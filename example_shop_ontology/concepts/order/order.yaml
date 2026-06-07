@@ -1,0 +1,65 @@
+# SHOP (example) > order > Order
+# Synthetic example — illustrates the `event` class and the lifecycle: block. Not real data.
+
+metadata:
+  concept: Order
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.4'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Order
+  label: Order
+  class: event                    # a stateful occurrence that moves through a lifecycle over time
+  definition: >
+    A purchase a customer places: one or more products bought in a single checkout. An order is a
+    thing that HAPPENS and then moves through states — placed → paid → shipped → delivered, with
+    returned/cancelled as terminal branches. Its current state is its furthest-reached lifecycle state.
+  semantics:
+    purpose: >
+      The central event of the shop — what revenue is computed from and what the fulfilment process
+      tracks. Each order is placed_by one Customer (see edges) and contains one or more Products.
+    null_semantics: >
+      A NULL shipped_at means the order has not shipped yet (not "shipped at an unknown time"). The
+      lifecycle state is read from which timestamps are present.
+
+# ── lifecycle: the canonical event state machine (phases group states, in sequence) ──
+lifecycle:
+  phase_sequence: [CHECKOUT, FULFILMENT, CLOSED]     # ordered macro-phases
+  boundary: "PAID is the CHECKOUT → FULFILMENT boundary (money taken, fulfilment can begin)"
+  phases:
+    - { name: CHECKOUT,   meaning: "Order created and (maybe) paid.",          states: [PLACED, PAID] }
+    - { name: FULFILMENT, meaning: "Goods moving to the customer.",            states: [SHIPPED, DELIVERED] }
+    - { name: CLOSED,     meaning: "Terminal outcomes.",                       states: [RETURNED, CANCELLED] }
+  phase_closure: closed
+  note: >
+    Happy path PLACED→PAID→SHIPPED→DELIVERED. CANCELLED can occur from PLACED/PAID (before shipping);
+    RETURNED only after DELIVERED. The state vocabulary itself is the OrderStatus enumeration.
+
+properties:
+  - { name: orderId,    type: string,    required: true,  doc: "order_id — identity key" }
+  - { name: placedAt,   type: timestamp, required: true,  doc: "when the order was placed" }
+  - { name: paidAt,     type: timestamp, required: false, doc: "NULL until paid" }
+  - { name: shippedAt,  type: timestamp, required: false, doc: "NULL until shipped" }
+  - { name: deliveredAt, type: timestamp, required: false, doc: "NULL until delivered" }
+  - { name: grossAmount, type: number,   required: true,  doc: "order total before refunds (see Revenue)" }
+
+grounding:
+  kind: sql_table
+  table: orders
+  schema: shop_warehouse
+  key_column: order_id
+
+constraints:
+  - assert: "Order lifecycle state is derived from which timestamps are present, not a free-text column"
+    severity: WARNING
+    machine_executable: false
+    notes: "e.g. shipped iff shipped_at IS NOT NULL. See OrderStatus for the value vocabulary."
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }
