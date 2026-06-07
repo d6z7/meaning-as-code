@@ -135,6 +135,44 @@ field is `assert:`, never `rule:` (§6 constraints) — so the word `rule` means
 
 ---
 
+## 5a. Reference syntax (how one file points at another)
+
+The naming contract (§5) says *where* an identifier lives; this says *how a reference addresses it*, so
+that references are mechanically resolvable (a checker can verify no reference is orphaned — see
+`tools/check_references.py`).
+
+A reference is a **path to a file, optionally followed by a `#anchor`**:
+
+```
+<relative-path>.yaml[#<anchor>]
+```
+
+- **Path** — relative to the ontology root (e.g. `concepts/order/order.yaml`, or in a wrapped/federated
+  project `<source>/concepts/...`). It must resolve to a real file.
+- **Anchor** — addresses an object *within* the file. The addressable anchors are:
+  - `#concept` — the file's top-level `concept:` block.
+  - `#<top-level-key>` — any top-level mapping key (e.g. `#foreign_keys`, `#gold_layer_architecture`).
+  - `#<list>.<id-or-name>` — an entry of any list whose items carry an `id:` or `name:`, nested by its
+    container. So `instances:` → `#instances.<id>`; a `foreign_keys:` list → `#foreign_keys.<name>`; a
+    nested `country_instances.instances:` → `#country_instances.instances.<id>`.
+  - **Names with spaces are backtick-quoted** in the anchor (e.g. ``#individual_kpis.`Total Market` ``);
+    backticks are ignored on resolution, so the quoted and unquoted forms are equivalent.
+
+Where references appear (each must resolve): edge `endpoints.{from,to}.ref`, edge `realized_by` (→ a
+table's `#foreign_keys...`), grounding (concept → its `table:`/`tables:`), rule `validated_against` (→ a
+table) and `over:`/`derives:` (→ concept/subclass names), `value_domain:` (→ an enumeration/reference
+concept), and any `{{ rules.<id>.template }}` injection (→ a rule in the same rules file).
+
+**Grounding may name its table two ways** (both valid): scalar `grounding.table: orders` for a
+single-table concept, or a `grounding.tables:`/`primary_tables:` **list** of `{ name: ..., role: ... }`
+for multi-table grounding. Either way the named table must have a `tables/<name>.yaml` descriptor.
+
+A reference that is not yet authored is marked with an explicit placeholder (`TODO`, `<...>`,
+`NEEDS_MAP`) so it reads as intentionally-incomplete, not broken — a checker reports these as INFO, not
+errors.
+
+---
+
 ## 6. Predefined keys — complete reference
 
 Concept files use these top-level keys, in this conventional **order** (the order tells a story:
