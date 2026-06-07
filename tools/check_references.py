@@ -2,7 +2,7 @@
 """
 check_references.py — generic referential-integrity checker for a YAML ontology built on this framework.
 
-The companion to validate_schema_v3.py: that one checks STRUCTURE (class present, semantics placement,
+The companion to validate_schema.py: that one checks STRUCTURE (class present, semantics placement,
 naming contract, edge legality); this one checks REFERENTIAL INTEGRITY — that every cross-file reference
 resolves to a real target. A green structural validator plus a green referential checker means the model
 is well-formed AND internally whole. (Neither proves correctness-against-data; that is execution
@@ -30,7 +30,7 @@ What it checks:
 
 What it does NOT check (out of scope; noted, not silently dropped):
   - SQL correctness, live-schema column existence (execution validation)
-  - structural schema rules (validate_schema_v3.py owns those)
+  - structural schema rules (validate_schema.py owns those)
 
 Usage:
   python tools/check_references.py <ontology-root> [--strict] [--quiet]

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_schema_v3.py — CI/local validator for the YAML ontology framework (schema v0.4).
+validate_schema.py — CI/local validator for the YAML ontology framework (schema v0.4).
 
 Checks an ontology authored under this framework: concept files (<source>/concepts/**/*.yaml)
 and edge files (<source>/edges.yaml, federation/edges.yaml).
@@ -9,7 +9,7 @@ Scope: structural + naming-contract + edge level/type legality. NOT a full JSON-
 focused rule-checker. A clean run (exit 0) means WELL-FORMED, not CORRECT (correctness is earned
 by execution validation, not the validator). Exit code 0 = clean, 1 = violations found.
 
-Usage:  python3 tools/validate_schema_v3.py [--root <repo_root>]
+Usage:  python3 tools/validate_schema.py [--root <repo_root>]
         (defaults to scanning <root>/**/concepts and <root>/**/edges.yaml)
 """
 import sys, glob, os, argparse

@@ -374,7 +374,7 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 
 1. **Structural validation.** Run the validator:
    ```
-   python tools/validate_schema_v3.py <path-to-your-source-or-file>
+   python tools/validate_schema.py <path-to-your-source-or-file>
    ```
    It enforces: `class:` present · interpretive keys in `semantics:` · `closure` not top-level ·
    `constraints[]` use `assert:` not `rule:` · rules have a legal `render_kind` + payload · edge
