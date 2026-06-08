@@ -257,7 +257,7 @@ the concept. Keeping relations out of concepts is what keeps each concept file a
                             assert-not-rule, rule render_kind, edge level/type, naming contract
 ```
 
-A validator (`tools/validate_schema_v3.py`) enforces the structural rules. But structure is not
+A validator (`tools/validate_schema.py`) enforces the structural rules. But structure is not
 correctness: the framework's distinctive discipline is **execution validation** — you run the query the
 model implies and let the data correct you. When the model says "X" and the data says "Y," that becomes a
 recorded **finding**, and the model is fixed. In practice this loop catches modelling errors that careful

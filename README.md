@@ -16,7 +16,8 @@ This repository is the complete, domain-neutral description of the framework, pl
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
 | [FRAMEWORK_STRUCTURE_MAP.md](FRAMEWORK_STRUCTURE_MAP.md) | The visual companion — diagrams of the object types, layers, and concept anatomy. |
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
-| [tools/validate_schema_v3.py](tools/validate_schema_v3.py) | A structural validator that enforces the framework's contracts (class present, semantics placement, naming contract, edge legality). |
+| [tools/validate_schema.py](tools/validate_schema.py) | A **structural** validator — enforces the framework's contracts within each file (class present, semantics placement, naming contract, edge legality). |
+| [tools/check_references.py](tools/check_references.py) | A **referential** validator — its companion; checks that every cross-file reference resolves (no orphans). Together: well-formed *and* internally whole. |
 
 ## In one paragraph
 
