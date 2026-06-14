@@ -16,7 +16,9 @@ This repository is the complete, domain-neutral description of the framework, pl
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
 | [FRAMEWORK_STRUCTURE_MAP.md](FRAMEWORK_STRUCTURE_MAP.md) | The visual companion — diagrams of the object types, layers, and concept anatomy. |
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
-| [tools/validate_schema_v3.py](tools/validate_schema_v3.py) | A structural validator that enforces the framework's contracts (class present, semantics placement, naming contract, edge legality). |
+| [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.5) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
+| [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core + `x-` extension contract, and the v0.5 change list. |
+| [tools/validate_schema_v0.5.py](tools/validate_schema_v0.5.py) | The schema-driven structural validator — checks any model against `mac.schema.json`. (Supersedes the hand-coded `validate_schema_v3.py`.) |
 
 ## In one paragraph
 
@@ -29,6 +31,30 @@ primitives. The discipline that makes this work is a small fixed schema (four la
 classes), single-homing (every fact lives in exactly one place), and execution validation (structure is
 not correctness — you run the queries the model implies and let the data correct you).
 
+## Validating the model
+
+The model is checked by two deterministic, data-free gates (no warehouse needed) — **structural**, then
+**referential**. A clean run means *well-formed* (L1), not *correct*: execution validation (L2) and SME
+confirmation (L3) still apply — see [CONFORMANCE.md](CONFORMANCE.md).
+
+```bash
+pip install jsonschema pyyaml      # one-time
+
+# 1. STRUCTURAL — validate every file against the formal schema (mac.schema.json)
+python3 tools/validate_schema_v0.5.py example_shop_ontology
+#   enforces files at schema_version 0.5 and skips legacy; add --all to check everything, --strict to fail on warnings
+
+# 2. REFERENTIAL — every cross-file reference (realized_by / grounding / over: / value_domain) resolves
+python3 tools/check_references.py example_shop_ontology
+
+# 3. NEGATIVE TESTS — prove the schema REJECTS bad input (not just that it accepts good)
+python3 tests/test_negative.py
+```
+
+Point (1) and (2) at *your own* model's root instead of `example_shop_ontology` to validate it. Exit code
+`0` = clean, `1` = violations, `2` = setup error (missing deps). The negative suite lives in
+[tests/](tests/) — intentionally-malformed fixtures the schema must reject; wire it into CI alongside (1)+(2).
+
 ## What this is not
 
 Not a runtime, not a reasoner, not a W3C standard. It *describes* a domain richly enough that an agent
@@ -37,6 +63,8 @@ for the honest trade-offs and when *not* to use it.
 
 ## Status
 
-The framework is at v0.4 of its schema. It has been exercised across multiple independent domains of
-genuinely different shape. It is offered as a pragmatic convention, not a finished product — feedback
-and adversarial testing on new domains are the most useful contributions.
+The framework is at **v0.5** of its schema — now formalized as a machine-checkable contract
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), with a schema-driven validator
+and a negative-test suite. It has been exercised across multiple independent domains of genuinely
+different shape. It is offered as a pragmatic convention, not a finished product — feedback and
+adversarial testing on new domains are the most useful contributions.

@@ -327,7 +327,9 @@
               "realized_by": {},
               "conditions": {},
               "confidence": { "$ref": "#/$defs/confidence" },
-              "federation_concept_id": { "type": "string" }
+              "federation_concept_id": { "type": "string" },
+              "notes": { "type": "string" },
+              "cross_references": { "type": ["array", "string"] }
             },
             "allOf": [
               { "if": { "properties": { "level": { "const": "physical" } } },
@@ -399,7 +401,8 @@
               "enforced": { "type": "boolean" },
               "required": { "type": "boolean" },
               "cardinality_at_to": { "type": "string" },
-              "confidence": { "$ref": "#/$defs/confidence" }
+              "confidence": { "$ref": "#/$defs/confidence" },
+              "notes": { "type": "string" }
             },
             "patternProperties": { "^x-": true },
             "additionalProperties": false

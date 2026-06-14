@@ -65,7 +65,8 @@ def _edge_enrichment_warnings(path, doc):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--root', default='.')
+    ap.add_argument('root', nargs='?', default='.',
+                    help='base dir to scan (positional, matching check_references.py); defaults to cwd')
     ap.add_argument('--schema',
                     default=os.path.join(os.path.dirname(__file__), '..', 'mac.schema.json'))
     ap.add_argument('--strict', action='store_true', help='warnings also fail the run')

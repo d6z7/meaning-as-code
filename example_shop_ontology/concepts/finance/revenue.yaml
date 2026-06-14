@@ -1,5 +1,6 @@
 # SHOP (example) > finance > Revenue
-# Synthetic example — illustrates the `measure` class + a DERIVATION (net = gross - refunds). Not real data.
+# Synthetic example — illustrates the `measure` class, a DERIVATION (net = gross - refunds), and the
+# v0.5 `contract:` construct (agent-facing binding rules). Not real data.
 
 metadata:
   concept: Revenue
@@ -30,6 +31,16 @@ concept:
 # Net revenue is not a stored column — it is derived. The concept points at the rule; the formula
 # lives in the rules layer (computation is single-homed there, not inlined here).
 derived_by_rule: net_revenue       # → rules.yaml
+
+# v0.5 `contract:` — the agent-facing binding rules for using this concept correctly (the resolution of
+# the framework's previously-deferred `reasoning_guidance:` question). May be a string or this object.
+contract:
+  no_probe_guarantee: >
+    Everything needed to answer "revenue" is here. Use NET revenue (rule net_revenue = gross − refunds);
+    never SUM(orders.gross_amount) on its own. No probe of the warehouse is needed to discover the refunds
+    join — the rule encodes it. If you find yourself wanting to probe, this concept is incomplete: fix it.
+  default_reading: "Unqualified 'revenue' means NET (gross minus refunds). Report gross only if explicitly asked."
+  resolution: "Net is produced by rules.yaml > net_revenue — reference it; do not re-derive the formula."
 
 grounding:
   kind: sql_table
