@@ -1,0 +1,8 @@
+# NEGATIVE fixture — MUST be rejected: 'denormalized' is not a legal physical edge type.
+edges:
+  - edge_id: a__denorm__b
+    level: physical
+    type: denormalized    # ← illegal: physical type must be foreign_key/composite_key/value_mapped_key
+    endpoints:
+      from: { ref: a.yaml#concept }
+      to:   { ref: b.yaml#concept }
