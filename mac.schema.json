@@ -28,7 +28,8 @@
         "date": { "description": "ISO date — string or a YAML-parsed date" },
         "change": { "type": "string" },
         "change_type": { "enum": ["CREATION", "ADDITION", "CORRECTION", "REMOVAL", "REFACTOR"] },
-        "by": { "type": "string" }
+        "by": { "type": "string" },
+        "rationale": { "type": "string" }
       },
       "additionalProperties": false
     },
@@ -88,8 +89,8 @@
     },
 
     "contract": {
-      "type": "object",
-      "description": "v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. Closed sub-shape; all optional; each is prose or a small structured rule.",
+      "type": ["string", "object"],
+      "description": "v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional.",
       "properties": {
         "no_probe_guarantee": {
           "type": "string",
@@ -134,7 +135,7 @@
         "family_resolution": { "type": "string" },
         "row_count": { "type": ["integer", "string"] },
         "used_in": { "type": ["array", "string"] },
-        "serves_from": { "type": "string", "description": "v0.5 PROMOTED to core: the serving-view .sql file this concept is served from." },
+        "serves_from": { "type": ["string", "array"], "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)." },
         "grain": { "type": "string", "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class." },
         "grounds_column": { "type": "string", "description": "(naming contract) a physical column name as a VALUE, never a key." },
         "note": { "type": "string" },
@@ -351,7 +352,8 @@
             "name": { "type": "string" },
             "schema": { "type": "string" },
             "type": { "enum": ["table", "view", "materialized_view"] },
-            "description": { "type": "string" }
+            "description": { "type": "string" },
+            "confidence": { "$ref": "#/$defs/confidence" }
           },
           "patternProperties": { "^x-": true },
           "additionalProperties": false
