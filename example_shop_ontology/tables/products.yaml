@@ -5,7 +5,7 @@ metadata:
   table: products
   source: SHOP
   version: '1.0'
-  schema_version: '0.4'
+  schema_version: '0.5'
   status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
   owner: example-team
   confidence: C
@@ -18,12 +18,12 @@ table:
 
 columns:
   - { name: sku,         type: string, role: primary_key }
-  - { name: name,        type: string, role: attribute }
+  - { name: name,        type: string, role: value, x-subrole: attribute }
   - { name: category_id, type: string, role: foreign_key, description: "→ categories.category_id (belongs_to_category edge)" }
-  - { name: list_price,  type: decimal, role: attribute }
+  - { name: list_price,  type: decimal, role: value, x-subrole: attribute }
 
 foreign_keys:
-  - { name: fk_category, column: category_id, references: categories.category_id }
+  - { name: fk_category, from_column: category_id, to_table: categories, to_column: category_id }
 
 grounded_by_concepts:
   - { concept: Product, role: primary_table }

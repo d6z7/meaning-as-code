@@ -1,6 +1,6 @@
 ---
-title: Concept & Rules Schema — key-by-key reference (v0.4)
-version: '0.4'
+title: Concept & Rules Schema — key-by-key reference (v0.5)
+version: '0.5'
 date: 2026-06-05
 status: CANONICAL — the exhaustive key reference for the framework. Domain-neutral.
 audience: ontology architects, platform/vendor integrators, AI-agent builders, new contributors
@@ -10,7 +10,14 @@ role: detailed key-by-key REFERENCE APPENDIX to the canonical framework descript
 companion: framework/FRAMEWORK.md (canonical description — READ FIRST), FRAMEWORK_STRUCTURE_MAP.md (visuals), example_shop_ontology/ (worked reference on a neutral domain)
 ---
 
-# Concept & Rules Schema — key-by-key reference (v0.4)
+# Concept & Rules Schema — key-by-key reference (v0.5)
+
+> **v0.5 — read alongside the formal schema.** The authoritative, machine-checkable contract is now
+> [`mac.schema.json`](mac.schema.json) + [`CONFORMANCE.md`](CONFORMANCE.md). This prose reference is
+> being brought into line with v0.5: the `contract:` construct is added (the deferred
+> `reasoning_guidance:` question, resolved); `value_set:` is consolidated into `values:`;
+> `grounding.serves_from`/`grain` are promoted. **Where prose and schema disagree, the schema governs
+> syntax.** The v0.5 change list is in `CONFORMANCE.md §3`.
 
 This is the complete, reader-facing reference for an ontology authored in YAML under this framework.
 Read it to understand **what a concept is, how the files are organised, the `class:` vocabulary, and the

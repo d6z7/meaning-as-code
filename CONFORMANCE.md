@@ -74,23 +74,20 @@ Conformance fixes these create for the GAPS application (Phase C, not schema cha
 need `render_kind`; FPL_CLEAN analytical column roles map down to canonical; the `non_additive`→
 `non-additive` spelling; the `value_set`→`values` migration.
 
-## 4. Open canon questions (surfaced by validating the framework's OWN example — need a ruling)
+## 4. Resolved canon questions (decided 2026-06-14)
 
-Validating `mac.schema.json` against `example_shop_ontology/` (the framework's reference example)
-exposed two places where the **canon contradicts itself** — the example uses constructs the schema docs
-don't sanction. These are **decisions, not bugs**, and they are PENDING:
+Validating `mac.schema.json` against `example_shop_ontology/` exposed two places where the canon
+contradicted itself. Both are now ruled — and in both, **the schema as written is already correct; the
+example is what migrates** (a Phase-C task):
 
-- **Q1 — column-role vocabulary.** `TABLES_SCHEMA`/the ratified DECISION 4 keep a *physical* role set
-  (`primary_key/foreign_key/value/discriminator/audit/composite_key_part`). But the shop example itself
-  uses `measure`, `attribute`, `temporal`. So the "canonical" set is narrower than the framework already
-  writes. **Options:** (a) widen the core role enum to include the analytical roles the example needs
-  (`dimension/measure/attribute/temporal`) — this *reverses* DECISION 4 for the framework core while GAPS
-  may still choose to map down; or (b) migrate the example to the narrow set. *(Schema currently enforces
-  the narrow set; the example fails until ruled.)*
-- **Q2 — foreign-key shape.** `TABLES_SCHEMA` documents `{name, from_column, to_table, to_column}`; the
-  shop example uses `{column, references}`. **Options:** (a) the rich shape is canonical (migrate the
-  example); (b) the terse shape is the generic core and the rich one is a GAPS profile. *(Schema
-  currently enforces the rich shape.)*
+- **Q1 — column-role vocabulary → KEEP NARROW.** The core role set stays *physical*
+  (`primary_key/foreign_key/value/discriminator/audit/composite_key_part/unknown`); DECISION 4 holds.
+  Rationale: a column's *analytical* meaning (measure/dimension/attribute) already lives in the Concept
+  layer — tagging the column too would restate it (single-homing). Phase C migrates the example's
+  `measure/attribute/temporal` down to canonical (`→ value`).
+- **Q2 — foreign-key shape → RICH SHAPE CANONICAL.** `{name, from_column, to_table, to_column}` is the
+  one canonical FK shape (explicit; feeds edge cardinality). Phase C migrates the example's terse
+  `{column, references}` to it.
 
 ## 5. Validating a file (Phase C wires this into the gate)
 

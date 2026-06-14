@@ -4,7 +4,7 @@
 metadata:
   layer: rules
   source: SHOP
-  schema_version: '0.4'
+  schema_version: '0.5'
   status: production
   date: 2026-06-05
 

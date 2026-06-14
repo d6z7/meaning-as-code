@@ -404,7 +404,7 @@
             "properties": {
               "concept": { "type": "string" },
               "ref": { "type": "string" },
-              "role": { "enum": ["primary_table", "referenced"] }
+              "role": { "type": "string", "description": "descriptive reverse-pointer role (e.g. primary_table, referenced, discriminator_column) — free text, not a load-bearing controlled vocabulary." }
             },
             "patternProperties": { "^x-": true },
             "additionalProperties": false
