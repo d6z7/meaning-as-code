@@ -167,7 +167,30 @@
       "properties": {
         "closure": { "enum": ["closed", "open", "unknown"] },
         "closure_why": { "type": "string" },
-        "items": { "type": "array" }
+        "items": {
+          "type": "array",
+          "description": "the value rows — every value has a stable `code`; label/meaning/confidence/from are optional core; per-enum attributes are allowed.",
+          "items": {
+            "type": "object",
+            "required": ["code"],
+            "properties": {
+              "code": { "type": ["string", "number"], "description": "the canonical value identifier" },
+              "label": { "type": "string" },
+              "meaning": { "type": "string" },
+              "confidence": { "$ref": "#/$defs/confidence" },
+              "note": { "type": "string" },
+              "open_question": { "type": "string" },
+              "from": { "type": ["string", "array"], "description": "raw source attribute(s) this value was conformed from (a list when several raw spellings map to one code)" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "unmapped": {
+          "type": "object",
+          "description": "the orphan-quarantine bucket — how raw values outside the closed set are surfaced (never silently dropped). Part of the value-domain conformance story.",
+          "additionalProperties": true
+        },
+        "canonicalization": { "type": ["string", "object"], "description": "how raw spellings/duplicates were conformed to the canonical codes." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": false
@@ -248,7 +271,14 @@
         "open_questions": { "type": "array", "items": { "$ref": "#/$defs/openQuestion" } }
       },
       "patternProperties": { "^x-": true },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "v0.5 per-class template — enumeration: the value set lives in `values:` (one concept = one set); the `enumerations:` plural wrapper is only for non-enumeration concepts carrying several coded columns.",
+          "if": { "properties": { "concept": { "properties": { "class": { "const": "enumeration" } } } } },
+          "then": { "required": ["values"], "not": { "required": ["enumerations"] } }
+        }
+      ]
     },
 
     "RulesFile": {
