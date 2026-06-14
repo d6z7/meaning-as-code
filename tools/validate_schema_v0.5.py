@@ -69,6 +69,9 @@ def main():
     ap.add_argument('--schema',
                     default=os.path.join(os.path.dirname(__file__), '..', 'mac.schema.json'))
     ap.add_argument('--strict', action='store_true', help='warnings also fail the run')
+    ap.add_argument('--all', action='store_true',
+                    help='validate every file regardless of metadata.schema_version '
+                         '(default: only enforce files that declare schema_version 0.5; legacy files are skipped)')
     args = ap.parse_args()
 
     try:
@@ -100,7 +103,8 @@ def main():
         files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
     files = sorted(set(files))
 
-    errors, warnings, clean = [], [], 0
+    TARGET = '0.5'
+    errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:
         try:
             doc = _load_yaml_str_dates(f)
@@ -108,6 +112,10 @@ def main():
             errors.append(f"ERROR  {f}: YAML parse failed: {e}")
             continue
         if not isinstance(doc, dict):
+            continue
+        sv = str((doc.get('metadata') or {}).get('schema_version', ''))
+        if not args.all and sv != TARGET:
+            skipped += 1   # legacy / not-yet-migrated — incremental adoption (use --all to force)
             continue
         which = _pick_def(f)
         errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))
@@ -124,8 +132,10 @@ def main():
         print(w)
     for e in errors:
         print(e)
-    print(f"\n{len(errors)} error(s), {len(warnings)} warning(s) across {len(files)} file(s); "
-          f"{clean} clean.  (schema-driven L1 gate — not correctness; see CONFORMANCE.md.)")
+    checked = len(files) - skipped
+    print(f"\n{len(errors)} error(s), {len(warnings)} warning(s); {clean}/{checked} checked file(s) clean, "
+          f"{skipped} skipped (not schema_version {TARGET}; use --all to include).  "
+          f"(schema-driven L1 gate — not correctness; see CONFORMANCE.md.)")
     fail = bool(errors) or (args.strict and bool(warnings))
     sys.exit(1 if fail else 0)
 
