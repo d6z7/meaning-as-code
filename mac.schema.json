@@ -285,7 +285,13 @@
               "cross_references": { "type": ["array", "string"] }
             },
             "patternProperties": { "^x-": true },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "allOf": [
+              { "if": { "properties": { "render_kind": { "enum": ["sql_expression", "derived_set"] } } },
+                "then": { "required": ["template"], "$comment": "an injected rule must carry its canonical SQL template" } },
+              { "if": { "properties": { "render_kind": { "const": "sql_view" } } },
+                "then": { "required": ["view_ref"], "$comment": "a view-backed rule must reference the pre-deposited view" } }
+            ]
           }
         }
       },

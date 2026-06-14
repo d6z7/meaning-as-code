@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
-validate_schema_v3.py — CI/local validator for the YAML ontology framework (schema v0.4).
+validate_schema_v3.py — DEPRECATED (schema v0.4). Superseded by validate_schema_v0.5.py, which is
+SCHEMA-DRIVEN (validates against mac.schema.json) rather than hand-coding the structural rules here.
+Do not extend this file — add structural rules to mac.schema.json. Kept only until its cross-file
+`derived_by_rule` resolution is absorbed by the referential checker.
+
+CI/local validator for the YAML ontology framework (schema v0.4).
 
 Checks an ontology authored under this framework: concept files (<source>/concepts/**/*.yaml)
 and edge files (<source>/edges.yaml, federation/edges.yaml).
