@@ -122,6 +122,21 @@
       "description": "Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.",
       "properties": {
         "kind": { "type": "string", "description": "Grounding adapter (pluggable): sql_table | api | file | graph." },
+        "sources": {
+          "type": "array",
+          "description": "v0.5 agnostic source binding — the relation(s) this concept queries, each with its key + the columns it uses. A view and a base table are IDENTICAL here (query target only); a view's lineage lives on its Physical descriptor (`derived_from`), never here.",
+          "items": {
+            "type": "object",
+            "required": ["relation"],
+            "properties": {
+              "relation": { "type": "string", "description": "the table OR view name to query (agnostic — the AI does not care which)" },
+              "key": { "type": ["string", "array"], "description": "primary / join key column(s)" },
+              "columns": { "type": "array", "description": "the columns this concept uses" }
+            },
+            "patternProperties": { "^x-": true },
+            "additionalProperties": true
+          }
+        },
         "table": { "type": "string" },
         "tables": { "type": "array" },
         "primary_tables": { "type": "array" },
@@ -395,6 +410,18 @@
           },
           "patternProperties": { "^x-": true },
           "additionalProperties": false
+        },
+        "derived_from": {
+          "type": "object",
+          "description": "(views only) LINEAGE — how this serving relation is built. Absent for base tables. For engineers/governance + rebuild; NOT read by the query-generating agent (the concept grounds to the relation agnostically).",
+          "properties": {
+            "sources": { "type": "array", "description": "the raw/upstream relation(s) this view is built from" },
+            "serves_from": { "type": "string", "description": "the executable DDL file (the SELECT)" },
+            "bakes_out": { "type": ["string", "array"], "description": "the impurities/workarounds this view dissolves (the homologation payoff)" },
+            "notes": { "type": "string" }
+          },
+          "patternProperties": { "^x-": true },
+          "additionalProperties": true
         },
         "columns": {
           "type": "array",
