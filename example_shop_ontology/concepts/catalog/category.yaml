@@ -24,9 +24,14 @@ concept:
       contains, and supports drill-down (Electronics → Phones → a specific Product).
     additivity: { product: additive }   # revenue rolls up additively from products into a category
 
-members_resolution: >
-  A category contains products via Product.categoryId; nested categories via Category.parentId. To get
-  all products under a top-level category, walk parentId transitively then match Product.categoryId.
+# v0.5 grouping template — a Category rolls up Product via a FK rule (not enumerated named sets).
+members:
+  over: Product
+  member_source:
+    kind: rule
+    rule: >
+      A category contains products via Product.categoryId; nested categories via Category.parentId. To get
+      all products under a top-level category, walk parentId transitively then match Product.categoryId.
 
 properties:
   - { name: categoryId, type: string, required: true,  doc: "category_id — identity key" }

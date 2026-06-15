@@ -211,6 +211,77 @@
       "additionalProperties": false
     },
 
+    "PropertyItem": {
+      "type": "object",
+      "description": "v0.5 CROSS-CLASS primitive — a concept property. Identical shape wherever `properties:` appears (reference / entity / event / measure): name + type + required + doc. Empirically uniform across 72/72 property items. The Palantir 'property'.",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "description": "the primitive datatype (string/int/date/...)" },
+        "required": { "type": "boolean" },
+        "doc": { "type": "string" },
+        "german": { "type": "string" },
+        "value_domain": { "type": "string", "description": "(optional) an enumeration this property's values must belong to" }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": true
+    },
+
+    "AttributeItem": {
+      "type": "object",
+      "description": "v0.5 cross-class — an EAV / enum-constrained attribute (reference / entity). Distinct from PropertyItem (primitive): an attribute's values must belong to an enumeration (`value_domain`) and are typically read from an EAV column.",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "value_domain": { "type": "string", "description": "the enumeration the attribute's values belong to" },
+        "eav_attribute": { "type": "string" },
+        "column": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "note": { "type": "string" }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": true
+    },
+
+    "groupingMembers": {
+      "type": "object",
+      "description": "v0.5 grouping template — how a grouping rolls up its leaf. `over` = the leaf concept. Membership is either `member_source.kind: rule` (a FK/derivation, e.g. category over product) or `kind: enumerated` with named `definitions` (e.g. region's brand definitions, each explicit or derived).",
+      "required": ["over"],
+      "properties": {
+        "over": { "type": "string", "description": "the leaf concept this groups (region over country, category over product)" },
+        "member_source": {
+          "type": "object",
+          "properties": {
+            "kind": { "enum": ["rule", "enumerated"] },
+            "rule": { "type": ["string", "object"], "description": "(rule) how membership is computed — a FK / transitive walk" }
+          },
+          "patternProperties": { "^x-": true },
+          "additionalProperties": true
+        },
+        "definitions": {
+          "type": "array",
+          "description": "(enumerated) the named member sets — each an explicit list or a derived rule",
+          "items": {
+            "type": "object",
+            "required": ["code"],
+            "properties": {
+              "namespace": { "type": "string", "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (VW-VE vs Audi-VE)" },
+              "code": { "type": ["string", "number"] },
+              "label": { "type": "string" },
+              "brand": { "type": "string" },
+              "members": { "type": "array", "description": "(explicit) the leaf codes in this set" },
+              "derived_rule": { "type": ["string", "object"], "description": "(derived) how this set's members are computed" },
+              "confidence": { "$ref": "#/$defs/confidence" }
+            },
+            "patternProperties": { "^x-": true },
+            "additionalProperties": true
+          }
+        }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": true
+    },
+
     "ConceptFile": {
       "type": "object",
       "required": ["metadata", "concept"],
@@ -255,11 +326,11 @@
         "contract": { "$ref": "#/$defs/contract" },
 
         "values": { "$ref": "#/$defs/enumerationValues" },
-        "properties": { "type": "array", "description": "Intrinsic PRIMITIVE attributes (string/int/date). Concept-typed relations are edges, not properties." },
-        "attributes": { "type": "array", "description": "EAV-read attributes constrained by an enumeration (value_domain). Distinct from 'properties' (primitive)." },
+        "properties": { "type": "array", "description": "Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties.", "items": { "$ref": "#/$defs/PropertyItem" } },
+        "attributes": { "type": "array", "description": "EAV / enum-constrained attributes — each an AttributeItem. Distinct from 'properties' (primitive).", "items": { "$ref": "#/$defs/AttributeItem" } },
         "subclasses": { "type": "array", "description": "is-a hierarchy (e.g. measure Flow/Stock/Target)." },
         "instances": { "type": "array" },
-        "members": { "type": "array", "description": "whole→part containment on the container. Containment is concept structure, not an edge." },
+        "members": { "description": "grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).", "oneOf": [ { "type": "array" }, { "$ref": "#/$defs/groupingMembers" } ] },
         "members_resolution": { "type": ["string", "object"] },
         "enumerations": { "type": "array", "description": "list of enum sub-blocks when a concept carries several coded columns." },
         "related_concepts": { "type": "array" },
@@ -292,6 +363,21 @@
           "$comment": "v0.5 per-class template — enumeration: the value set lives in `values:` (one concept = one set); the `enumerations:` plural wrapper is only for non-enumeration concepts carrying several coded columns.",
           "if": { "properties": { "concept": { "properties": { "class": { "const": "enumeration" } } } } },
           "then": { "required": ["values"], "not": { "required": ["enumerations"] } }
+        },
+        {
+          "$comment": "v0.5 per-class template — measure: must declare per-axis additivity (the footgun-preventer).",
+          "if": { "properties": { "concept": { "properties": { "class": { "const": "measure" } } } } },
+          "then": { "properties": { "concept": { "required": ["semantics"], "properties": { "semantics": { "required": ["additivity"] } } } } }
+        },
+        {
+          "$comment": "v0.5 per-class template — event: must carry a lifecycle (the state machine).",
+          "if": { "properties": { "concept": { "properties": { "class": { "const": "event" } } } } },
+          "then": { "required": ["lifecycle"] }
+        },
+        {
+          "$comment": "v0.5 per-class template — grouping: must roll up a leaf via the members template (over + member_source / definitions).",
+          "if": { "properties": { "concept": { "properties": { "class": { "const": "grouping" } } } } },
+          "then": { "required": ["members"], "properties": { "members": { "type": "object", "required": ["over"] } } }
         }
       ]
     },
