@@ -19,11 +19,11 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install PyYAML
-        run: pip install pyyaml
+      - name: Install deps
+        run: pip install jsonschema pyyaml
 
       - name: Structural validation (validate_schema.py)
-        run: python tools/validate_schema.py --root example_shop_ontology
+        run: python tools/validate_schema.py example_shop_ontology
 
       - name: Referential integrity (check_references.py)
         run: python tools/check_references.py example_shop_ontology

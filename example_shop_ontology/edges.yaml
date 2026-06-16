@@ -1,12 +1,12 @@
 # SHOP (example) — Edges layer
 # Synthetic example — illustrates the edges layer: relations BETWEEN concepts. Not real data.
 # A relation between two concepts is an edge, never a property of either endpoint.
-# Canonical v0.4 edge shape: edge_id · level · type · endpoints{from,to} · join_rule · realized_by.
+# Canonical v0.5 edge shape: edge_id · level · type · endpoints{from,to} · join_rule · realized_by · notes.
 
 metadata:
   layer: edges
   source: SHOP
-  schema_version: '0.4'
+  schema_version: '0.5'
   status: production
   date: 2026-06-05
 
@@ -20,6 +20,7 @@ edges:
       to:   { source: SHOP, concept: Customer, ref: "concepts/customer/customer.yaml#concept",                 cardinality: "1" }      # an order has exactly one customer
     join_rule: "orders.customer_id = customers.customer_id"
     realized_by: "tables/orders.yaml#foreign_keys (customer_id -> customers.customer_id)"
+    notes: "The most-traversed join — every per-customer aggregation goes through it."   # v0.5: `notes` is core on edges
     confidence: C
 
   - edge_id: product__belongs_to__category

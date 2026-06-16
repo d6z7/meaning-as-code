@@ -5,7 +5,7 @@ metadata:
   table: refunds
   source: SHOP
   version: '1.0'
-  schema_version: '0.4'
+  schema_version: '0.5'
   status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
   owner: example-team
   confidence: C
@@ -19,11 +19,11 @@ table:
 columns:
   - { name: refund_id,     type: string,  role: primary_key }
   - { name: order_id,      type: string,  role: foreign_key, description: "→ orders.order_id" }
-  - { name: refund_amount, type: decimal, role: measure }
-  - { name: refunded_at,   type: timestamp, role: temporal }
+  - { name: refund_amount, type: decimal, role: value, x-subrole: measure }
+  - { name: refunded_at,   type: timestamp, role: value, x-subrole: temporal }
 
 foreign_keys:
-  - { name: fk_order, column: order_id, references: orders.order_id }
+  - { name: fk_order, from_column: order_id, to_table: orders, to_column: order_id }
 
 grounded_by_concepts:
   - { concept: Revenue, role: refund_source }

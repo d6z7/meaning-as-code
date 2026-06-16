@@ -1,6 +1,6 @@
 ---
 title: The YAML Ontology Framework — meaning and semantics as version-controlled YAML
-version: '1.1'
+version: '1.2'
 date: 2026-06-05
 status: CANONICAL — the complete, self-contained, domain-neutral description of the framework. Read this first.
 audience: ontology architects, data/AI engineers, platform/vendor integrators, new contributors
@@ -10,6 +10,8 @@ scope: GENERIC methodology — domain-independent and vendor-neutral. Contains N
 supersedes: FRAMEWORK_v0.4_partial.md, ONTOLOGY_FRAMEWORK.md (both retired to archive/)
 companions:
   - CONCEPT_SPEC.md     # the detailed, key-by-key reference (appendix to this document)
+  - mac.schema.json     # v0.5: the machine-checkable schema — the strict, enforceable contract
+  - CONFORMANCE.md      # v0.5: conformance levels + the closed-core / `x-` extension rule
   - FRAMEWORK_STRUCTURE_MAP.md  # the visual companion (diagrams)
   - example_shop_ontology/   # a worked, validated example on a neutral domain — "this framework, applied"
 ---
