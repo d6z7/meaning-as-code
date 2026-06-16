@@ -86,6 +86,11 @@
           "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (MeasureType × axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
           "additionalProperties": { "type": "string", "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$" }
         },
+        "measure_type": {
+          "type": "string",
+          "description": "v0.6: the measure's additivity class — a reference to a mac.MeasureType member (Flow/Stock/Target). The (type × axis_kind) additivity law lives once on mac.MeasureType; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "pattern": "^mac\\.MeasureType\\.[A-Za-z_][A-Za-z0-9_]*$"
+        },
         "unit": { "type": "string" },
         "null_semantics": { "type": "string" }
       },
