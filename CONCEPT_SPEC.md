@@ -315,7 +315,7 @@ Where a project has such axes, they are documented in that project's concept fil
 
 ## 9. Validation
 
-`framework/tools/validate_schema_v3.py` enforces this schema: `class:` present, interpretive keys in
+`tools/validate_schema.py` enforces this schema: `class:` present, interpretive keys in
 `semantics:` (not loose), `closure` not a top-level key, `constraints[]` use `assert:` not `rule:`,
 rules have a legal `render_kind` + payload, edge level/type legality, naming-contract spot-checks. A
 clean run (0 errors) means **well-formed**, not **correct** — correctness is earned by execution

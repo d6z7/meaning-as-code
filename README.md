@@ -18,7 +18,8 @@ This repository is the complete, domain-neutral description of the framework, pl
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
 | [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.5) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
 | [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core + `x-` extension contract, and the v0.5 change list. |
-| [tools/validate_schema_v0.5.py](tools/validate_schema_v0.5.py) | The schema-driven structural validator — checks any model against `mac.schema.json`. (Supersedes the hand-coded `validate_schema_v3.py`.) |
+| [tools/validate_schema.py](tools/validate_schema.py) | The **structural** validator — schema-driven (MAC v0.5): checks every model file against `mac.schema.json` (closed vocabulary, required keys, naming contract, edge legality). |
+| [tools/check_references.py](tools/check_references.py) | A **referential** validator — its companion; checks that every cross-file reference resolves (no orphans). Together: well-formed *and* internally whole. |
 
 ## In one paragraph
 
@@ -41,7 +42,7 @@ confirmation (L3) still apply — see [CONFORMANCE.md](CONFORMANCE.md).
 pip install jsonschema pyyaml      # one-time
 
 # 1. STRUCTURAL — validate every file against the formal schema (mac.schema.json)
-python3 tools/validate_schema_v0.5.py example_shop_ontology
+python3 tools/validate_schema.py example_shop_ontology
 #   enforces files at schema_version 0.5 and skips legacy; add --all to check everything, --strict to fail on warnings
 
 # 2. REFERENTIAL — every cross-file reference (realized_by / grounding / over: / value_domain) resolves

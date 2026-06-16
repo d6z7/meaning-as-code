@@ -46,7 +46,8 @@ query caught it; the model was corrected. *Structure ≠ correctness.*
 These files follow the canonical v0.4 shape and pass the validator. From the repo root, run:
 
 ```sh
-python3 tools/validate_schema_v3.py
+python3 tools/validate_schema.py                       # structural — well-formed
+python3 tools/check_references.py example_shop_ontology # referential — internally whole
 ```
 
 The validator discovers any `concepts/**`, `edges.yaml`, and `rules.yaml` under the root, so it picks

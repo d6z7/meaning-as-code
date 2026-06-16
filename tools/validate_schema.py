@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_schema_v0.5.py — THE structural validator for MAC v0.5. Schema-driven.
+validate_schema.py — THE structural validator for MAC v0.5. Schema-driven.
 
 Unlike the retired hand-coded validate_schema_v3.py (which encoded the v0.4 structural rules in
 Python), this validator is driven by the FORMAL SCHEMA: it validates every MAC YAML file against
@@ -19,7 +19,7 @@ TableFile, */concepts/**→ConceptFile. Dates load as strings (PyYAML would othe
 A clean run (exit 0) means WELL-FORMED (L1), not CORRECT — L2 (execution validation) and L3 (SME)
 remain mandatory; see CONFORMANCE.md.
 
-Usage:  python3 tools/validate_schema_v0.5.py [--root .] [--schema <mac.schema.json>] [--strict]
+Usage:  python3 tools/validate_schema.py [root] [--schema <mac.schema.json>] [--strict] [--all]
         --strict : warnings also fail the run.
 Exit:   0 = clean · 1 = schema violations (or warnings under --strict) · 2 = setup error (deps/schema)
 """
