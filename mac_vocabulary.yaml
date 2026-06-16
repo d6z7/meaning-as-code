@@ -15,7 +15,7 @@ metadata:
   namespace: mac
   version: '0.6'
   status: active
-  defines: [aggregation_effect, axis_kind, MeasureType]
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -68,3 +68,22 @@ MeasureType:
       additivity:
         time:        mac.aggregation_effect.non_aggregable
         categorical: mac.aggregation_effect.non_aggregable
+
+# ===========================================================================
+# mac.rule_kind — the closed taxonomy that types every behavioural rule (what the rule governs).
+# A typed rule references its kind (kind: mac.rule_kind.<term>) instead of an inline string, so the set
+# is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
+# is an inherited fact rather than a directive — kept distinct for clarity; prune at a later revision
+# if warranted.)
+# ===========================================================================
+rule_kind:
+  kind: vocabulary
+  closed: true
+  description: What a behavioural rule governs — the rule's type.
+  terms:
+    resolution:  "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
+    aggregation: "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
+    default:     "What to assume when an axis is unspecified but a safe default exists."
+    ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
+    exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
+    guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
