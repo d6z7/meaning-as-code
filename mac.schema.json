@@ -78,8 +78,13 @@
         "scope": { "type": "string" },
         "additivity": {
           "type": "object",
-          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (GAPS: time/geography/model; a shop: customer/product) — any axis name maps to an additivity value. A stock measure is non-additive over time.",
+          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time.",
           "additionalProperties": { "$ref": "#/$defs/additivityAxis" }
+        },
+        "axis_kinds": {
+          "type": "object",
+          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (MeasureType × axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
+          "additionalProperties": { "type": "string", "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$" }
         },
         "unit": { "type": "string" },
         "null_semantics": { "type": "string" }
