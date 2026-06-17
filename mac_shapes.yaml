@@ -31,3 +31,13 @@ shapes:
     constraint:
       kind: required
       path: concept.semantics.additivity
+
+  # FIELD-ANCHORING (v0.1.6, FRAMEWORK §6d): a typed rule's `binds` must name a column of the table the
+  # concept grounds to — a RELATIONAL, CROSS-FILE invariant the schema cannot express (columns are
+  # single-homed in the Physical layer). A rule cannot claim to govern a field the concept doesn't ground.
+  - id: rule-binds-grounded
+    description: every contract.rules[].binds must be a column of the grounded table
+    target: concept
+    severity: error
+    constraint:
+      kind: rule_binds_grounded

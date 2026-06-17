@@ -52,6 +52,15 @@ constraints become inspectable, versioned model content (and generator-readable)
 declared shapes. The framework ships **built-in** universal invariants (`mac_shapes.yaml`, governed by
 [mac.shapes.schema.json](mac.shapes.schema.json)); an application adds its own via `--shapes`.
 
+**Field-anchoring (v0.1.6).** A concept's `contract.rules[]` are typed behavioural rules (`kind` →
+`mac.rule_kind`, `when`/`then`/`why`) **anchored to the field(s) they govern** via `binds:` — promoted
+from the GAPS pilot into core (the `contract.rules` RuleObject in `mac.schema.json`). The built-in
+`rule-binds-grounded` shape enforces it **cross-file**: every `binds` value must be a column of the table
+the concept grounds to (`grounding.table`/`sources` → `tables/<name>.yaml#columns`). Columns are
+single-homed in the Physical layer, so a rule cannot claim to govern a field the concept does not ground —
+the relational check the schema structurally cannot make. See `example_tpch_ontology` LineItem for a
+worked instance.
+
 ## 2. The closed-core + `x-` extension rule (how we stay strict without ossifying)
 
 Strictness is **layered**, not uniform:

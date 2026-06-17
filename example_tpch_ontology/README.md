@@ -33,6 +33,7 @@ benchmark — public, precisely specified, not real data). It complements `examp
 | **Physical** | `tables/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs |
 | **Edges** | `edges.yaml` (8) | every relation between concepts, incl. a **composite** join (`lineitem → partsupp`) |
 | **Rules** | `rules.yaml` (1) | `net_revenue` — a derivation with a renderable SQL template |
+| **Field-anchoring** | `LineItem.contract.rules` (2) | typed behavioural rules **`binds`**-ed to the columns they govern (e.g. revenue → `l_extendedprice`, `l_discount`); the `rule-binds-grounded` shape verifies, cross-file, that each bind is a real grounded column |
 
 ## Validate
 
