@@ -43,6 +43,15 @@ contract:
     join — the rule encodes it. If you find yourself wanting to probe, this concept is incomplete: fix it.
   default_reading: "Unqualified 'revenue' means NET (gross minus refunds). Report gross only if explicitly asked."
   resolution: "Net is produced by rules.yaml > net_revenue — reference it; do not re-derive the formula."
+  # Field-anchoring: the typed rule bound to the grounded `orders` column it governs (rule-binds-grounded).
+  rules:
+    - id: revenue.net_of_refunds
+      kind: mac.rule_kind.aggregation
+      when: "computing revenue from orders"
+      then: "net = SUM(gross_amount) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0"
+      never: "summing gross_amount alone — that is gross, not net revenue"
+      why: "gross_amount is the order total before returns; revenue is reported net of refunds"
+      binds: [gross_amount]
 
 grounding:
   kind: sql_table
