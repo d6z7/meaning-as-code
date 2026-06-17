@@ -5,7 +5,7 @@
 metadata:
   layer: edges
   source: TPCH
-  schema_version: '0.5'
+  schema_version: '0.1.6'
   status: production
   date: 2026-06-17
 

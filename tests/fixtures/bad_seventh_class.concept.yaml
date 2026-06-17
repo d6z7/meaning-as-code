@@ -1,5 +1,5 @@
 # NEGATIVE fixture — MUST be rejected: 'class' must be one of the closed six.
-metadata: { concept: Widget, source: TEST, schema_version: '0.5' }
+metadata: { concept: Widget, source: TEST, schema_version: '0.1.6' }
 concept:
   name: Widget
   class: widget          # ← illegal: not one of entity/event/measure/enumeration/reference/grouping

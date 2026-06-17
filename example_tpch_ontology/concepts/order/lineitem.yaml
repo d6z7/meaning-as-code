@@ -5,7 +5,7 @@ metadata:
   concept: LineItem
   source: TPCH
   version: '1.0'
-  schema_version: '0.5'
+  schema_version: '0.1.6'
   status: production
   owner: example-team
   confidence: C
@@ -47,6 +47,27 @@ properties:
   - { name: discount,      type: number,  required: false, doc: "l_discount — fraction 0..1" }
   - { name: shipDate,      type: date,    required: false, doc: "l_shipdate" }
   - { name: receiptDate,   type: date,    required: false, doc: "l_receiptdate — NULL until received" }
+
+# v0.1.6: typed behavioural rules, each ANCHORED to the field(s) it governs (binds). The binds names are
+# columns of the grounded table (lineitem) — the rule-binds-grounded shape verifies that cross-file.
+contract:
+  no_probe_guarantee: >
+    To read a line you need only its columns here; revenue is net of discount (see net_revenue), and the
+    fulfilment state is read from the dates/flags — no warehouse probe is needed.
+  rules:
+    - id: lineitem.revenue.net_of_discount
+      kind: mac.rule_kind.aggregation
+      when:  "computing revenue from order lines"
+      then:  "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)"
+      never: "summing l_extendedprice alone — that is gross, not revenue"
+      why:   "extended price is gross (price × quantity); revenue is net of the line discount"
+      binds: [l_extendedprice, l_discount]
+    - id: lineitem.state.received_iff_receiptdate
+      kind: mac.rule_kind.resolution
+      when:  "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)"
+      then:  "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment"
+      why:   "the lifecycle state is read from which dates are present, not a free-text column"
+      binds: [l_receiptdate, l_linestatus]
 
 grounding:
   kind: sql_table

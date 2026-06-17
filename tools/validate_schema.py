@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_schema.py — THE structural validator for MAC v0.5. Schema-driven.
+validate_schema.py — THE structural validator for MAC v0.1.6. Schema-driven.
 
 Unlike the retired hand-coded validate_schema_v3.py (which encoded the v0.4 structural rules in
 Python), this validator is driven by the FORMAL SCHEMA: it validates every MAC YAML file against
@@ -72,7 +72,7 @@ def main():
     ap.add_argument('--strict', action='store_true', help='warnings also fail the run')
     ap.add_argument('--all', action='store_true',
                     help='validate every file regardless of metadata.schema_version '
-                         '(default: only enforce files that declare schema_version 0.5; legacy files are skipped)')
+                         '(default: only enforce files at a recognized schema_version (current 0.1.6, or legacy 0.5); others are skipped)')
     args = ap.parse_args()
 
     try:
@@ -104,7 +104,8 @@ def main():
         files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
     files = sorted(set(files))
 
-    TARGET = '0.5'
+    CURRENT = '0.1.6'                 # the current — and only recognized — MAC schema version
+    RECOGNIZED = {CURRENT}            # strict: 0.5 is retired; a file at any other version is skipped (stale)
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:
         try:
@@ -115,7 +116,7 @@ def main():
         if not isinstance(doc, dict):
             continue
         sv = str((doc.get('metadata') or {}).get('schema_version', ''))
-        if not args.all and sv != TARGET:
+        if not args.all and sv not in RECOGNIZED:
             skipped += 1   # legacy / not-yet-migrated — incremental adoption (use --all to force)
             continue
         which = _pick_def(f)
@@ -135,7 +136,7 @@ def main():
         print(e)
     checked = len(files) - skipped
     print(f"\n{len(errors)} error(s), {len(warnings)} warning(s); {clean}/{checked} checked file(s) clean, "
-          f"{skipped} skipped (not schema_version {TARGET}; use --all to include).  "
+          f"{skipped} skipped (schema_version not recognized — current {CURRENT}; use --all to include).  "
           f"(schema-driven L1 gate — not correctness; see CONFORMANCE.md.)")
     fail = bool(errors) or (args.strict and bool(warnings))
     sys.exit(1 if fail else 0)

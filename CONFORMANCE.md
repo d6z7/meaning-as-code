@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.5)
-version: '0.5'
+title: MAC Conformance — the strict-syntax contract (v0.1.6)
+version: '0.1.6'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -51,6 +51,15 @@ tree, not a fact in file A against a set in file B. The **constraint gate** fill
 constraints become inspectable, versioned model content (and generator-readable), run by one engine over
 declared shapes. The framework ships **built-in** universal invariants (`mac_shapes.yaml`, governed by
 [mac.shapes.schema.json](mac.shapes.schema.json)); an application adds its own via `--shapes`.
+
+**Field-anchoring (v0.1.6).** A concept's `contract.rules[]` are typed behavioural rules (`kind` →
+`mac.rule_kind`, `when`/`then`/`why`) **anchored to the field(s) they govern** via `binds:` — promoted
+from the GAPS pilot into core (the `contract.rules` RuleObject in `mac.schema.json`). The built-in
+`rule-binds-grounded` shape enforces it **cross-file**: every `binds` value must be a column of the table
+the concept grounds to (`grounding.table`/`sources` → `tables/<name>.yaml#columns`). Columns are
+single-homed in the Physical layer, so a rule cannot claim to govern a field the concept does not ground —
+the relational check the schema structurally cannot make. See `example_tpch_ontology` LineItem for a
+worked instance.
 
 ## 2. The closed-core + `x-` extension rule (how we stay strict without ossifying)
 
@@ -119,8 +128,14 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
 
 ## 6. schema_version discipline
 
-- Every file pins `metadata.schema_version` (now `'0.5'`).
-- A **breaking** change to the core vocabulary bumps the minor (`0.5`→`0.6` while pre-1.0).
-- A **promotion** (an `x-` key entering core) is a minor bump with a changelog entry here.
-- The validator refuses a file whose `schema_version` it does not recognise — so a stale file fails
-  loudly rather than validating against the wrong contract.
+- `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.6'`**.
+- A **promotion** (an `x-` key entering core) or any **breaking** change to the core vocabulary bumps the
+  patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
+  `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — is what defines `0.1.6`.
+- The validator (`tools/validate_schema.py`) enforces files at a **recognized** `schema_version` (current
+  `0.1.6`; `0.5` is accepted as transitional legacy while applications migrate) and skips the rest, so a
+  stale file fails loudly rather than validating against the wrong contract.
+- **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's
+  own `0.1.x` line (it sorts below them — a relabel, not a forward bump). The historical deltas below
+  (§3) describe that same generation under its former `v0.5` name.

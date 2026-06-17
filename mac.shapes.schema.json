@@ -28,7 +28,7 @@
             "required": ["kind"],
             "additionalProperties": true,
             "properties": {
-              "kind": { "type": "string", "enum": ["required", "in", "subset_of"], "description": "the closed constraint vocabulary" },
+              "kind": { "type": "string", "enum": ["required", "in", "subset_of", "rule_binds_grounded"], "description": "the closed constraint vocabulary" },
               "path": { "type": "string", "description": "(required/in) dotted path; `[]` flattens a list" },
               "min": { "type": "integer", "description": "(required) minimum count, default 1" },
               "values": { "type": "array", "description": "(in) the closed set of allowed values" },

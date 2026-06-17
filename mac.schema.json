@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.5",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. v0.5 changes are recorded in CONFORMANCE.md §changelog.",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.6",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.6.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
 
   "oneOf": [
@@ -121,6 +121,29 @@
         "axis_handling": {
           "type": ["string", "object"],
           "description": "How to treat time / orthogonal axes for this concept. Was time_contract / two_axes_contract (the structural part stays in semantics)."
+        },
+        "rules": {
+          "type": "array",
+          "description": "v0.1.6: typed behavioural rules (promoted from the GAPS pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.",
+          "items": {
+            "type": "object",
+            "required": ["id", "kind"],
+            "additionalProperties": false,
+            "patternProperties": { "^x-": true },
+            "properties": {
+              "id":    { "type": "string", "description": "stable dotted id, e.g. lineitem.revenue.net_of_discount" },
+              "kind":  { "type": "string", "description": "a mac.rule_kind.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)" },
+              "scope": { "type": "string", "description": "general | <SOURCE> (general = framework default; else a source fact)" },
+              "when":  { "type": "string", "description": "trigger — the situation the rule applies to" },
+              "then":  { "type": "string", "description": "directive — what to do" },
+              "never": { "type": "string", "description": "anti-pattern to avoid (optional)" },
+              "why":   { "type": "string", "description": "one-line rationale" },
+              "binds": { "type": "array", "items": { "type": "string" }, "description": "the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring)." },
+              "enforced_by": { "type": "string", "description": "deterministic backstop (e.g. a CP-3 anchor id)" },
+              "examples": { "type": "array" },
+              "status": { "type": "string", "enum": ["active", "proposed"] }
+            }
+          }
         }
       },
       "patternProperties": { "^x-": true },

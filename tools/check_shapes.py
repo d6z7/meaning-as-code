@@ -49,7 +49,29 @@ def matches_where(doc, where):
     return True
 
 
-def check(shape, doc, focus, out):
+def grounded_columns(doc, root):
+    """The columns of the table(s) a concept grounds to — resolved CROSS-FILE from the Physical layer,
+    where columns are single-homed (v0.5 dropped grounding.columns). Supports both grounding forms:
+    grounding.table (sql_table adapter) and grounding.sources[].relation (the v0.5-agnostic form)."""
+    g = doc.get("grounding") or {}
+    names = []
+    if isinstance(g.get("table"), str):
+        names.append(g["table"])
+    for s in (g.get("sources") or []):
+        if isinstance(s, dict) and isinstance(s.get("relation"), str):
+            names.append(s["relation"].split(".")[-1])   # strip schema/catalog prefix
+    cols = set()
+    for t in names:
+        f = Path(root) / "tables" / f"{t}.yaml"
+        if f.exists():
+            tdoc = yaml.safe_load(f.read_text()) or {}
+            for col in (tdoc.get("columns") or []):
+                if isinstance(col, dict) and col.get("name"):
+                    cols.add(col["name"])
+    return cols
+
+
+def check(shape, doc, focus, out, root):
     if not matches_where(doc, shape.get("where")):
         return
     c, sev, sid = shape["constraint"], shape.get("severity", "error"), shape["id"]
@@ -68,6 +90,13 @@ def check(shape, doc, focus, out):
         right = set().union(*[set(extract(doc, r)) for r in rights]) if rights else set()
         for v in sorted(left - right):
             out.append((sev, focus, sid, f'{c["left"]}: "{v}" not in {c["right"]}'))
+    elif k == "rule_binds_grounded":
+        # CROSS-FILE relational invariant: every rule.binds must be a column of the table the concept
+        # grounds to (the field-anchoring). Columns are single-homed in the Physical layer.
+        cols = grounded_columns(doc, root)
+        for b in sorted(set(extract(doc, c.get("path", "contract.rules[].binds")))):
+            if b not in cols:
+                out.append((sev, focus, sid, f'rule binds "{b}" — not a column of the grounded table'))
     else:
         out.append(("error", focus, sid, f'unknown constraint kind "{k}"'))
 
@@ -93,7 +122,7 @@ def main():
         doc = yaml.safe_load(f.read_text())
         if isinstance(doc, dict):
             for s in shapes:
-                check(s, doc, f.name, viol)
+                check(s, doc, f.name, viol, a.root)
 
     print(f"── MAC shapes gate ── {len(shapes)} shape(s) × {len(files)} concept(s) "
           f"under {a.root} ──")

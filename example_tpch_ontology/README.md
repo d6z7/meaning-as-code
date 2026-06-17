@@ -33,17 +33,25 @@ benchmark — public, precisely specified, not real data). It complements `examp
 | **Physical** | `tables/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs |
 | **Edges** | `edges.yaml` (8) | every relation between concepts, incl. a **composite** join (`lineitem → partsupp`) |
 | **Rules** | `rules.yaml` (1) | `net_revenue` — a derivation with a renderable SQL template |
+| **Field-anchoring** | `LineItem.contract.rules` (2) | typed behavioural rules **`binds`**-ed to the columns they govern (e.g. revenue → `l_extendedprice`, `l_discount`); the `rule-binds-grounded` shape verifies, cross-file, that each bind is a real grounded column |
 
 ## Validate
 
 ```bash
-python3 tools/validate_schema.py example_tpch_ontology   # structural (L1) — 19/19 clean
-python3 tools/check_references.py example_tpch_ontology   # referential — 0 orphans
-python3 tools/check_shapes.py    example_tpch_ontology   # constraint (v0.1.6) — built-in MAC invariants
+./validate.sh        # runs all three MAC gates against this example (from anywhere)
 ```
 
-(The first two are data-free L1 gates. The shapes gate is satisfied inherently: the schema already
-enforces what the universal built-ins check — `concept.class` ∈ the closed six, and a `measure` declares
-its additivity.)
+It runs, in order, the three data-free **L1** gates — structural (`validate_schema.py` → `mac.schema.json`,
+19/19 clean), referential (`check_references.py` → 0 orphans), and constraint (`check_shapes.py` → the
+built-in shapes, incl. the cross-file `rule-binds-grounded` invariant) — and exits non-zero if any fails.
+L1 proves *conformance*, not correctness (it does not assert a column exists in a warehouse); L2/L3 remain
+(see [../CONFORMANCE.md](../CONFORMANCE.md)).
+
+## From question to SQL
+
+[QUERIES.md](QUERIES.md) is the payoff: four natural-language questions turned into SQL **mechanically by
+reading the ontology** — measure rules become the `SELECT` expression, edges' `join_rule`s become the
+`JOIN`s, grounding resolves the tables and columns (incl. the composite associative-entity join through
+PartSupp). Nothing is recalled from memory; every identifier is read from a cited file.
 
 Synthetic example — TPC-H is a benchmark schema, not real data.

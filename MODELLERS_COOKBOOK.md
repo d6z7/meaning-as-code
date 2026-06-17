@@ -155,7 +155,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
    cohesive set (e.g. `order/`, `catalog/`, `finance/`).
 2. Fill keys **in canonical order** (SPEC §6): `metadata → concept → ⟨shape block⟩ → grounding →
    constraints → governance → open_questions`.
-3. `metadata:` — `concept`, `source`, `version: '1.0'`, `schema_version: '0.4'`, `status: draft`,
+3. `metadata:` — `concept`, `source`, `version: '1.0'`, `schema_version: '0.1.6'`, `status: draft`,
    `owner`, `confidence:` (start low; it earns its way up via the trust gradient, FW §8).
 4. `concept:` — `name:` (PascalCase, the one canonical id), `label:`, `class:`, `definition:` (folded
    `>`, reads as a sentence), and a `semantics:` block with at least `purpose:`.
@@ -232,7 +232,7 @@ bound as params.
 **When:** A1 → edge. Run A4 for the level first.
 
 **Steps:**
-1. In `edges.yaml` (or `federation/edges.yaml` for cross-source), add an entry with the canonical v0.4
+1. In `edges.yaml` (or `federation/edges.yaml` for cross-source), add an entry with the canonical edge
    shape: `edge_id` · `level` · `type` · `endpoints{from,to}` · `join_rule` · `realized_by`.
 2. Each endpoint: `{ source, concept, ref: "concepts/…/x.yaml#concept", role, cardinality }`. Set
    cardinality on **both** ends (e.g. customer `0..N` ↔ order `1`).
