@@ -1,0 +1,50 @@
+---
+type: Metric
+title: Revenue
+description: 'The monetary value of sales, net of discount: per order line, l_extendedprice
+  × (1 − l_discount).'
+resource: table://tpch/lineitem
+tags:
+- TPCH
+- measure
+- confidence:C
+timestamp: '2026-06-17'
+---
+
+# Revenue
+
+The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount). "Revenue" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue), not a stored column.
+
+## Purpose
+
+The headline financial measure — sliced by part, customer, supplier, geography and time; the numerator of TPC-H's revenue and market-share queries.
+
+# Schema
+
+Grounded in `tpch.lineitem`.
+
+| column | type | role | description |
+|---|---|---|---|
+| `l_orderkey` | integer | foreign_key | → orders.o_orderkey (part_of edge); + composite-key part |
+| `l_linenumber` | integer | composite_key_part | line sequence within the order |
+| `l_partkey` | integer | foreign_key | → part.p_partkey (with l_suppkey = partsupp) |
+| `l_suppkey` | integer | foreign_key | → supplier.s_suppkey (with l_partkey = partsupp) |
+| `l_quantity` | decimal | value |  |
+| `l_extendedprice` | decimal | value | list price × quantity (gross, pre-discount) |
+| `l_discount` | decimal | value | fractional discount 0..1 |
+| `l_tax` | decimal | value |  |
+| `l_returnflag` | string | discriminator | R returned · A/N not |
+| `l_linestatus` | string | discriminator | O in-flight · F fulfilled |
+| `l_shipdate` | date | value |  |
+| `l_commitdate` | date | value |  |
+| `l_receiptdate` | date | value |  |
+| `l_shipmode` | string | discriminator |  |
+| `l_comment` | string | value |  |
+
+## Derivation
+
+Computed by rule `net_revenue` (see the MAC rules layer); do not re-derive the formula.
+
+# Citations
+
+1. MAC concept source of record: `concepts/finance/revenue.yaml` (schema_version 0.1.6, confidence C).

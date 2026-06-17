@@ -96,7 +96,7 @@ def main():
         s['$ref'] = f'#/$defs/{name}'
         return s
 
-    SKIP = {'.git', 'node_modules', '.venv', '__pycache__'}
+    SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projections/ = generated exports, not source
     skip = lambda p: any(part in SKIP for part in p.split(os.sep))
 
     files = []

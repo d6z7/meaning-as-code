@@ -240,7 +240,10 @@ class ReferenceChecker:
         return self._report()
 
     def _yaml_files(self):
-        return sorted(p for p in self.scan_root.rglob("*.yaml")) + sorted(p for p in self.scan_root.rglob("*.yml"))
+        # projections/ holds generated exports (OSI, etc.), not ontology source — never scan them
+        keep = lambda p: "projections" not in p.parts
+        return sorted(p for p in self.scan_root.rglob("*.yaml") if keep(p)) + \
+               sorted(p for p in self.scan_root.rglob("*.yml") if keep(p))
 
     def _build_index(self):
         for p in self._yaml_files():
