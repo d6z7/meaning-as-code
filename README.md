@@ -11,6 +11,7 @@ This repository is the complete, domain-neutral description of the framework, pl
 
 | Document | What it is |
 | --- | --- |
+| [articles/meaning-as-code.md](articles/meaning-as-code.md) | **The narrative** — the idea and objective as an essay: one probabilistic step then deterministic execution, why "as code", the three gates, field-anchoring, the model generating SQL, and where MAC sits vs SHACL/SBVR/SKOS/OSI. **Read this for the story** (then FRAMEWORK.md for the spec). |
 | **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [CONCEPT_SPEC.md](CONCEPT_SPEC.md) | The exhaustive key-by-key reference — every predefined key and its meaning. |
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
