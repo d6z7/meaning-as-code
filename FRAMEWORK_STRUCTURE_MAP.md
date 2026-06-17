@@ -1,6 +1,6 @@
 ---
 title: YAML Ontology Framework — Structure Map (visual companion)
-version: '0.5'
+version: '0.1.6'
 date: 2026-06-05
 status: VISUAL COMPANION to the canonical framework description (framework/FRAMEWORK.md). Read FRAMEWORK.md first for the narrative + complete definition; this provides the diagrams.
 audience: ontology architects, platform/vendor integrators, AI-agent builders, new contributors

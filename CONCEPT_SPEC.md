@@ -1,6 +1,6 @@
 ---
-title: Concept & Rules Schema — key-by-key reference (v0.5)
-version: '0.5'
+title: Concept & Rules Schema — key-by-key reference (v0.1.6)
+version: '0.1.6'
 date: 2026-06-05
 status: CANONICAL — the exhaustive key reference for the framework. Domain-neutral.
 audience: ontology architects, platform/vendor integrators, AI-agent builders, new contributors
@@ -10,14 +10,14 @@ role: detailed key-by-key REFERENCE APPENDIX to the canonical framework descript
 companion: framework/FRAMEWORK.md (canonical description — READ FIRST), FRAMEWORK_STRUCTURE_MAP.md (visuals), example_shop_ontology/ (worked reference on a neutral domain)
 ---
 
-# Concept & Rules Schema — key-by-key reference (v0.5)
+# Concept & Rules Schema — key-by-key reference (v0.1.6)
 
-> **v0.5 — read alongside the formal schema.** The authoritative, machine-checkable contract is now
+> **v0.1.6 — read alongside the formal schema.** The authoritative, machine-checkable contract is now
 > [`mac.schema.json`](mac.schema.json) + [`CONFORMANCE.md`](CONFORMANCE.md). This prose reference is
-> being brought into line with v0.5: the `contract:` construct is added (the deferred
-> `reasoning_guidance:` question, resolved); `value_set:` is consolidated into `values:`;
-> `grounding.serves_from`/`grain` are promoted. **Where prose and schema disagree, the schema governs
-> syntax.** The v0.5 change list is in `CONFORMANCE.md §3`.
+> brought into line with v0.1.6: the `contract:` construct is added (the deferred
+> `reasoning_guidance:` question, resolved), now carrying typed `rules` bound to fields (`binds`);
+> `value_set:` is consolidated into `values:`; `grounding.serves_from`/`grain` are promoted. **Where prose
+> and schema disagree, the schema governs syntax.** The change list is in `CONFORMANCE.md §3`.
 
 This is the complete, reader-facing reference for an ontology authored in YAML under this framework.
 Read it to understand **what a concept is, how the files are organised, the `class:` vocabulary, and the
@@ -196,7 +196,7 @@ metadata → concept → (values | properties | subclasses | instances | members
 | `concept:` | the concept's name (matches `concept.name`) |
 | `source:` | the data source this concept belongs to (one application's source identifier) |
 | `version:` | this file's content version (semver-ish; bump on change) |
-| `schema_version:` | which generation of THIS schema the file conforms to (e.g. '0.4') |
+| `schema_version:` | which generation of THIS schema the file conforms to (current '0.1.6') |
 | `status:` | production / draft / prototype |
 | `owner:` | CODEOWNERS-style owning group |
 | `confidence:` | whole-file default confidence — C (confirmed) / I (inferred) / Q (needs-SME). Individual values may override. |
