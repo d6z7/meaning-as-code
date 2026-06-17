@@ -74,7 +74,7 @@ the open*:
   dimensions, relationships; built to move a semantic layer *between tools*. It overlaps MAC's
   Semantic/Physical levels and is the natural **export target** — and MAC *does* export it: [`tools/mac_to_osi.py`](../tools/mac_to_osi.py)
   projects a MAC ontology onto an OSI semantic model (Physical→`datasets`/`fields`, Edges→`relationships`,
-  Rules→`metrics`), and the output ([`example_tpch_ontology/tpch.osi.yaml`](../example_tpch_ontology/tpch.osi.yaml))
+  Rules→`metrics`), and the output ([`example_tpch_ontology/projections/tpch.osi.yaml`](../example_tpch_ontology/projections/tpch.osi.yaml))
   **validates against OSI's own JSON Schema** (v0.2.0.dev0). What OSI is *not*: an authoring discipline with a *closed core an LLM can't hallucinate*, typed
   **rules bound to physical fields with cross-file enforcement**, an edges-as-data join model, a
   constraint/shapes gate, or L0–L3 trust tiers. *Adopt for interchange; keep MAC for authoring + governance.*
@@ -83,6 +83,13 @@ the open*:
   data" win without the triple-store. *Borrowed the shape; dropped the RDF.*
 - **SBVR (OMG)** — business vocabulary and rules with modality and verbalization. MAC's typed
   `contract.rules` are the lighter, executable-adjacent cousin: bound to real columns, run by a gate.
+- **OKF (Google Cloud Open Knowledge Format)** — a portable "LLM-wiki": markdown concept docs with YAML
+  frontmatter, built to hand *agents* their context. It overlaps MAC's *Meaning* level and is a natural
+  **export target** — and MAC exports it: [`tools/mac_to_okf.py`](../tools/mac_to_okf.py) projects a bundle
+  of `type`-tagged concept docs with `# Schema`, linked `## Relationships`, and `# Citations`. The telling
+  contrast: OKF's reference implementation *enriches* each concept with schemas and join paths via a second
+  LLM pass that crawls documentation; MAC already holds those as data and emits them deterministically.
+  *Author governed meaning in MAC; project to OKF to feed agents.*
 - **OWL / RDFS (W3C)** — maximally expressive, with reasoning. MAC is *deliberately* less expressive: no
   triple store, closed-world (a column is or isn't valid), and a small closed vocabulary an LLM can author
   without inventing keys. Reach for OWL when you need inference; reach for MAC when you need a model an

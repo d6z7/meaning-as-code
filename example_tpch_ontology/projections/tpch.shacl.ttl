@@ -7,19 +7,12 @@
 
 :CustomerShape a sh:NodeShape ;
     rdfs:label "Customer shape" ;
-    sh:property [ sh:datatype xsd:integer ;
+    sh:property [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "c_nationkey" ;
+            sh:name "c_comment" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Customer.c_nationkey ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "c_mktsegment" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Customer.c_mktsegment ;
+            sh:path :Customer.c_comment ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:decimal ;
             sh:maxCount 1 ;
@@ -27,6 +20,13 @@
             sh:name "c_acctbal" ;
             sh:nodeKind sh:Literal ;
             sh:path :Customer.c_acctbal ;
+            sh:severity sh:Violation ],
+        [ sh:class :Nation ;
+            sh:maxCount 1 ;
+            sh:message "Customer.fromNation -> Nation (grounded: customer.c_nationkey = nation.n_nationkey)" ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path :Customer.fromNation ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
@@ -39,23 +39,16 @@
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "c_comment" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Customer.c_comment ;
-            sh:severity sh:Violation ],
-        [ sh:class :Nation ;
-            sh:maxCount 1 ;
-            sh:message "Customer.fromNation -> Nation (grounded: customer.c_nationkey = nation.n_nationkey)" ;
-            sh:minCount 1 ;
-            sh:nodeKind sh:IRI ;
-            sh:path :Customer.fromNation ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
             sh:name "c_phone" ;
             sh:nodeKind sh:Literal ;
             sh:path :Customer.c_phone ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "c_nationkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Customer.c_nationkey ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
@@ -63,24 +56,31 @@
             sh:name "c_name" ;
             sh:nodeKind sh:Literal ;
             sh:path :Customer.c_name ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "c_mktsegment" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Customer.c_mktsegment ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Customer .
 
 :LineItemShape a sh:NodeShape ;
     rdfs:label "LineItem shape" ;
-    sh:property [ sh:datatype xsd:integer ;
+    sh:property [ sh:class :PartSupp ;
             sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_partkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_partkey ;
-            sh:severity sh:Violation ],
-        [ sh:class :Orders ;
-            sh:maxCount 1 ;
-            sh:message "LineItem.partOfOrder -> Orders (grounded: lineitem.l_orderkey = orders.o_orderkey)" ;
+            sh:message "LineItem.suppliedVia -> PartSupp (grounded: lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey)" ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
-            sh:path :LineItem.partOfOrder ;
+            sh:path :LineItem.suppliedVia ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_extendedprice" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_extendedprice ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
@@ -88,6 +88,55 @@
             sh:name "l_linestatus" ;
             sh:nodeKind sh:Literal ;
             sh:path :LineItem.l_linestatus ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_returnflag" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_returnflag ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_commitdate" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_commitdate ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_receiptdate" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_receiptdate ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_partkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_partkey ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_tax" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_tax ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_orderkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_orderkey ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_shipmode" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_shipmode ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
@@ -103,61 +152,12 @@
             sh:nodeKind sh:Literal ;
             sh:path :LineItem.l_discount ;
             sh:severity sh:Violation ],
-        [ sh:class :PartSupp ;
-            sh:maxCount 1 ;
-            sh:message "LineItem.suppliedVia -> PartSupp (grounded: lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey)" ;
-            sh:minCount 1 ;
-            sh:nodeKind sh:IRI ;
-            sh:path :LineItem.suppliedVia ;
-            sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "l_orderkey" ;
+            sh:name "l_suppkey" ;
             sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_orderkey ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_returnflag" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_returnflag ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:date ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_receiptdate" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_receiptdate ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:decimal ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_tax" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_tax ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:date ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_commitdate" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_commitdate ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:decimal ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_extendedprice" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_extendedprice ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_linenumber" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_linenumber ;
+            sh:path :LineItem.l_suppkey ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:decimal ;
             sh:maxCount 1 ;
@@ -166,32 +166,39 @@
             sh:nodeKind sh:Literal ;
             sh:path :LineItem.l_quantity ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_suppkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_suppkey ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "l_shipmode" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :LineItem.l_shipmode ;
-            sh:severity sh:Violation ],
         [ sh:datatype xsd:date ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "l_shipdate" ;
             sh:nodeKind sh:Literal ;
             sh:path :LineItem.l_shipdate ;
+            sh:severity sh:Violation ],
+        [ sh:class :Orders ;
+            sh:maxCount 1 ;
+            sh:message "LineItem.partOfOrder -> Orders (grounded: lineitem.l_orderkey = orders.o_orderkey)" ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path :LineItem.partOfOrder ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "l_linenumber" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :LineItem.l_linenumber ;
             sh:severity sh:Violation ] ;
     sh:targetClass :LineItem .
 
 :NationShape a sh:NodeShape ;
     rdfs:label "Nation shape" ;
-    sh:property [ sh:class :Region ;
+    sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "n_name" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Nation.n_name ;
+            sh:severity sh:Violation ],
+        [ sh:class :Region ;
             sh:maxCount 1 ;
             sh:message "Nation.inRegion -> Region (grounded: nation.n_regionkey = region.r_regionkey)" ;
             sh:minCount 1 ;
@@ -205,12 +212,12 @@
             sh:nodeKind sh:Literal ;
             sh:path :Nation.n_comment ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
+        [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "n_name" ;
+            sh:name "n_regionkey" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Nation.n_name ;
+            sh:path :Nation.n_regionkey ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
@@ -219,13 +226,6 @@
             sh:name "n_nationkey" ;
             sh:nodeKind sh:Literal ;
             sh:path :Nation.n_nationkey ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "n_regionkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Nation.n_regionkey ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Nation .
 
@@ -234,44 +234,9 @@
     sh:property [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "o_comment" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Orders.o_comment ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:decimal ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "o_totalprice" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Orders.o_totalprice ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
             sh:name "o_orderstatus" ;
             sh:nodeKind sh:Literal ;
             sh:path :Orders.o_orderstatus ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "o_custkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Orders.o_custkey ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:date ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "o_orderdate" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Orders.o_orderdate ;
-            sh:severity sh:Violation ],
-        [ sh:class :Customer ;
-            sh:maxCount 1 ;
-            sh:message "Orders.placedBy -> Customer (grounded: orders.o_custkey = customer.c_custkey)" ;
-            sh:minCount 1 ;
-            sh:nodeKind sh:IRI ;
-            sh:path :Orders.placedBy ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
@@ -287,12 +252,54 @@
             sh:name "o_orderpriority" ;
             sh:nodeKind sh:Literal ;
             sh:path :Orders.o_orderpriority ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:decimal ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "o_totalprice" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Orders.o_totalprice ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "o_custkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Orders.o_custkey ;
+            sh:severity sh:Violation ],
+        [ sh:class :Customer ;
+            sh:maxCount 1 ;
+            sh:message "Orders.placedBy -> Customer (grounded: orders.o_custkey = customer.c_custkey)" ;
+            sh:minCount 1 ;
+            sh:nodeKind sh:IRI ;
+            sh:path :Orders.placedBy ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "o_comment" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Orders.o_comment ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:date ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "o_orderdate" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Orders.o_orderdate ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Orders .
 
 :PartShape a sh:NodeShape ;
     rdfs:label "Part shape" ;
     sh:property [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "p_brand" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Part.p_brand ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "p_mfgr" ;
@@ -306,6 +313,13 @@
             sh:nodeKind sh:Literal ;
             sh:path :Part.p_name ;
             sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "p_size" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Part.p_size ;
+            sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
@@ -313,12 +327,12 @@
             sh:nodeKind sh:Literal ;
             sh:path :Part.p_type ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
+        [ sh:datatype xsd:decimal ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "p_brand" ;
+            sh:name "p_retailprice" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Part.p_brand ;
+            sh:path :Part.p_retailprice ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
@@ -328,32 +342,32 @@
             sh:nodeKind sh:Literal ;
             sh:path :Part.p_partkey ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:decimal ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "p_retailprice" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Part.p_retailprice ;
-            sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "p_comment" ;
             sh:nodeKind sh:Literal ;
             sh:path :Part.p_comment ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "p_size" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Part.p_size ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Part .
 
 :PartSuppShape a sh:NodeShape ;
     rdfs:label "PartSupp shape" ;
-    sh:property [ sh:datatype xsd:string ;
+    sh:property [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "ps_partkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :PartSupp.ps_partkey ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "ps_availqty" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :PartSupp.ps_availqty ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "ps_comment" ;
@@ -367,26 +381,12 @@
             sh:nodeKind sh:Literal ;
             sh:path :PartSupp.ps_supplycost ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "ps_partkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :PartSupp.ps_partkey ;
-            sh:severity sh:Violation ],
         [ sh:class :Supplier ;
             sh:maxCount 1 ;
             sh:message "PartSupp.fromSupplier -> Supplier (grounded: partsupp.ps_suppkey = supplier.s_suppkey)" ;
             sh:minCount 1 ;
             sh:nodeKind sh:IRI ;
             sh:path :PartSupp.fromSupplier ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "ps_availqty" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :PartSupp.ps_availqty ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:integer ;
             sh:maxCount 1 ;
@@ -432,12 +432,27 @@
 
 :SupplierShape a sh:NodeShape ;
     rdfs:label "Supplier shape" ;
-    sh:property [ sh:datatype xsd:integer ;
+    sh:property [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "s_nationkey" ;
+            sh:name "s_name" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Supplier.s_nationkey ;
+            sh:path :Supplier.s_name ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "s_comment" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Supplier.s_comment ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "Supplier.s_suppkey is the identity key — exactly one required" ;
+            sh:minCount 1 ;
+            sh:name "s_suppkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Supplier.s_suppkey ;
             sh:severity sh:Violation ],
         [ sh:class :Nation ;
             sh:maxCount 1 ;
@@ -453,34 +468,19 @@
             sh:nodeKind sh:Literal ;
             sh:path :Supplier.s_acctbal ;
             sh:severity sh:Violation ],
+        [ sh:datatype xsd:integer ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "s_nationkey" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Supplier.s_nationkey ;
+            sh:severity sh:Violation ],
         [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "s_phone" ;
             sh:nodeKind sh:Literal ;
             sh:path :Supplier.s_phone ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "s_comment" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Supplier.s_comment ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "s_name" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Supplier.s_name ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:integer ;
-            sh:maxCount 1 ;
-            sh:message "Supplier.s_suppkey is the identity key — exactly one required" ;
-            sh:minCount 1 ;
-            sh:name "s_suppkey" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Supplier.s_suppkey ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Supplier .
 
