@@ -28,6 +28,12 @@ read those for the *why* and the *what*, then read these files to see the framew
   live here, not as properties of the concepts.
 - **Physical** — `tables/orders.yaml`, the grounding target the concepts point at.
 
+**Field-anchoring** — `Order` and `Revenue` carry typed `contract.rules[]` **bound to the `orders`
+columns they govern** (`binds`): order state ← `paid_at`/`shipped_at`/`delivered_at`, revenue-eligibility
+← `paid_at`, net revenue ← `gross_amount`. The built-in `rule-binds-grounded` shape verifies, cross-file,
+that every bind is a real column of the grounded table — a rule can't claim to govern a field the concept
+doesn't ground.
+
 **The execution-validation loop** — `recon_findings.md` → FIND-SHOP-001: the first draft modelled
 revenue as gross; it validated structurally but was 8% wrong because the data has refunds. Running the
 query caught it; the model was corrected. *Structure ≠ correctness.*
