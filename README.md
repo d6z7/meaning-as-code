@@ -12,6 +12,8 @@ This repository is the complete, domain-neutral description of the framework, pl
 | Document | What it is |
 | --- | --- |
 | [articles/meaning-as-code.md](articles/meaning-as-code.md) | **The narrative** — the idea and objective as an essay: one probabilistic step then deterministic execution, why "as code", the three gates, field-anchoring, the model generating SQL, and where MAC sits vs SHACL/SBVR/SKOS/OSI. **Read this for the story** (then FRAMEWORK.md for the spec). |
+| [articles/positioning.md](articles/positioning.md) | **Why this over OSI / catalogs / graph stores / all-in-one platforms** — the coverage × vendor-neutrality argument: single-slice tools own one level, all-in-one platforms own all four but lock you in, MAC is full-coverage *and* neutral; plus how it interoperates with OSI/SHACL/SBVR/OWL. |
+| [articles/mac-in-the-loop.md](articles/mac-in-the-loop.md) | **Where MAC sits end-to-end** — the question → interpret → generate SQL → execute → explain-provenance loop; the probabilistic/deterministic split; provenance as a byproduct of meaning-as-code. |
 | **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [CONCEPT_SPEC.md](CONCEPT_SPEC.md) | The exhaustive key-by-key reference — every predefined key and its meaning. |
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
