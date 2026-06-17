@@ -43,16 +43,16 @@ query caught it; the model was corrected. *Structure ≠ correctness.*
 
 ## Note on validation
 
-These files follow the canonical v0.4 shape and pass the validator. From the repo root, run:
+These files follow the canonical v0.1.6 shape and pass all three MAC gates. Run them together:
 
 ```sh
-python3 tools/validate_schema.py                       # structural — well-formed
-python3 tools/check_references.py example_shop_ontology # referential — internally whole
+./validate.sh        # structural + referential + constraint, against this example (from anywhere)
 ```
 
-The validator discovers any `concepts/**`, `edges.yaml`, and `rules.yaml` under the root, so it picks
-up this example automatically and reports `0 errors`. A clean run means *well-formed* — correctness of
-the data claims is a separate, execution-validation step (see `recon_findings.md`).
+It runs `validate_schema.py` (structural — closed vocabulary, required keys), `check_references.py`
+(referential — internally whole, every `mac.*` term resolves), and `check_shapes.py` (constraint — the
+built-in shapes) in order, and exits non-zero if any fails. A clean run means *well-formed and conformant*
+(L1) — correctness of the data claims is a separate, execution-validation step (L2; see `recon_findings.md`).
 
 *Synthetic data. No connection to any real shop or any real business data — the example is entirely
 fabricated so it can be published and reused freely.*

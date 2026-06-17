@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.5)
-version: '0.5'
+title: MAC Conformance — the strict-syntax contract (v0.1.6)
+version: '0.1.6'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -128,8 +128,14 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
 
 ## 6. schema_version discipline
 
-- Every file pins `metadata.schema_version` (now `'0.5'`).
-- A **breaking** change to the core vocabulary bumps the minor (`0.5`→`0.6` while pre-1.0).
-- A **promotion** (an `x-` key entering core) is a minor bump with a changelog entry here.
-- The validator refuses a file whose `schema_version` it does not recognise — so a stale file fails
-  loudly rather than validating against the wrong contract.
+- `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.6'`**.
+- A **promotion** (an `x-` key entering core) or any **breaking** change to the core vocabulary bumps the
+  patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
+  `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — is what defines `0.1.6`.
+- The validator (`tools/validate_schema.py`) enforces files at a **recognized** `schema_version` (current
+  `0.1.6`; `0.5` is accepted as transitional legacy while applications migrate) and skips the rest, so a
+  stale file fails loudly rather than validating against the wrong contract.
+- **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's
+  own `0.1.x` line (it sorts below them — a relabel, not a forward bump). The historical deltas below
+  (§3) describe that same generation under its former `v0.5` name.
