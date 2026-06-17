@@ -1,17 +1,42 @@
-# The YAML Ontology Framework
+# Meaning as Code (MAC)
+#### the YAML Ontology Framework
 
-Write the *meaning* of your data down once — as plain-text, version-controlled YAML, organised into
-four layers — so that the same artifact can be read by an AI agent (to answer questions correctly) and
-ingested by any target platform (to become that platform's ontology), without locking your meaning into
-a vendor.
+**Write down what your data *means* — once, as version-controlled YAML — so an AI agent can read it to
+generate correct SQL, any platform can ingest it as its ontology, and a machine can check it before anyone
+trusts it.** No vendor owns your meaning; a diff shows when it changes; a gate fails when it breaks.
 
-This repository is the complete, domain-neutral description of the framework, plus a worked example.
+It is the one place that is both **full-coverage** (it models meaning end to end, not one slice) and
+**vendor-neutral** (it locks into no platform) — the cell the data catalogs, semantic layers, graph
+stores, and all-in-one platforms each leave empty. See [articles/positioning.md](articles/positioning.md).
+
+## What's in MAC
+
+- **Four layers** — Concept (what it means) · Physical (where it lives) · Edges (how it joins) · Rules
+  (how it's computed). One artifact, four kinds of fact.
+- **Six closed concept classes** — entity · event · measure · enumeration · reference · grouping. A short
+  menu, so a reader — or an LLM — always knows what kind of thing it's looking at.
+- **A closed core an LLM can't hallucinate** — only schema-defined keys (plus namespaced `x-` extensions)
+  are legal; an invented key is *rejected*. Safe machine authoring, by construction.
+- **Three data-free gates** — structural (the schema) · referential (every cross-file reference resolves) ·
+  constraint/shapes (relational invariants declared as DATA, run by one generic engine).
+- **Field-anchoring** — typed rules **bound to the columns they govern** (`binds`), enforced cross-file: a
+  rule cannot claim to govern a field the concept doesn't ground, and the gate proves it.
+- **The model generates the SQL** — `SELECT` from a rule, `JOIN` from an edge, tables and columns from
+  grounding: the deterministic half of question-answering, shown end-to-end in each example's `QUERIES.md`.
+- **Provenance for free** — because every clause traces to a concept, an edge, or a rule, an answer can be
+  explained by citing the model — and an unanswerable question is *refused*, not fabricated.
+- **Two worked examples** — a shop and TPC-H (hierarchy, associative entity, composite key, derived
+  measure), each with a `validate.sh` (runs all three gates) and a `QUERIES.md` (question → SQL).
+
+This repository is the complete, domain-neutral description of the framework, plus the worked examples.
 
 ## Start here
 
 | Document | What it is |
 | --- | --- |
 | [articles/meaning-as-code.md](articles/meaning-as-code.md) | **The narrative** — the idea and objective as an essay: one probabilistic step then deterministic execution, why "as code", the three gates, field-anchoring, the model generating SQL, and where MAC sits vs SHACL/SBVR/SKOS/OSI. **Read this for the story** (then FRAMEWORK.md for the spec). |
+| [articles/positioning.md](articles/positioning.md) | **Why this over OSI / catalogs / graph stores / all-in-one platforms** — the coverage × vendor-neutrality argument: single-slice tools own one level, all-in-one platforms own all four but lock you in, MAC is full-coverage *and* neutral; plus how it interoperates with OSI/SHACL/SBVR/OWL. |
+| [articles/mac-in-the-loop.md](articles/mac-in-the-loop.md) | **Where MAC sits end-to-end** — the question → interpret → generate SQL → execute → explain-provenance loop; the probabilistic/deterministic split; provenance as a byproduct of meaning-as-code. |
 | **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [CONCEPT_SPEC.md](CONCEPT_SPEC.md) | The exhaustive key-by-key reference — every predefined key and its meaning. |
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
@@ -37,27 +62,34 @@ not correctness — you run the queries the model implies and let the data corre
 
 ## Validating the model
 
-The model is checked by two deterministic, data-free gates (no warehouse needed) — **structural**, then
-**referential**. A clean run means *well-formed* (L1), not *correct*: execution validation (L2) and SME
-confirmation (L3) still apply — see [CONFORMANCE.md](CONFORMANCE.md).
+The model is checked by **three** deterministic, data-free gates (no warehouse needed) — **structural**,
+**referential**, then **constraint/shapes**. A clean run means *well-formed and conformant* (L1), not
+*correct*: execution validation (L2) and SME confirmation (L3) still apply — see [CONFORMANCE.md](CONFORMANCE.md).
 
 ```bash
 pip install jsonschema pyyaml      # one-time
 
+# Run all three gates against an example in one command:
+./example_shop_ontology/validate.sh
+
+# …or each gate on its own (point any of them at YOUR model's root to validate it):
 # 1. STRUCTURAL — validate every file against the formal schema (mac.schema.json)
 python3 tools/validate_schema.py example_shop_ontology
-#   enforces files at a recognized schema_version (current 0.1.6, legacy 0.5) and skips the rest; --all checks everything, --strict fails on warnings
+#   enforces files at the current schema_version (0.1.6) and skips the rest; --all checks everything, --strict fails on warnings
 
 # 2. REFERENTIAL — every cross-file reference (realized_by / grounding / over: / value_domain) resolves
 python3 tools/check_references.py example_shop_ontology
 
-# 3. NEGATIVE TESTS — prove the schema REJECTS bad input (not just that it accepts good)
+# 3. CONSTRAINT — run the shapes (relational invariants as data), incl. cross-file rule-binds-grounded
+python3 tools/check_shapes.py example_shop_ontology
+
+# plus NEGATIVE TESTS — prove the schema REJECTS bad input (not just that it accepts good)
 python3 tests/test_negative.py
 ```
 
-Point (1) and (2) at *your own* model's root instead of `example_shop_ontology` to validate it. Exit code
-`0` = clean, `1` = violations, `2` = setup error (missing deps). The negative suite lives in
-[tests/](tests/) — intentionally-malformed fixtures the schema must reject; wire it into CI alongside (1)+(2).
+Exit code `0` = clean, `1` = violations, `2` = setup error (missing deps). The negative suite lives in
+[tests/](tests/) — intentionally-malformed fixtures the schema must reject; wire all three gates + the
+negative suite into CI.
 
 ## What this is not
 
@@ -67,8 +99,9 @@ for the honest trade-offs and when *not* to use it.
 
 ## Status
 
-The framework and its schema contract share one version, **v0.1.6** — formalized as a machine-checkable contract
-([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), with a schema-driven validator,
-a referential checker, and (new in v0.1.6) a **constraint/shapes** validator + a negative-test suite. It has been exercised across multiple independent domains of genuinely
-different shape. It is offered as a pragmatic convention, not a finished product — feedback and
-adversarial testing on new domains are the most useful contributions.
+The framework and its schema contract share one version, **v0.1.6** — a machine-checkable contract
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)) with three gates (structural,
+referential, and the **constraint/shapes** validator) plus a negative-test suite, **proven across multiple
+independent domains of genuinely different shape.** It is a working, gated, vendor-neutral convention —
+deliberately lighter than a W3C standard, not a platform you buy. Feedback and adversarial testing on new
+domains are the most useful contributions.
