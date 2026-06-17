@@ -47,4 +47,11 @@ built-in shapes, incl. the cross-file `rule-binds-grounded` invariant) — and e
 L1 proves *conformance*, not correctness (it does not assert a column exists in a warehouse); L2/L3 remain
 (see [../CONFORMANCE.md](../CONFORMANCE.md)).
 
+## From question to SQL
+
+[QUERIES.md](QUERIES.md) is the payoff: four natural-language questions turned into SQL **mechanically by
+reading the ontology** — measure rules become the `SELECT` expression, edges' `join_rule`s become the
+`JOIN`s, grounding resolves the tables and columns (incl. the composite associative-entity join through
+PartSupp). Nothing is recalled from memory; every identifier is read from a cited file.
+
 Synthetic example — TPC-H is a benchmark schema, not real data.

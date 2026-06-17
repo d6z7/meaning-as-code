@@ -54,5 +54,12 @@ It runs `validate_schema.py` (structural — closed vocabulary, required keys), 
 built-in shapes) in order, and exits non-zero if any fails. A clean run means *well-formed and conformant*
 (L1) — correctness of the data claims is a separate, execution-validation step (L2; see `recon_findings.md`).
 
+## From question to SQL
+
+[QUERIES.md](QUERIES.md) turns four questions into SQL purely by reading the ontology (the `net_revenue`
+rule becomes the `SELECT`; edges' `join_rule`s become the `JOIN`s) — including one question the model
+**refuses**: net revenue by product category is *not derivable*, because no edge connects orders to
+products. Encoding joins as data lets the model report that gap instead of fabricating a join.
+
 *Synthetic data. No connection to any real shop or any real business data — the example is entirely
 fabricated so it can be published and reused freely.*

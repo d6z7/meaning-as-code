@@ -104,8 +104,8 @@ def main():
         files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
     files = sorted(set(files))
 
-    CURRENT = '0.1.6'                 # the current MAC schema version (the mac.schema.json generation)
-    RECOGNIZED = {CURRENT, '0.5'}      # 0.5 = transitional legacy (pre-rename); files should migrate to CURRENT
+    CURRENT = '0.1.6'                 # the current — and only recognized — MAC schema version
+    RECOGNIZED = {CURRENT}            # strict: 0.5 is retired; a file at any other version is skipped (stale)
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:
         try:
