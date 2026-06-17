@@ -8,11 +8,12 @@
 #   in         — every value at path ∈ a closed set
 #   subset_of  — set(left) ⊆ union(right paths)   ← the RELATIONAL kind JSON-Schema can't express
 #
-# NOTE (2026-06-17): the high-value relational invariants (e.g. "rule.binds ⊆ grounding columns") are
-# currently application-supplied, because the grounding/rule SHAPE still differs across MAC dialects
-# (example_shop_ontology uses grounding.kind/table + rules.yaml; GAPS uses grounding.sources + typed
-# contract.rules). Promote those to built-ins once a canonical form is chosen — that decision is what
-# the shapes layer exists to enforce.
+# CANONICAL (2026-06-17): rule-binds-grounded is now THE binding-integrity check for every MAC ontology,
+# resolving `binds` against the single-homed Physical layer (the grounded table's `tables/<t>.yaml`
+# columns) — NOT against columns a concept restates in its own grounding. Applications conform to this one
+# definition; dialect-local binding validators (e.g. GAPS's check_rule_binds.py + its app-shape variant
+# that resolved against declared grounding.sources columns) are deprecated in its favour. A `binds` that
+# names a field the grounded table does not actually expose is a real gap — surfaced here, not hidden.
 shapes:
   - id: concept-class-closed
     description: a concept's class must be one of the closed six-class vocabulary
