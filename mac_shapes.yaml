@@ -1,0 +1,33 @@
+# mac_shapes.yaml — the framework's BUILT-IN constraint shapes (the "shapes" / constraint layer of MAC).
+#
+# Shapes are constraints expressed as DATA, run by tools/check_shapes.py. These built-ins are the
+# universal MAC invariants — true for ANY conformant ontology regardless of domain, so they ship with
+# the framework. Applications (e.g. GAPS) supply additional, domain- or dialect-specific shapes via
+# `--shapes`. Each shape: id · target · [where] · severity · constraint{kind, …}. Constraint kinds:
+#   required   — count(path) >= min (default 1)
+#   in         — every value at path ∈ a closed set
+#   subset_of  — set(left) ⊆ union(right paths)   ← the RELATIONAL kind JSON-Schema can't express
+#
+# NOTE (2026-06-17): the high-value relational invariants (e.g. "rule.binds ⊆ grounding columns") are
+# currently application-supplied, because the grounding/rule SHAPE still differs across MAC dialects
+# (example_shop_ontology uses grounding.kind/table + rules.yaml; GAPS uses grounding.sources + typed
+# contract.rules). Promote those to built-ins once a canonical form is chosen — that decision is what
+# the shapes layer exists to enforce.
+shapes:
+  - id: concept-class-closed
+    description: a concept's class must be one of the closed six-class vocabulary
+    target: concept
+    severity: error
+    constraint:
+      kind: in
+      path: concept.class
+      values: [entity, event, measure, enumeration, reference, grouping]
+
+  - id: measure-declares-additivity
+    description: a measure concept must declare its per-axis additivity (the SUM footgun-preventer)
+    target: concept
+    where: { concept.class: measure }
+    severity: error
+    constraint:
+      kind: required
+      path: concept.semantics.additivity

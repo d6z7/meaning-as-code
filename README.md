@@ -20,6 +20,8 @@ This repository is the complete, domain-neutral description of the framework, pl
 | [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core + `x-` extension contract, and the v0.5 change list. |
 | [tools/validate_schema.py](tools/validate_schema.py) | The **structural** validator — schema-driven (MAC v0.5): checks every model file against `mac.schema.json` (closed vocabulary, required keys, naming contract, edge legality). |
 | [tools/check_references.py](tools/check_references.py) | A **referential** validator — its companion; checks that every cross-file reference resolves (no orphans). Together: well-formed *and* internally whole. |
+| [tools/check_shapes.py](tools/check_shapes.py) | A **constraint** validator (new in v0.1.6) — runs *shapes* (constraints declared as DATA in [mac_shapes.yaml](mac_shapes.yaml)) that the schema can't express, e.g. the relational invariant "the values here ⊆ a set declared there". The third gate: structural + referential + **constraint**. |
+| [mac_shapes.yaml](mac_shapes.yaml) · [mac.shapes.schema.json](mac.shapes.schema.json) | The **built-in constraint shapes** + the meta-schema governing their form — universal MAC invariants run by `check_shapes.py`; applications add domain/dialect shapes via `--shapes`. |
 
 ## In one paragraph
 
@@ -64,8 +66,8 @@ for the honest trade-offs and when *not* to use it.
 
 ## Status
 
-The framework is at **v0.5** of its schema — now formalized as a machine-checkable contract
-([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), with a schema-driven validator
-and a negative-test suite. It has been exercised across multiple independent domains of genuinely
+The framework is **v0.1.6**; its schema contract is **v0.5** — formalized as a machine-checkable contract
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), with a schema-driven validator,
+a referential checker, and (new in v0.1.6) a **constraint/shapes** validator + a negative-test suite. It has been exercised across multiple independent domains of genuinely
 different shape. It is offered as a pragmatic convention, not a finished product — feedback and
 adversarial testing on new domains are the most useful contributions.
