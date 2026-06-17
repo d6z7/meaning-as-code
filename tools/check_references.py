@@ -149,6 +149,13 @@ def collect_anchors(doc) -> set[str]:
 
 # ----------------------------------------------------------------------------- the checker
 
+# v0.6: a `mac.<namespace>[.<term>]` reference points at a framework construct defined in
+# mac_vocabulary.yaml (this repo's canon). Only a token whose SECOND segment is a known vocab namespace
+# is a reference — so `mac.schema.json` (a filename) is not one.
+_MAC_REF_RE = re.compile(r"mac\.[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?")
+_MAC_VOCAB = Path(__file__).resolve().parents[1] / "mac_vocabulary.yaml"
+
+
 class ReferenceChecker:
     """Generic referential checker. Subclass and override the hooks to add application-specific checks."""
 
@@ -161,6 +168,10 @@ class ReferenceChecker:
         self.scan_root = (self.root / scan_subdir).resolve() if scan_subdir else self.root
         self.idx = Index()
         self.findings: list[Finding] = []
+        # v0.6: framework vocab (mac.*) — references from any scanned file must resolve to a defined term.
+        self.mac_terms: set[str] = set()
+        self.mac_namespaces: set[str] = set()
+        self._index_mac_terms()
 
     # -- hooks an application overrides -------------------------------------------------
 
@@ -171,7 +182,46 @@ class ReferenceChecker:
         """Called once per parsed yaml during indexing. Override to index extra referable objects."""
 
     def resolve_file(self, relpath: str, doc) -> None:
-        """Called once per parsed yaml during resolution. Override to check extra reference kinds."""
+        """Called once per parsed yaml during resolution. Override to check extra reference kinds.
+
+        The base resolves `mac.*` framework-vocab references. A subclass that overrides this WITHOUT
+        calling super() replaces that (e.g. an application with its own mac.* handling)."""
+        self._check_mac_refs(relpath, doc)
+
+    # -- mac.* framework-vocab resolution (v0.6) ---------------------------------------
+    def _index_mac_terms(self) -> None:
+        """Collect the defined framework terms (mac.<namespace>[.<term>]) from mac_vocabulary.yaml.
+
+        A namespace is any top-level block carrying `terms:` (vocabulary) or `members:` (value_domain).
+        Both the bare `mac.<ns>` and each `mac.<ns>.<term>` are referable."""
+        import yaml
+        if not _MAC_VOCAB.is_file():
+            return                                   # no vocab present → nothing to enforce
+        doc = yaml.safe_load(_MAC_VOCAB.read_text(encoding="utf-8")) or {}
+        for ns, block in doc.items():
+            if not isinstance(block, dict):
+                continue
+            members = block.get("terms") or block.get("members")
+            if not isinstance(members, dict):
+                continue
+            self.mac_namespaces.add(ns)
+            self.mac_terms.add(f"mac.{ns}")
+            for m in members:
+                self.mac_terms.add(f"mac.{ns}.{m}")
+
+    def _check_mac_refs(self, relpath: str, doc) -> None:
+        """Every mac.<known-namespace>[.<term>] in a scanned file must resolve to a defined term."""
+        if not self.mac_namespaces:
+            return
+        for jpath, s in walk_strings(doc):
+            for tok in _MAC_REF_RE.findall(s):
+                ns = tok.split(".")[1] if tok.count(".") >= 1 else None
+                if ns not in self.mac_namespaces:
+                    continue                         # not a framework namespace (e.g. mac.schema.json)
+                if tok not in self.mac_terms:
+                    self.add("ERROR", f"{relpath}{jpath}",
+                             f"mac.* reference '{tok}' does not resolve to a defined term in "
+                             f"mac_vocabulary.yaml (known namespaces: {sorted(self.mac_namespaces)})")
 
     def table_status(self, src: str, tname: str) -> str:
         """'ok' | 'missing' | 'skip'. Override to add e.g. catalog-prefix tolerance."""

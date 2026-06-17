@@ -1,0 +1,89 @@
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.6).
+#
+# The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
+# A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
+# `mac.` is the framework/instance boundary (FRAMEWORK §0: the framework DEFINES, applications APPLY).
+# A referential checker resolves `mac.<known-namespace>...` against the namespaces below; a token whose
+# namespace is not registered here is not a framework reference (so `mac.schema.json` is just a filename).
+#
+# A namespace is a `vocabulary` (a closed set of named terms) or a `value_domain` (named members that
+# may carry structured attributes — e.g. a law). Examples are DOMAIN-NEUTRAL by rule; an applied
+# ontology supplies the domain instances that reference these terms.
+
+metadata:
+  registry: mac_vocabulary
+  namespace: mac
+  version: '0.6'
+  status: active
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind]
+
+# ===========================================================================
+# mac.aggregation_effect — how a measure may be combined along ONE axis.
+# ===========================================================================
+aggregation_effect:
+  kind: vocabulary
+  closed: true
+  description: The effect of aggregating a measure along a single axis.
+  terms:
+    additive:       "SUM is correct across this axis."
+    point_in_time:  "Non-additive over this axis: take the value at the leaf grain; never SUM across it."
+    non_aggregable: "Do not aggregate across this axis; report per cell."
+
+# ===========================================================================
+# mac.axis_kind — the KIND of an aggregation axis, for additivity purposes.
+# An applied ontology maps each concrete dimension to one kind; the additivity LAW is stated over kinds,
+# so it is universal (domain-independent).
+# ===========================================================================
+axis_kind:
+  kind: vocabulary
+  closed: true
+  description: The additivity-relevant classification of an aggregation axis.
+  terms:
+    time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
+    categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+
+# ===========================================================================
+# mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
+# non-additive fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here, over axis_kind
+# (3 types × 2 kinds = 6 universal cells). Each cell references a mac.aggregation_effect term.
+# An applied ontology's measures reference these members; they never re-encode the matrix.
+# ===========================================================================
+MeasureType:
+  kind: value_domain
+  closed: true
+  description: How a measure aggregates — defined once, over axis_kind.
+  members:
+    Flow:
+      definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."
+      additivity:
+        time:        mac.aggregation_effect.additive
+        categorical: mac.aggregation_effect.additive
+    Stock:
+      definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
+      additivity:
+        time:        mac.aggregation_effect.point_in_time
+        categorical: mac.aggregation_effect.additive
+    Target:
+      definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
+      additivity:
+        time:        mac.aggregation_effect.non_aggregable
+        categorical: mac.aggregation_effect.non_aggregable
+
+# ===========================================================================
+# mac.rule_kind — the closed taxonomy that types every behavioural rule (what the rule governs).
+# A typed rule references its kind (kind: mac.rule_kind.<term>) instead of an inline string, so the set
+# is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
+# is an inherited fact rather than a directive — kept distinct for clarity; prune at a later revision
+# if warranted.)
+# ===========================================================================
+rule_kind:
+  kind: vocabulary
+  closed: true
+  description: What a behavioural rule governs — the rule's type.
+  terms:
+    resolution:  "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
+    aggregation: "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
+    default:     "What to assume when an axis is unspecified but a safe default exists."
+    ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
+    exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
+    guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."

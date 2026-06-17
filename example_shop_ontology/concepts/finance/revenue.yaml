@@ -24,7 +24,9 @@ concept:
       The headline financial measure: what the shop earned, net of returns. The numerator of margin,
       the thing sliced by product/category/period.
     unit: currency (account currency)
-    additivity: { time: additive, customer: additive, product: additive }   # a flow — sums across any dimension
+    measure_type: mac.MeasureType.Flow                                      # v0.6: references the framework type that carries the additivity law
+    additivity: { time: additive, customer: additive, product: additive }   # schema-required type-independent floor
+    axis_kinds: { time: mac.axis_kind.time, customer: mac.axis_kind.categorical, product: mac.axis_kind.categorical }  # classify axes so the (type × kind) law resolves
     null_semantics: >
       An order with no refund row contributes its gross as net (no refund = zero refund), NOT missing data.
 
