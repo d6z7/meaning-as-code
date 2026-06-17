@@ -72,8 +72,10 @@ the open*:
 
 - **OSI (Open Semantic Interchange)** — an industry-backed YAML interchange for datasets, measures,
   dimensions, relationships; built to move a semantic layer *between tools*. It overlaps MAC's
-  Semantic/Physical levels and is the natural **export target**: MAC can emit OSI for the measure/dimension
-  slice. What OSI is not: an authoring discipline with a *closed core an LLM can't hallucinate*, typed
+  Semantic/Physical levels and is the natural **export target** — and MAC *does* export it: [`tools/mac_to_osi.py`](../tools/mac_to_osi.py)
+  projects a MAC ontology onto an OSI semantic model (Physical→`datasets`/`fields`, Edges→`relationships`,
+  Rules→`metrics`), and the output ([`example_tpch_ontology/tpch.osi.yaml`](../example_tpch_ontology/tpch.osi.yaml))
+  **validates against OSI's own JSON Schema** (v0.2.0.dev0). What OSI is *not*: an authoring discipline with a *closed core an LLM can't hallucinate*, typed
   **rules bound to physical fields with cross-file enforcement**, an edges-as-data join model, a
   constraint/shapes gate, or L0–L3 trust tiers. *Adopt for interchange; keep MAC for authoring + governance.*
 - **SHACL (W3C)** — constraints as data over RDF graphs. MAC's constraint gate is deliberately
