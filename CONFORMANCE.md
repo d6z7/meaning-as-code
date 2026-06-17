@@ -36,6 +36,22 @@ A file claims a level in `metadata` (`schema_version` pins the schema generation
 checked placement and legality but not a closed key-set, so files drifted (e.g. eight ad-hoc
 `*_contract` keys). v0.5 closes that hole.
 
+### The three gates — structural · referential · constraint (the constraint gate is new in v0.1.6)
+
+L1 is reached by three complementary, data-free validators, not one:
+
+| Gate | Tool | Checks |
+|---|---|---|
+| **structural** | `tools/validate_schema.py` | each file against `mac.schema.json` — closed keys, required keys, class/level/type/role enums, naming, edge legality |
+| **referential** | `tools/check_references.py` | every cross-file reference resolves (no orphans), `mac.*` terms resolve to the vocabulary |
+| **constraint** | `tools/check_shapes.py` | **shapes** — constraints declared as DATA ([mac_shapes.yaml](mac_shapes.yaml)) that the schema cannot express, above all **relational** invariants ("the values at path A ⊆ the set at path B") |
+
+The schema is necessarily *loose* where a rule is relational or cross-document — it validates one file's
+tree, not a fact in file A against a set in file B. The **constraint gate** fills exactly that gap:
+constraints become inspectable, versioned model content (and generator-readable), run by one engine over
+declared shapes. The framework ships **built-in** universal invariants (`mac_shapes.yaml`, governed by
+[mac.shapes.schema.json](mac.shapes.schema.json)); an application adds its own via `--shapes`.
+
 ## 2. The closed-core + `x-` extension rule (how we stay strict without ossifying)
 
 Strictness is **layered**, not uniform:
