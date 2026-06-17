@@ -54,4 +54,13 @@ reading the ontology** — measure rules become the `SELECT` expression, edges' 
 `JOIN`s, grounding resolves the tables and columns (incl. the composite associative-entity join through
 PartSupp). Nothing is recalled from memory; every identifier is read from a cited file.
 
+## Export to OSI
+
+[tpch.osi.yaml](tpch.osi.yaml) is the same model **projected onto OSI** (Open Semantic Interchange) by
+[`../tools/mac_to_osi.py`](../tools/mac_to_osi.py): Physical → `datasets`/`fields`, Edges → `relationships`
+(the composite `lineitem→partsupp` join survives as multi-column), Rules → `metrics` (the net-revenue
+aggregate `SUM(l_extendedprice × (1 − l_discount))`). It **validates against OSI's own JSON Schema** (v0.2.0.dev0) — proof of the
+"vendor-neutral, projects outward" half of the thesis. The MAC-only constructs OSI can't carry (typed
+`contract.rules` + `binds`, additivity law, the six classes) are dropped by design.
+
 Synthetic example — TPC-H is a benchmark schema, not real data.
