@@ -154,6 +154,11 @@ def collect_anchors(doc) -> set[str]:
 # mac_vocabulary.yaml (this repo's canon). Only a token whose SECOND segment is a known vocab namespace
 # is a reference — so `mac.schema.json` (a filename) is not one.
 _MAC_REF_RE = re.compile(r"mac\.[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)?")
+# v0.1.7: an APPLICATION vocabulary reference `<ns>.<vocab>[.<term>]` (e.g. gaps.field_role.attribute)
+# points at a term defined in a project-owned vocabulary.yaml (`namespace: <ns>`). Same define-once-then-
+# reference discipline as mac.*, but the terms are domain-owned, not framework-owned. A token is only
+# treated as a reference when its FIRST segment is a declared app namespace (so SQL `table.column` is not).
+_APP_REF_RE = re.compile(r"[a-z][a-z0-9_]*\.[a-z_]\w*(?:\.[A-Za-z_]\w*)?")
 _MAC_VOCAB = Path(__file__).resolve().parents[1] / "mac_vocabulary.yaml"
 
 
@@ -174,6 +179,10 @@ class ReferenceChecker:
         self.mac_terms: set[str] = set()
         self.mac_namespaces: set[str] = set()
         self._index_mac_terms()
+        # v0.1.7: application-owned vocabularies (project vocabulary.yaml files), resolved like mac.*
+        self.app_terms: set[str] = set()
+        self.app_prefixes: set[str] = set()
+        self._index_app_terms()
 
     # -- hooks an application overrides -------------------------------------------------
 
@@ -195,6 +204,7 @@ class ReferenceChecker:
         The base resolves `mac.*` framework-vocab references. A subclass that overrides this WITHOUT
         calling super() replaces that (e.g. an application with its own mac.* handling)."""
         self._check_mac_refs(relpath, doc)
+        self._check_app_refs(relpath, doc)
 
     # -- mac.* framework-vocab resolution (v0.6) ---------------------------------------
     def _index_mac_terms(self) -> None:
@@ -230,6 +240,44 @@ class ReferenceChecker:
                     self.add("ERROR", f"{relpath}{jpath}",
                              f"mac.* reference '{tok}' does not resolve to a defined term in "
                              f"mac_vocabulary.yaml (known namespaces: {sorted(self.mac_namespaces)})")
+
+    # -- application-vocabulary resolution (v0.1.7) ------------------------------------
+    def _index_app_terms(self) -> None:
+        """Collect terms from project-owned vocabulary.yaml files. Each declares `namespace: <ns>` and
+        one or more vocabulary blocks (a block carrying `terms:`/`members:`). Both `<ns>.<vocab>` and
+        `<ns>.<vocab>.<term>` become referable — the define-once half of define-then-reference."""
+        import yaml
+        for vf in sorted(self.scan_root.rglob("vocabulary.yaml")):
+            doc = yaml.safe_load(vf.read_text(encoding="utf-8")) or {}
+            ns = doc.get("namespace")
+            if not ns or ns == "mac":                # 'mac' is the framework's; app namespaces are distinct
+                continue
+            for block_name, block in doc.items():
+                if block_name == "namespace" or not isinstance(block, dict):
+                    continue
+                members = block.get("terms") or block.get("members")
+                if not isinstance(members, dict):
+                    continue
+                self.app_prefixes.add(ns)
+                self.app_terms.add(f"{ns}.{block_name}")
+                for m in members:
+                    self.app_terms.add(f"{ns}.{block_name}.{m}")
+
+    def _check_app_refs(self, relpath: str, doc) -> None:
+        """Every <app-namespace>.<vocab>[.<term>] reference must resolve to a defined app-vocab term.
+        Only tokens whose first segment is a DECLARED app namespace are checked (so `table.column` and
+        filenames are ignored) — the application-tier mirror of _check_mac_refs."""
+        if not self.app_prefixes:
+            return
+        for jpath, s in walk_strings(doc):
+            for tok in _APP_REF_RE.findall(s):
+                pfx = tok.split(".")[0]
+                if pfx not in self.app_prefixes:
+                    continue
+                if tok not in self.app_terms:
+                    self.add("ERROR", f"{relpath}{jpath}",
+                             f"application-vocabulary reference '{tok}' does not resolve to a defined "
+                             f"term (declared {pfx}.* vocab in a vocabulary.yaml)")
 
     def table_status(self, src: str, tname: str) -> str:
         """'ok' | 'missing' | 'skip'. Override to add e.g. catalog-prefix tolerance."""
