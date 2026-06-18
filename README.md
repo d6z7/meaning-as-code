@@ -9,6 +9,28 @@ It is the one place that is both **full-coverage** (it models meaning end to end
 **vendor-neutral** (it locks into no platform) — the cell the data catalogs, semantic layers, graph
 stores, and all-in-one platforms each leave empty. See [articles/positioning.md](articles/positioning.md).
 
+**One governed model, every platform.** Author it once; project it — *mechanically, nothing hand-written* —
+onto six industry formats, each validated **in its own terms** (not on our say-so):
+
+```mermaid
+flowchart LR
+  M["<b>one governed YAML model</b><br/>Concept · Physical · Edges · Rules"]
+  M --> OSI["<b>OSI</b><br/><i>semantic interchange</i>"]
+  M --> RDF["<b>RDF / OWL</b><br/><i>triples</i>"]
+  M --> SH["<b>SHACL</b><br/><i>validation</i>"]
+  M --> CY["<b>openCypher</b><br/><i>property graph</i>"]
+  M --> OKF["<b>OKF</b><br/><i>agent knowledge</i>"]
+  M --> MM["<b>Mermaid</b><br/><i>diagram</i>"]
+  classDef m fill:#fff2cc,stroke:#d6b656,color:#000;
+  classDef t fill:#dae8fc,stroke:#6c8ebf,color:#000;
+  class M m;
+  class OSI,RDF,SH,CY,OKF,MM t;
+```
+
+…and it reads its *own* model back as the answer to a question: `SELECT` from a rule, `JOIN` from an edge,
+columns from grounding — the deterministic half of an AI agent's job, pulled out of the model's head and
+into a file you can diff, gate, and trust.
+
 ## What's in MAC
 
 - **Four layers** — Concept (what it means) · Physical (where it lives) · Edges (how it joins) · Rules
@@ -25,10 +47,37 @@ stores, and all-in-one platforms each leave empty. See [articles/positioning.md]
   grounding: the deterministic half of question-answering, shown end-to-end in each example's `QUERIES.md`.
 - **Provenance for free** — because every clause traces to a concept, an edge, or a rule, an answer can be
   explained by citing the model — and an unanswerable question is *refused*, not fabricated.
-- **Two worked examples** — a shop and TPC-H (hierarchy, associative entity, composite key, derived
-  measure), each with a `validate.sh` (runs all three gates) and a `QUERIES.md` (question → SQL).
+- **Six projectors, each self-validating** — one model → OSI · RDF/OWL · SHACL · openCypher · OKF ·
+  Mermaid. None hand-written; each verified *in the target's own terms* (OSI's JSON Schema, a real SHACL
+  engine, an RDF re-parse, …). The "projects onto whatever you run" claim, as running code — see
+  [articles/projecting-outward.md](articles/projecting-outward.md).
+- **Two planes** — a **data plane** (how the data is made: sources → transforms → dataset schemas) and an
+  **ontology plane** (what it means: concepts, edges, rules), with one one-directional seam. The Palantir
+  Foundry split — datasets/transforms vs. ontology — but **vendor-neutral and in files you own**. Opt-in
+  per project via `mac.project.yaml`; absent ⇒ flat (back-compatible). See
+  [design/two-plane-layout.md](design/two-plane-layout.md).
+- **Two worked examples** — a shop (the two-plane *Option B* form — structure-only datasets, meaning in
+  field-anchored rules) and TPC-H (the *Option A* form; hierarchy, associative entity, composite key,
+  derived measure), each with a `validate.sh` (all three gates) and a `QUERIES.md` (question → SQL).
 
 This repository is the complete, domain-neutral description of the framework, plus the worked examples.
+
+## Projects onto your whole stack — six formats, each self-validating
+
+The thesis isn't "export to one tool"; it's *author meaning once and project the right slice onto whatever
+you run*. Six projectors do it mechanically, and each is checked by the **target's own** validator:
+
+| Projector | Target | Self-validation |
+| --- | --- | --- |
+| [`mac_to_osi.py`](tools/mac_to_osi.py) | **OSI** semantic model (Snowflake et al.) | validates against OSI's own JSON Schema |
+| [`mac_to_rdf.py`](tools/mac_to_rdf.py) | **RDF / OWL** Turtle (Stardog, Neptune-RDF) | re-parses as valid RDF |
+| [`mac_to_shacl.py`](tools/mac_to_shacl.py) | **SHACL** shapes (W3C) | a real engine (pySHACL) accepts good data, rejects broken |
+| [`mac_to_graph.py`](tools/mac_to_graph.py) | **openCypher** property graph (Neo4j, Neptune) | node/edge self-consistency |
+| [`mac_to_okf.py`](tools/mac_to_okf.py) | **OKF** agent-knowledge bundle (Google Cloud) | every doc typed; every link resolves |
+| [`mac_to_mermaid.py`](tools/mac_to_mermaid.py) | **Mermaid** diagram (renders on GitHub) | renders as a valid flowchart |
+
+No projection asks you to trust the projector — the target's validator is the evidence. One model behind
+six independent verdicts. (Outputs live under each example's `projections/`.)
 
 ## Start here
 
@@ -37,6 +86,8 @@ This repository is the complete, domain-neutral description of the framework, pl
 | [articles/meaning-as-code.md](articles/meaning-as-code.md) | **The narrative** — the idea and objective as an essay: one probabilistic step then deterministic execution, why "as code", the three gates, field-anchoring, the model generating SQL, and where MAC sits vs SHACL/SBVR/SKOS/OSI. **Read this for the story** (then FRAMEWORK.md for the spec). |
 | [articles/positioning.md](articles/positioning.md) | **Why this over OSI / catalogs / graph stores / all-in-one platforms** — the coverage × vendor-neutrality argument: single-slice tools own one level, all-in-one platforms own all four but lock you in, MAC is full-coverage *and* neutral; plus how it interoperates with OSI/SHACL/SBVR/OWL. |
 | [articles/mac-in-the-loop.md](articles/mac-in-the-loop.md) | **Where MAC sits end-to-end** — the question → interpret → generate SQL → execute → explain-provenance loop; the probabilistic/deterministic split; provenance as a byproduct of meaning-as-code. |
+| [articles/projecting-outward.md](articles/projecting-outward.md) | **One model, six formats** — the exporters as the "projects onto whatever you run" proof: OSI · openCypher · RDF/OWL · SHACL · OKF · Mermaid, each self-validating in its target's own terms. |
+| [design/two-plane-layout.md](design/two-plane-layout.md) | **The two-plane layout** — data plane (how the data is made) vs ontology plane (what it means), the seam, the manifest, and the structure-vs-meaning (Option A → B) split. The Foundry separation, vendor-neutral. |
 | **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [CONCEPT_SPEC.md](CONCEPT_SPEC.md) | The exhaustive key-by-key reference — every predefined key and its meaning. |
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
@@ -85,11 +136,30 @@ python3 tools/check_shapes.py example_shop_ontology
 
 # plus NEGATIVE TESTS — prove the schema REJECTS bad input (not just that it accepts good)
 python3 tests/test_negative.py
+# …and the LAYOUT test — the flat default still works after the two-plane layout (back-compat)
+python3 tests/test_layout.py
 ```
 
 Exit code `0` = clean, `1` = violations, `2` = setup error (missing deps). The negative suite lives in
 [tests/](tests/) — intentionally-malformed fixtures the schema must reject; wire all three gates + the
 negative suite into CI.
+
+## Project it
+
+Emit any target from a model root — the projectors resolve the layout (flat *or* two-plane) themselves:
+
+```bash
+python3 tools/mac_to_osi.py     example_shop_ontology -o out.osi.yaml     # OSI semantic model
+python3 tools/mac_to_rdf.py     example_shop_ontology -o out.ttl          # RDF / OWL (Turtle)
+python3 tools/mac_to_shacl.py   example_shop_ontology --selftest          # SHACL (+ pySHACL good/bad-data test)
+python3 tools/mac_to_graph.py   example_shop_ontology -o out.cypher       # openCypher property graph
+python3 tools/mac_to_okf.py     example_shop_ontology -o out.okf --check  # OKF agent-knowledge bundle
+python3 tools/mac_to_mermaid.py example_shop_ontology -o out.mmd          # Mermaid diagram (renders on GitHub)
+```
+
+Each example keeps its rendered outputs under `projections/` — and the shop ontology has a picture:
+[`example_shop_ontology/shop_ontology.drawio.svg`](example_shop_ontology/shop_ontology.drawio.svg) (curated)
+and an inline [Mermaid block](example_shop_ontology/README.md) (generated, renders on GitHub).
 
 ## What this is not
 
@@ -100,8 +170,9 @@ for the honest trade-offs and when *not* to use it.
 ## Status
 
 The framework and its schema contract share one version, **v0.1.6** — a machine-checkable contract
-([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)) with three gates (structural,
-referential, and the **constraint/shapes** validator) plus a negative-test suite, **proven across multiple
-independent domains of genuinely different shape.** It is a working, gated, vendor-neutral convention —
-deliberately lighter than a W3C standard, not a platform you buy. Feedback and adversarial testing on new
-domains are the most useful contributions.
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)) with three data-free gates
+(structural, referential, **constraint/shapes**) plus negative + layout test suites, the **two-plane
+layout** (data / ontology), and **six self-validating projectors** (OSI · RDF/OWL · SHACL · openCypher ·
+OKF · Mermaid) — **proven on two worked domains of genuinely different shape.** It is a working, gated,
+vendor-neutral convention — deliberately lighter than a W3C standard, not a platform you buy. Feedback and
+adversarial testing on new domains are the most useful contributions.
