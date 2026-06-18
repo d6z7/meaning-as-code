@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.6",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.6.",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.7",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.7.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
 
   "oneOf": [
@@ -201,6 +201,11 @@
         "serves_from": { "type": ["string", "array"], "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)." },
         "grain": { "type": "string", "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class." },
         "grounds_column": { "type": "string", "description": "(naming contract) a physical column name as a VALUE, never a key." },
+        "field_roles": {
+          "type": "object",
+          "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. gaps.field_role.attribute), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
+          "additionalProperties": { "type": "string" }
+        },
         "note": { "type": "string" },
         "notes": { "type": "string" }
       },

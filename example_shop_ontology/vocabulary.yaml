@@ -1,0 +1,12 @@
+# The shop example's APPLICATION vocabulary — defined ONCE, referenced as shop.* notions in the ontology.
+# Demonstrates the v0.1.7 mechanism: the framework owns the resolver + the field_roles slot + the gate;
+# the application owns its terms (this file). Not framework mac.* — domain-owned.
+namespace: shop
+field_role:
+  closed: true
+  description: "The analytical role of a grounded column — where a query may use it; implies the default guardrail."
+  terms:
+    key:       "identity / join column — resolve names to it; filter or join by exact value."
+    dimension: "categorical slice/group axis — fine to WHERE / GROUP BY."
+    attribute: "descriptive, display-only — SELECT to show; default guardrail: NEVER filter."
+    measure:   "numeric payload — aggregate per its additivity; never filter."

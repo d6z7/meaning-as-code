@@ -107,7 +107,7 @@ def main():
     files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not skip(f)]  # two-plane: data/datasets/
     files = sorted(set(files))
 
-    CURRENT = '0.1.6'                 # the current — and only recognized — MAC schema version
+    CURRENT = '0.1.7'                 # the current — and only recognized — MAC schema version
     RECOGNIZED = {CURRENT}            # strict: 0.5 is retired; a file at any other version is skipped (stale)
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:

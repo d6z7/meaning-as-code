@@ -42,3 +42,10 @@ shapes:
     severity: error
     constraint:
       kind: rule_binds_grounded
+
+  - id: field-roles-grounded
+    description: every grounding.field_roles column (the whitelist) must be a column of the grounded table
+    target: concept
+    severity: error
+    constraint:
+      kind: field_roles_grounded

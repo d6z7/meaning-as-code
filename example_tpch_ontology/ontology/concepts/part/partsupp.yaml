@@ -4,7 +4,7 @@ metadata:
   concept: PartSupp
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.6'
+  schema_version: '0.1.7'
   status: production
   owner: example-team
   confidence: C
