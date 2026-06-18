@@ -99,6 +99,14 @@ def check(shape, doc, focus, out, root):
         for b in sorted(set(extract(doc, c.get("path", "contract.rules[].binds")))):
             if b not in cols:
                 out.append((sev, focus, sid, f'rule binds "{b}" — not a column of the grounded table'))
+    elif k == "field_roles_grounded":
+        # v0.1.7: every column WHITELISTED in grounding.field_roles must be a real grounded column
+        # (the role VALUE's resolution is check_references' job; this proves the KEY exists).
+        cols = grounded_columns(doc, root)
+        fr = (doc.get("grounding") or {}).get("field_roles") or {}
+        for col in sorted(fr if isinstance(fr, dict) else {}):
+            if col not in cols:
+                out.append((sev, focus, sid, f'field_roles whitelists "{col}" — not a column of the grounded table'))
     else:
         out.append(("error", focus, sid, f'unknown constraint kind "{k}"'))
 

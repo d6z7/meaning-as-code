@@ -201,6 +201,11 @@
         "serves_from": { "type": ["string", "array"], "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)." },
         "grain": { "type": "string", "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class." },
         "grounds_column": { "type": "string", "description": "(naming contract) a physical column name as a VALUE, never a key." },
+        "field_roles": {
+          "type": "object",
+          "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. gaps.field_role.attribute), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
+          "additionalProperties": { "type": "string" }
+        },
         "note": { "type": "string" },
         "notes": { "type": "string" }
       },
