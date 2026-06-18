@@ -114,5 +114,6 @@ platform should own your meaning. That cell was empty. That is the one MAC fills
 
 ---
 
-*Companions: [meaning-as-code.md](meaning-as-code.md) (the idea) · [mac-in-the-loop.md](mac-in-the-loop.md)
+*Companions: [meaning-as-code.md](meaning-as-code.md) (the idea) · [projecting-outward.md](projecting-outward.md)
+(the exporters that prove "projects onto whatever you run") · [mac-in-the-loop.md](mac-in-the-loop.md)
 (where MAC sits in the question→answer→provenance loop) · [FRAMEWORK.md](../FRAMEWORK.md) (the spec).*
