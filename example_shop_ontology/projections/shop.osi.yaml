@@ -24,7 +24,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: parent_id
-      description: '→ categories.category_id (self-ref: nested categories)'
   - name: customers
     source: shop_warehouse.customers
     primary_key:
@@ -62,13 +61,11 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: customer_id
-      description: → customers.customer_id (placed_by edge)
     - name: status
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: status
-      description: OrderStatus code (PLACED…CANCELLED)
     - name: placed_at
       expression:
         dialects:
@@ -83,7 +80,6 @@ semantic_model:
           expression: paid_at
       dimension:
         is_time: true
-      description: NULL until paid
     - name: shipped_at
       expression:
         dialects:
@@ -91,7 +87,6 @@ semantic_model:
           expression: shipped_at
       dimension:
         is_time: true
-      description: NULL until shipped
     - name: delivered_at
       expression:
         dialects:
@@ -99,13 +94,11 @@ semantic_model:
           expression: delivered_at
       dimension:
         is_time: true
-      description: NULL until delivered
     - name: gross_amount
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: gross_amount
-      description: order total before refunds
   - name: products
     source: shop_warehouse.products
     primary_key:
@@ -126,7 +119,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: category_id
-      description: → categories.category_id (belongs_to_category edge)
     - name: list_price
       expression:
         dialects:
@@ -147,7 +139,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: order_id
-      description: → orders.order_id
     - name: refund_amount
       expression:
         dialects:

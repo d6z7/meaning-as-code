@@ -23,6 +23,12 @@ The ontology references `data/datasets/` (the published schemas) and nothing els
 dependencies flow ontology → datasets, never back. (`tpch`, the sibling example, stays **flat** — no
 manifest — which is the back-compatible default.)
 
+This example also applies **Option B** (the design's end-state): the `data/datasets/` descriptors carry
+**structure only** (name · type · key · role), and every column's **meaning** lives in the ontology as a
+field-anchored `contract.rules[].binds` entry. So a column's prose isn't duplicated — it has one home, and
+both the gates *and* the projectors read it there (see `projections/shop.okf/Order.md`, whose `# Schema`
+notes are sourced from the rules, not from the descriptor).
+
 ## What it demonstrates
 
 **All six concept classes, one each:**

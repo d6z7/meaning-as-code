@@ -18,13 +18,13 @@ table:
 
 columns:
   - { name: order_id,     type: string,    role: primary_key }
-  - { name: customer_id,  type: string,    role: foreign_key, description: "→ customers.customer_id (placed_by edge)" }
-  - { name: status,       type: string,    role: discriminator, description: "OrderStatus code (PLACED…CANCELLED)" }
+  - { name: customer_id,  type: string,    role: foreign_key }
+  - { name: status,       type: string,    role: discriminator }
   - { name: placed_at,    type: timestamp, role: value, x-subrole: temporal }
-  - { name: paid_at,      type: timestamp, role: value, x-subrole: temporal, description: "NULL until paid" }
-  - { name: shipped_at,   type: timestamp, role: value, x-subrole: temporal, description: "NULL until shipped" }
-  - { name: delivered_at, type: timestamp, role: value, x-subrole: temporal, description: "NULL until delivered" }
-  - { name: gross_amount, type: decimal,   role: value, x-subrole: measure, description: "order total before refunds" }
+  - { name: paid_at,      type: timestamp, role: value, x-subrole: temporal }
+  - { name: shipped_at,   type: timestamp, role: value, x-subrole: temporal }
+  - { name: delivered_at, type: timestamp, role: value, x-subrole: temporal }
+  - { name: gross_amount, type: decimal,   role: value, x-subrole: measure }
 
 foreign_keys:
   - { name: fk_customer, from_column: customer_id, to_table: customers, to_column: customer_id }

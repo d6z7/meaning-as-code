@@ -26,7 +26,7 @@ Grounded in `shop_warehouse.categories`.
 |---|---|---|---|
 | `category_id` | string | primary_key |  |
 | `name` | string | value |  |
-| `parent_id` | string | foreign_key | → categories.category_id (self-ref: nested categories) |
+| `parent_id` | string | foreign_key |  |
 
 ## Relationships
 
