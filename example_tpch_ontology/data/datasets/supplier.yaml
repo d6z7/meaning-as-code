@@ -4,7 +4,7 @@ metadata:
   table: supplier
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.6'
+  schema_version: '0.1.7'
   status: verified
   owner: example-team
   confidence: C
