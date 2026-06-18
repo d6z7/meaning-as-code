@@ -26,9 +26,9 @@ Grounded in `tpch.orders`.
 | column | type | role | description |
 |---|---|---|---|
 | `o_orderkey` | integer | primary_key |  |
-| `o_custkey` | integer | foreign_key | → customer.c_custkey (placed_by edge) |
-| `o_orderstatus` | string | discriminator | O open · P partial · F fulfilled |
-| `o_totalprice` | decimal | value | order total |
+| `o_custkey` | integer | foreign_key |  |
+| `o_orderstatus` | string | discriminator |  |
+| `o_totalprice` | decimal | value |  |
 | `o_orderdate` | date | value |  |
 | `o_orderpriority` | string | discriminator |  |
 | `o_comment` | string | value |  |

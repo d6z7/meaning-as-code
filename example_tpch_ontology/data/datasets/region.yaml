@@ -18,7 +18,7 @@ table:
 
 columns:
   - { name: r_regionkey, type: integer, role: primary_key }
-  - { name: r_name,      type: string,  role: value, description: "region name" }
+  - { name: r_name,      type: string,  role: value }
   - { name: r_comment,   type: string,  role: value }
 
 grounded_by_concepts:

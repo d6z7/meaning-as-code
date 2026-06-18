@@ -26,10 +26,10 @@ Grounded in `tpch.customer`.
 |---|---|---|---|
 | `c_custkey` | integer | primary_key |  |
 | `c_name` | string | value |  |
-| `c_nationkey` | integer | foreign_key | → nation.n_nationkey (from_nation edge) |
+| `c_nationkey` | integer | foreign_key |  |
 | `c_phone` | string | value |  |
-| `c_acctbal` | decimal | value | account balance |
-| `c_mktsegment` | string | discriminator | market segment (BUILDING, AUTOMOBILE, …) |
+| `c_acctbal` | decimal | value |  |
+| `c_mktsegment` | string | discriminator |  |
 | `c_comment` | string | value |  |
 
 ## Relationships

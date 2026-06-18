@@ -25,8 +25,8 @@ Grounded in `tpch.nation`.
 | column | type | role | description |
 |---|---|---|---|
 | `n_nationkey` | integer | primary_key |  |
-| `n_name` | string | value | nation name |
-| `n_regionkey` | integer | foreign_key | → region.r_regionkey (in_region edge) |
+| `n_name` | string | value |  |
+| `n_regionkey` | integer | foreign_key |  |
 | `n_comment` | string | value |  |
 
 ## Relationships

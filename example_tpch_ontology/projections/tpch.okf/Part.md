@@ -26,11 +26,11 @@ Grounded in `tpch.part`.
 |---|---|---|---|
 | `p_partkey` | integer | primary_key |  |
 | `p_name` | string | value |  |
-| `p_mfgr` | string | value | manufacturer |
-| `p_brand` | string | discriminator | brand |
-| `p_type` | string | discriminator | part type |
+| `p_mfgr` | string | value |  |
+| `p_brand` | string | discriminator |  |
+| `p_type` | string | discriminator |  |
 | `p_size` | integer | value |  |
-| `p_retailprice` | decimal | value | list retail price |
+| `p_retailprice` | decimal | value |  |
 | `p_comment` | string | value |  |
 
 ## Relationships

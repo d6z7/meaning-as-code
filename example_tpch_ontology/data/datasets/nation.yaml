@@ -18,8 +18,8 @@ table:
 
 columns:
   - { name: n_nationkey, type: integer, role: primary_key }
-  - { name: n_name,      type: string,  role: value, description: "nation name" }
-  - { name: n_regionkey, type: integer, role: foreign_key, description: "→ region.r_regionkey (in_region edge)" }
+  - { name: n_name,      type: string,  role: value }
+  - { name: n_regionkey, type: integer, role: foreign_key }
   - { name: n_comment,   type: string,  role: value }
 
 foreign_keys:

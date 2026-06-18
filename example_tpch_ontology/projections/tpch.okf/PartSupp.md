@@ -25,10 +25,10 @@ Grounded in `tpch.partsupp`.
 
 | column | type | role | description |
 |---|---|---|---|
-| `ps_partkey` | integer | composite_key_part | → part.p_partkey |
-| `ps_suppkey` | integer | composite_key_part | → supplier.s_suppkey |
-| `ps_availqty` | integer | value | available quantity |
-| `ps_supplycost` | decimal | value | cost the supplier charges for the part |
+| `ps_partkey` | integer | composite_key_part |  |
+| `ps_suppkey` | integer | composite_key_part |  |
+| `ps_availqty` | integer | value |  |
+| `ps_supplycost` | decimal | value |  |
 | `ps_comment` | string | value |  |
 
 ## Relationships

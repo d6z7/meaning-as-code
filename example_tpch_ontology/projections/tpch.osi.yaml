@@ -24,7 +24,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: c_nationkey
-      description: → nation.n_nationkey (from_nation edge)
     - name: c_phone
       expression:
         dialects:
@@ -35,13 +34,11 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: c_acctbal
-      description: account balance
     - name: c_mktsegment
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: c_mktsegment
-      description: market segment (BUILDING, AUTOMOBILE, …)
     - name: c_comment
       expression:
         dialects:
@@ -57,25 +54,21 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: l_orderkey
-      description: → orders.o_orderkey (part_of edge); + composite-key part
     - name: l_linenumber
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: l_linenumber
-      description: line sequence within the order
     - name: l_partkey
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: l_partkey
-      description: → part.p_partkey (with l_suppkey = partsupp)
     - name: l_suppkey
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: l_suppkey
-      description: → supplier.s_suppkey (with l_partkey = partsupp)
     - name: l_quantity
       expression:
         dialects:
@@ -86,13 +79,11 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: l_extendedprice
-      description: list price × quantity (gross, pre-discount)
     - name: l_discount
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: l_discount
-      description: fractional discount 0..1
     - name: l_tax
       expression:
         dialects:
@@ -103,13 +94,11 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: l_returnflag
-      description: R returned · A/N not
     - name: l_linestatus
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: l_linestatus
-      description: O in-flight · F fulfilled
     - name: l_shipdate
       expression:
         dialects:
@@ -156,13 +145,11 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: n_name
-      description: nation name
     - name: n_regionkey
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: n_regionkey
-      description: → region.r_regionkey (in_region edge)
     - name: n_comment
       expression:
         dialects:
@@ -183,19 +170,16 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: o_custkey
-      description: → customer.c_custkey (placed_by edge)
     - name: o_orderstatus
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: o_orderstatus
-      description: O open · P partial · F fulfilled
     - name: o_totalprice
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: o_totalprice
-      description: order total
     - name: o_orderdate
       expression:
         dialects:
@@ -233,19 +217,16 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: p_mfgr
-      description: manufacturer
     - name: p_brand
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: p_brand
-      description: brand
     - name: p_type
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: p_type
-      description: part type
     - name: p_size
       expression:
         dialects:
@@ -256,7 +237,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: p_retailprice
-      description: list retail price
     - name: p_comment
       expression:
         dialects:
@@ -273,25 +253,21 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: ps_partkey
-      description: → part.p_partkey
     - name: ps_suppkey
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: ps_suppkey
-      description: → supplier.s_suppkey
     - name: ps_availqty
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: ps_availqty
-      description: available quantity
     - name: ps_supplycost
       expression:
         dialects:
         - dialect: ANSI_SQL
           expression: ps_supplycost
-      description: cost the supplier charges for the part
     - name: ps_comment
       expression:
         dialects:
@@ -312,7 +288,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: r_name
-      description: region name
     - name: r_comment
       expression:
         dialects:
@@ -338,7 +313,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: s_nationkey
-      description: → nation.n_nationkey (from_nation edge)
     - name: s_phone
       expression:
         dialects:
@@ -349,7 +323,6 @@ semantic_model:
         dialects:
         - dialect: ANSI_SQL
           expression: s_acctbal
-      description: account balance
     - name: s_comment
       expression:
         dialects:
@@ -414,3 +387,12 @@ semantic_model:
     to_columns:
     - ps_partkey
     - ps_suppkey
+  metrics:
+  - name: revenue
+    expression:
+      dialects:
+      - dialect: ANSI_SQL
+        expression: SUM(l_extendedprice * (1 - l_discount))
+    description: 'Net revenue is the discounted value of order lines: per line, l_extendedprice × (1 − l_discount), summed.
+      l_extendedprice is already price × quantity (gross); the discount is a fraction in [0,1]. This is the figure "Revenue"
+      means by default, and the basis of TPC-H''s revenue/market-share queries.'

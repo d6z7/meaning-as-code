@@ -26,7 +26,7 @@ Grounded in `tpch.region`.
 | column | type | role | description |
 |---|---|---|---|
 | `r_regionkey` | integer | primary_key |  |
-| `r_name` | string | value | region name |
+| `r_name` | string | value |  |
 | `r_comment` | string | value |  |
 
 ## Relationships
