@@ -1,4 +1,4 @@
-# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.6).
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.7).
 #
 # The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
 # A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
@@ -13,7 +13,7 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.6'
+  version: '0.1.7'
   status: active
   defines: [aggregation_effect, axis_kind, MeasureType, rule_kind]
 
