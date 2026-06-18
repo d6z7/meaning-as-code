@@ -13,11 +13,11 @@ flowchart TB
   end
   subgraph DATA["DATA PLANE — how the data is made (datasets = structure only)"]
     direction LR
-    t_categories[("categories")]
-    t_customers[("customers")]
-    t_orders[("orders")]
-    t_products[("products")]
-    t_refunds[("refunds")]
+    t_categories[("categories<br/>category_id pk")]
+    t_customers[("customers<br/>customer_id pk")]
+    t_orders[("orders<br/>order_id pk")]
+    t_products[("products<br/>sku pk")]
+    t_refunds[("refunds<br/>refund_id pk")]
   end
   Category -. grounds .-> t_categories
   Product -. grounds .-> t_products

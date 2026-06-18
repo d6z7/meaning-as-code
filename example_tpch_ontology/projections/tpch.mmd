@@ -26,14 +26,14 @@ flowchart TB
   end
   subgraph DATA["DATA PLANE — how the data is made (datasets = structure only)"]
     direction LR
-    t_customer[("customer")]
+    t_customer[("customer<br/>c_custkey pk")]
     t_lineitem[("lineitem")]
-    t_nation[("nation")]
-    t_orders[("orders")]
-    t_part[("part")]
+    t_nation[("nation<br/>n_nationkey pk")]
+    t_orders[("orders<br/>o_orderkey pk")]
+    t_part[("part<br/>p_partkey pk")]
     t_partsupp[("partsupp")]
-    t_region[("region")]
-    t_supplier[("supplier")]
+    t_region[("region<br/>r_regionkey pk")]
+    t_supplier[("supplier<br/>s_suppkey pk")]
   end
   Revenue -. grounds .-> t_lineitem
   Nation -. grounds .-> t_nation
