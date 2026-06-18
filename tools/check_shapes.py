@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from mac_project import resolve
 
 REPO = Path(__file__).resolve().parents[1]
 BUILTIN = REPO / "mac_shapes.yaml"
@@ -60,9 +61,10 @@ def grounded_columns(doc, root):
     for s in (g.get("sources") or []):
         if isinstance(s, dict) and isinstance(s.get("relation"), str):
             names.append(s["relation"].split(".")[-1])   # strip schema/catalog prefix
+    descriptors = resolve(root).descriptors      # flat: root/tables; two-plane: root/data/datasets
     cols = set()
     for t in names:
-        f = Path(root) / "tables" / f"{t}.yaml"
+        f = descriptors / f"{t}.yaml"
         if f.exists():
             tdoc = yaml.safe_load(f.read_text()) or {}
             for col in (tdoc.get("columns") or []):
@@ -115,8 +117,9 @@ def main():
     a = ap.parse_args()
 
     shapes = load_shapes(a.shapes)
-    files = sorted((Path(a.root) / "concepts").glob("*/*.yaml")) + \
-            sorted((Path(a.root) / "concepts").glob("*.yaml"))
+    concepts_dir = resolve(a.root).ontology / "concepts"     # flat: root/concepts; two-plane: root/ontology/concepts
+    files = sorted(concepts_dir.glob("*/*.yaml")) + \
+            sorted(concepts_dir.glob("*.yaml"))
     viol = []
     for f in files:
         doc = yaml.safe_load(f.read_text())

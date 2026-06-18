@@ -24,6 +24,7 @@ Usage:  python3 tools/validate_schema.py [root] [--schema <mac.schema.json>] [--
 Exit:   0 = clean · 1 = schema violations (or warnings under --strict) · 2 = setup error (deps/schema)
 """
 import sys, os, glob, json, argparse
+from mac_project import resolve
 
 
 def _load_yaml_str_dates(path):
@@ -36,13 +37,13 @@ def _load_yaml_str_dates(path):
         return yaml.load(fh, Loader=_Loader)
 
 
-def _pick_def(path):
+def _pick_def(path, descriptors_dir=None):
     p = path.replace(os.sep, '/')
     if p.endswith('rules.yaml'):
         return 'RulesFile'
     if p.endswith('edges.yaml'):
         return 'EdgesFile'
-    if '/tables/' in p:
+    if '/tables/' in p or (descriptors_dir and os.path.dirname(os.path.abspath(path)) == str(descriptors_dir)):
         return 'TableFile'
     return 'ConceptFile'
 
@@ -99,9 +100,11 @@ def main():
     SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projections/ = generated exports, not source
     skip = lambda p: any(part in SKIP for part in p.split(os.sep))
 
+    layout = resolve(args.root)          # flat, or two-plane (mac.project.yaml)
     files = []
     for pat in ('**/concepts/**/*.yaml', '**/rules.yaml', '**/edges.yaml', '**/tables/*.yaml'):
         files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
+    files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not skip(f)]  # two-plane: data/datasets/
     files = sorted(set(files))
 
     CURRENT = '0.1.6'                 # the current — and only recognized — MAC schema version
@@ -119,7 +122,7 @@ def main():
         if not args.all and sv not in RECOGNIZED:
             skipped += 1   # legacy / not-yet-migrated — incremental adoption (use --all to force)
             continue
-        which = _pick_def(f)
+        which = _pick_def(f, layout.descriptors)
         errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))
         if which == 'EdgesFile':
             warnings += _edge_enrichment_warnings(f, doc)

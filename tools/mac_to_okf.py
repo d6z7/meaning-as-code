@@ -35,6 +35,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from mac_project import resolve
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
 TYPE_OF = {"entity": "Entity", "event": "Event", "measure": "Metric",
@@ -67,7 +68,7 @@ def ground_table(d):
 def table_cols(root, name):
     if not name:
         return []
-    f = root / "tables" / f"{name}.yaml"
+    f = resolve(root).descriptors / f"{name}.yaml"
     return [c for c in (load(f).get("columns") or []) if isinstance(c, dict) and c.get("name")] if f.exists() else []
 
 
@@ -84,14 +85,14 @@ def doc_path(name):
 
 def build_bundle(root):
     """Return {relpath: markdown_text} for the whole OKF bundle."""
-    concepts = [(f, load(f)) for f in sorted((root / "concepts").glob("**/*.yaml"))]
+    concepts = [(f, load(f)) for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml"))]
     concepts = [(f, d) for f, d in concepts if (d.get("concept") or {}).get("name")]
     source = next((str((d.get("metadata") or {}).get("source")) for _, d in concepts
                    if (d.get("metadata") or {}).get("source")), root.name)
     name = source.lower()
 
     names = {(d["concept"]["name"]) for _, d in concepts}                      # all concept names in bundle
-    edges = (load(root / "edges.yaml").get("edges") or []) if (root / "edges.yaml").exists() else []
+    edges = (load(resolve(root).ontology / "edges.yaml").get("edges") or []) if (resolve(root).ontology / "edges.yaml").exists() else []
 
     files = {}
     listing = []     # (title, type, desc, link) for index.md
@@ -162,7 +163,7 @@ def build_bundle(root):
                   "do not re-derive the formula.", ""]
 
         # # Citations — provenance back to the authoritative MAC source
-        rel_src = f.relative_to(root).as_posix()
+        rel_src = f.relative_to(resolve(root).ontology).as_posix()   # ontology-relative citation
         b += ["# Citations", "", f"1. MAC concept source of record: `{rel_src}` "
               f"(schema_version {meta.get('schema_version', '?')}, confidence {meta.get('confidence', '?')}).", ""]
 

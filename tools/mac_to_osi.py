@@ -17,6 +17,7 @@ Output validates against core-spec/osi-schema.json (version 0.2.0.dev0).
 import argparse, re, sys
 from pathlib import Path
 import yaml
+from mac_project import resolve
 
 OSI_VERSION = "0.2.0.dev0"
 DIALECT = "ANSI_SQL"
@@ -33,7 +34,7 @@ def load(p):
 
 def datasets(root):
     out = []
-    for f in sorted((root / "tables").glob("*.yaml")):
+    for f in sorted((resolve(root).descriptors).glob("*.yaml")):
         d = load(f)
         t = d.get("table") or {}
         cols = [c for c in (d.get("columns") or []) if isinstance(c, dict) and c.get("name")]
@@ -62,7 +63,7 @@ def datasets(root):
 
 
 def relationships(root):
-    f = root / "edges.yaml"
+    f = resolve(root).ontology / "edges.yaml"
     if not f.exists():
         return []
     out = []
@@ -108,7 +109,7 @@ def main():
 
     # model name: the source label off any table's metadata, else the dir name
     name = root.name
-    for f in (root / "tables").glob("*.yaml"):
+    for f in (resolve(root).descriptors).glob("*.yaml"):
         src = ((load(f).get("metadata") or {}).get("source"))
         if src:
             name = str(src).lower(); break

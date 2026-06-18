@@ -30,6 +30,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from mac_project import resolve
 from rdflib import Graph, Namespace, Literal, URIRef, BNode, RDF, RDFS, XSD
 from rdflib.collection import Collection
 
@@ -47,7 +48,7 @@ def load(p):
 
 
 def table_cols(root, name):
-    f = root / "tables" / f"{name}.yaml"
+    f = resolve(root).descriptors / f"{name}.yaml"
     if not f.exists():
         return []
     return [c for c in (load(f).get("columns") or []) if isinstance(c, dict) and c.get("name")]
@@ -67,7 +68,7 @@ def ground_table(d):
 def build_shapes(root):
     """Return (graph, MAC namespace, ontology-name). Pure projection — no validation."""
     name = root.name
-    for f in (root / "concepts").glob("**/*.yaml"):
+    for f in (resolve(root).ontology / "concepts").glob("**/*.yaml"):
         src = (load(f).get("metadata") or {}).get("source")
         if src:
             name = str(src).lower()
@@ -80,7 +81,7 @@ def build_shapes(root):
     g.bind("rdfs", RDFS)
     g.bind("xsd", XSD)
 
-    concepts = [load(f) for f in sorted((root / "concepts").glob("**/*.yaml"))]
+    concepts = [load(f) for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml"))]
     node_concepts = {(d.get("concept") or {}).get("name"): d
                      for d in concepts if (d.get("concept") or {}).get("class") in NODE_CLASSES
                      and (d.get("concept") or {}).get("name")}
@@ -127,7 +128,7 @@ def build_shapes(root):
                  message=(f"{nm}.{col['name']} is the identity key — exactly one required" if is_pk else None))
 
     # 2) edges -> object-property shapes on the From shape (range + cardinality from the `to` endpoint)
-    ef = root / "edges.yaml"
+    ef = resolve(root).ontology / "edges.yaml"
     for e in (load(ef).get("edges") or []) if ef.exists() else []:
         ep = e.get("endpoints") or {}
         frm, to = (ep.get("from") or {}), (ep.get("to") or {})

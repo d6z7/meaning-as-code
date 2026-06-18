@@ -10,13 +10,6 @@
     rdfs:label "Category shape" ;
     sh:property [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "parent_id" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Category.parent_id ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
             sh:message "Category.category_id is the identity key — exactly one required" ;
             sh:minCount 1 ;
             sh:name "category_id" ;
@@ -29,12 +22,26 @@
             sh:name "name" ;
             sh:nodeKind sh:Literal ;
             sh:path :Category.name ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "parent_id" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Category.parent_id ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Category .
 
 :CustomerShape a sh:NodeShape ;
     rdfs:label "Customer shape" ;
-    sh:property [ sh:datatype xsd:string ;
+    sh:property [ sh:datatype xsd:dateTime ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "created_at" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Customer.created_at ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "email" ;
@@ -48,61 +55,12 @@
             sh:name "customer_id" ;
             sh:nodeKind sh:Literal ;
             sh:path :Customer.customer_id ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:dateTime ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "created_at" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Customer.created_at ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Customer .
 
 :OrderShape a sh:NodeShape ;
     rdfs:label "Order shape" ;
-    sh:property [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "Order.order_id is the identity key — exactly one required" ;
-            sh:minCount 1 ;
-            sh:name "order_id" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.order_id ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "status" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.status ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:dateTime ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "delivered_at" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.delivered_at ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:decimal ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "gross_amount" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.gross_amount ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:dateTime ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "shipped_at" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.shipped_at ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:in ( "PLACED"^^xsd:string "PAID"^^xsd:string "SHIPPED"^^xsd:string "DELIVERED"^^xsd:string "RETURNED"^^xsd:string "CANCELLED"^^xsd:string ) ;
-            sh:message "OrderStatus is a closed code list (6 values): PLACED, PAID, SHIPPED, DELIVERED, RETURNED, CANCELLED" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Order.status ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:dateTime ;
+    sh:property [ sh:datatype xsd:dateTime ;
             sh:maxCount 1 ;
             sh:message "None" ;
             sh:name "placed_at" ;
@@ -112,9 +70,51 @@
         [ sh:datatype xsd:dateTime ;
             sh:maxCount 1 ;
             sh:message "None" ;
+            sh:name "delivered_at" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.delivered_at ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:in ( "PLACED"^^xsd:string "PAID"^^xsd:string "SHIPPED"^^xsd:string "DELIVERED"^^xsd:string "RETURNED"^^xsd:string "CANCELLED"^^xsd:string ) ;
+            sh:message "OrderStatus is a closed code list (6 values): PLACED, PAID, SHIPPED, DELIVERED, RETURNED, CANCELLED" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.status ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "Order.order_id is the identity key — exactly one required" ;
+            sh:minCount 1 ;
+            sh:name "order_id" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.order_id ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:dateTime ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "shipped_at" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.shipped_at ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:dateTime ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
             sh:name "paid_at" ;
             sh:nodeKind sh:Literal ;
             sh:path :Order.paid_at ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "customer_id" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.customer_id ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "status" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Order.status ;
             sh:severity sh:Violation ],
         [ sh:class :Customer ;
             sh:maxCount 1 ;
@@ -123,12 +123,12 @@
             sh:nodeKind sh:IRI ;
             sh:path :Order.placedBy ;
             sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
+        [ sh:datatype xsd:decimal ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "customer_id" ;
+            sh:name "gross_amount" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Order.customer_id ;
+            sh:path :Order.gross_amount ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Order .
 
@@ -137,9 +137,9 @@
     sh:property [ sh:datatype xsd:string ;
             sh:maxCount 1 ;
             sh:message "None" ;
-            sh:name "category_id" ;
+            sh:name "name" ;
             sh:nodeKind sh:Literal ;
-            sh:path :Product.category_id ;
+            sh:path :Product.name ;
             sh:severity sh:Violation ],
         [ sh:class :Category ;
             sh:maxCount 1 ;
@@ -147,13 +147,6 @@
             sh:minCount 0 ;
             sh:nodeKind sh:IRI ;
             sh:path :Product.belongsToCategory ;
-            sh:severity sh:Violation ],
-        [ sh:datatype xsd:string ;
-            sh:maxCount 1 ;
-            sh:message "None" ;
-            sh:name "name" ;
-            sh:nodeKind sh:Literal ;
-            sh:path :Product.name ;
             sh:severity sh:Violation ],
         [ sh:datatype xsd:decimal ;
             sh:maxCount 1 ;
@@ -169,6 +162,13 @@
             sh:name "sku" ;
             sh:nodeKind sh:Literal ;
             sh:path :Product.sku ;
+            sh:severity sh:Violation ],
+        [ sh:datatype xsd:string ;
+            sh:maxCount 1 ;
+            sh:message "None" ;
+            sh:name "category_id" ;
+            sh:nodeKind sh:Literal ;
+            sh:path :Product.category_id ;
             sh:severity sh:Violation ] ;
     sh:targetClass :Product .
 

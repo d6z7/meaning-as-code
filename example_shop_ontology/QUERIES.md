@@ -1,18 +1,18 @@
 # Shop — from question to SQL, generated *from the ontology*
 
 Each question becomes SQL by **reading the model**: `FROM`/columns from a concept's `grounding` →
-`tables/<t>.yaml`; `JOIN … ON …` from an **edge**'s `join_rule`; the measure expression from a **rule**'s
+`data/datasets/<t>.yaml`; `JOIN … ON …` from an **edge**'s `join_rule`; the measure expression from a **rule**'s
 `template`. Turning the question into an intent (which measure, which slice) is the one probabilistic
 step; resolving that intent to tables, columns and joins is deterministic execution against the model.
 
-Schema: `shop_warehouse`. The model declares exactly **two** joins (`edges.yaml`):
+Schema: `shop_warehouse`. The model declares exactly **two** joins (`ontology/edges.yaml`):
 
 ```
 orders.customer_id   = customers.customer_id    (order__placed_by__customer)
 products.category_id = categories.category_id   (product__belongs_to__category)
 ```
 
-Net **Revenue** is rule `net_revenue` (`rules.yaml`): `gross − refunds`, **only paid orders**
+Net **Revenue** is rule `net_revenue` (`ontology/rules.yaml`): `gross − refunds`, **only paid orders**
 (`paid_at IS NOT NULL`), refunds `LEFT JOIN`ed so unrefunded orders keep their full gross.
 
 ---
@@ -21,7 +21,7 @@ Net **Revenue** is rule `net_revenue` (`rules.yaml`): `gross − refunds`, **onl
 
 **Intent → ontology.** Measure = Revenue (rule `net_revenue` → expression + the *only-paid* condition);
 period filter on `orders.placed_at` (role `value`, `x-subrole: temporal`). Refunds are a **finer grain**
-than orders (`tables/refunds.yaml`: "zero or more rows per order"), so they are pre-aggregated to the
+than orders (`data/datasets/refunds.yaml`: "zero or more rows per order"), so they are pre-aggregated to the
 order grain before netting — honoring the Order grain (one row per order) instead of fanning it out.
 
 ```sql
@@ -40,7 +40,7 @@ WHERE o.paid_at IS NOT NULL                                        -- rule condi
 ## Q2. "Net revenue by customer (email)."
 
 **Intent → ontology.** Same Revenue rule; the per-customer slice uses the only join that reaches customer
-attributes: edge `order__placed_by__customer`. `email` lives on `customers` (`tables/customers.yaml`).
+attributes: edge `order__placed_by__customer`. `email` lives on `customers` (`data/datasets/customers.yaml`).
 
 ```sql
 SELECT c.email,

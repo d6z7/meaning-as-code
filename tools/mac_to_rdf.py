@@ -18,6 +18,7 @@ Usage:  python3 tools/mac_to_rdf.py <ontology_root> [-o out.ttl]
 import argparse, sys
 from pathlib import Path
 import yaml
+from mac_project import resolve
 from rdflib import Graph, Namespace, Literal, URIRef, RDF, RDFS, OWL, XSD
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
@@ -30,7 +31,7 @@ def load(p): return yaml.safe_load(Path(p).read_text()) or {}
 
 
 def table_cols(root, name):
-    f = root / "tables" / f"{name}.yaml"
+    f = resolve(root).descriptors / f"{name}.yaml"
     if not f.exists():
         return []
     return [c for c in (load(f).get("columns") or []) if isinstance(c, dict) and c.get("name")]
@@ -42,7 +43,7 @@ def main():
     a = ap.parse_args(); root = Path(a.root)
 
     name = root.name
-    for f in (root / "concepts").glob("**/*.yaml"):
+    for f in (resolve(root).ontology / "concepts").glob("**/*.yaml"):
         src = ((load(f).get("metadata") or {}).get("source"))
         if src: name = str(src).lower(); break
 
@@ -52,7 +53,7 @@ def main():
     g.add((onto, RDF.type, OWL.Ontology)); g.add((onto, RDFS.label, Literal(name)))
 
     classes = {}   # concept name -> class URI
-    for f in sorted((root / "concepts").glob("**/*.yaml")):
+    for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml")):
         d = load(f); c = d.get("concept") or {}
         if c.get("class") not in NODE_CLASSES or not c.get("name"):
             continue
@@ -71,7 +72,7 @@ def main():
             if col.get("description"):
                 g.add((dp, RDFS.comment, Literal(" ".join(str(col["description"]).split()))))
 
-    for e in (load(root / "edges.yaml").get("edges") or []) if (root / "edges.yaml").exists() else []:
+    for e in (load(resolve(root).ontology / "edges.yaml").get("edges") or []) if (resolve(root).ontology / "edges.yaml").exists() else []:
         ep = e.get("endpoints") or {}; frm, to = (ep.get("from") or {}), (ep.get("to") or {})
         fc, tc, role = frm.get("concept"), to.get("concept"), frm.get("role") or e.get("edge_id")
         if fc not in classes or tc not in classes:
