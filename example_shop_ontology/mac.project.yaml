@@ -1,0 +1,7 @@
+# mac.project.yaml — declares the two-plane layout (see ../design/two-plane-layout.md).
+# Data plane (how the data is made) vs ontology plane (what it means); the ontology may reference
+# data/datasets/ (the seam) and nothing else of the data plane.
+planes:
+  data: data
+  ontology: ontology
+descriptors: data/datasets

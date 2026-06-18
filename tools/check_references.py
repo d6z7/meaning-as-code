@@ -43,6 +43,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from mac_project import plane_prefixes
 
 try:
     import yaml
@@ -104,7 +105,7 @@ def walk_strings(node, path=""):
     elif isinstance(node, str):
         yield path, node
 
-LAYER_DIRS = ("concepts", "tables", "rules.yaml", "rules.yml", "edges.yaml", "edges.yml")
+LAYER_DIRS = ("concepts", "tables", "datasets", "rules.yaml", "rules.yml", "edges.yaml", "edges.yml")
 
 def source_of(relpath: str) -> str:
     """The data-source key for a file: the path prefix that sits ABOVE the layer dir/file
@@ -166,6 +167,7 @@ class ReferenceChecker:
         whose refs are repo-relative (e.g. root=repo, scan_subdir='public')."""
         self.root = root.resolve()
         self.scan_root = (self.root / scan_subdir).resolve() if scan_subdir else self.root
+        self._planes = plane_prefixes(root)   # two-plane: ['data','ontology'] — collapsed to one source
         self.idx = Index()
         self.findings: list[Finding] = []
         # v0.6: framework vocab (mac.*) — references from any scanned file must resolve to a defined term.
@@ -176,7 +178,13 @@ class ReferenceChecker:
     # -- hooks an application overrides -------------------------------------------------
 
     def source_of(self, relpath: str) -> str:
-        return source_of(relpath)
+        s = source_of(relpath)
+        # two-plane: a plane dir (ontology/, data/) is not a source — strip it so the ontology plane and
+        # the data plane share one source (a two-plane project is single-source).
+        parts = s.split("/") if s else []
+        if parts and parts[0] in self._planes:
+            return "/".join(parts[1:])
+        return s
 
     def index_file(self, relpath: str, doc) -> None:
         """Called once per parsed yaml during indexing. Override to index extra referable objects."""
@@ -279,7 +287,7 @@ class ReferenceChecker:
                         if isinstance(s, dict) and s.get("name"):
                             self.idx.referable_names.setdefault(src, set()).add(s["name"])
 
-            if in_layer(r, "tables"):
+            if in_layer(r, "tables") or in_layer(r, "datasets"):   # datasets/ = two-plane descriptor dir
                 self.idx.table_files.setdefault(src, set()).add(p.stem)
 
             if p.name in ("rules.yaml", "rules.yml"):

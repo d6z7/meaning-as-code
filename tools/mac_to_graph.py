@@ -17,6 +17,7 @@ Usage:  python3 tools/mac_to_graph.py <ontology_root> [-o out.cypher]
 import argparse, re, sys
 from pathlib import Path
 import yaml
+from mac_project import resolve
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
 
@@ -26,7 +27,7 @@ def upper_snake(s): return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s or "").upper
 
 
 def table_cols(root, name):
-    f = root / "tables" / f"{name}.yaml"
+    f = resolve(root).descriptors / f"{name}.yaml"
     if not f.exists():
         return [], None
     d = load(f)
@@ -37,7 +38,7 @@ def table_cols(root, name):
 
 def nodes(root):
     out = {}
-    for f in sorted((root / "concepts").glob("**/*.yaml")):
+    for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml")):
         d = load(f); c = d.get("concept") or {}
         if c.get("class") not in NODE_CLASSES or not c.get("name"):
             continue
@@ -51,7 +52,7 @@ def nodes(root):
 
 
 def rels(root):
-    f = root / "edges.yaml"
+    f = resolve(root).ontology / "edges.yaml"
     if not f.exists():
         return []
     out = []
@@ -73,7 +74,7 @@ def main():
 
     N, R = nodes(root), rels(root)
     name = root.name
-    for f in (root / "concepts").glob("**/*.yaml"):
+    for f in (resolve(root).ontology / "concepts").glob("**/*.yaml"):
         src = ((load(f).get("metadata") or {}).get("source"))
         if src: name = str(src).lower(); break
 
