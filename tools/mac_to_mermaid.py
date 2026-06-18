@@ -78,6 +78,16 @@ def gather(root):
     return name, concepts, datasets, grounded, edges
 
 
+def er_type(t):
+    """Mermaid erDiagram attribute types must be a SINGLE bare token — '<', '>', '(', ',', spaces all
+    break the parser. Collapse any generic/parametric type to a display alias: array<string> ->
+    array_string, map<string,int> -> map_string_int, decimal(10,2) -> decimal_10_2."""
+    s = "".join(ch if (ch.isalnum() or ch == "_") else "_" for ch in str(t or "string"))
+    while "__" in s:
+        s = s.replace("__", "_")
+    return s.strip("_") or "string"
+
+
 def build_er(name, concepts, datasets, grounded, edges):
     """Mermaid erDiagram: entities = grounded node-class concepts, attributes = their dataset columns
     (typed, PK/FK), relationships = edges (crow's-foot cardinality)."""
@@ -101,7 +111,7 @@ def build_er(name, concepts, datasets, grounded, edges):
         for c in cols:
             if not (isinstance(c, dict) and c.get("name")):
                 continue
-            typ = str(c.get("type", "string")).split()[0] or "string"
+            typ = er_type(c.get("type"))
             role = c.get("role")
             key = " PK" if role in ("primary_key", "composite_key_part") else (" FK" if role == "foreign_key" else "")
             out.append(f"    {typ} {c['name']}{key}")
