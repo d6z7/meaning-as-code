@@ -88,17 +88,26 @@ Today a TableFile single-homes **both** a column's *structure* (name, type, key,
 *meaning* (prose: "iso2 is the identity"; "this label is a perspective, not the identity"). The two planes
 want these on opposite sides. We get there in two steps:
 
-- **Option A (relocate) — first.** Move the descriptor as-is into `data/datasets/`. Pure path change; zero
-  semantic risk; gates stay green. Proves the planes, the seam, and the manifest.
-- **Option B (clean split) — then.** Column **structure** stays in `data/datasets/`; column **meaning**
-  moves **up** into the ontology, carried by the field-anchored typed `contract.rules[].binds` that the
-  framework already has. The data plane becomes pure "what the pipeline emits"; the ontology owns all
-  meaning.
+- **Option A (relocate) — transitional.** Move the descriptor as-is into `data/datasets/`. Pure path
+  change; zero semantic risk; gates stay green. Proves the planes, the seam, and the manifest. It is *not*
+  the end-state: the data plane still physically contains ontology knowledge (column prose), so the planes
+  are split by directory but still entangled by content.
+- **Option B (clean split) — RATIFIED end-state.** Column **structure** (name, type, key, role) stays in
+  `data/datasets/`; column **meaning** moves **up** into the ontology, carried by the field-anchored typed
+  `contract.rules[].binds` the framework already has. The data plane becomes pure "what the pipeline
+  emits"; the ontology owns *all* meaning. Only B makes "clean data first, semantics on top" literally true
+  — there is no semantics left in the data plane.
 
 Option B intentionally **re-splits** what v0.5 fused (it had single-homed structure+meaning in the Physical
 layer) — but in the right direction, and as a continuation of the field-anchoring work, not against it.
 Because that field-meaning is load-bearing (it is what lets an agent generate correct SQL without
 probing), B is a deliberate, gate-green migration — never a duplication.
+
+**B has one consequence beyond moving text: meaning gets a single home that *everything* reads.** Today the
+projectors source field meaning from the descriptor (OKF's `# Schema` notes, RDF's `rdfs:comment`). Under B
+the descriptor is structure-only, so the projectors must read field meaning from the ontology's
+`contract.rules[].binds` instead. This is the point, not a cost: after B, gates *and* projectors both read
+meaning from the one place it lives. The projector update is part of B.
 
 ## Conformance impact
 
