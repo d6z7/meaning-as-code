@@ -26,7 +26,7 @@ Grounded in `shop_warehouse.products`.
 |---|---|---|---|
 | `sku` | string | primary_key |  |
 | `name` | string | value |  |
-| `category_id` | string | foreign_key | → categories.category_id (belongs_to_category edge) |
+| `category_id` | string | foreign_key |  |
 | `list_price` | decimal | value |  |
 
 ## Relationships

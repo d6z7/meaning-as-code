@@ -35,7 +35,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from mac_project import resolve
+from mac_project import resolve, meaning_by_table
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
 TYPE_OF = {"entity": "Entity", "event": "Event", "measure": "Metric",
@@ -93,6 +93,7 @@ def build_bundle(root):
 
     names = {(d["concept"]["name"]) for _, d in concepts}                      # all concept names in bundle
     edges = (load(resolve(root).ontology / "edges.yaml").get("edges") or []) if (resolve(root).ontology / "edges.yaml").exists() else []
+    mbt = meaning_by_table([d for _, d in concepts], lambda d: ground_table(d)[0])  # Option B: meaning from field rules
 
     files = {}
     listing = []     # (title, type, desc, link) for index.md
@@ -126,8 +127,9 @@ def build_bundle(root):
             b += [f"# Schema", "", f"Grounded in `{schema + '.' if schema else ''}{tbl}`.", "",
                   "| column | type | role | description |", "|---|---|---|---|"]
             for col in cols:
+                meaning = mbt.get((tbl, col["name"])) or col.get("description", "")   # field rule first
                 b.append(f"| `{col['name']}` | {col.get('type', '')} | {col.get('role', '')} "
-                         f"| {' '.join(str(col.get('description', '')).split())} |")
+                         f"| {' '.join(str(meaning).split())} |")
             b.append("")
 
         # # Values — closed enumeration code list

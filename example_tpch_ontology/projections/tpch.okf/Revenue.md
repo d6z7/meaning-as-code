@@ -30,14 +30,14 @@ Grounded in `tpch.lineitem`.
 | `l_partkey` | integer | foreign_key | → part.p_partkey (with l_suppkey = partsupp) |
 | `l_suppkey` | integer | foreign_key | → supplier.s_suppkey (with l_partkey = partsupp) |
 | `l_quantity` | decimal | value |  |
-| `l_extendedprice` | decimal | value | list price × quantity (gross, pre-discount) |
-| `l_discount` | decimal | value | fractional discount 0..1 |
+| `l_extendedprice` | decimal | value | use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price) |
+| `l_discount` | decimal | value | use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price) |
 | `l_tax` | decimal | value |  |
 | `l_returnflag` | string | discriminator | R returned · A/N not |
-| `l_linestatus` | string | discriminator | O in-flight · F fulfilled |
+| `l_linestatus` | string | discriminator | a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment |
 | `l_shipdate` | date | value |  |
 | `l_commitdate` | date | value |  |
-| `l_receiptdate` | date | value |  |
+| `l_receiptdate` | date | value | a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment |
 | `l_shipmode` | string | discriminator |  |
 | `l_comment` | string | value |  |
 

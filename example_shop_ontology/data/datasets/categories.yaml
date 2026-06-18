@@ -19,7 +19,7 @@ table:
 columns:
   - { name: category_id, type: string, role: primary_key }
   - { name: name,        type: string, role: value, x-subrole: attribute }
-  - { name: parent_id,   type: string, role: foreign_key, description: "→ categories.category_id (self-ref: nested categories)" }
+  - { name: parent_id,   type: string, role: foreign_key }
 
 foreign_keys:
   - { name: fk_parent, from_column: parent_id, to_table: categories, to_column: category_id }

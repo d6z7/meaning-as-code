@@ -19,7 +19,7 @@ table:
 columns:
   - { name: sku,         type: string, role: primary_key }
   - { name: name,        type: string, role: value, x-subrole: attribute }
-  - { name: category_id, type: string, role: foreign_key, description: "→ categories.category_id (belongs_to_category edge)" }
+  - { name: category_id, type: string, role: foreign_key }
   - { name: list_price,  type: decimal, role: value, x-subrole: attribute }
 
 foreign_keys:

@@ -18,7 +18,14 @@ Usage:  python3 tools/mac_to_rdf.py <ontology_root> [-o out.ttl]
 import argparse, sys
 from pathlib import Path
 import yaml
-from mac_project import resolve
+from mac_project import resolve, meaning_by_table
+
+
+def gtable(d):
+    """The relation name a concept grounds to (grounding.table or sources[].relation tail)."""
+    gr = d.get("grounding") or {}
+    return gr.get("table") or next((s.get("relation", "").split(".")[-1]
+                                    for s in (gr.get("sources") or []) if isinstance(s, dict)), None)
 from rdflib import Graph, Namespace, Literal, URIRef, RDF, RDFS, OWL, XSD
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
@@ -52,25 +59,27 @@ def main():
     onto = URIRef(str(MAC)[:-1])           # the ontology IRI (drop the trailing '#')
     g.add((onto, RDF.type, OWL.Ontology)); g.add((onto, RDFS.label, Literal(name)))
 
+    all_docs = [load(f) for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml"))]
+    mbt = meaning_by_table(all_docs, gtable)   # Option B: column meaning comes from field-anchored rules
+
     classes = {}   # concept name -> class URI
-    for f in sorted((resolve(root).ontology / "concepts").glob("**/*.yaml")):
-        d = load(f); c = d.get("concept") or {}
+    for d in all_docs:
+        c = d.get("concept") or {}
         if c.get("class") not in NODE_CLASSES or not c.get("name"):
             continue
         label = c["name"]; cls = MAC[label]; classes[label] = cls
         g.add((cls, RDF.type, OWL.Class)); g.add((cls, RDFS.label, Literal(label)))
         if c.get("definition"):
             g.add((cls, RDFS.comment, Literal(" ".join(str(c["definition"]).split()))))
-        gr = d.get("grounding") or {}
-        tbl = gr.get("table") or next((s.get("relation", "").split(".")[-1]
-                                       for s in (gr.get("sources") or []) if isinstance(s, dict)), None)
+        tbl = gtable(d)
         for col in (table_cols(root, tbl) if tbl else []):
             dp = URIRef(f"{MAC}{label}.{col['name']}")   # class-qualified -> unique, single domain
             g.add((dp, RDF.type, OWL.DatatypeProperty)); g.add((dp, RDFS.label, Literal(col["name"])))
             g.add((dp, RDFS.domain, cls))
             g.add((dp, RDFS.range, XSD_OF.get(str(col.get("type", "")).lower(), XSD.string)))
-            if col.get("description"):
-                g.add((dp, RDFS.comment, Literal(" ".join(str(col["description"]).split()))))
+            meaning = mbt.get((tbl, col["name"])) or col.get("description")  # field rule first, then descriptor
+            if meaning:
+                g.add((dp, RDFS.comment, Literal(" ".join(str(meaning).split()))))
 
     for e in (load(resolve(root).ontology / "edges.yaml").get("edges") or []) if (resolve(root).ontology / "edges.yaml").exists() else []:
         ep = e.get("endpoints") or {}; frm, to = (ep.get("from") or {}), (ep.get("to") or {})
