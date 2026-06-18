@@ -1,6 +1,6 @@
 # Design: the two-plane project layout (data plane · ontology plane)
 
-status: design — ratified target for a v0.1.7 structural option
+status: design — ratified; implemented on the v0.1.6 contract (opt-in per project via mac.project.yaml)
 scope: GENERIC — domain-neutral. Uses the shop example; no business domain.
 
 ## Why

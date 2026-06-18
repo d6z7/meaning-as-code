@@ -169,11 +169,11 @@ for the honest trade-offs and when *not* to use it.
 
 ## Status
 
-Release **v0.1.7** on the **v0.1.6 file-format contract** ([mac.schema.json](mac.schema.json) +
-[CONFORMANCE.md](CONFORMANCE.md)) — the `schema_version` of model files is unchanged; v0.1.7 adds tooling
-and structure *on top of* that contract, not a new file format. It ships three data-free gates (structural,
-referential, **constraint/shapes**) plus negative + layout test suites, the **two-plane layout** (data /
-ontology), and **six self-validating projectors** (OSI · RDF/OWL · SHACL · openCypher · OKF · Mermaid) —
-**proven on two worked domains of genuinely different shape.** It is a working, gated, vendor-neutral
+The framework and its file-format schema share one version, **v0.1.6** — a machine-checkable contract
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)) with three data-free gates
+(structural, referential, **constraint/shapes**) plus negative + layout test suites, the **two-plane
+layout** (data / ontology), and **six self-validating projectors** (OSI · RDF/OWL · SHACL · openCypher ·
+OKF · Mermaid) — **proven on two worked domains of genuinely different shape.** (Releasing bumps that one
+version everywhere at once — see [RELEASING.md](RELEASING.md).) It is a working, gated, vendor-neutral
 convention — deliberately lighter than a W3C standard, not a platform you buy. Feedback and adversarial
 testing on new domains are the most useful contributions.
