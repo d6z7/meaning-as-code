@@ -1,0 +1,87 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram name="shop-ontology" id="shop-ontology">
+    <mxGraphModel dx="960" dy="640" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="980" pageHeight="680" math="0" shadow="0" background="#FFFFFF">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="The Shop ontology — two planes (ontology / data), concepts coloured by class, edges as joins, dashed = grounding (the seam)" style="text;html=1;align=left;verticalAlign=middle;fontSize=12;fontStyle=2;fontColor=#555555;" vertex="1" parent="1">
+          <mxGeometry x="40" y="16" width="900" height="24" as="geometry" />
+        </mxCell>
+
+        <!-- ONTOLOGY PLANE container -->
+        <mxCell id="onto" value="ONTOLOGY PLANE  —  what it means  (concepts · edges · rules)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#9673a6;dashed=1;verticalAlign=top;fontStyle=1;fontColor=#9673a6;fontSize=11;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="50" width="900" height="320" as="geometry" />
+        </mxCell>
+
+        <!-- concept nodes -->
+        <mxCell id="customer" value="Customer&#10;«entity»" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="120" width="150" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="order" value="Order&#10;«event»" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="410" y="120" width="150" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="product" value="Product&#10;«reference»" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="730" y="120" width="150" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="revenue" value="Revenue&#10;«measure»  (net = gross − refunds)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="270" width="150" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="orderstatus" value="OrderStatus&#10;«enumeration» (closed)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="410" y="270" width="150" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="category" value="Category&#10;«grouping»  (rolls up Product)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="730" y="270" width="150" height="56" as="geometry" />
+        </mxCell>
+
+        <!-- ontology edges (joins, solid) -->
+        <mxCell id="e_placedby" value="placedBy  (0..N → 1)" style="endArrow=block;html=1;strokeColor=#333333;fontSize=10;fontColor=#333333;" edge="1" parent="1" source="order" target="customer">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e_belongs" value="belongsToCategory  (0..N → 0..1)" style="endArrow=block;html=1;strokeColor=#333333;fontSize=10;fontColor=#333333;" edge="1" parent="1" source="product" target="category">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- intra-ontology relations (dotted): typed-by / derived-from -->
+        <mxCell id="r_status" value="status typed by" style="endArrow=open;html=1;dashed=1;dashPattern=1 2;strokeColor=#666666;fontSize=9;fontColor=#666666;" edge="1" parent="1" source="order" target="orderstatus">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r_revenue" value="computed from" style="endArrow=open;html=1;dashed=1;dashPattern=1 2;strokeColor=#d6b656;fontSize=9;fontColor=#b8860b;" edge="1" parent="1" source="revenue" target="order">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- DATA PLANE container -->
+        <mxCell id="data" value="DATA PLANE  —  how the data is made  (datasets = structure only; the seam)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#999999;dashed=1;verticalAlign=top;fontStyle=1;fontColor=#777777;fontSize=11;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="40" y="420" width="900" height="220" as="geometry" />
+        </mxCell>
+
+        <!-- dataset descriptors (structure only) -->
+        <mxCell id="t_customers" value="customers&#10;(customer_id pk)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="90" y="470" width="150" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="t_orders" value="orders&#10;(order_id pk)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="470" width="150" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="t_refunds" value="refunds&#10;(refund_id pk → order_id)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="380" y="560" width="150" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="t_products" value="products&#10;(sku pk)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="730" y="470" width="150" height="46" as="geometry" />
+        </mxCell>
+        <mxCell id="t_categories" value="categories&#10;(category_id pk, parent_id)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#999999;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="730" y="560" width="150" height="46" as="geometry" />
+        </mxCell>
+
+        <!-- grounding lines (the seam: concept → dataset, dashed) -->
+        <mxCell id="g_customer" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;" edge="1" parent="1" source="customer" target="t_customers"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_order" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;" edge="1" parent="1" source="order" target="t_orders"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_product" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;" edge="1" parent="1" source="product" target="t_products"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_category" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;" edge="1" parent="1" source="category" target="t_categories"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_status" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;" edge="1" parent="1" source="orderstatus" target="t_orders"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_rev1" value="gross" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;fontSize=9;fontColor=#999999;" edge="1" parent="1" source="revenue" target="t_orders"><mxGeometry relative="1" as="geometry" /></mxCell>
+        <mxCell id="g_rev2" value="refunds" style="endArrow=open;html=1;dashed=1;strokeColor=#bbbbbb;fontSize=9;fontColor=#999999;" edge="1" parent="1" source="revenue" target="t_refunds"><mxGeometry relative="1" as="geometry" /></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

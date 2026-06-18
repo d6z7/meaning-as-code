@@ -23,6 +23,10 @@ The ontology references `data/datasets/` (the published schemas) and nothing els
 dependencies flow ontology → datasets, never back. (`tpch`, the sibling example, stays **flat** — no
 manifest — which is the back-compatible default.)
 
+**Picture:** [`shop_ontology.drawio.svg`](shop_ontology.drawio.svg) shows the whole thing — the ontology
+plane (concepts coloured by class, edges as joins) over the data plane (the dataset descriptors), with
+dashed grounding lines as the seam between them.
+
 This example also applies **Option B** (the design's end-state): the `data/datasets/` descriptors carry
 **structure only** (name · type · key · role), and every column's **meaning** lives in the ontology as a
 field-anchored `contract.rules[].binds` entry. So a column's prose isn't duplicated — it has one home, and
