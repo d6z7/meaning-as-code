@@ -26,9 +26,9 @@ Grounded in `tpch.supplier`.
 |---|---|---|---|
 | `s_suppkey` | integer | primary_key |  |
 | `s_name` | string | value |  |
-| `s_nationkey` | integer | foreign_key | → nation.n_nationkey (from_nation edge) |
+| `s_nationkey` | integer | foreign_key |  |
 | `s_phone` | string | value |  |
-| `s_acctbal` | decimal | value | account balance |
+| `s_acctbal` | decimal | value |  |
 | `s_comment` | string | value |  |
 
 ## Relationships

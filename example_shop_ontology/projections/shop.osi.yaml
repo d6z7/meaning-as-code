@@ -166,3 +166,12 @@ semantic_model:
     - category_id
     to_columns:
     - category_id
+  metrics:
+  - name: revenue
+    expression:
+      dialects:
+      - dialect: ANSI_SQL
+        expression: SUM(o.gross_amount) - COALESCE(SUM(r.refund_amount), 0)
+    description: Net revenue = gross order total minus refunds. Gross is orders.gross_amount; refunds are summed from the
+      refunds table per order (a returned order has one or more refund rows). Orders with no refund contribute their full
+      gross. This is the figure "Revenue" means by default.

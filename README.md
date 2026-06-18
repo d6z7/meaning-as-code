@@ -56,9 +56,10 @@ into a file you can diff, gate, and trust.
   Foundry split — datasets/transforms vs. ontology — but **vendor-neutral and in files you own**. Opt-in
   per project via `mac.project.yaml`; absent ⇒ flat (back-compatible). See
   [design/two-plane-layout.md](design/two-plane-layout.md).
-- **Two worked examples** — a shop (the two-plane *Option B* form — structure-only datasets, meaning in
-  field-anchored rules) and TPC-H (the *Option A* form; hierarchy, associative entity, composite key,
-  derived measure), each with a `validate.sh` (all three gates) and a `QUERIES.md` (question → SQL).
+- **Two worked examples, both two-plane Option B** (structure-only datasets; all column meaning
+  field-anchored in the ontology) — a shop, and TPC-H (richer: a hierarchy, an associative entity, a
+  composite-key fact, a derived measure, and four closed enumerations), each with a `validate.sh` (all
+  three gates) and a `QUERIES.md` (question → SQL).
 
 This repository is the complete, domain-neutral description of the framework, plus the worked examples.
 

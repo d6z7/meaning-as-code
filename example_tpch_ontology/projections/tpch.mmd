@@ -5,11 +5,15 @@ flowchart TB
     Revenue["Revenue<br/><i>«measure»</i>"]
     Nation["Nation<br/><i>«entity»</i>"]
     Region["Region<br/><i>«entity»</i>"]
+    LineStatus["LineStatus<br/><i>«enumeration»</i>"]
     LineItem["LineItem<br/><i>«event»</i>"]
+    OrderStatus["OrderStatus<br/><i>«enumeration»</i>"]
     Orders["Orders<br/><i>«entity»</i>"]
+    ReturnFlag["ReturnFlag<br/><i>«enumeration»</i>"]
     Part["Part<br/><i>«entity»</i>"]
     PartSupp["PartSupp<br/><i>«entity»</i>"]
     Customer["Customer<br/><i>«entity»</i>"]
+    MarketSegment["MarketSegment<br/><i>«enumeration»</i>"]
     Supplier["Supplier<br/><i>«entity»</i>"]
     Nation -->|"inRegion (1)"| Region
     Customer -->|"fromNation (1)"| Nation
@@ -34,11 +38,15 @@ flowchart TB
   Revenue -. grounds .-> t_lineitem
   Nation -. grounds .-> t_nation
   Region -. grounds .-> t_region
+  LineStatus -. grounds .-> t_lineitem
   LineItem -. grounds .-> t_lineitem
+  OrderStatus -. grounds .-> t_orders
   Orders -. grounds .-> t_orders
+  ReturnFlag -. grounds .-> t_lineitem
   Part -. grounds .-> t_part
   PartSupp -. grounds .-> t_partsupp
   Customer -. grounds .-> t_customer
+  MarketSegment -. grounds .-> t_customer
   Supplier -. grounds .-> t_supplier
   classDef entity fill:#dae8fc,stroke:#6c8ebf,color:#000;
   classDef event fill:#ffe6cc,stroke:#d79b00,color:#000;
@@ -49,5 +57,6 @@ flowchart TB
   classDef dataset fill:#ffffff,stroke:#999,color:#333;
   class Revenue measure;
   class Nation,Region,Orders,Part,PartSupp,Customer,Supplier entity;
+  class LineStatus,OrderStatus,ReturnFlag,MarketSegment enumeration;
   class LineItem event;
   class t_customer,t_lineitem,t_nation,t_orders,t_part,t_partsupp,t_region,t_supplier dataset;

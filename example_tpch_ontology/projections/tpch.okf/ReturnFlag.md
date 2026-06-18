@@ -1,23 +1,22 @@
 ---
-type: Metric
-title: Revenue
-description: 'The monetary value of sales, net of discount: per order line, l_extendedprice
-  × (1 − l_discount).'
+type: Enumeration
+title: Return Flag
+description: Whether an order line was returned.
 resource: table://tpch/lineitem
 tags:
 - TPCH
-- measure
+- enumeration
 - confidence:C
-timestamp: '2026-06-17'
+timestamp: '2026-06-18'
 ---
 
-# Revenue
+# Return Flag
 
-The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount). "Revenue" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue), not a stored column.
+Whether an order line was returned. The code list the l_returnflag discriminator column carries — R for returned; A and N are the two not-returned codes (TPC-H splits not-returned by receipt date).
 
 ## Purpose
 
-The headline financial measure — sliced by part, customer, supplier, geography and time; the numerator of TPC-H's revenue and market-share queries.
+Stable codes + meanings so "returned lines" is one agreed filter (l_returnflag = 'R') rather than guessing which letters mean returned.
 
 # Schema
 
@@ -41,10 +40,16 @@ Grounded in `tpch.lineitem`.
 | `l_shipmode` | string | discriminator |  |
 | `l_comment` | string | value |  |
 
-## Derivation
+# Values
 
-Computed by rule `net_revenue` (see the MAC rules layer); do not re-derive the formula.
+Closed code list — these 3 are the complete set.
+
+| code | label | meaning |
+|---|---|---|
+| `R` | Returned | the line was returned |
+| `A` | Not returned | not returned (TPC-H's first not-returned class) |
+| `N` | Not returned | not returned (TPC-H's second not-returned class) |
 
 # Citations
 
-1. MAC concept source of record: `concepts/finance/revenue.yaml` (schema_version 0.1.6, confidence C).
+1. MAC concept source of record: `concepts/order/return_flag.yaml` (schema_version 0.1.6, confidence C).

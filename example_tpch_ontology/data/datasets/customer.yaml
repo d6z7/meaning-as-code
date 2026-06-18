@@ -18,10 +18,10 @@ table:
 columns:
   - { name: c_custkey,    type: integer, role: primary_key }
   - { name: c_name,       type: string,  role: value }
-  - { name: c_nationkey,  type: integer, role: foreign_key, description: "→ nation.n_nationkey (from_nation edge)" }
+  - { name: c_nationkey,  type: integer, role: foreign_key }
   - { name: c_phone,      type: string,  role: value }
-  - { name: c_acctbal,    type: decimal, role: value, x-subrole: measure, description: "account balance" }
-  - { name: c_mktsegment, type: string,  role: discriminator, description: "market segment (BUILDING, AUTOMOBILE, …)" }
+  - { name: c_acctbal,    type: decimal, role: value, x-subrole: measure }
+  - { name: c_mktsegment, type: string,  role: discriminator }
   - { name: c_comment,    type: string,  role: value }
 
 foreign_keys:

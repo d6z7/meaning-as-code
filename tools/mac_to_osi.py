@@ -86,7 +86,7 @@ def relationships(root):
 
 
 def metrics(root):
-    f = root / "rules.yaml"
+    f = resolve(root).ontology / "rules.yaml"     # two-plane aware (was root/rules.yaml)
     if not f.exists():
         return []
     out = []

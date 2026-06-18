@@ -24,13 +24,24 @@ benchmark — public, precisely specified, not real data). It complements `examp
   (shipped → received → returned); `part_of` an order and `supplied_via` a PartSupp (composite join).
 - **Revenue** (`measure`, derived) — net revenue `SUM(l_extendedprice × (1 − l_discount))`, a `Flow`
   referencing `mac.MeasureType.Flow`; computed by the rule, never stored.
+- **OrderStatus, LineStatus, ReturnFlag, MarketSegment** (`enumeration`) — the four closed code-sets the
+  discriminator columns carry (O/P/F · O/F · R/A/N · the five segments). Under **Option B** their meaning
+  lives here in the ontology, not as prose in the data-plane descriptors — and each projects to a SHACL
+  `sh:in` value constraint.
+
+## Two-plane, Option B
+
+This example is a two-plane **Option B** project (see [`../design/two-plane-layout.md`](../design/two-plane-layout.md)):
+the `data/datasets/` descriptors are **structure only** (name · type · key · role), and **all** column
+meaning lives in the ontology — measure semantics as field-anchored `contract.rules` on `LineItem`, and the
+discriminator code-sets as the four closed enumerations above. Nothing semantic is left in the data plane.
 
 ## The four layers, all present
 
 | Layer | Files | Shows |
 |---|---|---|
-| **Concept** | `ontology/concepts/**` (9) | the `entity` / `event` / `measure` classes; a hierarchy; an associative entity; a derived measure |
-| **Physical** | `data/datasets/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs |
+| **Concept** | `ontology/concepts/**` (13) | the `entity` / `event` / `measure` / `enumeration` classes; a hierarchy; an associative entity; a derived measure; four closed code-sets |
+| **Physical** | `data/datasets/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs — **structure only** (Option B) |
 | **Edges** | `ontology/edges.yaml` (8) | every relation between concepts, incl. a **composite** join (`lineitem → partsupp`) |
 | **Rules** | `ontology/rules.yaml` (1) | `net_revenue` — a derivation with a renderable SQL template |
 | **Field-anchoring** | `LineItem.contract.rules` (2) | typed behavioural rules **`binds`**-ed to the columns they govern (e.g. revenue → `l_extendedprice`, `l_discount`); the `rule-binds-grounded` shape verifies, cross-file, that each bind is a real grounded column |
@@ -42,7 +53,7 @@ benchmark — public, precisely specified, not real data). It complements `examp
 ```
 
 It runs, in order, the three data-free **L1** gates — structural (`validate_schema.py` → `mac.schema.json`,
-19/19 clean), referential (`check_references.py` → 0 orphans), and constraint (`check_shapes.py` → the
+every model file clean), referential (`check_references.py` → 0 orphans), and constraint (`check_shapes.py` → the
 built-in shapes, incl. the cross-file `rule-binds-grounded` invariant) — and exits non-zero if any fails.
 L1 proves *conformance*, not correctness (it does not assert a column exists in a warehouse); L2/L3 remain
 (see [../CONFORMANCE.md](../CONFORMANCE.md)).

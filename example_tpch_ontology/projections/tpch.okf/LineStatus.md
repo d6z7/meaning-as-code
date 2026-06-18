@@ -1,23 +1,23 @@
 ---
-type: Metric
-title: Revenue
-description: 'The monetary value of sales, net of discount: per order line, l_extendedprice
-  × (1 − l_discount).'
+type: Enumeration
+title: Line Status
+description: The fulfilment status of a single order line — whether the line has shipped/been
+  fulfilled or is still in flight.
 resource: table://tpch/lineitem
 tags:
 - TPCH
-- measure
+- enumeration
 - confidence:C
-timestamp: '2026-06-17'
+timestamp: '2026-06-18'
 ---
 
-# Revenue
+# Line Status
 
-The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount). "Revenue" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue), not a stored column.
+The fulfilment status of a single order line — whether the line has shipped/been fulfilled or is still in flight. The code list the l_linestatus discriminator column carries.
 
 ## Purpose
 
-The headline financial measure — sliced by part, customer, supplier, geography and time; the numerator of TPC-H's revenue and market-share queries.
+Stable codes + meanings for line fulfilment so a filter uses one agreed vocabulary rather than matching a single-letter column directly.
 
 # Schema
 
@@ -41,10 +41,15 @@ Grounded in `tpch.lineitem`.
 | `l_shipmode` | string | discriminator |  |
 | `l_comment` | string | value |  |
 
-## Derivation
+# Values
 
-Computed by rule `net_revenue` (see the MAC rules layer); do not re-derive the formula.
+Closed code list — these 2 are the complete set.
+
+| code | label | meaning |
+|---|---|---|
+| `O` | Open | in-flight — not yet fulfilled |
+| `F` | Fulfilled | fulfilled |
 
 # Citations
 
-1. MAC concept source of record: `concepts/finance/revenue.yaml` (schema_version 0.1.6, confidence C).
+1. MAC concept source of record: `concepts/order/line_status.yaml` (schema_version 0.1.6, confidence C).

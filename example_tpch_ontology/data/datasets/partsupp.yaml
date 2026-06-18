@@ -16,10 +16,10 @@ table:
   description: "One row per (part, supplier) pair — the associative table reifying which suppliers stock which parts, with availability and cost. Grounding target for the PartSupp associative entity."
 
 columns:
-  - { name: ps_partkey,   type: integer, role: composite_key_part, description: "→ part.p_partkey" }
-  - { name: ps_suppkey,   type: integer, role: composite_key_part, description: "→ supplier.s_suppkey" }
-  - { name: ps_availqty,  type: integer, role: value, x-subrole: measure, description: "available quantity" }
-  - { name: ps_supplycost, type: decimal, role: value, x-subrole: measure, description: "cost the supplier charges for the part" }
+  - { name: ps_partkey,   type: integer, role: composite_key_part }
+  - { name: ps_suppkey,   type: integer, role: composite_key_part }
+  - { name: ps_availqty,  type: integer, role: value, x-subrole: measure }
+  - { name: ps_supplycost, type: decimal, role: value, x-subrole: measure }
   - { name: ps_comment,   type: string,  role: value }
 
 foreign_keys:
