@@ -10,7 +10,7 @@ scope: GENERIC — domain-neutral. Names technology standards/products as target
 The positioning argument ([positioning.md](positioning.md)) ends on a claim: MAC is *vendor-neutral
 meaning you own, that **projects onto** whatever you run.* This piece makes that claim concrete. "Projects
 onto" is not a slogan — it is running code. One MAC ontology, authored and governed once, is emitted
-**mechanically** onto five target formats across four platform families, and each projection **validates in
+**mechanically** onto six target formats across five platform families, and each projection **validates in
 its target's own terms** — not on the author's say-so.
 
 ## The discipline: projections are derived, never authored
@@ -24,7 +24,7 @@ in one place, govern in one place, and re-run the projectors whenever the model 
 That direction is the whole point. Meaning flows *out* of MAC to the tools; it is never smeared *across*
 them.
 
-## Five projections, four families
+## Six projections, five families
 
 | Projector | Target | Standard / vendor home | Self-validation |
 |---|---|---|---|
@@ -33,10 +33,11 @@ them.
 | [`mac_to_rdf.py`](../tools/mac_to_rdf.py) | **RDF / OWL** (Turtle) | W3C; Stardog, Neptune-RDF, GraphDB | **re-parses** as valid RDF (round-trip) |
 | [`mac_to_shacl.py`](../tools/mac_to_shacl.py) | **SHACL** shapes | W3C | a real engine (**pySHACL**) accepts good data, rejects broken data |
 | [`mac_to_okf.py`](../tools/mac_to_okf.py) | **OKF** knowledge bundle | Google Cloud Open Knowledge Format v0.1 | every doc carries the required `type`; every internal link resolves |
+| [`mac_to_mermaid.py`](../tools/mac_to_mermaid.py) | **Mermaid** diagram | renders inline on GitHub / any Mermaid viewer | renders as a valid flowchart; a hand-laid drawio companion exists for the curated hero image |
 
-Four families because these are genuinely different jobs: a **semantic-interchange** format (OSI), a
-**graph** query model (openCypher), the **RDF/OWL + SHACL** triple-and-shapes world, and an
-**agent-knowledge** bundle (OKF). One model serves all four.
+Five families because these are genuinely different jobs: a **semantic-interchange** format (OSI), a
+**graph** query model (openCypher), the **RDF/OWL + SHACL** triple-and-shapes world, an **agent-knowledge**
+bundle (OKF), and a **human-facing diagram** (Mermaid). One model serves all five.
 
 ### OSI — the semantic-interchange target
 
