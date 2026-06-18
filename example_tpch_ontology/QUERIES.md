@@ -5,7 +5,7 @@ from memory of TPC-H. Every clause traces to a specific piece of the ontology:
 
 | SQL clause | comes from | layer |
 |---|---|---|
-| `FROM <table>` / column names | a concept's `grounding` → `tables/<t>.yaml#columns` | Physical |
+| `FROM <table>` / column names | a concept's `grounding` → `data/datasets/<t>.yaml#columns` | Physical |
 | `JOIN … ON …` | an **edge**'s `join_rule` | Edges |
 | the measure expression in `SELECT` | a **rule**'s `template` (e.g. `net_revenue`) | Rules |
 | which columns a rule may touch | the rule's `binds` (field-anchoring) | Concept `contract.rules` |
@@ -16,7 +16,7 @@ path, the entities to tables and columns — is **deterministic execution agains
 identifier here is invented; each is read from a file cited inline. (TPC-H is a synthetic benchmark; these
 queries are illustrative and not run against data.)
 
-Schema: `tpch`. Joins available (from `edges.yaml`, every `join_rule` verbatim):
+Schema: `tpch`. Joins available (from `ontology/edges.yaml`, every `join_rule` verbatim):
 
 ```
 lineitem.l_orderkey  = orders.o_orderkey         (lineitem__part_of__orders)
@@ -33,7 +33,7 @@ supplier.s_nationkey = nation.n_nationkey         (supplier__from__nation)
 
 ## Q1. "What is net revenue by region?"
 
-**Intent → ontology.** Measure = **Revenue** (`concepts/finance/revenue.yaml`, a `Flow`), derived by rule
+**Intent → ontology.** Measure = **Revenue** (`ontology/concepts/finance/revenue.yaml`, a `Flow`), derived by rule
 **`net_revenue`** → `SELECT` expression. Slice = region, so traverse `lineitem → orders → customer →
 nation → region` (four edges). Label = `region.r_name` (role `value`).
 
@@ -50,7 +50,7 @@ ORDER BY net_revenue DESC;
 ```
 
 No fan-out: every edge on the path is many-to-one outward from `lineitem`, so each line contributes its
-revenue exactly once — the SUM is sound at the line grain (`tables/lineitem.yaml`: one row per order line).
+revenue exactly once — the SUM is sound at the line grain (`data/datasets/lineitem.yaml`: one row per order line).
 
 ---
 

@@ -29,10 +29,10 @@ benchmark — public, precisely specified, not real data). It complements `examp
 
 | Layer | Files | Shows |
 |---|---|---|
-| **Concept** | `concepts/**` (9) | the `entity` / `event` / `measure` classes; a hierarchy; an associative entity; a derived measure |
-| **Physical** | `tables/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs |
-| **Edges** | `edges.yaml` (8) | every relation between concepts, incl. a **composite** join (`lineitem → partsupp`) |
-| **Rules** | `rules.yaml` (1) | `net_revenue` — a derivation with a renderable SQL template |
+| **Concept** | `ontology/concepts/**` (9) | the `entity` / `event` / `measure` classes; a hierarchy; an associative entity; a derived measure |
+| **Physical** | `data/datasets/**` (8) | grounding targets, column roles (incl. `composite_key_part`), FKs |
+| **Edges** | `ontology/edges.yaml` (8) | every relation between concepts, incl. a **composite** join (`lineitem → partsupp`) |
+| **Rules** | `ontology/rules.yaml` (1) | `net_revenue` — a derivation with a renderable SQL template |
 | **Field-anchoring** | `LineItem.contract.rules` (2) | typed behavioural rules **`binds`**-ed to the columns they govern (e.g. revenue → `l_extendedprice`, `l_discount`); the `rule-binds-grounded` shape verifies, cross-file, that each bind is a real grounded column |
 
 ## Validate
@@ -67,6 +67,7 @@ ignored by the gates). The one MAC model projects, mechanically, onto every targ
 | [`projections/tpch.ttl`](projections/tpch.ttl) | **RDF/OWL** (Turtle) | [`mac_to_rdf.py`](../tools/mac_to_rdf.py) | concepts → `owl:Class`, columns → `owl:DatatypeProperty`, edges → `owl:ObjectProperty`. Re-parses as valid RDF. |
 | [`projections/tpch.shacl.ttl`](projections/tpch.shacl.ttl) | **SHACL** (validation of the above) | [`mac_to_shacl.py`](../tools/mac_to_shacl.py) | NodeShapes + property shapes (datatype, key cardinality, closed-enum `sh:in`). `--selftest` runs **pySHACL** and asserts good data passes / broken data fails. |
 | [`projections/tpch.okf/`](projections/tpch.okf/) | **OKF** (Google Cloud Open Knowledge Format — agent knowledge bundle) | [`mac_to_okf.py`](../tools/mac_to_okf.py) | one markdown concept doc per concept (`type` frontmatter, `# Schema`, linked `## Relationships`, `# Citations`) + `index.md`/`log.md`. `--check` asserts every doc carries `type` and every internal link resolves. OKF's reference impl enriches via a *second LLM pass*; MAC emits it deterministically. |
+| [`projections/tpch.mmd`](projections/tpch.mmd) | **Mermaid** (diagram — renders inline on GitHub) | [`mac_to_mermaid.py`](../tools/mac_to_mermaid.py) | concepts coloured by class + edges + dashed grounding links to the dataset cylinders. Auto-layout, always in sync; renders natively on GitHub. |
 
 The MAC-only constructs these targets can't carry (typed `contract.rules` + `binds`, the additivity law, the
 six concept classes, L0–L3 trust tiers) are dropped by design — you author and govern in MAC, then project.

@@ -332,6 +332,15 @@ the contract a platform integrator implements and the proof that the framework i
 agent-only. An **agent** ignores these columns (it reads the constructs directly); a **platform
 integrator** reads one column and knows how to cast the whole ontology.
 
+> **This is now running code, not just a contract.** The conceptual mapping below is realized by **six
+> self-validating projectors** (`tools/mac_to_*.py`) — **OSI** (semantic interchange) · **RDF/OWL** ·
+> **SHACL** (validating the RDF) · **openCypher** (property graph) · **OKF** (agent-knowledge bundle) ·
+> **Mermaid** (diagram). Each output is checked **in its target's own terms** (OSI's JSON Schema, a real
+> SHACL engine, an RDF re-parse, …) — no projection asks you to trust the projector. See
+> [articles/projecting-outward.md](articles/projecting-outward.md). The projectors resolve a project's
+> layout (flat, or the **two-plane** data/ontology split — [design/two-plane-layout.md](design/two-plane-layout.md))
+> automatically.
+
 | Framework construct | RDF / OWL | Property graph | Relational + semantic layer |
 | --- | --- | --- | --- |
 | `class: entity` / `reference` | `owl:Class` | node label | dimension / entity table |

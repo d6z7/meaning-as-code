@@ -23,9 +23,57 @@ The ontology references `data/datasets/` (the published schemas) and nothing els
 dependencies flow ontology → datasets, never back. (`tpch`, the sibling example, stays **flat** — no
 manifest — which is the back-compatible default.)
 
-**Picture:** [`shop_ontology.drawio.svg`](shop_ontology.drawio.svg) shows the whole thing — the ontology
-plane (concepts coloured by class, edges as joins) over the data plane (the dataset descriptors), with
-dashed grounding lines as the seam between them.
+**Picture:** [`shop_ontology.drawio.svg`](shop_ontology.drawio.svg) (hand-laid-out) shows the whole thing —
+the ontology plane (concepts coloured by class, edges as joins) over the data plane (the dataset
+descriptors), with dashed grounding lines as the seam between them. The same diagram is kept as text in
+[`shop_ontology.mmd`](shop_ontology.mmd) and rendered inline below (GitHub renders it natively):
+
+```mermaid
+flowchart TB
+  subgraph ONT["ONTOLOGY PLANE — what it means (concepts · edges · rules)"]
+    direction LR
+    Customer["Customer<br/><i>«entity»</i>"]
+    Order["<b>Order</b><br/><i>«event»</i>"]
+    Product["Product<br/><i>«reference»</i>"]
+    Revenue["Revenue<br/><i>«measure»</i><br/>net = gross − refunds"]
+    OrderStatus["OrderStatus<br/><i>«enumeration» (closed)</i>"]
+    Category["Category<br/><i>«grouping»</i><br/>rolls up Product"]
+    Order -->|"placedBy (0..N→1)"| Customer
+    Product -->|"belongsToCategory (0..N→0..1)"| Category
+    Order -.->|status typed by| OrderStatus
+    Revenue -.->|computed from| Order
+  end
+  subgraph DATA["DATA PLANE — how the data is made (datasets = structure only)"]
+    direction LR
+    t_customers[("customers<br/>customer_id pk")]
+    t_orders[("orders<br/>order_id pk")]
+    t_refunds[("refunds<br/>refund_id pk → order_id")]
+    t_products[("products<br/>sku pk")]
+    t_categories[("categories<br/>category_id pk, parent_id")]
+  end
+  Customer -. grounds .-> t_customers
+  Order -. grounds .-> t_orders
+  Product -. grounds .-> t_products
+  Category -. grounds .-> t_categories
+  OrderStatus -. grounds .-> t_orders
+  Revenue -. gross .-> t_orders
+  Revenue -. refunds .-> t_refunds
+
+  classDef entity fill:#dae8fc,stroke:#6c8ebf,color:#000;
+  classDef event fill:#ffe6cc,stroke:#d79b00,color:#000;
+  classDef reference fill:#d5e8d4,stroke:#82b366,color:#000;
+  classDef measure fill:#fff2cc,stroke:#d6b656,color:#000;
+  classDef enumeration fill:#f5f5f5,stroke:#666,color:#000;
+  classDef grouping fill:#e1d5e7,stroke:#9673a6,color:#000;
+  classDef dataset fill:#ffffff,stroke:#999,color:#333;
+  class Customer entity;
+  class Order event;
+  class Product reference;
+  class Revenue measure;
+  class OrderStatus enumeration;
+  class Category grouping;
+  class t_customers,t_orders,t_refunds,t_products,t_categories dataset;
+```
 
 This example also applies **Option B** (the design's end-state): the `data/datasets/` descriptors carry
 **structure only** (name · type · key · role), and every column's **meaning** lives in the ontology as a
