@@ -19,6 +19,21 @@
       "enum": ["C", "I", "Q"]
     },
 
+    "EdgeEndpoint": {
+      "type": "object",
+      "required": ["concept"],
+      "description": "v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table. It names the concept at this end; the physical relation lives in that concept's grounding plus the edge's join_rule/realized_by. Authoring an endpoint as a `view`/`key` is FORBIDDEN (additionalProperties:false rejects them): a join between stored relations that is not a join between concepts is a pipeline transform, not an ontology edge. This is what keeps edges at the semantic stage and out of the data/pipeline stage.",
+      "properties": {
+        "source": { "type": "string", "description": "the source/ontology this concept belongs to (enables cross-source federation edges)." },
+        "concept": { "type": "string", "description": "REQUIRED — the concept at this end of the edge." },
+        "ref": { "type": "string", "description": "pointer to the concept definition (path#anchor), resolved cross-file by the referential gate." },
+        "role": { "type": "string", "description": "the relationship role/name read from this end (typically on `from`): e.g. placedBy, measuredForCountry." },
+        "cardinality": { "type": "string" }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
+
     "status": { "enum": ["production", "draft", "prototype"] },
 
     "changeLogEntry": {
@@ -483,7 +498,7 @@
               "endpoints": {
                 "type": "object",
                 "required": ["from", "to"],
-                "properties": { "from": { "type": "object" }, "to": { "type": "object" } },
+                "properties": { "from": { "$ref": "#/$defs/EdgeEndpoint" }, "to": { "$ref": "#/$defs/EdgeEndpoint" } },
                 "patternProperties": { "^x-": true },
                 "additionalProperties": false
               },
