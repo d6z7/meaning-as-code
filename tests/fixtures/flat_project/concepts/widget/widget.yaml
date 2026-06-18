@@ -1,0 +1,7 @@
+metadata: { concept: Widget, source: FLAT, version: '1.0', schema_version: '0.1.6', status: production, owner: t }
+concept:
+  name: Widget
+  label: Widget
+  class: entity
+  definition: "A flat-layout smoke-test concept (no mac.project.yaml — proves the resolver's flat default)."
+grounding: { kind: sql_table, table: widgets, schema: s, key_column: widget_id }

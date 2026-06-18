@@ -1,0 +1,7 @@
+# mac.project.yaml — two-plane layout (see ../design/two-plane-layout.md).
+# tpch is the OPTION A exemplar: relocated into data/ + ontology/, but the data/datasets/ descriptors
+# still carry column meaning (the shop example shows Option B, where meaning moves into the ontology).
+planes:
+  data: data
+  ontology: ontology
+descriptors: data/datasets

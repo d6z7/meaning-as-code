@@ -38,7 +38,7 @@ def resolve(root):
         desc = root / (m.get("descriptors") or "tables")
         return SimpleNamespace(root=root, ontology=onto.resolve(), descriptors=desc.resolve(),
                                planes=planes, two_plane=bool(planes))
-    return SimpleNamespace(root=root, ontology=root, descriptors=root / "tables",
+    return SimpleNamespace(root=root.resolve(), ontology=root.resolve(), descriptors=(root / "tables").resolve(),
                            planes={}, two_plane=False)
 
 
