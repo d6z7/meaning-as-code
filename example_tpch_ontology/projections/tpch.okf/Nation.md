@@ -37,4 +37,4 @@ Grounded in `tpch.nation`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/geography/nation.yaml` (schema_version 0.1.6, confidence C).
+1. MAC concept source of record: `concepts/geography/nation.yaml` (schema_version 0.1.8, confidence C).

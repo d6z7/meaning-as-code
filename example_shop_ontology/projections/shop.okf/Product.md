@@ -35,4 +35,4 @@ Grounded in `shop_warehouse.products`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/catalog/product.yaml` (schema_version 0.1.6, confidence C).
+1. MAC concept source of record: `concepts/catalog/product.yaml` (schema_version 0.1.8, confidence C).

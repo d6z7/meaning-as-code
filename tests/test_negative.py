@@ -14,7 +14,8 @@ import sys, os, json, glob
 
 HERE = os.path.dirname(__file__)
 SCHEMA = os.path.join(HERE, '..', 'mac.schema.json')
-DEF = {'concept': 'ConceptFile', 'edges': 'EdgesFile', 'rules': 'RulesFile', 'table': 'TableFile'}
+DEF = {'concept': 'ConceptFile', 'edges': 'EdgesFile', 'rules': 'RulesFile', 'table': 'TableFile',
+       'transform': 'TransformFile'}
 
 try:
     import yaml

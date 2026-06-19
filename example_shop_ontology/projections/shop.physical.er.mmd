@@ -1,0 +1,39 @@
+---
+title: shop — physical ER · one box per produced table
+---
+erDiagram
+  customers ||--o{ orders : "customer_id"
+  categories ||--o{ products : "category_id"
+  orders ||--o{ refunds : "order_id"
+  categories {
+    string category_id PK
+    string name
+    string parent_id FK
+  }
+  customers {
+    string customer_id PK
+    string email
+    timestamp created_at
+  }
+  orders {
+    string order_id PK
+    string customer_id FK
+    string status
+    timestamp placed_at
+    timestamp paid_at
+    timestamp shipped_at
+    timestamp delivered_at
+    decimal gross_amount
+  }
+  products {
+    string sku PK
+    string name
+    string category_id FK
+    decimal list_price
+  }
+  refunds {
+    string refund_id PK
+    string order_id FK
+    decimal refund_amount
+    timestamp refunded_at
+  }

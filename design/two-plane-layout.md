@@ -113,9 +113,13 @@ meaning from the one place it lives. The projector update is part of B.
 
 - New optional artifact: `mac.project.yaml` (absent ⇒ flat, today's behaviour).
 - New recognized descriptor location `data/datasets/` (in addition to `tables/`).
-- No change to any file's *content* schema; this is a layout/resolution contract.
-- A two-plane project must pass the same three gates; `data/transforms/` and `data/sources/` are pipeline
-  artifacts, not MAC layer files, and are not gate-scanned as concepts.
+- **v0.1.7 — the data plane is now fully typed.** `data/transforms/` (declared via the manifest
+  `transforms:` key) validate against the new `TransformFile` def, and `data/sources/` (`sources:` key)
+  validate as raw-input `TableFile`s (`metadata.kind: raw_source`). They are no longer un-scanned
+  pipeline artifacts — they are first-class, structurally gated data-plane files. The realizing SQL
+  (`*.sql`) stays an artifact, not a MAC file. A data-bound project may additionally claim the
+  **lineage-complete** profile (CONFORMANCE.md §1).
+- No change to any *ontology-plane* file's content schema; concepts still bind to `data/datasets/` only.
 
 ## Sequence
 

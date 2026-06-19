@@ -88,8 +88,13 @@ def build_shapes(root):
     table_to_class = {ground_table(d): nm for nm, d in node_concepts.items() if ground_table(d)}
     shape_of = {}            # class name -> NodeShape URI (so edges/enums can hang property shapes on it)
 
+    _bn = [0]                       # deterministic, build-order blank-node ids: BNode() mints RANDOM ids
+    def _bid(prefix):               # each run, so the Turtle serialization order churns. Stable ids fix it.
+        _bn[0] += 1
+        return BNode(f"{prefix}{_bn[0]:04d}")
+
     def prop(shape, path, **kw):
-        b = BNode()
+        b = _bid("ps")
         g.add((shape, SH.property, b))
         g.add((b, SH.path, path))
         if "name" in kw:
@@ -105,7 +110,7 @@ def build_shapes(root):
         if kw.get("max") is not None:
             g.add((b, SH.maxCount, Literal(int(kw["max"]))))
         if "members" in kw:
-            lst = BNode()
+            lst = _bid("in")
             Collection(g, lst, [Literal(m, datatype=XSD.string) for m in kw["members"]])
             g.add((b, SH["in"], lst))
         if "message" in kw:

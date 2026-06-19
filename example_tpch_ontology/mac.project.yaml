@@ -5,4 +5,6 @@
 planes:
   data: data
   ontology: ontology
-descriptors: data/datasets
+descriptors: data/datasets     # produced relations the ontology binds to (the seam)
+transforms: data/transforms    # the pipelines: source -> dataset (how the data is made)
+sources: data/sources          # observed raw-input schema-of-record (what comes in)

@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.7)
-version: '0.1.7'
+title: MAC Conformance — the strict-syntax contract (v0.1.8)
+version: '0.1.8'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -60,6 +60,27 @@ the concept grounds to (`grounding.table`/`sources` → `tables/<name>.yaml#colu
 single-homed in the Physical layer, so a rule cannot claim to govern a field the concept does not ground —
 the relational check the schema structurally cannot make. See `example_tpch_ontology` LineItem for a
 worked instance.
+
+**The data-plane transform construct (v0.1.8).** The two-plane layout's data plane is now fully typed,
+not just its seam. Alongside `data/datasets/` (produced relations → `TableFile`) and `data/sources/`
+(observed raw inputs → `TableFile`, marked `metadata.kind: raw_source`), `data/transforms/` descriptors
+validate against a new **`TransformFile`** def: a pipeline declares what it `produces` (one dataset) and
+its `inputs[]`, **each typed by a closed `kind`** — `raw_source` · `dataset` (view-on-view) ·
+`authored_seed` (rows authored from the ontology, no upstream table) · `external` (federation,
+upstream-owned). The validator routes these dirs by location (declared in `mac.project.yaml`:
+`transforms:` / `sources:`). See `example_shop_ontology/data/` for the worked `orders` triple
+(`orders_raw` source → `orders` transform → `orders` dataset).
+
+**The lineage-complete profile (opt-in, gated by the data plane).** A project that declares
+`planes.data` in `mac.project.yaml` may claim the **lineage-complete** profile: the data-plane graph is
+**total and connected** — every dataset is `produced` by a transform; every transform's `inputs[]`
+resolve and **mirror the realizing SQL** (no input present in the SQL but absent from `inputs[]`); every
+concept binding lands on a dataset (the referential gate already enforces the binding half). Under this
+profile the **lineage projection is a guaranteed derivation** — it cannot silently drop a node. This is
+a *structural completeness* requirement layered on L1 for data-bound projects, **not** a new L-level
+(L0–L3 stay orthogonal); a pure vocabulary ontology with no data plane is unaffected. The `inputs[]`-vs-SQL
+completeness check is the recorded follow-on (a referential-gate rule); the schema legalizes the
+construct it will enforce.
 
 ## 2. The closed-core + `x-` extension rule (how we stay strict without ossifying)
 
@@ -129,7 +150,7 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.7'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.8'`**.
 - A **promotion** (an `x-` key entering core) or any **breaking** change to the core vocabulary bumps the
   patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
@@ -140,7 +161,14 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
   `vocabulary.yaml`, e.g. `gaps.field_role.attribute`) and the `field-roles-grounded` coverage shape; and
   the six self-validating projectors (OSI · RDF/OWL · SHACL · openCypher · OKF · Mermaid). Per RELEASING.md,
   the tag, schema title, validator `CURRENT`, and every example `schema_version` move to `0.1.7` together.
-- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.7`)
+- **`0.1.8`** adds, on the same contract: the **data-plane transform construct** — the `TransformFile` def
+  (`produces` + typed `inputs[]`, the closed `kind` enum `raw_source`/`dataset`/`authored_seed`/`external`),
+  validated under `data/transforms/` and `data/sources/` (manifest `transforms:`/`sources:` keys); the
+  **lineage-complete** profile (§1); and a **data-plane lineage view** in `mac_to_mermaid` (the
+  `--lineage` mode: physical sources→transforms→datasets in production flow, alongside `--ontology` /
+  `--er` / `--physical`). Per RELEASING.md, the
+  tag, schema title, validator `CURRENT`, and every example `schema_version` move to `0.1.8` together.
+- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.8`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's
   own `0.1.x` line (it sorts below them — a relabel, not a forward bump). The historical deltas below

@@ -1,18 +1,90 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.7",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.7.",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.8",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.8.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
 
   "oneOf": [
     { "$ref": "#/$defs/ConceptFile" },
     { "$ref": "#/$defs/RulesFile" },
     { "$ref": "#/$defs/EdgesFile" },
-    { "$ref": "#/$defs/TableFile" }
+    { "$ref": "#/$defs/TableFile" },
+    { "$ref": "#/$defs/TransformFile" }
   ],
 
   "$defs": {
+
+    "TransformFile": {
+      "type": "object",
+      "description": "DATA-PLANE pipeline descriptor (two-plane layout, data/transforms/). Declares how ONE produced dataset is built: what it `produces`, the `inputs` it consumes (each typed by `kind`), and the ordered cleansing `transforms`. The realizing SQL lives beside it (produces.sql_file). Read by lineage/rebuild tooling and the lineage projection; NOT by the query-generating agent (a concept grounds to the produced relation agnostically). Distinguished from a TableFile by its `produces`+`inputs` discriminators.",
+      "required": ["produces", "inputs"],
+      "properties": {
+        "metadata": { "type": "object" },
+        "produces": {
+          "type": "object",
+          "description": "the single dataset this pipeline emits — the seam the ontology binds to.",
+          "required": ["relation"],
+          "properties": {
+            "relation": { "type": "string", "description": "the produced dataset relation (schema.name)" },
+            "sql_file": { "type": "string", "description": "the executable transform (the SELECT / CREATE VIEW) realizing this descriptor" },
+            "grain": { "type": "string" },
+            "serves_ontology": { "type": "string", "description": "pointer to the consuming concept/ontology file (documentation only)" }
+          },
+          "patternProperties": { "^x-": true },
+          "additionalProperties": false
+        },
+        "inputs": {
+          "type": "array",
+          "description": "EVERY relation this transform reads, each typed by `kind`. A leaf dataset's inputs are raw_source / authored_seed / external; a derived dataset may also list upstream `dataset` inputs (view-on-view). Inputs mirroring the realizing SQL is what makes lineage TOTAL — required by the lineage-complete profile (CONFORMANCE.md), not by this structural schema.",
+          "items": {
+            "type": "object",
+            "required": ["relation"],
+            "properties": {
+              "relation": { "type": "string" },
+              "kind": {
+                "enum": ["raw_source", "dataset", "authored_seed", "external"],
+                "description": "raw_source = an observed upstream table (described under data/sources/) · dataset = another produced relation in THIS project (view-on-view) · authored_seed = rows authored from the ontology, no upstream table · external = produced by a system we do not transform locally (federation)."
+              },
+              "role": { "type": "string", "description": "free-text role of this input in the transform (not a controlled vocabulary)" },
+              "descriptor": { "type": "string", "description": "pointer to the input's schema-of-record (data/sources/<name>.yaml for raw_source; the dataset descriptor for dataset)" },
+              "consumes": { "type": "object", "description": "optional map: input column -> the transform id (or rule) that reads it" },
+              "note": { "type": "string" }
+            },
+            "patternProperties": { "^x-": true },
+            "additionalProperties": false
+          }
+        },
+        "transforms": {
+          "type": "array",
+          "description": "the ordered cleansing steps, each dissolving ONE impurity so it never reaches the ontology; `sql` is the fragment of produces.sql_file that realizes it.",
+          "items": {
+            "type": "object",
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string" },
+              "impurity_class": { "type": "string" },
+              "raw_defect": { "type": "string" },
+              "rule": { "type": "string" },
+              "sql": { "type": "string" },
+              "establishes_guarantee": { "type": "string", "description": "the clean fact the consuming ontology then inherits (and must not re-derive)" },
+              "status": { "type": "string" },
+              "note": { "type": "string" }
+            },
+            "patternProperties": { "^x-": true },
+            "additionalProperties": false
+          }
+        },
+        "open_transforms": {
+          "type": "array",
+          "description": "impurities KNOWN but NOT yet dissolved — carried, not hidden (the re-eval punch-list for this layer).",
+          "items": { "type": "object" }
+        },
+        "governance": { "$ref": "#/$defs/governance" }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
 
     "confidence": {
       "description": "Trust tier (pluggable scale; GAPS uses C/I/Q). C confirmed · I inferred · Q needs-SME.",

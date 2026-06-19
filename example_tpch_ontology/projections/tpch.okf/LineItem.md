@@ -48,4 +48,4 @@ Grounded in `tpch.lineitem`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/order/lineitem.yaml` (schema_version 0.1.6, confidence C).
+1. MAC concept source of record: `concepts/order/lineitem.yaml` (schema_version 0.1.8, confidence C).
