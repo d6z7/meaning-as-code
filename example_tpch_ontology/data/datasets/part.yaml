@@ -4,7 +4,7 @@ metadata:
   table: part
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.7'
+  schema_version: '0.1.8'
   status: verified
   owner: example-team
   confidence: C

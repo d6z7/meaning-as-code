@@ -3,7 +3,7 @@
 metadata:
   layer: rules
   source: TPCH
-  schema_version: '0.1.7'
+  schema_version: '0.1.8'
   status: production
   date: 2026-06-17
 

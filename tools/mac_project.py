@@ -11,6 +11,8 @@ roots instead of hardcoding `concepts/` / `tables/`:
     L = resolve(root)
     L.ontology     # dir holding concepts/, edges.yaml, rules.yaml   (flat: root; two-plane: root/ontology)
     L.descriptors  # dir holding TableFile descriptors                (flat: root/tables; two-plane: root/data/datasets)
+    L.transforms   # dir holding TransformFile descriptors            (None unless declared: two-plane data/transforms)
+    L.sources      # dir holding raw-input TableFile descriptors      (None unless declared: two-plane data/sources)
     L.planes       # {} when flat; {"data": "...", "ontology": "..."} when two-plane
 
 The model already binds a concept to its descriptor by RELATION NAME, not by path, so nothing in the YAML
@@ -36,10 +38,13 @@ def resolve(root):
         planes = m.get("planes") or {}
         onto = root / (planes.get("ontology") or ".")
         desc = root / (m.get("descriptors") or "tables")
+        # data-plane descriptor dirs — present only when declared (transforms + raw sources)
+        tfm = (root / m["transforms"]).resolve() if m.get("transforms") else None
+        srcs = (root / m["sources"]).resolve() if m.get("sources") else None
         return SimpleNamespace(root=root, ontology=onto.resolve(), descriptors=desc.resolve(),
-                               planes=planes, two_plane=bool(planes))
+                               transforms=tfm, sources=srcs, planes=planes, two_plane=bool(planes))
     return SimpleNamespace(root=root.resolve(), ontology=root.resolve(), descriptors=(root / "tables").resolve(),
-                           planes={}, two_plane=False)
+                           transforms=None, sources=None, planes={}, two_plane=False)
 
 
 def field_meaning(concept_doc):

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_schema.py — THE structural validator for MAC v0.1.6. Schema-driven.
+validate_schema.py — THE structural validator for MAC v0.1.8. Schema-driven.
 
 Unlike the retired hand-coded validate_schema_v3.py (which encoded the v0.4 structural rules in
 Python), this validator is driven by the FORMAL SCHEMA: it validates every MAC YAML file against
@@ -13,8 +13,9 @@ It also runs the one structural check a JSON Schema cannot express — an edge-e
 wired). Cross-file/referential checks (does `derived_by_rule` resolve, are grounding targets present)
 are a SEPARATE concern — see the referential checker — and are intentionally not here.
 
-File type is chosen by location: */rules.yaml→RulesFile, */edges.yaml→EdgesFile, */tables/*.yaml→
-TableFile, */concepts/**→ConceptFile. Dates load as strings (PyYAML would otherwise yield date objects).
+File type is chosen by location: */rules.yaml→RulesFile, */edges.yaml→EdgesFile, */tables/*.yaml (and
+the two-plane data/datasets/)→TableFile, data/transforms/→TransformFile, data/sources/→TableFile (raw
+schema-of-record), */concepts/**→ConceptFile. Dates load as strings (PyYAML would otherwise yield dates).
 
 A clean run (exit 0) means WELL-FORMED (L1), not CORRECT — L2 (execution validation) and L3 (SME)
 remain mandatory; see CONFORMANCE.md.
@@ -37,13 +38,20 @@ def _load_yaml_str_dates(path):
         return yaml.load(fh, Loader=_Loader)
 
 
-def _pick_def(path, descriptors_dir=None):
+def _pick_def(path, layout=None):
     p = path.replace(os.sep, '/')
     if p.endswith('rules.yaml'):
         return 'RulesFile'
     if p.endswith('edges.yaml'):
         return 'EdgesFile'
-    if '/tables/' in p or (descriptors_dir and os.path.dirname(os.path.abspath(path)) == str(descriptors_dir)):
+    d = os.path.dirname(os.path.abspath(path))
+    # two-plane data plane: transforms/ -> TransformFile; sources/ -> TableFile (raw schema-of-record)
+    if layout is not None and getattr(layout, 'transforms', None) and d == str(layout.transforms):
+        return 'TransformFile'
+    if layout is not None and getattr(layout, 'sources', None) and d == str(layout.sources):
+        return 'TableFile'
+    descriptors_dir = getattr(layout, 'descriptors', None) if layout is not None else None
+    if '/tables/' in p or (descriptors_dir and d == str(descriptors_dir)):
         return 'TableFile'
     return 'ConceptFile'
 
@@ -73,7 +81,7 @@ def main():
     ap.add_argument('--strict', action='store_true', help='warnings also fail the run')
     ap.add_argument('--all', action='store_true',
                     help='validate every file regardless of metadata.schema_version '
-                         '(default: only enforce files at a recognized schema_version (current 0.1.6, or legacy 0.5); others are skipped)')
+                         '(default: only enforce files at a recognized schema_version (current 0.1.8); others are skipped)')
     args = ap.parse_args()
 
     try:
@@ -105,9 +113,12 @@ def main():
     for pat in ('**/concepts/**/*.yaml', '**/rules.yaml', '**/edges.yaml', '**/tables/*.yaml'):
         files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
     files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not skip(f)]  # two-plane: data/datasets/
+    for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None)):  # data/transforms/, data/sources/
+        if extra:
+            files += [f for f in glob.glob(str(extra / '*.yaml')) if not skip(f)]
     files = sorted(set(files))
 
-    CURRENT = '0.1.7'                 # the current — and only recognized — MAC schema version
+    CURRENT = '0.1.8'                 # the current — and only recognized — MAC schema version
     RECOGNIZED = {CURRENT}            # strict: 0.5 is retired; a file at any other version is skipped (stale)
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:
@@ -122,7 +133,7 @@ def main():
         if not args.all and sv not in RECOGNIZED:
             skipped += 1   # legacy / not-yet-migrated — incremental adoption (use --all to force)
             continue
-        which = _pick_def(f, layout.descriptors)
+        which = _pick_def(f, layout)
         errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))
         if which == 'EdgesFile':
             warnings += _edge_enrichment_warnings(f, doc)
