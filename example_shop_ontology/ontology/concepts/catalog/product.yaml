@@ -5,7 +5,7 @@ metadata:
   concept: Product
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: production
   owner: example-team
   confidence: C

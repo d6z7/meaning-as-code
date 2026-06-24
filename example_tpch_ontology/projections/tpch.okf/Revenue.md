@@ -47,4 +47,4 @@ Computed by rule `net_revenue` (see the MAC rules layer); do not re-derive the f
 
 # Citations
 
-1. MAC concept source of record: `concepts/finance/revenue.yaml` (schema_version 0.1.8, confidence C).
+1. MAC concept source of record: `concepts/finance/revenue.yaml` (schema_version 0.1.9, confidence C).

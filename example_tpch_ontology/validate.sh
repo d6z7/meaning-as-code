@@ -13,7 +13,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 EX="$(basename "$HERE")"
 cd "$ROOT"
 
-echo "── MAC validation · $EX · schema_version 0.1.6 ──"
+echo "── MAC validation · $EX · schema_version 0.1.9 ──"
 echo "[1/3] structural  — validate_schema.py → mac.schema.json (closed vocabulary, required keys, naming, edge legality)"
 python3 tools/validate_schema.py "$EX"
 echo "[2/3] referential — check_references.py → every cross-file reference + mac.* term resolves"

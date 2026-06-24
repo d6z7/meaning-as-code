@@ -6,7 +6,7 @@
 metadata:
   table: orders_raw
   source: SHOP
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: verified
   kind: raw_source              # rides in the open metadata block; distinguishes raw input from produced output
   external: true                # upstream-owned; we observe it, we do not maintain it

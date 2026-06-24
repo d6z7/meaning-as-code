@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.8)
-version: '0.1.8'
+title: MAC Conformance — the strict-syntax contract (v0.1.9)
+version: '0.1.9'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -150,7 +150,7 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.8'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.9'`**.
 - A **promotion** (an `x-` key entering core) or any **breaking** change to the core vocabulary bumps the
   patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
@@ -168,7 +168,17 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
   `--lineage` mode: physical sources→transforms→datasets in production flow, alongside `--ontology` /
   `--er` / `--physical`). Per RELEASING.md, the
   tag, schema title, validator `CURRENT`, and every example `schema_version` move to `0.1.8` together.
-- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.8`)
+- **`0.1.9`** adds, on the same contract: the **content-model UDF seam** — an optional `realized_by` **canon
+  binding** on the behaviour-bearing slots (`semantics`, `grounding`, enumeration `values`, grouping
+  `members`, and each `contract.rules[]`), `{ udf: mac.canon.<name>, params }` or a list (`$defs/canonBinding`).
+  It names a canon in the new **`mac.canon`** vocabulary registry (`mac_vocabulary.yaml`), resolved by
+  `check_references` (an unknown canon name is an ERROR); the canon **logic is single-homed** in the
+  executable library **`tools/canon/`** and demonstrated runnable in **`tests/test_canon.py`**. The seam is
+  the determinism-coverage mechanism (reference_manual/the_content_model.md §4): a behaviour-bearing slot
+  WITH a `realized_by` is canon-backed (deterministic); WITHOUT, its prose is model-interpreted. Optional and
+  backward-compatible. Per RELEASING.md, the tag, schema title, validator `CURRENT`, and every example
+  `schema_version` move to `0.1.9` together.
+- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.9`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's
   own `0.1.x` line (it sorts below them — a relabel, not a forward bump). The historical deltas below

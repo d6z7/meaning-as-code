@@ -5,7 +5,7 @@ metadata:
   concept: OrderStatus
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: production
   owner: example-team
   confidence: C
@@ -27,6 +27,14 @@ values:
   closure_why: >
     The shop defines exactly these six states; a seventh would be a process change, not an undocumented
     value. Terminal branches (RETURNED, CANCELLED) included.
+  # v0.1.9 — the `closure: closed` flag above is canon-backed: closure_anomaly_check turns it into the
+  # deterministic out-of-set anomaly query (an open/unknown set would yield no check). Logic single-homed
+  # in tools/canon/; this concept supplies only the table/column/known-values (the manual's UDF seam).
+  realized_by:
+    udf: mac.canon.closure_anomaly_check
+    applied_as: anomaly_check
+    params: { table: orders, column: status, closure: closed,
+              known_values: [PLACED, PAID, SHIPPED, DELIVERED, RETURNED, CANCELLED] }
   items:
     - { code: PLACED,    label: Placed,    meaning: "Created, not yet paid",                     phase: CHECKOUT,   confidence: C }
     - { code: PAID,      label: Paid,      meaning: "Payment captured",                          phase: CHECKOUT,   confidence: C }
@@ -45,3 +53,4 @@ governance:
   last_reviewed: 2026-06-05
   change_log:
     - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }
+    - { date: 2026-06-24, change: "v0.1.9: bound the closed value set to mac.canon.closure_anomaly_check (the content-model UDF seam).", change_type: ADDITION, by: example-team }

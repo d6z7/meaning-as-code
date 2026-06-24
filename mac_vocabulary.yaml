@@ -1,4 +1,4 @@
-# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.8).
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.9).
 #
 # The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
 # A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
@@ -13,9 +13,9 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.8'
+  version: '0.1.9'
   status: active
-  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind]
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -87,3 +87,28 @@ rule_kind:
     ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
     exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
     guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
+
+# ===========================================================================
+# mac.canon — the canon library: the deterministic, parameterized UDFs a behaviour-bearing slot binds
+# to via `realized_by: { udf: mac.canon.<name>, params: {...} }` (v0.1.9; the content-model UDF seam,
+# reference_manual/the_content_model.md §4). The logic is single-homed in the executable library
+# tools/canon/ and demonstrated runnable in tests/test_canon.py ("a canon that doesn't run is prose in
+# a code costume"). Each member names the pattern it serves; an applied ontology references the term and
+# supplies only params — it never re-encodes the logic. Coverage, not completeness (AUTHORING A5): this
+# is the set built and validated so far; it extends by branch → PR with a witnessing pattern.
+# ===========================================================================
+canon:
+  kind: value_domain
+  closed: false                    # extends as patterns surface new deterministic needs (A5)
+  description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
+  members:
+    composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
+    additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
+    axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
+    exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
+    snapshot_collapse:     { serves: scd_type_2,                needs_sqlglot: false, doc: "collapse a versioned relation to current / as-of one row per key" }
+    closure_anomaly_check: { serves: explicit_closure,          needs_sqlglot: false, doc: "for a closed value set, the query that finds out-of-set values (else None)" }
+    scoped_latest:         { serves: tracking_vintage,          needs_sqlglot: false, doc: "MAX(date) over a scoped subset, not the whole table" }
+    hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }
+    densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
+    ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
