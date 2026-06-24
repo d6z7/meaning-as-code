@@ -8,7 +8,7 @@ read those for the *why* and the *what*, then read these files to see the framew
 
 ## Project layout — two planes
 
-This example uses the **two-plane layout** (see [`../design/two-plane-layout.md`](../design/two-plane-layout.md)),
+This example uses the **two-plane layout** (see [`../reference_manual/data_plane.md`](../reference_manual/data_plane.md)),
 declared in [`mac.project.yaml`](mac.project.yaml):
 
 ```

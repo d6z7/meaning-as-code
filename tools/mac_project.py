@@ -3,7 +3,7 @@
 mac_project.py — resolve a MAC project's layout (flat, or the two-plane data/ontology split).
 
 A MAC project either is FLAT (today's default — concepts/ tables/ edges.yaml rules.yaml at the root) or
-declares a TWO-PLANE layout in `mac.project.yaml` (data plane + ontology plane, see design/two-plane-layout.md).
+declares a TWO-PLANE layout in `mac.project.yaml` (data plane + ontology plane, see reference_manual/data_plane.md).
 This one resolver is the single place that knows the difference, so every gate and projector asks it for two
 roots instead of hardcoding `concepts/` / `tables/`:
 

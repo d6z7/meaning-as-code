@@ -52,4 +52,4 @@ Closed code list — these 3 are the complete set.
 
 # Citations
 
-1. MAC concept source of record: `concepts/order/return_flag.yaml` (schema_version 0.1.8, confidence C).
+1. MAC concept source of record: `concepts/order/return_flag.yaml` (schema_version 0.1.9, confidence C).

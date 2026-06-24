@@ -31,7 +31,7 @@ benchmark — public, precisely specified, not real data). It complements `examp
 
 ## Two-plane, Option B
 
-This example is a two-plane **Option B** project (see [`../design/two-plane-layout.md`](../design/two-plane-layout.md)):
+This example is a two-plane **Option B** project (see [`../reference_manual/data_plane.md`](../reference_manual/data_plane.md)):
 the `data/datasets/` descriptors are **structure only** (name · type · key · role), and **all** column
 meaning lives in the ontology — measure semantics as field-anchored `contract.rules` on `LineItem`, and the
 discriminator code-sets as the four closed enumerations above. Nothing semantic is left in the data plane.

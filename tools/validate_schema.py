@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-validate_schema.py — THE structural validator for MAC v0.1.8. Schema-driven.
+validate_schema.py — THE structural validator for MAC v0.1.9. Schema-driven.
 
 Unlike the retired hand-coded validate_schema_v3.py (which encoded the v0.4 structural rules in
 Python), this validator is driven by the FORMAL SCHEMA: it validates every MAC YAML file against
@@ -81,7 +81,7 @@ def main():
     ap.add_argument('--strict', action='store_true', help='warnings also fail the run')
     ap.add_argument('--all', action='store_true',
                     help='validate every file regardless of metadata.schema_version '
-                         '(default: only enforce files at a recognized schema_version (current 0.1.8); others are skipped)')
+                         '(default: only enforce files at a recognized schema_version (current 0.1.9); others are skipped)')
     args = ap.parse_args()
 
     try:
@@ -118,7 +118,7 @@ def main():
             files += [f for f in glob.glob(str(extra / '*.yaml')) if not skip(f)]
     files = sorted(set(files))
 
-    CURRENT = '0.1.8'                 # the current — and only recognized — MAC schema version
+    CURRENT = '0.1.9'                 # the current — and only recognized — MAC schema version
     RECOGNIZED = {CURRENT}            # strict: 0.5 is retired; a file at any other version is skipped (stale)
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:

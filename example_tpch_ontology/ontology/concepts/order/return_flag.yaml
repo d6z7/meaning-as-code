@@ -5,7 +5,7 @@ metadata:
   concept: ReturnFlag
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: production
   owner: example-team
   confidence: C
@@ -25,6 +25,12 @@ concept:
 values:
   closure: closed
   closure_why: "TPC-H's l_returnflag is exactly these three values."
+  # v0.1.9 — SAME canon as shop OrderStatus, different params: the reuse the content model claims (one
+  # function, many concepts, parameters only). closure_anomaly_check realizes the `closed` flag.
+  realized_by:
+    udf: mac.canon.closure_anomaly_check
+    applied_as: anomaly_check
+    params: { table: lineitem, column: l_returnflag, closure: closed, known_values: [R, A, N] }
   items:
     - { code: R, label: Returned,      meaning: "the line was returned",                                    confidence: C }
     - { code: A, label: Not returned,  meaning: "not returned (TPC-H's first not-returned class)",           confidence: C }
@@ -40,3 +46,4 @@ governance:
   last_reviewed: 2026-06-18
   change_log:
     - { date: 2026-06-18, change: "Created when tpch moved to Option B: the l_returnflag code-set's meaning moved from the data-plane descriptor into this ontology enumeration.", change_type: CREATION, by: example-team }
+    - { date: 2026-06-24, change: "v0.1.9: bound the closed value set to mac.canon.closure_anomaly_check (the content-model UDF seam).", change_type: ADDITION, by: example-team }

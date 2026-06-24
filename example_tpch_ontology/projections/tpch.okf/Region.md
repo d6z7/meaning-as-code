@@ -35,4 +35,4 @@ Grounded in `tpch.region`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/geography/region.yaml` (schema_version 0.1.8, confidence C).
+1. MAC concept source of record: `concepts/geography/region.yaml` (schema_version 0.1.9, confidence C).

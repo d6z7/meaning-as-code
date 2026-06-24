@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.8",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.8.",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.9",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.9 (adds the content-model UDF seam: an optional `realized_by` canon binding on behaviour-bearing slots, resolved against the mac.canon registry).",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
 
   "oneOf": [
@@ -157,6 +157,28 @@
       "enum": ["additive", "non-additive"]
     },
 
+    "canonRef": {
+      "type": "object",
+      "required": ["udf"],
+      "description": "v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).",
+      "properties": {
+        "udf": { "type": "string", "description": "the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable)." },
+        "params": { "type": "object", "description": "the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here." },
+        "applied_as": { "type": "string", "description": "how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer." },
+        "note": { "type": "string" }
+      },
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
+
+    "canonBinding": {
+      "description": "v0.1.9: the content-model UDF seam (reference_manual/the_content_model.md §4) — binds a behaviour-bearing slot to a deterministic canon (mac.canon.*), or a LIST of canons that compose. OPTIONAL everywhere it appears: present → the slot is canon-backed (deterministic, run not read); absent → the slot's prose is model-interpreted. The prose stays beside it — the human twin (AUTHORING A9). This is the determinism-coverage seam: behaviour-bearing slots WITH a realized_by ÷ all behaviour-bearing slots.",
+      "oneOf": [
+        { "$ref": "#/$defs/canonRef" },
+        { "type": "array", "items": { "$ref": "#/$defs/canonRef" } }
+      ]
+    },
+
     "semantics": {
       "type": "object",
       "description": "The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).",
@@ -179,7 +201,8 @@
           "pattern": "^mac\\.MeasureType\\.[A-Za-z_][A-Za-z0-9_]*$"
         },
         "unit": { "type": "string" },
-        "null_semantics": { "type": "string" }
+        "null_semantics": { "type": "string" },
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": false
@@ -227,6 +250,7 @@
               "why":   { "type": "string", "description": "one-line rationale" },
               "binds": { "type": "array", "items": { "type": "string" }, "description": "the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring)." },
               "enforced_by": { "type": "string", "description": "deterministic backstop (e.g. a CP-3 anchor id)" },
+              "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose." },
               "examples": { "type": "array" },
               "status": { "type": "string", "enum": ["active", "proposed"] }
             }
@@ -279,7 +303,8 @@
           "additionalProperties": { "type": "string" }
         },
         "note": { "type": "string" },
-        "notes": { "type": "string" }
+        "notes": { "type": "string" },
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": false
@@ -330,7 +355,8 @@
           "description": "the orphan-quarantine bucket — how raw values outside the closed set are surfaced (never silently dropped). Part of the value-domain conformance story.",
           "additionalProperties": true
         },
-        "canonicalization": { "type": ["string", "object"], "description": "how raw spellings/duplicates were conformed to the canonical codes." }
+        "canonicalization": { "type": ["string", "object"], "description": "how raw spellings/duplicates were conformed to the canonical codes." },
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": false
@@ -401,7 +427,8 @@
             "patternProperties": { "^x-": true },
             "additionalProperties": true
           }
-        }
+        },
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": true

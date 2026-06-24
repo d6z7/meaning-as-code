@@ -34,4 +34,4 @@ Grounded in `shop_warehouse.categories`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/catalog/category.yaml` (schema_version 0.1.8, confidence C).
+1. MAC concept source of record: `concepts/catalog/category.yaml` (schema_version 0.1.9, confidence C).

@@ -39,4 +39,4 @@ Grounded in `tpch.partsupp`.
 
 # Citations
 
-1. MAC concept source of record: `concepts/part/partsupp.yaml` (schema_version 0.1.8, confidence C).
+1. MAC concept source of record: `concepts/part/partsupp.yaml` (schema_version 0.1.9, confidence C).

@@ -6,7 +6,7 @@
 metadata:
   layer: edges
   source: SHOP
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: production
   date: 2026-06-05
 

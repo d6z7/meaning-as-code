@@ -10,8 +10,8 @@ scope: GENERIC methodology — domain-independent and vendor-neutral. Contains N
 supersedes: FRAMEWORK_v0.4_partial.md, ONTOLOGY_FRAMEWORK.md (both retired to archive/)
 companions:
   - CONCEPT_SPEC.md     # the detailed, key-by-key reference (appendix to this document)
-  - mac.schema.json     # v0.1.8: the machine-checkable schema — the strict, enforceable contract
-  - CONFORMANCE.md      # v0.1.8: conformance levels + the closed-core / `x-` extension rule
+  - mac.schema.json     # v0.1.9: the machine-checkable schema — the strict, enforceable contract
+  - CONFORMANCE.md      # v0.1.9: conformance levels + the closed-core / `x-` extension rule
   - FRAMEWORK_STRUCTURE_MAP.md  # the visual companion (diagrams)
   - example_shop_ontology/   # a worked, validated example on a neutral domain — "this framework, applied"
 ---
@@ -338,7 +338,7 @@ integrator** reads one column and knows how to cast the whole ontology.
 > **Mermaid** (diagram). Each output is checked **in its target's own terms** (OSI's JSON Schema, a real
 > SHACL engine, an RDF re-parse, …) — no projection asks you to trust the projector. See
 > [articles/projecting-outward.md](articles/projecting-outward.md). The projectors resolve a project's
-> layout (flat, or the **two-plane** data/ontology split — [design/two-plane-layout.md](design/two-plane-layout.md))
+> layout (flat, or the **two-plane** data/ontology split — [reference_manual/data_plane.md](reference_manual/data_plane.md))
 > automatically.
 
 | Framework construct | RDF / OWL | Property graph | Relational + semantic layer |

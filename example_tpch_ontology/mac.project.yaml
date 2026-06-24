@@ -1,4 +1,4 @@
-# mac.project.yaml — two-plane layout (see ../design/two-plane-layout.md).
+# mac.project.yaml — two-plane layout (see ../reference_manual/data_plane.md).
 # tpch is a two-plane OPTION B project: the data/datasets/ descriptors are structure-only, and every
 # column's meaning lives in the ontology — measure semantics as field-anchored rules (LineItem), and the
 # discriminator code-sets as closed enumeration concepts (OrderStatus, LineStatus, ReturnFlag, MarketSegment).

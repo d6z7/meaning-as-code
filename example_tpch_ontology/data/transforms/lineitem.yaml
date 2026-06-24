@@ -7,7 +7,7 @@ metadata:
   pipeline: lineitem
   source: TPCH
   layer: data-transformation
-  schema_version: '0.1.8'
+  schema_version: '0.1.9'
   status: verified
   owner: example-team
 
