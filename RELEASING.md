@@ -55,3 +55,18 @@ After any ontology change, the committed `projections/` (incl. the diagram) must
 left stale. A model whose picture no longer matches it is a release defect. *(Planned: a
 `tools/check_projections.py` freshness gate — regenerate to a temp dir and diff against the committed
 `projections/` — wired into `validate.sh`/CI.)*
+
+## The Shape Reference is generated — keep it in lock-step with the schema
+
+`reference_manual/shape_reference.md` is **derived from `mac.schema.json`** (the per-object-type structural
+shapes are generated; the surrounding contracts are hand-written). After **any change to `mac.schema.json`**
+it must be regenerated, never left stale. Three layers keep this honest:
+
+1. **Local (auto):** the committed `.githooks/pre-commit` regenerates and stages the doc whenever
+   `mac.schema.json` is part of a commit. Enable once per clone: `git config core.hooksPath .githooks`.
+2. **CI (enforced):** `python tools/gen_schema_shapes.py --check` runs in `validate.yml` — a stale doc
+   **fails the build** (regenerate to fix). This is the backstop for anyone who skips the hook.
+3. **Manual:** `python tools/gen_schema_shapes.py` regenerates on demand. Only the block between the
+   `<!-- BEGIN/END GENERATED:schema-shapes -->` markers is rewritten; the hand-written prose is preserved.
+
+(Same freshness pattern as `projections/` above — generated artifacts are committed *and* gate-checked.)

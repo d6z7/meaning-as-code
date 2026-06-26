@@ -23,7 +23,8 @@ the **formal stance** — we describe what we have built and validated, and noth
 Every piece of content is one of: **skeleton** (typed/pointer, deterministic), **behaviour-bearing**
 (drives a query/decision), or **pure prose** (informs a human only). No unclassified content. *Check:* apply
 the discriminator — "could two competent models produce different behaviour from this slot?"
-([content model §2](the_content_model.md)).
+([content model §2](the_content_model.md)). The complete slot inventory per object type — which keys exist
+and where they nest — is the [Shape Reference](shape_reference.md).
 
 ### A2 — Behaviour-bearing prose carries a UDF seam
 A slot that drives behaviour ships **prose always**, and a `realized_by:` **canon wherever determinism is

@@ -13,7 +13,8 @@ defines the **constructs** — the answer-particles — as what they actually ar
 patterns and canons rest on.*
 
 > **Relationship to the canon (single-homing, AUTHORING A3).** The *prose* definitions of the four layers and
-> six classes live in [`../FRAMEWORK.md`](../FRAMEWORK.md) §4–§5; the additivity law lives in
+> six classes live in [`../FRAMEWORK.md`](../FRAMEWORK.md) §4–§5; their concrete YAML **shape** (which keys,
+> where, per class) is the generated [Shape Reference](shape_reference.md); the additivity law lives in
 > [`../mac_vocabulary.yaml`](../mac_vocabulary.yaml). This chapter does **not** restate them — it adds the
 > layer FRAMEWORK leaves implicit: the **formal structure** under each construct, and the **completeness
 > argument** over them. Where prose and this chapter overlap, FRAMEWORK owns the prose; this owns the math.
