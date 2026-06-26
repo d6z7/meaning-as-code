@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+# pre-commit — keep generated docs in lock-step with their source.
+#
+# The Shape Reference (reference_manual/shape_reference.md) is generated from mac.schema.json. If the
+# schema is part of this commit, regenerate the doc and stage it, so the two can never diverge. The CI
+# `--check` gate is the backstop for anyone who bypasses this hook (or hasn't enabled it).
+#
+# Enable once per clone:  git config core.hooksPath .githooks
+set -e
+
+if git diff --cached --name-only | grep -qx "mac.schema.json"; then
+  echo "[pre-commit] mac.schema.json changed → regenerating reference_manual/shape_reference.md"
+  python3 tools/gen_schema_shapes.py
+  git add reference_manual/shape_reference.md
+fi

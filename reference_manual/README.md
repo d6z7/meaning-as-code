@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral. All examples are from example_shop_ontology/ 
   No real business domain, warehouse, or vendor appears here.
 companions:
   - ../FRAMEWORK.md            # the canon — the why + the complete construct definitions
-  - ../CONCEPT_SPEC.md         # the exhaustive key-by-key reference
+  - shape_reference.md         # the per-object-type Shape Reference (generated shapes + naming/ref contracts)
   - ../MODELLERS_COOKBOOK.md   # decision procedures + recipes for the closed primitives
   - ../example_shop_ontology/  # the worked example every entry points at
 ---
@@ -38,6 +38,19 @@ file per worked pattern** — the most MAC-native shape: each pattern is a looku
 | [03_pattern_reference.md](03_pattern_reference.md) | **The Pattern Reference** — the idioms. Why it can be complete, the entry template, and the enumeration work-list. Links to `patterns/`. | 🔧 prototyped |
 | [04_discipline.md](04_discipline.md) | **The discipline** — two orthogonal axes: the correctness gradient (ref. FRAMEWORK §8) and the determinism gradient (canon vs prose); why correctness must come *before* canonization; the manual's self-review discipline. | ✅ written |
 | [05_tutorial.md](05_tutorial.md) | **Tutorial: from blank canvas to a running model** — "hello, ontology" (one concept, run it), the author→gate→run→promote loop, growing to concept + edge + rule, and when to jump to a Ch.03 pattern. References the cookbook + example; doesn't restate them. | ✅ written |
+
+## Shape reference
+
+The **per-object-type structural reference** — what keys exist, where they nest, what's required, the
+per-class conditionals, and the `x-` extension rule. The structural shapes are **generated from
+[`mac.schema.json`](../mac.schema.json)** (always current — re-run `tools/gen_schema_shapes.py`), wrapped
+by two hand-written contracts (naming · reference syntax). It is the readable face of the closed schema and
+the concrete companion to [Ch.02](02_building_blocks.md) (which owns the six classes *as structures*; this
+shows their YAML shape). Supersedes the retired `../CONCEPT_SPEC.md`.
+
+| File | Reference | Status |
+| --- | --- | --- |
+| [shape_reference.md](shape_reference.md) | Shape Reference — `ConceptFile` · `RulesFile` · `EdgesFile` · `TableFile` · `TransformFile`, plus the naming contract + reference syntax | generated + prose |
 
 ## Patterns (worked entries)
 
@@ -118,7 +131,7 @@ manual is itself meaning-as-code). A reference manual for frameworks needs its o
 ## Resolved: how this manual relates to the canon
 
 *(Was an open decision; settled by how Ch.02/04 were written.)* Chapters 02 and 04 chose **(a) reference**:
-they point at the canon (`FRAMEWORK.md`, `CONCEPT_SPEC.md`, `mac_vocabulary.yaml`) for the prose definitions
+they point at the canon (`FRAMEWORK.md`, `shape_reference.md`, `mac_vocabulary.yaml`) for the prose definitions
 and own only the **new layer** — Ch.02 the formal core (structures + the equation + completeness), Ch.04 the
 determinism axis. Nothing canonical is copied in; single-homing (A3) holds. If a future need for a fully
 standalone "book" arises, option (b) — absorb the canon and make these the canonical home — remains open,
