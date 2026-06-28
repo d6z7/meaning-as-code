@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.9",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.9 (adds the content-model UDF seam: an optional `realized_by` canon binding on behaviour-bearing slots, resolved against the mac.canon registry).",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.10",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
 
   "oneOf": [
@@ -87,7 +87,7 @@
     },
 
     "confidence": {
-      "description": "Trust tier (pluggable scale; GAPS uses C/I/Q). C confirmed · I inferred · Q needs-SME.",
+      "description": "Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.",
       "enum": ["C", "I", "Q"]
     },
 
@@ -234,7 +234,7 @@
         },
         "rules": {
           "type": "array",
-          "description": "v0.1.6: typed behavioural rules (promoted from the GAPS pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.",
+          "description": "v0.1.6: typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.",
           "items": {
             "type": "object",
             "required": ["id", "kind"],
@@ -299,7 +299,7 @@
         "grounds_column": { "type": "string", "description": "(naming contract) a physical column name as a VALUE, never a key." },
         "field_roles": {
           "type": "object",
-          "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. gaps.field_role.attribute), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
+          "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
           "additionalProperties": { "type": "string" }
         },
         "note": { "type": "string" },
@@ -356,10 +356,54 @@
           "additionalProperties": true
         },
         "canonicalization": { "type": ["string", "object"], "description": "how raw spellings/duplicates were conformed to the canonical codes." },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)." }
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)." },
+        "aliases": { "$ref": "#/$defs/aliasBlock", "description": "v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum." }
       },
       "patternProperties": { "^x-": true },
       "additionalProperties": false
+    },
+
+    "aliasBlock": {
+      "type": "object",
+      "description": "v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a canonical value code. Tier 1 (scope_relative, optional) — the SAME surface means a different code UNDER a different scope value (named by scope_key); Tier 2 (multilingual) — scope-free de/en/syn surfaces. A surface resolving to >1 code ⇒ ASK; a token outside the closed set ⇒ ASK (offer the set); never a silent bind/drop. Each map key MUST be a declared values.items[].code (enforced by check_shapes, not expressible in pure JSON Schema).",
+      "properties": {
+        "scope_key": { "type": "string", "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'brand_letter', 'channel'); omitted for multilingual-only enums." },
+        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "the canon that realizes the resolution — mac.canon.alias_resolve." },
+        "map": {
+          "type": "object",
+          "description": "canonical code → its alias tiers.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "stored": { "type": ["string", "number"], "description": "the byte-exact served value when it differs from the code (else the code is emitted verbatim)." },
+              "multilingual": {
+                "type": "object",
+                "description": "scope-free surfaces by language.",
+                "properties": {
+                  "de": { "type": "array", "items": { "type": "string" } },
+                  "en": { "type": "array", "items": { "type": "string" } },
+                  "syn": { "type": "array", "items": { "type": "string" } }
+                },
+                "patternProperties": { "^x-": true },
+                "additionalProperties": false
+              },
+              "scope_relative": { "$ref": "#/$defs/aliasScopeMap", "description": "domain-neutral Tier-1: scope value → the surfaces that, under that scope, mean this code. The GENERIC name the engine core reads." },
+              "brand_relative": { "$ref": "#/$defs/aliasScopeMap", "description": "an authoring alias of scope_relative for brand-scoped enums (loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes." }
+            },
+            "patternProperties": { "^x-": true },
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": ["map"],
+      "patternProperties": { "^x-": true },
+      "additionalProperties": false
+    },
+
+    "aliasScopeMap": {
+      "type": "object",
+      "description": "a scope value (e.g. a brand letter) → the list of surfaces that, UNDER that scope, resolve to the owning code.",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
     },
 
     "PropertyItem": {
@@ -416,7 +460,7 @@
             "type": "object",
             "required": ["code"],
             "properties": {
-              "namespace": { "type": "string", "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (VW-VE vs Audi-VE)" },
+              "namespace": { "type": "string", "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (one brand's 'VE' vs another brand's 'VE')" },
               "code": { "type": ["string", "number"] },
               "label": { "type": "string" },
               "brand": { "type": "string" },

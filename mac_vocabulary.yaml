@@ -1,4 +1,4 @@
-# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.9).
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.10).
 #
 # The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
 # A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
@@ -13,7 +13,7 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.9'
+  version: '0.1.10'
   status: active
   defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon]
 
@@ -112,3 +112,4 @@ canon:
     hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
     ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
+    alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }

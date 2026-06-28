@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.9)
+## Structural shapes — generated (schema 0.1.10)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -100,7 +100,7 @@ metadata:  # REQUIRED
   benchmark_baseline: <…>  # string
   status: <…>  # enum: production | draft | prototype
   owner: <…>  # string
-  confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+  confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
 
 concept:  # REQUIRED
   name: <…>  # REQUIRED · string · PascalCase ontology id — the single canonical identifier.
@@ -131,7 +131,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
   default_reading: <…>  # string|object · The default aggregation / role / perspective to assume when the…
   answer_rules: <…>  # string|object · Binding constraints on answering — which definition to use, what to…
   axis_handling: <…>  # string|object · How to treat time / orthogonal axes for this concept
-  rules:  # v0.1.6: typed behavioural rules (promoted from the GAPS pilot,…
+  rules:  # v0.1.6: typed behavioural rules (promoted from an applied pilot,…
     - <item>
       id: <…>  # REQUIRED · string · stable dotted id, e.g
       kind: <…>  # REQUIRED · string · a mac.rule_kind.* reference…
@@ -158,7 +158,7 @@ values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set 
       code: <…>  # REQUIRED · string|number · the canonical value identifier
       label: <…>  # string
       meaning: <…>  # string
-      confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+      confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
       note: <…>  # string
       open_question: <…>  # string
       from: <…>  # string|array · raw source attribute(s) this value was conformed from (a list when…
@@ -169,6 +169,14 @@ values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set 
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
     note: <…>  # string
+  aliases:  # v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a…  # closed: only keys above + x-*
+    scope_key: <…>  # string · the dimension/column whose value selects a Tier-1 scope_relative row…
+    realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+      udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
+      params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
+      applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
+      note: <…>  # string
+    map:  # REQUIRED · canonical code → its alias tiers.  # open: extra keys allowed
 
 properties:  # Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem…
   - <item>  # $defs.PropertyItem
@@ -185,7 +193,7 @@ attributes:  # EAV / enum-constrained attributes — each an AttributeItem
     value_domain: <…>  # string · the enumeration the attribute's values belong to
     eav_attribute: <…>  # string
     column: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     note: <…>  # string
 
 subclasses: [ ... ]  # is-a hierarchy (e.g
@@ -205,7 +213,7 @@ members:  # one of: array | object · v0.5 grouping template — how a grouping 
       brand: <…>  # string
       members: [ ... ]  # (explicit) the leaf codes in this set
       derived_rule: <…>  # string|object · (derived) how this set's members are computed
-      confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+      confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
@@ -342,7 +350,7 @@ rules:  # REQUIRED
     conditions: <…>
     edge_cases: <…>
     inspectable: <…>  # boolean
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     cross_references: <…>  # array|string
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
@@ -389,7 +397,7 @@ edges:  # REQUIRED
     join_rule: <…>  # string
     realized_by: <…>
     conditions: <…>
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     federation_concept_id: <…>  # string
     notes: <…>  # string
     cross_references: <…>  # array|string
@@ -408,7 +416,7 @@ table:  # REQUIRED
   schema: <…>  # string
   type: <…>  # enum: table | view | materialized_view
   description: <…>  # string
-  confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+  confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
 
 derived_from:  # (views only) LINEAGE — how this serving relation is built
   sources: [ ... ]  # the raw/upstream relation(s) this view is built from
@@ -422,7 +430,7 @@ columns:  # REQUIRED
     type: <…>  # string
     role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | composite_key_part | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     description: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     nullable: <…>  # boolean
     notes: <…>  # string
     enum_ref: <…>  # string
@@ -436,7 +444,7 @@ foreign_keys:
     enforced: <…>  # boolean
     required: <…>  # boolean
     cardinality_at_to: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; GAPS uses C/I/Q)
+    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     notes: <…>  # string
 
 grounded_by_concepts:
