@@ -1,0 +1,45 @@
+# TPC-H (example) — data plane / TRANSFORMS: the `lineitem` pipeline (how the central fact is made).
+# Synthetic example of the TransformFile construct. Demonstrates TWO input kinds: a raw_source (the
+# observed upstream lines) and a `dataset` input (view-on-view enrichment from the orders dataset).
+# The consuming concept (LineItem) describes only the CLEAN result and carries no transform logic.
+
+metadata:
+  pipeline: lineitem
+  source: TPCH
+  layer: data-transformation
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+
+produces:
+  relation: tpch.lineitem
+  sql_file: data/transforms/lineitem.sql
+  grain: "one row per (l_orderkey, l_linenumber)"
+  serves_ontology: ontology/concepts/order/lineitem.yaml
+
+inputs:
+  - relation: tpch_raw.lineitem_raw
+    kind: raw_source
+    role: raw_lines
+    descriptor: data/sources/lineitem_raw.yaml
+    consumes:
+      l_discount_bps: discount-basis-points-to-fraction
+  - relation: tpch.orders
+    kind: dataset                                  # view-on-view: enriches lines with their order's date
+    role: order_enrichment
+    descriptor: data/datasets/orders.yaml
+
+transforms:
+  - id: discount-basis-points-to-fraction
+    impurity_class: unit_mismatch
+    raw_defect: "discount arrives as integer basis points (l_discount_bps, e.g. 700 = 7%)"
+    rule: "convert basis points to the [0,1] fraction the ontology's Revenue rule expects"
+    sql: "cast(l_discount_bps AS decimal(6,4)) / 10000 AS l_discount"
+    establishes_guarantee: "l_discount is a [0,1] fraction — Revenue = extendedprice * (1 - l_discount) is correct"
+    status: applied
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-19
+  change_log:
+    - { date: 2026-06-19, change: "Created the lineitem pipeline descriptor; demonstrates raw_source + dataset input kinds.", change_type: CREATION, by: example-team }

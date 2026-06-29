@@ -1,0 +1,8 @@
+# NEGATIVE fixture — MUST be rejected: 'value_set' was dropped in v0.5 (consolidated into values:).
+metadata: { concept: Status, source: TEST, schema_version: '0.1.6' }
+concept: { name: Status, class: enumeration, definition: uses the dropped value_set carrier }
+value_set:                # ← illegal in v0.5: unknown top-level key
+  closure: closed
+values:
+  items:
+    - { code: A }

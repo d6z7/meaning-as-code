@@ -1,0 +1,39 @@
+# TPC-H (example) — Rules layer: a DERIVATION with a renderable form. Synthetic; not real data.
+
+metadata:
+  layer: rules
+  source: TPCH
+  schema_version: '0.1.9'
+  status: production
+  date: 2026-06-17
+
+rules:
+
+  - rule: net_revenue
+    derives: Revenue                       # → concepts/finance/revenue.yaml (derived_by_rule: net_revenue)
+    over: [LineItem]
+    logic: >
+      Net revenue is the discounted value of order lines: per line, l_extendedprice × (1 − l_discount),
+      summed. l_extendedprice is already price × quantity (gross); the discount is a fraction in [0,1].
+      This is the figure "Revenue" means by default, and the basis of TPC-H's revenue/market-share queries.
+    render_kind: sql_expression
+    template: |
+      SUM(l_extendedprice * (1 - l_discount))                 -- net = gross extended price, less discount
+    requires_join: |
+      lineitem l
+        -- slice by joining outward as needed:
+        -- l.l_orderkey = o.o_orderkey (orders) ; o.o_custkey = c.c_custkey (customer)
+        -- c.c_nationkey = n.n_nationkey (nation) ; n.n_regionkey = r.r_regionkey (region)
+        -- (l.l_partkey, l.l_suppkey) = (ps.ps_partkey, ps.ps_suppkey) (partsupp)
+    conditions:
+      - "Discount is a fraction 0..1; a NULL discount counts as 0 (the line contributes its full extended price)."
+      - "Extended price is gross (price × quantity); the discount is applied here, taxes are not (that would be a separate measure)."
+    validated_against: [lineitem]
+    inspectable: true
+    confidence: C
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

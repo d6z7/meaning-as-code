@@ -1,0 +1,5 @@
+# NEGATIVE fixture — MUST be rejected: every property (PropertyItem) requires a name.
+metadata: { concept: Product, source: TEST, schema_version: '0.1.6' }
+concept: { name: Product, class: reference, definition: a property is missing its name }
+properties:
+  - { type: string, required: true, doc: "no name!" }     # ← missing required `name`

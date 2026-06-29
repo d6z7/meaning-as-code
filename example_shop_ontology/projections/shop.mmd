@@ -1,0 +1,44 @@
+---
+title: shop — ontology flowchart · concepts grounded to the data plane
+---
+%%{init: {"flowchart": {"curve": "basis"}}}%%
+flowchart LR
+  subgraph ONT["ONTOLOGY PLANE — shop: what it means (concepts · edges · rules)"]
+    direction LR
+    Category["Category<br/><i>«grouping»</i>"]
+    Product["Product<br/><i>«reference»</i>"]
+    Customer["Customer<br/><i>«entity»</i>"]
+    Revenue["Revenue<br/><i>«measure»</i>"]
+    Order["Order<br/><i>«event»</i>"]
+    OrderStatus["OrderStatus<br/><i>«enumeration»</i>"]
+    Order -->|"placedBy (1)"| Customer
+    Product -->|"belongsToCategory (0..1)"| Category
+  end
+  subgraph DATA["DATA PLANE — how the data is made (datasets = structure only)"]
+    direction LR
+    t_categories[("categories<br/>category_id pk")]
+    t_customers[("customers<br/>customer_id pk")]
+    t_orders[("orders<br/>order_id pk")]
+    t_products[("products<br/>sku pk")]
+    t_refunds[("refunds<br/>refund_id pk")]
+  end
+  Category -. grounds .-> t_categories
+  Product -. grounds .-> t_products
+  Customer -. grounds .-> t_customers
+  Revenue -. grounds .-> t_orders
+  Order -. grounds .-> t_orders
+  OrderStatus -. grounds .-> t_orders
+  classDef entity fill:#dae8fc,stroke:#6c8ebf,color:#000;
+  classDef event fill:#ffe6cc,stroke:#d79b00,color:#000;
+  classDef reference fill:#d5e8d4,stroke:#82b366,color:#000;
+  classDef grouping fill:#e1d5e7,stroke:#9673a6,color:#000;
+  classDef measure fill:#fff2cc,stroke:#d6b656,color:#000;
+  classDef enumeration fill:#f5f5f5,stroke:#666,color:#000;
+  classDef dataset fill:#ffffff,stroke:#999,color:#333;
+  class Category grouping;
+  class Product reference;
+  class Customer entity;
+  class Revenue measure;
+  class Order event;
+  class OrderStatus enumeration;
+  class t_categories,t_customers,t_orders,t_products,t_refunds dataset;

@@ -1,0 +1,34 @@
+name: validate-ontology
+
+# CP-1 quality gate for the framework repo: run the structural + referential validators on every push
+# and PR. A green run means the ontology (here, the worked example) is well-formed AND referentially
+# whole. It does NOT prove correctness-against-data (that is execution validation — see FRAMEWORK.md §8).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install jsonschema pyyaml
+
+      - name: Structural validation (validate_schema.py)
+        run: python tools/validate_schema.py example_shop_ontology
+
+      - name: Referential integrity (check_references.py)
+        run: python tools/check_references.py example_shop_ontology
+
+      # Generated-doc freshness: the Shape Reference is generated from mac.schema.json. If the schema
+      # changed without regenerating the doc, fail (run: python tools/gen_schema_shapes.py).
+      - name: Shape Reference freshness (gen_schema_shapes.py --check)
+        run: python tools/gen_schema_shapes.py --check

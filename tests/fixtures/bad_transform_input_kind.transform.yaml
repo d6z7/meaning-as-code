@@ -1,0 +1,7 @@
+# NEGATIVE fixture — MUST be rejected: input.kind is a closed enum
+# ({raw_source, dataset, authored_seed, external}); 'upstream_view' is not a member.
+produces:
+  relation: shop_warehouse.orders
+inputs:
+  - relation: shop_raw.orders_raw
+    kind: upstream_view        # ← invalid: not in the closed input-kind enum

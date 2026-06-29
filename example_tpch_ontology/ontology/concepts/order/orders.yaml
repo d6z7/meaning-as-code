@@ -1,0 +1,40 @@
+# TPC-H (example) > order > Orders — the `entity` class (the order header). Synthetic; not real data.
+
+metadata:
+  concept: Orders
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Orders
+  label: Order
+  class: entity
+  definition: >
+    The header of a customer order: who placed it (one Customer), when, its total price and status. The
+    parent of one or more LineItems. Modelled as an entity (a header record); the fulfilment lifecycle
+    lives on its LineItems, which is where shipping actually happens.
+  semantics:
+    purpose: >
+      Groups order lines under one customer + date, and carries the order-level total and status.
+
+properties:
+  - { name: orderKey,    type: integer, required: true,  doc: "o_orderkey — identity key" }
+  - { name: custKey,     type: integer, required: true,  doc: "o_custkey — the placing customer (placed_by edge)" }
+  - { name: orderStatus, type: string,  required: false, doc: "o_orderstatus — O/P/F" }
+  - { name: totalPrice,  type: number,  required: false, doc: "o_totalprice" }
+  - { name: orderDate,   type: date,    required: false, doc: "o_orderdate" }
+
+grounding:
+  kind: sql_table
+  table: orders
+  schema: tpch
+  key_column: o_orderkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

@@ -1,0 +1,50 @@
+# SHOP (example) > catalog > Category
+# Synthetic example — illustrates the `grouping` class (aggregation above the leaf). Not real data.
+
+metadata:
+  concept: Category
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Category
+  label: Category
+  class: grouping                 # a categorical aggregation ABOVE the leaf (Product) level
+  definition: >
+    A grouping of products into a browsable hierarchy — e.g. Electronics > Phones, Home > Kitchen.
+    A Category is not a sellable thing (that is Product, a reference); it is the roll-up level used to
+    aggregate revenue and browse the catalogue. Categories nest (a category may have a parent category).
+  semantics:
+    purpose: >
+      The roll-up axis for the catalogue: lets "revenue by category" aggregate over the products it
+      contains, and supports drill-down (Electronics → Phones → a specific Product).
+    additivity: { product: additive }   # revenue rolls up additively from products into a category
+
+# v0.5 grouping template — a Category rolls up Product via a FK rule (not enumerated named sets).
+members:
+  over: Product
+  member_source:
+    kind: rule
+    rule: >
+      A category contains products via Product.categoryId; nested categories via Category.parentId. To get
+      all products under a top-level category, walk parentId transitively then match Product.categoryId.
+
+properties:
+  - { name: categoryId, type: string, required: true,  doc: "category_id — identity key" }
+  - { name: name,       type: string, required: true,  doc: "display name (e.g. 'Phones')" }
+  - { name: parentId,   type: string, required: false, doc: "parent category (NULL at top level) — the nesting" }
+
+grounding:
+  kind: sql_table
+  table: categories
+  schema: shop_warehouse
+  key_column: category_id
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

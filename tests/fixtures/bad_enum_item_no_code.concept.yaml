@@ -1,0 +1,7 @@
+# NEGATIVE fixture — MUST be rejected: every enumeration value needs a `code`.
+metadata: { concept: Status, source: TEST, schema_version: '0.1.6' }
+concept: { name: Status, class: enumeration, definition: a value row is missing its required code }
+values:
+  closure: closed
+  items:
+    - { label: "Open", meaning: "in progress" }     # ← no `code:`

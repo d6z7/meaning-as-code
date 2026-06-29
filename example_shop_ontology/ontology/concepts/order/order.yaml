@@ -1,0 +1,95 @@
+# SHOP (example) > order > Order
+# Synthetic example — illustrates the `event` class and the lifecycle: block. Not real data.
+
+metadata:
+  concept: Order
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Order
+  label: Order
+  class: event                    # a stateful occurrence that moves through a lifecycle over time
+  definition: >
+    A purchase a customer places: one or more products bought in a single checkout. An order is a
+    thing that HAPPENS and then moves through states — placed → paid → shipped → delivered, with
+    returned/cancelled as terminal branches. Its current state is its furthest-reached lifecycle state.
+  semantics:
+    purpose: >
+      The central event of the shop — what revenue is computed from and what the fulfilment process
+      tracks. Each order is placed_by one Customer (see edges) and contains one or more Products.
+    null_semantics: >
+      A NULL shipped_at means the order has not shipped yet (not "shipped at an unknown time"). The
+      lifecycle state is read from which timestamps are present.
+
+# ── lifecycle: the canonical event state machine (phases group states, in sequence) ──
+lifecycle:
+  phase_sequence: [CHECKOUT, FULFILMENT, CLOSED]     # ordered macro-phases
+  boundary: "PAID is the CHECKOUT → FULFILMENT boundary (money taken, fulfilment can begin)"
+  phases:
+    - { name: CHECKOUT,   meaning: "Order created and (maybe) paid.",          states: [PLACED, PAID] }
+    - { name: FULFILMENT, meaning: "Goods moving to the customer.",            states: [SHIPPED, DELIVERED] }
+    - { name: CLOSED,     meaning: "Terminal outcomes.",                       states: [RETURNED, CANCELLED] }
+  phase_closure: closed
+  note: >
+    Happy path PLACED→PAID→SHIPPED→DELIVERED. CANCELLED can occur from PLACED/PAID (before shipping);
+    RETURNED only after DELIVERED. The state vocabulary itself is the OrderStatus enumeration.
+
+properties:
+  - { name: orderId,    type: string,    required: true,  doc: "order_id — identity key" }
+  - { name: placedAt,   type: timestamp, required: true,  doc: "when the order was placed" }
+  - { name: paidAt,     type: timestamp, required: false, doc: "NULL until paid" }
+  - { name: shippedAt,  type: timestamp, required: false, doc: "NULL until shipped" }
+  - { name: deliveredAt, type: timestamp, required: false, doc: "NULL until delivered" }
+  - { name: grossAmount, type: number,   required: true,  doc: "order total before refunds (see Revenue)" }
+
+grounding:
+  kind: sql_table
+  table: orders
+  schema: shop_warehouse
+  key_column: order_id
+  # v0.1.7 whitelist: the columns carrying ontology meaning + their analytical role, referenced from the
+  # application vocabulary (../../vocabulary.yaml). check_references resolves the role; the
+  # field-roles-grounded shape proves each column is real. `attribute` ⇒ display-only/never-filter.
+  field_roles:
+    order_id:     shop.field_role.key
+    customer_id:  shop.field_role.key
+    status:       shop.field_role.dimension
+    gross_amount: shop.field_role.measure
+
+# Field-anchoring: typed behavioural rules bound to the `orders` columns they govern (`binds`). The
+# built-in `rule-binds-grounded` shape verifies each bind is a real column of the grounded table.
+contract:
+  no_probe_guarantee: >
+    Everything needed to read an order's state and its revenue-eligibility is on the orders row — the
+    lifecycle is which `*_at` timestamps are present, not a separate column. No warehouse probe needed.
+  rules:
+    - id: order.state.from_timestamps
+      kind: mac.rule_kind.resolution
+      when: "deciding an order's lifecycle state (placed / paid / shipped / delivered)"
+      then: "read it from which timestamps are present — paid iff paid_at IS NOT NULL, shipped iff shipped_at IS NOT NULL, delivered iff delivered_at IS NOT NULL (furthest-reached state wins)"
+      never: "treating a NULL shipped_at as 'shipped at an unknown time' — NULL means not yet shipped"
+      why: "the state is derived from the presence of the timestamp columns, not stored as free text"
+      binds: [paid_at, shipped_at, delivered_at]
+    - id: order.revenue.paid_only
+      kind: mac.rule_kind.exclusion
+      when: "counting an order toward revenue"
+      then: "include it only if it is paid (paid_at IS NOT NULL)"
+      never: "counting a PLACED-but-unpaid order as revenue"
+      why: "revenue recognizes paid orders only — an unpaid order is a pending checkout, not earnings"
+      binds: [paid_at]
+
+constraints:
+  - assert: "Order lifecycle state is derived from which timestamps are present, not a free-text column"
+    severity: WARNING
+    machine_executable: false
+    notes: "e.g. shipped iff shipped_at IS NOT NULL. See OrderStatus for the value vocabulary."
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

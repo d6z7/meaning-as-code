@@ -1,0 +1,38 @@
+# TPC-H (example) > geography > Region
+# Synthetic example — illustrates the `entity` class at the top of a hierarchy. Not real data.
+
+metadata:
+  concept: Region
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Region
+  label: Region
+  class: entity
+  definition: >
+    A top-level geographic grouping of nations (TPC-H regions: AFRICA, AMERICA, ASIA, EUROPE,
+    MIDDLE EAST). The root of the geography hierarchy — a Nation belongs to exactly one Region, and
+    customers/suppliers roll up to a region through their nation.
+  semantics:
+    purpose: >
+      The coarsest geography level — the axis for continental roll-ups of revenue, supply, and demand.
+
+properties:
+  - { name: regionKey, type: integer, required: true,  doc: "r_regionkey — identity key" }
+  - { name: name,      type: string,  required: true,  doc: "r_name — region name" }
+
+grounding:
+  kind: sql_table
+  table: region
+  schema: tpch
+  key_column: r_regionkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

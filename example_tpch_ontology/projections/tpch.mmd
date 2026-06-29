@@ -1,0 +1,65 @@
+---
+title: tpch — ontology flowchart · concepts grounded to the data plane
+---
+%%{init: {"flowchart": {"curve": "basis"}}}%%
+flowchart LR
+  subgraph ONT["ONTOLOGY PLANE — tpch: what it means (concepts · edges · rules)"]
+    direction LR
+    Revenue["Revenue<br/><i>«measure»</i>"]
+    Nation["Nation<br/><i>«entity»</i>"]
+    Region["Region<br/><i>«entity»</i>"]
+    LineStatus["LineStatus<br/><i>«enumeration»</i>"]
+    LineItem["LineItem<br/><i>«event»</i>"]
+    OrderStatus["OrderStatus<br/><i>«enumeration»</i>"]
+    Orders["Orders<br/><i>«entity»</i>"]
+    ReturnFlag["ReturnFlag<br/><i>«enumeration»</i>"]
+    Part["Part<br/><i>«entity»</i>"]
+    PartSupp["PartSupp<br/><i>«entity»</i>"]
+    Customer["Customer<br/><i>«entity»</i>"]
+    MarketSegment["MarketSegment<br/><i>«enumeration»</i>"]
+    Supplier["Supplier<br/><i>«entity»</i>"]
+    Nation -->|"inRegion (1)"| Region
+    Customer -->|"fromNation (1)"| Nation
+    Supplier -->|"fromNation (1)"| Nation
+    PartSupp -->|"ofPart (1)"| Part
+    PartSupp -->|"fromSupplier (1)"| Supplier
+    Orders -->|"placedBy (1)"| Customer
+    LineItem -->|"partOfOrder (1)"| Orders
+    LineItem -->|"suppliedVia (1)"| PartSupp
+  end
+  subgraph DATA["DATA PLANE — how the data is made (datasets = structure only)"]
+    direction LR
+    t_customer[("customer<br/>c_custkey pk")]
+    t_lineitem[("lineitem")]
+    t_nation[("nation<br/>n_nationkey pk")]
+    t_orders[("orders<br/>o_orderkey pk")]
+    t_part[("part<br/>p_partkey pk")]
+    t_partsupp[("partsupp")]
+    t_region[("region<br/>r_regionkey pk")]
+    t_supplier[("supplier<br/>s_suppkey pk")]
+  end
+  Revenue -. grounds .-> t_lineitem
+  Nation -. grounds .-> t_nation
+  Region -. grounds .-> t_region
+  LineStatus -. grounds .-> t_lineitem
+  LineItem -. grounds .-> t_lineitem
+  OrderStatus -. grounds .-> t_orders
+  Orders -. grounds .-> t_orders
+  ReturnFlag -. grounds .-> t_lineitem
+  Part -. grounds .-> t_part
+  PartSupp -. grounds .-> t_partsupp
+  Customer -. grounds .-> t_customer
+  MarketSegment -. grounds .-> t_customer
+  Supplier -. grounds .-> t_supplier
+  classDef entity fill:#dae8fc,stroke:#6c8ebf,color:#000;
+  classDef event fill:#ffe6cc,stroke:#d79b00,color:#000;
+  classDef reference fill:#d5e8d4,stroke:#82b366,color:#000;
+  classDef grouping fill:#e1d5e7,stroke:#9673a6,color:#000;
+  classDef measure fill:#fff2cc,stroke:#d6b656,color:#000;
+  classDef enumeration fill:#f5f5f5,stroke:#666,color:#000;
+  classDef dataset fill:#ffffff,stroke:#999,color:#333;
+  class Revenue measure;
+  class Nation,Region,Orders,Part,PartSupp,Customer,Supplier entity;
+  class LineStatus,OrderStatus,ReturnFlag,MarketSegment enumeration;
+  class LineItem event;
+  class t_customer,t_lineitem,t_nation,t_orders,t_part,t_partsupp,t_region,t_supplier dataset;

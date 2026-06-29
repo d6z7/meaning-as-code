@@ -1,0 +1,36 @@
+# TPC-H (example) — Physical layer: the supplier table descriptor. Synthetic; not real data.
+
+metadata:
+  table: supplier
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: supplier
+  schema: tpch
+  type: table
+  description: "One row per supplier. Grounding target for the Supplier entity; each supplier is from one nation."
+
+columns:
+  - { name: s_suppkey,  type: integer, role: primary_key }
+  - { name: s_name,     type: string,  role: value }
+  - { name: s_nationkey, type: integer, role: foreign_key }
+  - { name: s_phone,    type: string,  role: value }
+  - { name: s_acctbal,  type: decimal, role: value, x-subrole: measure }
+  - { name: s_comment,  type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_nation, from_column: s_nationkey, to_table: nation, to_column: n_nationkey }
+
+grounded_by_concepts:
+  - { concept: Supplier, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

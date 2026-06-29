@@ -1,0 +1,39 @@
+# TPC-H (example) > part > Part — the `entity` class. Synthetic; not real data.
+
+metadata:
+  concept: Part
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Part
+  label: Part
+  class: entity
+  definition: >
+    A catalogue item that can be ordered. Identified by p_partkey, classified by brand and type. Sold
+    through one or more suppliers (see PartSupp) and bought on order lines.
+  semantics:
+    purpose: >
+      The product axis — slices revenue and quantity by brand, type, and individual part.
+
+properties:
+  - { name: partKey,      type: integer, required: true,  doc: "p_partkey — identity key" }
+  - { name: name,         type: string,  required: false, doc: "p_name" }
+  - { name: brand,        type: string,  required: false, doc: "p_brand" }
+  - { name: type,         type: string,  required: false, doc: "p_type" }
+  - { name: retailPrice,  type: number,  required: false, doc: "p_retailprice — list price" }
+
+grounding:
+  kind: sql_table
+  table: part
+  schema: tpch
+  key_column: p_partkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

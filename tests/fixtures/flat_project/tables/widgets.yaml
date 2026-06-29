@@ -1,0 +1,4 @@
+metadata: { table: widgets, source: FLAT, version: '1.0', schema_version: '0.1.6', status: verified, owner: t }
+table: { name: widgets, schema: s, type: table }
+columns:
+  - { name: widget_id, type: string, role: primary_key }

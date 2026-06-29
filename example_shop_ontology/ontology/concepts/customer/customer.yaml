@@ -1,0 +1,40 @@
+# SHOP (example) > customer > Customer
+# Synthetic example — illustrates the `entity` class. Not real data.
+
+metadata:
+  concept: Customer
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Customer
+  label: Customer
+  class: entity                   # a structured thing with identity, that other concepts reference
+  definition: >
+    A person (or business) who can place orders in the shop. Identified by customer_id. The root party
+    of the ordering process; an Order is placed_by exactly one Customer.
+  semantics:
+    purpose: >
+      Identifies who placed an order, so revenue and behaviour can be attributed to a party and orders
+      can be grouped per customer.
+
+properties:
+  - { name: customerId,    type: string, required: true,  doc: "customer_id — the identity key" }
+  - { name: displayName,   type: string, required: false, doc: "name shown on the account" }
+  - { name: countryCode,   type: string, required: false, doc: "ISO-2 billing country" }
+  - { name: signupDate,    type: date,   required: false, doc: "when the account was created" }
+
+grounding:
+  kind: sql_table
+  table: customers
+  schema: shop_warehouse
+  key_column: customer_id
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

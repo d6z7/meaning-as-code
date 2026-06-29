@@ -1,0 +1,46 @@
+# TPC-H (example) — Physical layer: the lineitem table descriptor (the central fact). Synthetic; not real data.
+
+metadata:
+  table: lineitem
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: lineitem
+  schema: tpch
+  type: table
+  description: "One row per order line — the central fact (composite key l_orderkey + l_linenumber). Grounding target for the LineItem event and the gross source of Revenue. Each line belongs to one order and is supplied via one (part, supplier) = partsupp."
+
+columns:
+  - { name: l_orderkey,     type: integer, role: foreign_key }
+  - { name: l_linenumber,   type: integer, role: composite_key_part }
+  - { name: l_partkey,      type: integer, role: foreign_key }
+  - { name: l_suppkey,      type: integer, role: foreign_key }
+  - { name: l_quantity,     type: decimal, role: value, x-subrole: measure }
+  - { name: l_extendedprice, type: decimal, role: value, x-subrole: measure }
+  - { name: l_discount,     type: decimal, role: value, x-subrole: measure }
+  - { name: l_tax,          type: decimal, role: value, x-subrole: measure }
+  - { name: l_returnflag,   type: string,  role: discriminator }
+  - { name: l_linestatus,   type: string,  role: discriminator }
+  - { name: l_shipdate,     type: date,    role: value, x-subrole: temporal }
+  - { name: l_commitdate,   type: date,    role: value, x-subrole: temporal }
+  - { name: l_receiptdate,  type: date,    role: value, x-subrole: temporal }
+  - { name: l_shipmode,     type: string,  role: discriminator }
+  - { name: l_comment,      type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_orders, from_column: l_orderkey, to_table: orders, to_column: o_orderkey }
+
+grounded_by_concepts:
+  - { concept: LineItem, role: primary_table }
+  - { concept: Revenue,  role: gross_source }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

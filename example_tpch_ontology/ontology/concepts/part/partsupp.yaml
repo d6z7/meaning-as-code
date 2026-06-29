@@ -1,0 +1,39 @@
+# TPC-H (example) > part > PartSupp — an associative `entity` (a reified relationship). Synthetic; not real data.
+
+metadata:
+  concept: PartSupp
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: PartSupp
+  label: Part-Supplier
+  class: entity
+  definition: >
+    The supply of a Part by a Supplier — a reified many-to-many relationship with its own attributes
+    (available quantity, supply cost). Identified by the composite key (ps_partkey, ps_suppkey). It is an
+    entity, not an edge, precisely because it CARRIES data: an edge cannot hold availqty/supplycost.
+  semantics:
+    purpose: >
+      Captures which supplier stocks which part, at what cost — the bridge an order line is supplied through.
+
+properties:
+  - { name: partKey,     type: integer, required: true,  doc: "ps_partkey — composite key part (→ Part)" }
+  - { name: suppKey,     type: integer, required: true,  doc: "ps_suppkey — composite key part (→ Supplier)" }
+  - { name: availQty,    type: integer, required: false, doc: "ps_availqty" }
+  - { name: supplyCost,  type: number,  required: false, doc: "ps_supplycost" }
+
+grounding:
+  kind: sql_table
+  table: partsupp
+  schema: tpch
+  key_column: ps_partkey   # composite (ps_partkey, ps_suppkey); the leading key part is named here
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

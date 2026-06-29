@@ -1,0 +1,47 @@
+# TPC-H (example) > finance > Revenue — the `measure` class (derived). Synthetic; not real data.
+
+metadata:
+  concept: Revenue
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Revenue
+  label: Revenue
+  class: measure
+  definition: >
+    The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount).
+    "Revenue" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue),
+    not a stored column.
+  semantics:
+    purpose: >
+      The headline financial measure — sliced by part, customer, supplier, geography and time; the
+      numerator of TPC-H's revenue and market-share queries.
+    unit: currency (account currency)
+    measure_type: mac.MeasureType.Flow
+    additivity: { time: additive, geography: additive, part: additive, customer: additive, supplier: additive }
+    axis_kinds:
+      time:      mac.axis_kind.time
+      geography: mac.axis_kind.categorical
+      part:      mac.axis_kind.categorical
+      customer:  mac.axis_kind.categorical
+      supplier:  mac.axis_kind.categorical
+    null_semantics: >
+      A line with NULL discount contributes its full extended price (no discount = zero discount), not missing data.
+
+derived_by_rule: net_revenue
+
+grounding:
+  kind: sql_table
+  table: lineitem
+  schema: tpch
+  key_column: l_orderkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

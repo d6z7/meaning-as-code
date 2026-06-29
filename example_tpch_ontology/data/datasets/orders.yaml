@@ -1,0 +1,37 @@
+# TPC-H (example) — Physical layer: the orders table descriptor. Synthetic; not real data.
+
+metadata:
+  table: orders
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: orders
+  schema: tpch
+  type: table
+  description: "One row per customer order (header). Grounding target for the Orders entity; placed by one customer."
+
+columns:
+  - { name: o_orderkey,      type: integer, role: primary_key }
+  - { name: o_custkey,       type: integer, role: foreign_key }
+  - { name: o_orderstatus,   type: string,  role: discriminator }
+  - { name: o_totalprice,    type: decimal, role: value, x-subrole: measure }
+  - { name: o_orderdate,     type: date,    role: value, x-subrole: temporal }
+  - { name: o_orderpriority, type: string,  role: discriminator }
+  - { name: o_comment,       type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_customer, from_column: o_custkey, to_table: customer, to_column: c_custkey }
+
+grounded_by_concepts:
+  - { concept: Orders, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

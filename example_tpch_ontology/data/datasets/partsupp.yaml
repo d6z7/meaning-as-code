@@ -1,0 +1,36 @@
+# TPC-H (example) — Physical layer: the partsupp (part-supplier) table descriptor. Synthetic; not real data.
+
+metadata:
+  table: partsupp
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: partsupp
+  schema: tpch
+  type: table
+  description: "One row per (part, supplier) pair — the associative table reifying which suppliers stock which parts, with availability and cost. Grounding target for the PartSupp associative entity."
+
+columns:
+  - { name: ps_partkey,   type: integer, role: composite_key_part }
+  - { name: ps_suppkey,   type: integer, role: composite_key_part }
+  - { name: ps_availqty,  type: integer, role: value, x-subrole: measure }
+  - { name: ps_supplycost, type: decimal, role: value, x-subrole: measure }
+  - { name: ps_comment,   type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_part,     from_column: ps_partkey, to_table: part,     to_column: p_partkey }
+  - { name: fk_supplier, from_column: ps_suppkey, to_table: supplier, to_column: s_suppkey }
+
+grounded_by_concepts:
+  - { concept: PartSupp, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

@@ -1,0 +1,115 @@
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.10).
+#
+# The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
+# A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
+# `mac.` is the framework/instance boundary (FRAMEWORK §0: the framework DEFINES, applications APPLY).
+# A referential checker resolves `mac.<known-namespace>...` against the namespaces below; a token whose
+# namespace is not registered here is not a framework reference (so `mac.schema.json` is just a filename).
+#
+# A namespace is a `vocabulary` (a closed set of named terms) or a `value_domain` (named members that
+# may carry structured attributes — e.g. a law). Examples are DOMAIN-NEUTRAL by rule; an applied
+# ontology supplies the domain instances that reference these terms.
+
+metadata:
+  registry: mac_vocabulary
+  namespace: mac
+  version: '0.1.10'
+  status: active
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon]
+
+# ===========================================================================
+# mac.aggregation_effect — how a measure may be combined along ONE axis.
+# ===========================================================================
+aggregation_effect:
+  kind: vocabulary
+  closed: true
+  description: The effect of aggregating a measure along a single axis.
+  terms:
+    additive:       "SUM is correct across this axis."
+    point_in_time:  "Non-additive over this axis: take the value at the leaf grain; never SUM across it."
+    non_aggregable: "Do not aggregate across this axis; report per cell."
+
+# ===========================================================================
+# mac.axis_kind — the KIND of an aggregation axis, for additivity purposes.
+# An applied ontology maps each concrete dimension to one kind; the additivity LAW is stated over kinds,
+# so it is universal (domain-independent).
+# ===========================================================================
+axis_kind:
+  kind: vocabulary
+  closed: true
+  description: The additivity-relevant classification of an aggregation axis.
+  terms:
+    time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
+    categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+
+# ===========================================================================
+# mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
+# non-additive fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here, over axis_kind
+# (3 types × 2 kinds = 6 universal cells). Each cell references a mac.aggregation_effect term.
+# An applied ontology's measures reference these members; they never re-encode the matrix.
+# ===========================================================================
+MeasureType:
+  kind: value_domain
+  closed: true
+  description: How a measure aggregates — defined once, over axis_kind.
+  members:
+    Flow:
+      definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."
+      additivity:
+        time:        mac.aggregation_effect.additive
+        categorical: mac.aggregation_effect.additive
+    Stock:
+      definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
+      additivity:
+        time:        mac.aggregation_effect.point_in_time
+        categorical: mac.aggregation_effect.additive
+    Target:
+      definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
+      additivity:
+        time:        mac.aggregation_effect.non_aggregable
+        categorical: mac.aggregation_effect.non_aggregable
+
+# ===========================================================================
+# mac.rule_kind — the closed taxonomy that types every behavioural rule (what the rule governs).
+# A typed rule references its kind (kind: mac.rule_kind.<term>) instead of an inline string, so the set
+# is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
+# is an inherited fact rather than a directive — kept distinct for clarity; prune at a later revision
+# if warranted.)
+# ===========================================================================
+rule_kind:
+  kind: vocabulary
+  closed: true
+  description: What a behavioural rule governs — the rule's type.
+  terms:
+    resolution:  "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
+    aggregation: "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
+    default:     "What to assume when an axis is unspecified but a safe default exists."
+    ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
+    exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
+    guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
+
+# ===========================================================================
+# mac.canon — the canon library: the deterministic, parameterized UDFs a behaviour-bearing slot binds
+# to via `realized_by: { udf: mac.canon.<name>, params: {...} }` (v0.1.9; the content-model UDF seam,
+# reference_manual/the_content_model.md §4). The logic is single-homed in the executable library
+# tools/canon/ and demonstrated runnable in tests/test_canon.py ("a canon that doesn't run is prose in
+# a code costume"). Each member names the pattern it serves; an applied ontology references the term and
+# supplies only params — it never re-encodes the logic. Coverage, not completeness (AUTHORING A5): this
+# is the set built and validated so far; it extends by branch → PR with a witnessing pattern.
+# ===========================================================================
+canon:
+  kind: value_domain
+  closed: false                    # extends as patterns surface new deterministic needs (A5)
+  description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
+  members:
+    composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
+    additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
+    axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
+    exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
+    snapshot_collapse:     { serves: scd_type_2,                needs_sqlglot: false, doc: "collapse a versioned relation to current / as-of one row per key" }
+    closure_anomaly_check: { serves: explicit_closure,          needs_sqlglot: false, doc: "for a closed value set, the query that finds out-of-set values (else None)" }
+    scoped_latest:         { serves: tracking_vintage,          needs_sqlglot: false, doc: "MAX(date) over a scoped subset, not the whole table" }
+    hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }
+    densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
+    ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
+    alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }

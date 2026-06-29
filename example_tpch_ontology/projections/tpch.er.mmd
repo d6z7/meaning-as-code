@@ -1,0 +1,83 @@
+---
+title: tpch — object ER · entities are node-class concepts
+---
+erDiagram
+  Region ||--o{ Nation : "inRegion"
+  Nation ||--o{ Customer : "fromNation"
+  Nation ||--o{ Supplier : "fromNation"
+  Part ||--o{ PartSupp : "ofPart"
+  Supplier ||--o{ PartSupp : "fromSupplier"
+  Customer ||--o{ Orders : "placedBy"
+  Orders ||--o{ LineItem : "partOfOrder"
+  PartSupp ||--o{ LineItem : "suppliedVia"
+  Nation {
+    integer n_nationkey PK
+    string n_name
+    integer n_regionkey FK
+    string n_comment
+  }
+  Region {
+    integer r_regionkey PK
+    string r_name
+    string r_comment
+  }
+  LineItem {
+    integer l_orderkey FK
+    integer l_linenumber PK
+    integer l_partkey FK
+    integer l_suppkey FK
+    decimal l_quantity
+    decimal l_extendedprice
+    decimal l_discount
+    decimal l_tax
+    string l_returnflag
+    string l_linestatus
+    date l_shipdate
+    date l_commitdate
+    date l_receiptdate
+    string l_shipmode
+    string l_comment
+  }
+  Orders {
+    integer o_orderkey PK
+    integer o_custkey FK
+    string o_orderstatus
+    decimal o_totalprice
+    date o_orderdate
+    string o_orderpriority
+    string o_comment
+  }
+  Part {
+    integer p_partkey PK
+    string p_name
+    string p_mfgr
+    string p_brand
+    string p_type
+    integer p_size
+    decimal p_retailprice
+    string p_comment
+  }
+  PartSupp {
+    integer ps_partkey PK
+    integer ps_suppkey PK
+    integer ps_availqty
+    decimal ps_supplycost
+    string ps_comment
+  }
+  Customer {
+    integer c_custkey PK
+    string c_name
+    integer c_nationkey FK
+    string c_phone
+    decimal c_acctbal
+    string c_mktsegment
+    string c_comment
+  }
+  Supplier {
+    integer s_suppkey PK
+    string s_name
+    integer s_nationkey FK
+    string s_phone
+    decimal s_acctbal
+    string s_comment
+  }

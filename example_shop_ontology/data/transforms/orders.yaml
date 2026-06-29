@@ -1,0 +1,49 @@
+# SHOP (example) — data plane / TRANSFORMS: the `orders` pipeline (how the clean dataset is made).
+# Synthetic example of the data-plane transform construct (TransformFile). It describes HOW the raw
+# input is cleansed into the relation the ontology binds to; the consuming concept (Order) describes
+# only the CLEAN result and carries NO transformation logic. The executable realization is orders.sql.
+
+metadata:
+  pipeline: orders
+  source: SHOP
+  layer: data-transformation
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+
+produces:
+  relation: shop_warehouse.orders          # the seam: data/datasets/orders.yaml — what the Order concept binds to
+  sql_file: data/transforms/orders.sql
+  grain: "one row per order_id"
+  serves_ontology: ontology/concepts/order/order.yaml
+
+inputs:
+  - relation: shop_raw.orders_raw
+    kind: raw_source
+    role: raw_orders
+    descriptor: data/sources/orders_raw.yaml   # the observed input schema-of-record (drift baseline)
+    consumes:                                  # raw column -> the cleansing step that reads it
+      status: status-canonicalize
+      gross_cents: amount-to-decimal
+
+transforms:
+  - id: status-canonicalize
+    impurity_class: vocabulary_drift
+    raw_defect: "raw status arrives in mixed casing / synonyms (PAID, paid, Paid)"
+    rule: "lower-case, trim, and map synonyms to the canonical status token set"
+    sql: "lower(trim(status)) then a CASE mapping to {placed, paid, shipped, delivered, cancelled}"
+    establishes_guarantee: "status is exactly one canonical token (OrderStatus enumeration values)"
+    status: applied
+  - id: amount-to-decimal
+    impurity_class: type_truncation
+    raw_defect: "gross is stored as integer cents (gross_cents) — currency math would truncate"
+    rule: "convert integer cents to a decimal currency amount"
+    sql: "cast(gross_cents AS decimal(12,2)) / 100 AS gross_amount"
+    establishes_guarantee: "gross_amount is a decimal currency value — ratios/sums never truncate"
+    status: applied
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-19
+  change_log:
+    - { date: 2026-06-19, change: "Created the orders pipeline descriptor demonstrating the data-plane TransformFile construct.", change_type: CREATION, by: example-team }

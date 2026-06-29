@@ -1,0 +1,71 @@
+# SHOP (example) > finance > Revenue
+# Synthetic example — illustrates the `measure` class, a DERIVATION (net = gross - refunds), and the
+# v0.5 `contract:` construct (agent-facing binding rules). Not real data.
+
+metadata:
+  concept: Revenue
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Revenue
+  label: Revenue
+  class: measure                  # a quantity you sum/aggregate; has additivity, unit, a derivation
+  definition: >
+    The monetary value of sales. GROSS revenue is the order total at checkout; NET revenue subtracts
+    refunds (from returned orders). "Revenue" without qualification means NET — the figure the business
+    reports. Net revenue is COMPUTED (see rules.yaml > net_revenue), not stored.
+  semantics:
+    purpose: >
+      The headline financial measure: what the shop earned, net of returns. The numerator of margin,
+      the thing sliced by product/category/period.
+    unit: currency (account currency)
+    measure_type: mac.MeasureType.Flow                                      # v0.6: references the framework type that carries the additivity law
+    additivity: { time: additive, customer: additive, product: additive }   # schema-required type-independent floor
+    axis_kinds: { time: mac.axis_kind.time, customer: mac.axis_kind.categorical, product: mac.axis_kind.categorical }  # classify axes so the (type × kind) law resolves
+    null_semantics: >
+      An order with no refund row contributes its gross as net (no refund = zero refund), NOT missing data.
+
+# Net revenue is not a stored column — it is derived. The concept points at the rule; the formula
+# lives in the rules layer (computation is single-homed there, not inlined here).
+derived_by_rule: net_revenue       # → rules.yaml
+
+# v0.5 `contract:` — the agent-facing binding rules for using this concept correctly (the resolution of
+# the framework's previously-deferred `reasoning_guidance:` question). May be a string or this object.
+contract:
+  no_probe_guarantee: >
+    Everything needed to answer "revenue" is here. Use NET revenue (rule net_revenue = gross − refunds);
+    never SUM(orders.gross_amount) on its own. No probe of the warehouse is needed to discover the refunds
+    join — the rule encodes it. If you find yourself wanting to probe, this concept is incomplete: fix it.
+  default_reading: "Unqualified 'revenue' means NET (gross minus refunds). Report gross only if explicitly asked."
+  resolution: "Net is produced by rules.yaml > net_revenue — reference it; do not re-derive the formula."
+  # Field-anchoring: the typed rule bound to the grounded `orders` column it governs (rule-binds-grounded).
+  rules:
+    - id: revenue.net_of_refunds
+      kind: mac.rule_kind.aggregation
+      when: "computing revenue from orders"
+      then: "net = SUM(gross_amount) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0"
+      never: "summing gross_amount alone — that is gross, not net revenue"
+      why: "gross_amount is the order total before returns; revenue is reported net of refunds"
+      binds: [gross_amount]
+
+grounding:
+  kind: sql_table
+  table: orders
+  schema: shop_warehouse
+  note: "Gross from orders.gross_amount; refunds from the refunds table — combined by rule net_revenue."
+
+constraints:
+  - assert: "Revenue defaults to NET (gross minus refunds), never gross, unless explicitly asked for gross"
+    severity: ERROR
+    machine_executable: false
+    notes: "Reporting gross as 'revenue' overstates earnings by the refund volume. See rules.yaml net_revenue."
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

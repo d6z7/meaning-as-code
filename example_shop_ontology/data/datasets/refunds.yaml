@@ -1,0 +1,35 @@
+# SHOP (example) — Physical layer: the refunds table descriptor
+# Synthetic example — illustrates the physical (grounding-target) layer. Not real data.
+
+metadata:
+  table: refunds
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: refunds
+  schema: shop_warehouse
+  type: table
+  description: "Zero or more rows per order (a returned order has refund rows). The refunds side of net Revenue."
+
+columns:
+  - { name: refund_id,     type: string,  role: primary_key }
+  - { name: order_id,      type: string,  role: foreign_key }
+  - { name: refund_amount, type: decimal, role: value, x-subrole: measure }
+  - { name: refunded_at,   type: timestamp, role: value, x-subrole: temporal }
+
+foreign_keys:
+  - { name: fk_order, from_column: order_id, to_table: orders, to_column: order_id }
+
+grounded_by_concepts:
+  - { concept: Revenue, role: refund_source }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-08
+  change_log:
+    - { date: 2026-06-08, change: "Created to complete the example's physical layer (refunds side of the net_revenue rule).", change_type: CREATION, by: example-team }

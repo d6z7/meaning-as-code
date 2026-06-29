@@ -1,0 +1,51 @@
+# mac_shapes.yaml — the framework's BUILT-IN constraint shapes (the "shapes" / constraint layer of MAC).
+#
+# Shapes are constraints expressed as DATA, run by tools/check_shapes.py. These built-ins are the
+# universal MAC invariants — true for ANY conformant ontology regardless of domain, so they ship with
+# the framework. Applications supply additional, domain- or dialect-specific shapes via
+# `--shapes`. Each shape: id · target · [where] · severity · constraint{kind, …}. Constraint kinds:
+#   required   — count(path) >= min (default 1)
+#   in         — every value at path ∈ a closed set
+#   subset_of  — set(left) ⊆ union(right paths)   ← the RELATIONAL kind JSON-Schema can't express
+#
+# CANONICAL (2026-06-17): rule-binds-grounded is now THE binding-integrity check for every MAC ontology,
+# resolving `binds` against the single-homed Physical layer (the grounded table's `tables/<t>.yaml`
+# columns) — NOT against columns a concept restates in its own grounding. Applications conform to this one
+# definition; dialect-local binding validators (e.g. an application's own check_rule_binds.py + an app-shape variant
+# that resolved against declared grounding.sources columns) are deprecated in its favour. A `binds` that
+# names a field the grounded table does not actually expose is a real gap — surfaced here, not hidden.
+shapes:
+  - id: concept-class-closed
+    description: a concept's class must be one of the closed six-class vocabulary
+    target: concept
+    severity: error
+    constraint:
+      kind: in
+      path: concept.class
+      values: [entity, event, measure, enumeration, reference, grouping]
+
+  - id: measure-declares-additivity
+    description: a measure concept must declare its per-axis additivity (the SUM footgun-preventer)
+    target: concept
+    where: { concept.class: measure }
+    severity: error
+    constraint:
+      kind: required
+      path: concept.semantics.additivity
+
+  # FIELD-ANCHORING (v0.1.6, FRAMEWORK §6d): a typed rule's `binds` must name a column of the table the
+  # concept grounds to — a RELATIONAL, CROSS-FILE invariant the schema cannot express (columns are
+  # single-homed in the Physical layer). A rule cannot claim to govern a field the concept doesn't ground.
+  - id: rule-binds-grounded
+    description: every contract.rules[].binds must be a column of the grounded table
+    target: concept
+    severity: error
+    constraint:
+      kind: rule_binds_grounded
+
+  - id: field-roles-grounded
+    description: every grounding.field_roles column (the whitelist) must be a column of the grounded table
+    target: concept
+    severity: error
+    constraint:
+      kind: field_roles_grounded

@@ -1,0 +1,37 @@
+# TPC-H (example) — data plane / SOURCES: the observed raw lineitem input (schema-of-record).
+# Synthetic. What COMES IN before cleansing — the drift baseline the `lineitem` pipeline reads.
+# Not ontology-bound: concepts bind to data/datasets/lineitem.yaml, never to this raw input.
+
+metadata:
+  table: lineitem_raw
+  source: TPCH
+  schema_version: '0.1.9'
+  status: verified
+  kind: raw_source
+  external: true
+  observed: 2026-06-19
+  owner: example-team
+
+table:
+  name: lineitem_raw
+  schema: tpch_raw
+  type: table
+  description: "Raw upstream order lines as they arrive (single-char return-flag codes, discount as basis points)."
+
+columns:
+  - { name: l_orderkey,      type: integer, role: foreign_key }
+  - { name: l_linenumber,    type: integer, role: composite_key_part }
+  - { name: l_partkey,       type: integer, role: foreign_key }
+  - { name: l_suppkey,       type: integer, role: foreign_key }
+  - { name: l_quantity,      type: decimal, role: value }
+  - { name: l_extendedprice, type: decimal, role: value }
+  - { name: l_discount_bps,  type: integer, role: value }
+  - { name: l_returnflag,    type: string,  role: discriminator }
+  - { name: l_linestatus,    type: string,  role: discriminator }
+  - { name: l_shipdate,      type: date,    role: value }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-19
+  change_log:
+    - { date: 2026-06-19, change: "Created as a synthetic raw-input example for the data-plane transform construct.", change_type: CREATION, by: example-team }

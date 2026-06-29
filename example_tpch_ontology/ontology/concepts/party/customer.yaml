@@ -1,0 +1,38 @@
+# TPC-H (example) > party > Customer — the `entity` class. Synthetic; not real data.
+
+metadata:
+  concept: Customer
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Customer
+  label: Customer
+  class: entity
+  definition: >
+    A party that places orders. Identified by c_custkey, located in one Nation (see edges), and
+    classified by a market segment. The demand side — orders and revenue attribute to a customer.
+  semantics:
+    purpose: >
+      Attributes orders and revenue to a party, and (through its nation) to geography and market segment.
+
+properties:
+  - { name: custKey,     type: integer, required: true,  doc: "c_custkey — identity key" }
+  - { name: name,        type: string,  required: false, doc: "c_name" }
+  - { name: nationKey,   type: integer, required: true,  doc: "c_nationkey — the customer's nation (from_nation edge)" }
+  - { name: mktSegment,  type: string,  required: false, doc: "c_mktsegment — market segment" }
+
+grounding:
+  kind: sql_table
+  table: customer
+  schema: tpch
+  key_column: c_custkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

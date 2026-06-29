@@ -1,0 +1,4 @@
+# NEGATIVE fixture — MUST be rejected: a stray top-level key outside the closed core / x- namespace.
+metadata: { concept: Foo, source: TEST, schema_version: '0.1.6' }
+concept: { name: Foo, class: entity, definition: has a stray physical-looking top-level key }
+bogus_random_column: should be rejected   # ← not core, not x- → rejected (closed-core discipline)

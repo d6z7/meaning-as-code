@@ -1,0 +1,41 @@
+# SHOP (example) — Physical layer: the orders table descriptor
+# Synthetic example — illustrates the physical (grounding-target) layer. Not real data.
+
+metadata:
+  table: orders
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: orders
+  schema: shop_warehouse
+  type: table
+  description: "One row per order. Grounding target for the Order event, OrderStatus, and Revenue (gross side)."
+
+columns:
+  - { name: order_id,     type: string,    role: primary_key }
+  - { name: customer_id,  type: string,    role: foreign_key }
+  - { name: status,       type: string,    role: discriminator }
+  - { name: placed_at,    type: timestamp, role: value, x-subrole: temporal }
+  - { name: paid_at,      type: timestamp, role: value, x-subrole: temporal }
+  - { name: shipped_at,   type: timestamp, role: value, x-subrole: temporal }
+  - { name: delivered_at, type: timestamp, role: value, x-subrole: temporal }
+  - { name: gross_amount, type: decimal,   role: value, x-subrole: measure }
+
+foreign_keys:
+  - { name: fk_customer, from_column: customer_id, to_table: customers, to_column: customer_id }
+
+grounded_by_concepts:
+  - { concept: Order,       role: primary_table }
+  - { concept: OrderStatus, role: discriminator_column }
+  - { concept: Revenue,     role: gross_source }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

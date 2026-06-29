@@ -1,0 +1,31 @@
+# TPC-H (example) — Physical layer: the region table descriptor
+# Synthetic example (TPC-H benchmark schema). Not real data.
+
+metadata:
+  table: region
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: region
+  schema: tpch
+  type: table
+  description: "One row per region (5: AFRICA, AMERICA, ASIA, EUROPE, MIDDLE EAST). Grounding target for the Region entity — the top of the geography hierarchy."
+
+columns:
+  - { name: r_regionkey, type: integer, role: primary_key }
+  - { name: r_name,      type: string,  role: value }
+  - { name: r_comment,   type: string,  role: value }
+
+grounded_by_concepts:
+  - { concept: Region, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

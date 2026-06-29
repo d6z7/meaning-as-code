@@ -1,0 +1,40 @@
+# SHOP (example) > catalog > Product
+# Synthetic example — illustrates the `reference` class (a dimension facts point at). Not real data.
+
+metadata:
+  concept: Product
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Product
+  label: Product
+  class: reference                # a dimension entity, identified by a key, that orders point at
+  definition: >
+    A sellable item in the catalogue, identified by sku. Orders reference products; products roll up
+    into a Category (see grouping). The leaf of the catalogue hierarchy.
+  semantics:
+    purpose: >
+      The dimension that says WHAT was bought. Joins order lines to a name, price, and category so
+      revenue can be sliced by product or rolled up by category.
+
+properties:
+  - { name: sku,        type: string, required: true,  doc: "sku — identity key" }
+  - { name: name,       type: string, required: true,  doc: "display name" }
+  - { name: listPrice,  type: number, required: false, doc: "catalogue price (per unit)" }
+  - { name: categoryId, type: string, required: false, doc: "FK to Category (belongs_to_category edge)" }
+
+grounding:
+  kind: sql_table
+  table: products
+  schema: shop_warehouse
+  key_column: sku
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

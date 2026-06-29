@@ -1,0 +1,39 @@
+# SHOP (example) — Rules layer
+# Synthetic example — illustrates the rules layer: a DERIVATION with a renderable form. Not real data.
+
+metadata:
+  layer: rules
+  source: SHOP
+  schema_version: '0.1.9'
+  status: production
+  date: 2026-06-05
+
+rules:
+
+  - rule: net_revenue
+    derives: Revenue                       # → concepts/finance/revenue.yaml (derived_by_rule: net_revenue)
+    over: [Order]
+    logic: >
+      Net revenue = gross order total minus refunds. Gross is orders.gross_amount; refunds are summed
+      from the refunds table per order (a returned order has one or more refund rows). Orders with no
+      refund contribute their full gross. This is the figure "Revenue" means by default.
+    render_kind: sql_expression
+    template: |
+      SUM(o.gross_amount) - COALESCE(SUM(r.refund_amount), 0)    -- net = gross - refunds
+    requires_join: |
+      orders o
+        LEFT JOIN refunds r ON r.order_id = o.order_id
+      WHERE o.paid_at IS NOT NULL                                -- only paid orders count as revenue
+        {% if period_start %}AND o.placed_at BETWEEN ? AND ?{% endif %}   -- BOUND, never interpolated
+    conditions:
+      - "Only paid orders count (paid_at IS NOT NULL) — a PLACED-but-unpaid order is not revenue."
+      - "LEFT JOIN so unrefunded orders keep their full gross (no refund row = zero refund)."
+    validated_against: [orders, refunds]
+    inspectable: true
+    confidence: C
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

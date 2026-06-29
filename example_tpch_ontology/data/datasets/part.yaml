@@ -1,0 +1,35 @@
+# TPC-H (example) — Physical layer: the part table descriptor. Synthetic; not real data.
+
+metadata:
+  table: part
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: part
+  schema: tpch
+  type: table
+  description: "One row per part (catalog item). Grounding target for the Part entity."
+
+columns:
+  - { name: p_partkey,     type: integer, role: primary_key }
+  - { name: p_name,        type: string,  role: value }
+  - { name: p_mfgr,        type: string,  role: value }
+  - { name: p_brand,       type: string,  role: discriminator }
+  - { name: p_type,        type: string,  role: discriminator }
+  - { name: p_size,        type: integer, role: value }
+  - { name: p_retailprice, type: decimal, role: value, x-subrole: measure }
+  - { name: p_comment,     type: string,  role: value }
+
+grounded_by_concepts:
+  - { concept: Part, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

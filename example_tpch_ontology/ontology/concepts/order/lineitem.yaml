@@ -1,0 +1,81 @@
+# TPC-H (example) > order > LineItem — the `event` class (the central fact, with a fulfilment lifecycle).
+# Synthetic example. Not real data.
+
+metadata:
+  concept: LineItem
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: LineItem
+  label: Order Line
+  class: event
+  definition: >
+    A single line of an order — one part, supplied by one supplier, in some quantity at some price. The
+    central fact of TPC-H (composite key order + line number). It is an EVENT: it is shipped, received,
+    and possibly returned, moving through a fulfilment lifecycle read from its ship/receipt dates and
+    status flags. Revenue is computed from its extended price and discount.
+  semantics:
+    purpose: >
+      The grain of sales analysis — quantity, price and discount per part/supplier/order, the source of
+      Revenue and of fulfilment timing.
+    null_semantics: >
+      A NULL l_receiptdate means the line has not been received yet (still in flight), not unknown.
+
+lifecycle:
+  phase_sequence: [IN_FLIGHT, CLOSED]
+  boundary: "RECEIPT (l_receiptdate present) is the IN_FLIGHT → CLOSED boundary."
+  phases:
+    - { name: IN_FLIGHT, meaning: "Shipped, not yet received (l_linestatus = O).", states: [SHIPPED] }
+    - { name: CLOSED,    meaning: "Received; may then be returned (l_linestatus = F).", states: [RECEIVED, RETURNED] }
+  phase_closure: closed
+  note: >
+    States derive from l_linestatus (O in-flight / F fulfilled) and l_returnflag (R). Happy path
+    SHIPPED → RECEIVED; RETURNED only after receipt.
+
+properties:
+  - { name: orderKey,      type: integer, required: true,  doc: "l_orderkey — parent order (part_of edge) + composite key part" }
+  - { name: lineNumber,    type: integer, required: true,  doc: "l_linenumber — composite key part" }
+  - { name: partKey,       type: integer, required: true,  doc: "l_partkey — with suppKey = the supplying PartSupp" }
+  - { name: suppKey,       type: integer, required: true,  doc: "l_suppkey — with partKey = the supplying PartSupp" }
+  - { name: quantity,      type: number,  required: true,  doc: "l_quantity" }
+  - { name: extendedPrice, type: number,  required: true,  doc: "l_extendedprice — gross (pre-discount)" }
+  - { name: discount,      type: number,  required: false, doc: "l_discount — fraction 0..1" }
+  - { name: shipDate,      type: date,    required: false, doc: "l_shipdate" }
+  - { name: receiptDate,   type: date,    required: false, doc: "l_receiptdate — NULL until received" }
+
+# v0.1.6: typed behavioural rules, each ANCHORED to the field(s) it governs (binds). The binds names are
+# columns of the grounded table (lineitem) — the rule-binds-grounded shape verifies that cross-file.
+contract:
+  no_probe_guarantee: >
+    To read a line you need only its columns here; revenue is net of discount (see net_revenue), and the
+    fulfilment state is read from the dates/flags — no warehouse probe is needed.
+  rules:
+    - id: lineitem.revenue.net_of_discount
+      kind: mac.rule_kind.aggregation
+      when:  "computing revenue from order lines"
+      then:  "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)"
+      never: "summing l_extendedprice alone — that is gross, not revenue"
+      why:   "extended price is gross (price × quantity); revenue is net of the line discount"
+      binds: [l_extendedprice, l_discount]
+    - id: lineitem.state.received_iff_receiptdate
+      kind: mac.rule_kind.resolution
+      when:  "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)"
+      then:  "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment"
+      why:   "the lifecycle state is read from which dates are present, not a free-text column"
+      binds: [l_receiptdate, l_linestatus]
+
+grounding:
+  kind: sql_table
+  table: lineitem
+  schema: tpch
+  key_column: l_orderkey   # composite (l_orderkey, l_linenumber); leading key part named here
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

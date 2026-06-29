@@ -1,0 +1,41 @@
+# TPC-H (example) > order > LineStatus
+# Synthetic example — the `enumeration` class (closed value set). TPC-H is a public benchmark, not real data.
+
+metadata:
+  concept: LineStatus
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: LineStatus
+  label: Line Status
+  class: enumeration
+  definition: >
+    The fulfilment status of a single order line — whether the line has shipped/been fulfilled or is
+    still in flight. The code list the l_linestatus discriminator column carries.
+  semantics:
+    purpose: >
+      Stable codes + meanings for line fulfilment so a filter uses one agreed vocabulary rather than
+      matching a single-letter column directly.
+
+values:
+  closure: closed
+  closure_why: "TPC-H's l_linestatus is exactly these two values."
+  items:
+    - { code: O, label: Open,      meaning: "in-flight — not yet fulfilled", confidence: C }
+    - { code: F, label: Fulfilled, meaning: "fulfilled",                      confidence: C }
+
+grounding:
+  kind: sql_table
+  table: lineitem
+  schema: tpch
+  grounds_column: l_linestatus
+
+governance:
+  last_reviewed: 2026-06-18
+  change_log:
+    - { date: 2026-06-18, change: "Created when tpch moved to Option B: the l_linestatus code-set's meaning moved from the data-plane descriptor into this ontology enumeration.", change_type: CREATION, by: example-team }

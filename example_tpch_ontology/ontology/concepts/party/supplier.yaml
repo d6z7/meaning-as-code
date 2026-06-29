@@ -1,0 +1,37 @@
+# TPC-H (example) > party > Supplier — the `entity` class. Synthetic; not real data.
+
+metadata:
+  concept: Supplier
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Supplier
+  label: Supplier
+  class: entity
+  definition: >
+    A party that supplies parts. Identified by s_suppkey and located in one Nation (see edges). The
+    supply side — which supplier provides a part, at what cost, is captured by PartSupp.
+  semantics:
+    purpose: >
+      Attributes supply (availability, cost) and the supplied side of order lines to a party and its geography.
+
+properties:
+  - { name: suppKey,   type: integer, required: true,  doc: "s_suppkey — identity key" }
+  - { name: name,      type: string,  required: false, doc: "s_name" }
+  - { name: nationKey, type: integer, required: true,  doc: "s_nationkey — the supplier's nation (from_nation edge)" }
+
+grounding:
+  kind: sql_table
+  table: supplier
+  schema: tpch
+  key_column: s_suppkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

@@ -1,0 +1,40 @@
+# SHOP (example) — Edges layer
+# Synthetic example — illustrates the edges layer: relations BETWEEN concepts. Not real data.
+# A relation between two concepts is an edge, never a property of either endpoint.
+# Canonical v0.5 edge shape: edge_id · level · type · endpoints{from,to} · join_rule · realized_by · notes.
+
+metadata:
+  layer: edges
+  source: SHOP
+  schema_version: '0.1.9'
+  status: production
+  date: 2026-06-05
+
+edges:
+
+  - edge_id: order__placed_by__customer
+    level: physical                       # a real FK join between tables
+    type: foreign_key
+    endpoints:
+      from: { source: SHOP, concept: Order,    ref: "ontology/concepts/order/order.yaml#concept",       role: placedBy, cardinality: "0..N" }  # a customer has many orders
+      to:   { source: SHOP, concept: Customer, ref: "ontology/concepts/customer/customer.yaml#concept",                 cardinality: "1" }      # an order has exactly one customer
+    join_rule: "orders.customer_id = customers.customer_id"
+    realized_by: "data/datasets/orders.yaml#foreign_keys (customer_id -> customers.customer_id)"
+    notes: "The most-traversed join — every per-customer aggregation goes through it."   # v0.5: `notes` is core on edges
+    confidence: C
+
+  - edge_id: product__belongs_to__category
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: SHOP, concept: Product,  ref: "ontology/concepts/catalog/product.yaml#concept",   role: belongsToCategory, cardinality: "0..N" }  # a category has many products
+      to:   { source: SHOP, concept: Category, ref: "ontology/concepts/catalog/category.yaml#concept",                          cardinality: "0..1" }   # a product has at most one category
+    join_rule: "products.category_id = categories.category_id"
+    realized_by: "data/datasets/products.yaml#foreign_keys (category_id -> categories.category_id)"
+    confidence: C
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }

@@ -1,0 +1,33 @@
+# SHOP (example) — data plane / SOURCES: the observed raw orders input (schema-of-record).
+# Synthetic example. This is what COMES IN, before cleansing — the drift baseline the `orders`
+# pipeline (data/transforms/orders.yaml) reads. Not ontology-bound: concepts bind to the produced
+# data/datasets/orders.yaml, never to this raw input.
+
+metadata:
+  table: orders_raw
+  source: SHOP
+  schema_version: '0.1.9'
+  status: verified
+  kind: raw_source              # rides in the open metadata block; distinguishes raw input from produced output
+  external: true                # upstream-owned; we observe it, we do not maintain it
+  observed: 2026-06-19          # date this schema was last probed (DESCRIBE) — the drift anchor
+  owner: example-team
+
+table:
+  name: orders_raw
+  schema: shop_raw
+  type: table
+  description: "Raw upstream orders as they arrive (mixed status casing, amount in integer cents)."
+
+columns:
+  - { name: order_id,    type: string,    role: primary_key }
+  - { name: customer_id, type: string,    role: foreign_key }
+  - { name: status,      type: string,    role: discriminator }
+  - { name: gross_cents, type: bigint,    role: value }
+  - { name: placed_at,   type: timestamp, role: value }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-19
+  change_log:
+    - { date: 2026-06-19, change: "Created as a synthetic raw-input example for the data-plane transform construct.", change_type: CREATION, by: example-team }

@@ -1,0 +1,8 @@
+# NEGATIVE fixture — MUST be rejected: an `enumeration` must use `values:`, never the `enumerations:` wrapper.
+metadata: { concept: Colour, source: TEST, schema_version: '0.1.6' }
+concept: { name: Colour, class: enumeration, definition: uses the forbidden enumerations wrapper instead of values }
+enumerations:                 # ← v0.5 per-class template: enumeration uses values:, not this wrapper
+  - name: ColourCode
+    closure: closed
+    values:
+      - { code: RED }

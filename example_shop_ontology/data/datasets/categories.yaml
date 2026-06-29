@@ -1,0 +1,34 @@
+# SHOP (example) — Physical layer: the categories table descriptor
+# Synthetic example — illustrates the physical (grounding-target) layer. Not real data.
+
+metadata:
+  table: categories
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: categories
+  schema: shop_warehouse
+  type: table
+  description: "One row per category. Grounding target for the Category grouping; self-referential via parent_id."
+
+columns:
+  - { name: category_id, type: string, role: primary_key }
+  - { name: name,        type: string, role: value, x-subrole: attribute }
+  - { name: parent_id,   type: string, role: foreign_key }
+
+foreign_keys:
+  - { name: fk_parent, from_column: parent_id, to_table: categories, to_column: category_id }
+
+grounded_by_concepts:
+  - { concept: Category, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-08
+  change_log:
+    - { date: 2026-06-08, change: "Created to complete the example's physical layer (Category grounding target).", change_type: CREATION, by: example-team }

@@ -1,0 +1,32 @@
+---
+title: shop — object ER · entities are node-class concepts
+---
+erDiagram
+  Customer ||--o{ Order : "placedBy"
+  Category |o--o{ Product : "belongsToCategory"
+  Category {
+    string category_id PK
+    string name
+    string parent_id FK
+  }
+  Product {
+    string sku PK
+    string name
+    string category_id FK
+    decimal list_price
+  }
+  Customer {
+    string customer_id PK
+    string email
+    timestamp created_at
+  }
+  Order {
+    string order_id PK
+    string customer_id FK
+    string status
+    timestamp placed_at
+    timestamp paid_at
+    timestamp shipped_at
+    timestamp delivered_at
+    decimal gross_amount
+  }

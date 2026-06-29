@@ -1,0 +1,56 @@
+# TPC-H (example) > party > MarketSegment
+# Synthetic example — the `enumeration` class (closed value set). TPC-H is a public benchmark, not real data.
+
+metadata:
+  concept: MarketSegment
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.10'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: MarketSegment
+  label: Market Segment
+  class: enumeration
+  definition: >
+    The market segment a customer belongs to — the code list the c_mktsegment discriminator column
+    carries. TPC-H defines exactly five segments.
+  semantics:
+    purpose: >
+      Stable codes + meanings so "customers in the BUILDING segment" filters on one agreed vocabulary
+      rather than free-text matching.
+
+values:
+  closure: closed
+  closure_why: "TPC-H defines exactly these five market segments."
+  items:
+    - { code: AUTOMOBILE, label: Automobile, meaning: "automotive sector customers", confidence: C }
+    - { code: BUILDING,   label: Building,   meaning: "building/construction sector customers", confidence: C }
+    - { code: FURNITURE,  label: Furniture,  meaning: "furniture sector customers", confidence: C }
+    - { code: HOUSEHOLD,  label: Household,  meaning: "household sector customers", confidence: C }
+    - { code: MACHINERY,  label: Machinery,  meaning: "machinery sector customers", confidence: C }
+  # v0.1.9 — aliasBlock witness (MULTILINGUAL-ONLY tier, no scope_key): the second example proves the same
+  # mechanism rides an enum with NO scope tier — a surface 'auto' resolves to AUTOMOBILE; a token outside the
+  # closed five ASKs. mac.canon.alias_resolve.
+  aliases:
+    realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
+    map:
+      AUTOMOBILE:
+        multilingual:
+          en: [auto, automotive, "car sector", vehicles]
+      BUILDING:
+        multilingual:
+          en: [construction, "building sector"]
+
+grounding:
+  kind: sql_table
+  table: customer
+  schema: tpch
+  grounds_column: c_mktsegment
+
+governance:
+  last_reviewed: 2026-06-18
+  change_log:
+    - { date: 2026-06-18, change: "Created when tpch moved to Option B: the c_mktsegment code-set's meaning moved from the data-plane descriptor into this ontology enumeration.", change_type: CREATION, by: example-team }

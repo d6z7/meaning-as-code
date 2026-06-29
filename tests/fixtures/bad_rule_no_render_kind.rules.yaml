@@ -1,0 +1,7 @@
+# NEGATIVE fixture — MUST be rejected: every rule requires render_kind.
+rules:
+  - rule: net_thing
+    derives: NetThing
+    over: [GrossThing]
+    logic: gross minus something
+    # ← missing required render_kind:

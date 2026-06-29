@@ -1,0 +1,37 @@
+# TPC-H (example) — Physical layer: the customer table descriptor. Synthetic; not real data.
+
+metadata:
+  table: customer
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: customer
+  schema: tpch
+  type: table
+  description: "One row per customer. Grounding target for the Customer entity; each customer is from one nation."
+
+columns:
+  - { name: c_custkey,    type: integer, role: primary_key }
+  - { name: c_name,       type: string,  role: value }
+  - { name: c_nationkey,  type: integer, role: foreign_key }
+  - { name: c_phone,      type: string,  role: value }
+  - { name: c_acctbal,    type: decimal, role: value, x-subrole: measure }
+  - { name: c_mktsegment, type: string,  role: discriminator }
+  - { name: c_comment,    type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_nation, from_column: c_nationkey, to_table: nation, to_column: n_nationkey }
+
+grounded_by_concepts:
+  - { concept: Customer, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

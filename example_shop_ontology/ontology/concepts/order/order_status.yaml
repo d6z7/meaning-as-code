@@ -1,0 +1,72 @@
+# SHOP (example) > order > OrderStatus
+# Synthetic example — illustrates the `enumeration` class (closed value set). Not real data.
+
+metadata:
+  concept: OrderStatus
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.10'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: OrderStatus
+  label: Order Status
+  class: enumeration              # the controlled vocabulary of order lifecycle states
+  definition: >
+    The set of states an Order can be in. This is the value vocabulary that the Order lifecycle moves
+    through (see order.yaml > lifecycle); here it is enumerated as a closed code list with meanings.
+  semantics:
+    purpose: >
+      Gives the lifecycle states stable codes + meanings so reports and filters use one agreed vocabulary
+      ("count delivered orders") rather than ad-hoc string matching.
+
+values:
+  closure: closed                 # these six are the complete set of states
+  closure_why: >
+    The shop defines exactly these six states; a seventh would be a process change, not an undocumented
+    value. Terminal branches (RETURNED, CANCELLED) included.
+  # v0.1.9 — the `closure: closed` flag above is canon-backed: closure_anomaly_check turns it into the
+  # deterministic out-of-set anomaly query (an open/unknown set would yield no check). Logic single-homed
+  # in tools/canon/; this concept supplies only the table/column/known-values (the manual's UDF seam).
+  realized_by:
+    udf: mac.canon.closure_anomaly_check
+    applied_as: anomaly_check
+    params: { table: orders, column: status, closure: closed,
+              known_values: [PLACED, PAID, SHIPPED, DELIVERED, RETURNED, CANCELLED] }
+  items:
+    - { code: PLACED,    label: Placed,    meaning: "Created, not yet paid",                     phase: CHECKOUT,   confidence: C }
+    - { code: PAID,      label: Paid,      meaning: "Payment captured",                          phase: CHECKOUT,   confidence: C }
+    - { code: SHIPPED,   label: Shipped,   meaning: "Handed to carrier",                         phase: FULFILMENT, confidence: C }
+    - { code: DELIVERED, label: Delivered, meaning: "Received by customer (happy-path terminal)", phase: FULFILMENT, confidence: C }
+    - { code: RETURNED,  label: Returned,  meaning: "Returned after delivery",                   phase: CLOSED,     confidence: C }
+    - { code: CANCELLED, label: Cancelled, meaning: "Cancelled before shipping",                 phase: CLOSED,     confidence: C }
+  # v0.1.9 — aliasBlock witness (the GENERIC scope_relative tier, scoped by a NON-brand dimension 'channel'):
+  # 'cancelled' resolves to CANCELLED, but under a wholesale channel 'rejected' also means CANCELLED — the same
+  # two-tier shape rides a domain that names no brand at all. Multilingual tier is scope-free.
+  aliases:
+    scope_key: channel
+    realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
+    map:
+      CANCELLED:
+        multilingual:
+          en: [cancelled, canceled, voided]
+        scope_relative:
+          retail:    [cancelled]
+          wholesale: [rejected]
+      RETURNED:
+        multilingual:
+          en: [returned, "sent back"]
+
+grounding:
+  kind: sql_table
+  table: orders
+  schema: shop_warehouse
+  grounds_column: status         # the discriminator column carrying the code (if materialised)
+
+governance:
+  last_reviewed: 2026-06-05
+  change_log:
+    - { date: 2026-06-05, change: "Created as a synthetic example for the framework article.", change_type: CREATION, by: example-team }
+    - { date: 2026-06-24, change: "v0.1.9: bound the closed value set to mac.canon.closure_anomaly_check (the content-model UDF seam).", change_type: ADDITION, by: example-team }

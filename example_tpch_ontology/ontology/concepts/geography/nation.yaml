@@ -1,0 +1,39 @@
+# TPC-H (example) > geography > Nation
+# Synthetic example — illustrates an `entity` with a parent in a hierarchy. Not real data.
+
+metadata:
+  concept: Nation
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Nation
+  label: Nation
+  class: entity
+  definition: >
+    A country (TPC-H has 25). The middle level of the geography hierarchy: a Nation belongs to one
+    Region (see edges) and is the nation of customers and suppliers. The grain at which most geography
+    filtering happens before rolling up to Region.
+  semantics:
+    purpose: >
+      Attributes customer demand and supplier capacity to a country, and bridges them to a Region.
+
+properties:
+  - { name: nationKey, type: integer, required: true,  doc: "n_nationkey — identity key" }
+  - { name: name,      type: string,  required: true,  doc: "n_name — nation name" }
+  - { name: regionKey, type: integer, required: true,  doc: "n_regionkey — parent region (see in_region edge)" }
+
+grounding:
+  kind: sql_table
+  table: nation
+  schema: tpch
+  key_column: n_nationkey
+
+governance:
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }

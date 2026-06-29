@@ -1,0 +1,33 @@
+# SHOP (example) — Physical layer: the customers table descriptor
+# Synthetic example — illustrates the physical (grounding-target) layer. Not real data.
+
+metadata:
+  table: customers
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: customers
+  schema: shop_warehouse
+  type: table
+  description: "One row per customer. Grounding target for the Customer entity."
+
+columns:
+  - { name: customer_id, type: string, role: primary_key }
+  - { name: email,       type: string, role: value, x-subrole: attribute }
+  - { name: created_at,  type: timestamp, role: value, x-subrole: temporal }
+
+foreign_keys: []
+
+grounded_by_concepts:
+  - { concept: Customer, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-08
+  change_log:
+    - { date: 2026-06-08, change: "Created to complete the example's physical layer (referenced by the placed_by edge).", change_type: CREATION, by: example-team }

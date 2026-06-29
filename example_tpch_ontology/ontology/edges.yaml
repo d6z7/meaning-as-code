@@ -1,0 +1,101 @@
+# TPC-H (example) — Edges layer: relations BETWEEN concepts (never a property of an endpoint).
+# Canonical v0.5 edge shape: edge_id · level · type · endpoints{from,to} · join_rule · realized_by · notes.
+# Synthetic example (TPC-H benchmark schema). Not real data.
+
+metadata:
+  layer: edges
+  source: TPCH
+  schema_version: '0.1.9'
+  status: production
+  date: 2026-06-17
+
+edges:
+
+  - edge_id: nation__in__region
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: Nation, ref: "ontology/concepts/geography/nation.yaml#concept", role: inRegion, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Region, ref: "ontology/concepts/geography/region.yaml#concept",                  cardinality: "1" }
+    join_rule: "nation.n_regionkey = region.r_regionkey"
+    realized_by: "data/datasets/nation.yaml#foreign_keys (n_regionkey -> region.r_regionkey)"
+    notes: "Geography hierarchy upper edge — continental roll-ups traverse it."
+    confidence: C
+
+  - edge_id: customer__from__nation
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: Customer, ref: "ontology/concepts/party/customer.yaml#concept", role: fromNation, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Nation,   ref: "ontology/concepts/geography/nation.yaml#concept",                  cardinality: "1" }
+    join_rule: "customer.c_nationkey = nation.n_nationkey"
+    realized_by: "data/datasets/customer.yaml#foreign_keys (c_nationkey -> nation.n_nationkey)"
+    confidence: C
+
+  - edge_id: supplier__from__nation
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: Supplier, ref: "ontology/concepts/party/supplier.yaml#concept", role: fromNation, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Nation,   ref: "ontology/concepts/geography/nation.yaml#concept",                  cardinality: "1" }
+    join_rule: "supplier.s_nationkey = nation.n_nationkey"
+    realized_by: "data/datasets/supplier.yaml#foreign_keys (s_nationkey -> nation.n_nationkey)"
+    confidence: C
+
+  - edge_id: partsupp__of__part
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: PartSupp, ref: "ontology/concepts/part/partsupp.yaml#concept", role: ofPart, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Part,     ref: "ontology/concepts/part/part.yaml#concept",                cardinality: "1" }
+    join_rule: "partsupp.ps_partkey = part.p_partkey"
+    realized_by: "data/datasets/partsupp.yaml#foreign_keys (ps_partkey -> part.p_partkey)"
+    confidence: C
+
+  - edge_id: partsupp__from__supplier
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: PartSupp, ref: "ontology/concepts/part/partsupp.yaml#concept", role: fromSupplier, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Supplier, ref: "ontology/concepts/party/supplier.yaml#concept",                    cardinality: "1" }
+    join_rule: "partsupp.ps_suppkey = supplier.s_suppkey"
+    realized_by: "data/datasets/partsupp.yaml#foreign_keys (ps_suppkey -> supplier.s_suppkey)"
+    confidence: C
+
+  - edge_id: orders__placed_by__customer
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: Orders,   ref: "ontology/concepts/order/orders.yaml#concept", role: placedBy, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Customer, ref: "ontology/concepts/party/customer.yaml#concept",                cardinality: "1" }
+    join_rule: "orders.o_custkey = customer.c_custkey"
+    realized_by: "data/datasets/orders.yaml#foreign_keys (o_custkey -> customer.c_custkey)"
+    notes: "The most-traversed join — per-customer and (via nation) per-geography revenue go through it."
+    confidence: C
+
+  - edge_id: lineitem__part_of__orders
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: LineItem, ref: "ontology/concepts/order/lineitem.yaml#concept", role: partOfOrder, cardinality: "0..N" }
+      to:   { source: TPCH, concept: Orders,   ref: "ontology/concepts/order/orders.yaml#concept",                     cardinality: "1" }
+    join_rule: "lineitem.l_orderkey = orders.o_orderkey"
+    realized_by: "data/datasets/lineitem.yaml#foreign_keys (l_orderkey -> orders.o_orderkey)"
+    confidence: C
+
+  - edge_id: lineitem__supplied_via__partsupp
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { source: TPCH, concept: LineItem, ref: "ontology/concepts/order/lineitem.yaml#concept", role: suppliedVia, cardinality: "0..N" }
+      to:   { source: TPCH, concept: PartSupp, ref: "ontology/concepts/part/partsupp.yaml#concept",                     cardinality: "1" }
+    join_rule: "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey"
+    realized_by: "composite key (l_partkey, l_suppkey) -> (ps_partkey, ps_suppkey)"
+    notes: "Composite join — the part+supplier of a line resolves to exactly one PartSupp row."
+    confidence: C
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example (8 edges over the 8 tables).", change_type: CREATION, by: example-team }

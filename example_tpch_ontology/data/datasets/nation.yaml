@@ -1,0 +1,35 @@
+# TPC-H (example) — Physical layer: the nation table descriptor
+# Synthetic example (TPC-H benchmark schema). Not real data.
+
+metadata:
+  table: nation
+  source: TPCH
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: nation
+  schema: tpch
+  type: table
+  description: "One row per nation (25). Grounding target for the Nation entity; each nation belongs to one region."
+
+columns:
+  - { name: n_nationkey, type: integer, role: primary_key }
+  - { name: n_name,      type: string,  role: value }
+  - { name: n_regionkey, type: integer, role: foreign_key }
+  - { name: n_comment,   type: string,  role: value }
+
+foreign_keys:
+  - { name: fk_region, from_column: n_regionkey, to_table: region, to_column: r_regionkey }
+
+grounded_by_concepts:
+  - { concept: Nation, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-06-17
+  change_log:
+    - { date: 2026-06-17, change: "Created — TPC-H synthetic example.", change_type: CREATION, by: example-team }
