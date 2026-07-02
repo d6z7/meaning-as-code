@@ -173,6 +173,7 @@ class ReferenceChecker:
         self.scan_root = (self.root / scan_subdir).resolve() if scan_subdir else self.root
         self._planes = plane_prefixes(root)   # two-plane: ['data','ontology'] — collapsed to one source
         self.idx = Index()
+        self.table_schemas: dict[tuple, str] = {}   # (src, bare_name) -> declared table.schema
         self.findings: list[Finding] = []
         # v0.6: framework vocab (mac.*) — references from any scanned file must resolve to a defined term.
         self.mac_terms: set[str] = set()
@@ -268,21 +269,42 @@ class ReferenceChecker:
         filenames are ignored) — the application-tier mirror of _check_mac_refs."""
         if not self.app_prefixes:
             return
+        src = self.source_of(relpath)
+        relations = self.idx.table_files.get(src, set())
         for jpath, s in walk_strings(doc):
             for tok in _APP_REF_RE.findall(s):
                 pfx = tok.split(".")[0]
                 if pfx not in self.app_prefixes:
                     continue
-                if tok not in self.app_terms:
-                    self.add("ERROR", f"{relpath}{jpath}",
-                             f"application-vocabulary reference '{tok}' does not resolve to a defined "
-                             f"term (declared {pfx}.* vocab in a vocabulary.yaml)")
+                if tok in self.app_terms:
+                    continue
+                # A token whose tail names a declared relation (a descriptor) is a RELATION reference,
+                # not a vocab miss — this lets a source's deployed schema equal its vocab namespace
+                # (a schema-qualified relation `<ns>.<table>` where <ns> is also the app namespace).
+                if tok.split(".")[-1] in relations:
+                    continue
+                self.add("ERROR", f"{relpath}{jpath}",
+                         f"application-vocabulary reference '{tok}' does not resolve to a defined "
+                         f"term (declared {pfx}.* vocab in a vocabulary.yaml)")
 
     def table_status(self, src: str, tname: str) -> str:
-        """'ok' | 'missing' | 'skip'. Override to add e.g. catalog-prefix tolerance."""
+        """'ok' | 'present' | 'prefixed' | 'missing' | 'skip'. Resolves on the bare relation name and
+        tolerates a schema/catalog prefix: 'present' when the prefix IS the declared table.schema (a
+        clean qualified reference — `<schema>.<name>` where <name>'s descriptor declares that schema),
+        'prefixed' when the bare name resolves but the prefix is not the declared schema (naming
+        inconsistency), 'missing' otherwise. Callers treat present/prefixed as resolved."""
         if "<" in tname or ">" in tname:
             return "skip"
-        return "ok" if tname in self.idx.table_files.get(src, set()) else "missing"
+        tables = self.idx.table_files.get(src, set())
+        if tname in tables:
+            return "ok"
+        if "." in tname:
+            bare = tname.split(".")[-1]
+            if bare in tables:
+                declared = self.table_schemas.get((src, bare))
+                prefix = tname.rsplit(".", 1)[0]
+                return "present" if declared and declared == prefix else "prefixed"
+        return "missing"
 
     # -- core ---------------------------------------------------------------------------
 
@@ -295,10 +317,20 @@ class ReferenceChecker:
         return self._report()
 
     def _yaml_files(self):
-        # projections/ holds generated exports (OSI, etc.), not ontology source — never scan them
-        keep = lambda p: "projections" not in p.parts
-        return sorted(p for p in self.scan_root.rglob("*.yaml") if keep(p)) + \
-               sorted(p for p in self.scan_root.rglob("*.yml") if keep(p))
+        # projections/ = generated exports; *.local.* = gitignored, env-specific manifests — never model source.
+        keep = lambda p: "projections" not in p.parts and ".local." not in p.name
+        # Layout-driven: when the project declares planes (two-plane), the MODEL is exactly those plane
+        # dirs — test catalogs, evidence, and deploy manifests at the repo root are out of scope.
+        # Flat/legacy projects (no planes) fall back to scanning the whole tree.
+        if self._planes:
+            roots = [self.scan_root / pl for pl in self._planes if (self.scan_root / pl).is_dir()]
+        else:
+            roots = [self.scan_root]
+        out = []
+        for rt in roots:
+            out += [p for p in rt.rglob("*.yaml") if keep(p)]
+            out += [p for p in rt.rglob("*.yml") if keep(p)]
+        return sorted(set(out))
 
     def _build_index(self):
         for p in self._yaml_files():
@@ -336,6 +368,11 @@ class ReferenceChecker:
 
             if in_layer(r, "tables") or in_layer(r, "datasets"):   # datasets/ = two-plane descriptor dir
                 self.idx.table_files.setdefault(src, set()).add(p.stem)
+                tbl = doc.get("table")
+                if isinstance(tbl, dict) and tbl.get("schema"):
+                    self.table_schemas[(src, p.stem)] = tbl["schema"]
+                    if tbl.get("name"):
+                        self.table_schemas[(src, tbl["name"])] = tbl["schema"]
 
             if p.name in ("rules.yaml", "rules.yml"):
                 for rule in (doc.get("rules") or []):
@@ -486,6 +523,11 @@ class ReferenceChecker:
 
 # ----------------------------------------------------------------------------- cli
 
+def _sig(f) -> str:
+    """Stable signature for baseline comparison: 'where :: message'."""
+    return f"{f.where} :: {f.message}"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Generic referential-integrity checker for a framework ontology")
     ap.add_argument("root", help="base dir references resolve against (relpaths reported from here)")
@@ -494,6 +536,10 @@ def main(argv=None) -> int:
                          "(for wrapped projects whose refs are repo-relative, e.g. --scan-subdir public)")
     ap.add_argument("--strict", action="store_true", help="treat WARNINGs as failures")
     ap.add_argument("--quiet", action="store_true", help="errors + summary only")
+    ap.add_argument("--baseline", default=None,
+                    help="accept the ERRORs listed in this file (logged debt); fail only on NEW errors beyond it")
+    ap.add_argument("--update-baseline", action="store_true",
+                    help="write the current ERROR set to --baseline and exit 0")
     args = ap.parse_args(argv)
 
     root = Path(args.root)
@@ -504,6 +550,25 @@ def main(argv=None) -> int:
     chk = ReferenceChecker(root, scan_subdir=args.scan_subdir)
     chk._build_index()
     chk._resolve()
+
+    if args.update_baseline:
+        if not args.baseline:
+            print("--update-baseline requires --baseline PATH", file=sys.stderr)
+            return 2
+        errs = [f for f in chk.findings if f.severity == "ERROR"]
+        Path(args.baseline).write_text(
+            "# referential-checker baseline — accepted, already-logged referential debt.\n"
+            "# Each line is an error signature the gate tolerates. Regenerate with --update-baseline.\n"
+            + "".join(f"{_sig(f)}\n" for f in errs), encoding="utf-8")
+        print(f"baseline written: {args.baseline}  ({len(errs)} accepted error(s))")
+        return 0
+
+    if args.baseline and Path(args.baseline).is_file():
+        accepted = {ln.strip() for ln in Path(args.baseline).read_text(encoding="utf-8").splitlines()
+                    if ln.strip() and not ln.startswith("#")}
+        chk.findings = [f for f in chk.findings
+                        if not (f.severity == "ERROR" and _sig(f) in accepted)]
+
     return chk._report(quiet=args.quiet, strict=args.strict)
 
 
