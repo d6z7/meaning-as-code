@@ -13,6 +13,8 @@ concept:
   name: PartSupp
   label: Part-Supplier
   class: entity
+  identity:
+    kind: composite
   definition: >
     The supply of a Part by a Supplier — a reified many-to-many relationship with its own attributes
     (available quantity, supply cost). Identified by the composite key (ps_partkey, ps_suppkey). It is an

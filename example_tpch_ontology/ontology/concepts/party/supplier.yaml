@@ -13,6 +13,9 @@ concept:
   name: Supplier
   label: Supplier
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: s_suppkey
   definition: >
     A party that supplies parts. Identified by s_suppkey and located in one Nation (see edges). The
     supply side — which supplier provides a part, at what cost, is captured by PartSupp.

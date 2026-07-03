@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.10)
+## Structural shapes — generated (schema 0.1.11)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -124,6 +124,10 @@ concept:  # REQUIRED
   notes: <…>  # string
   grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
   related_axis: <…>  # string
+  identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above + x-*
+    kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | resolved_axis | sme_pending · mac.identity_kind.<term> — how the canonical identity is established.
+    canonical_key: <…>  # string · the column/expression that IS the identity (omit for resolved_axis /…
+    note: <…>  # string
 
 contract:  # string|object · v0.5 NEW core construct (DECISION 0)
   no_probe_guarantee: <…>  # string · What an agent needs ONLY, to use this concept without probing the data;…

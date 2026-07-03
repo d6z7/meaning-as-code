@@ -14,6 +14,9 @@ concept:
   name: Product
   label: Product
   class: reference                # a dimension entity, identified by a key, that orders point at
+  identity:
+    kind: fk_name
+    canonical_key: sku
   definition: >
     A sellable item in the catalogue, identified by sku. Orders reference products; products roll up
     into a Category (see grouping). The leaf of the catalogue hierarchy.

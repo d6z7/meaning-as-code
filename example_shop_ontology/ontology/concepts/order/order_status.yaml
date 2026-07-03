@@ -14,6 +14,8 @@ concept:
   name: OrderStatus
   label: Order Status
   class: enumeration              # the controlled vocabulary of order lifecycle states
+  identity:
+    kind: code
   definition: >
     The set of states an Order can be in. This is the value vocabulary that the Order lifecycle moves
     through (see order.yaml > lifecycle); here it is enumerated as a closed code list with meanings.

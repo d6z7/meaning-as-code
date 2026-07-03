@@ -13,6 +13,9 @@ concept:
   name: Part
   label: Part
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: p_partkey
   definition: >
     A catalogue item that can be ordered. Identified by p_partkey, classified by brand and type. Sold
     through one or more suppliers (see PartSupp) and bought on order lines.

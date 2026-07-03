@@ -14,6 +14,8 @@ concept:
   name: LineItem
   label: Order Line
   class: event
+  identity:
+    kind: composite
   definition: >
     A single line of an order — one part, supplied by one supplier, in some quantity at some price. The
     central fact of TPC-H (composite key order + line number). It is an EVENT: it is shipped, received,

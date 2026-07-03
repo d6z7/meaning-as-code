@@ -14,6 +14,8 @@ concept:
   name: LineStatus
   label: Line Status
   class: enumeration
+  identity:
+    kind: code
   definition: >
     The fulfilment status of a single order line — whether the line has shipped/been fulfilled or is
     still in flight. The code list the l_linestatus discriminator column carries.

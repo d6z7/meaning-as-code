@@ -103,7 +103,7 @@ def project(root: Path) -> dict:
             "name": name, "class": c.get("class"), "label": c.get("label"),
             "german": c.get("german"), "definition": (c.get("definition") or "").strip(),
             "file": str(p.relative_to(root)), "grounding": grounding_of(doc),
-            "values": values_of(doc),
+            "values": values_of(doc), "identity": (c.get("identity") or {}),
         }
         if c.get("class") == "measure":
             measures.append(rec)
@@ -178,8 +178,8 @@ def to_markdown(root: Path, model: dict) -> str:
         L.append("")
 
     L.append("## Dimensions\n")
-    L.append("| Dimension | Class | Key | Serving relation | #Values | Values (closed sets) |")
-    L.append("|---|---|---|---|---|---|")
+    L.append("| Dimension | Class | Identity | Key | Serving relation | #Values | Values (closed sets) |")
+    L.append("|---|---|---|---|---|---|---|")
     for d in sorted(model["dimensions"], key=lambda x: (x["class"] or "", x["name"])):
         g = d["grounding"]
         codes = [str(v["code"]) for v in d["values"] if v.get("code")]
@@ -191,8 +191,10 @@ def to_markdown(root: Path, model: dict) -> str:
         rel = ", ".join(f"`{r}`" for r in g["relations"]) or "—"
         kv = g["key"]
         key = ", ".join(f"`{k}`" for k in kv) if isinstance(kv, list) else (f"`{kv}`" if kv else "—")
-        L.append(f"| **{d['name']}** | {d['class']} | {key} | {rel} | {n} | {vlist} |")
+        ik = (d.get("identity") or {}).get("kind") or "—"
+        L.append(f"| **{d['name']}** | {d['class']} | {ik} | {key} | {rel} | {n} | {vlist} |")
     L.append("\n_`*` = closed enumeration (exactly these values; anything else is `__unmapped__`)._")
+    L.append("_Identity = `mac.identity_kind`: iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending._")
     return "\n".join(L) + "\n"
 
 
