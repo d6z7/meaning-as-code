@@ -88,7 +88,7 @@ def main():
     for n in N.values():
         if not n["key"] and n.get("identity_kind") not in KEYLESS_KINDS:
             problems.append(f'node :{n["label"]} has no key (no grounding key_column / table PK / identity.canonical_key)')
-        elif n["props"] and n["key"] not in n["props"]:
+        elif n["key"] and n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')
     for r in R:
         for side in ("from", "to"):
