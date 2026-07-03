@@ -48,4 +48,4 @@ Closed code list — these 6 are the complete set.
 
 # Citations
 
-1. MAC concept source of record: `concepts/order/order_status.yaml` (schema_version 0.1.9, confidence C).
+1. MAC concept source of record: `concepts/order/order_status.yaml` (schema_version 0.1.10, confidence C).

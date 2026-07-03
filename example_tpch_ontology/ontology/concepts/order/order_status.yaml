@@ -14,6 +14,8 @@ concept:
   name: OrderStatus
   label: Order Status
   class: enumeration
+  identity:
+    kind: code
   definition: >
     The status of an order, derived in TPC-H from the line-status of its lines: open if all lines are
     still open, fulfilled if all are fulfilled, partial when mixed. The code list the o_orderstatus

@@ -14,6 +14,9 @@ concept:
   name: Nation
   label: Nation
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: n_nationkey
   definition: >
     A country (TPC-H has 25). The middle level of the geography hierarchy: a Nation belongs to one
     Region (see edges) and is the nation of customers and suppliers. The grain at which most geography

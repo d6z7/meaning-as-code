@@ -14,6 +14,9 @@ concept:
   name: Customer
   label: Customer
   class: entity                   # a structured thing with identity, that other concepts reference
+  identity:
+    kind: fk_name
+    canonical_key: customer_id
   definition: >
     A person (or business) who can place orders in the shop. Identified by customer_id. The root party
     of the ordering process; an Order is placed_by exactly one Customer.

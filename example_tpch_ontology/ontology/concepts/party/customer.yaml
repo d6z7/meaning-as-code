@@ -13,6 +13,9 @@ concept:
   name: Customer
   label: Customer
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: c_custkey
   definition: >
     A party that places orders. Identified by c_custkey, located in one Nation (see edges), and
     classified by a market segment. The demand side — orders and revenue attribute to a customer.

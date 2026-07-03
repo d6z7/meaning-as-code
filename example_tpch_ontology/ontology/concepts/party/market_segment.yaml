@@ -14,6 +14,8 @@ concept:
   name: MarketSegment
   label: Market Segment
   class: enumeration
+  identity:
+    kind: code
   definition: >
     The market segment a customer belongs to — the code list the c_mktsegment discriminator column
     carries. TPC-H defines exactly five segments.

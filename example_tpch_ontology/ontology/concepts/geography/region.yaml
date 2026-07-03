@@ -14,6 +14,9 @@ concept:
   name: Region
   label: Region
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: r_regionkey
   definition: >
     A top-level geographic grouping of nations (TPC-H regions: AFRICA, AMERICA, ASIA, EUROPE,
     MIDDLE EAST). The root of the geography hierarchy — a Nation belongs to exactly one Region, and

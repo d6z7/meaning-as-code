@@ -46,8 +46,10 @@ def nodes(root):
         tbl = g.get("table") or next((s.get("relation", "").split(".")[-1]
                                       for s in (g.get("sources") or []) if isinstance(s, dict)), None)
         cols, pk = table_cols(root, tbl) if tbl else ([], None)
-        key = g.get("key_column") or pk
-        out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "props": cols, "class": c["class"]}
+        ident = c.get("identity") or {}
+        key = g.get("key_column") or pk or ident.get("canonical_key")
+        out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "props": cols, "class": c["class"],
+                          "identity_kind": ident.get("kind")}
     return out
 
 
@@ -79,10 +81,13 @@ def main():
         if src: name = str(src).lower(); break
 
     # --- self-consistency check (the rigor analog of OSI schema-validation) ---
+    # keyless-by-design kinds (mac.identity_kind) legitimately have no single-column key — a fact grain,
+    # a pinned/resolved axis, or an unresolved SME identity — so they are NOT flagged.
+    KEYLESS_KINDS = {"composite", "resolved_axis", "sme_pending"}
     problems = []
     for n in N.values():
-        if not n["key"]:
-            problems.append(f'node :{n["label"]} has no key (no grounding key_column / table PK)')
+        if not n["key"] and n.get("identity_kind") not in KEYLESS_KINDS:
+            problems.append(f'node :{n["label"]} has no key (no grounding key_column / table PK / identity.canonical_key)')
         elif n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')
     for r in R:

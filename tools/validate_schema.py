@@ -118,10 +118,10 @@ def main():
             files += [f for f in glob.glob(str(extra / '*.yaml')) if not skip(f)]
     files = sorted(set(files))
 
-    CURRENT = '0.1.10'                # the current MAC schema version (0.1.10 added the aliasBlock $def)
-    RECOGNIZED = {CURRENT, '0.1.9'}   # TRANSITIONAL: 0.1.10 is additive over 0.1.9, so 0.1.9 content stays
-                                      # checked during migration (not orphaned). Drop '0.1.9' once all content
-                                      # reconforms to 0.1.10 — that finish is dev-only, not for main.
+    CURRENT = '0.1.11'                        # current MAC schema version (0.1.11 added the optional concept.identity block)
+    RECOGNIZED = {CURRENT, '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
+                                              # migration (not orphaned). Drop older versions once all content reconforms —
+                                              # that finish is dev-only, not for main.
     errors, warnings, clean, skipped = [], [], 0, 0
     for f in files:
         try:

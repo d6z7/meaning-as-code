@@ -14,6 +14,9 @@ concept:
   name: Order
   label: Order
   class: event                    # a stateful occurrence that moves through a lifecycle over time
+  identity:
+    kind: fk_name
+    canonical_key: order_id
   definition: >
     A purchase a customer places: one or more products bought in a single checkout. An order is a
     thing that HAPPENS and then moves through states — placed → paid → shipped → delivered, with
