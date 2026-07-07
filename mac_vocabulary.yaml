@@ -13,9 +13,9 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.12'
+  version: '0.1.11'
   status: active
-  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind, canonical_slot]
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -133,53 +133,3 @@ canon:
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
     ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
-
-# ===========================================================================
-# mac.canonical_slot — v0.1.12. The CLOSED set of dimension-slot names a `canonical query form`
-# (the source-neutral, pre-SQL review checkpoint of a deterministic resolver — see the
-# `canonical-query-form` initiative, cap-ontology-workbench/specs/canonical-query-form/) may key its
-# `dimensions:` map with. A slot key outside this set fails validation — the same closed-vocabulary
-# discipline as `mac.rule_kind` / the (separately ADR'd) `resolution_via`.
-#
-# WHY THIS LIVES HERE (framework-owned, not source-local) — operator ruling O4, 2026-07-07:
-# a canonical form is deliberately a SHARED VOCABULARY across an application's several sources
-# (e.g. GAPS's FPL / HIFA / SPG) — INV-8 of the originating epic. If each source declared its own
-# dimension-slot vocabulary, "the same slot name means the same kind of thing across sources" would be
-# a convention, not an enforced fact, and the whole point of a *canonical* (source-neutral) form would
-# be lost to per-source dialect drift. So the slot NAMES are pinned once, here, and every source's
-# canonical-form content (build-time gold and, later, runtime emission) references this one set.
-# Precedent `OQ_MEASURE_TYPE_PROMOTION` (cap-ontology-hifa/ontology/concepts/kpi/kpi.yaml) went the
-# OPPOSITE way for a different closed set (measure_type) and stayed source-local — that is a different,
-# still-OPEN question (a HIFA-local `hifa.measure_type.*` vocabulary is not promoted into mac.MeasureType
-# by this change; see canonical-form-schema.md's measure_type section for why the two cases differ).
-#
-# HONESTY NOTE — a deliberate, narrow exception to this registry's own domain-neutral discipline: unlike
-# every sibling vocabulary above (aggregation_effect, axis_kind, MeasureType, rule_kind, identity_kind,
-# canon — each a domain-neutral KIND, per this file's header comment), the seven terms below name actual
-# GAPS/automotive dimensions (brand, market, model, powertrain, bodystyle, segment) rather than an
-# abstract classification. That is O4's trade-off, made with eyes open: a fully domain-neutral name
-# (e.g. `entity_axis_1`) would have satisfied the "framework stays domain-neutral" rule at the cost of the
-# vocabulary being unreadable to the SME/reviewer audience the schema is explicitly written for (operator
-# decision 3, "the schema is mandatory user-facing documentation"). If `meaning-as-code` ever serves a
-# second, non-automotive domain, revisit whether `canonical_slot` belongs here at all, or should become a
-# per-application vocabulary.yaml namespace instead (the v0.1.7 application-vocabulary mechanism this file
-# already supports for exactly this kind of domain-owned closed set).
-# ===========================================================================
-canonical_slot:
-  kind: vocabulary
-  closed: true
-  description: >
-    The closed set of `dimensions.<slot>` keys a canonical query form may use. Sourced verbatim from the
-    canonical-query-form epic's G1-approved schema proposal (`canonical-form-proposal.md` §2: "brand |
-    market | model | time | powertrain | bodystyle | segment | …"), closed at G2/S1 per operator ruling
-    O4. Coverage, not (claimed) completeness: this is the set the epic's worked cases (S5/S6) actually
-    exercise; extend only via a dated decision + a witnessing worked case (same discipline as `canon`
-    above), never by silently widening a source's own content.
-  terms:
-    brand:      "The customer-facing brand identity a question scopes to (e.g. Volkswagen Pkw, Audi, ŠKODA) — an applied ontology's Brand concept. Brand is the one measure-independent dimension verified 1:1 across FPL/HIFA (brand_letter <-> produkt_marke)."
-    market:     "The geographic scope of a question — a country, or a named grouping above the single-country grain (e.g. 'Europe'). A slot unambiguous in one source's geography concept may be ambiguous in another's (e.g. a country exposing several roles) — that is BINDING-origin ambiguity (mac.canonical_slot itself stays one slot; the role split happens at bind time, see ambiguity_origin in canonical-form-schema.md), not a reason to split `market` into per-role slots here."
-    model:      "The vehicle model / model line a question scopes to."
-    time:       "The temporal scope of a question — a period, a point-in-time, or a named relative reference. Mandatory whenever the resolved `measure.measure_type` is time-additive (e.g. Flow) — an unspecified period on such a measure is a recognition-time ambiguity, not a silent default."
-    powertrain: "The fuel/drivetrain classification axis a question filters or splits on (e.g. BEV vs non-BEV)."
-    bodystyle:  "The vehicle body-style classification axis a question filters or splits on."
-    segment:    "The vehicle segment classification axis a question filters or splits on."
