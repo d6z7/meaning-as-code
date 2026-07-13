@@ -196,7 +196,7 @@ def exclusion_filter(sql: str, *, column: str, not_in=None, not_like=None, diale
     if not conds:
         return sql, []
     top = sqlglot.parse_one(sql, read=dialect).find(exp.Select)
-    top.where(" AND ".join(conds), append=True, dialect=dialect)
+    top = top.where(" AND ".join(conds), append=True, dialect=dialect)
     return top.sql(dialect=dialect), params
 
 
@@ -210,7 +210,7 @@ def axis_default(sql: str, *, axis_column: str, default_value, dialect: str = "t
     present = bool(where) and any(c.name == axis_column for c in where.find_all(exp.Column))
     if present:
         return sql, []
-    top.where(f"{axis_column} = ?", append=True, dialect=dialect)
+    top = top.where(f"{axis_column} = ?", append=True, dialect=dialect)
     return top.sql(dialect=dialect), [default_value]
 
 

@@ -122,7 +122,16 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("root", help="MAC ontology root (a dir containing concepts/)")
     ap.add_argument("--shapes", nargs="*", default=[], help="extra application shape files")
+    ap.add_argument("--baseline", default=None,
+                    help="accept the ERRORs listed in this file (logged debt); fail only on NEW errors "
+                         "beyond it. Each line is a violation signature — the text after '[ERROR] ' — "
+                         "matched exactly (same contract as check_references.py --baseline).")
     a = ap.parse_args()
+
+    accepted = set()
+    if a.baseline and Path(a.baseline).is_file():
+        accepted = {ln.strip() for ln in Path(a.baseline).read_text(encoding="utf-8").splitlines()
+                    if ln.strip() and not ln.lstrip().startswith("#")}
 
     shapes = load_shapes(a.shapes)
     concepts_dir = resolve(a.root).ontology / "concepts"     # flat: root/concepts; two-plane: root/ontology/concepts
@@ -137,12 +146,25 @@ def main():
 
     print(f"── MAC shapes gate ── {len(shapes)} shape(s) × {len(files)} concept(s) "
           f"under {a.root} ──")
+    baselined = new_errs = 0
     for sev, focus, sid, msg in viol:
-        print(f"  [{sev.upper()}] {focus} :: {sid}: {msg}")
+        sig = f"{focus} :: {sid}: {msg}"
+        if sev == "error" and sig in accepted:
+            baselined += 1
+            print(f"  [ERROR·baselined] {sig}")
+        else:
+            if sev == "error":
+                new_errs += 1
+            print(f"  [{sev.upper()}] {sig}")
     errs = sum(1 for v in viol if v[0] == "error")
-    print("\n" + (f"✗ {len(viol)} violation(s) ({errs} error)" if viol
-                  else "✓ OK — all shapes satisfied"))
-    return 1 if errs else 0
+    if viol:
+        tail = f"✗ {len(viol)} violation(s) ({errs} error)"
+        if baselined:
+            tail += f" — {baselined} accepted-baseline, {new_errs} new"
+        print("\n" + tail)
+    else:
+        print("\n✓ OK — all shapes satisfied")
+    return 1 if new_errs else 0
 
 
 if __name__ == "__main__":
