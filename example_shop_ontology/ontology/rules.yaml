@@ -32,6 +32,26 @@ rules:
     inspectable: true
     confidence: C
 
+  - rule: related_products
+    derives: Product                       # the shared-attribute self-relation over Product (edges.yaml#product__related__product)
+    over: [Product]
+    logic: >
+      Two products are "related" (sibling products) iff they share the SAME non-NULL category — the
+      symmetric self-relation matching products.category_id across distinct sku. A product with no
+      category relates to nothing. This is NOT a stored foreign key: the set is materialised on demand
+      from the shared attribute, and is the business meaning of the product__related__product edge.
+    render_kind: derived_set
+    template: |
+      SELECT a.sku AS sku, b.sku AS related_sku          -- symmetric: (a,b) and (b,a) both emitted
+      FROM products a
+        JOIN products b
+          ON a.category_id = b.category_id
+         AND a.category_id IS NOT NULL
+         AND a.sku <> b.sku
+    validated_against: [products]
+    inspectable: true
+    confidence: C
+
 governance:
   owner: example-team
   last_reviewed: 2026-06-05

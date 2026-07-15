@@ -1,0 +1,10 @@
+# NEGATIVE fixture — MUST be rejected: 'foreign_key' is not a legal BUSINESS edge type.
+# v0.1.12: a business edge type must be `identity` or `shared_attribute` (foreign_key is physical-only).
+edges:
+  - edge_id: a__related__b
+    level: business
+    type: foreign_key     # ← illegal: business ⊂ {identity, shared_attribute}
+    endpoints:
+      from: { concept: A, ref: a.yaml#concept }
+      to:   { concept: B, ref: b.yaml#concept }
+    resolved_by: "rules.yaml#rules.x"

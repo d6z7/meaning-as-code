@@ -178,6 +178,55 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
   WITH a `realized_by` is canon-backed (deterministic); WITHOUT, its prose is model-interpreted. Optional and
   backward-compatible. Per RELEASING.md, the tag, schema title, validator `CURRENT`, and every example
   `schema_version` move to `0.1.9` together.
+- **`0.1.12`** adds, on the same contract, a first-class home for a **business relation's NL-trigger
+  vocabulary** (additive over `0.1.11`, so `0.1.11` files remain valid): the business-edge `type` enum
+  widens from `identity` to **`identity | shared_attribute`** (`shared_attribute` = a symmetric business
+  relation where two instances of the SAME concept relate iff they share a non-null value of a named
+  attribute — not a stored FK); two OPTIONAL edge fields — **`resolved_by`** (a `path.yaml#anchor` ref to
+  the rule that computes the relation set; the `shared_attribute` counterpart of the `identity`-edge
+  `realized_by` requirement) and **`aliases`** (`$defs/relationAliasBlock`); and the **`relationAliasBlock`**
+  `$def` — a CLOSED `{ realized_by, multilingual{de,en,syn} }` object holding the auditable surface→relation
+  trigger vocabulary, where a surface resolves to THIS EDGE (by `edge_id`) via the new
+  **`mac.canon.relation_alias_resolve`** deterministic token→relation resolver (registered in
+  `mac_vocabulary.yaml`, resolved by `check_references`). Contrast `aliasBlock`, whose keys are value codes:
+  the routing target here is the relation itself. Optional and backward-compatible.
+- **Canon-registry extension (vocabulary-only, no schema bump): `mac.canon.enum_from_register`.** A new
+  member of the **`closed: false`** `mac.canon` registry (`mac_vocabulary.yaml`): the deterministic canon
+  that realizes a **closed enumeration's value set by reading a PINNED register** (a lookup artifact) —
+  the value domain IS the register's `code` column — instead of restating the codes in inline
+  `values.items`. An enumeration binds it on `values.realized_by`:
+  `{ udf: mac.canon.enum_from_register, params: { register: <artifact stem/path>, key_column: code } }`
+  and **OMITS `items`** (the register is single-homed; restating the codes would double-home them). This
+  needs **NO `mac.schema.json` change** — the `enumerationValues` `$def` already permits `values` with
+  `realized_by` and no `items` (`items` is not required). Per **RELEASING.md “When to bump”**, a change
+  that does not touch `mac.schema.json` (a vocabulary-only addition to a registry that is explicitly
+  `closed: false` and “extends by branch → PR with a witnessing pattern”) **does not bump the
+  `schema_version`**; it rides on the current `0.1.12` generation. (It mirrors `alias_resolve` /
+  `relation_alias_resolve` as a **declarative** registry entry — a consumer sources the value set from the
+  register; it is not an executable `tools/canon/` UDF.) Witness: `example_shop_ontology` `ShippingCarrier`
+  (enumeration, no inline items) + the `shipping_carriers` register. *(Were this to arrive bundled with a
+  schema change, it would go out under the next additive number, `0.1.13`.)*
+- **Canon-registry extension (vocabulary-only, no schema bump): `mac.canon.grouping_from_register`.** The
+  **nested-membership twin** of `enum_from_register` — another member of the **`closed: false`** `mac.canon`
+  registry (`mac_vocabulary.yaml`): the deterministic canon that realizes a **grouping's enumerated member
+  sets by reading an EXPLODED register** (a lookup artifact with one row per `(group_key, member)`) and
+  **RE-AGGREGATING** it by the group key into nested member arrays — instead of restating the sets in inline
+  `members.definitions`. A grouping binds it on `members.realized_by`:
+  `{ udf: mac.canon.grouping_from_register, applied_as: member_set, params: { register: <artifact stem/path>,
+  group_key: <col | [cols]>, member_col: <col>, carry: [<scalar cols>] } }` and **OMITS `definitions`** (the
+  register is single-homed; restating the sets would double-home them). `group_key` is the identity
+  column(s) each set is keyed by (a string, or a list for a composite key); `member_col` is the column
+  collected into each set's array; `carry` lists the per-group scalar columns repeated on every member row
+  and carried through onto each set (label / count / flags). This needs **NO `mac.schema.json` change** — the
+  `groupingMembers` `$def` already permits `members` with `over` + `realized_by` and no `definitions`
+  (`over` is the only required key; `definitions` is optional). Per **RELEASING.md “When to bump”**, a
+  vocabulary-only addition to a registry that is explicitly `closed: false` and “extends by branch → PR with
+  a witnessing pattern” **does not bump the `schema_version`**; it rides on the current `0.1.12` generation.
+  (Like `alias_resolve` / `enum_from_register`, it is a **declarative** registry entry — a consumer
+  re-aggregates the member sets from the register; it is not an executable `tools/canon/` UDF.) Witness:
+  `example_shop_ontology` `ProductBundle` (grouping, no inline `definitions`) + the exploded
+  `product_bundles` register. *(Were this to arrive bundled with a schema change, it would go out under the
+  next additive number, `0.1.13`.)*
 - The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.9`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's

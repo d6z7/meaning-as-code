@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
   "title": "Meaning-as-Code (MAC) — formal schema v0.1.10",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
     {
@@ -513,6 +513,11 @@
                   "active",
                   "proposed"
                 ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [ "C", "P", "R" ],
+                "description": "Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal)."
               }
             }
           }
@@ -848,6 +853,48 @@
           "type": "string"
         }
       }
+    },
+    "relationAliasBlock": {
+      "type": "object",
+      "description": "v0.1.12 (additive): the auditable, first-class NL trigger vocabulary for a BUSINESS RELATION. Contrast aliasBlock (whose keys are value codes and whose target is a closed value code): here a surface resolves to THIS EDGE — the relation is the routing target, addressed by edge_id. The deterministic resolver (mac.canon.relation_alias_resolve) binds token→relation via these surfaces; the LLM never chooses the relation (the aliases live on the artifact, not smeared in a rule's prose). Attaches to a level:business edge (typically type:shared_attribute).",
+      "properties": {
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "the canon that realizes the resolution — mac.canon.relation_alias_resolve (a deterministic token→relation resolver)."
+        },
+        "multilingual": {
+          "type": "object",
+          "description": "scope-free NL surfaces by language that trigger this relation — the SAME shape as aliasBlock's multilingual (de/en/syn lists of surface strings).",
+          "properties": {
+            "de": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "en": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "syn": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          },
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      },
+      "additionalProperties": false
     },
     "PropertyItem": {
       "type": "object",
@@ -1535,7 +1582,19 @@
               "join_rule": {
                 "type": "string"
               },
+              "verified_by": {
+                "type": "string",
+                "description": "(additive) a resolvable ref (path.yaml#id) to a data expectation that proves this edge's cardinality/1:1 claim. Referentially resolved by check_references.py against the expectations file's ids; dangling → referential error. A string ref, distinct from realized_by (a canon binding) and resolved_by (a resolution-rule anchor)."
+              },
               "realized_by": {},
+              "resolved_by": {
+                "type": "string",
+                "description": "v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution rule that computes a business relation's instance set — e.g. the self-relation of a shared_attribute edge. A string anchor, distinct from realized_by (a canon binding). Used by a level:business type:shared_attribute edge in place of realized_by."
+              },
+              "aliases": {
+                "$ref": "#/$defs/relationAliasBlock",
+                "description": "v0.1.12 (additive): the first-class NL trigger vocabulary for a business relation — surfaces resolve to THIS EDGE (by edge_id) via a deterministic token→relation resolver (mac.canon.relation_alias_resolve). Optional; absent ⇒ no relation-alias resolution for this edge."
+              },
               "conditions": {},
               "confidence": {
                 "$ref": "#/$defs/confidence"
@@ -1585,11 +1644,53 @@
                 "then": {
                   "properties": {
                     "type": {
+                      "enum": [
+                        "identity",
+                        "shared_attribute"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": [
+                    "level",
+                    "type"
+                  ],
+                  "properties": {
+                    "level": {
+                      "const": "business"
+                    },
+                    "type": {
                       "const": "identity"
                     }
-                  },
+                  }
+                },
+                "then": {
                   "required": [
                     "realized_by"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "required": [
+                    "level",
+                    "type"
+                  ],
+                  "properties": {
+                    "level": {
+                      "const": "business"
+                    },
+                    "type": {
+                      "const": "shared_attribute"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "resolved_by"
                   ]
                 }
               },

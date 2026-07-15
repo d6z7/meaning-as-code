@@ -1,4 +1,4 @@
-# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.11).
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.12).
 #
 # The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
 # A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
@@ -13,7 +13,7 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.11'
+  version: '0.1.12'
   status: active
   defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind]
 
@@ -133,3 +133,6 @@ canon:
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
     ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
+    relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
+    enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
+    grouping_from_register: { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping." }

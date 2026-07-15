@@ -33,6 +33,24 @@ edges:
     realized_by: "data/datasets/products.yaml#foreign_keys (category_id -> categories.category_id)"
     confidence: C
 
+  # v0.1.12: a BUSINESS relation (not a stored FK) — two products relate iff they share a non-NULL
+  # category. The NL trigger vocabulary ("related products", "verwandte Produkte") is first-class here
+  # in `aliases`, resolved token->relation by mac.canon.relation_alias_resolve — the LLM never chooses.
+  - edge_id: product__related__product
+    level: business                       # a computed self-relation, symmetric; NOT a physical FK join
+    type: shared_attribute                # relates iff two Product instances share a non-NULL attribute
+    endpoints:
+      from: { source: SHOP, concept: Product, ref: "ontology/concepts/catalog/product.yaml#concept", role: relatedTo, cardinality: "0..N" }
+      to:   { source: SHOP, concept: Product, ref: "ontology/concepts/catalog/product.yaml#concept",                  cardinality: "0..N" }
+    resolved_by: "ontology/rules.yaml#rules.related_products"   # the rule that computes the relation set
+    aliases:
+      realized_by: { udf: mac.canon.relation_alias_resolve, applied_as: predicate_injection }
+      multilingual:
+        en: [related products, sibling products, same category]
+        de: [verwandte Produkte, gleiche Kategorie]
+    notes: "Two products are related iff they share a non-NULL category (symmetric self-relation, not a stored FK)."
+    confidence: C
+
 governance:
   owner: example-team
   last_reviewed: 2026-06-05
