@@ -1,0 +1,6 @@
+# A3 good: member_1 appears in TWO DIFFERENT schemes (different groups) — per-group uniqueness holds → PASS.
+concept: { name: SchemeMap, class: grouping }
+members:
+  definitions:
+    - { scheme: scheme_a, group: group_a, members: [member_1, member_2] }
+    - { scheme: scheme_b, group: group_a, members: [member_1, member_3] }

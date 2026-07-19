@@ -20,7 +20,14 @@ jobs:
           python-version: '3.12'
 
       - name: Install deps
-        run: pip install jsonschema pyyaml
+        run: pip install jsonschema pyyaml sqlglot
+
+      - name: Unit tests (canon, layout, negative, shapes)
+        run: |
+          python tests/test_canon.py
+          python tests/test_layout.py
+          python tests/test_negative.py
+          python tests/test_shapes.py
 
       - name: Structural validation (validate_schema.py)
         run: python tools/validate_schema.py example_shop_ontology

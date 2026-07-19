@@ -1,0 +1,58 @@
+# SHOP (example) > order > ShippingCarrier
+# Synthetic example — the `enumeration` class whose closed value set is REALIZED BY A REGISTER (a pinned
+# lookup artifact), NOT restated inline. It witnesses mac.canon.enum_from_register: `values` carries the
+# closure + the register pointer and OMITS `items` — the value domain IS the register's `code` column.
+# Contrast OrderStatus (inline items). Not real data.
+
+metadata:
+  concept: ShippingCarrier
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.10'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: ShippingCarrier
+  label: Shipping Carrier
+  class: enumeration              # a closed value set — but sourced from a register, not inline
+  identity:
+    kind: code                   # identity = the carrier code; surface spellings/labels are aliases
+  definition: >
+    The set of shipping carriers an Order can be handed to. This is a closed value vocabulary, but its
+    members are NOT enumerated here — they live in the pinned `shipping_carriers` register (code + label),
+    the single home of the code set. The enumeration realizes its value domain by reading that register.
+  semantics:
+    purpose: >
+      Gives carrier reports/filters one agreed vocabulary ("shipments via the express carrier") while
+      keeping the member list single-homed in the register — the ontology declares the closure and the
+      pointer; the register carries the rows.
+
+values:
+  closure: closed                 # the register is the complete, authoritative set
+  closure_why: >
+    The carriers the shop ships with are exactly the rows of the shipping_carriers register; a new carrier
+    is a register row, not an undocumented value. The closure is asserted here; the members are realized
+    from the register.
+  # v0.1.9 UDF seam — but the register-sourced variant: the closed value set is realized by READING the
+  # pinned register (mac.canon.enum_from_register), keyed by its `code` column. There is deliberately NO
+  # `items:` block — restating the codes here would double-home them. A consumer sources the value domain
+  # (for value-domain checks / alias-target validation) from the register named in params.
+  realized_by:
+    udf: mac.canon.enum_from_register
+    applied_as: value_domain
+    params:
+      register: shipping_carriers   # the pinned register artifact (its `code` column IS the value set)
+      key_column: code              # the column that carries the value code (convention default: code)
+
+grounding:
+  kind: sql_table
+  table: shipping_carriers        # the register is the authoritative grounding target for the code
+  schema: shop_warehouse
+  grounds_column: code            # the code column the value domain is read from
+
+governance:
+  last_reviewed: 2026-07-14
+  change_log:
+    - { date: 2026-07-14, change: "Created as the witness for a register-sourced enumeration (mac.canon.enum_from_register): closed value set realized from the shipping_carriers register, no inline items.", change_type: CREATION, by: example-team }

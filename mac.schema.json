@@ -2,36 +2,63 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
   "title": "Meaning-as-Code (MAC) — formal schema v0.1.10",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.13 (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
-
   "oneOf": [
-    { "$ref": "#/$defs/ConceptFile" },
-    { "$ref": "#/$defs/RulesFile" },
-    { "$ref": "#/$defs/EdgesFile" },
-    { "$ref": "#/$defs/TableFile" },
-    { "$ref": "#/$defs/TransformFile" }
+    {
+      "$ref": "#/$defs/ConceptFile"
+    },
+    {
+      "$ref": "#/$defs/RulesFile"
+    },
+    {
+      "$ref": "#/$defs/EdgesFile"
+    },
+    {
+      "$ref": "#/$defs/TableFile"
+    },
+    {
+      "$ref": "#/$defs/TransformFile"
+    }
   ],
-
   "$defs": {
-
     "TransformFile": {
       "type": "object",
       "description": "DATA-PLANE pipeline descriptor (two-plane layout, data/transforms/). Declares how ONE produced dataset is built: what it `produces`, the `inputs` it consumes (each typed by `kind`), and the ordered cleansing `transforms`. The realizing SQL lives beside it (produces.sql_file). Read by lineage/rebuild tooling and the lineage projection; NOT by the query-generating agent (a concept grounds to the produced relation agnostically). Distinguished from a TableFile by its `produces`+`inputs` discriminators.",
-      "required": ["produces", "inputs"],
+      "required": [
+        "produces",
+        "inputs"
+      ],
       "properties": {
-        "metadata": { "type": "object" },
+        "metadata": {
+          "type": "object"
+        },
         "produces": {
           "type": "object",
           "description": "the single dataset this pipeline emits — the seam the ontology binds to.",
-          "required": ["relation"],
+          "required": [
+            "relation"
+          ],
           "properties": {
-            "relation": { "type": "string", "description": "the produced dataset relation (schema.name)" },
-            "sql_file": { "type": "string", "description": "the executable transform (the SELECT / CREATE VIEW) realizing this descriptor" },
-            "grain": { "type": "string" },
-            "serves_ontology": { "type": "string", "description": "pointer to the consuming concept/ontology file (documentation only)" }
+            "relation": {
+              "type": "string",
+              "description": "the produced dataset relation (schema.name)"
+            },
+            "sql_file": {
+              "type": "string",
+              "description": "the executable transform (the SELECT / CREATE VIEW) realizing this descriptor"
+            },
+            "grain": {
+              "type": "string"
+            },
+            "serves_ontology": {
+              "type": "string",
+              "description": "pointer to the consuming concept/ontology file (documentation only)"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": false
         },
         "inputs": {
@@ -39,19 +66,41 @@
           "description": "EVERY relation this transform reads, each typed by `kind`. A leaf dataset's inputs are raw_source / authored_seed / external; a derived dataset may also list upstream `dataset` inputs (view-on-view). Inputs mirroring the realizing SQL is what makes lineage TOTAL — required by the lineage-complete profile (CONFORMANCE.md), not by this structural schema.",
           "items": {
             "type": "object",
-            "required": ["relation"],
+            "required": [
+              "relation"
+            ],
             "properties": {
-              "relation": { "type": "string" },
+              "relation": {
+                "type": "string"
+              },
               "kind": {
-                "enum": ["raw_source", "dataset", "authored_seed", "external"],
+                "enum": [
+                  "raw_source",
+                  "dataset",
+                  "authored_seed",
+                  "external"
+                ],
                 "description": "raw_source = an observed upstream table (described under data/sources/) · dataset = another produced relation in THIS project (view-on-view) · authored_seed = rows authored from the ontology, no upstream table · external = produced by a system we do not transform locally (federation)."
               },
-              "role": { "type": "string", "description": "free-text role of this input in the transform (not a controlled vocabulary)" },
-              "descriptor": { "type": "string", "description": "pointer to the input's schema-of-record (data/sources/<name>.yaml for raw_source; the dataset descriptor for dataset)" },
-              "consumes": { "type": "object", "description": "optional map: input column -> the transform id (or rule) that reads it" },
-              "note": { "type": "string" }
+              "role": {
+                "type": "string",
+                "description": "free-text role of this input in the transform (not a controlled vocabulary)"
+              },
+              "descriptor": {
+                "type": "string",
+                "description": "pointer to the input's schema-of-record (data/sources/<name>.yaml for raw_source; the dataset descriptor for dataset)"
+              },
+              "consumes": {
+                "type": "object",
+                "description": "optional map: input column -> the transform id (or rule) that reads it"
+              },
+              "note": {
+                "type": "string"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         },
@@ -60,156 +109,310 @@
           "description": "the ordered cleansing steps, each dissolving ONE impurity so it never reaches the ontology; `sql` is the fragment of produces.sql_file that realizes it.",
           "items": {
             "type": "object",
-            "required": ["id"],
+            "required": [
+              "id"
+            ],
             "properties": {
-              "id": { "type": "string" },
-              "impurity_class": { "type": "string" },
-              "raw_defect": { "type": "string" },
-              "rule": { "type": "string" },
-              "sql": { "type": "string" },
-              "establishes_guarantee": { "type": "string", "description": "the clean fact the consuming ontology then inherits (and must not re-derive)" },
-              "status": { "type": "string" },
-              "note": { "type": "string" }
+              "id": {
+                "type": "string"
+              },
+              "impurity_class": {
+                "type": "string"
+              },
+              "raw_defect": {
+                "type": "string"
+              },
+              "rule": {
+                "type": "string"
+              },
+              "sql": {
+                "type": "string"
+              },
+              "establishes_guarantee": {
+                "type": "string",
+                "description": "the clean fact the consuming ontology then inherits (and must not re-derive)"
+              },
+              "status": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         },
         "open_transforms": {
           "type": "array",
           "description": "impurities KNOWN but NOT yet dissolved — carried, not hidden (the re-eval punch-list for this layer).",
-          "items": { "type": "object" }
+          "items": {
+            "type": "object"
+          }
         },
-        "governance": { "$ref": "#/$defs/governance" }
+        "governance": {
+          "$ref": "#/$defs/governance"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "confidence": {
       "description": "Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.",
-      "enum": ["C", "I", "Q"]
+      "enum": [
+        "C",
+        "I",
+        "Q"
+      ]
     },
-
     "EdgeEndpoint": {
       "type": "object",
-      "required": ["concept"],
+      "required": [
+        "concept"
+      ],
       "description": "v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table. It names the concept at this end; the physical relation lives in that concept's grounding plus the edge's join_rule/realized_by. Authoring an endpoint as a `view`/`key` is FORBIDDEN (additionalProperties:false rejects them): a join between stored relations that is not a join between concepts is a pipeline transform, not an ontology edge. This is what keeps edges at the semantic stage and out of the data/pipeline stage.",
       "properties": {
-        "source": { "type": "string", "description": "the source/ontology this concept belongs to (enables cross-source federation edges)." },
-        "concept": { "type": "string", "description": "REQUIRED — the concept at this end of the edge." },
-        "ref": { "type": "string", "description": "pointer to the concept definition (path#anchor), resolved cross-file by the referential gate." },
-        "role": { "type": "string", "description": "the relationship role/name read from this end (typically on `from`): e.g. placedBy, measuredForCountry." },
-        "cardinality": { "type": "string" }
+        "source": {
+          "type": "string",
+          "description": "the source/ontology this concept belongs to (enables cross-source federation edges)."
+        },
+        "concept": {
+          "type": "string",
+          "description": "REQUIRED — the concept at this end of the edge."
+        },
+        "ref": {
+          "type": "string",
+          "description": "pointer to the concept definition (path#anchor), resolved cross-file by the referential gate."
+        },
+        "role": {
+          "type": "string",
+          "description": "the relationship role/name read from this end (typically on `from`): e.g. placedBy, measuredForCountry."
+        },
+        "cardinality": {
+          "type": "string"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
-    "status": { "enum": ["production", "draft", "prototype"] },
-
+    "status": {
+      "enum": [
+        "production",
+        "draft",
+        "prototype"
+      ]
+    },
     "changeLogEntry": {
       "type": "object",
-      "required": ["date", "change", "change_type"],
+      "required": [
+        "date",
+        "change",
+        "change_type"
+      ],
       "properties": {
-        "date": { "description": "ISO date — string or a YAML-parsed date" },
-        "change": { "type": "string" },
-        "change_type": { "enum": ["CREATION", "ADDITION", "CORRECTION", "REMOVAL", "REFACTOR"] },
-        "by": { "type": "string" },
-        "rationale": { "type": "string" }
+        "date": {
+          "description": "ISO date — string or a YAML-parsed date"
+        },
+        "change": {
+          "type": "string"
+        },
+        "change_type": {
+          "enum": [
+            "CREATION",
+            "ADDITION",
+            "CORRECTION",
+            "REMOVAL",
+            "REFACTOR"
+          ]
+        },
+        "by": {
+          "type": "string"
+        },
+        "rationale": {
+          "type": "string"
+        }
       },
       "additionalProperties": false
     },
-
     "governance": {
       "type": "object",
       "description": "Housekeeping. APPEND-ONLY — never edit change_log history.",
       "properties": {
-        "owner": { "type": "string" },
-        "last_reviewed": { "description": "ISO date — string or a YAML-parsed date" },
-        "approval_status": { "type": "string" },
-        "change_log": { "type": "array", "items": { "$ref": "#/$defs/changeLogEntry" } }
+        "owner": {
+          "type": "string"
+        },
+        "last_reviewed": {
+          "description": "ISO date — string or a YAML-parsed date"
+        },
+        "approval_status": {
+          "type": "string"
+        },
+        "change_log": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/changeLogEntry"
+          }
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "openQuestion": {
       "type": "object",
-      "required": ["id", "question"],
+      "required": [
+        "id",
+        "question"
+      ],
       "properties": {
-        "id": { "type": "string" },
-        "topic": { "type": "string" },
-        "question": { "type": "string" },
-        "status": { "enum": ["OPEN", "PARTIAL", "RESOLVED", "NEEDS_SME_CONFIRMATION"] },
-        "owner_for_resolution": { "type": "string" },
-        "priority": { "type": "string" },
-        "category": { "type": "string" },
-        "note": { "type": "string" },
-        "cross_references": { "type": ["array", "string"] }
+        "id": {
+          "type": "string"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPEN",
+            "PARTIAL",
+            "RESOLVED",
+            "NEEDS_SME_CONFIRMATION"
+          ]
+        },
+        "owner_for_resolution": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "cross_references": {
+          "type": [
+            "array",
+            "string"
+          ]
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "additivityAxis": {
       "description": "v0.5: canonical values are 'additive' / 'non-additive' (hyphen). The legacy underscore 'non_additive' is a Phase-C conformance fix.",
-      "enum": ["additive", "non-additive"]
+      "enum": [
+        "additive",
+        "non-additive"
+      ]
     },
-
     "canonRef": {
       "type": "object",
-      "required": ["udf"],
+      "required": [
+        "udf"
+      ],
       "description": "v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).",
       "properties": {
-        "udf": { "type": "string", "description": "the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable)." },
-        "params": { "type": "object", "description": "the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here." },
-        "applied_as": { "type": "string", "description": "how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer." },
-        "note": { "type": "string" }
+        "udf": {
+          "type": "string",
+          "description": "the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable)."
+        },
+        "params": {
+          "type": "object",
+          "description": "the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here."
+        },
+        "applied_as": {
+          "type": "string",
+          "description": "how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer."
+        },
+        "note": {
+          "type": "string"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "canonBinding": {
       "description": "v0.1.9: the content-model UDF seam (reference_manual/the_content_model.md §4) — binds a behaviour-bearing slot to a deterministic canon (mac.canon.*), or a LIST of canons that compose. OPTIONAL everywhere it appears: present → the slot is canon-backed (deterministic, run not read); absent → the slot's prose is model-interpreted. The prose stays beside it — the human twin (AUTHORING A9). This is the determinism-coverage seam: behaviour-bearing slots WITH a realized_by ÷ all behaviour-bearing slots.",
       "oneOf": [
-        { "$ref": "#/$defs/canonRef" },
-        { "type": "array", "items": { "$ref": "#/$defs/canonRef" } }
+        {
+          "$ref": "#/$defs/canonRef"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/canonRef"
+          }
+        }
       ]
     },
-
     "semantics": {
       "type": "object",
       "description": "The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).",
       "properties": {
-        "purpose": { "type": "string" },
-        "scope": { "type": "string" },
+        "purpose": {
+          "type": "string"
+        },
+        "scope": {
+          "type": "string"
+        },
         "additivity": {
           "type": "object",
           "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time.",
-          "additionalProperties": { "$ref": "#/$defs/additivityAxis" }
+          "additionalProperties": {
+            "$ref": "#/$defs/additivityAxis"
+          }
         },
         "axis_kinds": {
           "type": "object",
           "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (MeasureType × axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
-          "additionalProperties": { "type": "string", "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$" }
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
+          }
         },
         "measure_type": {
           "type": "string",
           "description": "v0.6: the measure's additivity class — a reference to a mac.MeasureType member (Flow/Stock/Target). The (type × axis_kind) additivity law lives once on mac.MeasureType; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
           "pattern": "^mac\\.MeasureType\\.[A-Za-z_][A-Za-z0-9_]*$"
         },
-        "unit": { "type": "string" },
-        "null_semantics": { "type": "string" },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero." }
+        "unit": {
+          "type": "string"
+        },
+        "null_semantics": {
+          "type": "string"
+        },
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero."
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "contract": {
-      "type": ["string", "object"],
+      "type": [
+        "string",
+        "object"
+      ],
       "description": "v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional.",
       "properties": {
         "no_probe_guarantee": {
@@ -217,19 +420,31 @@
           "description": "What an agent needs ONLY, to use this concept without probing the data; if more is needed, the concept is incomplete (fix it, don't probe). Was 'no_probe_guarantee'."
         },
         "resolution": {
-          "type": ["string", "object"],
+          "type": [
+            "string",
+            "object"
+          ],
           "description": "How identity / name→code resolves (a join, not a probe). Was name_contract / resolution_contract / identity_contract."
         },
         "default_reading": {
-          "type": ["string", "object"],
+          "type": [
+            "string",
+            "object"
+          ],
           "description": "The default aggregation / role / perspective to assume when the question is silent. Was aggregation_contract."
         },
         "answer_rules": {
-          "type": ["string", "object"],
+          "type": [
+            "string",
+            "object"
+          ],
           "description": "Binding constraints on answering — which definition to use, what to emit, what to refuse. Was answer_contract."
         },
         "axis_handling": {
-          "type": ["string", "object"],
+          "type": [
+            "string",
+            "object"
+          ],
           "description": "How to treat time / orthogonal axes for this concept. Was time_contract / two_axes_contract (the structural part stays in semantics)."
         },
         "rules": {
@@ -237,115 +452,295 @@
           "description": "v0.1.6: typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.",
           "items": {
             "type": "object",
-            "required": ["id", "kind"],
+            "required": [
+              "id",
+              "kind"
+            ],
             "additionalProperties": false,
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "properties": {
-              "id":    { "type": "string", "description": "stable dotted id, e.g. lineitem.revenue.net_of_discount" },
-              "kind":  { "type": "string", "description": "a mac.rule_kind.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)" },
-              "scope": { "type": "string", "description": "general | <SOURCE> (general = framework default; else a source fact)" },
-              "when":  { "type": "string", "description": "trigger — the situation the rule applies to" },
-              "then":  { "type": "string", "description": "directive — what to do" },
-              "never": { "type": "string", "description": "anti-pattern to avoid (optional)" },
-              "why":   { "type": "string", "description": "one-line rationale" },
-              "binds": { "type": "array", "items": { "type": "string" }, "description": "the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring)." },
-              "enforced_by": { "type": "string", "description": "deterministic backstop (e.g. a CP-3 anchor id)" },
-              "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose." },
-              "examples": { "type": "array" },
-              "status": { "type": "string", "enum": ["active", "proposed"] }
+              "id": {
+                "type": "string",
+                "description": "stable dotted id, e.g. lineitem.revenue.net_of_discount"
+              },
+              "kind": {
+                "type": "string",
+                "description": "a mac.rule_kind.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)"
+              },
+              "scope": {
+                "type": "string",
+                "description": "general | <SOURCE> (general = framework default; else a source fact)"
+              },
+              "when": {
+                "type": "string",
+                "description": "trigger — the situation the rule applies to"
+              },
+              "then": {
+                "type": "string",
+                "description": "directive — what to do"
+              },
+              "never": {
+                "type": "string",
+                "description": "anti-pattern to avoid (optional)"
+              },
+              "why": {
+                "type": "string",
+                "description": "one-line rationale"
+              },
+              "subject": {
+                "type": "string",
+                "description": "v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a few words, read alongside the rule `id`. NOT a restatement of when/then/never (that would be prose); the terse human label shown as the rule's heading in the ontology explorer. Complements `why` (the rationale). Replaces the per-rule PURPOSE authoring comment (history stays in git)."
+              },
+              "binds": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring)."
+              },
+              "enforced_by": {
+                "type": "string",
+                "description": "deterministic backstop (e.g. a CP-3 anchor id)"
+              },
+              "realized_by": {
+                "$ref": "#/$defs/canonBinding",
+                "description": "v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose."
+              },
+              "examples": {
+                "type": "array"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "proposed"
+                ]
+              },
+              "confidence": {
+                "type": "string",
+                "enum": [ "C", "P", "R" ],
+                "description": "Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal)."
+              }
             }
           }
         }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": true
     },
-
     "grounding": {
       "type": "object",
       "description": "Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.",
       "properties": {
-        "kind": { "type": "string", "description": "Grounding adapter (pluggable): sql_table | api | file | graph." },
+        "kind": {
+          "type": "string",
+          "description": "Grounding adapter (pluggable): sql_table | api | file | graph."
+        },
         "sources": {
           "type": "array",
           "description": "v0.5 agnostic source binding — the relation(s) this concept queries, each with its key + the columns it uses. A view and a base table are IDENTICAL here (query target only); a view's lineage lives on its Physical descriptor (`derived_from`), never here.",
           "items": {
             "type": "object",
-            "required": ["relation"],
+            "required": [
+              "relation"
+            ],
             "properties": {
-              "relation": { "type": "string", "description": "the table OR view name to query (agnostic — the AI does not care which)" },
-              "key": { "type": ["string", "array"], "description": "primary / join key column(s)" },
-              "columns": { "type": "array", "description": "the columns this concept uses" }
+              "relation": {
+                "type": "string",
+                "description": "the table OR view name to query (agnostic — the AI does not care which)"
+              },
+              "key": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "description": "primary / join key column(s)"
+              },
+              "columns": {
+                "type": "array",
+                "description": "the columns this concept uses"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": true
           }
         },
-        "table": { "type": "string" },
-        "tables": { "type": "array" },
-        "primary_tables": { "type": "array" },
-        "schema": { "type": "string" },
-        "key_column": { "type": "string" },
-        "code_column": { "type": "string" },
-        "value_filter": { "type": "string" },
-        "join_rule": { "type": "string" },
-        "discriminator": { "type": "string" },
-        "snapshot_rule": { "type": "string" },
-        "family_resolution": { "type": "string" },
-        "row_count": { "type": ["integer", "string"] },
-        "used_in": { "type": ["array", "string"] },
-        "serves_from": { "type": ["string", "array"], "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)." },
-        "grain": { "type": "string", "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class." },
-        "grounds_column": { "type": "string", "description": "(naming contract) a physical column name as a VALUE, never a key." },
+        "table": {
+          "type": "string"
+        },
+        "tables": {
+          "type": "array"
+        },
+        "primary_tables": {
+          "type": "array"
+        },
+        "schema": {
+          "type": "string"
+        },
+        "key_column": {
+          "type": "string"
+        },
+        "code_column": {
+          "type": "string"
+        },
+        "value_filter": {
+          "type": "string"
+        },
+        "join_rule": {
+          "type": "string"
+        },
+        "discriminator": {
+          "type": "string"
+        },
+        "snapshot_rule": {
+          "type": "string"
+        },
+        "family_resolution": {
+          "type": "string"
+        },
+        "row_count": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "used_in": {
+          "type": [
+            "array",
+            "string"
+          ]
+        },
+        "serves_from": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)."
+        },
+        "grain": {
+          "type": "string",
+          "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class."
+        },
+        "grounds_column": {
+          "type": "string",
+          "description": "(naming contract) a physical column name as a VALUE, never a key."
+        },
         "field_roles": {
           "type": "object",
           "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
-          "additionalProperties": { "type": "string" }
+          "additionalProperties": {
+            "type": "string"
+          }
         },
-        "note": { "type": "string" },
-        "notes": { "type": "string" },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter." }
+        "note": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter."
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "constraintEntry": {
       "type": "object",
       "description": "A data-quality invariant (validation, NOT derivation). The description field is 'assert:', never 'rule:'.",
-      "required": ["assert"],
+      "required": [
+        "assert"
+      ],
       "properties": {
-        "assert": { "type": "string" },
-        "severity": { "enum": ["ERROR", "WARNING", "INFORMATIONAL"] },
-        "machine_executable": { "type": "boolean" },
-        "sql_assertion": { "type": "string" },
-        "open_question": { "type": "string" },
-        "notes": { "type": "string" }
+        "assert": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "ERROR",
+            "WARNING",
+            "INFORMATIONAL"
+          ]
+        },
+        "machine_executable": {
+          "type": "boolean"
+        },
+        "sql_assertion": {
+          "type": "string"
+        },
+        "open_question": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "enumerationValues": {
       "type": "object",
       "description": "v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure ('value_set:' was dropped, DECISION 3). Closure lives HERE, with the values — never in semantics.",
       "properties": {
-        "closure": { "enum": ["closed", "open", "unknown"] },
-        "closure_why": { "type": "string" },
+        "closure": {
+          "enum": [
+            "closed",
+            "open",
+            "unknown"
+          ]
+        },
+        "closure_why": {
+          "type": "string"
+        },
         "items": {
           "type": "array",
           "description": "the value rows — every value has a stable `code`; label/meaning/confidence/from are optional core; per-enum attributes are allowed.",
           "items": {
             "type": "object",
-            "required": ["code"],
+            "required": [
+              "code"
+            ],
             "properties": {
-              "code": { "type": ["string", "number"], "description": "the canonical value identifier" },
-              "label": { "type": "string" },
-              "meaning": { "type": "string" },
-              "confidence": { "$ref": "#/$defs/confidence" },
-              "note": { "type": "string" },
-              "open_question": { "type": "string" },
-              "from": { "type": ["string", "array"], "description": "raw source attribute(s) this value was conformed from (a list when several raw spellings map to one code)" }
+              "code": {
+                "type": [
+                  "string",
+                  "number"
+                ],
+                "description": "the canonical value identifier"
+              },
+              "label": {
+                "type": "string"
+              },
+              "meaning": {
+                "type": "string"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "note": {
+                "type": "string"
+              },
+              "open_question": {
+                "type": "string"
+              },
+              "from": {
+                "type": [
+                  "string",
+                  "array"
+                ],
+                "description": "raw source attribute(s) this value was conformed from (a list when several raw spellings map to one code)"
+              }
             },
             "additionalProperties": true
           }
@@ -355,102 +750,252 @@
           "description": "the orphan-quarantine bucket — how raw values outside the closed set are surfaced (never silently dropped). Part of the value-domain conformance story.",
           "additionalProperties": true
         },
-        "canonicalization": { "type": ["string", "object"], "description": "how raw spellings/duplicates were conformed to the canonical codes." },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)." },
-        "aliases": { "$ref": "#/$defs/aliasBlock", "description": "v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum." }
+        "canonicalization": {
+          "type": [
+            "string",
+            "object"
+          ],
+          "description": "how raw spellings/duplicates were conformed to the canonical codes."
+        },
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)."
+        },
+        "aliases": {
+          "$ref": "#/$defs/aliasBlock",
+          "description": "v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum."
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "aliasBlock": {
       "type": "object",
       "description": "v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a canonical value code. Tier 1 (scope_relative, optional) — the SAME surface means a different code UNDER a different scope value (named by scope_key); Tier 2 (multilingual) — scope-free de/en/syn surfaces. A surface resolving to >1 code ⇒ ASK; a token outside the closed set ⇒ ASK (offer the set); never a silent bind/drop. Each map key MUST be a declared values.items[].code (enforced by check_shapes, not expressible in pure JSON Schema).",
       "properties": {
-        "scope_key": { "type": "string", "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'brand_letter', 'channel'); omitted for multilingual-only enums." },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "the canon that realizes the resolution — mac.canon.alias_resolve." },
+        "scope_key": {
+          "type": "string",
+          "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'brand_letter', 'channel'); omitted for multilingual-only enums."
+        },
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "the canon that realizes the resolution — mac.canon.alias_resolve."
+        },
         "map": {
           "type": "object",
           "description": "canonical code → its alias tiers.",
           "additionalProperties": {
             "type": "object",
             "properties": {
-              "stored": { "type": ["string", "number"], "description": "the byte-exact served value when it differs from the code (else the code is emitted verbatim)." },
+              "stored": {
+                "type": [
+                  "string",
+                  "number"
+                ],
+                "description": "the byte-exact served value when it differs from the code (else the code is emitted verbatim)."
+              },
               "multilingual": {
                 "type": "object",
                 "description": "scope-free surfaces by language.",
                 "properties": {
-                  "de": { "type": "array", "items": { "type": "string" } },
-                  "en": { "type": "array", "items": { "type": "string" } },
-                  "syn": { "type": "array", "items": { "type": "string" } }
+                  "de": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "en": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "syn": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
                 },
-                "patternProperties": { "^x-": true },
+                "patternProperties": {
+                  "^x-": true
+                },
                 "additionalProperties": false
               },
-              "scope_relative": { "$ref": "#/$defs/aliasScopeMap", "description": "domain-neutral Tier-1: scope value → the surfaces that, under that scope, mean this code. The GENERIC name the engine core reads." },
-              "brand_relative": { "$ref": "#/$defs/aliasScopeMap", "description": "an authoring alias of scope_relative for brand-scoped enums (loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes." }
+              "scope_relative": {
+                "$ref": "#/$defs/aliasScopeMap",
+                "description": "domain-neutral Tier-1: scope value → the surfaces that, under that scope, mean this code. The GENERIC name the engine core reads."
+              },
+              "brand_relative": {
+                "$ref": "#/$defs/aliasScopeMap",
+                "description": "an authoring alias of scope_relative for brand-scoped enums (loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes."
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         }
       },
-      "required": ["map"],
-      "patternProperties": { "^x-": true },
+      "required": [
+        "map"
+      ],
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "aliasScopeMap": {
       "type": "object",
       "description": "a scope value (e.g. a brand letter) → the list of surfaces that, UNDER that scope, resolve to the owning code.",
-      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
     },
-
+    "relationAliasBlock": {
+      "type": "object",
+      "description": "v0.1.12 (additive): the auditable, first-class NL trigger vocabulary for a BUSINESS RELATION. Contrast aliasBlock (whose keys are value codes and whose target is a closed value code): here a surface resolves to THIS EDGE — the relation is the routing target, addressed by edge_id. The deterministic resolver (mac.canon.relation_alias_resolve) binds token→relation via these surfaces; the LLM never chooses the relation (the aliases live on the artifact, not smeared in a rule's prose). Attaches to a level:business edge (typically type:shared_attribute).",
+      "properties": {
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "the canon that realizes the resolution — mac.canon.relation_alias_resolve (a deterministic token→relation resolver)."
+        },
+        "multilingual": {
+          "type": "object",
+          "description": "scope-free NL surfaces by language that trigger this relation — the SAME shape as aliasBlock's multilingual (de/en/syn lists of surface strings).",
+          "properties": {
+            "de": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "en": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "syn": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "patternProperties": {
+            "^x-": true
+          },
+          "additionalProperties": false
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      },
+      "additionalProperties": false
+    },
     "PropertyItem": {
       "type": "object",
       "description": "v0.5 CROSS-CLASS primitive — a concept property. Identical shape wherever `properties:` appears (reference / entity / event / measure): name + type + required + doc. Empirically uniform across 72/72 property items. The Palantir 'property'.",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "type": { "type": "string", "description": "the primitive datatype (string/int/date/...)" },
-        "required": { "type": "boolean" },
-        "doc": { "type": "string" },
-        "german": { "type": "string" },
-        "value_domain": { "type": "string", "description": "(optional) an enumeration this property's values must belong to" }
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "description": "the primitive datatype (string/int/date/...)"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "doc": {
+          "type": "string"
+        },
+        "german": {
+          "type": "string"
+        },
+        "value_domain": {
+          "type": "string",
+          "description": "(optional) an enumeration this property's values must belong to"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": true
     },
-
     "AttributeItem": {
       "type": "object",
       "description": "v0.5 cross-class — an EAV / enum-constrained attribute (reference / entity). Distinct from PropertyItem (primitive): an attribute's values must belong to an enumeration (`value_domain`) and are typically read from an EAV column.",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "value_domain": { "type": "string", "description": "the enumeration the attribute's values belong to" },
-        "eav_attribute": { "type": "string" },
-        "column": { "type": "string" },
-        "confidence": { "$ref": "#/$defs/confidence" },
-        "note": { "type": "string" }
+        "name": {
+          "type": "string"
+        },
+        "value_domain": {
+          "type": "string",
+          "description": "the enumeration the attribute's values belong to"
+        },
+        "eav_attribute": {
+          "type": "string"
+        },
+        "column": {
+          "type": "string"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "note": {
+          "type": "string"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": true
     },
-
     "groupingMembers": {
       "type": "object",
       "description": "v0.5 grouping template — how a grouping rolls up its leaf. `over` = the leaf concept. Membership is either `member_source.kind: rule` (a FK/derivation, e.g. category over product) or `kind: enumerated` with named `definitions` (e.g. region's brand definitions, each explicit or derived).",
-      "required": ["over"],
+      "required": [
+        "over"
+      ],
       "properties": {
-        "over": { "type": "string", "description": "the leaf concept this groups (region over country, category over product)" },
+        "over": {
+          "type": "string",
+          "description": "the leaf concept this groups (region over country, category over product)"
+        },
         "member_source": {
           "type": "object",
           "properties": {
-            "kind": { "enum": ["rule", "enumerated"] },
-            "rule": { "type": ["string", "object"], "description": "(rule) how membership is computed — a FK / transitive walk" }
+            "kind": {
+              "enum": [
+                "rule",
+                "enumerated"
+              ]
+            },
+            "rule": {
+              "type": [
+                "string",
+                "object"
+              ],
+              "description": "(rule) how membership is computed — a FK / transitive walk"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": true
         },
         "definitions": {
@@ -458,272 +1003,849 @@
           "description": "(enumerated) the named member sets — each an explicit list or a derived rule",
           "items": {
             "type": "object",
-            "required": ["code"],
+            "required": [
+              "code"
+            ],
             "properties": {
-              "namespace": { "type": "string", "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (one brand's 'VE' vs another brand's 'VE')" },
-              "code": { "type": ["string", "number"] },
-              "label": { "type": "string" },
-              "brand": { "type": "string" },
-              "members": { "type": "array", "description": "(explicit) the leaf codes in this set" },
-              "derived_rule": { "type": ["string", "object"], "description": "(derived) how this set's members are computed" },
-              "confidence": { "$ref": "#/$defs/confidence" }
+              "namespace": {
+                "type": "string",
+                "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (one brand's 'VE' vs another brand's 'VE')"
+              },
+              "code": {
+                "type": [
+                  "string",
+                  "number"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "brand": {
+                "type": "string"
+              },
+              "members": {
+                "type": "array",
+                "description": "(explicit) the leaf codes in this set"
+              },
+              "derived_rule": {
+                "type": [
+                  "string",
+                  "object"
+                ],
+                "description": "(derived) how this set's members are computed"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": true
           }
         },
-        "realized_by": { "$ref": "#/$defs/canonBinding", "description": "v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree." }
+        "realized_by": {
+          "$ref": "#/$defs/canonBinding",
+          "description": "v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree."
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": true
     },
-
     "ConceptFile": {
       "type": "object",
-      "required": ["metadata", "concept"],
+      "required": [
+        "metadata",
+        "concept"
+      ],
       "properties": {
         "metadata": {
           "type": "object",
-          "required": ["concept", "source", "schema_version"],
+          "required": [
+            "concept",
+            "source",
+            "schema_version"
+          ],
           "properties": {
-            "concept": { "type": "string" },
-            "source": { "type": "string" },
-            "version": { "type": "string" },
-            "schema_version": { "type": "string" },
-            "benchmark_baseline": { "type": "string" },
-            "status": { "$ref": "#/$defs/status" },
-            "owner": { "type": "string" },
-            "confidence": { "$ref": "#/$defs/confidence" }
+            "concept": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "schema_version": {
+              "type": "string"
+            },
+            "benchmark_baseline": {
+              "type": "string"
+            },
+            "status": {
+              "$ref": "#/$defs/status"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "confidence": {
+              "$ref": "#/$defs/confidence"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": false
         },
         "concept": {
           "type": "object",
-          "required": ["name", "class"],
+          "required": [
+            "name",
+            "class"
+          ],
           "properties": {
-            "name": { "type": "string", "description": "PascalCase ontology id — the single canonical identifier." },
-            "label": { "type": "string" },
-            "german": { "type": "string" },
+            "name": {
+              "type": "string",
+              "description": "PascalCase ontology id — the single canonical identifier."
+            },
+            "label": {
+              "type": "string"
+            },
+            "german": {
+              "type": "string"
+            },
             "class": {
-              "enum": ["entity", "event", "measure", "enumeration", "reference", "grouping"],
+              "enum": [
+                "entity",
+                "event",
+                "measure",
+                "enumeration",
+                "reference",
+                "grouping"
+              ],
               "description": "The closed six-class vocabulary. Never invent a seventh."
             },
-            "definition": { "type": "string" },
-            "semantics": { "$ref": "#/$defs/semantics" },
-            "notes": { "type": "string" },
-            "grounded_by": { "type": "string", "description": "(enumerations) the discriminator column the values come from." },
-            "related_axis": { "type": "string" }
+            "definition": {
+              "type": "string"
+            },
+            "semantics": {
+              "$ref": "#/$defs/semantics"
+            },
+            "notes": {
+              "type": "string"
+            },
+            "grounded_by": {
+              "type": "string",
+              "description": "(enumerations) the discriminator column the values come from."
+            },
+            "related_axis": {
+              "type": "string"
+            },
+            "identity": {
+              "type": "object",
+              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.identity_kind) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / resolved_axis / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one.",
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "iso",
+                    "code",
+                    "namespace_code",
+                    "fk_name",
+                    "composite",
+                    "resolved_axis",
+                    "sme_pending"
+                  ],
+                  "description": "mac.identity_kind.<term> — how the canonical identity is established."
+                },
+                "canonical_key": {
+                  "type": "string",
+                  "description": "the column/expression that IS the identity (omit for resolved_axis / sme_pending)."
+                },
+                "note": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind"
+              ],
+              "additionalProperties": false,
+              "patternProperties": {
+                "^x-": true
+              }
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": false
         },
-
-        "contract": { "$ref": "#/$defs/contract" },
-
-        "values": { "$ref": "#/$defs/enumerationValues" },
-        "properties": { "type": "array", "description": "Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties.", "items": { "$ref": "#/$defs/PropertyItem" } },
-        "attributes": { "type": "array", "description": "EAV / enum-constrained attributes — each an AttributeItem. Distinct from 'properties' (primitive).", "items": { "$ref": "#/$defs/AttributeItem" } },
-        "subclasses": { "type": "array", "description": "is-a hierarchy (e.g. measure Flow/Stock/Target)." },
-        "instances": { "type": "array" },
-        "members": { "description": "grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).", "oneOf": [ { "type": "array" }, { "$ref": "#/$defs/groupingMembers" } ] },
-        "members_resolution": { "type": ["string", "object"] },
-        "enumerations": { "type": "array", "description": "list of enum sub-blocks when a concept carries several coded columns." },
-        "related_concepts": { "type": "array" },
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "values": {
+          "$ref": "#/$defs/enumerationValues"
+        },
+        "properties": {
+          "type": "array",
+          "description": "Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties.",
+          "items": {
+            "$ref": "#/$defs/PropertyItem"
+          }
+        },
+        "attributes": {
+          "type": "array",
+          "description": "EAV / enum-constrained attributes — each an AttributeItem. Distinct from 'properties' (primitive).",
+          "items": {
+            "$ref": "#/$defs/AttributeItem"
+          }
+        },
+        "subclasses": {
+          "type": "array",
+          "description": "is-a hierarchy (e.g. measure Flow/Stock/Target)."
+        },
+        "instances": {
+          "type": "array"
+        },
+        "members": {
+          "description": "grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).",
+          "oneOf": [
+            {
+              "type": "array"
+            },
+            {
+              "$ref": "#/$defs/groupingMembers"
+            }
+          ]
+        },
+        "members_resolution": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "enumerations": {
+          "type": "array",
+          "description": "list of enum sub-blocks when a concept carries several coded columns."
+        },
+        "related_concepts": {
+          "type": "array"
+        },
         "lifecycle": {
           "type": "object",
           "description": "(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.",
           "properties": {
-            "phase_sequence": { "type": "array" },
-            "phases": { "type": "array" },
+            "phase_sequence": {
+              "type": "array"
+            },
+            "phases": {
+              "type": "array"
+            },
             "phase_closure": {},
             "states": {},
             "boundary": {},
-            "note": { "type": "string" }
+            "note": {
+              "type": "string"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": false
         },
-        "individual_kpis": { "type": "array", "description": "(measure catalogue) concrete measures, each referencing a measure_type + own semantics." },
-        "derived_by_rule": { "type": "string", "description": "marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it." },
-
-        "grounding": { "$ref": "#/$defs/grounding" },
-        "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraintEntry" } },
-        "governance": { "$ref": "#/$defs/governance" },
-        "open_questions": { "type": "array", "items": { "$ref": "#/$defs/openQuestion" } }
+        "individual_kpis": {
+          "type": "array",
+          "description": "(measure catalogue) concrete measures, each referencing a measure_type + own semantics."
+        },
+        "derived_by_rule": {
+          "type": "string",
+          "description": "marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it."
+        },
+        "grounding": {
+          "$ref": "#/$defs/grounding"
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/constraintEntry"
+          }
+        },
+        "governance": {
+          "$ref": "#/$defs/governance"
+        },
+        "open_questions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/openQuestion"
+          }
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false,
       "allOf": [
         {
           "$comment": "v0.5 per-class template — enumeration: the value set lives in `values:` (one concept = one set); the `enumerations:` plural wrapper is only for non-enumeration concepts carrying several coded columns.",
-          "if": { "properties": { "concept": { "properties": { "class": { "const": "enumeration" } } } } },
-          "then": { "required": ["values"], "not": { "required": ["enumerations"] } }
+          "if": {
+            "properties": {
+              "concept": {
+                "properties": {
+                  "class": {
+                    "const": "enumeration"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "values"
+            ],
+            "not": {
+              "required": [
+                "enumerations"
+              ]
+            }
+          }
         },
         {
           "$comment": "v0.5 per-class template — measure: must declare per-axis additivity (the footgun-preventer).",
-          "if": { "properties": { "concept": { "properties": { "class": { "const": "measure" } } } } },
-          "then": { "properties": { "concept": { "required": ["semantics"], "properties": { "semantics": { "required": ["additivity"] } } } } }
+          "if": {
+            "properties": {
+              "concept": {
+                "properties": {
+                  "class": {
+                    "const": "measure"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "concept": {
+                "required": [
+                  "semantics"
+                ],
+                "properties": {
+                  "semantics": {
+                    "required": [
+                      "additivity"
+                    ]
+                  }
+                }
+              }
+            }
+          }
         },
         {
           "$comment": "v0.5 per-class template — event: must carry a lifecycle (the state machine).",
-          "if": { "properties": { "concept": { "properties": { "class": { "const": "event" } } } } },
-          "then": { "required": ["lifecycle"] }
+          "if": {
+            "properties": {
+              "concept": {
+                "properties": {
+                  "class": {
+                    "const": "event"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "lifecycle"
+            ]
+          }
         },
         {
           "$comment": "v0.5 per-class template — grouping: must roll up a leaf via the members template (over + member_source / definitions).",
-          "if": { "properties": { "concept": { "properties": { "class": { "const": "grouping" } } } } },
-          "then": { "required": ["members"], "properties": { "members": { "type": "object", "required": ["over"] } } }
+          "if": {
+            "properties": {
+              "concept": {
+                "properties": {
+                  "class": {
+                    "const": "grouping"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "members"
+            ],
+            "properties": {
+              "members": {
+                "type": "object",
+                "required": [
+                  "over"
+                ]
+              }
+            }
+          }
         }
       ]
     },
-
     "RulesFile": {
       "type": "object",
-      "required": ["rules"],
+      "required": [
+        "rules"
+      ],
       "properties": {
-        "metadata": { "type": "object" },
-        "governance": { "$ref": "#/$defs/governance" },
+        "metadata": {
+          "type": "object"
+        },
+        "governance": {
+          "$ref": "#/$defs/governance"
+        },
         "rules": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["rule", "derives", "over", "logic", "render_kind"],
+            "required": [
+              "rule",
+              "derives",
+              "over",
+              "logic",
+              "render_kind"
+            ],
             "description": "v0.5: render_kind is REQUIRED. The 'formula' family was dropped → use template/logic (DROP→template).",
             "properties": {
-              "rule": { "type": "string" },
-              "derives": { "type": "string" },
-              "over": { "type": ["array", "string"] },
-              "logic": { "type": "string" },
-              "render_kind": { "enum": ["sql_expression", "sql_view", "derived_set", "spark_udf", "spec_only"] },
-              "template": { "type": "string" },
-              "view_ref": { "type": "string" },
-              "usage_template": { "type": "string" },
-              "requires_join": { "type": "string" },
-              "relative_template": { "type": "string" },
-              "applied_as": { "type": "string" },
+              "rule": {
+                "type": "string"
+              },
+              "derives": {
+                "type": "string"
+              },
+              "over": {
+                "type": [
+                  "array",
+                  "string"
+                ]
+              },
+              "logic": {
+                "type": "string"
+              },
+              "render_kind": {
+                "enum": [
+                  "sql_expression",
+                  "sql_view",
+                  "derived_set",
+                  "spark_udf",
+                  "spec_only"
+                ]
+              },
+              "template": {
+                "type": "string"
+              },
+              "view_ref": {
+                "type": "string"
+              },
+              "usage_template": {
+                "type": "string"
+              },
+              "requires_join": {
+                "type": "string"
+              },
+              "relative_template": {
+                "type": "string"
+              },
+              "applied_as": {
+                "type": "string"
+              },
               "closure": {},
               "disambiguation": {},
-              "validated_against": { "type": ["array", "string"] },
+              "validated_against": {
+                "type": [
+                  "array",
+                  "string"
+                ]
+              },
               "conditions": {},
               "edge_cases": {},
-              "inspectable": { "type": "boolean" },
-              "confidence": { "$ref": "#/$defs/confidence" },
-              "cross_references": { "type": ["array", "string"] }
+              "inspectable": {
+                "type": "boolean"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "cross_references": {
+                "type": [
+                  "array",
+                  "string"
+                ]
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false,
             "allOf": [
-              { "if": { "properties": { "render_kind": { "enum": ["sql_expression", "derived_set"] } } },
-                "then": { "required": ["template"], "$comment": "an injected rule must carry its canonical SQL template" } },
-              { "if": { "properties": { "render_kind": { "const": "sql_view" } } },
-                "then": { "required": ["view_ref"], "$comment": "a view-backed rule must reference the pre-deposited view" } }
+              {
+                "if": {
+                  "properties": {
+                    "render_kind": {
+                      "enum": [
+                        "sql_expression",
+                        "derived_set"
+                      ]
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "template"
+                  ],
+                  "$comment": "an injected rule must carry its canonical SQL template"
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "render_kind": {
+                      "const": "sql_view"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "view_ref"
+                  ],
+                  "$comment": "a view-backed rule must reference the pre-deposited view"
+                }
+              }
             ]
           }
         }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "EdgesFile": {
       "type": "object",
-      "required": ["edges"],
+      "required": [
+        "edges"
+      ],
       "properties": {
-        "metadata": { "type": "object" },
-        "governance": { "$ref": "#/$defs/governance" },
-        "planned_edges": { "type": "array" },
+        "metadata": {
+          "type": "object"
+        },
+        "governance": {
+          "$ref": "#/$defs/governance"
+        },
+        "planned_edges": {
+          "type": "array"
+        },
         "edges": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["level", "type", "endpoints"],
+            "required": [
+              "level",
+              "type",
+              "endpoints"
+            ],
             "description": "v0.5: edge type must be LEGAL for its level. Illegal types 'denormalized' and 'literal_equal' were removed (denormalized → not an edge; literal_equal → value_mapped_key).",
             "properties": {
-              "edge_id": { "type": "string" },
-              "level": { "enum": ["physical", "business", "federation"] },
-              "type": { "type": "string" },
+              "edge_id": {
+                "type": "string"
+              },
+              "level": {
+                "enum": [
+                  "physical",
+                  "business",
+                  "federation"
+                ]
+              },
+              "type": {
+                "type": "string"
+              },
               "endpoints": {
                 "type": "object",
-                "required": ["from", "to"],
-                "properties": { "from": { "$ref": "#/$defs/EdgeEndpoint" }, "to": { "$ref": "#/$defs/EdgeEndpoint" } },
-                "patternProperties": { "^x-": true },
+                "required": [
+                  "from",
+                  "to"
+                ],
+                "properties": {
+                  "from": {
+                    "$ref": "#/$defs/EdgeEndpoint"
+                  },
+                  "to": {
+                    "$ref": "#/$defs/EdgeEndpoint"
+                  }
+                },
+                "patternProperties": {
+                  "^x-": true
+                },
                 "additionalProperties": false
               },
-              "join_rule": { "type": "string" },
+              "join_rule": {
+                "type": "string"
+              },
+              "verified_by": {
+                "type": "string",
+                "description": "(additive) a resolvable ref (path.yaml#id) to a data expectation that proves this edge's cardinality/1:1 claim. Referentially resolved by check_references.py against the expectations file's ids; dangling → referential error. A string ref, distinct from realized_by (a canon binding) and resolved_by (a resolution-rule anchor)."
+              },
               "realized_by": {},
+              "resolved_by": {
+                "type": "string",
+                "description": "v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution rule that computes a business relation's instance set — e.g. the self-relation of a shared_attribute edge. A string anchor, distinct from realized_by (a canon binding). Used by a level:business type:shared_attribute edge in place of realized_by."
+              },
+              "aliases": {
+                "$ref": "#/$defs/relationAliasBlock",
+                "description": "v0.1.12 (additive): the first-class NL trigger vocabulary for a business relation — surfaces resolve to THIS EDGE (by edge_id) via a deterministic token→relation resolver (mac.canon.relation_alias_resolve). Optional; absent ⇒ no relation-alias resolution for this edge."
+              },
               "conditions": {},
-              "confidence": { "$ref": "#/$defs/confidence" },
-              "federation_concept_id": { "type": "string" },
-              "notes": { "type": "string" },
-              "cross_references": { "type": ["array", "string"] }
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "federation_concept_id": {
+                "type": "string"
+              },
+              "notes": {
+                "type": "string"
+              },
+              "cross_references": {
+                "type": [
+                  "array",
+                  "string"
+                ]
+              }
             },
             "allOf": [
-              { "if": { "properties": { "level": { "const": "physical" } } },
-                "then": { "properties": { "type": { "enum": ["foreign_key", "composite_key", "value_mapped_key"] } } } },
-              { "if": { "properties": { "level": { "const": "business" } } },
-                "then": { "properties": { "type": { "const": "identity" } }, "required": ["realized_by"] } },
-              { "if": { "properties": { "level": { "const": "federation" } } },
-                "then": { "properties": { "type": { "const": "same_real_world_event" } }, "required": ["conditions", "confidence"] } }
+              {
+                "if": {
+                  "properties": {
+                    "level": {
+                      "const": "physical"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "foreign_key",
+                        "composite_key",
+                        "value_mapped_key"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "level": {
+                      "const": "business"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "identity",
+                        "shared_attribute"
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "required": [
+                    "level",
+                    "type"
+                  ],
+                  "properties": {
+                    "level": {
+                      "const": "business"
+                    },
+                    "type": {
+                      "const": "identity"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "realized_by"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "required": [
+                    "level",
+                    "type"
+                  ],
+                  "properties": {
+                    "level": {
+                      "const": "business"
+                    },
+                    "type": {
+                      "const": "shared_attribute"
+                    }
+                  }
+                },
+                "then": {
+                  "required": [
+                    "resolved_by"
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "level": {
+                      "const": "federation"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "type": {
+                      "const": "same_real_world_event"
+                    }
+                  },
+                  "required": [
+                    "conditions",
+                    "confidence"
+                  ]
+                }
+              }
             ],
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     },
-
     "TableFile": {
       "type": "object",
-      "required": ["table", "columns"],
+      "required": [
+        "table",
+        "columns"
+      ],
       "properties": {
-        "metadata": { "type": "object" },
+        "metadata": {
+          "type": "object"
+        },
         "table": {
           "type": "object",
-          "required": ["name"],
+          "required": [
+            "name"
+          ],
           "properties": {
-            "name": { "type": "string" },
-            "schema": { "type": "string" },
-            "type": { "enum": ["table", "view", "materialized_view"] },
-            "description": { "type": "string" },
-            "confidence": { "$ref": "#/$defs/confidence" }
+            "name": {
+              "type": "string"
+            },
+            "schema": {
+              "type": "string"
+            },
+            "type": {
+              "enum": [
+                "table",
+                "view",
+                "materialized_view"
+              ]
+            },
+            "description": {
+              "type": "string"
+            },
+            "confidence": {
+              "$ref": "#/$defs/confidence"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": false
         },
         "derived_from": {
           "type": "object",
           "description": "(views only) LINEAGE — how this serving relation is built. Absent for base tables. For engineers/governance + rebuild; NOT read by the query-generating agent (the concept grounds to the relation agnostically).",
           "properties": {
-            "sources": { "type": "array", "description": "the raw/upstream relation(s) this view is built from" },
-            "serves_from": { "type": "string", "description": "the executable DDL file (the SELECT)" },
-            "bakes_out": { "type": ["string", "array"], "description": "the impurities/workarounds this view dissolves (the homologation payoff)" },
-            "notes": { "type": "string" }
+            "sources": {
+              "type": "array",
+              "description": "the raw/upstream relation(s) this view is built from"
+            },
+            "serves_from": {
+              "type": "string",
+              "description": "the executable DDL file (the SELECT)"
+            },
+            "bakes_out": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "description": "the impurities/workarounds this view dissolves (the homologation payoff)"
+            },
+            "notes": {
+              "type": "string"
+            }
           },
-          "patternProperties": { "^x-": true },
+          "patternProperties": {
+            "^x-": true
+          },
           "additionalProperties": true
         },
         "columns": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "role"],
+            "required": [
+              "name",
+              "role"
+            ],
             "properties": {
-              "name": { "type": "string" },
-              "type": { "type": "string" },
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
               "role": {
-                "enum": ["primary_key", "foreign_key", "value", "discriminator", "audit", "composite_key_part", "unknown"],
+                "enum": [
+                  "primary_key",
+                  "foreign_key",
+                  "value",
+                  "discriminator",
+                  "audit",
+                  "composite_key_part",
+                  "unknown"
+                ],
                 "description": "v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytical roles (dimension/measure/attribute) are mapped down to this during projection; they do NOT enter the schema. 'unknown' is forbidden in production-status files (enforced separately)."
               },
-              "description": { "type": "string" },
-              "confidence": { "$ref": "#/$defs/confidence" },
-              "nullable": { "type": "boolean" },
-              "notes": { "type": "string" },
-              "enum_ref": { "type": "string" }
+              "description": {
+                "type": "string"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "nullable": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": "string"
+              },
+              "enum_ref": {
+                "type": "string"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         },
@@ -731,19 +1853,44 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "from_column", "to_table", "to_column"],
+            "required": [
+              "name",
+              "from_column",
+              "to_table",
+              "to_column"
+            ],
             "properties": {
-              "name": { "type": "string" },
-              "from_column": { "type": "string" },
-              "to_table": { "type": "string" },
-              "to_column": { "type": "string" },
-              "enforced": { "type": "boolean" },
-              "required": { "type": "boolean" },
-              "cardinality_at_to": { "type": "string" },
-              "confidence": { "$ref": "#/$defs/confidence" },
-              "notes": { "type": "string" }
+              "name": {
+                "type": "string"
+              },
+              "from_column": {
+                "type": "string"
+              },
+              "to_table": {
+                "type": "string"
+              },
+              "to_column": {
+                "type": "string"
+              },
+              "enforced": {
+                "type": "boolean"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "cardinality_at_to": {
+                "type": "string"
+              },
+              "confidence": {
+                "$ref": "#/$defs/confidence"
+              },
+              "notes": {
+                "type": "string"
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         },
@@ -752,19 +1899,31 @@
           "items": {
             "type": "object",
             "properties": {
-              "concept": { "type": "string" },
-              "ref": { "type": "string" },
-              "role": { "type": "string", "description": "descriptive reverse-pointer role (e.g. primary_table, referenced, discriminator_column) — free text, not a load-bearing controlled vocabulary." }
+              "concept": {
+                "type": "string"
+              },
+              "ref": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "description": "descriptive reverse-pointer role (e.g. primary_table, referenced, discriminator_column) — free text, not a load-bearing controlled vocabulary."
+              }
             },
-            "patternProperties": { "^x-": true },
+            "patternProperties": {
+              "^x-": true
+            },
             "additionalProperties": false
           }
         },
-        "governance": { "$ref": "#/$defs/governance" }
+        "governance": {
+          "$ref": "#/$defs/governance"
+        }
       },
-      "patternProperties": { "^x-": true },
+      "patternProperties": {
+        "^x-": true
+      },
       "additionalProperties": false
     }
-
   }
 }

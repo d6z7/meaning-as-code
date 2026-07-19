@@ -51,6 +51,14 @@ gen er    mac_to_mermaid.py "$NAME.er.mmd" --er
 gen pher  mac_to_mermaid.py "$NAME.physical.er.mmd" --physical
 gen okf   mac_to_okf.py     "$NAME.okf"
 
+# operator manual (docs/manual.md, from docs/manual.template.md + the ontology) — a source-side doc, NOT a
+# projections/ artifact, so it is generated in place rather than via gen(). Runs BEFORE the explorer so the
+# fresh manual is embedded in the Manual tab. A project with no template is a graceful no-op (exit 0).
+echo "  → docs/manual.md (regenerated when the project ships a template)"
+"$PY" "$HERE/mac_to_manual.py" "$ROOT"
+
+gen expl  mac_to_explorer.py "$NAME.explorer.html"
+
 # data-plane lineage — only emits when the project declares a data plane with transforms
 if "$PY" "$HERE/mac_to_mermaid.py" "$ROOT" --lineage --direction LR -o "$PROJ/$NAME.data_lineage.mmd" 2>/dev/null; then
   echo "  → $NAME.data_lineage.mmd"

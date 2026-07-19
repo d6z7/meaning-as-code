@@ -13,6 +13,9 @@ concept:
   name: Orders
   label: Order
   class: entity
+  identity:
+    kind: fk_name
+    canonical_key: o_orderkey
   definition: >
     The header of a customer order: who placed it (one Customer), when, its total price and status. The
     parent of one or more LineItems. Modelled as an entity (a header record); the fulfilment lifecycle

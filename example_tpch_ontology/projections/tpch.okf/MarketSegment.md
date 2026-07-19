@@ -47,4 +47,4 @@ Closed code list — these 5 are the complete set.
 
 # Citations
 
-1. MAC concept source of record: `concepts/party/market_segment.yaml` (schema_version 0.1.9, confidence C).
+1. MAC concept source of record: `concepts/party/market_segment.yaml` (schema_version 0.1.10, confidence C).

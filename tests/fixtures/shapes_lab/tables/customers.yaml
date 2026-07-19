@@ -1,0 +1,5 @@
+metadata: { table: customers, source: LAB, version: '1.0', schema_version: '0.1.12', status: verified, owner: t }
+table: { name: customers, schema: s, type: table }
+columns:
+  - { name: customer_id, type: string, role: primary_key }
+  - { name: email,       type: string, role: value }

@@ -33,6 +33,27 @@ shapes:
       kind: required
       path: concept.semantics.additivity
 
+  # CANONICAL IDENTITY (v0.1.11): every concept declares HOW it is identified (concept.identity.kind ∈
+  # mac.identity_kind), so disambiguation is uniform and machine-checkable. WARN-FIRST during migration —
+  # promote to error once all conformant ontologies declare it. The keyless-by-design kinds
+  # (composite / resolved_axis / sme_pending) satisfy this without inventing a fake key.
+  - id: concept-declares-identity
+    description: every concept should declare concept.identity.kind (mac.identity_kind)
+    target: concept
+    severity: warning
+    constraint:
+      kind: required
+      path: concept.identity.kind
+
+  - id: enumeration-declares-closure
+    description: an enumeration concept should declare its value-set closure (values.closure)
+    target: concept
+    where: { concept.class: enumeration }
+    severity: warning
+    constraint:
+      kind: required
+      path: values.closure
+
   # FIELD-ANCHORING (v0.1.6, FRAMEWORK §6d): a typed rule's `binds` must name a column of the table the
   # concept grounds to — a RELATIONAL, CROSS-FILE invariant the schema cannot express (columns are
   # single-homed in the Physical layer). A rule cannot claim to govern a field the concept doesn't ground.
@@ -49,3 +70,14 @@ shapes:
     severity: error
     constraint:
       kind: field_roles_grounded
+
+  # JOIN-GROUNDING (A1): every edges[].join_rule "relA.col = relB.col" must resolve BOTH columns against
+  # their endpoint relation's grounded columns (the Physical-layer descriptor). A join that names a
+  # column the relation does not expose is a broken relation — a RELATIONAL, CROSS-FILE invariant the
+  # schema cannot express. Targets the edges file (not concept files).
+  - id: join-rule-grounded
+    description: every edges[].join_rule column must be a grounded column of its endpoint relation
+    target: edges
+    severity: error
+    constraint:
+      kind: join_rule_grounded

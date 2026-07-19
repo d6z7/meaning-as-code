@@ -14,6 +14,9 @@ concept:
   name: Category
   label: Category
   class: grouping                 # a categorical aggregation ABOVE the leaf (Product) level
+  identity:
+    kind: fk_name
+    canonical_key: category_id
   definition: >
     A grouping of products into a browsable hierarchy — e.g. Electronics > Phones, Home > Kitchen.
     A Category is not a sellable thing (that is Product, a reference); it is the roll-up level used to

@@ -13,6 +13,8 @@ concept:
   name: Revenue
   label: Revenue
   class: measure
+  identity:
+    kind: code
   definition: >
     The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount).
     "Revenue" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue),

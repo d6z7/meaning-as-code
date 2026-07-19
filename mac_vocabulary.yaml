@@ -1,4 +1,4 @@
-# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.10).
+# mac_vocabulary.yaml — the canonical framework vocabulary registry (MAC v0.1.12).
 #
 # The home of the closed `mac.*` terms an applied ontology references instead of restating in prose.
 # A reference of the form `mac.<namespace>[.<term>]` resolves HERE (the framework canon); the leading
@@ -13,9 +13,9 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.10'
+  version: '0.1.12'
   status: active
-  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon]
+  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -70,6 +70,26 @@ MeasureType:
         categorical: mac.aggregation_effect.non_aggregable
 
 # ===========================================================================
+# mac.identity_kind — HOW a concept's canonical identity is established. Every concept declares
+# `concept.identity.kind: mac.identity_kind.<term>`; `concept.identity.canonical_key` (when one is
+# exposed) names the column/expression that IS the identity. Domain-neutral: an applied ontology picks
+# the kind that fits. The three "keyless-by-design" kinds (composite, resolved_axis, sme_pending) let a
+# concept declare it legitimately has no single-column key — so the contract never forces a fake one.
+# ===========================================================================
+identity_kind:
+  kind: vocabulary
+  closed: true
+  description: How a concept's canonical identity is established (declared once per concept).
+  terms:
+    iso:            "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
+    code:           "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
+    namespace_code: "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
+    fk_name:        "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
+    composite:      "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
+    resolved_axis:  "An axis the serving view PINS or collapses (e.g. reporting role, firmness). Keyless-by-design: not exposed as a filterable key on the default view (grounding columns: [])."
+    sme_pending:    "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
+
+# ===========================================================================
 # mac.rule_kind — the closed taxonomy that types every behavioural rule (what the rule governs).
 # A typed rule references its kind (kind: mac.rule_kind.<term>) instead of an inline string, so the set
 # is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
@@ -113,3 +133,6 @@ canon:
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
     ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
+    relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
+    enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
+    grouping_from_register: { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping." }

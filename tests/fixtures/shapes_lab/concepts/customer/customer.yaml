@@ -1,0 +1,7 @@
+metadata: { concept: Customer, source: LAB, version: '1.0', schema_version: '0.1.12', status: production, owner: t }
+concept:
+  name: Customer
+  label: Customer
+  class: entity
+  definition: "A generic customer — shapes-lab fixture (no domain specifics)."
+grounding: { kind: sql_table, table: customers, schema: s, key_column: customer_id }

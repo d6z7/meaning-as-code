@@ -14,6 +14,8 @@ concept:
   name: ReturnFlag
   label: Return Flag
   class: enumeration
+  identity:
+    kind: code
   definition: >
     Whether an order line was returned. The code list the l_returnflag discriminator column carries —
     R for returned; A and N are the two not-returned codes (TPC-H splits not-returned by receipt date).

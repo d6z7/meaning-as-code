@@ -16,7 +16,7 @@
         "properties": {
           "id": { "type": "string", "description": "stable kebab-case shape id" },
           "description": { "type": "string" },
-          "target": { "type": "string", "enum": ["concept"], "description": "which node kind the shape applies to (currently: concept files)" },
+          "target": { "type": "string", "enum": ["concept", "edges"], "description": "which node kind the shape applies to: concept files (default) or the edges file" },
           "where": {
             "type": "object",
             "description": "optional target filter — apply only to nodes where each path resolves to the given value (e.g. {concept.class: measure})",
@@ -28,15 +28,18 @@
             "required": ["kind"],
             "additionalProperties": true,
             "properties": {
-              "kind": { "type": "string", "enum": ["required", "in", "subset_of", "rule_binds_grounded"], "description": "the closed constraint vocabulary" },
-              "path": { "type": "string", "description": "(required/in) dotted path; `[]` flattens a list" },
+              "kind": { "type": "string", "enum": ["required", "in", "subset_of", "rule_binds_grounded", "field_roles_grounded", "join_rule_grounded", "partition", "no_predicate_restatement"], "description": "the closed constraint vocabulary" },
+              "path": { "type": "string", "description": "(required/in; optional for rule_binds_grounded/no_predicate_restatement) dotted path; `[]` flattens a list" },
               "min": { "type": "integer", "description": "(required) minimum count, default 1" },
               "values": { "type": "array", "description": "(in) the closed set of allowed values" },
               "left": { "type": "string", "description": "(subset_of) the path whose values must be a subset" },
               "right": {
                 "description": "(subset_of) the path(s) whose union the left must be within",
                 "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }]
-              }
+              },
+              "group_by_root": { "type": "string", "description": "(partition) dotted path to the list of grouping rows" },
+              "group_key": { "type": "string", "description": "(partition) key on each row naming its group — member_key uniqueness holds WITHIN each group, not globally" },
+              "member_key": { "type": "string", "description": "(partition) key on each row holding the member list that must be unique within the group" }
             }
           }
         }

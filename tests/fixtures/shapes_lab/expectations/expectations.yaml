@@ -1,0 +1,6 @@
+# Stub data-expectations file — the A2 verified_by target. Addressable ids: #expectations.<id>.
+metadata: { source: LAB }
+expectations:
+  - id: order_customer_1to1
+    kind: cardinality
+    claim: "each order resolves to exactly one customer (the FK is 1:1 on the customer side)"
