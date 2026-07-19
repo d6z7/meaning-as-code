@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.12)
+## Structural shapes — generated (schema 0.1.13)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -144,6 +144,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
       then: <…>  # string · directive — what to do
       never: <…>  # string · anti-pattern to avoid (optional)
       why: <…>  # string · one-line rationale
+      subject: <…>  # string · v0.1.13: a SHORT email-subject-style headline naming the rule's…
       binds: [ ... ]  # the grounded field(s) this rule governs — must be columns of the table…
       enforced_by: <…>  # string · deterministic backstop (e.g
       realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
