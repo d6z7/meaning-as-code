@@ -1,0 +1,35 @@
+# SHOP (example) — Physical layer: the shipping_carriers REGISTER (a lookup artifact)
+# Synthetic example — illustrates a PINNED REGISTER that realizes an enumeration's closed value set
+# (see ontology/concepts/order/shipping_carrier.yaml, which reads this via mac.canon.enum_from_register).
+# Not real data.
+
+metadata:
+  table: shipping_carriers
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: shipping_carriers
+  schema: shop_warehouse
+  type: table
+  description: >
+    One row per shipping carrier — a pinned REGISTER (code + label). It is the authoritative home of the
+    ShippingCarrier code set: the ShippingCarrier enumeration realizes its closed value domain by reading
+    this register's `code` column (mac.canon.enum_from_register) instead of restating the codes inline.
+
+columns:
+  - { name: code,  type: string, role: primary_key }              # the value code — the enumeration's key column
+  - { name: label, type: string, role: value, x-subrole: attribute }
+
+grounded_by_concepts:
+  - { concept: ShippingCarrier, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-07-14
+  change_log:
+    - { date: 2026-07-14, change: "Created as the register witness for mac.canon.enum_from_register (a register-sourced enumeration).", change_type: CREATION, by: example-team }

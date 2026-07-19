@@ -1,0 +1,42 @@
+# SHOP (example) — Physical layer: the product_bundles REGISTER (an EXPLODED lookup artifact)
+# Synthetic example — illustrates a PINNED, EXPLODED register (one row per (bundle_code, product)) that
+# realizes a GROUPING's enumerated member sets (see ontology/concepts/catalog/product_bundle.yaml, which
+# reads this via mac.canon.grouping_from_register — re-aggregating the rows by bundle_code into nested
+# member arrays). Contrast shipping_carriers (a FLAT register realizing an enumeration's value set). Not
+# real data.
+
+metadata:
+  table: product_bundles
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.12'
+  status: verified                 # in a real setting: reconciled against the live DB via DESCRIBE
+  owner: example-team
+  confidence: C
+
+table:
+  name: product_bundles
+  schema: shop_warehouse
+  type: table
+  description: >
+    One row per (bundle, product) — a pinned EXPLODED REGISTER. It is the authoritative home of the
+    ProductBundle member sets: the ProductBundle grouping realizes its enumerated membership by reading
+    this register and RE-AGGREGATING the rows by `bundle_code` into `{bundle: {products: [...], label,
+    featured}}` (mac.canon.grouping_from_register) instead of restating the sets inline in
+    members.definitions. The grain is the composite (bundle_code, product); `label`/`featured` are
+    per-bundle scalars repeated on every member row and carried through onto each set.
+
+columns:
+  - { name: bundle_code, type: string,  role: composite_key_part }   # the group key — the ProductBundle identity each set is keyed by
+  - { name: product,     type: string,  role: composite_key_part }   # the member — a leaf Product sku collected into the set's array
+  - { name: label,       type: string,  role: value, x-subrole: attribute }   # per-bundle scalar carried through
+  - { name: featured,    type: boolean, role: value, x-subrole: attribute }   # per-bundle scalar carried through
+
+grounded_by_concepts:
+  - { concept: ProductBundle, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-07-15
+  change_log:
+    - { date: 2026-07-15, change: "Created as the exploded-register witness for mac.canon.grouping_from_register (a register-sourced enumerated grouping).", change_type: CREATION, by: example-team }

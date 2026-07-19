@@ -1,0 +1,65 @@
+# SHOP (example) > catalog > ProductBundle
+# Synthetic example — the `grouping` class whose enumerated member sets are REALIZED BY AN EXPLODED
+# REGISTER (a pinned lookup artifact, one row per member), NOT restated inline. It witnesses
+# mac.canon.grouping_from_register: `members` carries `over` + the register pointer and OMITS
+# `definitions` — the member sets ARE the re-aggregation of the register by the group key. Contrast
+# Category (a grouping whose membership is a FK rule) and ShippingCarrier (a FLAT register realizing an
+# enumeration's value set). Not real data.
+
+metadata:
+  concept: ProductBundle
+  source: SHOP
+  version: '1.0'
+  schema_version: '0.1.12'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: ProductBundle
+  label: Product Bundle
+  class: grouping                  # a categorical aggregation ABOVE the leaf (Product) — a named set of products
+  identity:
+    kind: code                    # identity = the bundle code; each bundle is one enumerated member set
+    canonical_key: bundle_code
+  definition: >
+    A curated set of products sold and reported together (e.g. a "starter kit"). A ProductBundle is not a
+    sellable leaf (that is Product, a reference); it is the roll-up level used to aggregate revenue over
+    the products it contains. Its member sets are a CLOSED enumeration, but they are NOT listed here — they
+    live in the pinned, exploded `product_bundles` register (one row per bundle×product), the single home
+    of the membership. The grouping realizes its member sets by re-aggregating that register.
+  semantics:
+    purpose: >
+      The roll-up axis for bundles ("revenue for the starter kit"), while keeping the member lists
+      single-homed in the register — the ontology declares the closure + the pointer and the register
+      carries the rows; a new bundle (or a new product in one) is a register edit, not an ontology edit.
+    additivity: { product: additive }   # revenue rolls up additively from the member products into the bundle
+
+# v0.5 grouping template — the register-sourced variant: the enumerated member sets are realized by READING
+# the pinned EXPLODED register (mac.canon.grouping_from_register) and RE-AGGREGATING its rows by the group
+# key into nested member arrays. There is deliberately NO `definitions:` block — restating the sets here
+# would double-home them. A consumer builds `{bundle: {products: [...], label, featured}}` from the register
+# named in params.
+members:
+  over: Product                   # the leaf this groups
+  member_source:
+    kind: enumerated              # named member sets (not a FK rule) — but single-homed in the register, not inline
+  realized_by:
+    udf: mac.canon.grouping_from_register
+    applied_as: member_set
+    params:
+      register: product_bundles   # the pinned exploded register artifact
+      group_key: bundle_code      # the identity column each set is keyed by (a string; a list for a composite key)
+      member_col: product         # the column collected into each set's member array (the leaf Product sku)
+      carry: [label, featured]    # per-bundle scalar columns carried through onto each set
+
+grounding:
+  kind: sql_table
+  table: product_bundles          # the exploded register is the authoritative grounding target
+  schema: shop_warehouse
+  key_column: bundle_code         # the group key the member sets are re-aggregated by
+
+governance:
+  last_reviewed: 2026-07-15
+  change_log:
+    - { date: 2026-07-15, change: "Created as the witness for a register-sourced enumerated grouping (mac.canon.grouping_from_register): member sets re-aggregated from the exploded product_bundles register, no inline definitions.", change_type: CREATION, by: example-team }

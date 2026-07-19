@@ -70,3 +70,14 @@ shapes:
     severity: error
     constraint:
       kind: field_roles_grounded
+
+  # JOIN-GROUNDING (A1): every edges[].join_rule "relA.col = relB.col" must resolve BOTH columns against
+  # their endpoint relation's grounded columns (the Physical-layer descriptor). A join that names a
+  # column the relation does not expose is a broken relation — a RELATIONAL, CROSS-FILE invariant the
+  # schema cannot express. Targets the edges file (not concept files).
+  - id: join-rule-grounded
+    description: every edges[].join_rule column must be a grounded column of its endpoint relation
+    target: edges
+    severity: error
+    constraint:
+      kind: join_rule_grounded

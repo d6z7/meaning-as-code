@@ -1,0 +1,13 @@
+# A4 good: the rule CITES the edge by id and embeds no join predicate → PASS.
+metadata: { concept: Order, source: LAB, version: '1.0', schema_version: '0.1.12', status: production, owner: t }
+concept:
+  name: Order
+  label: Order
+  class: entity
+  definition: "A generic order whose resolution rule cites the edge rather than restating it."
+grounding: { kind: sql_table, table: orders, schema: s, key_column: order_id }
+contract:
+  rules:
+    - id: order.resolve.attach_customer
+      binds: [customer_id]
+      then: "resolved via edge order__of_customer"

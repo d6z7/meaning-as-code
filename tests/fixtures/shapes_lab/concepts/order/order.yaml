@@ -1,0 +1,7 @@
+metadata: { concept: Order, source: LAB, version: '1.0', schema_version: '0.1.12', status: production, owner: t }
+concept:
+  name: Order
+  label: Order
+  class: entity
+  definition: "A generic order — shapes-lab fixture (no domain specifics)."
+grounding: { kind: sql_table, table: orders, schema: s, key_column: order_id }

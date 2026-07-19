@@ -1,0 +1,6 @@
+# A3 bad: member_1 appears in TWO groups of the SAME scheme (scheme_a) — not unique within the group → FAIL.
+concept: { name: SchemeMap, class: grouping }
+members:
+  definitions:
+    - { scheme: scheme_a, group: group_a, members: [member_1, member_2] }
+    - { scheme: scheme_a, group: group_b, members: [member_1, member_3] }

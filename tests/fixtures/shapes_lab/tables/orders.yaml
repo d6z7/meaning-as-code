@@ -1,0 +1,5 @@
+metadata: { table: orders, source: LAB, version: '1.0', schema_version: '0.1.12', status: verified, owner: t }
+table: { name: orders, schema: s, type: table }
+columns:
+  - { name: order_id,    type: string, role: primary_key }
+  - { name: customer_id, type: string, role: foreign_key }

@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.11)
+## Structural shapes — generated (schema 0.1.13)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -144,6 +144,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
       then: <…>  # string · directive — what to do
       never: <…>  # string · anti-pattern to avoid (optional)
       why: <…>  # string · one-line rationale
+      subject: <…>  # string · v0.1.13: a SHORT email-subject-style headline naming the rule's…
       binds: [ ... ]  # the grounded field(s) this rule governs — must be columns of the table…
       enforced_by: <…>  # string · deterministic backstop (e.g
       realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
@@ -153,6 +154,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
         note: <…>  # string
       examples: [ ... ]
       status: <…>  # enum: active | proposed
+      confidence: <…>  # enum: C | P | R · Assurance factor for the rule: C=confirmed (an…
 
 values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set +…
   closure: <…>  # enum: closed | open | unknown
@@ -399,7 +401,19 @@ edges:  # REQUIRED
         role: <…>  # string · the relationship role/name read from this end (typically on `from`): e.g
         cardinality: <…>  # string
     join_rule: <…>  # string
+    verified_by: <…>  # string · (additive) a resolvable ref (path.yaml#id) to a data expectation that…
     realized_by: <…>
+    resolved_by: <…>  # string · v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution…
+    aliases:  # v0.1.12 (additive): the auditable, first-class NL trigger vocabulary…  # closed: only keys above + x-*
+      realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+        udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
+        params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
+        applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
+        note: <…>  # string
+      multilingual:  # scope-free NL surfaces by language that trigger this relation — the…  # closed: only keys above + x-*
+        de: [ ... ]
+        en: [ ... ]
+        syn: [ ... ]
     conditions: <…>
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     federation_concept_id: <…>  # string

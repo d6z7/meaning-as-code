@@ -435,6 +435,8 @@ class ReferenceChecker:
 
             # (a) every embedded reference path + (b) rule injection
             for jpath, s in walk_strings(doc):
+                if jpath.endswith(".verified_by"):
+                    continue   # first-class edge.verified_by is resolved by its dedicated handler (f) below
                 if REF_PATH_RE.search(s) and ("/" in s):
                     self.check_ref_string(f"{r}{jpath}", s)
                 for m in RULE_INJECT_RE.finditer(s):
@@ -491,6 +493,13 @@ class ReferenceChecker:
                         if not any(cname in names for names in self.idx.referable_names.values()):
                             self.add("WARNING", f"{r} rule:{rule.get('rule')}",
                                      f"over: names '{cname}' not found as any concept/subclass")
+
+            # (f) edge.verified_by -> a data-expectation id (first-class, additive). A resolvable ref
+            # (path.yaml#id) proving the edge's cardinality/1:1 claim; resolved like any path#anchor ref.
+            if p.name in ("edges.yaml", "edges.yml"):
+                for e in (doc.get("edges") or []):
+                    if isinstance(e, dict) and isinstance(e.get("verified_by"), str):
+                        self.check_ref_string(f"{r} edge:{e.get('edge_id')} verified_by", e["verified_by"])
 
             self.resolve_file(r, doc)   # application hook
 

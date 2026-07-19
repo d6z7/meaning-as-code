@@ -1,0 +1,11 @@
+# A2 good: verified_by resolves to an expectation id → PASS (check_references.py).
+metadata: { layer: edges, source: LAB, schema_version: '0.1.12', status: production }
+edges:
+  - edge_id: order__of_customer
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Order,    ref: "concepts/order/order.yaml#concept" }
+      to:   { concept: Customer, ref: "concepts/customer/customer.yaml#concept" }
+    join_rule: "orders.customer_id = customers.customer_id"
+    verified_by: "expectations/expectations.yaml#expectations.order_customer_1to1"
