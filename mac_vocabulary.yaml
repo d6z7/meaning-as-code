@@ -13,7 +13,7 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.12'
+  version: '0.1.13'
   status: active
   defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind]
 
@@ -27,6 +27,7 @@ aggregation_effect:
   terms:
     additive:       "SUM is correct across this axis."
     point_in_time:  "Non-additive over this axis: take the value at the leaf grain; never SUM across it."
+    averageable:    "Never SUM across this axis (summing double-counts / is meaningless); the correct fold is a mean / median / percentile. Distinct from point_in_time (which still SUMs on OTHER axes) and from non_aggregable (which forbids even an average)."
     non_aggregable: "Do not aggregate across this axis; report per cell."
 
 # ===========================================================================
@@ -44,8 +45,8 @@ axis_kind:
 
 # ===========================================================================
 # mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
-# non-additive fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here, over axis_kind
-# (3 types × 2 kinds = 6 universal cells). Each cell references a mac.aggregation_effect term.
+# non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
+# over axis_kind (4 types × 2 kinds = 8 universal cells). Each cell references a mac.aggregation_effect term.
 # An applied ontology's measures reference these members; they never re-encode the matrix.
 # ===========================================================================
 MeasureType:
@@ -63,6 +64,11 @@ MeasureType:
       additivity:
         time:        mac.aggregation_effect.point_in_time
         categorical: mac.aggregation_effect.additive
+    Intensive:
+      definition: "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM."
+      additivity:
+        time:        mac.aggregation_effect.averageable
+        categorical: mac.aggregation_effect.averageable
     Target:
       definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
       additivity:

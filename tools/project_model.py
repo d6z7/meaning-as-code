@@ -28,6 +28,7 @@ MAC_VOCAB = HERE.parent / "mac_vocabulary.yaml"
 EFFECT = {  # mac.aggregation_effect term -> short label for the projection
     "mac.aggregation_effect.additive":      "additive (sum)",
     "mac.aggregation_effect.point_in_time": "point-in-time (as-of)",
+    "mac.aggregation_effect.averageable":   "averageable (avg / percentile)",
     "mac.aggregation_effect.non_aggregable":"non-additive",
     "mac.aggregation_effect.semi_additive": "semi-additive",
 }
