@@ -777,7 +777,7 @@
       "properties": {
         "scope_key": {
           "type": "string",
-          "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'brand_letter', 'channel'); omitted for multilingual-only enums."
+          "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'region', 'channel'); omitted for multilingual-only enums."
         },
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
@@ -850,7 +850,7 @@
     },
     "aliasScopeMap": {
       "type": "object",
-      "description": "a scope value (e.g. a brand letter) → the list of surfaces that, UNDER that scope, resolve to the owning code.",
+      "description": "a scope value (e.g. a region) → the list of surfaces that, UNDER that scope, resolve to the owning code.",
       "additionalProperties": {
         "type": "array",
         "items": {

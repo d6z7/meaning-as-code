@@ -35,6 +35,9 @@ jobs:
       - name: Referential integrity (check_references.py)
         run: python tools/check_references.py example_shop_ontology
 
+      - name: Public-repo cleanliness (check_mac_public.py)
+        run: python tools/check_mac_public.py
+
       # Generated-doc freshness: the Shape Reference is generated from mac.schema.json. If the schema
       # changed without regenerating the doc, fail (run: python tools/gen_schema_shapes.py).
       - name: Shape Reference freshness (gen_schema_shapes.py --check)
