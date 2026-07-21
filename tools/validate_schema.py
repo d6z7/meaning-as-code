@@ -118,8 +118,8 @@ def main():
             files += [f for f in glob.glob(str(extra / '*.yaml')) if not skip(f)]
     files = sorted(set(files))
 
-    CURRENT = '0.1.12'                        # current MAC schema version (0.1.12 added the relationAliasBlock + business-edge shared_attribute type + edge.resolved_by/aliases)
-    RECOGNIZED = {CURRENT, '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
+    CURRENT = '0.1.13'                        # current MAC schema version = mac_vocabulary.yaml `version` (0.1.13 added the OPTIONAL typed-rule `subject` field + the vocab's aggregation_effect.averageable / MeasureType.Intensive; additive over 0.1.12's relationAliasBlock + business-edge shared_attribute + edge.resolved_by/aliases)
+    RECOGNIZED = {CURRENT, '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
                                               # migration (not orphaned). Drop older versions once all content reconforms —
                                               # that finish is dev-only, not for main.
     errors, warnings, clean, skipped = [], [], 0, 0
