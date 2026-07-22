@@ -1,3 +1,11 @@
+<meta charset="utf-8">
+<script>
+  /* universal theme selector — the SAME mechanism as ask.html (global localStorage 'mac_theme'), so the
+     theme choice carries across the Ask and Explorer views. Sets data-theme before first paint (no flash). */
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+  function toggleTheme(){ var c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = c; localStorage.setItem('mac_theme', c); var b = document.getElementById('themebtn'); if (b) b.textContent = c === 'dark' ? '☀' : '🌙'; }
+  addEventListener('DOMContentLoaded', function(){ var b = document.getElementById('themebtn'); if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙'; });
+</script>
 <style>
 :root{
   --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
@@ -44,9 +52,21 @@ button{font-family:inherit;cursor:pointer}
 code,.mono{font-family:var(--mono);font-size:.86em}
 .tnum{font-variant-numeric:tabular-nums}
 
-.wrap{display:grid;grid-template-columns:288px 1fr;min-height:100vh}
-.rail{background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;
-  height:100vh;overflow-y:auto}
+/* shared macOS-style menu bar (sticky top line); mirrors ask.html's .macbar */
+.macbar{position:sticky;top:0;z-index:1000;height:40px;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+.macbar .mb-left,.macbar .mb-right{display:flex;align-items:center}
+.macbar .mb-left{gap:16px}
+.macbar .mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;color:var(--ink);font-size:13.5px}
+.macbar .mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.macbar .mb-tabs{display:inline-flex;align-items:center;gap:3px}
+.macbar .mb-tab{padding:4px 12px;border-radius:7px;color:var(--faint);text-decoration:none;font-weight:650;font-size:13px;line-height:1;cursor:pointer;white-space:nowrap}
+.macbar .mb-tab:hover{background:var(--ground);color:var(--ink)}
+.macbar .mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.macbar .mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);border-radius:6px;width:30px;height:28px;cursor:pointer;font-size:14px}
+.wrap{display:grid;grid-template-columns:288px 1fr;min-height:calc(100vh - 40px)}
+.rail{background:var(--surface);border-right:1px solid var(--border);position:sticky;top:40px;
+  height:calc(100vh - 40px);overflow-y:auto}
 .rail-head{padding:18px 18px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;
   background:var(--surface);z-index:2}
 .brand{font-weight:750;letter-spacing:-.01em;font-size:16px;display:flex;align-items:center;gap:9px}
@@ -376,7 +396,20 @@ table.tbl.reg thead th{position:sticky;top:0;background:var(--surface);z-index:1
 .derived pre.d-sql{white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.5;margin:0;color:var(--ink)}
 </style>
 
-<button class="themebtn" id="themebtn" type="button">◐ theme</button>
+<!-- shared macOS-style menu bar: source (left) · Ask|Explorer · theme (right). Sticky top line — the rail and
+     main scroll beneath it. Mirrors ask.html's .macbar so the two views read as one app. -->
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span><span id="mb-source">Explorer</span></span>
+    <span class="mb-tabs">
+      <a class="mb-tab" id="tabAsk" href="" title="Ask a natural-language question of this ontology">Ask</a>
+      <span class="mb-tab active" title="You are here">Explorer</span>
+    </span>
+  </div>
+  <div class="mb-right">
+    <button class="mb-theme" id="themebtn" type="button" title="Toggle light / dark" onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
 <div class="wrap">
   <aside class="rail">
     <div class="rail-head">
@@ -400,6 +433,20 @@ table.tbl.reg thead th{position:sticky;top:0;background:var(--surface);z-index:1
 
 <script>
 window.MAC_MODEL = /*__MODEL_JSON__*/null;
+// Ask <-> Explorer view toggle (mirrors ask.html). "Ask" opens the generic /ask page for THIS source —
+// relative when served over http (ask.html shares this origin), else the file:// origin that
+// mac_to_explorer.py injects for /*__ASK_BASE__*/ via --ask-base. Empty base under file:// -> Ask stays hidden.
+(function(){
+  var ASK_BASE = "/*__ASK_BASE__*/".trim();
+  var SERVED = location.protocol.indexOf("http") === 0;
+  var meta = (window.MAC_MODEL && window.MAC_MODEL.meta) || {};
+  var src = meta.source || "";
+  var sEl = document.getElementById("mb-source"); if (sEl && src) sEl.textContent = src;   // menubar app-name = source
+  var q = src ? ("?src=" + encodeURIComponent(src)) : "";
+  var href = SERVED ? ("ask.html" + q) : (ASK_BASE ? (ASK_BASE.replace(/\/+$/, "") + "/ask.html" + q) : "");
+  var a = document.getElementById("tabAsk");                                                // the Ask menu item (link out)
+  if (a) { if (href) a.setAttribute("href", href); else a.style.display = "none"; }         // hide when /ask isn't reachable
+})();
 (function(){
 "use strict";
 var M = window.MAC_MODEL;
@@ -429,7 +476,7 @@ if(PREFS.graphLayout) graphLayout=PREFS.graphLayout;
 if(PREFS.flowDir) flowDir=PREFS.flowDir;
 if(typeof PREFS.erStraight==="boolean") erStraight=PREFS.erStraight;
 if(typeof PREFS.erCompact==="boolean") erCompact=PREFS.erCompact;
-if(PREFS.theme) document.documentElement.setAttribute("data-theme",PREFS.theme);
+/* theme is UNIVERSAL now (global 'mac_theme', set pre-paint by the head script) — no longer per-source here */
 if(PREFS.pos && typeof PREFS.pos==="object") graphPos=PREFS.pos;
 var graphSearchFn=null;   // registered inside initGraph; #search calls it on the graph tab (grey + frame + pulse)
 var graphHideCat={};    // node category (concept class OR relation group) -> true = hidden
@@ -1339,16 +1386,7 @@ window.addEventListener("hashchange",route);
   if(!(M.manual&&M.manual.markdown)){var tm=document.getElementById("tab-manual"); if(tm) tm.style.display="none";}
 })();
 
-/* theme toggle */
-(function(){
-  var btn=document.getElementById("themebtn");
-  btn.addEventListener("click",function(){
-    var cur=document.documentElement.getAttribute("data-theme");
-    var dark=cur?cur==="dark":window.matchMedia("(prefers-color-scheme:dark)").matches;
-    document.documentElement.setAttribute("data-theme", dark?"light":"dark");
-    savePrefs();
-  });
-})();
+/* theme toggle — now the UNIVERSAL toggleTheme() (head script), wired via the button's onclick; see ask.html */
 
 /* search */
 document.getElementById("search").addEventListener("input",function(e){
