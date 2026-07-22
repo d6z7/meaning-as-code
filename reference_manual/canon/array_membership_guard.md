@@ -14,7 +14,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 ## Serves
 
 The [`multivalued_bridge`](../patterns/multivalued_bridge.md) pattern — any attribute a row has *many* of
-(tags, categories, segments, powertrains).
+(tags, categories, segments, labels).
 
 ## Contract (the pluggable interface)
 
@@ -45,16 +45,16 @@ def array_membership_guard(sql: str, *, column: str, dialect: str = "trino") -> 
 ## How a concept plugs in
 
 ```yaml
-realized_by: { udf: array_membership_guard, params: { column: powertrains } }
+realized_by: { udf: array_membership_guard, params: { column: tags } }
 ```
 
 ## Demonstration
 
 ```python
-array_membership_guard("SELECT * FROM product WHERE powertrains = 'BEV'", column="powertrains")
-# → ["`powertrains` is multivalued; use a membership test (contains(powertrains, …) / EXISTS), not `=`."]  REJECTED
+array_membership_guard("SELECT * FROM product WHERE tags = 'sale'", column="tags")
+# → ["`tags` is multivalued; use a membership test (contains(tags, …) / EXISTS), not `=`."]  REJECTED
 
-array_membership_guard("SELECT * FROM product WHERE contains(powertrains, 'BEV')", column="powertrains")
+array_membership_guard("SELECT * FROM product WHERE contains(tags, 'sale')", column="tags")
 # → []   PASSES — contains() is not an equality
 ```
 

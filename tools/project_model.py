@@ -28,6 +28,7 @@ MAC_VOCAB = HERE.parent / "mac_vocabulary.yaml"
 EFFECT = {  # mac.aggregation_effect term -> short label for the projection
     "mac.aggregation_effect.additive":      "additive (sum)",
     "mac.aggregation_effect.point_in_time": "point-in-time (as-of)",
+    "mac.aggregation_effect.averageable":   "averageable (avg / percentile)",
     "mac.aggregation_effect.non_aggregable":"non-additive",
     "mac.aggregation_effect.semi_additive": "semi-additive",
 }
@@ -162,7 +163,7 @@ def to_markdown(root: Path, model: dict) -> str:
         ncodes = sum(len(b["variants"]) for b in model["base_measures"].values())
         L.append(f"\n_{len(model['base_measures'])} base measures × variants = {ncodes} KpiCodes._\n")
     for m in model["measure_concepts"]:
-        if not any(it.get("measure_type") for it in m["values"]):     # a standalone measure concept (e.g. OB-Reach)
+        if not any(it.get("measure_type") for it in m["values"]):     # a standalone measure concept (no typed KpiCode enumeration)
             g = ", ".join(m["grounding"]["relations"]) or "—"
             L.append(f"### {m['name']} (special measure)\n")
             L.append(f"{m['definition']}\n")

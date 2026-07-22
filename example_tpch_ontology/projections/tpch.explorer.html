@@ -1,3 +1,11 @@
+<meta charset="utf-8">
+<script>
+  /* universal theme selector — the SAME mechanism as ask.html (global localStorage 'mac_theme'), so the
+     theme choice carries across the Ask and Explorer views. Sets data-theme before first paint (no flash). */
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+  function toggleTheme(){ var c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = c; localStorage.setItem('mac_theme', c); var b = document.getElementById('themebtn'); if (b) b.textContent = c === 'dark' ? '☀' : '🌙'; }
+  addEventListener('DOMContentLoaded', function(){ var b = document.getElementById('themebtn'); if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙'; });
+</script>
 <style>
 :root{
   --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
@@ -44,9 +52,21 @@ button{font-family:inherit;cursor:pointer}
 code,.mono{font-family:var(--mono);font-size:.86em}
 .tnum{font-variant-numeric:tabular-nums}
 
-.wrap{display:grid;grid-template-columns:288px 1fr;min-height:100vh}
-.rail{background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;
-  height:100vh;overflow-y:auto}
+/* shared macOS-style menu bar (sticky top line); mirrors ask.html's .macbar */
+.macbar{position:sticky;top:0;z-index:1000;height:40px;display:flex;align-items:center;justify-content:space-between;
+  gap:16px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
+.macbar .mb-left,.macbar .mb-right{display:flex;align-items:center}
+.macbar .mb-left{gap:16px}
+.macbar .mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;color:var(--ink);font-size:13.5px}
+.macbar .mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.macbar .mb-tabs{display:inline-flex;align-items:center;gap:3px}
+.macbar .mb-tab{padding:4px 12px;border-radius:7px;color:var(--faint);text-decoration:none;font-weight:650;font-size:13px;line-height:1;cursor:pointer;white-space:nowrap}
+.macbar .mb-tab:hover{background:var(--ground);color:var(--ink)}
+.macbar .mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.macbar .mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);border-radius:6px;width:30px;height:28px;cursor:pointer;font-size:14px}
+.wrap{display:grid;grid-template-columns:288px 1fr;min-height:calc(100vh - 40px)}
+.rail{background:var(--surface);border-right:1px solid var(--border);position:sticky;top:40px;
+  height:calc(100vh - 40px);overflow-y:auto}
 .rail-head{padding:18px 18px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;
   background:var(--surface);z-index:2}
 .brand{font-weight:750;letter-spacing:-.01em;font-size:16px;display:flex;align-items:center;gap:9px}
@@ -56,10 +76,6 @@ code,.mono{font-family:var(--mono);font-size:.86em}
 .tab{flex:1;padding:6px 4px;font-size:12px;font-weight:650;border:1px solid var(--border);
   background:var(--ground);color:var(--muted);border-radius:7px;text-align:center}
 .tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
-/* /ask cross-link — an outbound link (not an in-page tab): open the companion query UI for this source */
-.asklink{display:block;margin-top:9px;padding:7px 10px;font-size:12px;font-weight:650;text-align:center;
-  border:1px solid var(--accent);color:var(--accent);border-radius:7px;text-decoration:none;background:transparent}
-.asklink:hover{background:var(--accent);color:#fff}
 .search{width:100%;margin-top:11px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;
   background:var(--ground);color:var(--ink);font-size:13px}
 .search::placeholder{color:var(--faint)}
@@ -297,6 +313,7 @@ table.matrix tr:hover td.cn{background:var(--surface-2)}
 .gnode.rel.registers rect{fill:var(--cls-grouping)}
 .gnode.hot rect{stroke:var(--accent);stroke-width:3}
 .glink.binding{stroke:var(--commit);stroke-width:1.5;stroke-dasharray:2 4}
+.glink.orel{stroke:var(--accent);stroke-width:1.8}
 .graphwrap svg{cursor:grab}
 .graphctl{position:absolute;top:11px;left:15px;display:flex;flex-wrap:wrap;gap:6px;z-index:2;max-width:calc(100% - 30px)}
 .gbtn{font-size:11.5px;font-weight:600;padding:5px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--muted);box-shadow:var(--shadow)}
@@ -306,6 +323,7 @@ table.matrix tr:hover td.cn{background:var(--surface-2)}
 .garrow{fill:var(--muted);stroke:none}
 .garrow.hierarchy{fill:var(--accent)}
 .garrow.binding{fill:var(--commit)}
+.garrow.orel{fill:var(--accent)}
 .glink.dim,.gnode.dim{}
 .gnode.focus circle,.gnode.focus rect{stroke:var(--accent);stroke-width:3.5}
 /* focus header + connects-to panel */
@@ -332,7 +350,7 @@ table.matrix tr:hover td.cn{background:var(--surface-2)}
 .gnode.hot .erbox,.gnode.focus .erbox{stroke:var(--accent);stroke-width:2.4}
 .erhead.fact{fill:var(--accent)}.erhead.measure-view{fill:var(--cls-measure)}.erhead.dimension{fill:var(--cls-entity)}
 .erhead.region-view{fill:var(--cls-reference)}.erhead.view{fill:var(--muted)}.erhead.registers{fill:var(--cls-grouping)}
-.erttl{font-size:10.5px;font-weight:700;fill:#fff;font-family:var(--mono);pointer-events:none}
+.erttl{font-size:10.5px;font-weight:700;fill:#fff;font-family:var(--mono);pointer-events:none;paint-order:stroke;stroke:rgba(0,0,0,.5);stroke-width:2.2px}
 .ercol{font-size:9.5px;fill:var(--ink);font-family:var(--mono);pointer-events:none}
 .ercol.pk{fill:var(--cls-entity);font-weight:700}.ercol.fk{fill:var(--accent)}.ercol.more{fill:var(--faint);font-style:italic}
 .erm{stroke:var(--muted);fill:none;stroke-width:1.3}
@@ -341,14 +359,57 @@ table.matrix tr:hover td.cn{background:var(--surface-2)}
 @keyframes gpulse{0%{stroke-width:3}45%{stroke-width:8.5}100%{stroke-width:3}}
 .gnode.ghit circle,.gnode.ghit rect{stroke:var(--accent);animation:gpulse .55s ease-out 2}
 @media(prefers-reduced-motion:reduce){.gnode.ghit circle,.gnode.ghit rect{animation:none;stroke:var(--accent)}}
-/* interactive legend — facet filters (node categories + edge kinds) */
+/* interactive legend — facet filters (node categories + edge kinds on the graph; concept classes on the map) */
 .li.off{opacity:.35;text-decoration:line-through}
-.legend .li[data-nodecat],.legend .li[data-edgekind],.legend .li[data-clearfilters]{cursor:pointer;user-select:none}
-.legend .li[data-nodecat]:hover,.legend .li[data-edgekind]:hover,.legend .li[data-clearfilters]:hover{color:var(--ink)}
+.legend .li[data-nodecat],.legend .li[data-edgekind],.legend .li[data-clearfilters],
+.legend .li[data-mapclass],.legend .li[data-mapclearfilters]{cursor:pointer;user-select:none}
+.legend .li[data-nodecat]:hover,.legend .li[data-edgekind]:hover,.legend .li[data-clearfilters]:hover,
+.legend .li[data-mapclass]:hover,.legend .li[data-mapclearfilters]:hover{color:var(--ink)}
 path.glink{fill:none;stroke-linejoin:round}   /* ER FK connectors are elbow <path>s, not <line>s — a path with no fill:none would render as a black blob */
+
+/* register preview: complete + vertically scrollable, with a sticky header so columns stay labelled */
+.scroll.regscroll{max-height:360px;overflow-y:auto}
+table.tbl.reg thead th{position:sticky;top:0;background:var(--surface);z-index:1}
+
+/* dedicated framed panel — a config-object (rules.yaml / query_rules.yaml) shown alongside the concepts */
+.frame{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow);margin:28px 0 10px;overflow:hidden}
+.frame-hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:13px 18px;background:var(--surface-2);border-bottom:1px solid var(--border)}
+.frame-ttl{font-weight:750;font-size:14.5px;color:var(--ink);letter-spacing:-.01em}
+.frame-sub{font-size:12px;color:var(--muted)}
+.frame-src{font-family:var(--mono);font-size:11px;color:var(--faint);font-weight:600;text-transform:none;letter-spacing:0}
+.frame-bd{padding:6px 18px 18px}
+.frame-bd .sec:first-child{margin-top:14px}
+.xref{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:11px 15px;margin:14px 0 2px}
+.xref .xr-n{font-weight:750;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* derived measures — the root rules.yaml registry (ratios / variances over base concepts) */
+.derived{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--cls-measure);
+  border-radius:var(--radius);margin:12px 0;box-shadow:var(--shadow);padding:13px 16px}
+.derived .d-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.derived .d-name{font-family:var(--mono);font-weight:700;font-size:14.5px;color:var(--cls-measure)}
+.derived .d-id{font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+.derived .d-over{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:9px 0 4px;font-size:12.5px}
+.derived .d-over .ol{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700}
+.derived .d-over .arr{color:var(--faint)}
+.derived .d-logic{font-size:13px;color:var(--muted);line-height:1.55;margin:6px 0 2px;max-width:82ch}
+.derived pre.d-sql{white-space:pre-wrap;font-family:var(--mono);font-size:12px;line-height:1.5;margin:0;color:var(--ink)}
 </style>
 
-<button class="themebtn" id="themebtn" type="button">◐ theme</button>
+<!-- shared macOS-style menu bar: source (left) · Ask|Explorer · theme (right). Sticky top line — the rail and
+     main scroll beneath it. Mirrors ask.html's .macbar so the two views read as one app. -->
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span><span id="mb-source">Explorer</span></span>
+    <span class="mb-tabs">
+      <a class="mb-tab" id="tabAsk" href="" title="Ask a natural-language question of this ontology">Ask</a>
+      <span class="mb-tab active" title="You are here">Explorer</span>
+    </span>
+  </div>
+  <div class="mb-right">
+    <button class="mb-theme" id="themebtn" type="button" title="Toggle light / dark" onclick="toggleTheme()">🌙</button>
+  </div>
+</div>
 <div class="wrap">
   <aside class="rail">
     <div class="rail-head">
@@ -356,13 +417,13 @@ path.glink{fill:none;stroke-linejoin:round}   /* ER FK connectors are elbow <pat
       <div class="tag" id="railtag">semantic model · drill-down</div>
       <div class="tabs">
         <a class="tab" data-tab="graph" href="#graph">Graph</a>
-        <a class="tab" data-tab="map" href="#map">Map</a>
+        <a class="tab" data-tab="map" href="#map">Concepts</a>
+        <a class="tab" data-tab="edges" id="tab-edges" href="#edges">Edges</a>
         <a class="tab" data-tab="data" id="tab-data" href="#data">Data</a>
         <a class="tab" data-tab="slots" href="#slots">Slots</a>
         <a class="tab" data-tab="decisions" href="#decisions">Decisions</a>
         <a class="tab" data-tab="manual" id="tab-manual" href="#manual">Manual</a>
       </div>
-      <a class="asklink" id="asknav" target="_blank" rel="noopener" hidden>🔎 Ask a question</a>
       <input class="search" id="search" type="search" placeholder="Filter concepts / relations…" autocomplete="off">
     </div>
     <nav class="nav" id="nav"></nav>
@@ -371,8 +432,21 @@ path.glink{fill:none;stroke-linejoin:round}   /* ER FK connectors are elbow <pat
 </div>
 
 <script>
-window.MAC_MODEL = {"meta": {"source": "TPCH", "concept_count": 13, "rule_count": 2, "edge_count": 8, "general_rule_count": 0}, "domains": ["finance", "geography", "order", "part", "party"], "lanes": {"ASK": 0, "COMMIT": 2, "REFUSE": 0, "INVARIANT": 0, "OTHER": 0}, "slots": ["metadata", "concept", "values", "grounding", "contract", "governance", "derived_by_rule", "properties", "lifecycle"], "concepts": [{"id": "Revenue", "label": "Revenue", "german": "", "klass": "measure", "definition": "The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount). \"Revenue\" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue), not a stored column.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "finance", "file": "ontology/concepts/finance/revenue.yaml", "slots_present": ["metadata", "concept", "derived_by_rule", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Nation", "label": "Nation", "german": "", "klass": "entity", "definition": "A country (TPC-H has 25). The middle level of the geography hierarchy: a Nation belongs to one Region (see edges) and is the nation of customers and suppliers. The grain at which most geography filtering happens before rolling up to Region.", "identity": {"kind": "fk_name", "canonical_key": "n_nationkey"}, "confidence": "C", "version": "1.0", "domain": "geography", "file": "ontology/concepts/geography/nation.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Region", "label": "Region", "german": "", "klass": "entity", "definition": "A top-level geographic grouping of nations (TPC-H regions: AFRICA, AMERICA, ASIA, EUROPE, MIDDLE EAST). The root of the geography hierarchy — a Nation belongs to exactly one Region, and customers/suppliers roll up to a region through their nation.", "identity": {"kind": "fk_name", "canonical_key": "r_regionkey"}, "confidence": "C", "version": "1.0", "domain": "geography", "file": "ontology/concepts/geography/region.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "LineStatus", "label": "Line Status", "german": "", "klass": "enumeration", "definition": "The fulfilment status of a single order line — whether the line has shipped/been fulfilled or is still in flight. The code list the l_linestatus discriminator column carries.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/line_status.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Orders", "label": "Order", "german": "", "klass": "entity", "definition": "The header of a customer order: who placed it (one Customer), when, its total price and status. The parent of one or more LineItems. Modelled as an entity (a header record); the fulfilment lifecycle lives on its LineItems, which is where shipping actually happens.", "identity": {"kind": "fk_name", "canonical_key": "o_orderkey"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/orders.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "LineItem", "label": "Order Line", "german": "", "klass": "event", "definition": "A single line of an order — one part, supplied by one supplier, in some quantity at some price. The central fact of TPC-H (composite key order + line number). It is an EVENT: it is shipped, received, and possibly returned, moving through a fulfilment lifecycle read from its ship/receipt dates and status flags. Revenue is computed from its extended price and discount.", "identity": {"kind": "composite"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/lineitem.yaml", "slots_present": ["metadata", "concept", "lifecycle", "properties", "contract", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": [{"id": "lineitem.revenue.net_of_discount", "kind": "mac.rule_kind.aggregation", "decision": "COMMIT", "scope": "", "confidence": "", "when": "computing revenue from order lines", "then": "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)", "never": "summing l_extendedprice alone — that is gross, not revenue", "binds": ["l_extendedprice", "l_discount"], "subject": "", "purpose": "", "genesis": ""}, {"id": "lineitem.state.received_iff_receiptdate", "kind": "mac.rule_kind.resolution", "decision": "COMMIT", "scope": "", "confidence": "", "when": "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)", "then": "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment", "never": "", "binds": ["l_receiptdate", "l_linestatus"], "subject": "", "purpose": "", "genesis": ""}]}, {"id": "OrderStatus", "label": "Order Status", "german": "", "klass": "enumeration", "definition": "The status of an order, derived in TPC-H from the line-status of its lines: open if all lines are still open, fulfilled if all are fulfilled, partial when mixed. The code list the o_orderstatus discriminator column carries.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/order_status.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "ReturnFlag", "label": "Return Flag", "german": "", "klass": "enumeration", "definition": "Whether an order line was returned. The code list the l_returnflag discriminator column carries — R for returned; A and N are the two not-returned codes (TPC-H splits not-returned by receipt date).", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/return_flag.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Part", "label": "Part", "german": "", "klass": "entity", "definition": "A catalogue item that can be ordered. Identified by p_partkey, classified by brand and type. Sold through one or more suppliers (see PartSupp) and bought on order lines.", "identity": {"kind": "fk_name", "canonical_key": "p_partkey"}, "confidence": "C", "version": "1.0", "domain": "part", "file": "ontology/concepts/part/part.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "PartSupp", "label": "Part-Supplier", "german": "", "klass": "entity", "definition": "The supply of a Part by a Supplier — a reified many-to-many relationship with its own attributes (available quantity, supply cost). Identified by the composite key (ps_partkey, ps_suppkey). It is an entity, not an edge, precisely because it CARRIES data: an edge cannot hold availqty/supplycost.", "identity": {"kind": "composite"}, "confidence": "C", "version": "1.0", "domain": "part", "file": "ontology/concepts/part/partsupp.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Customer", "label": "Customer", "german": "", "klass": "entity", "definition": "A party that places orders. Identified by c_custkey, located in one Nation (see edges), and classified by a market segment. The demand side — orders and revenue attribute to a customer.", "identity": {"kind": "fk_name", "canonical_key": "c_custkey"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/customer.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "MarketSegment", "label": "Market Segment", "german": "", "klass": "enumeration", "definition": "The market segment a customer belongs to — the code list the c_mktsegment discriminator column carries. TPC-H defines exactly five segments.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/market_segment.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [{"target": "AUTOMOBILE", "kind": "value", "terms": ["auto", "automotive", "car sector", "vehicles"]}, {"target": "BUILDING", "kind": "value", "terms": ["construction", "building sector"]}], "rules": []}, {"id": "Supplier", "label": "Supplier", "german": "", "klass": "entity", "definition": "A party that supplies parts. Identified by s_suppkey and located in one Nation (see edges). The supply side — which supplier provides a part, at what cost, is captured by PartSupp.", "identity": {"kind": "fk_name", "canonical_key": "s_suppkey"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/supplier.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}], "edges": [{"id": "nation__in__region", "level": "physical", "type": "foreign_key", "from": "Nation", "to": "Region", "role": "inRegion", "join_rule": "nation.n_regionkey = region.r_regionkey", "card_from": "0..N", "card_to": "1"}, {"id": "customer__from__nation", "level": "physical", "type": "foreign_key", "from": "Customer", "to": "Nation", "role": "fromNation", "join_rule": "customer.c_nationkey = nation.n_nationkey", "card_from": "0..N", "card_to": "1"}, {"id": "supplier__from__nation", "level": "physical", "type": "foreign_key", "from": "Supplier", "to": "Nation", "role": "fromNation", "join_rule": "supplier.s_nationkey = nation.n_nationkey", "card_from": "0..N", "card_to": "1"}, {"id": "partsupp__of__part", "level": "physical", "type": "foreign_key", "from": "PartSupp", "to": "Part", "role": "ofPart", "join_rule": "partsupp.ps_partkey = part.p_partkey", "card_from": "0..N", "card_to": "1"}, {"id": "partsupp__from__supplier", "level": "physical", "type": "foreign_key", "from": "PartSupp", "to": "Supplier", "role": "fromSupplier", "join_rule": "partsupp.ps_suppkey = supplier.s_suppkey", "card_from": "0..N", "card_to": "1"}, {"id": "orders__placed_by__customer", "level": "physical", "type": "foreign_key", "from": "Orders", "to": "Customer", "role": "placedBy", "join_rule": "orders.o_custkey = customer.c_custkey", "card_from": "0..N", "card_to": "1"}, {"id": "lineitem__part_of__orders", "level": "physical", "type": "foreign_key", "from": "LineItem", "to": "Orders", "role": "partOfOrder", "join_rule": "lineitem.l_orderkey = orders.o_orderkey", "card_from": "0..N", "card_to": "1"}, {"id": "lineitem__supplied_via__partsupp", "level": "physical", "type": "foreign_key", "from": "LineItem", "to": "PartSupp", "role": "suppliedVia", "join_rule": "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey", "card_from": "0..N", "card_to": "1"}], "graph": {"nodes": [{"id": "Revenue", "label": "Revenue", "klass": "measure", "rules": 0, "domain": "finance"}, {"id": "Nation", "label": "Nation", "klass": "entity", "rules": 0, "domain": "geography"}, {"id": "Region", "label": "Region", "klass": "entity", "rules": 0, "domain": "geography"}, {"id": "LineStatus", "label": "Line Status", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "Orders", "label": "Order", "klass": "entity", "rules": 0, "domain": "order"}, {"id": "LineItem", "label": "Order Line", "klass": "event", "rules": 2, "domain": "order"}, {"id": "OrderStatus", "label": "Order Status", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "ReturnFlag", "label": "Return Flag", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "Part", "label": "Part", "klass": "entity", "rules": 0, "domain": "part"}, {"id": "PartSupp", "label": "Part-Supplier", "klass": "entity", "rules": 0, "domain": "part"}, {"id": "Customer", "label": "Customer", "klass": "entity", "rules": 0, "domain": "party"}, {"id": "MarketSegment", "label": "Market Segment", "klass": "enumeration", "rules": 0, "domain": "party"}, {"id": "Supplier", "label": "Supplier", "klass": "entity", "rules": 0, "domain": "party"}], "links": [{"source": "Nation", "target": "Region", "kind": "fk", "label": "inRegion", "card_from": "0..N", "card_to": "1"}, {"source": "Customer", "target": "Nation", "kind": "fk", "label": "fromNation", "card_from": "0..N", "card_to": "1"}, {"source": "Supplier", "target": "Nation", "kind": "fk", "label": "fromNation", "card_from": "0..N", "card_to": "1"}, {"source": "PartSupp", "target": "Part", "kind": "fk", "label": "ofPart", "card_from": "0..N", "card_to": "1"}, {"source": "PartSupp", "target": "Supplier", "kind": "fk", "label": "fromSupplier", "card_from": "0..N", "card_to": "1"}, {"source": "Orders", "target": "Customer", "kind": "fk", "label": "placedBy", "card_from": "0..N", "card_to": "1"}, {"source": "LineItem", "target": "Orders", "kind": "fk", "label": "partOfOrder", "card_from": "0..N", "card_to": "1"}, {"source": "LineItem", "target": "PartSupp", "kind": "fk", "label": "suppliedVia", "card_from": "0..N", "card_to": "1"}]}, "general_rules": [], "decision_policy": [], "relations": [{"name": "customer", "leaf": "customer", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "c_custkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "c_name", "type": "string", "role": "value", "confidence": ""}, {"name": "c_nationkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "c_phone", "type": "string", "role": "value", "confidence": ""}, {"name": "c_acctbal", "type": "decimal", "role": "value", "confidence": ""}, {"name": "c_mktsegment", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "c_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "c_nationkey", "to_table": "nation", "to_column": "n_nationkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/customer.yaml"}, {"name": "lineitem", "leaf": "lineitem", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "one row per (l_orderkey, l_linenumber)", "columns": [{"name": "l_orderkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_linenumber", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "l_partkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_suppkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_quantity", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_extendedprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_discount", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_tax", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_returnflag", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_linestatus", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_shipdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_commitdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_receiptdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_shipmode", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "l_orderkey", "to_table": "orders", "to_column": "o_orderkey", "notes": ""}], "reverse_joins": [], "lineage": {"grain": "one row per (l_orderkey, l_linenumber)", "sql_file": "data/transforms/lineitem.sql", "inputs": [{"relation": "tpch_raw.lineitem_raw", "leaf": "lineitem_raw", "kind": "raw_source", "role": "raw_lines"}, {"relation": "tpch.orders", "leaf": "orders", "kind": "dataset", "role": "order_enrichment"}], "steps": [{"id": "discount-basis-points-to-fraction", "impurity": "unit_mismatch", "rule": "convert basis points to the [0,1] fraction the ontology's Revenue rule expects", "establishes": "l_discount is a [0,1] fraction — Revenue = extendedprice * (1 - l_discount) is correct"}], "file": "data/transforms/lineitem.yaml"}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/lineitem.yaml"}, {"name": "nation", "leaf": "nation", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "n_nationkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "n_name", "type": "string", "role": "value", "confidence": ""}, {"name": "n_regionkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "n_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "n_regionkey", "to_table": "region", "to_column": "r_regionkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/nation.yaml"}, {"name": "orders", "leaf": "orders", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "o_orderkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "o_custkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "o_orderstatus", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "o_totalprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "o_orderdate", "type": "date", "role": "value", "confidence": ""}, {"name": "o_orderpriority", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "o_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "o_custkey", "to_table": "customer", "to_column": "c_custkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/orders.yaml"}, {"name": "part", "leaf": "part", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "p_partkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "p_name", "type": "string", "role": "value", "confidence": ""}, {"name": "p_mfgr", "type": "string", "role": "value", "confidence": ""}, {"name": "p_brand", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "p_type", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "p_size", "type": "integer", "role": "value", "confidence": ""}, {"name": "p_retailprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "p_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/part.yaml"}, {"name": "partsupp", "leaf": "partsupp", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "ps_partkey", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "ps_suppkey", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "ps_availqty", "type": "integer", "role": "value", "confidence": ""}, {"name": "ps_supplycost", "type": "decimal", "role": "value", "confidence": ""}, {"name": "ps_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "ps_partkey", "to_table": "part", "to_column": "p_partkey", "notes": ""}, {"from_column": "ps_suppkey", "to_table": "supplier", "to_column": "s_suppkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/partsupp.yaml"}, {"name": "region", "leaf": "region", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "r_regionkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "r_name", "type": "string", "role": "value", "confidence": ""}, {"name": "r_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/region.yaml"}, {"name": "supplier", "leaf": "supplier", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "s_suppkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "s_name", "type": "string", "role": "value", "confidence": ""}, {"name": "s_nationkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "s_phone", "type": "string", "role": "value", "confidence": ""}, {"name": "s_acctbal", "type": "decimal", "role": "value", "confidence": ""}, {"name": "s_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "s_nationkey", "to_table": "nation", "to_column": "n_nationkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/supplier.yaml"}], "manual": null};
-window.ASK_BASE = "";   // origin for the /ask link when opened as a local file; empty -> relative (served) only
+window.MAC_MODEL = {"meta": {"source": "TPCH", "concept_count": 13, "rule_count": 2, "edge_count": 8, "general_rule_count": 0, "derived_count": 1}, "domains": ["finance", "geography", "order", "part", "party"], "lanes": {"ASK": 0, "COMMIT": 2, "REFUSE": 0, "INVARIANT": 0, "OTHER": 0}, "slots": ["metadata", "concept", "values", "grounding", "contract", "governance", "derived_by_rule", "properties", "lifecycle"], "concepts": [{"id": "Revenue", "label": "Revenue", "german": "", "klass": "measure", "definition": "The monetary value of sales, net of discount: per order line, l_extendedprice × (1 − l_discount). \"Revenue\" without qualification means this net figure. It is COMPUTED (see rules.yaml > net_revenue), not a stored column.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "finance", "file": "ontology/concepts/finance/revenue.yaml", "slots_present": ["metadata", "concept", "derived_by_rule", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Nation", "label": "Nation", "german": "", "klass": "entity", "definition": "A country (TPC-H has 25). The middle level of the geography hierarchy: a Nation belongs to one Region (see edges) and is the nation of customers and suppliers. The grain at which most geography filtering happens before rolling up to Region.", "identity": {"kind": "fk_name", "canonical_key": "n_nationkey"}, "confidence": "C", "version": "1.0", "domain": "geography", "file": "ontology/concepts/geography/nation.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Region", "label": "Region", "german": "", "klass": "entity", "definition": "A top-level geographic grouping of nations (TPC-H regions: AFRICA, AMERICA, ASIA, EUROPE, MIDDLE EAST). The root of the geography hierarchy — a Nation belongs to exactly one Region, and customers/suppliers roll up to a region through their nation.", "identity": {"kind": "fk_name", "canonical_key": "r_regionkey"}, "confidence": "C", "version": "1.0", "domain": "geography", "file": "ontology/concepts/geography/region.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "LineStatus", "label": "Line Status", "german": "", "klass": "enumeration", "definition": "The fulfilment status of a single order line — whether the line has shipped/been fulfilled or is still in flight. The code list the l_linestatus discriminator column carries.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/line_status.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Orders", "label": "Order", "german": "", "klass": "entity", "definition": "The header of a customer order: who placed it (one Customer), when, its total price and status. The parent of one or more LineItems. Modelled as an entity (a header record); the fulfilment lifecycle lives on its LineItems, which is where shipping actually happens.", "identity": {"kind": "fk_name", "canonical_key": "o_orderkey"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/orders.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "LineItem", "label": "Order Line", "german": "", "klass": "event", "definition": "A single line of an order — one part, supplied by one supplier, in some quantity at some price. The central fact of TPC-H (composite key order + line number). It is an EVENT: it is shipped, received, and possibly returned, moving through a fulfilment lifecycle read from its ship/receipt dates and status flags. Revenue is computed from its extended price and discount.", "identity": {"kind": "composite"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/lineitem.yaml", "slots_present": ["metadata", "concept", "lifecycle", "properties", "contract", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": [{"id": "lineitem.revenue.net_of_discount", "kind": "mac.rule_kind.aggregation", "decision": "COMMIT", "scope": "", "confidence": "", "when": "computing revenue from order lines", "then": "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)", "never": "summing l_extendedprice alone — that is gross, not revenue", "binds": ["l_extendedprice", "l_discount"], "subject": "", "purpose": "", "genesis": ""}, {"id": "lineitem.state.received_iff_receiptdate", "kind": "mac.rule_kind.resolution", "decision": "COMMIT", "scope": "", "confidence": "", "when": "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)", "then": "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment", "never": "", "binds": ["l_receiptdate", "l_linestatus"], "subject": "", "purpose": "", "genesis": ""}]}, {"id": "OrderStatus", "label": "Order Status", "german": "", "klass": "enumeration", "definition": "The status of an order, derived in TPC-H from the line-status of its lines: open if all lines are still open, fulfilled if all are fulfilled, partial when mixed. The code list the o_orderstatus discriminator column carries.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/order_status.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "ReturnFlag", "label": "Return Flag", "german": "", "klass": "enumeration", "definition": "Whether an order line was returned. The code list the l_returnflag discriminator column carries — R for returned; A and N are the two not-returned codes (TPC-H splits not-returned by receipt date).", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "order", "file": "ontology/concepts/order/return_flag.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Part", "label": "Part", "german": "", "klass": "entity", "definition": "A catalogue item that can be ordered. Identified by p_partkey, classified by brand and type. Sold through one or more suppliers (see PartSupp) and bought on order lines.", "identity": {"kind": "fk_name", "canonical_key": "p_partkey"}, "confidence": "C", "version": "1.0", "domain": "part", "file": "ontology/concepts/part/part.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "PartSupp", "label": "Part-Supplier", "german": "", "klass": "entity", "definition": "The supply of a Part by a Supplier — a reified many-to-many relationship with its own attributes (available quantity, supply cost). Identified by the composite key (ps_partkey, ps_suppkey). It is an entity, not an edge, precisely because it CARRIES data: an edge cannot hold availqty/supplycost.", "identity": {"kind": "composite"}, "confidence": "C", "version": "1.0", "domain": "part", "file": "ontology/concepts/part/partsupp.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "Customer", "label": "Customer", "german": "", "klass": "entity", "definition": "A party that places orders. Identified by c_custkey, located in one Nation (see edges), and classified by a market segment. The demand side — orders and revenue attribute to a customer.", "identity": {"kind": "fk_name", "canonical_key": "c_custkey"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/customer.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}, {"id": "MarketSegment", "label": "Market Segment", "german": "", "klass": "enumeration", "definition": "The market segment a customer belongs to — the code list the c_mktsegment discriminator column carries. TPC-H defines exactly five segments.", "identity": {"kind": "code"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/market_segment.yaml", "slots_present": ["metadata", "concept", "values", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "closed", "registers": [], "constraints": [], "aliases": [{"target": "AUTOMOBILE", "kind": "value", "terms": ["auto", "automotive", "car sector", "vehicles"]}, {"target": "BUILDING", "kind": "value", "terms": ["construction", "building sector"]}], "rules": []}, {"id": "Supplier", "label": "Supplier", "german": "", "klass": "entity", "definition": "A party that supplies parts. Identified by s_suppkey and located in one Nation (see edges). The supply side — which supplier provides a part, at what cost, is captured by PartSupp.", "identity": {"kind": "fk_name", "canonical_key": "s_suppkey"}, "confidence": "C", "version": "1.0", "domain": "party", "file": "ontology/concepts/party/supplier.yaml", "slots_present": ["metadata", "concept", "properties", "grounding", "governance"], "grain": "", "field_roles": {}, "sources": [], "members_over": "", "values_closure": "", "registers": [], "constraints": [], "aliases": [], "rules": []}], "edges": [{"id": "nation__in__region", "level": "physical", "type": "foreign_key", "from": "Nation", "to": "Region", "role": "inRegion", "join_rule": "nation.n_regionkey = region.r_regionkey", "card_from": "0..N", "card_to": "1"}, {"id": "customer__from__nation", "level": "physical", "type": "foreign_key", "from": "Customer", "to": "Nation", "role": "fromNation", "join_rule": "customer.c_nationkey = nation.n_nationkey", "card_from": "0..N", "card_to": "1"}, {"id": "supplier__from__nation", "level": "physical", "type": "foreign_key", "from": "Supplier", "to": "Nation", "role": "fromNation", "join_rule": "supplier.s_nationkey = nation.n_nationkey", "card_from": "0..N", "card_to": "1"}, {"id": "partsupp__of__part", "level": "physical", "type": "foreign_key", "from": "PartSupp", "to": "Part", "role": "ofPart", "join_rule": "partsupp.ps_partkey = part.p_partkey", "card_from": "0..N", "card_to": "1"}, {"id": "partsupp__from__supplier", "level": "physical", "type": "foreign_key", "from": "PartSupp", "to": "Supplier", "role": "fromSupplier", "join_rule": "partsupp.ps_suppkey = supplier.s_suppkey", "card_from": "0..N", "card_to": "1"}, {"id": "orders__placed_by__customer", "level": "physical", "type": "foreign_key", "from": "Orders", "to": "Customer", "role": "placedBy", "join_rule": "orders.o_custkey = customer.c_custkey", "card_from": "0..N", "card_to": "1"}, {"id": "lineitem__part_of__orders", "level": "physical", "type": "foreign_key", "from": "LineItem", "to": "Orders", "role": "partOfOrder", "join_rule": "lineitem.l_orderkey = orders.o_orderkey", "card_from": "0..N", "card_to": "1"}, {"id": "lineitem__supplied_via__partsupp", "level": "physical", "type": "foreign_key", "from": "LineItem", "to": "PartSupp", "role": "suppliedVia", "join_rule": "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey", "card_from": "0..N", "card_to": "1"}], "graph": {"nodes": [{"id": "Revenue", "label": "Revenue", "klass": "measure", "rules": 0, "domain": "finance"}, {"id": "Nation", "label": "Nation", "klass": "entity", "rules": 0, "domain": "geography"}, {"id": "Region", "label": "Region", "klass": "entity", "rules": 0, "domain": "geography"}, {"id": "LineStatus", "label": "Line Status", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "Orders", "label": "Order", "klass": "entity", "rules": 0, "domain": "order"}, {"id": "LineItem", "label": "Order Line", "klass": "event", "rules": 2, "domain": "order"}, {"id": "OrderStatus", "label": "Order Status", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "ReturnFlag", "label": "Return Flag", "klass": "enumeration", "rules": 0, "domain": "order"}, {"id": "Part", "label": "Part", "klass": "entity", "rules": 0, "domain": "part"}, {"id": "PartSupp", "label": "Part-Supplier", "klass": "entity", "rules": 0, "domain": "part"}, {"id": "Customer", "label": "Customer", "klass": "entity", "rules": 0, "domain": "party"}, {"id": "MarketSegment", "label": "Market Segment", "klass": "enumeration", "rules": 0, "domain": "party"}, {"id": "Supplier", "label": "Supplier", "klass": "entity", "rules": 0, "domain": "party"}], "links": [{"source": "Nation", "target": "Region", "kind": "fk", "label": "inRegion", "card_from": "0..N", "card_to": "1"}, {"source": "Customer", "target": "Nation", "kind": "fk", "label": "fromNation", "card_from": "0..N", "card_to": "1"}, {"source": "Supplier", "target": "Nation", "kind": "fk", "label": "fromNation", "card_from": "0..N", "card_to": "1"}, {"source": "PartSupp", "target": "Part", "kind": "fk", "label": "ofPart", "card_from": "0..N", "card_to": "1"}, {"source": "PartSupp", "target": "Supplier", "kind": "fk", "label": "fromSupplier", "card_from": "0..N", "card_to": "1"}, {"source": "Orders", "target": "Customer", "kind": "fk", "label": "placedBy", "card_from": "0..N", "card_to": "1"}, {"source": "LineItem", "target": "Orders", "kind": "fk", "label": "partOfOrder", "card_from": "0..N", "card_to": "1"}, {"source": "LineItem", "target": "PartSupp", "kind": "fk", "label": "suppliedVia", "card_from": "0..N", "card_to": "1"}]}, "general_rules": [], "decision_policy": [], "derived_measures": [{"id": "net_revenue", "derives": "Revenue", "over": ["LineItem"], "logic": "Net revenue is the discounted value of order lines: per line, l_extendedprice × (1 − l_discount), summed. l_extendedprice is already price × quantity (gross); the discount is a fraction in [0,1]. This is the figure \"Revenue\" means by default, and the basis of TPC-H's revenue/market-share queries.", "render_kind": "sql_expression", "template": "SUM(l_extendedprice * (1 - l_discount))                 -- net = gross extended price, less discount", "relative_template": "", "confidence": "C", "conditions": ["Discount is a fraction 0..1; a NULL discount counts as 0 (the line contributes its full extended price).", "Extended price is gross (price × quantity); the discount is applied here, taxes are not (that would be a separate measure)."], "validated_against": ["lineitem"]}], "relations": [{"name": "customer", "leaf": "customer", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "c_custkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "c_name", "type": "string", "role": "value", "confidence": ""}, {"name": "c_nationkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "c_phone", "type": "string", "role": "value", "confidence": ""}, {"name": "c_acctbal", "type": "decimal", "role": "value", "confidence": ""}, {"name": "c_mktsegment", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "c_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "c_nationkey", "to_table": "nation", "to_column": "n_nationkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/customer.yaml"}, {"name": "lineitem", "leaf": "lineitem", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "one row per (l_orderkey, l_linenumber)", "columns": [{"name": "l_orderkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_linenumber", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "l_partkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_suppkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "l_quantity", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_extendedprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_discount", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_tax", "type": "decimal", "role": "value", "confidence": ""}, {"name": "l_returnflag", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_linestatus", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_shipdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_commitdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_receiptdate", "type": "date", "role": "value", "confidence": ""}, {"name": "l_shipmode", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "l_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "l_orderkey", "to_table": "orders", "to_column": "o_orderkey", "notes": ""}], "reverse_joins": [], "lineage": {"grain": "one row per (l_orderkey, l_linenumber)", "sql_file": "data/transforms/lineitem.sql", "inputs": [{"relation": "tpch_raw.lineitem_raw", "leaf": "lineitem_raw", "kind": "raw_source", "role": "raw_lines"}, {"relation": "tpch.orders", "leaf": "orders", "kind": "dataset", "role": "order_enrichment"}], "steps": [{"id": "discount-basis-points-to-fraction", "impurity": "unit_mismatch", "rule": "convert basis points to the [0,1] fraction the ontology's Revenue rule expects", "establishes": "l_discount is a [0,1] fraction — Revenue = extendedprice * (1 - l_discount) is correct"}], "file": "data/transforms/lineitem.yaml"}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/lineitem.yaml"}, {"name": "nation", "leaf": "nation", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "n_nationkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "n_name", "type": "string", "role": "value", "confidence": ""}, {"name": "n_regionkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "n_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "n_regionkey", "to_table": "region", "to_column": "r_regionkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/nation.yaml"}, {"name": "orders", "leaf": "orders", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "o_orderkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "o_custkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "o_orderstatus", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "o_totalprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "o_orderdate", "type": "date", "role": "value", "confidence": ""}, {"name": "o_orderpriority", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "o_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "o_custkey", "to_table": "customer", "to_column": "c_custkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/orders.yaml"}, {"name": "part", "leaf": "part", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "p_partkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "p_name", "type": "string", "role": "value", "confidence": ""}, {"name": "p_mfgr", "type": "string", "role": "value", "confidence": ""}, {"name": "p_brand", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "p_type", "type": "string", "role": "discriminator", "confidence": ""}, {"name": "p_size", "type": "integer", "role": "value", "confidence": ""}, {"name": "p_retailprice", "type": "decimal", "role": "value", "confidence": ""}, {"name": "p_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/part.yaml"}, {"name": "partsupp", "leaf": "partsupp", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "ps_partkey", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "ps_suppkey", "type": "integer", "role": "composite_key_part", "confidence": ""}, {"name": "ps_availqty", "type": "integer", "role": "value", "confidence": ""}, {"name": "ps_supplycost", "type": "decimal", "role": "value", "confidence": ""}, {"name": "ps_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "ps_partkey", "to_table": "part", "to_column": "p_partkey", "notes": ""}, {"from_column": "ps_suppkey", "to_table": "supplier", "to_column": "s_suppkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/partsupp.yaml"}, {"name": "region", "leaf": "region", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "r_regionkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "r_name", "type": "string", "role": "value", "confidence": ""}, {"name": "r_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/region.yaml"}, {"name": "supplier", "leaf": "supplier", "schema": "tpch", "type": "table", "status": "verified", "confidence": "", "group": "view", "grain": "", "columns": [{"name": "s_suppkey", "type": "integer", "role": "primary_key", "confidence": ""}, {"name": "s_name", "type": "string", "role": "value", "confidence": ""}, {"name": "s_nationkey", "type": "integer", "role": "foreign_key", "confidence": ""}, {"name": "s_phone", "type": "string", "role": "value", "confidence": ""}, {"name": "s_acctbal", "type": "decimal", "role": "value", "confidence": ""}, {"name": "s_comment", "type": "string", "role": "value", "confidence": ""}], "foreign_keys": [{"from_column": "s_nationkey", "to_table": "nation", "to_column": "n_nationkey", "notes": ""}], "reverse_joins": [], "lineage": {}, "measure_view": {}, "bound_concepts": [], "file": "data/datasets/supplier.yaml"}], "manual": null};
+// Ask <-> Explorer view toggle (mirrors ask.html). "Ask" opens the generic /ask page for THIS source —
+// relative when served over http (ask.html shares this origin), else the file:// origin that
+// mac_to_explorer.py injects for  via --ask-base. Empty base under file:// -> Ask stays hidden.
+(function(){
+  var ASK_BASE = "".trim();
+  var SERVED = location.protocol.indexOf("http") === 0;
+  var meta = (window.MAC_MODEL && window.MAC_MODEL.meta) || {};
+  var src = meta.source || "";
+  var sEl = document.getElementById("mb-source"); if (sEl && src) sEl.textContent = src;   // menubar app-name = source
+  var q = src ? ("?src=" + encodeURIComponent(src)) : "";
+  var href = SERVED ? ("ask.html" + q) : (ASK_BASE ? (ASK_BASE.replace(/\/+$/, "") + "/ask.html" + q) : "");
+  var a = document.getElementById("tabAsk");                                                // the Ask menu item (link out)
+  if (a) { if (href) a.setAttribute("href", href); else a.style.display = "none"; }         // hide when /ask isn't reachable
+})();
 (function(){
 "use strict";
 var M = window.MAC_MODEL;
@@ -402,11 +476,12 @@ if(PREFS.graphLayout) graphLayout=PREFS.graphLayout;
 if(PREFS.flowDir) flowDir=PREFS.flowDir;
 if(typeof PREFS.erStraight==="boolean") erStraight=PREFS.erStraight;
 if(typeof PREFS.erCompact==="boolean") erCompact=PREFS.erCompact;
-if(PREFS.theme) document.documentElement.setAttribute("data-theme",PREFS.theme);
+/* theme is UNIVERSAL now (global 'mac_theme', set pre-paint by the head script) — no longer per-source here */
 if(PREFS.pos && typeof PREFS.pos==="object") graphPos=PREFS.pos;
 var graphSearchFn=null;   // registered inside initGraph; #search calls it on the graph tab (grey + frame + pulse)
 var graphHideCat={};    // node category (concept class OR relation group) -> true = hidden
 var graphHideKinds={};  // edge kind (fk|hierarchy|coground|binding) -> true = hidden
+var mapHideClass={};    // Concepts tab: concept class -> true = hidden (legend-glyph facet filter over the tile grid)
 function relColor(g){return {"fact":"var(--accent)","measure view":"var(--cls-measure)","dimension":"var(--cls-entity)","region view":"var(--cls-reference)","view":"var(--muted)","registers":"var(--cls-grouping)"}[g]||"var(--muted)";}
 function slug(g){return String(g||"").replace(/\s+/g,"-");}
 function trunc(s){s=String(s||"");return s.length>22?s.slice(0,21)+"…":s;}
@@ -461,17 +536,19 @@ function renderRail(){
     t.classList.toggle("active", t.getAttribute("data-tab")===state.tab);});
 }
 
-/* ---------- map ---------- */
+/* ---------- concepts (map) ---------- */
 function viewMap(){
   var q=state.q.toLowerCase();
-  var cs=M.concepts.filter(function(c){return !q||c.label.toLowerCase().indexOf(q)>=0||c.id.toLowerCase().indexOf(q)>=0||(c.definition||"").toLowerCase().indexOf(q)>=0;});
+  var clsCount={}; M.concepts.forEach(function(c){clsCount[c.klass]=(clsCount[c.klass]||0)+1;});
+  var cs=M.concepts.filter(function(c){
+    return !mapHideClass[c.klass] && (!q||c.label.toLowerCase().indexOf(q)>=0||c.id.toLowerCase().indexOf(q)>=0||(c.definition||"").toLowerCase().indexOf(q)>=0);});
   var L=M.lanes;
   var legend='<div class="legend">'
     +'<div class="li"><span class="lane-dot lane-ASK"></span>ASK <b>'+L.ASK+'</b></div>'
     +'<div class="li"><span class="lane-dot lane-COMMIT"></span>COMMIT <b>'+L.COMMIT+'</b></div>'
     +'<div class="li"><span class="lane-dot lane-REFUSE"></span>REFUSE <b>'+L.REFUSE+'</b></div>'
     +'<div class="li"><span class="lane-dot lane-INVARIANT"></span>INVARIANT <b>'+L.INVARIANT+'</b></div>'
-    +'<div class="li" style="margin-left:auto">'+M.meta.concept_count+' concepts · '+M.meta.rule_count+' rules · '+M.meta.edge_count+' edges</div></div>';
+    +'<div class="li" style="margin-left:auto">'+M.meta.concept_count+' concepts · '+M.meta.rule_count+' rules · '+M.meta.edge_count+' edges'+(M.meta.derived_count?' · '+M.meta.derived_count+' derived':'')+'</div></div>';
   var tiles=cs.map(function(c){
     return '<a class="card tile" style="border-top:3px solid var(--cls-'+esc(c.klass)+')" href="#c/'+encodeURIComponent(c.id)+'">'
       +'<div class="tl-top"><span class="tl-name">'+esc(c.label)+'</span>'+classChip(c.klass)+'</div>'
@@ -479,13 +556,56 @@ function viewMap(){
       +laneBar(ruleLanes(c))
       +'<div class="tl-foot"><span>'+c.rules.length+' rule'+(c.rules.length!==1?"s":"")+'</span><span class="mono">'+esc(c.grain||c.domain)+'</span></div></a>';
   }).join("");
-  var clsLegend='<div class="legend" style="margin:8px 0">'+CLASSES.map(function(k){
-    return '<div class="li">'+classDot(k)+CLASS_GLYPH[k]+' '+k+'</div>';}).join("")+'</div>';
-  return '<div class="crumb"><b>Map</b><span class="sep">·</span>every concept, decision lanes at a glance</div>'
+  // interactive class legend — each glyph is a facet filter over the tile grid (counts stay whole-corpus)
+  var anyMapFilter=CLASSES.some(function(k){return mapHideClass[k];});
+  var clsLegend='<div class="legend" style="margin:8px 0">'+CLASSES.filter(function(k){return clsCount[k];}).map(function(k){
+    return '<div class="li'+(mapHideClass[k]?" off":"")+'" data-mapclass="'+esc(k)+'" title="click to show / hide this class">'+classDot(k)+CLASS_GLYPH[k]+' '+k+' <b>'+clsCount[k]+'</b></div>';}).join("")
+    +(anyMapFilter?'<div class="li" data-mapclearfilters="1" style="color:var(--accent);font-weight:650">✕ clear</div>':'')+'</div>';
+  // dedicated framed panel for the rule config-objects that ship alongside the concepts
+  var dm=M.derived_measures||[];
+  var genN=(M.general_rules||[]).length, slotN=(M.decision_policy||[]).length;
+  var cfgFrame="";
+  if(dm.length || genN || slotN){
+    var dmBlock = dm.length
+      ? '<h2 class="sec">Derived measures — '+dm.length+' <span class="frame-src">rules.yaml</span></h2>'
+        +'<div class="note">Named ratios &amp; variances the ontology derives <b>over</b> base concepts / measure-codes. Each linked concept opens its own page (and lists the measure there too).</div>'
+        +dm.map(derivedCard).join("")
+      : "";
+    var qrBlock = (genN||slotN)
+      ? '<div class="xref"><span class="xr-n">'+genN+'</span>&nbsp;general behavioural rules<span style="color:var(--faint)">·</span><span class="xr-n">'+slotN+'</span>&nbsp;routing slots<span class="frame-src" style="margin-left:4px">query_rules.yaml</span><a href="#decisions" style="margin-left:auto">open Decisions ↗</a></div>'
+      : "";
+    cfgFrame='<section class="frame"><div class="frame-hd"><span class="frame-ttl">Configuration rules</span>'
+      +'<span class="frame-sub">the rule config-objects the interpreter loads, alongside the concepts</span></div>'
+      +'<div class="frame-bd">'+dmBlock+qrBlock+'</div></section>';
+  }
+  return '<div class="crumb"><b>Concepts</b><span class="sep">·</span>every concept, decision lanes at a glance</div>'
     +'<h1 class="title">'+esc(M.meta.source)+' ontology</h1>'
     +'<p class="def">The semantic model — '+M.meta.concept_count+' concepts and '+M.meta.rule_count+' governed rules. Pick a concept to drill into its grounding, members and rules. Every rule shows its decision lane (ASK / COMMIT / REFUSE / INVARIANT); the authoring prose sits one click away.</p>'
     +clsLegend+legend
-    +'<div class="grid" style="margin-top:16px">'+tiles+'</div>';
+    +'<div class="grid" style="margin-top:16px">'+(tiles||'<p class="empty">No concept matches the current filter.</p>')+'</div>'
+    +cfgFrame;
+}
+/* ---------- derived-measure card (root rules.yaml) ---------- */
+function overToken(t){
+  var c=byId(t);
+  return c ? '<a href="#c/'+encodeURIComponent(c.id)+'">'+esc(c.label)+'</a>'
+           : '<span class="chip mono" title="measure code">'+esc(t)+'</span>';
+}
+function derivedCard(m){
+  var over=(m.over||[]).map(overToken).join('<span class="arr">·</span>');
+  var tpl="";
+  if(m.template) tpl='<details class="prose"><summary>SQL template</summary><div class="ptext"><pre class="d-sql">'+esc(m.template)+(m.relative_template?"\n\n-- relative:\n"+esc(m.relative_template):"")+'</pre></div></details>';
+  var cond="";
+  if(m.conditions && m.conditions.length) cond='<details class="prose"><summary>Conditions — '+m.conditions.length+'</summary><div class="ptext"><ul style="margin:4px 0;padding-left:18px">'+m.conditions.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul></div></details>';
+  var va=(m.validated_against&&m.validated_against.length)?'<div class="d-over"><span class="ol">validated against</span>'+m.validated_against.map(function(v){return relLink(v);}).join('<span class="arr">·</span>')+'</div>':'';
+  return '<div class="derived">'
+    +'<div class="d-top"><span class="d-name">Σ '+esc(m.derives||m.id)+'</span>'
+    +(m.derives?'<span class="d-id">'+esc(m.id)+'</span>':'')
+    +(m.confidence?'<span class="chip mono" title="confidence">'+esc(m.confidence)+'</span>':'')
+    +(m.render_kind?'<span class="chip mono">'+esc(m.render_kind)+'</span>':'')+'</div>'
+    +(over?'<div class="d-over"><span class="ol">over</span>'+over+'</div>':'')
+    +(m.logic?'<div class="d-logic">'+esc(m.logic)+'</div>':'')
+    +va+tpl+cond+'</div>';
 }
 
 /* ---------- rule card ---------- */
@@ -541,9 +661,10 @@ function viewConcept(id){
     c.registers.forEach(function(rg){
       var head='<tr>'+rg.columns.map(function(col){return '<th>'+esc(col)+'</th>';}).join("")+'</tr>';
       var body=rg.rows.map(function(row){return '<tr>'+row.map(function(v){return '<td class="mono">'+esc(v)+'</td>';}).join("")+'</tr>';}).join("");
-      registers+='<h2 class="sec">Members — <span class="mono" style="text-transform:none;letter-spacing:0">'+esc(rg.register)+'</span></h2>'
-        +'<div class="scroll"><table class="tbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table>'
-        +'<div class="regcap">showing '+rg.rows.length+' of '+rg.total+' rows · single source: '+esc(rg.file)+'</div></div>';
+      var complete=(rg.rows.length>=rg.total);
+      registers+='<h2 class="sec">Members — <span class="mono" style="text-transform:none;letter-spacing:0">'+esc(rg.register)+'</span> <span style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--faint)">'+rg.total+' row'+(rg.total!==1?"s":"")+'</span></h2>'
+        +'<div class="scroll regscroll"><table class="tbl reg"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'
+        +'<div class="regcap">'+(complete?('all '+rg.total+' rows'):('first '+rg.rows.length+' of '+rg.total+' rows (scroll)'))+' · single source: '+esc(rg.file)+'</div>';
     });
   }
 
@@ -589,12 +710,19 @@ function viewConcept(id){
     rulesHtml='<h2 class="sec">Rules</h2><p class="empty">No source-specific rules — this concept inherits the general behavioural rules (see the Decisions tab).</p>';
   }
 
-  return '<div class="crumb"><a href="#map">Map</a><span class="sep">›</span><span style="text-transform:capitalize">'+esc(c.domain.replace(/_/g," "))+'</span><span class="sep">›</span><b>'+esc(c.label)+'</b></div>'
+  var dmc=(M.derived_measures||[]).filter(function(m){return (m.over||[]).indexOf(c.id)>=0;});
+  var derivedHtml="";
+  if(dmc.length){
+    derivedHtml='<h2 class="sec">Derived measures — '+dmc.length+' <span style="font-weight:600;text-transform:none;letter-spacing:0;margin-left:8px;color:var(--muted)">computed over '+esc(c.label)+'</span></h2>'
+      +'<div class="note">Named ratios / variances from the root <span class="mono">rules.yaml</span> registry that derive a measure <b>over</b> this concept (among others).</div>'
+      +dmc.map(derivedCard).join("");
+  }
+  return '<div class="crumb"><a href="#map">Concepts</a><span class="sep">›</span><span style="text-transform:capitalize">'+esc(c.domain.replace(/_/g," "))+'</span><span class="sep">›</span><b>'+esc(c.label)+'</b></div>'
     +'<h1 class="title">'+esc(c.label)+'</h1>'
     +'<div class="metaline">'+classChip(c.klass)+laneChips(t)+'</div>'
     +'<p class="def">'+esc(c.definition)+'</p>'
     +'<div class="panelrow" style="margin-top:18px">'+grounding+right+'</div>'
-    +aliasHtml+registers+constraintsHtml+edgesHtml+rulesHtml;
+    +aliasHtml+registers+constraintsHtml+edgesHtml+rulesHtml+derivedHtml;
 }
 function laneChips(t){
   return LANES.filter(function(l){return t[l];}).map(function(l){
@@ -619,6 +747,35 @@ function viewSlots(){
     +'<h1 class="title">Slot coverage</h1>'
     +'<p class="def">Every concept is one row, every MAC top-level slot one column. A filled square means the concept populates that slot. The schema is a small closed vocabulary — learn this one grid and every concept reads the same way.</p>'
     +'<div class="matrix-wrap" style="margin-top:16px"><table class="matrix"><thead>'+head+'</thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+/* ---------- edges ---------- */
+function conRef(id){
+  var c=byId(id);
+  return c ? '<a href="#c/'+encodeURIComponent(id)+'">'+classDot(c.klass)+' '+esc(c.label)+'</a>'
+           : '<span class="mono" title="endpoint not a loaded concept">'+esc(id)+'</span>';
+}
+function viewEdges(){
+  var eds=M.edges||[], q=state.q.toLowerCase();
+  var fe=eds.filter(function(e){return !q||((e.id||"")+" "+(e.from||"")+" "+(e.to||"")+" "+(e.type||"")+" "+(e.role||"")).toLowerCase().indexOf(q)>=0;});
+  var byType={}; eds.forEach(function(e){var k=e.type||"—"; byType[k]=(byType[k]||0)+1;});
+  var legend='<div class="legend">'+Object.keys(byType).sort().map(function(k){
+    return '<div class="li"><span class="chip mono">'+esc(k)+'</span> <b>'+byType[k]+'</b></div>';}).join("")
+    +'<div class="li" style="margin-left:auto">'+eds.length+' edges · '+M.meta.concept_count+' concepts</div></div>';
+  var rows=fe.map(function(e){
+    var card=(e.card_from||e.card_to)?('<span class="chip mono">'+esc(e.card_from||"?")+' : '+esc(e.card_to||"?")+'</span>'):'<span class="empty">—</span>';
+    return '<tr><td class="mono">'+esc(e.id)+(e.level?'<div style="font-size:10px;color:var(--faint)">'+esc(e.level)+'</div>':'')+'</td>'
+      +'<td>'+conRef(e.from)+' <span style="color:var(--faint)">→</span> '+conRef(e.to)+'</td>'
+      +'<td class="mono">'+esc(e.type||"")+(e.role?'<div style="font-size:11px;color:var(--faint)">'+esc(e.role)+'</div>':'')+'</td>'
+      +'<td>'+card+'</td>'
+      +'<td class="mono" style="font-size:11px;white-space:normal">'+esc(e.join_rule||"")+'</td></tr>';
+  }).join("");
+  return '<div class="crumb"><b>Edges</b><span class="sep">·</span>the relationship graph, cross-referenced to concepts</div>'
+    +'<h1 class="title">Edges</h1>'
+    +'<p class="def">Every declared relationship between concepts — endpoints (each links to its concept page), type / role, cardinality and the join that resolves it. This is the same graph the <a href="#graph">Graph</a> draws and each concept page lists under Relationships — here it is the whole edge set in one cross-referenced table.</p>'
+    +legend
+    +'<div class="scroll" style="margin-top:14px"><table class="tbl"><thead><tr><th>edge</th><th>from → to</th><th>type / role</th><th>cardinality</th><th>join</th></tr></thead><tbody>'
+    +(rows||'<tr><td colspan="5"><span class="empty">No edge matches the current filter.</span></td></tr>')+'</tbody></table></div>';
 }
 
 /* ---------- decisions ---------- */
@@ -664,13 +821,20 @@ function buildGraphData(mode){
   rels.forEach(function(r){(r.foreign_keys||[]).forEach(function(fk){
     var t="r:"+fk.to_table; if(relIds[t]) fkLinks.push({source:"r:"+r.leaf,target:t,kind:"fk",label:fk.from_column,to_col:fk.to_column,card_from:"N",card_to:"1"});});});
   if(mode==="data"||mode==="er") return {nodes:relNodes, links:fkLinks};
-  // both: concepts that have a binding + relations + binding edges + fk edges
+  // both (Bindings) = the FULL union: concepts (bound and/or related) + relations, wired with
+  // concept<->concept ontology relations (orel / hierarchy) + concept->relation binding edges + relation<->relation FK edges.
   var need={}, bind=[];
   rels.forEach(function(r){(r.bound_concepts||[]).forEach(function(b){
     need[b.id]=1; bind.push({source:"c:"+b.id,target:"r:"+r.leaf,kind:"binding",label:"reads"});});});
+  var orel=[];
+  (M.graph.links||[]).forEach(function(l){
+    if(l.kind==="coground") return;                              // synthetic 'same serving table' edge — redundant once both concepts bind the same relation node
+    need[l.source]=1; need[l.target]=1;
+    orel.push({source:"c:"+l.source,target:"c:"+l.target,kind:(l.kind==="fk"?"orel":l.kind),label:l.label});
+  });
   var conNodes=M.concepts.filter(function(c){return need[c.id];}).map(function(c){
     return {id:"c:"+c.id,label:c.label,klass:c.klass,kind:"concept",rules:c.rules.length,href:"#c/"+encodeURIComponent(c.id)};});
-  return {nodes:conNodes.concat(relNodes), links:bind.concat(fkLinks)};
+  return {nodes:conNodes.concat(relNodes), links:orel.concat(bind).concat(fkLinks)};
 }
 function graphNodeById(full,id){ for(var i=0;i<full.nodes.length;i++){ if(full.nodes[i].id===id) return full.nodes[i]; } return null; }
 function graphNbrs(full,id){
@@ -686,10 +850,10 @@ function graphSub(full,id,depth){
   return {nodes:full.nodes.filter(function(n){return keep[n.id];}), links:full.links.filter(function(l){return keep[l.source]&&keep[l.target];})};
 }
 function focusNode(id){ if(graphFocus&&graphFocus!==id) focusHist.push(graphFocus); graphFocus=id; render(); }
-var NBR_KIND={binding:"binds to (grounding)",fk:"joins (FK)",hierarchy:"rolls up",coground:"same serving table",dim:"related"};
+var NBR_KIND={binding:"binds to (grounding)",orel:"relates to",fk:"joins (FK)",hierarchy:"rolls up",coground:"same serving table",dim:"related"};
 function layoutFlow(nodes, links, er, dir){
   // Layered left→right layout: rank by directed edges (source left, target right), so every arrow flows rightward.
-  var DIRK={fk:1,hierarchy:1,binding:1};                        // which edge kinds carry flow direction
+  var DIRK={fk:1,hierarchy:1,binding:1,orel:1};                 // which edge kinds carry flow direction
   var out={}, inn={}, indeg={}, byId={}, seen={};
   nodes.forEach(function(n){ out[n.id]=[]; inn[n.id]=[]; indeg[n.id]=0; byId[n.id]=n; });
   links.forEach(function(l){
@@ -739,7 +903,7 @@ function viewGraph(){
   if(graphMode==="ontology") leg=clsLeg+sep+eLeg("relation",'stroke="var(--muted)" stroke-width="1.8"',"fk")+eLeg("rolls up",'stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4"',"hierarchy")+eLeg("same table",'stroke="var(--border)" stroke-width="1.2"',"coground")+'<div class="li"><span class="gcard" style="position:static;stroke:none">0..N · 1</span> cardinality</div>';
   else if(graphMode==="data") leg=relLeg+sep+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
   else if(graphMode==="er") leg=relLeg+sep+'<div class="li'+(graphHideKinds["fk"]?" off":"")+'" data-edgekind="fk"><svg width="26" height="10"><line x1="2" y1="5" x2="24" y2="5" stroke="var(--muted)" stroke-width="1.4"/><path d="M22,5 L24,2 M22,5 L24,5 M22,5 L24,8" stroke="var(--muted)" fill="none" stroke-width="1.1"/><path d="M5,2 L5,8" stroke="var(--muted)" stroke-width="1.4"/></svg>FK · many → one</div>';
-  else leg=clsLeg+relLeg+sep+eLeg("binds",'stroke="var(--commit)" stroke-width="1.6" stroke-dasharray="2 4"',"binding")+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
+  else leg=clsLeg+relLeg+sep+eLeg("relation",'stroke="var(--accent)" stroke-width="1.8"',"orel")+eLeg("rolls up",'stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4"',"hierarchy")+eLeg("binds",'stroke="var(--commit)" stroke-width="1.6" stroke-dasharray="2 4"',"binding")+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
   var full=buildGraphData(graphMode), focusHdr="", connects="";
   if(graphFocusOn && graphFocus){
     var fn=graphNodeById(full,graphFocus);
@@ -821,8 +985,8 @@ function initGraph(){
   links.forEach(function(l){
     var e=C(er?"path":"line"); e.setAttribute("class","glink "+l.kind); gL.appendChild(e); l.el=e;
     if(er && l.kind==="fk"){ l.footEl=C("path"); l.footEl.setAttribute("class","erm"); l.oneEl=C("path"); l.oneEl.setAttribute("class","erm"); gL.appendChild(l.footEl); gL.appendChild(l.oneEl); }
-    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding")){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
-    if(showLabel && l.label && l.kind!=="coground"){ l.lblEl=C("text"); l.lblEl.setAttribute("class",er?"erkey":"glabel"); l.lblEl.textContent=trunc(l.label); gLbl.appendChild(l.lblEl); }
+    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding"||l.kind==="orel")){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
+    if((showLabel||l.kind==="orel"||l.kind==="hierarchy") && l.label && l.kind!=="coground"){ l.lblEl=C("text"); l.lblEl.setAttribute("class",er?"erkey":"glabel"); l.lblEl.textContent=trunc(l.label); gLbl.appendChild(l.lblEl); }
     if(showCard && l.cf){ l.cfEl=C("text"); l.cfEl.setAttribute("class","gcard"); l.cfEl.textContent=l.cf; gLbl.appendChild(l.cfEl); }
     if(showCard && l.ct){ l.ctEl=C("text"); l.ctEl.setAttribute("class","gcard"); l.ctEl.textContent=l.ct; gLbl.appendChild(l.ctEl); }
   });
@@ -860,7 +1024,7 @@ function initGraph(){
       } else {                                                 // live: pin + let physics settle around it
         n.fx=n.x; n.fy=n.y; alpha=Math.max(alpha,0.3); step();
         function mm(e2){var q=ptr(e2); n.fx=q.x-ox; n.fy=q.y-oy; moved=Math.abs(q.x-p.x)+Math.abs(q.y-p.y)>4; alpha=Math.max(alpha,0.25); step();}
-        function mu(){document.removeEventListener("mousemove",mm);document.removeEventListener("mouseup",mu); n.fx=null;n.fy=null; if(!moved){ if(graphFocusOn) focusNode(n.id); else location.hash=n.href; } else snapPos(); }
+        function mu(){document.removeEventListener("mousemove",mm);document.removeEventListener("mouseup",mu); if(!moved){ n.fx=null;n.fy=null; if(graphFocusOn) focusNode(n.id); else location.hash=n.href; } else { n.fx=n.x; n.fy=n.y; snapPos(); } }
         document.addEventListener("mousemove",mm); document.addEventListener("mouseup",mu);
       }
     });
@@ -921,6 +1085,7 @@ function initGraph(){
       for(j=i+1;j<nodes.length;j++){b=nodes[j];
         dx=a.x-b.x; dy=a.y-b.y; d2=dx*dx+dy*dy+0.01; d=Math.sqrt(d2);
         f=REP/d2; fx=dx/d*f; fy=dy/d*f; a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;
+        var minD=(a.r||10)+(b.r||10)+(er?18:12); if(d<minD){ var sep=(minD-d)*0.5; a.vx+=dx/d*sep;a.vy+=dy/d*sep; b.vx-=dx/d*sep;b.vy-=dy/d*sep; }  // hard min-separation: two nodes never overlap
       }}
     links.forEach(function(l){var L=er?(erCompact?180:340):(l.kind==="coground"?125:92); dx=l.t.x-l.s.x;dy=l.t.y-l.s.y;d=Math.sqrt(dx*dx+dy*dy)+0.01;
       f=(d-L)*0.03; fx=dx/d*f; fy=dy/d*f; l.s.vx+=fx;l.s.vy+=fy;l.t.vx-=fx;l.t.vy-=fy;});
@@ -970,8 +1135,12 @@ function initGraph(){
   var ftb=document.getElementById("g-fit");
   if(ftb){ ftb.onclick=function(){ fitView(); }; }
 
-  if(graphLayout==="flow"){ layoutFlow(nodes, links, er, flowDir); paint(); fitView(); }                 // layered flow (follows edge direction)
-  else if(haveSaved){ paint(); fitView(); }                                                            // restored a hand-dragged layout: honour it, skip the settle
+  if(!haveSaved && graphLayout==="flow"){ layoutFlow(nodes, links, er, flowDir); paint(); fitView(); }                 // layered flow (follows edge direction)
+  else if(haveSaved){
+    var unsaved=nodes.filter(function(n){ return !(savedLayout&&savedLayout[n.id]); });   // nodes added since the layout was saved (e.g. new registers) — settle just these into free space
+    if(unsaved.length){ nodes.forEach(function(n){ if(savedLayout&&savedLayout[n.id]){ n.fx=n.x; n.fy=n.y; } }); for(var us=0;us<240;us++){ physics(); alpha*=0.985; } nodes.forEach(function(n){ n.fx=null; n.fy=null; }); alpha=0; }
+    paint(); fitView();
+  }                                                            // restored a hand-dragged layout: honour it, skip the settle
   else if(er){ for(var es=0;es<320;es++){ physics(); alpha*=0.985; } alpha=0; paint(); fitView(); }        // ER: settle statically, then frame it all
   else if(graphFrozen){ for(var stp=0;stp<300;stp++){ physics(); alpha*=0.985; } alpha=0; paint(); fitView(); }  // default: settle + auto-fit, no jitter
   else { step(); }
@@ -1177,6 +1346,7 @@ function render(){
   if(state.tab!=="graph") graphSearchFn=null;   // drop the graph-search closure when off the graph tab
   var main=document.getElementById("main"), html;
   if(state.tab==="graph") html=viewGraph();
+  else if(state.tab==="edges") html=viewEdges();
   else if(state.tab==="slots") html=viewSlots();
   else if(state.tab==="decisions") html=viewDecisions();
   else if(state.tab==="data") html=state.relation?viewRelation(state.relation):viewData();
@@ -1198,7 +1368,7 @@ function route(){
   else if(h==="data"){state.tab="data";}
   else if(h==="manual"){state.tab="manual";}
   else if(h==="map"){state.tab="map";}
-  else if(h==="slots"||h==="decisions"||h==="graph"){state.tab=h;}
+  else if(h==="slots"||h==="decisions"||h==="graph"||h==="edges"){state.tab=h;}
   else {state.tab="graph";}   // empty / unknown hash → the relationship graph is the home page
   render();
 }
@@ -1210,34 +1380,13 @@ window.addEventListener("hashchange",route);
   if(bn) bn.textContent=(M.meta.source||"MAC")+" Ontology Explorer";
   var tag=document.getElementById("railtag");
   if(tag) tag.textContent="semantic model · "+M.meta.concept_count+" concepts";
-  // additive tabs self-hide when the source ships no data plane / no manual
+  // additive tabs self-hide when the source ships no edges / no data plane / no manual
+  if(!(M.edges&&M.edges.length)){var te=document.getElementById("tab-edges"); if(te) te.style.display="none";}
   if(!(M.relations&&M.relations.length)){var td=document.getElementById("tab-data"); if(td) td.style.display="none";}
   if(!(M.manual&&M.manual.markdown)){var tm=document.getElementById("tab-manual"); if(tm) tm.style.display="none";}
-  /* /ask cross-link — visible when the explorer is SERVED (relative, port-agnostic href) or when a server
-     base was baked in at build time (--ask-base, for opening the file directly). Opened as a local file
-     with no base -> the link stays hidden rather than dangling. Source drives ?src=<source>. */
-  var an=document.getElementById("asknav"), src=M.meta&&M.meta.source;
-  if(an && src){
-    var served=/^https?:$/.test(location.protocol);
-    var base=(window.ASK_BASE||"").replace(/\/+$/,"");
-    if(served||base){
-      an.href=(served?"":base+"/")+"ask.html?src="+encodeURIComponent(src);
-      an.title="Open the "+src+" /ask window";
-      an.hidden=false;
-    }
-  }
 })();
 
-/* theme toggle */
-(function(){
-  var btn=document.getElementById("themebtn");
-  btn.addEventListener("click",function(){
-    var cur=document.documentElement.getAttribute("data-theme");
-    var dark=cur?cur==="dark":window.matchMedia("(prefers-color-scheme:dark)").matches;
-    document.documentElement.setAttribute("data-theme", dark?"light":"dark");
-    savePrefs();
-  });
-})();
+/* theme toggle — now the UNIVERSAL toggleTheme() (head script), wired via the button's onclick; see ask.html */
 
 /* search */
 document.getElementById("search").addEventListener("input",function(e){
@@ -1245,6 +1394,7 @@ document.getElementById("search").addEventListener("input",function(e){
   if(state.tab==="graph"){ if(graphSearchFn) graphSearchFn(state.q); renderRail(); }  // graph: grey non-matches + frame the hit, no SVG re-init
   else if(state.tab==="map" && !state.concept) render();     // map grid filters live
   else if(state.tab==="data" && !state.relation) render();   // data grid filters live
+  else if(state.tab==="edges") render();                     // edges table filters live
   else renderRail();                                         // detail views: just filter the rail
 });
 
@@ -1252,6 +1402,10 @@ document.getElementById("search").addEventListener("input",function(e){
 document.getElementById("main").addEventListener("click",function(e){
   var t=e.target; if(t&&t.nodeType===3) t=t.parentNode;   // a click can land on a text node — walk up to the element
   if(!t||!t.closest) return;
+  var mc=t.closest("[data-mapclass]");   // Concepts tab: legend-glyph facet filter over the tile grid
+  if(mc){ e.preventDefault(); var _mc=mc.getAttribute("data-mapclass"); if(mapHideClass[_mc]) delete mapHideClass[_mc]; else mapHideClass[_mc]=true; render(); return; }
+  var mcf=t.closest("[data-mapclearfilters]");
+  if(mcf){ e.preventDefault(); mapHideClass={}; render(); return; }
   var gm=t.closest(".gmode");
   if(gm){ e.preventDefault(); graphMode=gm.getAttribute("data-mode"); graphFocus=null; focusHist=[]; savePrefs(); render(); return; }
   var nf=t.closest("[data-focus]");
@@ -1273,7 +1427,7 @@ document.getElementById("main").addEventListener("click",function(e){
   var ec=t.closest("[data-ercols]");
   if(ec){ e.preventDefault(); erCompact=!erCompact; savePrefs(); render(); return; }
   var ly=t.closest("[data-layout]");
-  if(ly){ e.preventDefault(); graphLayout=ly.getAttribute("data-layout"); savePrefs(); render(); return; }
+  if(ly){ e.preventDefault(); graphLayout=ly.getAttribute("data-layout"); if(graphPos[graphMode]) delete graphPos[graphMode]; savePrefs(); render(); return; }
   var fd=t.closest("[data-flowdir]");
   if(fd){ e.preventDefault(); flowDir=(flowDir==="lr")?"tb":"lr"; savePrefs(); render(); return; }
   var es=t.closest("[data-erstraight]");
