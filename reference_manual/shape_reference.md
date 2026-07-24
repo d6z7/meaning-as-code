@@ -106,7 +106,7 @@ concept:  # REQUIRED
   name: <…>  # REQUIRED · string · PascalCase ontology id — the single canonical identifier.
   label: <…>  # string
   german: <…>  # string
-  class: <…>  # REQUIRED · enum: entity | event | measure | enumeration | reference | grouping · The closed six-class vocabulary
+  class: <…>  # REQUIRED · enum: entity | event | measure | enumeration | reference | grouping | meta · The closed seven-class vocabulary
   definition: <…>  # string
   semantics:  # The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).  # closed: only keys above + x-*
     purpose: <…>  # string

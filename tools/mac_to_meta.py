@@ -267,7 +267,8 @@ def dataset_descriptors(tables: dict, source: str = "fpl") -> dict:
 # ============================================================================================
 
 _META_KIND = "meta-ontology"
-_META_CLASS = "{src}.class.meta"                 # the dedicated meaning-plane class the guardrail keys on
+_META_CLASS = "meta"                             # the framework's meaning-plane concept class (epic #86);
+#                                                  the guardrail keys on the meta_ prefix + route, not this
 _META_GOVERNING_RULE = "meta.model_property_channel"
 _META_GENERATED_BY = "meaning-as-code/tools/mac_to_meta.py::emit_meta_concepts"
 _META_NOTE = "GENERATED — do not hand-edit; regenerate from model.introspection.json."
