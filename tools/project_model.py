@@ -1013,7 +1013,7 @@ def _rule_ids_in(text, catalog_ids: set) -> list[str]:
     if not isinstance(text, str) or not text:
         return []
     hits = []
-    for rid in catalog_ids:
+    for rid in sorted(catalog_ids):          # sorted → deterministic rule_ids (catalog_ids is a set)
         i = text.find(rid)
         while i != -1:
             before = text[i - 1] if i > 0 else " "
