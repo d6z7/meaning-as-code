@@ -261,6 +261,27 @@ def _register_enum(doc: dict):
     return None
 
 
+def _value_domain_register(doc: dict):
+    """Register that realizes a dimension's VALUE DOMAIN (realized_by.udf == enum_from_register),
+    wherever the concept declares it — on the `values:` block (BodyType/FuelType/Segment), the
+    concept top level, the `concept:` block, or an enumeration. Returns (register_name, key_col)
+    or None. Names no source."""
+    vblock = doc.get("values")
+    candidates = [
+        (vblock or {}).get("realized_by") if isinstance(vblock, dict) else None,
+        doc.get("realized_by"),
+        (doc.get("concept") or {}).get("realized_by"),
+    ]
+    candidates += [en.get("realized_by") for en in (doc.get("enumerations") or []) if isinstance(en, dict)]
+    for rb in candidates:
+        if isinstance(rb, dict) and rb.get("udf") == "mac.canon.enum_from_register":
+            params = rb.get("params") or {}
+            reg = params.get("register")
+            if reg:
+                return str(reg), params.get("key_column", "code")
+    return None
+
+
 def _surface_for_stem(doc: dict, stem):
     """Multilingual surface synonyms for a measure stem, from any enumeration's aliasBlock.
     Generic: matches on the stem part of each alias key (no hardcoded default variant); None if absent."""
@@ -631,12 +652,31 @@ def dimensions_of(root: Path, model: dict) -> list[dict]:
                        count_offline_complete=complete)
             if note:
                 rec["count_note"] = note
+            # a reference dim may ALSO declare a small closed value domain (Platform: dim_model facet
+            # grounded, but its 8 platforms are registered) -> surface it for the meaning plane / meta_enum.
+            vd = _value_domain_register(doc)
+            if vd:
+                reg_name, key = vd
+                rec["enum_values"] = [{"value": r.get(key) or r.get("code"), "label": r.get("label")}
+                                      for r in _read_register(root, reg_name) if (r.get(key) or r.get("code"))]
             out.append(rec); continue
 
-        # (d) plain enumeration / open dim -> cardinality from the inline closed value set
-        vals = [v for v in (d.get("values") or []) if v.get("code")]
-        rec.update(grain=identity.get("canonical_key"), realized_from=None,
-                   cardinality={"values": len(vals)})
+        # (d) plain enumeration / open dim -> cardinality + the value LIST from the closed value set
+        # (so the meaning plane can answer "what body types / fuel classes / segments exist" -> meta_enum).
+        # Inline values first; if the domain is register-backed (BodyType/FuelType/Segment), resolve it.
+        vals = [{"code": v.get("code"), "label": v.get("label")}
+                for v in (d.get("values") or []) if v.get("code")]
+        realized = None
+        if not vals:
+            vd = _value_domain_register(doc)
+            if vd:
+                reg_name, key = vd
+                realized = f"data/lookups/{reg_name}.csv"
+                vals = [{"code": r.get(key) or r.get("code"), "label": r.get("label")}
+                        for r in _read_register(root, reg_name) if (r.get(key) or r.get("code"))]
+        rec.update(grain=identity.get("canonical_key"), realized_from=realized,
+                   cardinality={"values": len(vals)},
+                   enum_values=[{"value": v.get("code"), "label": v.get("label")} for v in vals])
         out.append(rec)
     return out
 
