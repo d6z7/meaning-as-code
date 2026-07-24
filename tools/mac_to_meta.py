@@ -319,6 +319,34 @@ _META_CONCEPTS = {
      "clusters — these are READ from {src}.meta_dimensions / {src}.meta_brand_members, never hand-written "
      "and never computed off the warehouse plane."),
  },
+ "Enum": {
+   "label": "Enum value (closed value domain)",
+   "identity": {"kind": "code", "canonical_key": "value"},
+   "relations": [("meta_enum", ["concept", "value"])],
+   "roles": {
+     "concept": "dimension", "value": "dimension", "label": "attribute"},
+   "definition": (
+     "A member of a closed VALUE DOMAIN the FPL model defines — the actual enumerable values of a "
+     "categorical dimension (the body types, fuel classes, vehicle segments, platforms, brands, plan "
+     "stages, …), each with its human LABEL. The subject is the MODEL's own value register, reflected as "
+     "a queryable relation ({src}.meta_enum): one row per (concept, value). The set of valid values for a "
+     "dimension is READ from meta_enum — never enumerated as SQL string literals in an answer, and never "
+     "scraped with SELECT DISTINCT off a warehouse fact/dim."),
+   "grain": (
+     "one row per (concept, value) in {src}.meta_enum; `concept` is the dimension name (e.g. 'BodyType', "
+     "'FuelType', 'VehicleSegment', 'VehicleModelPlatform'), `value` its code, `label` the description. "
+     "All columns VARCHAR."),
+   "answers": (
+     "what values a categorical dimension can take — which body types / fuel classes / segments / "
+     "platforms / brands / plan stages EXIST, how many there are, and what each code MEANS (its label)."),
+   "example": (
+     "SELECT value, label FROM {src}.meta_enum WHERE concept = 'BodyType' ORDER BY value;\n"
+     "SELECT concept, count(*) AS n FROM {src}.meta_enum GROUP BY concept ORDER BY concept;"),
+   "never": (
+     "Enumerating a dimension's valid values as SQL string literals, or scraping them with SELECT DISTINCT "
+     "off a warehouse fact/dim (dim_model, the fact) — the closed value domain is READ from {src}.meta_enum "
+     "(the meaning plane), never off the data plane (two-planes-never-mixed)."),
+ },
  "RegionDefinition": {
    "label": "Region Definition",
    "identity": {"kind": "namespace_code", "canonical_key": "region_definition_used"},
