@@ -24,6 +24,23 @@ def _j(x):
     return None if x is None else json.dumps(x, ensure_ascii=False, sort_keys=True)
 
 
+_MAC_VOCAB = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
+
+
+def _framework_schema_version(default: str = "0.1.13") -> str:
+    """The MAC framework's CURRENT schema version, read generically from mac_vocabulary.yaml
+    (metadata.version) — the same source validate_schema.py's CURRENT tracks and the version pre-flight
+    gate enforces. Generated meta concepts declare it so they are gated (not silently skipped). Falls
+    back to `default` if the vocab is absent/unreadable, so emit never crashes offline."""
+    try:
+        import yaml
+        doc = yaml.safe_load(_MAC_VOCAB.read_text(encoding="utf-8")) or {}
+        v = (doc.get("metadata") or {}).get("version")
+        return str(v) if v else default
+    except Exception:
+        return default
+
+
 # --- table extractors: introspection dict -> list[row dict]. One per meta_* table. ------------------
 
 def t_measures(d):
@@ -207,6 +224,29 @@ def grounding_yaml(tables: dict, source: str = "fpl") -> str:
       },
     }
     return _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)
+
+
+def dataset_descriptors(tables: dict, source: str = "fpl") -> dict:
+    """{table_name: yaml_text} — a Physical-layer schema-of-record descriptor per meta_* relation, the
+    twin of the warehouse dim descriptors (data/datasets/<rel>.yaml). The shapes gate resolves a grounded
+    concept's columns CROSS-FILE from these (check_shapes.grounded_columns_for_relation); without them the
+    meaning-plane concepts fail field-roles-grounded. Columns AUTO-derived from the reflection in DDL
+    order; all VARCHAR (the meaning plane is descriptive). Generated — never hand-edited."""
+    import yaml as _yaml
+    sv = _framework_schema_version()
+    out = {}
+    for name, rows in tables.items():
+        doc = {
+          "metadata": {
+            "table": name, "source": source.upper(), "schema_version": sv, "status": "deployed",
+            "generated_by": "meaning-as-code/tools/mac_to_meta.py::dataset_descriptors",
+            "note": "GENERATED — do not hand-edit; regenerate from model.introspection.json.",
+            "owner": "data-platform-team"},
+          "table": {"name": name, "schema": source, "type": "view", "confidence": "C"},
+          "columns": [{"name": c, "type": "string", "confidence": "C"} for c in _ordered_columns(rows)],
+        }
+        out[name] = _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)
+    return out
 
 
 # ============================================================================================
@@ -572,8 +612,8 @@ def _concept_doc(name, spec, tables, source):
     identity = dict(spec["identity"])
     return {
       "metadata": {
-        "concept": name, "source": source.upper(), "kind": _META_KIND,
-        "generated_by": _META_GENERATED_BY, "note": _META_NOTE},
+        "concept": name, "source": source.upper(), "schema_version": _framework_schema_version(),
+        "kind": _META_KIND, "generated_by": _META_GENERATED_BY, "note": _META_NOTE},
       "concept": {
         "name": name, "label": spec["label"], "class": _sub(_META_CLASS, source),
         "identity": identity, "definition": _sub(spec["definition"], source)},
