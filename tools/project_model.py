@@ -278,6 +278,23 @@ def _surface_for_stem(doc: dict, stem):
     return None
 
 
+def _definition_for_stem(doc: dict, stem):
+    """Per-measure prose definition for a stem, from an enumeration aliasBlock entry's `definition:` field.
+    Generic: matches on the stem part of each alias key; None if absent. (Mirrors _surface_for_stem.)"""
+    if not stem:
+        return None
+    for en in (doc.get("enumerations") or []):
+        if not isinstance(en, dict):
+            continue
+        amap = ((en.get("aliases") or {}).get("map")) or {}
+        for code, entry in amap.items():
+            if isinstance(code, str) and code.split(".")[0] == stem and isinstance(entry, dict):
+                d = entry.get("definition")
+                if isinstance(d, str) and d.strip():
+                    return d.strip()
+    return None
+
+
 def _additivity_from_type(law: dict, measure_type):
     """Resolve (type_key, {time, categorical}) from a mac.MeasureType token via the framework law.
     (None, None) when no type is declared; (type_key, None) when the law lacks that member."""
@@ -348,7 +365,8 @@ def measures_of(root: Path, model: dict | None = None) -> list[dict]:
                     axis_kinds=axis_kinds, variants=b["variants"], kpi_codes=b["codes"],
                     closure=en.get("closure"), grounds_relation=grounds_relation,
                     identity=identity, realized_from=f"data/lookups/{register}.csv",
-                    surface=_surface_for_stem(doc, b["stem"]), definition=None))
+                    surface=_surface_for_stem(doc, b["stem"]),
+                    definition=_definition_for_stem(doc, b["stem"])))
             continue
 
         # ---- kind 2: inline typed enumeration ----
