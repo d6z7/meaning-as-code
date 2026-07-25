@@ -13,9 +13,9 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.13'
+  version: '0.1.14'
   status: active
-  defines: [aggregation_effect, axis_kind, MeasureType, rule_kind, canon, identity_kind]
+  defines: [aggregation_effect, axis_kind, binding_mode, MeasureType, rule_kind, canon, identity_kind]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -42,6 +42,23 @@ axis_kind:
   terms:
     time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
     categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+
+# ===========================================================================
+# mac.binding_mode — HOW a question binds a dimension: the ROLE a referenced dimension plays in the query.
+# This is the categorial answer to "GROUP BY or not". It is a PER-QUESTION classification the interpreter
+# assigns to every dimension token (not an intrinsic property a concept declares — its neighbours axis_kind
+# and MeasureType are intrinsic; this one types a runtime decision). The grain LAW is stated ONCE over these
+# two modes (measure.grain_mandatory), so it is universal: a rule rules over the MODE, never over the
+# instance (a specific member, or a specific way a member-set is spelled). Set cardinality is irrelevant —
+# a scope resolving to many members is still one restrict binding, not a partition.
+# ===========================================================================
+binding_mode:
+  kind: vocabulary
+  closed: true
+  description: The role a question binds a dimension with — restrict (a member-set scope) vs partition (a per-member breakdown axis).
+  terms:
+    restrict:  "A member or member-SET is named as a SCOPE (one value or many, however the set is derived or expanded). It constrains WHERE and does NOT enter GROUP BY; its folded members are disclosed under ASSUMPTIONS, never spread into result rows. Cardinality-agnostic: a set of many members is still one filter."
+    partition: "The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter."
 
 # ===========================================================================
 # mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
