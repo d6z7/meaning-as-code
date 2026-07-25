@@ -13,7 +13,7 @@
 metadata:
   registry: mac_vocabulary
   namespace: mac
-  version: '0.1.14'
+  version: '0.1.13'
   status: active
   defines: [aggregation_effect, axis_kind, binding_mode, MeasureType, rule_kind, canon, identity_kind]
 
