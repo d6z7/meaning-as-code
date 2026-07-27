@@ -3,6 +3,9 @@
   /* universal theme selector — the SAME mechanism as ask.html (global localStorage 'mac_theme'), so the
      theme choice carries across the Ask and Explorer views. Sets data-theme before first paint (no flash). */
   (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+  /* Embedded in the /ask shell iframe? The shell already renders the .macbar, so hide OUR duplicate.
+     Standalone (a cmd/ctrl-click'd fresh tab, top-level) keeps its own bar. Set pre-paint (no flash). */
+  if (window.top !== window.self) document.documentElement.classList.add('embedded');
   function toggleTheme(){ var c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = c; localStorage.setItem('mac_theme', c); var b = document.getElementById('themebtn'); if (b) b.textContent = c === 'dark' ? '☀' : '🌙'; }
   addEventListener('DOMContentLoaded', function(){ var b = document.getElementById('themebtn'); if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙'; });
 </script>
@@ -53,6 +56,8 @@ code,.mono{font-family:var(--mono);font-size:.86em}
 .tnum{font-variant-numeric:tabular-nums}
 
 /* shared macOS-style menu bar (sticky top line); mirrors ask.html's .macbar */
+/* When embedded in the /ask shell iframe the shell owns the bar — hide our duplicate (set by the head script). */
+:root.embedded .macbar{display:none}
 .macbar{position:sticky;top:0;z-index:1000;height:40px;display:flex;align-items:center;justify-content:space-between;
   gap:16px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
 .macbar .mb-left,.macbar .mb-right{display:flex;align-items:center}
