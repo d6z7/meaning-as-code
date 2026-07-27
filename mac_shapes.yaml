@@ -16,13 +16,13 @@
 # names a field the grounded table does not actually expose is a real gap — surfaced here, not hidden.
 shapes:
   - id: concept-class-closed
-    description: a concept's class must be one of the closed six-class vocabulary
+    description: a concept's class must be one of the closed seven-class vocabulary
     target: concept
     severity: error
     constraint:
       kind: in
       path: concept.class
-      values: [entity, event, measure, enumeration, reference, grouping]
+      values: [entity, event, measure, enumeration, reference, grouping, meta]
 
   - id: measure-declares-additivity
     description: a measure concept must declare its per-axis additivity (the SUM footgun-preventer)

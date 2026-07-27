@@ -3,6 +3,9 @@
   /* universal theme selector — the SAME mechanism as ask.html (global localStorage 'mac_theme'), so the
      theme choice carries across the Ask and Explorer views. Sets data-theme before first paint (no flash). */
   (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+  /* Embedded in the /ask shell iframe? The shell already renders the .macbar, so hide OUR duplicate.
+     Standalone (a cmd/ctrl-click'd fresh tab, top-level) keeps its own bar. Set pre-paint (no flash). */
+  if (window.top !== window.self) document.documentElement.classList.add('embedded');
   function toggleTheme(){ var c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = c; localStorage.setItem('mac_theme', c); var b = document.getElementById('themebtn'); if (b) b.textContent = c === 'dark' ? '☀' : '🌙'; }
   addEventListener('DOMContentLoaded', function(){ var b = document.getElementById('themebtn'); if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙'; });
 </script>
@@ -53,6 +56,8 @@ code,.mono{font-family:var(--mono);font-size:.86em}
 .tnum{font-variant-numeric:tabular-nums}
 
 /* shared macOS-style menu bar (sticky top line); mirrors ask.html's .macbar */
+/* When embedded in the /ask shell iframe the shell owns the bar — hide our duplicate (set by the head script). */
+:root.embedded .macbar{display:none}
 .macbar{position:sticky;top:0;z-index:1000;height:40px;display:flex;align-items:center;justify-content:space-between;
   gap:16px;padding:0 14px;background:var(--surface);border-bottom:1px solid var(--border)}
 .macbar .mb-left,.macbar .mb-right{display:flex;align-items:center}
@@ -171,6 +176,18 @@ details.prose summary::before{content:"\25B8";color:var(--faint);font-size:10px;
 details.prose[open] summary::before{transform:rotate(90deg)}
 details.prose .ptext{font-size:13px;color:var(--muted);line-height:1.58;padding:9px 2px 2px;max-width:76ch}
 .prose-why summary{color:var(--accent)}
+/* explain-in-plain-english panel — model narration (POST /explain) grounded in the rule's fields + cross-refs;
+   deterministic field-level summary is the offline/error fallback */
+.prose-explain summary{color:var(--commit)}
+.prose-explain summary::after{content:"grounded · on demand";margin-left:8px;font-size:10px;
+  font-weight:600;color:var(--faint);letter-spacing:.02em;text-transform:none}
+.prose-explain .ptext p{margin:0 0 8px} .prose-explain .ptext p:last-child{margin-bottom:0}
+.prose-explain .ptext b{color:var(--ink);font-weight:650}
+.xp-hint{color:var(--faint);font-style:italic}
+.xp-spin{color:var(--muted)} .xp-spin::before{content:"◌ ";animation:xpspin 1s linear infinite;display:inline-block}
+@keyframes xpspin{to{transform:rotate(360deg)}}
+.xp-attr{margin-top:9px;padding-top:7px;border-top:1px dashed var(--border);font-size:10.5px;color:var(--faint);letter-spacing:.02em}
+.xp-attr.xp-warn{color:var(--ask)}
 
 .matrix-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
 table.matrix{border-collapse:collapse;font-size:12px;width:100%}
@@ -585,6 +602,133 @@ function viewMap(){
     +'<div class="grid" style="margin-top:16px">'+(tiles||'<p class="empty">No concept matches the current filter.</p>')+'</div>'
     +cfgFrame;
 }
+/* ---------- plain-English explainers (Option A: narrate the rule's OWN fields, no model call) ---------- */
+function joinList(a){a=a||[];if(a.length===0)return"";if(a.length===1)return a[0];
+  return a.slice(0,-1).join(", ")+" and "+a[a.length-1];}
+// render_kind -> how the measure is actually computed, in plain words. Unknown kinds degrade to "".
+var RENDER_KIND_EN={
+  sql_expression:"It is calculated on demand by injecting a SQL expression into the query at run time",
+  derived_set:"It is calculated as a set-membership test injected into the query at run time",
+  snapshot_filter:"It is calculated by filtering rows to a point-in-time snapshot",
+  sql_view:"It is read from a pre-built gold-layer SQL view rather than recomputed each time",
+  spec_only:"It has no fixed SQL form — an agent generates the query from the description"
+};
+// A derived measure (root rules.yaml): narrate over / render_kind / conditions / validated_against.
+// The authored `logic` is already shown on the card face, so this panel translates the MACHINE metadata to English.
+function explainDerived(m){
+  var ps=[], name=m.derives||m.id;
+  var overLabels=(m.over||[]).map(function(t){var c=byId(t);return esc(c?c.label:t);});
+  var lead="<b>"+esc(name)+"</b>"+((m.id&&m.derives)?' (rule <span class="mono">'+esc(m.id)+"</span>)":"")
+    +" is a value the ontology derives"+(overLabels.length?" over "+joinList(overLabels):"")+".";
+  ps.push(lead);
+  if(RENDER_KIND_EN[m.render_kind]) ps.push(RENDER_KIND_EN[m.render_kind]+".");
+  if(m.conditions&&m.conditions.length)
+    ps.push((m.conditions.length===1?"One condition":m.conditions.length+" conditions")
+      +" must hold for the result to be valid — see <b>Conditions</b> below.");
+  if(m.validated_against&&m.validated_against.length)
+    ps.push("It has been validated against "+joinList(m.validated_against.map(esc))+".");
+  if(m.confidence) ps.push("Authoring confidence: grade <b>"+esc(m.confidence)+"</b>.");
+  return ps.map(function(p){return "<p>"+p+"</p>";}).join("");
+}
+// A when/then/never rule (concept contract or query_rules): lead with what its decision lane MEANS operationally.
+var LANE_EN={
+  ASK:"This is an <b>ASK</b> rule — when its trigger arises the engine must stop and ask the user rather than guess.",
+  COMMIT:"This is a <b>COMMIT</b> rule — the engine applies it automatically, no question asked.",
+  REFUSE:"This is a <b>REFUSE</b> rule — it blocks a query the ontology treats as unanswerable or wrong.",
+  INVARIANT:"This is an <b>INVARIANT</b> — a guarantee the ontology holds to at all times."
+};
+function explainRuleNL(r){
+  var ps=[];
+  if(LANE_EN[r.decision]) ps.push(LANE_EN[r.decision]);
+  if(r.when) ps.push("<b>It fires when:</b> "+esc(r.when));
+  if(r.then) ps.push("<b>Then it:</b> "+esc(r.then));
+  if(r.never) ps.push("<b>It never:</b> "+esc(r.never));
+  if(r.binds&&r.binds.length) ps.push("<b>It binds to:</b> "+joinList(r.binds.map(esc))+".");
+  if(ps.length===0) return "";
+  return ps.map(function(p){return "<p>"+p+"</p>";}).join("");
+}
+/* ---------- on-demand NL explanation (POST /explain), GROUNDED by a bundle built from THIS model ----------
+   When a runtime server is on this origin, the panel resolves the rule's cross-references from MAC_MODEL,
+   POSTs that bundle to /explain, and the model narrates it. The deterministic field-level summary above is
+   kept as the OFFLINE / error fallback, so the panel always shows something useful (no server -> no blank). */
+var XP_SERVED = location.protocol.indexOf("http")===0;   // a runtime server shares this origin
+var XP_BUNDLES = {};                                     // panel id -> resolved grounding bundle
+var XP_N = 0, XP_RULES = null;
+function xpAllRules(){                                    // flat id-index across contract / query / derived rules
+  if(XP_RULES) return XP_RULES;
+  XP_RULES=[];
+  (M.general_rules||[]).forEach(function(r){ XP_RULES.push({id:r.id, kind:"query"}); });
+  (M.concepts||[]).forEach(function(c){ (c.rules||[]).forEach(function(r){ XP_RULES.push({id:r.id, kind:"contract", on:c.id}); }); });
+  (M.derived_measures||[]).forEach(function(m){ XP_RULES.push({id:m.id, kind:"derived"}); });
+  return XP_RULES;
+}
+// referenced rules = other rules whose id is NAMED in this rule's own text (a Never clause routing to
+// region.resolve.named_definition, a hand-off, a forbidden sibling). Deterministic substring match on the id.
+function xpRefs(selfId, text){
+  text=String(text||"");
+  return xpAllRules().filter(function(x){ return x.id && x.id!==selfId && text.indexOf(x.id)>=0; })
+    .map(function(x){ return {id:x.id, kind:x.kind, on:x.on||null}; });
+}
+function xpConcept(id){ var c=byId(id); return c?{id:c.id, label:c.label, klass:c.klass, definition:c.definition||""}:{token:id, in_model:false}; }
+function xpDerivedBundle(m){
+  var text=[m.logic,(m.conditions||[]).join(" ")].join(" ");
+  var sib=(M.derived_measures||[]).filter(function(d){ return d.id!==m.id && (d.over||[]).some(function(o){ return (m.over||[]).indexOf(o)>=0; }); })
+            .map(function(d){ return {id:d.id, derives:d.derives}; });
+  return { source:(M.meta&&M.meta.source)||"", rule_kind:"derived_measure",
+    rule:{id:m.id, derives:m.derives, over:m.over, render_kind:m.render_kind, logic:m.logic,
+          conditions:m.conditions, validated_against:m.validated_against, confidence:m.confidence},
+    reads_concepts:(m.over||[]).map(xpConcept), sibling_measures_over_same_concept:sib,
+    referenced_rules:xpRefs(m.id, text) };
+}
+function xpRuleBundle(r){
+  var text=[r.when,r.then,r.never,r.purpose].join(" ");
+  return { source:(M.meta&&M.meta.source)||"", rule_kind:"decision_rule",
+    rule:{id:r.id, subject:r.subject, decision:r.decision, when:r.when, then:r.then, never:r.never,
+          binds:r.binds, confidence:r.confidence, scope:r.scope, purpose:r.purpose},
+    binds_concepts:(r.binds||[]).map(xpConcept), referenced_rules:xpRefs(r.id, text) };
+}
+function xpHash(s){ var h=5381,i=s.length; while(i) h=(h*33)^s.charCodeAt(--i); return (h>>>0).toString(36); }
+function xpKey(b){ return "macxp_"+(b.source||"x")+"_"+((b.rule&&b.rule.id)||"")+"_"+xpHash(JSON.stringify(b.rule)); }
+// SAFE mini-markdown: escape FIRST (no raw HTML survives), then **bold** / *italic* / paragraph + line breaks.
+function xpMd(t){ var e=esc(String(t||"")).replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/(^|[^*])\*([^*]+)\*/g,"$1<i>$2</i>");
+  return e.split(/\n{2,}/).map(function(p){ return "<p>"+p.replace(/\n/g,"<br>")+"</p>"; }).join(""); }
+function explainPanel(kind, item){
+  var fallback = kind==="derived" ? explainDerived(item) : explainRuleNL(item);
+  if(!fallback && !XP_SERVED) return "";
+  var id="xp"+(XP_N++);
+  XP_BUNDLES[id] = kind==="derived" ? xpDerivedBundle(item) : xpRuleBundle(item);
+  var body = XP_SERVED ? '<div class="xp-hint">Open to generate a plain-English explanation from this rule and its cross-references.</div>' : fallback;
+  return '<details class="prose prose-explain" data-xp="'+id+'"><summary>Explain — in plain English</summary>'
+    +'<div class="ptext" id="xpbody-'+id+'" data-fallback="'+encodeURIComponent(fallback||"")+'">'+body+'</div></details>';
+}
+function xpRender(body, nl, model, cached){
+  body.innerHTML = xpMd(nl) + '<div class="xp-attr">generated'+(model?" · "+esc(model):"")+(cached?" · cached":"")
+    +" · grounded in this rule's fields + cross-references</div>";
+}
+function xpFallback(body, why){
+  var fb=decodeURIComponent(body.getAttribute("data-fallback")||"");
+  body.removeAttribute("data-loaded");                                  // allow a retry on next open
+  body.innerHTML = (fb||"<p>No field-level summary available.</p>")
+    +'<div class="xp-attr xp-warn">model unavailable — showing field-level summary'+(why?" ("+esc(why)+")":"")+"</div>";
+}
+// toggle does NOT bubble -> capture-phase listener; lazy-generates on first open, caches per rule-content hash.
+document.addEventListener("toggle", function(ev){
+  var d=ev.target; if(!d.matches||!d.matches("details.prose-explain[data-xp]")||!d.open) return;
+  var id=d.getAttribute("data-xp"), body=document.getElementById("xpbody-"+id);
+  if(!body || body.getAttribute("data-loaded") || !XP_SERVED) return;
+  var bundle=XP_BUNDLES[id]; if(!bundle) return;
+  var cache=null; try{ cache=JSON.parse(localStorage.getItem(xpKey(bundle))||"null"); }catch(e){}
+  if(cache && cache.nl){ xpRender(body, cache.nl, cache.model, true); body.setAttribute("data-loaded","1"); return; }
+  body.setAttribute("data-loaded","1");
+  body.innerHTML='<div class="xp-spin">Generating explanation…</div>';
+  fetch("/explain",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({bundle:bundle})})
+    .then(function(res){ return res.json(); })
+    .then(function(j){
+      if(j && j.nl){ xpRender(body, j.nl, j.model, false); try{ localStorage.setItem(xpKey(bundle), JSON.stringify({nl:j.nl, model:j.model})); }catch(e){} }
+      else xpFallback(body, (j&&j.error)||"no explanation returned"); })
+    .catch(function(err){ xpFallback(body, String(err&&err.message||err)); });
+}, true);
+
 /* ---------- derived-measure card (root rules.yaml) ---------- */
 function overToken(t){
   var c=byId(t);
@@ -605,7 +749,7 @@ function derivedCard(m){
     +(m.render_kind?'<span class="chip mono">'+esc(m.render_kind)+'</span>':'')+'</div>'
     +(over?'<div class="d-over"><span class="ol">over</span>'+over+'</div>':'')
     +(m.logic?'<div class="d-logic">'+esc(m.logic)+'</div>':'')
-    +va+tpl+cond+'</div>';
+    +va+explainPanel("derived", m)+tpl+cond+'</div>';
 }
 
 /* ---------- rule card ---------- */
@@ -618,7 +762,7 @@ function ruleCard(r){
   if(r.binds && r.binds.length){
     binds='<div class="binds"><span class="bl">binds</span>'+r.binds.map(function(b){return '<span class="chip mono">'+esc(b)+'</span>';}).join("")+'</div>';
   }
-  var prose="";
+  var prose=explainPanel("rule", r);
   if(r.purpose) prose+='<details class="prose prose-why"><summary>Why — plain language</summary><div class="ptext">'+esc(r.purpose)+'</div></details>';
   if(r.genesis) prose+='<details class="prose"><summary>History — how this rule came to be</summary><div class="ptext">'+esc(r.genesis)+'</div></details>';
   return '<div class="rule '+r.decision+'">'

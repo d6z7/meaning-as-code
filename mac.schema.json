@@ -1123,9 +1123,10 @@
                 "measure",
                 "enumeration",
                 "reference",
-                "grouping"
+                "grouping",
+                "meta"
               ],
-              "description": "The closed six-class vocabulary. Never invent a seventh."
+              "description": "The closed seven-class vocabulary. `meta` is the meaning-plane class (epic #86): a concept whose SUBJECT is the model itself, grounded only on the reflected meta_* relations. The two-planes guardrail keys on the meta_ table prefix + MODEL_PROPERTY route, not the class."
             },
             "definition": {
               "type": "string"
