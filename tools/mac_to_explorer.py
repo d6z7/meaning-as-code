@@ -600,6 +600,8 @@ def main():
     if not TEMPLATE.exists():
         sys.exit("mac_to_explorer: template not found at %s" % TEMPLATE)
     tpl = TEMPLATE.read_text(encoding="utf-8")
+    # inject the shared graph engine verbatim into its marker (same IIFE scope as before)
+    tpl = tpl.replace("/*__GRAPH_ENGINE__*/", (HERE / "graph_engine.js").read_text(encoding="utf-8"))
     # inject the /ask base FIRST, on the model-free template, so nothing in the model JSON can collide
     tpl = tpl.replace("/*__ASK_BASE__*/", (a.ask_base or "").strip().replace("\\", "\\\\").replace('"', '\\"'))
     data = json.dumps(model, ensure_ascii=False).replace("</", "<\\/")
