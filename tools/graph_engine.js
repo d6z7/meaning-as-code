@@ -34,8 +34,22 @@ function buildLineageGraph(mode, LM){
     var owners={};
     (LM.datasets||[]).forEach(function(d){ (d.columns||[]).forEach(function(c){ if(c.role==="primary_key"){ (owners[c.name]=owners[c.name]||[]).push(d.name); } }); });
     Object.keys(owners).forEach(function(k){ var ds=owners[k]; for(var i=1;i<ds.length;i++){ link("ds:"+ds[0],"ds:"+ds[i],"flow"); } });
+  } else if(mode==="lineage-downstream" || mode==="lineage-upstream"){
+    // COLUMN-LEVEL lineage: source columns -> dataset columns, coloured by edge kind. Direction flips
+    // for upstream (dataset on the left, traced back to its sources). Columns deduped per (table,col).
+    var up=(mode==="lineage-upstream");
+    flows.forEach(function(f){
+      var ds=(f.dataset&&f.dataset.name)||f.id;
+      (f.edges||[]).forEach(function(e){
+        var srcT=e.src_table||"?", scId="sc:"+srcT+"."+e.src_col, dcId="dc:"+ds+"."+e.to_col;
+        node(scId,"source",e.src_col+"  ·  "+srcT, up?1:0, srcT);
+        node(dcId,"dataset",e.to_col+"  ·  "+ds, up?0:1, ds);
+        if(up) link(dcId,scId,e.kind); else link(scId,dcId,e.kind);
+      });
+      (f.derived||[]).forEach(function(d){ var dcId="dc:"+ds+"."+d.to_col; node(dcId,"dataset",d.to_col+"  ·  "+ds, up?0:1, ds+" ("+(d.kind||"derived")+")"); });
+    });
   } else {
-    return {nodes:[],links:[]};   // downstream / upstream — column-level view, follow-up increment
+    return {nodes:[],links:[]};
   }
   var out=[]; Object.keys(nodes).forEach(function(k){ out.push(nodes[k]); });
   return {nodes:out, links:links};
@@ -153,7 +167,8 @@ function layoutFlow(nodes, links, er, dir){
 }
 function viewGraph(){
   var modes=[["ontology","Ontology"],["data","Data plane"],["both","Bindings"],["er","ER"],["rules","Rules"]];
-  var toggle='<div class="gmodes">'+modes.map(function(m){
+  // the lineage plane switches its 4 VIEWS from the left rail (state.lineageView), not this plane toggle.
+  var toggle=isLineageMode(graphMode)?"":'<div class="gmodes">'+modes.map(function(m){
     return '<a class="gmode'+(graphMode===m[0]?" active":"")+'" data-mode="'+m[0]+'" href="#graph">'+esc(m[1])+'</a>';}).join("")+'</div>';
   function eLeg(label,extra,kind){return '<div class="li'+(kind&&graphHideKinds[kind]?" off":"")+'"'+(kind?' data-edgekind="'+kind+'"':'')+'><svg width="24" height="8"><line x1="1" y1="4" x2="23" y2="4" '+extra+'/></svg>'+label+'</div>';}
   var clsLeg=CLASSES.map(function(k){return '<div class="li'+(graphHideCat[k]?" off":"")+'" data-nodecat="'+esc(k)+'">'+classDot(k)+CLASS_GLYPH[k]+' '+k+'</div>';}).join("");
@@ -172,6 +187,16 @@ function viewGraph(){
     var reLeg=["governed_by","applies_to","on_concept","derives","over","validated_against","cross_reference","locks"].filter(function(k){return presentE[k];}).map(function(k){
       var re=RULE_EDGE[k]; return eLeg(RULE_EDGE_LABEL[k],'stroke="'+re[0]+'" stroke-width="'+Math.max(re[1],1.4)+'"'+(re[2]?' stroke-dasharray="'+re[2]+'"':''),k);}).join("");
     leg=rspLeg+sep+reLeg;
+  }
+  else if(isLineageMode(graphMode)){
+    var _lg=buildGraphData(graphMode), lpresent={}, lpresentE={};
+    _lg.nodes.forEach(function(n){lpresent[n.klass]=1;}); _lg.links.forEach(function(l){lpresentE[l.kind]=1;});
+    var lrLeg=LINEAGE_ROLES.filter(function(r){return lpresent["lin_"+r[0]];}).map(function(r){
+      var cat="lin_"+r[0];
+      return '<div class="li'+(graphHideCat[cat]?" off":"")+'" data-nodecat="'+esc(cat)+'"><span class="lane-dot" style="background:'+r[2]+'"></span>'+esc(r[1])+'</div>';}).join("");
+    var lkLeg=Object.keys(LINEAGE_KIND).filter(function(k){return lpresentE[k];}).map(function(k){
+      var lk=LINEAGE_KIND[k]; return eLeg(LINEAGE_KIND_LABEL[k]||k,'stroke="'+lk[0]+'" stroke-width="'+Math.max(lk[1],1.4)+'"'+(lk[2]?' stroke-dasharray="'+lk[2]+'"':''),k);}).join("");
+    leg=lrLeg+sep+lkLeg;
   }
   else leg=clsLeg+relLeg+sep+eLeg("relation",'stroke="var(--accent)" stroke-width="1.8"',"orel")+eLeg("rolls up",'stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4"',"hierarchy")+eLeg("binds",'stroke="var(--commit)" stroke-width="1.6" stroke-dasharray="2 4"',"binding")+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
   var full=buildGraphData(graphMode), focusHdr="", connects="";
