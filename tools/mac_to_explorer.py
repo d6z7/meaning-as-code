@@ -465,6 +465,15 @@ def build_rule_graph(concepts, general, policy, derived, relations, governance):
         if gov:
             link(gov, "der:%s" % rid, "locks")
 
+    # fixed species LANES (like the design proposal): governance -> slot -> query_rule -> contract_rule
+    # -> derivation -> view -> concept -> dq, left to right. The renderer honors this as the column rank
+    # so the plane reads as clean lanes instead of the generic edge-longest-path ranking (which collapses
+    # this shallow graph into a few crowded columns).
+    RG_RANK = {"governance": 0, "slot": 1, "query_rule": 2, "contract_rule": 3,
+               "derivation": 4, "view": 5, "concept": 6, "dq": 7}
+    for n in nodes.values():
+        n["rank"] = RG_RANK.get(n["kind"], 3)
+
     return {"nodes": list(nodes.values()), "links": links,
             "stats": {"nodes": len(nodes), "links": len(links)}}
 

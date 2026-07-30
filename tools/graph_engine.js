@@ -11,7 +11,7 @@ function buildGraphData(mode){
       // klass drives the facet-category key; prefix "rk_" so a rules-plane species (e.g. "view") never
       // collides with a data-plane REL_GROUP of the same name on the session-shared graphHideCat.
       return {id:n.id,label:n.label,klass:"rk_"+n.kind,kind:"concept",color:RULE_NODE_COLOR[n.kind]||"var(--muted)",
-              rules:0,href:"#graph",rgkind:n.kind,rkind:n.rkind||"",severity:n.severity||"",policy:n.policy||"",detail:n.detail||""};
+              rules:0,href:"#graph",rgkind:n.kind,rkind:n.rkind||"",severity:n.severity||"",policy:n.policy||"",detail:n.detail||"",rank:n.rank};
     });
     var rl=(rg.links||[]).map(function(l){return {source:l.source,target:l.target,kind:l.kind,label:""};});
     return {nodes:rn, links:rl};
@@ -70,12 +70,21 @@ function layoutFlow(nodes, links, er, dir){
     var k=l.s.id+">"+l.t.id; if(seen[k]) return; seen[k]=1;
     out[l.s.id].push(l.t.id); inn[l.t.id].push(l.s.id); indeg[l.t.id]++;
   });
-  var ind={}, q=[], order=[];                                   // Kahn topological order (cycle-safe: remnants appended)
-  nodes.forEach(function(n){ ind[n.id]=indeg[n.id]; if(!ind[n.id]) q.push(n.id); });
-  while(q.length){ var u=q.shift(); order.push(u); out[u].forEach(function(v){ if(--ind[v]===0) q.push(v); }); }
-  nodes.forEach(function(n){ if(order.indexOf(n.id)<0) order.push(n.id); });
-  var rank={}; nodes.forEach(function(n){ rank[n.id]=0; });      // longest-path rank
-  order.forEach(function(u){ out[u].forEach(function(v){ if(rank[u]+1>rank[v]) rank[v]=rank[u]+1; }); });
+  var rank={};
+  var preRanked = nodes.length && nodes.every(function(n){ return isFinite(n.rank); });
+  if(preRanked){                                                // caller supplied fixed lanes (e.g. rule species)
+    var used={}; nodes.forEach(function(n){ used[n.rank]=1; });
+    var uniq=Object.keys(used).map(Number).sort(function(a,b){ return a-b; });
+    var remap={}; uniq.forEach(function(r,i){ remap[r]=i; });   // compact away empty lanes (absent species)
+    nodes.forEach(function(n){ rank[n.id]=remap[n.rank]; });    // barycenter (below) still orders within each lane
+  } else {
+    var ind={}, q=[], order=[];                                 // Kahn topological order (cycle-safe: remnants appended)
+    nodes.forEach(function(n){ ind[n.id]=indeg[n.id]; if(!ind[n.id]) q.push(n.id); });
+    while(q.length){ var u=q.shift(); order.push(u); out[u].forEach(function(v){ if(--ind[v]===0) q.push(v); }); }
+    nodes.forEach(function(n){ if(order.indexOf(n.id)<0) order.push(n.id); });
+    nodes.forEach(function(n){ rank[n.id]=0; });                // longest-path rank
+    order.forEach(function(u){ out[u].forEach(function(v){ if(rank[u]+1>rank[v]) rank[v]=rank[u]+1; }); });
+  }
   var maxr=0; nodes.forEach(function(n){ if(rank[n.id]>maxr) maxr=rank[n.id]; });
   var cols=[]; for(var r=0;r<=maxr;r++) cols[r]=[];
   nodes.forEach(function(n){ cols[rank[n.id]].push(n); });
@@ -151,7 +160,7 @@ function viewGraph(){
     +'<button class="gbtn'+(graphFocusOn?" on":"")+'" data-gfocus-toggle="1" type="button">◎ Focus'+(graphFocusOn?": on":"")+'</button>'
     +'<button class="gbtn" id="g-freeze" type="button">❄ Freeze</button>'
     +'<button class="gbtn" id="g-fit" type="button">⊡ Fit</button>'
-    +'<button class="gbtn'+(graphLayout==="flow"?" on":"")+'" data-layout="'+(graphLayout==="flow"?"force":"flow")+'" type="button">'+(graphLayout==="flow"?"✦ Force":"→ Flow")+'</button>'
+    +(graphMode==="rules"?"":'<button class="gbtn'+(graphLayout==="flow"?" on":"")+'" data-layout="'+(graphLayout==="flow"?"force":"flow")+'" type="button">'+(graphLayout==="flow"?"✦ Force":"→ Flow")+'</button>')
     +'<button class="gbtn" id="g-reset" type="button">⤢ 1:1</button>'
     +(graphMode==="er"?'<button class="gbtn'+(erCompact?"":" on")+'" data-ercols="1" type="button">'+(erCompact?"⊞ Columns":"⊟ Compact")+'</button>':'')
     +(graphMode==="er"?'<button class="gbtn" data-erstraight="1" type="button" title="switch ER connectors">'+(erStraight?"⌐ Elbow":"╱ Straight")+'</button>':'')
@@ -179,7 +188,7 @@ function initGraph(){
     G.nodes=G.nodes.filter(function(n){ var cat=(n.kind==="relation")?(n.group||""):(n.klass||""); if(graphHideCat[cat]) return false; kept[n.id]=1; return true; });
     G.links=G.links.filter(function(l){ return !graphHideKinds[l.kind] && kept[l.source] && kept[l.target]; });
   })();
-  var nodes=G.nodes.map(function(n){return {id:n.id,label:n.label,klass:n.klass||"",kind:n.kind||"concept",group:n.group||"",href:n.href||("#c/"+encodeURIComponent(n.id)),rules:n.rules||0,cols:n.cols||[],color:n.color||"",rgkind:n.rgkind||"",detail:n.detail||""};});
+  var nodes=G.nodes.map(function(n){return {id:n.id,label:n.label,klass:n.klass||"",kind:n.kind||"concept",group:n.group||"",href:n.href||("#c/"+encodeURIComponent(n.id)),rules:n.rules||0,cols:n.cols||[],color:n.color||"",rgkind:n.rgkind||"",detail:n.detail||"",rank:n.rank};});
   var idx={}; nodes.forEach(function(n){idx[n.id]=n;});
   var links=G.links.map(function(l){return {s:idx[l.source],t:idx[l.target],kind:l.kind,label:l.label||"",cf:l.card_from||"",ct:l.card_to||"",to:l.to_col||""};})
                    .filter(function(l){return l.s&&l.t;});
@@ -356,7 +365,7 @@ function initGraph(){
   var ftb=document.getElementById("g-fit");
   if(ftb){ ftb.onclick=function(){ fitView(); }; }
 
-  if(!haveSaved && graphLayout==="flow"){ layoutFlow(nodes, links, er, flowDir); paint(); fitView(); }                 // layered flow (follows edge direction)
+  if(!haveSaved && (graphLayout==="flow" || graphMode==="rules")){ layoutFlow(nodes, links, er, (graphMode==="rules"?"lr":flowDir)); paint(); fitView(); }   // rules plane always opens as fixed species lanes (left→right)
   else if(haveSaved){
     var unsaved=nodes.filter(function(n){ return !(savedLayout&&savedLayout[n.id]); });   // nodes added since the layout was saved (e.g. new registers) — settle just these into free space
     if(unsaved.length){ nodes.forEach(function(n){ if(savedLayout&&savedLayout[n.id]){ n.fx=n.x; n.fy=n.y; } }); for(var us=0;us<240;us++){ physics(); alpha*=0.985; } nodes.forEach(function(n){ n.fx=null; n.fy=null; }); alpha=0; }
