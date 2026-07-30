@@ -31,6 +31,16 @@ import yaml
 
 HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE / "explorer_template.html"
+CONCEPT_RENDER = HERE / "concept_render.js"
+
+
+def _cr_fragments(text):
+    """Parse concept_render.js into {function_name: exact_source_text}. Each shared structural render
+    function is delimited /*__CR__<name>__*/ ... /*__CR__END__*/; the text BETWEEN the delimiters is the
+    verbatim definition, injected at the template's matching /*__CR__<name>__*/ marker (same verbatim
+    contract as graph_engine.js, but one marker per function since they are scattered, not contiguous)."""
+    return {m.group(1): m.group(2)
+            for m in re.finditer(r"/\*__CR__(\w+)__\*/\n(.*?)\n/\*__CR__END__\*/", text, re.S)}
 
 # A register preview embeds up to this many rows (the concept page renders them in a scrollable frame).
 # High enough that every enum-scale register (measures, brands, segments…) is COMPLETE; capped so a large
@@ -45,6 +55,10 @@ DECISION = {
     "mac.rule_kind.default":     "COMMIT",
     "mac.rule_kind.exclusion":   "REFUSE",
     "mac.rule_kind.guarantee":   "INVARIANT",
+    # bare (non-namespaced) kinds — some sources' query_rules[] use these; same lanes.
+    "ambiguity": "ASK", "resolution": "COMMIT", "aggregation": "COMMIT",
+    "default": "COMMIT", "exclusion": "REFUSE", "guarantee": "INVARIANT",
+    "federation": "REFUSE", "caveat": "COMMIT", "meta": "COMMIT",
 }
 
 
@@ -189,12 +203,18 @@ def norm_rules(rules, prose):
         if isinstance(binds, str):
             binds = [binds]
         p = prose.get(rid, {})
+        applies_to = r.get("applies_to")
+        applies_to = [applies_to] if isinstance(applies_to, str) else [str(a) for a in (applies_to or [])]
         out.append({
             "id": rid, "kind": r.get("kind", ""), "decision": decision_of(r.get("kind", "")),
             "scope": r.get("scope", ""), "confidence": r.get("confidence", ""),
             "when": (r.get("when", "") or "").strip(), "then": (r.get("then", "") or "").strip(),
             "never": (r.get("never", "") or "").strip(), "binds": binds,
             "subject": (r.get("subject", "") or "").strip(),  # the one-line email-subject headline (MAC v0.1.13)
+            # additive fields for query_rules[] shapes that carry a scope/severity instead of when/then/never
+            # (a source may express a rule as `applies_to:[views] + rule:<prose> + severity`) — degrade to [] / "".
+            "applies_to": applies_to, "severity": r.get("severity", ""),
+            "statement": (r.get("rule", "") or "").strip(),
             "purpose": p.get("purpose", ""), "genesis": p.get("genesis", ""),
         })
     return out
@@ -278,7 +298,10 @@ def parse_query_rules(root):
         return [], []
     text = qp.read_text(encoding="utf-8")
     data = yaml.safe_load(text) or {}
-    general = norm_rules(data.get("rules", []), extract_prose(text))
+    # Query-time discipline rules live under `rules:` (when/then/never shape) OR `query_rules:`
+    # (applies_to + rule + severity shape) depending on the source's convention — read BOTH so no
+    # source's query rules go missing from the model. norm_rules normalizes the superset.
+    general = norm_rules((data.get("query_rules") or []) + (data.get("rules") or []), extract_prose(text))
     policy = []
     for s in (data.get("decision_policy", {}) or {}).get("slots", []) or []:
         if isinstance(s, dict):
@@ -317,8 +340,133 @@ def parse_rules(root):
             "confidence": r.get("confidence", ""),
             "conditions": [str(c).strip() for c in (r.get("conditions", []) or [])],
             "validated_against": [str(v) for v in (r.get("validated_against", []) or [])],
+            "cross_references": [str(x) for x in (r.get("cross_references", []) or [])],
         })
     return out
+
+
+def parse_governance(root):
+    """Optional rule-governance state from PHASE.yaml (BUILD/TUNE + freeze provenance). Convention-only:
+    absent file -> {} (the rule graph simply omits the governance node). No source literals."""
+    gp = find_file(root, "PHASE.yaml")
+    if not gp:
+        return {}
+    try:
+        d = yaml.safe_load(gp.read_text(encoding="utf-8")) or {}
+    except Exception:
+        return {}
+    return {"phase": (d.get("phase", "") or "").strip(), "frozen_at": str(d.get("frozen_at", "")),
+            "frozen_by": (d.get("frozen_by", "") or ""), "lock": (d.get("lock", "") or "")}
+
+
+def build_rule_graph(concepts, general, policy, derived, relations, governance):
+    """Project the RULE layer as a dependency graph (governance -> policy slot -> rule -> view/concept
+    -> DQ finding), assembled ENTIRELY from already-parsed pieces. Every node/edge traces to a real
+    field; an absent input yields a smaller graph, never an error. Source-agnostic — no literal names.
+
+    Node kinds: governance | slot | query_rule | contract_rule | derivation | concept | view | dq.
+    Edge kinds: locks | governed_by | applies_to | on_concept | derives | over | validated_against
+                | cross_reference."""
+    nodes, links = {}, []
+
+    def node(nid, kind, label, **kw):
+        if nid and nid not in nodes:
+            nodes[nid] = dict({"id": nid, "kind": kind, "label": label}, **kw)
+        return nid
+
+    def link(s, t, kind):
+        if s and t and s in nodes and t in nodes:
+            links.append({"source": s, "target": t, "kind": kind})
+
+    con_klass = {c["id"]: c.get("klass", "") for c in (concepts or [])}
+    rel_group = {r.get("leaf", ""): r.get("group", "") for r in (relations or []) if r.get("leaf")}
+
+    def view_node(ref):
+        leaf = _rel_leaf(ref)
+        if not leaf:
+            return None
+        return node("view:%s" % leaf, "view", leaf,
+                    detail=rel_group.get(leaf, "serving relation"))
+
+    def concept_node(name):
+        name = (name or "").strip()
+        if not name:
+            return None
+        return node("con:%s" % name, "concept", name, klass=con_klass.get(name, "concept"))
+
+    gov = None
+    if governance and governance.get("phase"):
+        gov = node("gov:phase", "governance", "rules.lock · %s" % governance["phase"],
+                   detail=("Rule-governance phase = %s (frozen %s by %s). BUILD = rule CRUD permitted, the "
+                           "lock is a drift detector; TUNE = default-deny, every change needs an operator bless."
+                           % (governance.get("phase"), governance.get("frozen_at", ""),
+                              governance.get("frozen_by", ""))))
+
+    qr_ids = set()
+    for r in general or []:
+        rid = r.get("id")
+        if not rid:
+            continue
+        qr_ids.add(rid)
+        node("qr:%s" % rid, "query_rule", rid, rkind=r.get("kind", ""), severity=r.get("severity", ""),
+             decision=r.get("decision", ""),
+             detail=(r.get("statement") or r.get("then") or r.get("when") or r.get("subject") or "")[:600])
+        for v in (r.get("applies_to") or []):
+            link("qr:%s" % rid, view_node(v), "applies_to")
+        if gov:
+            link(gov, "qr:%s" % rid, "locks")
+
+    for s in policy or []:
+        sid = s.get("slot")
+        if not sid:
+            continue
+        node("slot:%s" % sid, "slot", sid, policy=s.get("policy", ""), lane=s.get("lane", ""),
+             detail=(s.get("on_missing") or "")[:600])
+        # governing_rule may cite ONE id + prose ("kpi-code-resolution (this file)") or, rarely, several
+        # ids. Draw a governed_by edge for EVERY token that is a real query-rule id (prose tokens simply
+        # aren't in qr_ids), deduped — faithful to both shapes.
+        seen_gr = set()
+        for tok in re.findall(r"[A-Za-z0-9_.\-]+", s.get("governing_rule") or ""):
+            if tok in qr_ids and tok not in seen_gr:
+                seen_gr.add(tok)
+                link("slot:%s" % sid, "qr:%s" % tok, "governed_by")
+        if gov:
+            link(gov, "slot:%s" % sid, "locks")
+
+    # 5th species: per-concept contract.rules[] (already parsed onto each concept as `rules`)
+    for c in (concepts or []):
+        for r in c.get("rules", []) or []:
+            rid = r.get("id")
+            if not rid:
+                continue
+            crid = node("cr:%s::%s" % (c["id"], rid), "contract_rule", rid, rkind=r.get("kind", ""),
+                        decision=r.get("decision", ""), on=c["id"],
+                        detail=(r.get("then") or r.get("subject") or r.get("when") or "")[:600])
+            link(crid, concept_node(c["id"]), "on_concept")
+            if gov:
+                link(gov, crid, "locks")
+
+    for r in derived or []:
+        rid = r.get("id")
+        if not rid:
+            continue
+        node("der:%s" % rid, "derivation", rid, render_kind=r.get("render_kind", ""),
+             confidence=r.get("confidence", ""), detail=(r.get("logic") or "")[:600],
+             template=(r.get("template") or "")[:900])
+        if r.get("derives"):
+            link("der:%s" % rid, concept_node(r["derives"]), "derives")
+        for o in (r.get("over") or []):
+            link("der:%s" % rid, concept_node(o), "over")
+        for v in (r.get("validated_against") or []):
+            link("der:%s" % rid, view_node(v), "validated_against")
+        for x in (r.get("cross_references") or []):
+            lab = str(x).split("#")[-1] if "#" in str(x) else os.path.basename(str(x))
+            link("der:%s" % rid, node("dq:%s" % x, "dq", lab, detail=str(x)), "cross_reference")
+        if gov:
+            link(gov, "der:%s" % rid, "locks")
+
+    return {"nodes": list(nodes.values()), "links": links,
+            "stats": {"nodes": len(nodes), "links": len(links)}}
 
 
 def build_graph(concepts, edges):
@@ -548,6 +696,8 @@ def build_model(root):
     edges = parse_edges(root)
     general, policy = parse_query_rules(root)
     derived = parse_rules(root)
+    governance = parse_governance(root)
+    relations = parse_data_plane(root, concepts)
 
     lanes = {"ASK": 0, "COMMIT": 0, "REFUSE": 0, "INVARIANT": 0, "OTHER": 0}
     for c in concepts:
@@ -565,18 +715,26 @@ def build_model(root):
                 seen.append(s)
     slots = [s for s in preferred if s in seen] + [s for s in seen if s not in preferred]
 
+    rule_graph = build_rule_graph(concepts, general, policy, derived, relations, governance)
+
     return {
         "meta": {"source": source, "concept_count": len(concepts),
                  "rule_count": sum(len(c["rules"]) for c in concepts) + len(general),
                  "edge_count": len(edges), "general_rule_count": len(general),
-                 "derived_count": len(derived)},
+                 "derived_count": len(derived),
+                 "rule_graph_node_count": rule_graph["stats"]["nodes"],
+                 "rule_graph_edge_count": rule_graph["stats"]["links"]},
         "domains": domains, "lanes": lanes, "slots": slots,
         "concepts": concepts, "edges": edges, "graph": build_graph(concepts, edges),
         "general_rules": general, "decision_policy": policy, "derived_measures": derived,
         # additive: the data plane (relations the concepts bind to) + an optional operator manual.
         # Both self-hide when absent, so a source with no data/ plane renders exactly as before.
-        "relations": parse_data_plane(root, concepts),
+        "relations": relations,
         "manual": load_manual(root),
+        # the RULE dependency graph (governance -> policy -> rule -> view/concept -> DQ), a pure
+        # projection of the pieces above. Empty {nodes:[],links:[]} for a source with no rules.
+        "governance": governance,
+        "rule_graph": rule_graph,
     }
 
 
@@ -602,6 +760,11 @@ def main():
     tpl = TEMPLATE.read_text(encoding="utf-8")
     # inject the shared graph engine verbatim into its marker (same IIFE scope as before)
     tpl = tpl.replace("/*__GRAPH_ENGINE__*/", (HERE / "graph_engine.js").read_text(encoding="utf-8"))
+    # inject the shared structural render functions verbatim, each at its per-function marker (SSOT:
+    # concept_render.js). Output = the same functions at their original positions -> byte-identical.
+    if CONCEPT_RENDER.exists():
+        for _name, _frag in _cr_fragments(CONCEPT_RENDER.read_text(encoding="utf-8")).items():
+            tpl = tpl.replace("/*__CR__%s__*/" % _name, _frag)
     # inject the /ask base FIRST, on the model-free template, so nothing in the model JSON can collide
     tpl = tpl.replace("/*__ASK_BASE__*/", (a.ask_base or "").strip().replace("\\", "\\\\").replace('"', '\\"'))
     data = json.dumps(model, ensure_ascii=False).replace("</", "<\\/")

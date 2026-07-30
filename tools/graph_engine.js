@@ -1,4 +1,21 @@
+// --- rules plane: generic presentation vocab for the rule dependency graph (M.rule_graph). Colours
+// reference the template's theme CSS vars, so no source values live here and both themes just work. ---
+var RULE_NODE_COLOR={governance:"var(--faint)",slot:"var(--cls-reference)",query_rule:"var(--cls-entity)",contract_rule:"var(--commit)",derivation:"var(--cls-measure)",concept:"var(--cls-grouping)",view:"var(--muted)",dq:"var(--cls-enumeration)"};
+var RULE_SPECIES=[["governance","governance","var(--faint)"],["slot","decision slot","var(--cls-reference)"],["query_rule","query rule","var(--cls-entity)"],["contract_rule","concept rule","var(--commit)"],["derivation","derivation","var(--cls-measure)"],["concept","concept","var(--cls-grouping)"],["view","serving view","var(--muted)"],["dq","DQ finding","var(--cls-enumeration)"]];
+var RULE_EDGE={locks:["var(--border)",1,"3 4"],governed_by:["var(--cls-reference)",1.7,""],applies_to:["var(--cls-entity)",1.5,""],on_concept:["var(--faint)",1.1,"1 4"],derives:["var(--cls-measure)",1.7,""],over:["var(--cls-measure)",1.2,"4 3"],validated_against:["var(--muted)",1.4,""],cross_reference:["var(--cls-enumeration)",1.2,"2 3"]};
+var RULE_EDGE_LABEL={locks:"locks",governed_by:"governed by",applies_to:"applies to",on_concept:"on concept",derives:"derives",over:"operates over",validated_against:"validated",cross_reference:"evidence"};
 function buildGraphData(mode){
+  if(mode==="rules"){                                          // the RULE dependency plane — a pure map of M.rule_graph
+    var rg=(M&&M.rule_graph)||{nodes:[],links:[]};
+    var rn=(rg.nodes||[]).map(function(n){
+      // klass drives the facet-category key; prefix "rk_" so a rules-plane species (e.g. "view") never
+      // collides with a data-plane REL_GROUP of the same name on the session-shared graphHideCat.
+      return {id:n.id,label:n.label,klass:"rk_"+n.kind,kind:"concept",color:RULE_NODE_COLOR[n.kind]||"var(--muted)",
+              rules:0,href:"#graph",rgkind:n.kind,rkind:n.rkind||"",severity:n.severity||"",policy:n.policy||"",detail:n.detail||""};
+    });
+    var rl=(rg.links||[]).map(function(l){return {source:l.source,target:l.target,kind:l.kind,label:""};});
+    return {nodes:rn, links:rl};
+  }
   if(mode==="ontology"){
     return {nodes:M.graph.nodes.map(function(n){return {id:n.id,label:n.label,klass:n.klass,kind:"concept",rules:n.rules||0,href:"#c/"+encodeURIComponent(n.id)};}),
             links:M.graph.links.slice()};
@@ -42,7 +59,10 @@ function focusNode(id){ if(graphFocus&&graphFocus!==id) focusHist.push(graphFocu
 var NBR_KIND={binding:"binds to (grounding)",orel:"relates to",fk:"joins (FK)",hierarchy:"rolls up",coground:"same serving table",dim:"related"};
 function layoutFlow(nodes, links, er, dir){
   // Layered left→right layout: rank by directed edges (source left, target right), so every arrow flows rightward.
-  var DIRK={fk:1,hierarchy:1,binding:1,orel:1};                 // which edge kinds carry flow direction
+  var DIRK={fk:1,hierarchy:1,binding:1,orel:1,                  // which edge kinds carry flow direction
+            governed_by:1,applies_to:1,on_concept:1,derives:1,over:1,validated_against:1,cross_reference:1};
+  // `locks` (governance -> every rule) is deliberately EXCLUDED: it is a decorative spine, not a
+  // dependency. Ranking it would collapse the whole rule set into one lane under the lock node.
   var out={}, inn={}, indeg={}, byId={}, seen={};
   nodes.forEach(function(n){ out[n.id]=[]; inn[n.id]=[]; indeg[n.id]=0; byId[n.id]=n; });
   links.forEach(function(l){
@@ -82,7 +102,7 @@ function layoutFlow(nodes, links, er, dir){
   });
 }
 function viewGraph(){
-  var modes=[["ontology","Ontology"],["data","Data plane"],["both","Bindings"],["er","ER"]];
+  var modes=[["ontology","Ontology"],["data","Data plane"],["both","Bindings"],["er","ER"],["rules","Rules"]];
   var toggle='<div class="gmodes">'+modes.map(function(m){
     return '<a class="gmode'+(graphMode===m[0]?" active":"")+'" data-mode="'+m[0]+'" href="#graph">'+esc(m[1])+'</a>';}).join("")+'</div>';
   function eLeg(label,extra,kind){return '<div class="li'+(kind&&graphHideKinds[kind]?" off":"")+'"'+(kind?' data-edgekind="'+kind+'"':'')+'><svg width="24" height="8"><line x1="1" y1="4" x2="23" y2="4" '+extra+'/></svg>'+label+'</div>';}
@@ -92,6 +112,17 @@ function viewGraph(){
   if(graphMode==="ontology") leg=clsLeg+sep+eLeg("relation",'stroke="var(--muted)" stroke-width="1.8"',"fk")+eLeg("rolls up",'stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4"',"hierarchy")+eLeg("same table",'stroke="var(--border)" stroke-width="1.2"',"coground")+'<div class="li"><span class="gcard" style="position:static;stroke:none">0..N · 1</span> cardinality</div>';
   else if(graphMode==="data") leg=relLeg+sep+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
   else if(graphMode==="er") leg=relLeg+sep+'<div class="li'+(graphHideKinds["fk"]?" off":"")+'" data-edgekind="fk"><svg width="26" height="10"><line x1="2" y1="5" x2="24" y2="5" stroke="var(--muted)" stroke-width="1.4"/><path d="M22,5 L24,2 M22,5 L24,5 M22,5 L24,8" stroke="var(--muted)" fill="none" stroke-width="1.1"/><path d="M5,2 L5,8" stroke="var(--muted)" stroke-width="1.4"/></svg>FK · many → one</div>';
+  else if(graphMode==="rules"){
+    var _rg=buildGraphData("rules"), present={}, presentE={};        // legend only what's actually in THIS graph
+    _rg.nodes.forEach(function(n){present[n.klass]=1;});             // n.klass is the "rk_"+kind facet key
+    _rg.links.forEach(function(l){presentE[l.kind]=1;});
+    var rspLeg=RULE_SPECIES.filter(function(s){return present["rk_"+s[0]];}).map(function(s){
+      var cat="rk_"+s[0];
+      return '<div class="li'+(graphHideCat[cat]?" off":"")+'" data-nodecat="'+esc(cat)+'"><span class="lane-dot" style="background:'+s[2]+'"></span>'+esc(s[1])+'</div>';}).join("");
+    var reLeg=["governed_by","applies_to","on_concept","derives","over","validated_against","cross_reference","locks"].filter(function(k){return presentE[k];}).map(function(k){
+      var re=RULE_EDGE[k]; return eLeg(RULE_EDGE_LABEL[k],'stroke="'+re[0]+'" stroke-width="'+Math.max(re[1],1.4)+'"'+(re[2]?' stroke-dasharray="'+re[2]+'"':''),k);}).join("");
+    leg=rspLeg+sep+reLeg;
+  }
   else leg=clsLeg+relLeg+sep+eLeg("relation",'stroke="var(--accent)" stroke-width="1.8"',"orel")+eLeg("rolls up",'stroke="var(--accent)" stroke-width="1.8" stroke-dasharray="5 4"',"hierarchy")+eLeg("binds",'stroke="var(--commit)" stroke-width="1.6" stroke-dasharray="2 4"',"binding")+eLeg("joins (FK)",'stroke="var(--muted)" stroke-width="1.8"',"fk");
   var full=buildGraphData(graphMode), focusHdr="", connects="";
   if(graphFocusOn && graphFocus){
@@ -148,7 +179,7 @@ function initGraph(){
     G.nodes=G.nodes.filter(function(n){ var cat=(n.kind==="relation")?(n.group||""):(n.klass||""); if(graphHideCat[cat]) return false; kept[n.id]=1; return true; });
     G.links=G.links.filter(function(l){ return !graphHideKinds[l.kind] && kept[l.source] && kept[l.target]; });
   })();
-  var nodes=G.nodes.map(function(n){return {id:n.id,label:n.label,klass:n.klass||"",kind:n.kind||"concept",group:n.group||"",href:n.href||("#c/"+encodeURIComponent(n.id)),rules:n.rules||0,cols:n.cols||[]};});
+  var nodes=G.nodes.map(function(n){return {id:n.id,label:n.label,klass:n.klass||"",kind:n.kind||"concept",group:n.group||"",href:n.href||("#c/"+encodeURIComponent(n.id)),rules:n.rules||0,cols:n.cols||[],color:n.color||"",rgkind:n.rgkind||"",detail:n.detail||""};});
   var idx={}; nodes.forEach(function(n){idx[n.id]=n;});
   var links=G.links.map(function(l){return {s:idx[l.source],t:idx[l.target],kind:l.kind,label:l.label||"",cf:l.card_from||"",ct:l.card_to||"",to:l.to_col||""};})
                    .filter(function(l){return l.s&&l.t;});
@@ -173,8 +204,9 @@ function initGraph(){
   var showLabel=(graphMode==="ontology"||er), showCard=(graphMode==="ontology");
   links.forEach(function(l){
     var e=C(er?"path":"line"); e.setAttribute("class","glink "+l.kind); gL.appendChild(e); l.el=e;
+    if(graphMode==="rules" && RULE_EDGE[l.kind]){ var _re=RULE_EDGE[l.kind]; e.setAttribute("stroke",_re[0]); e.setAttribute("stroke-width",_re[1]); if(_re[2]) e.setAttribute("stroke-dasharray",_re[2]); }  // rule edge-kinds have no .glink CSS — stroke inline (theme vars) so no template touch
     if(er && l.kind==="fk"){ l.footEl=C("path"); l.footEl.setAttribute("class","erm"); l.oneEl=C("path"); l.oneEl.setAttribute("class","erm"); gL.appendChild(l.footEl); gL.appendChild(l.oneEl); }
-    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding"||l.kind==="orel")){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
+    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding"||l.kind==="orel"||RULE_EDGE[l.kind])){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); if(graphMode==="rules" && RULE_EDGE[l.kind]) l.arrowEl.setAttribute("fill",RULE_EDGE[l.kind][0]); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
     if((showLabel||l.kind==="orel"||l.kind==="hierarchy") && l.label && l.kind!=="coground"){ l.lblEl=C("text"); l.lblEl.setAttribute("class",er?"erkey":"glabel"); l.lblEl.textContent=trunc(l.label); gLbl.appendChild(l.lblEl); }
     if(showCard && l.cf){ l.cfEl=C("text"); l.cfEl.setAttribute("class","gcard"); l.cfEl.textContent=l.cf; gLbl.appendChild(l.cfEl); }
     if(showCard && l.ct){ l.ctEl=C("text"); l.ctEl.setAttribute("class","gcard"); l.ctEl.textContent=l.ct; gLbl.appendChild(l.ctEl); }
@@ -198,8 +230,8 @@ function initGraph(){
       }
     } else if(n.kind==="relation"){ var s=n.side, rc=C("rect");
       rc.setAttribute("x",-s/2); rc.setAttribute("y",-s/2); rc.setAttribute("width",s); rc.setAttribute("height",s); rc.setAttribute("rx",3); g.appendChild(rc);
-    } else { var c=C("circle"); c.setAttribute("r",n.r); g.appendChild(c); }
-    var ti=C("title"); ti.textContent=n.label; g.appendChild(ti);
+    } else { var c=C("circle"); c.setAttribute("r",n.r); if(n.color) c.setAttribute("fill",n.color); g.appendChild(c); }
+    var ti=C("title"); ti.textContent=n.label+(n.detail?"\n\n"+n.detail:""); g.appendChild(ti);
     if(!(er && n.kind==="relation")){ var t=C("text"); t.setAttribute("text-anchor","middle"); t.setAttribute("dy",-n.r-4); t.textContent=trunc(n.label); g.appendChild(t); }
     gN.appendChild(g);
     g.addEventListener("mouseenter",function(){hi(n);});
