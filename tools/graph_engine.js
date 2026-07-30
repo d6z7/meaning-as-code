@@ -4,7 +4,48 @@ var RULE_NODE_COLOR={governance:"var(--faint)",slot:"var(--cls-reference)",query
 var RULE_SPECIES=[["governance","governance","var(--faint)"],["slot","decision slot","var(--cls-reference)"],["query_rule","query rule","var(--cls-entity)"],["contract_rule","concept rule","var(--commit)"],["derivation","derivation","var(--cls-measure)"],["concept","concept","var(--cls-grouping)"],["view","serving view","var(--muted)"],["dq","DQ finding","var(--cls-enumeration)"]];
 var RULE_EDGE={locks:["var(--border)",1,"3 4"],governed_by:["var(--cls-reference)",1.7,""],applies_to:["var(--cls-entity)",1.5,""],on_concept:["var(--faint)",1.1,"1 4"],derives:["var(--cls-measure)",1.7,""],over:["var(--cls-measure)",1.2,"4 3"],validated_against:["var(--muted)",1.4,""],cross_reference:["var(--cls-enumeration)",1.2,"2 3"]};
 var RULE_EDGE_LABEL={locks:"locks",governed_by:"governed by",applies_to:"applies to",on_concept:"on concept",derives:"derives",over:"operates over",validated_against:"validated",cross_reference:"evidence"};
+// --- lineage plane: same inline-theme-var pattern. Nodes coloured by ROLE (source table / produced
+// dataset / view); column-edge kinds carry the closed lineage vocabulary. Guarded so the explorer
+// (no window.LINEAGE_MODEL) renders no lineage mode. Folds lineage into the ONE engine — no library. ---
+var LINEAGE_NODE_COLOR={source:"var(--muted)",dataset:"var(--cls-entity)",view:"var(--cls-measure)"};
+var LINEAGE_KIND={passthrough:["var(--muted)",1.2,""],transform:["var(--cls-measure)",1.7,""],rename:["var(--cls-reference)",1.5,""],reshape:["var(--cls-grouping)",1.5,""],union:["var(--cls-entity)",1.5,""],open:["var(--accent)",1.3,"3 3"],seed:["var(--cls-enumeration)",1.3,"2 3"],"const":["var(--faint)",1.1,"1 3"],filter:["var(--commit)",1.3,"4 3"],flow:["var(--hair2)",1.4,""]};
+var LINEAGE_KIND_LABEL={passthrough:"passthrough",transform:"transform",rename:"rename",reshape:"reshape",union:"union",open:"open (proposed)",seed:"seed",const:"const",filter:"filter",flow:"flows to"};
+var LINEAGE_ROLES=[["source","source table","var(--muted)"],["dataset","produced dataset","var(--cls-entity)"],["view","view / transform","var(--cls-measure)"]];
+function isLineageMode(m){ return !!m && m.indexOf("lineage")===0; }
+// inline stroke/width/dash for the current plane's edge kind (rules OR lineage); null otherwise.
+function edgeStyle(kind){ if(typeof graphMode==="undefined") return null; if(graphMode==="rules") return RULE_EDGE[kind]||null; if(isLineageMode(graphMode)) return LINEAGE_KIND[kind]||null; return null; }
+// Project window.LINEAGE_MODEL onto engine nodes/links for a given lineage view. Reuses the rules-plane
+// node shape (color + rank + inline edge-kind stroke). v1: overview + final (table/dataset topology);
+// downstream/upstream (column-level) land in a follow-up increment.
+function buildLineageGraph(mode, LM){
+  var nodes={}, links=[];
+  function node(id,role,label,rank,detail){ if(id&&!nodes[id]) nodes[id]={id:id,label:label,klass:"lin_"+role,kind:"concept",color:LINEAGE_NODE_COLOR[role]||"var(--muted)",rules:0,href:"#graph",rank:rank,linrole:role,detail:detail||""}; return id; }
+  function link(s,t,kind){ if(s&&t&&nodes[s]&&nodes[t]) links.push({source:s,target:t,kind:kind||"flow",label:""}); }
+  var flows=LM.flows||[];
+  if(mode==="lineage-overview"){
+    flows.forEach(function(f){
+      var ds=(f.dataset&&f.dataset.name)||f.id, dsId="ds:"+ds;
+      node(dsId,"dataset",ds,1,(f.grain||""));
+      (f.sources||[]).forEach(function(s){ var nm=s.short||s.rel, sid="src:"+nm; node(sid,"source",nm,0,(s.schema||"")); link(sid,dsId,"flow"); });
+    });
+  } else if(mode==="lineage-final"){
+    (LM.datasets||[]).forEach(function(d){ node("ds:"+d.name,"dataset",d.name,1); });
+    // shared-key relationships: datasets that share a primary_key column name are related
+    var owners={};
+    (LM.datasets||[]).forEach(function(d){ (d.columns||[]).forEach(function(c){ if(c.role==="primary_key"){ (owners[c.name]=owners[c.name]||[]).push(d.name); } }); });
+    Object.keys(owners).forEach(function(k){ var ds=owners[k]; for(var i=1;i<ds.length;i++){ link("ds:"+ds[0],"ds:"+ds[i],"flow"); } });
+  } else {
+    return {nodes:[],links:[]};   // downstream / upstream — column-level view, follow-up increment
+  }
+  var out=[]; Object.keys(nodes).forEach(function(k){ out.push(nodes[k]); });
+  return {nodes:out, links:links};
+}
 function buildGraphData(mode){
+  if(isLineageMode(mode)){                                      // the LINEAGE plane — folds lineage into the ONE engine
+    var LM=(typeof window!=="undefined" && window.LINEAGE_MODEL) || (typeof M!=="undefined" && M && M.lineage_model) || null;
+    if(!LM) return {nodes:[],links:[]};                        // explorer / any host without a lineage model: no lineage
+    return buildLineageGraph(mode, LM);
+  }
   if(mode==="rules"){                                          // the RULE dependency plane — a pure map of M.rule_graph
     var rg=(M&&M.rule_graph)||{nodes:[],links:[]};
     var rn=(rg.nodes||[]).map(function(n){
@@ -213,9 +254,9 @@ function initGraph(){
   var showLabel=(graphMode==="ontology"||er), showCard=(graphMode==="ontology");
   links.forEach(function(l){
     var e=C(er?"path":"line"); e.setAttribute("class","glink "+l.kind); gL.appendChild(e); l.el=e;
-    if(graphMode==="rules" && RULE_EDGE[l.kind]){ var _re=RULE_EDGE[l.kind]; e.setAttribute("stroke",_re[0]); e.setAttribute("stroke-width",_re[1]); if(_re[2]) e.setAttribute("stroke-dasharray",_re[2]); }  // rule edge-kinds have no .glink CSS — stroke inline (theme vars) so no template touch
+    if(edgeStyle(l.kind)){ var _re=edgeStyle(l.kind); e.setAttribute("stroke",_re[0]); e.setAttribute("stroke-width",_re[1]); if(_re[2]) e.setAttribute("stroke-dasharray",_re[2]); }  // rule/lineage edge-kinds have no .glink CSS — stroke inline (theme vars) so no template touch
     if(er && l.kind==="fk"){ l.footEl=C("path"); l.footEl.setAttribute("class","erm"); l.oneEl=C("path"); l.oneEl.setAttribute("class","erm"); gL.appendChild(l.footEl); gL.appendChild(l.oneEl); }
-    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding"||l.kind==="orel"||RULE_EDGE[l.kind])){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); if(graphMode==="rules" && RULE_EDGE[l.kind]) l.arrowEl.setAttribute("fill",RULE_EDGE[l.kind][0]); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
+    if(!er && (l.kind==="fk"||l.kind==="hierarchy"||l.kind==="binding"||l.kind==="orel"||edgeStyle(l.kind))){ l.arrowEl=C("path"); l.arrowEl.setAttribute("class","garrow "+l.kind); if(edgeStyle(l.kind)) l.arrowEl.setAttribute("fill",edgeStyle(l.kind)[0]); gL.appendChild(l.arrowEl); }  // directed: arrowhead at the 'to' end
     if((showLabel||l.kind==="orel"||l.kind==="hierarchy") && l.label && l.kind!=="coground"){ l.lblEl=C("text"); l.lblEl.setAttribute("class",er?"erkey":"glabel"); l.lblEl.textContent=trunc(l.label); gLbl.appendChild(l.lblEl); }
     if(showCard && l.cf){ l.cfEl=C("text"); l.cfEl.setAttribute("class","gcard"); l.cfEl.textContent=l.cf; gLbl.appendChild(l.cfEl); }
     if(showCard && l.ct){ l.ctEl=C("text"); l.ctEl.setAttribute("class","gcard"); l.ctEl.textContent=l.ct; gLbl.appendChild(l.ctEl); }
@@ -365,7 +406,7 @@ function initGraph(){
   var ftb=document.getElementById("g-fit");
   if(ftb){ ftb.onclick=function(){ fitView(); }; }
 
-  if(!haveSaved && (graphLayout==="flow" || graphMode==="rules")){ layoutFlow(nodes, links, er, (graphMode==="rules"?"lr":flowDir)); paint(); fitView(); }   // rules plane always opens as fixed species lanes (left→right)
+  if(!haveSaved && (graphLayout==="flow" || graphMode==="rules" || isLineageMode(graphMode))){ layoutFlow(nodes, links, er, ((graphMode==="rules"||isLineageMode(graphMode))?"lr":flowDir)); paint(); fitView(); }   // rules + lineage planes open as fixed left→right lanes
   else if(haveSaved){
     var unsaved=nodes.filter(function(n){ return !(savedLayout&&savedLayout[n.id]); });   // nodes added since the layout was saved (e.g. new registers) — settle just these into free space
     if(unsaved.length){ nodes.forEach(function(n){ if(savedLayout&&savedLayout[n.id]){ n.fx=n.x; n.fy=n.y; } }); for(var us=0;us<240;us++){ physics(); alpha*=0.985; } nodes.forEach(function(n){ n.fx=null; n.fy=null; }); alpha=0; }
