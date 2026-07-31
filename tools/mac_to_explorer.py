@@ -627,7 +627,7 @@ def parse_data_plane(root, concepts):
             name = tbl.get("name") or Path(dp).stem
             leaf = _rel_leaf(name)
             cols = [{"name": co.get("name", ""), "type": co.get("type", ""), "role": co.get("role", ""),
-                     "confidence": co.get("confidence", "")}
+                     "confidence": co.get("confidence", ""), "description": (co.get("description", "") or "").strip()}
                     for co in (dd.get("columns", []) or []) if isinstance(co, dict)]
             fwd, revj = [], []
             for fk in (dd.get("foreign_keys", []) or []):
@@ -656,7 +656,7 @@ def parse_data_plane(root, concepts):
             relations.append({
                 "name": regname, "leaf": regname, "schema": "", "type": "register",  # full name IS the id; _rel_leaf('brands.lookup')->'lookup' would collide ALL *.lookup registers onto one node/pos key
                 "status": "register", "confidence": "", "group": "registers", "grain": "",
-                "columns": [{"name": h, "type": "", "role": "", "confidence": ""} for h in rows[0]],
+                "columns": [{"name": h, "type": "", "role": "", "confidence": "", "description": ""} for h in rows[0]],
                 "foreign_keys": [], "reverse_joins": [], "lineage": {}, "measure_view": {},
                 "rowcount": len(rows) - 1, "sample": rows[1:6],
                 "bound_concepts": rev_reg.get(regname, []), "file": os.path.relpath(lp, root)})
