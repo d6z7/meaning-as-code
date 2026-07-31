@@ -310,14 +310,14 @@ function initGraph(){
   }
   var alpha=1;
   function physics(){
-    var i,j,a,b,dx,dy,d,d2,f,fx,fy, REP=er?(erCompact?40000:90000):2700, cen=er?0.0016:0.006, cap=er?60:24;
+    var i,j,a,b,dx,dy,d,d2,f,fx,fy, REP=er?(erCompact?40000:90000):2700, cen=er?0.0016:0.0075, cap=er?60:24;  // ontology cen bumped 0.006->0.0075: tighter central cluster so fitView magnifies more (bigger, more legible labels) without unbounding the layout
     for(i=0;i<nodes.length;i++){a=nodes[i];
       for(j=i+1;j<nodes.length;j++){b=nodes[j];
         dx=a.x-b.x; dy=a.y-b.y; d2=dx*dx+dy*dy+0.01; d=Math.sqrt(d2);
         f=REP/d2; fx=dx/d*f; fy=dy/d*f; a.vx+=fx;a.vy+=fy;b.vx-=fx;b.vy-=fy;
         var minD=(a.r||10)+(b.r||10)+(er?18:12); if(d<minD){ var sep=(minD-d)*0.5; a.vx+=dx/d*sep;a.vy+=dy/d*sep; b.vx-=dx/d*sep;b.vy-=dy/d*sep; }  // hard min-separation: two nodes never overlap
       }}
-    links.forEach(function(l){var L=er?(erCompact?180:340):(l.kind==="coground"?125:92); dx=l.t.x-l.s.x;dy=l.t.y-l.s.y;d=Math.sqrt(dx*dx+dy*dy)+0.01;
+    links.forEach(function(l){var L=er?(erCompact?180:340):(l.kind==="coground"?112:82); dx=l.t.x-l.s.x;dy=l.t.y-l.s.y;d=Math.sqrt(dx*dx+dy*dy)+0.01;  // ontology link rest-length shortened (92->82, coground 125->112): connected concepts sit closer, tightening the settled bbox
       f=(d-L)*0.03; fx=dx/d*f; fy=dy/d*f; l.s.vx+=fx;l.s.vy+=fy;l.t.vx-=fx;l.t.vy-=fy;});
     nodes.forEach(function(n){ n.vx+=(W/2-n.x)*cen; n.vy+=(H/2-n.y)*cen;
       if(n.fx!=null){n.x=n.fx;n.vx=0;} else {n.vx*=0.86; n.x+=Math.max(-cap,Math.min(cap,n.vx*alpha));}
