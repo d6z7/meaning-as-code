@@ -40,9 +40,13 @@ def _load_yaml_str_dates(path):
 
 def _pick_def(path, layout=None):
     p = path.replace(os.sep, '/')
-    if p.endswith('rules.yaml'):
+    # basename-EXACT: only the canonical ontology files are Rules/Edges docs. A data-plane
+    # descriptor for a VIEW that happens to be named *_rules/*_edges (fpl.meta_rules,
+    # fpl.meta_edges) is a TableFile and fell through this suffix match before.
+    base = os.path.basename(p)
+    if base == 'rules.yaml':
         return 'RulesFile'
-    if p.endswith('edges.yaml'):
+    if base == 'edges.yaml':
         return 'EdgesFile'
     d = os.path.dirname(os.path.abspath(path))
     # two-plane data plane: transforms/ -> TransformFile; sources/ -> TableFile (raw schema-of-record)

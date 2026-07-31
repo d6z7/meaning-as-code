@@ -243,7 +243,8 @@ def dataset_descriptors(tables: dict, source: str = "fpl") -> dict:
             "note": "GENERATED — do not hand-edit; regenerate from model.introspection.json.",
             "owner": "data-platform-team"},
           "table": {"name": name, "schema": source, "type": "view", "confidence": "C"},
-          "columns": [{"name": c, "type": "string", "confidence": "C"} for c in _ordered_columns(rows)],
+          "columns": [{"name": c, "type": "string", "role": ("value" if c == "value" else "unknown"),
+                       "confidence": "C"} for c in _ordered_columns(rows)],
         }
         out[name] = _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)
     return out
@@ -428,7 +429,7 @@ _META_CONCEPTS = {
  },
  "RegionMember": {
    "label": "Region Member",
-   "identity": {"kind": "composite", "key": ["region_definition_used", "member"]},
+   "identity": {"kind": "composite", "x-key": ["region_definition_used", "member"]},
    "relations": [("meta_region_members", ["region_definition_used", "member"])],
    "roles": {
      "region_definition_used": "dimension", "namespace": "dimension", "code": "dimension",
@@ -462,7 +463,7 @@ _META_CONCEPTS = {
  },
  "Rule": {
    "label": "Rule (model behaviour / derived-measure law)",
-   "identity": {"kind": "qualified_id", "canonical_key": "rule_id"},
+   "identity": {"kind": "namespace_code", "canonical_key": "rule_id"},
    "relations": [("meta_rules", ["rule_id"]), ("meta_rule_refs", ["rule_id", "ref_kind", "ref_value"]),
                  ("meta_decision_policy", ["slot"]), ("meta_rule_kinds", ["term"])],
    "roles": {
@@ -552,7 +553,7 @@ _META_CONCEPTS = {
  },
  "Provenance": {
    "label": "Provenance (ontology byte-provenance / freshness ledger)",
-   "identity": {"kind": "composite", "key": ["source", "input_path"]},
+   "identity": {"kind": "composite", "x-key": ["source", "input_path"]},
    "relations": [("meta_provenance", ["source", "input_path"])],
    "roles": {
      "source": "dimension", "input_path": "dimension",
@@ -614,7 +615,7 @@ def _concept_doc(name, spec, tables, source):
     return {
       "metadata": {
         "concept": name, "source": source.upper(), "schema_version": _framework_schema_version(),
-        "kind": _META_KIND, "generated_by": _META_GENERATED_BY, "note": _META_NOTE},
+        "x-kind": _META_KIND, "x-generated-by": _META_GENERATED_BY, "x-note": _META_NOTE},
       "concept": {
         "name": name, "label": spec["label"], "class": _sub(_META_CLASS, source),
         "identity": identity, "definition": _sub(spec["definition"], source)},
@@ -624,7 +625,7 @@ def _concept_doc(name, spec, tables, source):
         "answers": _sub(spec["answers"], source),
         "example": _sub(spec["example"], source),
         "never": _sub(spec["never"], source)},
-      "governance": {"owner": "data-platform-team", "generated": True},
+      "governance": {"owner": "data-platform-team", "x-generated": True},
     }
 
 
