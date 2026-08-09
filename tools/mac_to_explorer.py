@@ -747,6 +747,32 @@ def build_model(root):
     }
 
 
+def attach_rule_functions(model, root):
+    """Additive: attach the PCA-1 self-contained function record (explanation + typed params +
+    emit code) to each rule by id, from source-local pca/rule_functions.json. Self-hides when the
+    file is absent, so a source without rule-functions renders exactly as before. The explanation is
+    marked llm_visible=False — operator-facing only; it reaches the model solely on Path B."""
+    p = root / "pca" / "rule_functions.json"
+    if not p.exists():
+        return
+    try:
+        fns = {r["id"]: r for r in (json.loads(p.read_text(encoding="utf-8")) or {}).get("rules", [])}
+    except Exception:
+        return
+    buckets = list(model.get("general_rules", [])) + list(model.get("derived_measures", []))
+    for c in model.get("concepts", []):
+        buckets += list(c.get("rules", []))
+    n = 0
+    for r in buckets:
+        fn = fns.get(r.get("id"))
+        if fn:
+            r["fn"] = {"explanation": fn["explanation"], "params": fn["params"],
+                       "code": fn["code"], "returns_kind": fn.get("returns_kind", ""),
+                       "llm_visible": False}
+            n += 1
+    model["meta"]["rule_function_count"] = n
+
+
 def main():
     ap = argparse.ArgumentParser(description="Project a MAC ontology onto a self-contained HTML explorer.")
     ap.add_argument("root", help="ontology project root (contains ontology/concepts/ or concepts/)")
@@ -760,6 +786,7 @@ def main():
 
     root = Path(a.root).resolve()
     model = build_model(root)
+    attach_rule_functions(model, root)
     name = model["meta"]["source"].lower()
     out = Path(a.out) if a.out else (root / "projections" / (name + ".explorer.html"))
     out.parent.mkdir(parents=True, exist_ok=True)

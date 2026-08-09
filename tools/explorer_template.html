@@ -166,6 +166,19 @@ table.tbl tr:last-child td{border-bottom:none}
 .wtn .lab{font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;padding-top:3px;color:var(--faint)}
 .wtn .lab.when{color:var(--accent)} .wtn .lab.then{color:var(--commit)} .wtn .lab.never{color:var(--refuse)}
 .wtn .val{font-family:var(--mono);font-size:12.2px;line-height:1.55;color:var(--ink);white-space:pre-wrap}
+/* PCA-1 self-contained function view */
+.fn-box{margin-top:6px;border:1px solid var(--border);border-radius:9px;padding:0;background:var(--panel,transparent)}
+.fn-box>summary.fn-h{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 12px}
+.fn-box>summary.fn-h::-webkit-details-marker{display:none}
+.fn-badge{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--commit);background:var(--commit-bg,rgba(47,138,78,.12));border-radius:5px;padding:2px 8px}
+.fn-note{font-size:11px;color:var(--faint)}
+.fn-expl{padding:0 12px 8px;font-size:13px;line-height:1.55;color:var(--ink)}
+.fn-plabel{padding:6px 12px 4px;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint)}
+.fn-params{padding:0 12px 4px;display:flex;flex-direction:column;gap:3px}
+.fn-p{display:grid;grid-template-columns:auto auto 1fr auto;gap:10px;align-items:baseline;font-size:12px}
+.fn-n{font-family:var(--mono);color:var(--accent)}
+.fn-ty{font-size:11px;color:var(--faint)} .fn-src{font-size:11px;color:var(--muted,var(--faint))} .fn-ex{font-size:11px;color:var(--faint);text-align:right}
+.fn-code{margin:4px 12px 12px;background:var(--code-bg,#141a24);color:var(--code-ink,#cdd6e2);border:1px solid var(--border);border-radius:7px;padding:11px 12px;overflow-x:auto;font-family:var(--mono);font-size:11.6px;line-height:1.5;white-space:pre}
 .binds{display:flex;flex-wrap:wrap;gap:6px;margin-top:3px;align-items:center}
 .binds .bl{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);font-weight:700}
 details.prose{margin-top:4px;border-top:1px dashed var(--border);padding-top:9px}
@@ -771,7 +784,27 @@ function ruleCard(r){
     +'<div class="rule-sub">'+(r.subject?'<span class="rule-id">'+esc(r.id)+'</span>':'')
     +(r.confidence?'<span class="chip mono" title="confidence">'+esc(r.confidence)+'</span>':"")
     +(r.scope&&r.scope!==M.meta.source?'<span class="chip mono">'+esc(r.scope)+'</span>':"")+'</div>'
-    +'<div class="rule-body">'+wtn+binds+prose+'</div></div>';
+    +'<div class="rule-body">'+wtn+binds+prose+ruleFunction(r)+'</div></div>';
+}
+
+/* PCA-1 self-contained function view (Path A). Self-hides when the rule carries no function.
+   The explanation + parameters + code travel together; the explanation is operator-facing and,
+   per r.fn.llm_visible=false, is NOT sent to the model on Path A (only Path B shows it prose). */
+function ruleFunction(r){
+  if(!r.fn) return "";
+  var f=r.fn;
+  var names=(f.params||[]).map(function(p){return p.name;}).join(", ");
+  var params=(f.params||[]).map(function(p){
+    return '<div class="fn-p"><code class="fn-n">'+esc(p.name)+'</code><span class="fn-ty">'+esc(p.type)+'</span>'
+      +'<span class="fn-src">'+esc(p.source)+'</span><span class="fn-ex mono">'+esc(String(p.example))+'</span></div>';
+  }).join("");
+  var body=(f.code||"").split("\n").map(function(l){return "    "+l;}).join("\n");
+  return '<details class="fn-box" open><summary class="fn-h"><span class="fn-badge">ƒ function</span>'
+    +'<span class="fn-note" title="Path A executes the code deterministically; the explanation is operator-facing and not sent to the model">Path A · deterministic · explanation not shown to the LLM</span></summary>'
+    +'<div class="fn-expl">'+esc(f.explanation)+'</div>'
+    +(params?'<div class="fn-plabel">parameters passed to the code</div><div class="fn-params">'+params+'</div>':'')
+    +'<div class="fn-plabel">code — self-contained &amp; testable</div>'
+    +'<pre class="fn-code">def emit('+esc(names)+'):\n'+esc(body)+'</pre></details>';
 }
 
 /* ---------- concept ---------- */
