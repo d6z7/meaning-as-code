@@ -45,6 +45,11 @@ shapes:
       kind: required
       path: concept.identity.kind
 
+  # NOTE: the NO-PROBE MANDATE shape (concept-declares-no-probe) is a SERVING-domain contract, not a
+  # universal ontology invariant, so it does NOT live here (keeping this file true for ANY conformant
+  # ontology — the shop/tpch examples + self-tests stay green). It is seeded per serving-source as
+  # `<source>/ontology/shapes.yaml`, loaded by check_all.sh's `--shapes` step. See
+  # docs/HARVEST_RIGHT_FIRST_TIME.md gap #4 + the harvest scaffold.
   - id: enumeration-declares-closure
     description: an enumeration concept should declare its value-set closure (values.closure)
     target: concept

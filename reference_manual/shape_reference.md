@@ -515,6 +515,7 @@ transforms:  # the ordered cleansing steps, each dissolving ONE impurity so it n
     rule: <…>  # string
     sql: <…>  # string
     establishes_guarantee: <…>  # string · the clean fact the consuming ontology then inherits (and must not…
+    resolves: [ ... ]  # the data-quality register finding id(s) this rule dissolves — kept in…
     status: <…>  # string
     note: <…>  # string
 

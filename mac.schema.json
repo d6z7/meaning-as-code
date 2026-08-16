@@ -132,6 +132,13 @@
                 "type": "string",
                 "description": "the clean fact the consuming ontology then inherits (and must not re-derive)"
               },
+              "resolves": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "the data-quality register finding id(s) this rule dissolves — kept in sync with data/quality/{register,impurity_resolution_map} by check_dq_resolution_sync.py"
+              },
               "status": {
                 "type": "string"
               },
