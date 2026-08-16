@@ -83,27 +83,87 @@ def seed_name(rel):
     return Path(rel).name if "/" in rel else rel
 
 
-def resolve_to_col(src_col, sql):
-    """Resolve the OUTPUT column a (src_col, rule.sql) maps to, and whether the .sql confirms it.
+_AS_TAIL = re.compile(r"\bAS\s+([A-Za-z_]\w*)\s*$", re.I)
 
-    Handles the `ch_<N>` representative convention: a consumed `ch_1` whose rule sql writes `ch_<N> AS actual_ts`
-    resolves via the digit-run template `ch_<N>`. Returns (to_col, sql_confirmed)."""
+
+def _split_top_level(sql):
+    """Split a select-list on TOP-LEVEL commas only — parentheses and quoted literals are opaque.
+
+    `max(CASE WHEN a='x' THEN value END) AS iso2, max(CASE WHEN a='y' THEN value END) AS iso3`
+    -> two expressions, so a column is never matched against a neighbouring expression's alias."""
+    parts, depth, cur, quote = [], 0, [], None
+    for ch in sql:
+        if quote:
+            cur.append(ch)
+            if ch == quote:
+                quote = None
+            continue
+        if ch in "'\"":
+            quote = ch
+            cur.append(ch)
+            continue
+        if ch == "(":
+            depth += 1
+        elif ch == ")":
+            depth -= 1
+        if ch == "," and depth == 0:
+            parts.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+    if cur:
+        parts.append("".join(cur))
+    return parts
+
+
+def resolve_to_cols(src_col, sql):
+    """Every OUTPUT column a (src_col, rule.sql) maps to, and whether the .sql confirms it.
+
+    Returns (targets, sql_confirmed). The first four branches are the historical `resolve_to_col`
+    behaviour, unchanged and in the same order. The last is the EXPRESSION SCAN, which only ever runs
+    when none of them matched, so existing lineage is byte-preserved.
+
+    The expression scan exists because the EAV-pivot shape is pervasive here and defeats a plain
+    `<col> AS <name>` regex — the alias is separated from the column by the CASE terminator:
+
+        max(CASE WHEN attribute='IsoCode01' THEN value END) AS iso2
+
+    Scanning per top-level expression also makes the many-to-many honest: ONE source column legitimately
+    feeds SEVERAL outputs when a rule pivots it repeatedly (`value` -> iso2 AND iso3), so this returns a
+    LIST and the caller emits one edge per target. Conservative by construction: a target is claimed only
+    when src_col occurs (word-bounded) inside the very expression that alias terminates — a missing edge
+    is better than a fabricated one."""
     sql = sql or ""
     # cast(<col> AS <type>) keeps the name (a retype, not a rename)
     if re.search(r"cast\(\s*" + re.escape(src_col) + r"\s+as\s", sql, re.I):
-        return src_col, True
-    # <col> AS <name>
-    m = re.search(r"\b" + re.escape(src_col) + r"\s+AS\s+(\w+)", sql, re.I)
-    if m:
-        return m.group(1), True
+        return [src_col], True
+    # <col> AS <name> — the FIRST direct match keeps its historical precedence (it stays targets[0], so
+    # classify() and every 1:1 caller see exactly what they saw before); the expression scan below then
+    # UNIONS any further aliases the same column feeds, instead of the old first-match-wins truncation.
+    direct = re.search(r"\b" + re.escape(src_col) + r"\s+AS\s+(\w+)", sql, re.I)
     # templated ch_<N> slot -> collapse only the LEADING checkpoint index, never a digit inside a suffix
     # (ch_1 -> ch_<N>; ch_1_eta_first -> ch_<N>_eta_first; ch_1_eta_zp8 -> ch_<N>_eta_zp8, NOT ch_<N>_eta_zp<N>)
     tmpl = re.sub(r"^(ch_)\d+", r"\1<N>", src_col)
     if tmpl != src_col:
         m = re.search(re.escape(tmpl) + r"\s+AS\s+(\w+)", sql, re.I)
         if m:
-            return m.group(1), True
-    return src_col, False
+            return [m.group(1)], True
+    # EXPRESSION SCAN — the alias is detached from the column (CASE pivots, aggregates, concatenations)
+    word = re.compile(r"\b" + re.escape(src_col) + r"\b")
+    targets = [direct.group(1)] if direct else []
+    for expr in _split_top_level(sql):
+        m = _AS_TAIL.search(expr.strip())
+        if m and word.search(expr[:m.start()]) and m.group(1) not in targets:
+            targets.append(m.group(1))
+    if targets:
+        return targets, True
+    return [src_col], False
+
+
+def resolve_to_col(src_col, sql):
+    """The FIRST output column a (src_col, rule.sql) maps to — the 1:1 view used by classify()."""
+    targets, ok = resolve_to_cols(src_col, sql)
+    return targets[0], ok
 
 
 def classify(src_col, rule, is_open, is_union):
@@ -265,10 +325,17 @@ def build_flow(tf, sources, datasets, concepts, unclassifiable):
                     if not col_shown:
                         display.append({"name": shown, "badge": str(n_reshape)}); actual += n_reshape; col_shown = True
                 else:
-                    edges.append({"src_table": sshort, "src_col": src_col, "to_col": to_col, "rule_id": rid,
-                                  "kind": kind, "provenance": provenance(kind, sql_ok)})
+                    # ONE edge per resolved target: a pivot rule legitimately maps one source column
+                    # onto several outputs (value -> iso2 AND iso3). The column is still shown/counted
+                    # once, however many outputs it feeds.
+                    to_cols, sql_ok = resolve_to_cols(src_col, sql)
+                    for tc in to_cols:
+                        edges.append({"src_table": sshort, "src_col": src_col, "to_col": tc, "rule_id": rid,
+                                      "kind": kind, "provenance": provenance(kind, sql_ok)})
+                        produced_cols.add(tc)
                     if not col_shown:
                         display.append({"name": src_col, "badge": None}); actual += 1; col_shown = True
+                    continue
                 produced_cols.add(to_col)
 
         # bare passthroughs — a source column NOT consumed but present in the dataset, carried unchanged.
