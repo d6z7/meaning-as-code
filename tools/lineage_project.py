@@ -5,7 +5,9 @@ lineage_project.py — project the MAC data plane onto a COLUMN-LEVEL lineage mo
 A data-plane sibling of the model/mermaid projectors. Where mac_to_mermaid --lineage draws TABLE-level
 production flow (source -> transform -> dataset), this descends one level deeper: it reads each
 TransformFile's `inputs[].consumes` map ({src_col: rule_id}) plus each rule's `.sql` fragment and resolves
-every (src_col, rule) into a COLUMN edge classified by a CLOSED 9-kind vocabulary:
+every (src_col, rule) into a COLUMN edge classified by a CLOSED 9-kind vocabulary. Edges are drawn from
+every LINEAGE PARENT input — `raw_source` AND `dataset` (see EDGE_INPUT_KINDS): the chain has multiple
+levels, so a served view built on another served view carries real column lineage too.
 
     passthrough · transform(cast) · rename · reshape(wide->long) · union(multi-source) · seed · const · filter · open
 
@@ -40,6 +42,21 @@ ELLIPSIS = "…"
 # The closed edge-kind vocabulary (H2). An edge kind outside this set is a hard error.
 CLOSED_KINDS = {"passthrough", "transform", "rename", "reshape", "union", "seed", "const", "filter", "open"}
 DERIVED_KINDS = {"seed", "const"}
+
+# The input kinds that are LINEAGE PARENTS (i.e. produce column EDGES).
+#
+# WHY `dataset` belongs here: the enforced chain — raw source -> transformation -> dataset -> ontology
+# concept — has MULTIPLE LEVELS. A served dataset is itself a legitimate parent of the next dataset (a
+# "view-of-view": fpl2.country_bucket_membership is built on the served fpl2.dim_country_register, not on
+# any raw table). Treating only `raw_source` as an edge source silently collapsed those flows to
+# edges=0 with every output column falling back to derived/const — lineage that says NOTHING.
+# A dataset input resolves its columns from the upstream DATASET descriptor (data/datasets/<stem>.yaml)
+# instead of data/sources/<stem>.yaml; everything downstream (consumes -> classify -> resolve_to_col)
+# is identical.
+#
+# `authored_seed` and `external` deliberately stay SEEDS: a hand-authored reference CSV / an out-of-plane
+# input is decoration bound in at build time, not a parent the column's meaning flows down from.
+EDGE_INPUT_KINDS = ("raw_source", "dataset")
 
 DEFAULT_ROOTS = ["../cap-ontology-fpl", "../cap-ontology-hifa"]
 
@@ -194,9 +211,12 @@ def build_flow(tf, sources, datasets, concepts, unclassifiable):
 
     inputs = tf.get("inputs") or []
     raw_inputs = [i for i in inputs if (i.get("kind") == "raw_source")]
-    seed_inputs = [i for i in inputs if (i.get("kind") != "raw_source")]
+    edge_inputs = [i for i in inputs if (i.get("kind") in EDGE_INPUT_KINDS)]
+    seed_inputs = [i for i in inputs if (i.get("kind") not in EDGE_INPUT_KINDS)]
 
-    # union = >1 raw-source branch sharing the same consumes key-set
+    # union = >1 raw-source branch sharing the same consumes key-set. Deliberately scoped to RAW branches:
+    # a union is a UNION ALL over sibling raw extracts of the same physical shape. A dataset input is a
+    # single upstream view, never a union sibling, so it must not perturb this shape test.
     consume_shapes = [tuple(sorted((i.get("consumes") or {}).keys())) for i in raw_inputs]
     is_union = len(raw_inputs) > 1 and len(set(consume_shapes)) == 1
 
@@ -206,10 +226,12 @@ def build_flow(tf, sources, datasets, concepts, unclassifiable):
 
     edges, predicates, sources_out, produced_cols = [], [], [], set()
 
-    for inp in raw_inputs:
+    for inp in edge_inputs:
         srel = inp.get("relation", "")
         sshort = bare(srel)
-        sdoc = sources.get(sshort) or {}
+        is_dataset_parent = inp.get("kind") == "dataset"
+        # a dataset parent's columns live in data/datasets/<stem>.yaml, a raw parent's in data/sources/
+        sdoc = ((datasets.get(sshort) if is_dataset_parent else sources.get(sshort)) or {})
         stable = sdoc.get("table") or {}
         scols = [c for c in (sdoc.get("columns") or []) if isinstance(c, dict) and c.get("name")]
         scol_names = [c["name"] for c in scols]
@@ -249,8 +271,13 @@ def build_flow(tf, sources, datasets, concepts, unclassifiable):
                         display.append({"name": src_col, "badge": None}); actual += 1; col_shown = True
                 produced_cols.add(to_col)
 
-        # bare passthroughs — a source column NOT consumed but present in the dataset, carried unchanged
-        for name in scol_names:
+        # bare passthroughs — a source column NOT consumed but present in the dataset, carried unchanged.
+        # RAW parents only: a raw descriptor is the physical table, so a same-named column that survives
+        # into the dataset really was carried. A dataset parent's `consumes` is a DECLARED contract between
+        # two governed views (and is routinely empty when the parent only drives row coverage, e.g. a
+        # fact_coverage / kpi_vocab input), so inferring edges from bare name collisions there would
+        # FABRICATE lineage rather than project it.
+        for name in ([] if is_dataset_parent else scol_names):
             if name in consumes or name not in dcol_names or name in produced_cols:
                 continue
             edges.append({"src_table": sshort, "src_col": name, "to_col": name, "rule_id": None,

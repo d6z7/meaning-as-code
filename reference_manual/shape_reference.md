@@ -101,6 +101,8 @@ metadata:  # REQUIRED
   status: <…>  # enum: production | draft | prototype
   owner: <…>  # string
   confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
+  provenance: <…>  # enum: harvested | authored | tuned · How this object came to be: harvested = emitted by the harvest…
+  profiled_via: <…>  # string · Free-text note on how the raw source was profiled (e.g
 
 concept:  # REQUIRED
   name: <…>  # REQUIRED · string · PascalCase ontology id — the single canonical identifier.

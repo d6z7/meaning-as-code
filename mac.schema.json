@@ -527,7 +527,11 @@
               },
               "confidence": {
                 "type": "string",
-                "enum": [ "C", "P", "R" ],
+                "enum": [
+                  "C",
+                  "P",
+                  "R"
+                ],
                 "description": "Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal)."
               }
             }
@@ -1099,6 +1103,19 @@
             },
             "confidence": {
               "$ref": "#/$defs/confidence"
+            },
+            "provenance": {
+              "type": "string",
+              "enum": [
+                "harvested",
+                "authored",
+                "tuned"
+              ],
+              "description": "How this object came to be: harvested = emitted by the harvest (self-documenting); authored/tuned = MANUAL work, which MUST carry an entry in interventions/ledger.yaml (check_intervention_ledger.py)."
+            },
+            "profiled_via": {
+              "type": "string",
+              "description": "Free-text note on how the raw source was profiled (e.g. 'Glue + Athena profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp."
             }
           },
           "patternProperties": {
