@@ -31,43 +31,44 @@ ERROR, WARNING, INFO = "error", "warning", "info"
 ORDER = {ERROR: 0, WARNING: 1, INFO: 2}
 
 # ── the closed diagnostic taxonomy ────────────────────────────────────────────────────────────────
-# The code is the contract. Its text may be reworded; its meaning may not change without a version
+# READ, NOT RESTATED. The taxonomy lives in mac_vocabulary.yaml#diagnostic_code, the one home for
+# every closed vocabulary this framework owns. It used to be a dict right here while ALSO being
+# tabulated in CONFORMANCE.md — two hand-maintained copies of a set whose own comment called it
+# CLOSED, which is exactly what check_vocabulary_drift exists to forbid. The framework was breaking
+# its own rule about its own error codes.
+#
+# The CODE is the contract. Its text may be reworded; its meaning may not change without a version
 # bump, because suppressions and counts are keyed on it.
-CODES = {
-    # WHAT IS NOT DEFINED
-    "MAC001": ("undefined-artifact",
-               "present in the bundle, carries no MAC definition, not declared out of scope"),
-    "MAC002": ("invalid-artifact",
-               "has a MAC definition and does not satisfy it"),
-    "MAC009": ("undeclared-extension",
-               "an x- key with no profile entry — CONFORMANCE.md §2: undeclared debt, not license"),
 
-    # WHAT IS DEFINED REDUNDANTLY
-    "MAC003": ("fact-restated",
-               "one fact stated in more than one home; nothing keeps the copies in step"),
-    "MAC004": ("fact-contradicted",
-               "statements of one fact disagree — something downstream is reading the wrong one"),
+def _load_codes() -> dict:
+    """{code: (kind, description)} from the vocabulary. A framework that cannot read its own taxonomy
+    must fail LOUDLY here: every diagnostic downstream is keyed on these, and silently degrading to an
+    empty map would render every finding as `unknown` while still reporting the bundle."""
+    import yaml
+    from pathlib import Path as _P
+    doc = yaml.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
+                         .read_text(encoding="utf-8")) or {}
+    terms = (doc.get("diagnostic_code") or {}).get("terms") or {}
+    if not terms:
+        raise RuntimeError("mac_vocabulary.yaml#diagnostic_code is missing or empty — the diagnostic "
+                           "taxonomy has no home, so no finding can be classified")
+    return {c: (m.get("kind", "unknown"), m.get("description", "")) for c, m in terms.items()}
 
-    # WHAT IS OFFERED AND NOT TAKEN
-    "MAC005": ("capability-unadopted",
-               "MAC offers a mechanism for this and the bundle does not use it"),
 
-    # WHAT IS CLAIMED WITHOUT WARRANT
-    "MAC006": ("claim-unearned",
-               "a conformance level or confidence asserted with no evidence behind it"),
-    "MAC010": ("change-unprotocolled",
-               "an authored or tuned object with no entry in the change record"),
+CODES = _load_codes()
+SEVERITY_DEFAULT = None      # filled below; a check may override per finding and says why when it does
 
-    # WHAT POINTS AT NOTHING
-    "MAC007": ("guard-dead",
-               "a rule or guard testing a value that cannot occur — it can never fire"),
-    "MAC008": ("reference-unresolved",
-               "a reference that resolves to nothing"),
 
-    # WHAT IS NOT COVERED
-    "MAC011": ("coverage-missing",
-               "a required completeness the bundle does not reach"),
-}
+def _load_severities() -> dict:
+    import yaml
+    from pathlib import Path as _P
+    doc = yaml.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
+                         .read_text(encoding="utf-8")) or {}
+    return {c: m.get("severity", WARNING)
+            for c, m in ((doc.get("diagnostic_code") or {}).get("terms") or {}).items()}
+
+
+SEVERITY_DEFAULT = _load_severities()
 
 
 @dataclass(frozen=True)

@@ -181,3 +181,76 @@ canon:
     relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
     enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
     grouping_from_register: { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping." }
+
+# ===========================================================================
+# mac.diagnostic_code — THE CLOSED DIAGNOSTIC TAXONOMY. Every finding the compiler can make.
+#
+# MOVED HERE 2026-08-18, on the operator's observation. It lived as a Python dict in
+# tools/mac_diag.py while ALSO being tabulated in CONFORMANCE.md — two hand-maintained homes for a
+# taxonomy whose own docstring called it CLOSED. That is precisely the defect check_vocabulary_drift
+# was built to catch hours earlier, and the framework was committing it about its own error codes.
+#
+# The CODE is the contract: its text may be reworded, its meaning may not change without a version
+# bump, because suppressions and counts are keyed on it. `severity` is the DEFAULT a check emits at;
+# a check may raise or lower it for a specific finding and says why when it does.
+# ===========================================================================
+diagnostic_code:
+  kind: vocabulary
+  closed: true
+  description: The closed taxonomy of findings the MAC compiler can report.
+  terms:
+    MAC001:
+      kind: undefined-artifact
+      severity: error
+      group: "what is not defined"
+      description: "present in the bundle, carries no MAC definition, not declared out of scope"
+    MAC002:
+      kind: invalid-artifact
+      severity: error
+      group: "what is not defined"
+      description: "has a MAC definition and does not satisfy it"
+    MAC009:
+      kind: undeclared-extension
+      severity: error
+      group: "what is not defined"
+      description: "an x- key with no profile entry — CONFORMANCE.md §2: undeclared debt, not license"
+    MAC003:
+      kind: fact-restated
+      severity: warning
+      group: "what is defined redundantly"
+      description: "one fact stated in more than one home; nothing keeps the copies in step"
+    MAC004:
+      kind: fact-contradicted
+      severity: error
+      group: "what is defined redundantly"
+      description: "statements of one fact disagree — something downstream is reading the wrong one"
+    MAC005:
+      kind: capability-unadopted
+      severity: warning
+      group: "what is offered and not taken"
+      description: "MAC offers a mechanism for this and the bundle does not use it"
+    MAC006:
+      kind: claim-unearned
+      severity: warning
+      group: "what is claimed without warrant"
+      description: "a conformance level or confidence asserted with no evidence behind it"
+    MAC010:
+      kind: change-unprotocolled
+      severity: warning
+      group: "what is claimed without warrant"
+      description: "an authored or tuned object with no entry in the change record"
+    MAC007:
+      kind: guard-dead
+      severity: error
+      group: "what points at nothing"
+      description: "a rule or guard testing a value that cannot occur — it can never fire"
+    MAC008:
+      kind: reference-unresolved
+      severity: error
+      group: "what points at nothing"
+      description: "a reference that resolves to nothing"
+    MAC011:
+      kind: coverage-missing
+      severity: error
+      group: "what is not covered"
+      description: "a required completeness the bundle does not reach"

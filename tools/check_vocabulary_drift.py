@@ -36,6 +36,11 @@ import mac_diag as D
 
 _ROOT = Path(__file__).resolve().parent.parent
 _LITERAL = re.compile(r"\bmac\.([a-z_]+)\.([a-z_][a-z0-9_]*)\b")
+# Diagnostic codes are written BARE — `MAC007`, never `mac.diagnostic_code.MAC007` — so the qualified
+# pattern above cannot see them. They are a closed vocabulary like any other and drift the same way:
+# a check emitting a code the taxonomy does not define produces a finding nobody can suppress, count
+# or argue with by class.
+_CODE = re.compile(r"\b(MAC\d{3})\b")
 
 
 def _vocabularies() -> dict:
@@ -72,6 +77,10 @@ def check_vocabulary_drift(root=None) -> list:
                 if voc in vocab and term not in vocab[voc]:
                     bad.append(D.Witness(file=str(f.relative_to(_ROOT)), line=i,
                                          detail=f"mac.{voc}.{term} — `{voc}` has no member `{term}`"))
+            for code in _CODE.findall(line):
+                if "diagnostic_code" in vocab and code not in vocab["diagnostic_code"]:
+                    bad.append(D.Witness(file=str(f.relative_to(_ROOT)), line=i,
+                                         detail=f"{code} — diagnostic_code has no such member"))
     if not bad:
         return []
     return [D.Diagnostic(
