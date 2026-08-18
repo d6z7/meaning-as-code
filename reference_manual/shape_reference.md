@@ -595,6 +595,8 @@ reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the
     must_exit: <…>  # integer
 
 acceptance:  # Where this source declares its test-verification artifacts for the…
+
+lookups: <…>  # string · data/lookups root — the value registers a concept may delegate to.
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
@@ -767,6 +769,28 @@ shapes:  # REQUIRED
 metadata:
 
 rule:  # REQUIRED
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### SmeLedgerFile
+
+*discriminator key:* `?:` · *required:* `questions`
+
+```yaml
+registry: <…>  # string
+
+source: <…>  # string
+
+questions:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    question: <…>  # REQUIRED · string
+    status: <…>  # enum: OPEN | PARTIAL | RESOLVED | NEEDS_SME_CONFIRMATION
+    owner: <…>  # string
+    about: <…>  # string
+    answer: <…>  # string
+    answered_by: <…>  # string
+    answered_on: <…>
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 

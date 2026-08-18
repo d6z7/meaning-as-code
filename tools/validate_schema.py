@@ -64,6 +64,7 @@ def _pick_def(path, layout=None):
         'impurity_resolution_map.yaml': 'ImpurityResolutionMapFile',
         'PHASE.yaml': 'PhaseFile',
         'shapes.yaml': 'ShapesFile',
+        'sme_ledger.yaml': 'SmeLedgerFile',
     }
     if base in _BY_BASE:
         return _BY_BASE[base]
@@ -193,10 +194,15 @@ def enumerate_bundle(root, layout=None):
         files.append(proj)
     # v0.1.14 — the nine artifacts MAC gained definitions for. COLLECTED here, routed in _pick_def.
     # Both halves are needed: a definition nothing enumerates is a definition nothing applies.
+    # BOTH LAYOUTS. fpl2 grew these across four homes (bundle root, ontology/, acceptance/,
+    # interventions/); a source scaffolded from v0.1.16 puts them in one `governance/` plane. Routing
+    # keys on BASENAME, so it already handled both — collection did not, and a definition nothing
+    # enumerates is a definition nothing applies. Second time that half was the one missed.
     for pat in ('acceptance/properties.yaml', 'interventions/ledger.yaml',
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
-                'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml'):
+                'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',
+                'governance/*.yaml', 'governance/protosql/*.yaml'):
         files += [f for f in glob.glob(os.path.join(root, pat)) if not _skipped(f)]
     files = sorted(set(files))
 

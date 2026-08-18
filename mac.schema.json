@@ -49,6 +49,9 @@
     },
     {
       "$ref": "#/$defs/ProtoSqlFile"
+    },
+    {
+      "$ref": "#/$defs/SmeLedgerFile"
     }
   ],
   "$defs": {
@@ -420,10 +423,11 @@
         },
         "additivity": {
           "type": "object",
-          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time.",
+          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.16: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: ideal_stock declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.",
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
-          }
+          },
+          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#MeasureType"
         },
         "axis_kinds": {
           "type": "object",
@@ -2220,6 +2224,10 @@
         "acceptance": {
           "type": "object",
           "description": "Where this source declares its test-verification artifacts for the generic board/gate."
+        },
+        "lookups": {
+          "type": "string",
+          "description": "data/lookups root — the value registers a concept may delegate to."
         }
       },
       "additionalProperties": false,
@@ -2669,6 +2677,66 @@
         },
         "rule": {
           "type": "object"
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "SmeLedgerFile": {
+      "type": "object",
+      "description": "v0.1.16: THE DOUBT CHANNEL. A harvest with nowhere to put an uncertainty writes it out as a confident fact — measured on a bundle that had no ledger: 17 of 22 concepts arrived stamped confidence C with an owner who had never seen them, and one unreviewed claim produced a wrong value anchor that stood for weeks. An OPEN QUESTION is a successful outcome of authoring, and this is where it goes.",
+      "required": [
+        "questions"
+      ],
+      "properties": {
+        "registry": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "question"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "question": {
+                "type": "string"
+              },
+              "status": {
+                "enum": [
+                  "OPEN",
+                  "PARTIAL",
+                  "RESOLVED",
+                  "NEEDS_SME_CONFIRMATION"
+                ]
+              },
+              "owner": {
+                "type": "string"
+              },
+              "about": {
+                "type": "string"
+              },
+              "answer": {
+                "type": "string"
+              },
+              "answered_by": {
+                "type": "string"
+              },
+              "answered_on": {}
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
         }
       },
       "patternProperties": {

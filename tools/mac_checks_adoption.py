@@ -277,6 +277,14 @@ def _schema_offers(fw: Framework, since: dict) -> tuple:
                     slot = dotted(ptr, k)
                     if slot in seen or "." not in slot:
                         continue                       # a bare top-level key is a document, not a slot
+                    # A DERIVED slot is not an unadopted capability. v0.1.16 made
+                    # `concept.semantics.additivity` derivable from (measure_type x axis_kind), so its
+                    # ABSENCE is the desired state — and this check promptly reported 9 sites as
+                    # failing to adopt the very block that was just removed on purpose, i.e. it told
+                    # the reader to re-add what the framework had stopped asking for. A slot says so
+                    # itself via `x-derived-from`; nothing here carries a list of special cases.
+                    if v.get("x-derived-from"):
+                        continue
                     seen.add(slot)
                     o = Offer(key=slot, kind=SLOT, slot=slot,
                               since=_since_for(slot, desc, since),
