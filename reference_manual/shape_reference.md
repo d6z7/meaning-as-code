@@ -580,7 +580,7 @@ reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the
   stages:  # REQUIRED
     - <item>
       id: <…>  # REQUIRED · string
-      authoring: <…>  # REQUIRED · enum: tool | hand | tool-then-hand · WHO authors this stage's outputs
+      authoring: <…>  # REQUIRED · enum: tool | model | hand | model-then-hand · WHO authors this stage's outputs
       command: <…>  # string · the command that performs it, when there is one
       produces: [ ... ]  # bundle-relative globs this stage is expected to create
       billed: <…>  # boolean

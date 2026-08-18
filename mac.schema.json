@@ -2112,10 +2112,11 @@
                   "authoring": {
                     "enum": [
                       "tool",
+                      "model",
                       "hand",
-                      "tool-then-hand"
+                      "model-then-hand"
                     ],
-                    "description": "WHO authors this stage's outputs. `tool` = mechanical/generated; `hand` = a human or agent authors it from business sources. The distinction is checkable against each object's `provenance`."
+                    "description": "WHO authors this stage's outputs. `tool` = deterministic/mechanical (projection, scaffolding). `model` = an LLM authors them from live metadata + SME context — this is what 'harvest' MEANS, and it is NOT mechanical: the data-plane prompt asks a model to author descriptors, DQ findings, cleansing rules and view SQL. `hand` = a human or agent authors from business sources. `model-then-hand` = model draft, human refinement — the honest state of most harvested bundles. ADDED after `tool` was measured to be a false claim about the data plane on fpl2: calling LLM authoring 'mechanical' is what lets 17 of 22 concepts carry an unreviewed CONFIRMED stamp without anyone noticing a claim had been made."
                   },
                   "command": {
                     "type": "string",
@@ -2140,7 +2141,7 @@
             },
             "prohibited": {
               "type": "array",
-              "description": "Commands that must NOT be run against this bundle, each with the reason. A prohibition must name EVERY command that reaches the forbidden behaviour, not just the obvious one.",
+              "description": "Commands that must NOT be run against this bundle, each with the reason. A prohibition must name EVERY command that reaches the forbidden behaviour, not just the obvious one. USE SPARINGLY AND ONLY ON A RULING. A prohibition on the only mechanism that can produce an artifact does not protect the bundle — it guarantees that artifact is hand-written forever. A tool whose CURRENT output is inadequate is a limitation to record on the stage, not a ban.",
               "items": {
                 "type": "object",
                 "required": [
