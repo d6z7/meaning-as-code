@@ -24,14 +24,29 @@ shapes:
       path: concept.class
       values: [entity, event, measure, enumeration, reference, grouping, meta]
 
-  - id: measure-declares-additivity
-    description: a measure concept must declare its per-axis additivity (the SUM footgun-preventer)
+  # v0.1.16: the footgun-preventer now demands the DERIVATION INPUTS, not the derived answer. A measure
+  # says what it IS and what its axes ARE; mac_vocabulary.yaml#MeasureType says what that implies. The
+  # old shape required the concept to write the implication out, which let it author both the premise
+  # and the conclusion — and ideal_stock duly declared `Target` while writing `geography: additive`,
+  # producing a wrong value anchor that stood for weeks. The SUM is still prevented; it is now prevented
+  # by a fact that cannot be contradicted because nobody writes it twice.
+  - id: measure-declares-type
+    description: a measure concept must declare measure_type (what it is) — additivity derives from it
     target: concept
     where: { concept.class: measure }
     severity: error
     constraint:
       kind: required
-      path: concept.semantics.additivity
+      path: concept.semantics.measure_type
+
+  - id: measure-declares-axis-kinds
+    description: a measure concept must declare axis_kinds — the law resolves per (measure_type x axis_kind)
+    target: concept
+    where: { concept.class: measure }
+    severity: error
+    constraint:
+      kind: required
+      path: concept.semantics.axis_kinds
 
   # CANONICAL IDENTITY (v0.1.11): every concept declares HOW it is identified (concept.identity.kind ∈
   # mac.identity_kind), so disambiguation is uniform and machine-checkable. WARN-FIRST during migration —

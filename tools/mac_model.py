@@ -376,7 +376,10 @@ class Axis:
     measure: str
     name: str
     kind: Stated | None          # concept.semantics.axis_kinds.<name>, as written
-    additivity: Stated | None    # concept.semantics.additivity.<name>, as written
+    additivity: Stated | None    # RESOLVED: the concept's own value when it wrote one, otherwise the
+                                 # law's, cited to «framework»/mac_vocabulary.yaml. v0.1.16 stopped
+                                 # requiring concepts to write it — a consumer must not have to care
+                                 # which of the two it got, only that the value carries its Site.
     role: str                    # "aggregation_axis" | "measure_selector" — DERIVED, see _axis_role
 
 
@@ -981,6 +984,36 @@ def _build_values(doc: Doc, concept: str, kind: str) -> ValueSet | None:
     return ValueSet(concept, closure, reg_ref, None, tuple(members))
 
 
+
+def _derived_additivity(axis: str, axis_kinds: dict, measure_type, selectors: frozenset):
+    """The law's value for an axis the concept did not write, carrying the law's own provenance.
+
+    v0.1.16. Before this, `additivity` was schema-REQUIRED, so every measure wrote out what its own
+    `measure_type` already implies — the concept authored the premise AND the conclusion, and the two
+    could drift. `ideal_stock` declared `Target` and wrote `geography: additive`, which the law
+    forbids; ANCHOR_05 summed Ideal Stock across models on the strength of it and stood for weeks.
+    You cannot contradict a value you do not write.
+
+    NOTHING IS REIMPLEMENTED HERE. `Law.additivity()` already resolves (MeasureType x axis_kind) and
+    stamps the result with its Site in «framework»/mac_vocabulary.yaml, so a consumer can always see
+    WHERE a value came from — concept or law — without caring which.
+
+    A MEASURE SELECTOR is answered `none` and never asked of the law: selecting a different value of a
+    discriminator selects a different MEASURE, so no fold along it is meaningful (see _axis_role), and
+    the law deliberately makes no statement about one.
+
+    Returns None when the law cannot decide — an unknown measure_type, or an axis with no declared
+    kind. None is the honest answer; inventing `additive` would be the exact footgun this prevents.
+    """
+    if axis in selectors:
+        return Stated("none", Site(f"{FRAMEWORK}/{VOCABULARY}", "measure_selector"), "framework")
+    if not measure_type or not axis_kinds.get(axis):
+        return None
+    stated = _law().additivity(measure_type, axis_kinds[axis])
+    if stated is None:
+        return None
+    return Stated(str(stated.value).split(".")[-1], stated.site, "framework")
+
 def _build_measure(doc: Doc, concept: str, c: dict, kind: str, selectors: frozenset) -> Measure:
     s = _as_dict(c.get("semantics"))
     additivity = _as_dict(s.get("additivity"))
@@ -995,7 +1028,8 @@ def _build_measure(doc: Doc, concept: str, c: dict, kind: str, selectors: frozen
                   if axis in axis_kinds else None),
             additivity=(Stated(additivity[axis],
                                Site(doc.relpath, f"concept.semantics.additivity.{axis}"), kind)
-                        if axis in additivity else None),
+                        if axis in additivity else
+                        _derived_additivity(axis, axis_kinds, s.get("measure_type"), selectors)),
             role=_axis_role(axis, selectors))
     mt = s.get("measure_type")
     unit = s.get("unit")
@@ -1277,6 +1311,12 @@ def _family_measure_additivity(b: Bundle) -> tuple:
         for axis_name, axis in m.axes.items():
             if axis.additivity is None:        # the family is about a DECLARED fold; nothing stated,
                 continue                       # nothing to compare, and deriving it is not a defect
+            # v0.1.16: a DERIVED value is not a second home — it IS the law's statement, carrying the
+            # law's own Site. Counting it here would compare the law against itself and report every
+            # measure as restating a fact nobody wrote. `provenance == "framework"` is the marker
+            # _derived_additivity stamps on `kind`; an authored value never carries it.
+            if axis.additivity.kind == "framework":
+                continue
             statements, normalized = [], []
             # HOME FIRST: the law is what the concept's value is derivable FROM, never the reverse,
             # so it leads the tuple and Fact.home() names the site that should hold the fact once.

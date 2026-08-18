@@ -316,7 +316,7 @@ open_questions:
 **Per `concept.class` (conditional shape):**
 
 - **event** — requires `lifecycle`
-- **measure** — requires `concept.semantics.additivity`; requires `concept.semantics`
+- **measure** — requires `concept.semantics.measure_type`; requires `concept.semantics.axis_kinds`; requires `concept.semantics`
 - **enumeration** — requires `values`; forbids `enumerations`
 - **grouping** — requires `members`
 

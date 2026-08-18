@@ -1388,6 +1388,7 @@
             }
           },
           "then": {
+            "$comment": "v0.1.16: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: ideal_stock declared `Target` and wrote `geography: additive`, which the law forbids, and ANCHOR_05 summed Ideal Stock across models on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [
@@ -1396,7 +1397,8 @@
                 "properties": {
                   "semantics": {
                     "required": [
-                      "additivity"
+                      "measure_type",
+                      "axis_kinds"
                     ]
                   }
                 }
