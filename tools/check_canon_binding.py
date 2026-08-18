@@ -85,6 +85,13 @@ def check_canon_binding(root) -> list:
                 unresolved.append(D.Witness(file=rel, path=r.get("id", ""), detail=str(exc)[:140]))
                 continue
             authored, rendered = _flat(r), _flat(out)
+            # NOTHING WRITTEN, NOTHING TO DRIFT. A bound rule may omit when/then/never entirely —
+            # the schema permits it precisely because the canon renders them — and then there is no
+            # second home and no comparison to make. Reporting "prose lacks REFUSE" for a rule that
+            # deliberately carries no prose inverts the check: it would push authors back toward the
+            # hand-written copies this whole mechanism exists to remove.
+            if not authored.strip():
+                continue
             # SYMMETRIC, and it took a failed probe to notice. The first cut only asked "does the
             # render lose something the author wrote", which misses the direction that matters more:
             # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution ban

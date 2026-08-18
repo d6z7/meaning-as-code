@@ -47,6 +47,28 @@ metadata:
   description: Behavioural contracts that hold for any conformant ontology.
 
 rules:
+  # ── the one that governs the other two, and everything else ──────────────────────────────────────
+  - id: mac.guarantee.never_guess
+    subject: "Never guess — an answer that cannot be established from the data is a refusal"
+    kind: mac.rule_kind.guarantee
+    scope: { concept.class: "*" }
+    confidence: C
+    when:  "any question whose answer cannot be established from the grounded data"
+    then:  "REFUSE, and say what was missing — the scope that had no row, the name that did not
+            resolve, the grain that was not available"
+    never: "guessing, estimating, interpolating, or returning a plausible value in place of one the
+            data does not support; returning an empty result framed as a real zero"
+    why: >
+      This is the no-hallucination invariant, stated where a rule can reach it. It was previously
+      restated inside every refusal rule as the clause "never guess or estimate" — thirteen times in
+      one bundle, and one of those thirteen (`market`) had dropped it, so the rule forbade
+      fuzzy-substitution while permitting an outright invention. A law repeated per site is a law that
+      goes missing at one of them.
+
+      The two rules above are SPECIALISATIONS of this one: they say what refusing looks like for a
+      measure with no row, and for a name that does not resolve. They do not re-derive the ban, and a
+      concept must not restate it either.
+
   - id: mac.exclusion.no_evidence.measure
     subject: "Refuse a measure with no row for the resolved scope — never guess, estimate or zero-fill"
     kind: mac.rule_kind.exclusion
