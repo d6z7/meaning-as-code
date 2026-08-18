@@ -1,0 +1,77 @@
+# mac_rules.yaml — the framework's COMMON RULES: behavioural contracts MAC states ONCE.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# MAC already ships two kinds of universal statement and had no home for a third:
+#
+#   mac.schema.json   STRUCTURE   what an artifact must look like
+#   mac_shapes.yaml   CONSTRAINT  invariants true of any conformant ontology
+#   mac_rules.yaml    BEHAVIOUR   how to ACT, true of any conformant ontology     <- this file
+#
+# MEASURED, and it is why this exists. gaps/fpl2 carried the SAME refusal law thirteen times, once per
+# measure concept — 13 distinct `when` wordings, 13 `then`, 12 `never`. Every copy individually
+# well-formed, so no gate ever saw anything; and one of them (`market`) ended up with a BARE `then`
+# that promised an evidence-boundary answer it could not produce. Of the 13, THREE carried no
+# information at all beyond the concept's own name.
+#
+# The law "a measure with no row for the resolved scope must REFUSE, never guess and never zero-fill"
+# is not a fact about Gross Stock. It is a fact about MEASURES. Restating it per concept is the
+# N-homes defect the whole framework argues against, applied to behaviour instead of to data.
+#
+# HOW A BUNDLE USES THIS
+# ----------------------
+# It does not. A common rule APPLIES to every concept matching `applies_to`, without the bundle
+# writing anything. A concept writes only what MAC cannot know:
+#
+#   * `bundle_may_supply` names the parameters a concept MAY add — `confusable` is the important one,
+#     because only the author knows which measure a tired reader would substitute (an empty Gross
+#     Stock answered with Ideal Stock is worse than no answer).
+#   * a concept that needs to say something DIFFERENT still writes its own rule; a local rule with the
+#     same id OVERRIDES the common one, and that override is visible precisely because it is rare.
+#
+# THE TEST: deleting every `exclusion.no_evidence` rule from every concept in a bundle must not change
+# what that bundle refuses. If it does, the common rule is under-specified — or the concept was
+# carrying an exception it never declared as one.
+metadata:
+  spec_version: mac.rules/1
+  description: Behavioural contracts that hold for any conformant ontology.
+
+rules:
+  - id: mac.rule.exclusion.no_evidence.measure
+    subject: "Refuse a measure with no row for the resolved scope — never guess, estimate or zero-fill"
+    kind: mac.rule_kind.exclusion
+    applies_to:
+      concept.class: measure
+    realized_by:
+      udf: mac.canon.refuse_measure_no_row
+    params_from_concept:
+      # what MAC can work out for itself; a concept overrides only where it differs
+      label: concept.label
+      source: metadata.source
+    bundle_may_supply:
+      - confusable       # which measures a reader would wrongly substitute — ONLY the author knows
+      - slot             # what was resolved and found empty, when it is not "scope"
+      - null_is_real     # set when a RESOLVED row's null MEANS something and must not become 0
+      - substitute_kind  # "source" for a cross-source measure; "measure" otherwise
+      - ban_in_then      # whether the substitution ban is restated in `then` as well as `never`
+    rationale: >
+      The evidence boundary is universal: a measure that has no row for what was asked has no answer,
+      and every way of producing one anyway — a guess, an estimate, a zero, another measure's figure —
+      is worse than the refusal, because it looks like an answer.
+
+  - id: mac.rule.exclusion.no_evidence.name
+    subject: "Refuse a name that does not resolve to a code — never fuzzy-substitute a near miss"
+    kind: mac.rule_kind.exclusion
+    applies_to:
+      concept.class: reference
+    realized_by:
+      udf: mac.canon.refuse_unresolvable_name
+    params_from_concept:
+      thing: concept.label
+      source: metadata.source
+    bundle_may_supply:
+      - code             # the identity it should have resolved to
+      - via              # the register the lookup goes through, when there is one
+    rationale: >
+      A near-miss substitution is the failure this prevents: answering about the Golf when the question
+      said Golf Plus is worse than refusing, because the answer looks right.
