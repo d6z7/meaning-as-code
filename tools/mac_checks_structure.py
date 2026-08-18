@@ -258,8 +258,8 @@ _PROFILE_KEYS = ("profile", "x_profile", "extensions")
 
 def _profile(root) -> dict:
     """CONFORMANCE §2: 'a project declares a PROFILE: the list of x- keys it uses and what each means.'
-    The standard names the construct and gives it no schema home, so the only project-level document
-    there is gets searched, under every spelling in use."""
+    Since v0.1.14 the construct HAS a schema home — mac.schema.json#$defs/ProjectFile#profile.extensions
+    — but the three pre-schema spellings are still read, so a bundle written before it keeps working."""
     proj = os.path.join(str(root), "mac.project.yaml")
     if not os.path.exists(proj):
         return {}
@@ -270,7 +270,12 @@ def _profile(root) -> dict:
     for key in _PROFILE_KEYS:
         block = doc.get(key)
         if isinstance(block, dict):
-            return block
+            # v0.1.14 gave the construct a SCHEMA HOME ($defs/ProjectFile), and it nests the keys one
+            # level down under `extensions` so `profile` can carry more than the key list later. The
+            # three legacy spellings held the map directly, so both shapes are read: descend when the
+            # block is the schema-defined wrapper, otherwise take it as the map itself.
+            inner = block.get("extensions")
+            return inner if isinstance(inner, dict) else block
     return {}
 
 

@@ -69,6 +69,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import mac_checks_adoption as ADOPTION            # noqa: E402
+import check_reproduction as REPRO
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -106,6 +107,8 @@ PHASES = (
      "what is stated twice, contradicted, unwarranted, dead, or off the record"),
     ("adoption", ("MAC005",), "conformance",
      "what MAC offers and the bundle does not take"),
+    ("reproduction", ("MAC004", "MAC008", "MAC011"), "root",
+     "whether the process RECORD still agrees with the artifacts"),
 )
 
 
@@ -118,6 +121,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return SEMANTIC.run(bundle_model, root)
     if name == "adoption":
         return ADOPTION.check(root, fw=framework, bundle=bundle_conf)
+    if name == "reproduction":
+        return REPRO.check_reproduction(root)
     raise KeyError(name)                                     # PROGRAMMER error, not bundle content
 
 

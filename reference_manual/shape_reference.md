@@ -537,4 +537,65 @@ governance:  # Housekeeping
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
+### ProjectFile
+
+*discriminator key:* `?:` · *required:* `planes`
+
+```yaml
+spec_version: <…>  # string · Absent on bundles predating the container spec (cap-ontology-fpl);…
+
+metadata:
+  project: <…>  # REQUIRED · string
+  kind: <…>  # string
+  data_domain: <…>  # string
+  dataset: <…>  # string
+  label: <…>  # string
+  domain_label: <…>  # string
+
+capabilities:  # Claims validated against real contents on Open; a claim the container…
+
+planes:  # REQUIRED · plane name -> directory
+
+sources: <…>  # string
+
+transforms: <…>  # string
+
+descriptors: <…>  # string
+
+runtime:
+
+publish:
+
+profile:  # CONFORMANCE.md §2: the core is CLOSED; an application extends it under…
+  extensions:  # REQUIRED · x- key -> what it means and why it exists.  # open: extra keys allowed
+
+conformance:  # What this bundle declares about its own conformance
+  out_of_scope:
+    - <item>
+      path: <…>  # REQUIRED · string · glob, bundle-relative
+      reason: <…>  # REQUIRED · string
+
+reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the artifacts…
+  narrative: <…>  # string · path to the human-readable twin, e.g
+  stages:  # REQUIRED
+    - <item>
+      id: <…>  # REQUIRED · string
+      authoring: <…>  # REQUIRED · enum: tool | hand | tool-then-hand · WHO authors this stage's outputs
+      command: <…>  # string · the command that performs it, when there is one
+      produces: [ ... ]  # bundle-relative globs this stage is expected to create
+      billed: <…>  # boolean
+      note: <…>  # string
+  prohibited:  # Commands that must NOT be run against this bundle, each with the reason
+    - <item>
+      command: <…>  # REQUIRED · string
+      reason: <…>  # REQUIRED · string
+      enforced_by: <…>  # string · the checkable consequence, e.g
+  gate:  # the command that decides whether the rebuild succeeded  # closed: only keys above
+    command: <…>  # string
+    must_exit: <…>  # integer
+
+acceptance:  # Where this source declares its test-verification artifacts for the…
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
 <!-- END GENERATED:schema-shapes -->

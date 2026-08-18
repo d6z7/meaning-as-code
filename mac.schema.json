@@ -19,6 +19,9 @@
     },
     {
       "$ref": "#/$defs/TransformFile"
+    },
+    {
+      "$ref": "#/$defs/ProjectFile"
     }
   ],
   "$defs": {
@@ -1949,6 +1952,241 @@
         "^x-": true
       },
       "additionalProperties": false
+    },
+    "ProjectFile": {
+      "type": "object",
+      "description": "v0.1.14: THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and `^x-` remains the sanctioned way to extend. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It now carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on fpl2's REPRODUCTION.md).",
+      "required": [
+        "planes"
+      ],
+      "properties": {
+        "spec_version": {
+          "type": "string",
+          "pattern": "^mac\\.container/[0-9]+$",
+          "description": "Absent on bundles predating the container spec (cap-ontology-fpl); required going forward."
+        },
+        "metadata": {
+          "type": "object",
+          "required": [
+            "project"
+          ],
+          "properties": {
+            "project": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "data_domain": {
+              "type": "string"
+            },
+            "dataset": {
+              "type": "string"
+            },
+            "label": {
+              "type": "string"
+            },
+            "domain_label": {
+              "type": "string"
+            }
+          }
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "Claims validated against real contents on Open; a claim the container cannot back fails."
+        },
+        "planes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "plane name -> directory. `data` and `ontology` are conventional; `governance` holds the control mechanisms (PHASE, lock, sme_ledger, properties, decisions, interventions) in ONE place rather than scattered across the bundle root."
+        },
+        "sources": {
+          "type": "string"
+        },
+        "transforms": {
+          "type": "string"
+        },
+        "descriptors": {
+          "type": "string"
+        },
+        "runtime": {
+          "type": "object"
+        },
+        "publish": {
+          "type": "object"
+        },
+        "profile": {
+          "type": "object",
+          "description": "CONFORMANCE.md §2: the core is CLOSED; an application extends it under `x-` and DECLARES each key here. An x- key with no entry is undeclared debt, not license. Diagnosed as MAC009.",
+          "required": [
+            "extensions"
+          ],
+          "properties": {
+            "extensions": {
+              "type": "object",
+              "description": "x- key -> what it means and why it exists.",
+              "propertyNames": {
+                "pattern": "^x-[a-z0-9-]+$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "description"
+                ],
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "applies_to": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "promotion_candidate": {
+                    "type": "boolean",
+                    "description": "§2 promotion path: recurs across sources, an agent reads it directly, and it projects onto all three target families."
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "conformance": {
+          "type": "object",
+          "description": "What this bundle declares about its own conformance. `out_of_scope` is the ONLY sanctioned escape from MAC001: a bundle may own files MAC does not define, provided it says which and why. Declared out of scope is honest; silently unchecked is not.",
+          "properties": {
+            "out_of_scope": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "reason"
+                ],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "description": "glob, bundle-relative"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "reproduction": {
+          "type": "object",
+          "description": "How this bundle is rebuilt — as DATA, so a gate can check the artifacts still match the record. Prose cannot: fpl2's REPRODUCTION.md carried two stale claims simultaneously (a prohibition naming one of the two commands that trigger it, and a gate list naming three of eleven checkers, retired). Both read as authoritative.",
+          "required": [
+            "stages"
+          ],
+          "properties": {
+            "narrative": {
+              "type": "string",
+              "description": "path to the human-readable twin, e.g. REPRODUCTION.md"
+            },
+            "stages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "authoring"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "authoring": {
+                    "enum": [
+                      "tool",
+                      "hand",
+                      "tool-then-hand"
+                    ],
+                    "description": "WHO authors this stage's outputs. `tool` = mechanical/generated; `hand` = a human or agent authors it from business sources. The distinction is checkable against each object's `provenance`."
+                  },
+                  "command": {
+                    "type": "string",
+                    "description": "the command that performs it, when there is one"
+                  },
+                  "produces": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "bundle-relative globs this stage is expected to create"
+                  },
+                  "billed": {
+                    "type": "boolean"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "prohibited": {
+              "type": "array",
+              "description": "Commands that must NOT be run against this bundle, each with the reason. A prohibition must name EVERY command that reaches the forbidden behaviour, not just the obvious one.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "command",
+                  "reason"
+                ],
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "enforced_by": {
+                    "type": "string",
+                    "description": "the checkable consequence, e.g. 'ontology/concepts/**#metadata.provenance != harvested'"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "gate": {
+              "type": "object",
+              "description": "the command that decides whether the rebuild succeeded",
+              "properties": {
+                "command": {
+                  "type": "string"
+                },
+                "must_exit": {
+                  "type": "integer"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        "acceptance": {
+          "type": "object",
+          "description": "Where this source declares its test-verification artifacts for the generic board/gate."
+        }
+      },
+      "additionalProperties": false,
+      "patternProperties": {
+        "^x-": true
+      }
     }
   }
 }

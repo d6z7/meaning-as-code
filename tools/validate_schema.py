@@ -52,6 +52,8 @@ def _pick_def(path, layout=None):
     # descriptor for a VIEW that happens to be named *_rules/*_edges (fpl.meta_rules,
     # fpl.meta_edges) is a TableFile and fell through this suffix match before.
     base = os.path.basename(p)
+    if base == 'mac.project.yaml':
+        return 'ProjectFile'
     if base == 'rules.yaml':
         return 'RulesFile'
     if base == 'edges.yaml':
@@ -154,6 +156,9 @@ def enumerate_bundle(root, layout=None):
     for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None)):   # data/transforms/, data/sources/
         if extra:
             files += [f for f in glob.glob(str(extra / '*.yaml')) if not _skipped(f)]
+    proj = os.path.join(root, 'mac.project.yaml')                                     # the bundle MANIFEST
+    if os.path.exists(proj) and not _skipped(proj):
+        files.append(proj)
     files = sorted(set(files))
 
     all_yaml = sorted(set(f for f in glob.glob(os.path.join(root, '**', '*.yaml'), recursive=True)
@@ -167,7 +172,10 @@ def enumerate_bundle(root, layout=None):
     known = {os.path.realpath(f) for f in files}
     unknown, waived = [], []
     for f in all_yaml:
-        if os.path.realpath(f) in known or os.path.basename(f) == 'mac.project.yaml':
+        # NO SPECIAL CASES. mac.project.yaml used to be exempted here by basename, which meant the
+        # one file where a bundle declares its own conformance was the one file nobody checked. It is
+        # now routed to $defs/ProjectFile above and arrives in `known` like everything else.
+        if os.path.realpath(f) in known:
             continue
         rel = os.path.relpath(f, root)
         (waived if is_declared(rel) else unknown).append(rel)
