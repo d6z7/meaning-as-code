@@ -440,6 +440,9 @@ def main(argv=None) -> int:
     ap.add_argument("--show", default=WARNING, choices=[ERROR, WARNING, INFO],
                     help="least severity PRINTED (default: warning). Never changes what is COMPUTED, "
                          "never changes the exit code, never changes what --json persists")
+    ap.add_argument("--no-persist", action="store_true",
+                    help="do NOT write the finding set (default is <root>/compile.json — the "
+                         "dashboard's input, so a stale one shows a verdict that is no longer true)")
     ap.add_argument("--json", metavar="PATH", default=None,
                     help="persist the complete finding set here — the dashboard's input")
     ap.add_argument("--no-legacy", action="store_true",
@@ -494,10 +497,15 @@ def main(argv=None) -> int:
           else "  not computed: none — every check that owns a code ran to completion")
 
     # ── persistence ───────────────────────────────────────────────────────────────────────────────
-    if args.json:
+    # ALWAYS, to <root>/compile.json unless --json redirects it. It used to persist only when --json
+    # was passed, so a run that printed COMPILES left the previous verdict on disk — and that file is
+    # what the wiki's Compiler Report reads. Observed 2026-08-19: the dashboard showed an error that
+    # had been fixed two hours earlier, because every compile since had been run without the flag.
+    # A record that updates only when you remember a flag is a record nobody can trust.
+    if not args.no_persist:
         doc = payload(root, diags, rows, timings, started=started, duration=wall,
                       no_legacy=args.no_legacy)
-        out = Path(args.json)
+        out = Path(args.json) if args.json else Path(root) / "compile.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(doc, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
         print(f"  finding set persisted → {out}  ({de(out.stat().st_size / 1024, 1)} kB)")
