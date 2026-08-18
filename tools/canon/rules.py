@@ -42,7 +42,8 @@ def _join(items) -> str:
 
 
 def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
-                          confusable=None, null_is_real: str = "") -> dict:
+                          confusable=None, null_is_real: str = "", ban_in_then: bool = True,
+                          substitute_kind: str = "measure") -> dict:
     """A MEASURE has no row for the resolved scope — refuse at the evidence boundary.
 
     params
@@ -55,16 +56,24 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
                     tempting one.
       null_is_real  set when a RESOLVED row can carry a null value that MEANS something. Then null is
                     an answer, not an absence, and coercing it to 0 invents a fact.
+      ban_in_then   MEASURED 2026-08-18 across the 13 authored copies: five state the substitution ban
+                    in BOTH `then` and `never`, and `ideal_stock` states it ONLY in `never`. Rendering
+                    it in both regardless ADDS a clause its author did not write — a canon that
+                    silently adds content is the mirror of one that silently drops it.
+      substitute_kind  what a tired reader would substitute FROM. `total_market` bans substituting
+                    "another SOURCE's figure" (it is the only cross-source measure here), every other
+                    copy bans "another MEASURE's". One word, and the wrong one names the wrong risk.
     """
     never = ["returning an empty result framed as a real zero"]
     if confusable:
-        never.insert(0, f"silently substituting {_join(confusable)} or another measure's value")
+        never.insert(0, f"silently substituting {_join(confusable)} or another {substitute_kind}'s value")
     else:
-        never.append("substituting another measure's value")
+        never.append(f"substituting another {substitute_kind}'s value")
     # The authored corpus states the substitution ban in BOTH `then` and `never` on five of the nine
     # measures. Rendering it once would quietly weaken those five, so the canon carries it in both —
     # a canon that silently drops authored content is worse than the copies it replaces.
-    ban = f", or substitute another measure's figure" if confusable is not None else ""
+    ban = (f", or substitute another {substitute_kind}'s figure"
+           if (confusable is not None and ban_in_then) else "")
     then = (f"REFUSE with an evidence-boundary answer "
             f"('{source} has no {label} information for <{slot}>') — never guess, estimate{ban}")
     if null_is_real:
@@ -79,24 +88,28 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
     }
 
 
-def refuse_unresolvable_name(*, source: str, thing: str, code: str) -> dict:
+def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "") -> dict:
     """A NAME does not resolve to a code — refuse rather than fuzzy-match.
 
     params
       source  the bundle's own name ("FPL2")
       thing   what was named and could not be resolved ("model", "market", "brand")
       code    the identity it should have resolved to ("fpl_model_code")
+      via     the register the resolution goes THROUGH, when the concept names one. `country` and
+              `market` both say "via the register" and the canon had no way to carry it, so binding
+              them would have dropped the clause that says WHERE the lookup happens.
 
     A near-miss substitution is the failure this prevents: answering about the Golf when the question
     said Golf Plus is worse than refusing, because the answer looks right.
     """
     return {
         "subject": f"Refuse an unresolvable {thing} — don't guess or fuzzy-substitute",
-        "when": f"a named {thing} does not resolve to any {code}",
+        "when": (f"a named {thing} does not resolve to any {code}"
+                 + (f" via {via}" if via else "")),
         "then": (f"REFUSE with an evidence-boundary answer "
                  f"('{source} has no information about <{thing}>') — never guess or fuzzy-substitute "
                  f"a similarly-named {thing}"),
-        "never": f"inventing a {code}; silently substituting a near-miss {thing}",
+        "never": f"silently substituting a near-miss {thing}; inventing a {code}",
     }
 
 
