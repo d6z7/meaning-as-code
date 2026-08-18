@@ -2,7 +2,7 @@
 #
 # WHY THIS FILE EXISTS
 # --------------------
-# MAC already ships two kinds of universal statement and had no home for a third:
+# MAC ships two kinds of universal statement and had no home for a third:
 #
 #   mac.schema.json   STRUCTURE   what an artifact must look like
 #   mac_shapes.yaml   CONSTRAINT  invariants true of any conformant ontology
@@ -10,24 +10,34 @@
 #
 # MEASURED, and it is why this exists. gaps/fpl2 carried the SAME refusal law thirteen times, once per
 # measure concept — 13 distinct `when` wordings, 13 `then`, 12 `never`. Every copy individually
-# well-formed, so no gate ever saw anything; and one of them (`market`) ended up with a BARE `then`
-# that promised an evidence-boundary answer it could not produce. Of the 13, THREE carried no
-# information at all beyond the concept's own name.
+# well-formed, so no gate ever saw anything; one (`market`) ended up with a BARE `then` promising an
+# evidence-boundary answer it could not produce; and THREE of the thirteen carried no information at
+# all beyond the concept's own name.
 #
-# The law "a measure with no row for the resolved scope must REFUSE, never guess and never zero-fill"
-# is not a fact about Gross Stock. It is a fact about MEASURES. Restating it per concept is the
-# N-homes defect the whole framework argues against, applied to behaviour instead of to data.
+# "A measure with no row for the resolved scope must REFUSE" is not a fact about Gross Stock. It is a
+# fact about MEASURES. Restating it per concept is the N-homes defect this framework argues against,
+# applied to behaviour instead of to data.
+#
+# A COMMON RULE IS AN ORDINARY RULE
+# ---------------------------------
+# Same shape as `contract.rules[]` — id · kind · subject · when · then · never · realized_by. It is
+# not a new construct and must not become one: an earlier draft of this file invented `applies_to`,
+# `params_from_concept` and `bundle_may_supply` and carried NO when/then/never at all, which is the
+# invent-beside-rather-than-reuse habit the framework exists to catch.
+#
+# ONE addition, and only one: `scope`, naming which concepts the rule reaches. A concept-level rule
+# already has `scope`; here it carries a class selector instead of a source name. Nothing else differs.
 #
 # HOW A BUNDLE USES THIS
 # ----------------------
-# It does not. A common rule APPLIES to every concept matching `applies_to`, without the bundle
-# writing anything. A concept writes only what MAC cannot know:
+# It does not write the rule. A concept matching `scope` gets the behaviour. What a concept MAY still
+# write is a `realized_by` for the SAME canon carrying parameters MAC cannot know — chiefly
+# `confusable`, because only the author knows which measure a tired reader would substitute, and an
+# empty Gross Stock answered with Ideal Stock is worse than no answer. Those parameters are the
+# bundle's contribution; the law is MAC's.
 #
-#   * `bundle_may_supply` names the parameters a concept MAY add — `confusable` is the important one,
-#     because only the author knows which measure a tired reader would substitute (an empty Gross
-#     Stock answered with Ideal Stock is worse than no answer).
-#   * a concept that needs to say something DIFFERENT still writes its own rule; a local rule with the
-#     same id OVERRIDES the common one, and that override is visible precisely because it is rare.
+# A concept needing to say something DIFFERENT still writes its own full rule. That is an OVERRIDE and
+# it is meant to be visible precisely because it is rare.
 #
 # THE TEST: deleting every `exclusion.no_evidence` rule from every concept in a bundle must not change
 # what that bundle refuses. If it does, the common rule is under-specified — or the concept was
@@ -37,41 +47,33 @@ metadata:
   description: Behavioural contracts that hold for any conformant ontology.
 
 rules:
-  - id: mac.rule.exclusion.no_evidence.measure
+  - id: mac.exclusion.no_evidence.measure
     subject: "Refuse a measure with no row for the resolved scope — never guess, estimate or zero-fill"
     kind: mac.rule_kind.exclusion
-    applies_to:
-      concept.class: measure
+    scope: { concept.class: measure }
+    confidence: C
+    when:  "the resolved scope has no row for the requested measure, variant and period"
+    then:  "REFUSE with an evidence-boundary answer ('<source> has no <measure> information for
+            <scope>') — never guess, estimate, or substitute another measure's figure"
+    never: "returning an empty result framed as a real zero; substituting another measure's value"
     realized_by:
       udf: mac.canon.refuse_measure_no_row
-    params_from_concept:
-      # what MAC can work out for itself; a concept overrides only where it differs
-      label: concept.label
-      source: metadata.source
-    bundle_may_supply:
-      - confusable       # which measures a reader would wrongly substitute — ONLY the author knows
-      - slot             # what was resolved and found empty, when it is not "scope"
-      - null_is_real     # set when a RESOLVED row's null MEANS something and must not become 0
-      - substitute_kind  # "source" for a cross-source measure; "measure" otherwise
-      - ban_in_then      # whether the substitution ban is restated in `then` as well as `never`
-    rationale: >
-      The evidence boundary is universal: a measure that has no row for what was asked has no answer,
-      and every way of producing one anyway — a guess, an estimate, a zero, another measure's figure —
-      is worse than the refusal, because it looks like an answer.
+    why: >
+      The evidence boundary is universal: a measure with no row for what was asked has no answer, and
+      every way of producing one anyway — a guess, an estimate, a zero, another measure's figure — is
+      worse than the refusal, because it looks like an answer.
 
-  - id: mac.rule.exclusion.no_evidence.name
+  - id: mac.exclusion.no_evidence.name
     subject: "Refuse a name that does not resolve to a code — never fuzzy-substitute a near miss"
     kind: mac.rule_kind.exclusion
-    applies_to:
-      concept.class: reference
+    scope: { concept.class: reference }
+    confidence: C
+    when:  "a named entity does not resolve to any code"
+    then:  "REFUSE with an evidence-boundary answer ('<source> has no information about <thing>') —
+            never guess or fuzzy-substitute a similarly-named one"
+    never: "silently substituting a near-miss; inventing a code"
     realized_by:
       udf: mac.canon.refuse_unresolvable_name
-    params_from_concept:
-      thing: concept.label
-      source: metadata.source
-    bundle_may_supply:
-      - code             # the identity it should have resolved to
-      - via              # the register the lookup goes through, when there is one
-    rationale: >
+    why: >
       A near-miss substitution is the failure this prevents: answering about the Golf when the question
       said Golf Plus is worse than refusing, because the answer looks right.

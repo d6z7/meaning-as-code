@@ -3,7 +3,9 @@
 
 WHY
 ---
-mac_rules.yaml states behavioural contracts that hold for ANY conformant ontology. A concept matching
+mac_rules.yaml states behavioural contracts that hold for ANY conformant ontology, in the ORDINARY
+rule shape — id · kind · subject · when · then · never · realized_by, plus `scope` carrying a class
+selector rather than a source name. It is not a new construct. A concept matching
 a common rule's `applies_to` gets that behaviour whether or not it writes anything. So a concept that
 writes the rule out again is not adding a contract — it is adding a COPY of one, and copies drift.
 
@@ -61,7 +63,7 @@ def check_common_rules(root) -> list:
 
     by_class = {}
     for c in common:
-        cls = (c.get("applies_to") or {}).get("concept.class")
+        cls = (c.get("scope") or {}).get("concept.class")
         if cls:
             by_class.setdefault(cls, []).append(c)
 
@@ -78,8 +80,17 @@ def check_common_rules(root) -> list:
                 rb = r.get("realized_by") or {}
                 if rb.get("udf") != udf:
                     continue
+                # What the CONCEPT contributes beyond the common law: the canon parameters MAC
+                # cannot know. Read from the canon's own signature — an earlier draft listed them in
+                # the rule under an invented `bundle_may_supply` key, which was a second home for a
+                # fact the function already declares.
+                import inspect
+                from canon import rules as _CR
+                fn = _CR.CANONS.get(udf)
+                known = set(inspect.signature(fn).parameters) if fn else set()
                 extra = {k: v for k, v in (rb.get("params") or {}).items()
-                         if k in (cr.get("bundle_may_supply") or []) and v not in (None, "", False)}
+                         if k in known and k not in ("source", "label", "thing")
+                         and v not in (None, "", False)}
                 rel, rid = str(p.relative_to(root)), r.get("id", "")
                 if extra:
                     params_only.append(D.Witness(file=rel, path=rid,
