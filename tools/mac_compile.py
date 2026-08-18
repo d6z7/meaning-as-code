@@ -74,6 +74,7 @@ import check_vocabulary_drift as VOCAB
 import check_canon_binding as CANONB
 import check_common_rules as COMMON
 import check_cookbook_smells as COOKBOOK
+import check_rule_reference_basis as REFBASIS
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -121,6 +122,8 @@ PHASES = (
      "whether a concept restates a law MAC already states for its class"),
     ("cookbook", ("MAC003",), "root",
      "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"),
+    ("reference_basis", ("MAC008",), "root",
+     "whether a rule naming another concept has any reason to"),
 )
 
 
@@ -143,6 +146,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return COMMON.check_common_rules(root)
     if name == "cookbook":
         return COOKBOOK.check_cookbook_smells(root)
+    if name == "reference_basis":
+        return REFBASIS.check_rule_reference_basis(root)
     raise KeyError(name)                                     # PROGRAMMER error, not bundle content
 
 
