@@ -166,8 +166,25 @@ canon:
   description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
   members:
     composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
-    refuse_measure_no_row: { serves: exclusion_no_evidence,   needs_sqlglot: false, doc: "RENDER canon — a measure has no row for the resolved scope; emit the refusal clauses" }
-    refuse_unresolvable_name: { serves: exclusion_no_evidence, needs_sqlglot: false, doc: "RENDER canon — a name does not resolve to a code; emit the refusal clauses" }
+    # `params_from` names the DECLARATION each parameter is readable from. A binding that attaches
+    # one of these is stating a fact that already has a home — MAC003 if it agrees, MAC004 if it does
+    # not. Measured 2026-08-19: two fpl2 bindings attached `code` and BOTH disagreed with
+    # identity.canonical_key (code='code' vs brand_letter; code='market' vs iso2), because a regex
+    # over rule prose had guessed what the concept already declared.
+    refuse_measure_no_row:
+      serves: exclusion_no_evidence
+      needs_sqlglot: false
+      doc: "RENDER canon — a measure has no row for the resolved scope; emit the refusal clauses"
+      params_from:
+        label: concept.label
+        null_is_real: concept.semantics.null_semantics
+    refuse_unresolvable_name:
+      serves: exclusion_no_evidence
+      needs_sqlglot: false
+      doc: "RENDER canon — a name does not resolve to a code; emit the refusal clauses"
+      params_from:
+        thing: concept.label
+        code: concept.identity.canonical_key
     additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
     axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
     exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }

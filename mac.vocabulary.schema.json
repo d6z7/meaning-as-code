@@ -38,7 +38,36 @@
         "type": "object"
       },
       "members": {
-        "type": "object"
+        "type": "object",
+        "description": "members of a value_domain or registry. A `canon` member declares what it serves, whether it needs sqlglot, and — the point of params_from — which of its parameters are READABLE from a concept declaration rather than attachable to a binding.",
+        "additionalProperties": {
+          "type": "object",
+          "properties": {
+            "definition": {
+              "type": "string"
+            },
+            "additivity": {
+              "type": "object"
+            },
+            "serves": {
+              "type": "string"
+            },
+            "needs_sqlglot": {
+              "type": "boolean"
+            },
+            "doc": {
+              "type": "string"
+            },
+            "params_from": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "canon parameter -> the dotted concept path it derives from"
+            }
+          },
+          "additionalProperties": false
+        }
       }
     },
     "additionalProperties": false

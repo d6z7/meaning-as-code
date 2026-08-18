@@ -133,10 +133,49 @@ CANONS = {
 }
 
 
-def render(udf: str, params: dict) -> dict:
-    """Render a rule's authored clauses from its canon binding. Unknown canon or a missing required
-    parameter raises — a rule that cannot render is a build error, never a silently empty rule."""
+def _params_from_registry(udf: str) -> dict:
+    """{param: dotted concept path} declared in mac_vocabulary.yaml#canon.members[].params_from."""
+    try:
+        import yaml
+        from pathlib import Path as _P
+        f = _P(__file__).resolve().parent.parent.parent / "mac_vocabulary.yaml"
+        m = ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
+             .get("canon", {}).get("members", {}) or {}).get(udf.split(".")[-1]) or {}
+        return m.get("params_from") or {}
+    except Exception:                                                    # noqa: BLE001
+        return {}
+
+
+def _dig(doc, dotted: str):
+    cur = doc
+    for part in dotted.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
+
+
+def render(udf: str, params: dict, concept: dict | None = None) -> dict:
+    """Render a rule's authored clauses from its canon binding.
+
+    DERIVED PARAMETERS ARE READ, NOT ATTACHED. The registry declares which of a canon's parameters
+    live on the concept (`params_from`); those are filled from `concept` here, and an ATTACHED value
+    never overrides a declared one — that is what makes attaching them pointless rather than merely
+    redundant. Measured 2026-08-19: `label` was attached on 5 fpl2 bindings and disagreed with
+    concept.label on THREE of them ("DtC" vs "Deliveries to Customer", "IstProd" vs "Actual
+    Production", "Prodant" vs "Production Request"), so the refusal message named the measure
+    something its own concept does not call it.
+
+    Unknown canon, or a parameter left unfilled, raises — a rule that cannot render is a build error,
+    never a silently empty rule.
+    """
     fn = CANONS.get(udf)
     if fn is None:
         raise KeyError(f"unknown canon {udf!r}; known: {sorted(CANONS)}")
-    return fn(**(params or {}))
+    merged = dict(params or {})
+    if concept is not None:
+        for prm, path in _params_from_registry(udf).items():
+            val = _dig(concept, path)
+            if val:
+                merged[prm] = val
+    return fn(**merged)

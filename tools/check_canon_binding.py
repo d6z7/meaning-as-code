@@ -59,6 +59,31 @@ def _flat(rule, keys=("when", "then", "never")) -> str:
     return " ".join(" ".join(str(rule.get(k) or "").split()) for k in keys).lower()
 
 
+def _params_from() -> dict:
+    """{canon: {param: dotted concept path}} — READ from the registry, never listed here."""
+    try:
+        import yaml
+        f = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
+        out = {}
+        for name, m in ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
+                        .get("canon", {}).get("members", {}) or {}).items():
+            pf = (m or {}).get("params_from")
+            if pf:
+                out["mac.canon." + name] = pf
+        return out
+    except Exception:                                                   # noqa: BLE001
+        return {}
+
+
+def _dig(doc: dict, dotted: str):
+    cur = doc
+    for part in dotted.split("."):
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(part)
+    return cur
+
+
 def check_canon_binding(root) -> list:
     try:
         import yaml
@@ -68,7 +93,8 @@ def check_canon_binding(root) -> list:
         return [D.Diagnostic(code="MAC008", severity=D.WARNING, source="check_canon_binding",
                              summary=f"the canon library could not be loaded, so bindings are "
                                      f"UNVERIFIED, not clean: {exc!r}")]
-    unresolved, drifted = [], []
+    unresolved, drifted, restated, contradicted = [], [], [], []
+    PF = _params_from()
     for f in sorted((Path(root) / "ontology" / "concepts").glob("*.yaml")):
         try:
             doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
@@ -79,8 +105,25 @@ def check_canon_binding(root) -> list:
             if not isinstance(rb, dict) or not rb.get("udf"):
                 continue
             rel = str(f.relative_to(root))
+            # A PARAMETER THAT HAS A DECLARED HOME MUST NOT BE ATTACHED. If it agrees with the
+            # declaration it is a restatement; if it disagrees, the binding and the concept are
+            # saying different things and the binding is the one that RUNS. Measured: two fpl2
+            # bindings attached `code` and both disagreed with identity.canonical_key.
+            for prm, path in (PF.get(rb.get("udf")) or {}).items():
+                if prm not in (rb.get("params") or {}):
+                    continue
+                attached = str((rb["params"] or {}).get(prm) or "").strip()
+                declared = str(_dig(doc, path) or "").strip()
+                if declared and attached and attached.lower() != declared.lower():
+                    contradicted.append(D.Witness(
+                        file=rel, path=str(r.get("id")),
+                        detail=f"{prm}={attached!r} but {path}={declared!r}"))
+                elif declared:
+                    restated.append(D.Witness(
+                        file=rel, path=str(r.get("id")),
+                        detail=f"{prm} repeats {path} ({declared!r}) — read it, do not attach it"))
             try:
-                out = CR.render(rb["udf"], rb.get("params") or {})
+                out = CR.render(rb["udf"], rb.get("params") or {}, concept=doc)
             except Exception as exc:                                    # noqa: BLE001
                 unresolved.append(D.Witness(file=rel, path=r.get("id", ""), detail=str(exc)[:140]))
                 continue
@@ -114,6 +157,21 @@ def check_canon_binding(root) -> list:
             summary=f"{len(unresolved)} rule(s) name a canon that cannot be rendered",
             note="an unknown udf, or a parameter the canon's signature does not accept",
             witnesses=unresolved))
+    if contradicted:
+        out.append(D.Diagnostic(
+            code="MAC004", severity=D.ERROR, source="check_canon_binding",
+            summary=f"{len(contradicted)} canon parameter(s) contradict the declaration they are "
+                    f"readable from",
+            note="The binding is the one that RUNS, so a disagreement here is a wrong answer waiting. "
+                 "Delete the parameter — the canon reads it from the concept.",
+            witnesses=contradicted))
+    if restated:
+        out.append(D.Diagnostic(
+            code="MAC003", severity=D.WARNING, source="check_canon_binding",
+            summary=f"{len(restated)} canon parameter(s) repeat a fact the concept already declares",
+            note="Agreeing today is not a defence — nothing keeps the two in step. "
+                 "mac_vocabulary.yaml#canon.members[].params_from names where each is read from.",
+            witnesses=restated))
     if drifted:
         out.append(D.Diagnostic(
             code="MAC004", severity=D.ERROR, source="check_canon_binding",
