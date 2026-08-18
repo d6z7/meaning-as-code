@@ -525,15 +525,18 @@
               },
               "when": {
                 "type": "string",
-                "description": "trigger — the situation the rule applies to"
+                "description": "trigger — the situation the rule applies to",
+                "minLength": 1
               },
               "then": {
                 "type": "string",
-                "description": "directive — what to do"
+                "description": "directive — what to do",
+                "minLength": 1
               },
               "never": {
                 "type": "string",
-                "description": "anti-pattern to avoid (optional)"
+                "description": "anti-pattern to avoid (optional)",
+                "minLength": 1
               },
               "why": {
                 "type": "string",
@@ -577,7 +580,25 @@
                 ],
                 "description": "Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal)."
               }
-            }
+            },
+            "allOf": [
+              {
+                "$comment": "v0.1.17: a rule is either WRITTEN or BOUND — never neither. `when`/`then` were optional strings with no minLength, so a rule could carry an EMPTY clause and validate: market.exclusion.no_evidence shipped a bare `then` promising an evidence-boundary answer it could not produce, and the canon library's own docstring recorded it months before anything blocked. Where `realized_by` is present the clauses are RENDERED from the canon and may be omitted; where it is absent they must be there and non-empty.",
+                "if": {
+                  "not": {
+                    "required": [
+                      "realized_by"
+                    ]
+                  }
+                },
+                "then": {
+                  "required": [
+                    "when",
+                    "then"
+                  ]
+                }
+              }
+            ]
           }
         }
       },
