@@ -75,6 +75,7 @@ import check_canon_binding as CANONB
 import check_common_rules as COMMON
 import check_cookbook_smells as COOKBOOK
 import check_rule_reference_basis as REFBASIS
+import check_framework_selfconform as SELFCONF
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -124,6 +125,8 @@ PHASES = (
      "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"),
     ("reference_basis", ("MAC008",), "root",
      "whether a rule naming another concept has any reason to"),
+    ("selfconform", ("MAC001", "MAC002"), "root",
+     "whether the FRAMEWORK satisfies the rules it enforces on every bundle"),
 )
 
 
@@ -148,6 +151,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return COOKBOOK.check_cookbook_smells(root)
     if name == "reference_basis":
         return REFBASIS.check_rule_reference_basis(root)
+    if name == "selfconform":
+        return SELFCONF.check_framework_selfconform(root)
     raise KeyError(name)                                     # PROGRAMMER error, not bundle content
 
 

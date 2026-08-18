@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/d6z7/meaning-as-code/mac.rules.schema.json",
+  "title": "MAC common rules (mac_rules.yaml)",
+  "description": "The framework's COMMON RULES. additionalProperties:false is the point of this file existing: mac_rules.yaml was created without a schema and immediately grew three invented keys (applies_to, params_from_concept, bundle_may_supply) that no reader could have challenged. A common rule is an ORDINARY rule — the same keys a concept's contract.rules[] carries — plus `scope` holding a class selector. Anything else is an invention and must fail here.",
+  "type": "object",
+  "required": [
+    "rules"
+  ],
+  "properties": {
+    "metadata": {
+      "type": "object"
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "subject"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^mac\\."
+          },
+          "kind": {
+            "type": "string",
+            "pattern": "^mac\\.rule_kind\\."
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scope": {
+            "type": "object",
+            "description": "which concepts this reaches, e.g. {concept.class: measure}"
+          },
+          "confidence": {
+            "enum": [
+              "C",
+              "P",
+              "R"
+            ]
+          },
+          "when": {
+            "type": "string",
+            "minLength": 1
+          },
+          "then": {
+            "type": "string",
+            "minLength": 1
+          },
+          "never": {
+            "type": "string",
+            "minLength": 1
+          },
+          "why": {
+            "type": "string"
+          },
+          "realized_by": {
+            "type": "object",
+            "required": [
+              "udf"
+            ],
+            "properties": {
+              "udf": {
+                "type": "string",
+                "pattern": "^mac\\.canon\\."
+              },
+              "params": {
+                "type": "object"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/d6z7/meaning-as-code/mac.vocabulary.schema.json",
+  "title": "MAC vocabulary (mac_vocabulary.yaml)",
+  "description": "The closed vocabularies and value domains. Governed for the same reason as everything else: a vocabulary that can grow a key nobody defined is not closed. Each block declares its kind and whether it is closed; a `vocabulary` carries `terms`, a `value_domain` carries `members`.",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object"
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": {
+    "type": "object",
+    "required": [
+      "kind"
+    ],
+    "properties": {
+      "kind": {
+        "enum": [
+          "vocabulary",
+          "value_domain",
+          "registry"
+        ]
+      },
+      "closed": {
+        "type": "boolean"
+      },
+      "description": {
+        "type": "string"
+      },
+      "version": {
+        "type": "string"
+      },
+      "terms": {
+        "type": "object"
+      },
+      "members": {
+        "type": "object"
+      }
+    },
+    "additionalProperties": false
+  }
+}
