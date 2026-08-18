@@ -20,8 +20,11 @@ A rule naming another concept is asserting a RELATIONSHIP with it. That assertio
 ontology can show:
 
     an EDGE between the two                     the relationship is modelled
-    a SHARED SURFACE TERM                       they answer to the same word, so confusing them is
-                                                a mistake a person actually makes
+    THE SAME UNIT                               they measure the same kind of thing, so comparing,
+                                                differencing or confusing them is meaningful
+    a SHARED SURFACE TERM                       they answer to the same word (the residue the unit
+                                                cannot settle — IstProd and DtC are both `vehicles`
+                                                and still not confusable)
 
 CO-GROUNDING IS NOT A BASIS, and this is the whole trick. 14 of fpl2's 22 concepts ground on
 `v_fpl_kpi`; counting a shared fact table as a relationship makes every pair of measures look related
@@ -47,6 +50,14 @@ from pathlib import Path
 import mac_diag as D
 
 _STOP = {"the", "and", "for", "with", "per", "not", "its"}
+
+
+def _unit(concept: dict) -> str:
+    """The measure's declared unit, normalised. THE PRIMARY BASIS — and it was sitting in
+    `semantics.unit` on all 9 fpl2 measures while the first cut of this check scraped German nouns
+    out of prose to guess the same thing, badly. MAC declared it; nothing read it."""
+    u = ((concept.get("semantics") or {}).get("unit") or "")
+    return re.sub(r"[^a-z0-9]", "", str(u).lower())
 
 
 def _surface_terms(concept: dict, doc: dict) -> set:
@@ -87,6 +98,7 @@ def check_rule_reference_basis(root) -> list:
         c = doc.get("concept") or {}
         if c.get("name"):
             concepts[c["name"]] = {"doc": doc, "label": c.get("label"), "rel": str(Path(f).name),
+                                   "unit": _unit(c),
                                    "surface": _stems(_surface_terms(c, doc))}
     edges = set()
     ef = R / "ontology" / "edges.yaml"
@@ -115,11 +127,14 @@ def check_rule_reference_basis(root) -> list:
                 if key in seen:
                     continue
                 seen.add(key)
-                if frozenset((name, other)) in edges or (info["surface"] & oi["surface"]):
+                same_unit = bool(info["unit"]) and info["unit"] == oi["unit"]
+                if frozenset((name, other)) in edges or same_unit or (info["surface"] & oi["surface"]):
                     continue
+                why = f"units differ ({info['unit'] or '?'} vs {oi['unit'] or '?'})" if (
+                    info["unit"] or oi["unit"]) else "neither declares a unit"
                 unbased.append(D.Witness(
                     file=f"ontology/concepts/{info['rel']}", path=str(r.get("id")),
-                    detail=f"names {other} — no edge, and no surface term in common"))
+                    detail=f"names {other} — no edge, {why}, no shared surface term"))
     if not unbased:
         return []
     return [D.Diagnostic(

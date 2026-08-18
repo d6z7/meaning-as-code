@@ -47,6 +47,32 @@ metadata:
   description: Behavioural contracts that hold for any conformant ontology.
 
 rules:
+  - id: mac.aggregate.unit_algebra
+    subject: "What may be combined is decided by the UNIT — never declared per pair"
+    kind: mac.rule_kind.aggregation
+    scope: { concept.class: measure }
+    confidence: C
+    when:  "two measures are combined — compared, differenced, summed together, or divided"
+    then:  "decide from the UNITS. COMPARE and DIFFERENCE require unit(a) == unit(b). SUM of two
+            measures requires the same unit AND the same additivity on the folding axis. A RATIO is
+            always defined and yields unit(a)/unit(b) — dimensionless when they are equal, which is
+            what makes a share meaningful"
+    never: "declaring per-pair which measures may be combined, or which are confusable with which — a
+            pairwise list grows as the square of the measures and drifts at every edge"
+    why: >
+      MEASURED on fpl2, which had no unit algebra and hand-wrote the pairs instead. Seven rules
+      carried "never confuse X with Y"; FOUR of them named deliveries as the foil, and the units say
+      why that is nonsense — DtC is `vehicles`, Order Intake is `orders`. The three pairs a domain
+      owner confirmed as real confusions are exactly the three with equal units (GrossStock/IdealStock
+      and IstProd/Prodant both `vehicles`, OrderBook/OrderIntake both `orders`).
+
+      It also validates the derived measures gold already ships: market_share is vehicles/vehicles ->
+      dimensionless, bev_share_of_oi is orders/orders -> dimensionless. Both legal, and neither needed
+      a declaration to say so.
+
+      A pairwise list needs O(n^2) statements and a human to maintain them. A unit needs one per
+      measure and decides every pair.
+
   - id: mac.resolve.period_reading
     subject: "How a bare period is read — determined by the measure's type, never restated per concept"
     kind: mac.rule_kind.resolution

@@ -39,6 +39,20 @@ shapes:
       kind: required
       path: concept.semantics.measure_type
 
+  # v0.1.18: the UNIT is what makes an operation decidable. Two measures may be compared or
+  # subtracted only if their units are equal; a ratio is always defined and yields unit_a/unit_b.
+  # Without it, legality has to be declared per PAIR — which is how fpl2 ended up with hand-written
+  # "never confuse X with Y" clauses, four of the seven naming a foil with no basis at all.
+  # MEASURED at introduction: 9 of 19 measures across three bundles declared a unit; 10 did not.
+  - id: measure-declares-unit
+    description: a measure concept must declare semantics.unit — operations are decided by it
+    target: concept
+    where: { concept.class: measure }
+    severity: error
+    constraint:
+      kind: required
+      path: concept.semantics.unit
+
   - id: measure-declares-axis-kinds
     description: a measure concept must declare axis_kinds — the law resolves per (measure_type x axis_kind)
     target: concept
