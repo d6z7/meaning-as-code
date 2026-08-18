@@ -54,6 +54,23 @@ def _pick_def(path, layout=None):
     base = os.path.basename(p)
     if base == 'mac.project.yaml':
         return 'ProjectFile'
+    # v0.1.14 — the nine artifacts that were MAC001 on every bundle that had them. Routed by their
+    # canonical location/basename, the same way rules.yaml and edges.yaml are.
+    _BY_BASE = {
+        'properties.yaml': 'PropertiesFile',
+        'ledger.yaml': 'InterventionLedgerFile',
+        'vanilla_delta.yaml': 'VanillaDeltaFile',
+        'data_quality_register.yaml': 'DataQualityRegisterFile',
+        'impurity_resolution_map.yaml': 'ImpurityResolutionMapFile',
+        'PHASE.yaml': 'PhaseFile',
+        'shapes.yaml': 'ShapesFile',
+    }
+    if base in _BY_BASE:
+        return _BY_BASE[base]
+    if base.endswith('.sections.yaml'):
+        return 'KnowledgeSectionsFile'
+    if '/protosql/' in p:
+        return 'ProtoSqlFile'
     if base == 'rules.yaml':
         return 'RulesFile'
     if base == 'edges.yaml':
@@ -95,6 +112,21 @@ CURRENT = '0.1.13'                        # current MAC schema version = mac_voc
 RECOGNIZED = {CURRENT, '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
                                           # migration (not orphaned). Drop older versions once all content reconforms —
                                           # that finish is dev-only, not for main.
+
+# REGISTERS ARE NOT VERSIONED CONTENT. The schema_version gate exists so a CONCEPT file written against
+# an older grammar is not judged by a newer one during migration. A register (a ledger, a DQ list, a
+# phase switch, a knowledge extraction) has no such evolution story and carries no stamp — gold's own
+# sme_ledger.yaml says so in its header: "No schema_version (registry, not a concept file)".
+# Without this exemption the nine definitions added in v0.1.14 would be DECORATIVE: routed, matched to
+# a definition, and then skipped for having no version — coverage that reads as 0 undefined while
+# nothing is actually checked. Measured: it hid a real defect (a DQ finding using the properties
+# severity vocabulary) until --all was passed.
+UNVERSIONED_DEFS = {
+    'PropertiesFile', 'InterventionLedgerFile', 'VanillaDeltaFile', 'DataQualityRegisterFile',
+    'ImpurityResolutionMapFile', 'KnowledgeSectionsFile', 'PhaseFile', 'ShapesFile', 'ProtoSqlFile',
+    'ProjectFile',
+}
+
 
 
 def _skipped(p):
@@ -159,6 +191,13 @@ def enumerate_bundle(root, layout=None):
     proj = os.path.join(root, 'mac.project.yaml')                                     # the bundle MANIFEST
     if os.path.exists(proj) and not _skipped(proj):
         files.append(proj)
+    # v0.1.14 — the nine artifacts MAC gained definitions for. COLLECTED here, routed in _pick_def.
+    # Both halves are needed: a definition nothing enumerates is a definition nothing applies.
+    for pat in ('acceptance/properties.yaml', 'interventions/ledger.yaml',
+                'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
+                'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
+                'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml'):
+        files += [f for f in glob.glob(os.path.join(root, pat)) if not _skipped(f)]
     files = sorted(set(files))
 
     all_yaml = sorted(set(f for f in glob.glob(os.path.join(root, '**', '*.yaml'), recursive=True)
@@ -228,7 +267,7 @@ def validate_files(enum, schema=None, all_versions=False):
             continue
         sv = str((doc.get('metadata') or {}).get('schema_version', ''))
         which = _pick_def(f, enum.layout)
-        if not all_versions and sv not in RECOGNIZED:
+        if not all_versions and which not in UNVERSIONED_DEFS and sv not in RECOGNIZED:
             out.append(FileVerdict(path=f, definition=which, schema_version=sv, skipped=True))
             continue
         errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))

@@ -22,6 +22,33 @@
     },
     {
       "$ref": "#/$defs/ProjectFile"
+    },
+    {
+      "$ref": "#/$defs/PropertiesFile"
+    },
+    {
+      "$ref": "#/$defs/InterventionLedgerFile"
+    },
+    {
+      "$ref": "#/$defs/VanillaDeltaFile"
+    },
+    {
+      "$ref": "#/$defs/DataQualityRegisterFile"
+    },
+    {
+      "$ref": "#/$defs/ImpurityResolutionMapFile"
+    },
+    {
+      "$ref": "#/$defs/KnowledgeSectionsFile"
+    },
+    {
+      "$ref": "#/$defs/PhaseFile"
+    },
+    {
+      "$ref": "#/$defs/ShapesFile"
+    },
+    {
+      "$ref": "#/$defs/ProtoSqlFile"
     }
   ],
   "$defs": {
@@ -2185,6 +2212,454 @@
         }
       },
       "additionalProperties": false,
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "PropertiesFile": {
+      "type": "object",
+      "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. P-ADD-01 on fpl2 asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",
+      "required": [
+        "properties"
+      ],
+      "properties": {
+        "suite": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "generated": {},
+        "settled_year": {},
+        "engine": {
+          "type": "object"
+        },
+        "not_expressible": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "properties": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One invariant.",
+            "required": [
+              "id",
+              "statement",
+              "sql"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "family": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "blocker",
+                  "major",
+                  "minor"
+                ]
+              },
+              "source": {
+                "type": "string"
+              },
+              "statement": {
+                "type": "string"
+              },
+              "assertion": {
+                "type": "object"
+              },
+              "tolerance": {},
+              "sql": {
+                "type": "string"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "InterventionLedgerFile": {
+      "type": "object",
+      "description": "v0.1.14: the APPEND-ONLY record of manual work — which objects a human or agent authored, tuned or retired, and why. Autodiscovered output is self-documenting (the descriptor IS the record); manual work is not, and an implicit object is not a protocol. Read by MAC010 (change-unprotocolled), which means the framework already DEPENDED on this file while having no definition for it.",
+      "required": [
+        "interventions"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "interventions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One intervention.",
+            "required": [
+              "id",
+              "what",
+              "why"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "date": {},
+              "actor": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "what": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "objects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "dq_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence": {},
+              "sme_owner": {
+                "type": "string"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "VanillaDeltaFile": {
+      "type": "object",
+      "description": "v0.1.14: the CURRENT-STATE register of every difference between the generated bundle and what is on disk. SIBLING OF, NOT A COPY OF, the intervention ledger: the ledger is append-only HISTORY (which objects were touched), this is current STATE (what differs NOW) and a delta disappears when the delta does. Object-level protocol is not locus-level protocol — the ledger recorded that a transform was tuned and still could not show that a family-collapse list had been extended past gold's, which is what broke Golf Plus.",
+      "required": [
+        "deltas"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "deltas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One locus-level delta.",
+            "required": [
+              "id",
+              "file",
+              "delta",
+              "why"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "file": {
+                "type": "string"
+              },
+              "locus": {
+                "type": "string"
+              },
+              "baseline": {
+                "type": "string"
+              },
+              "delta": {
+                "type": "string"
+              },
+              "why": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "introduced": {},
+              "amended": {},
+              "ratified": {},
+              "ledger_ref": {
+                "type": "string"
+              },
+              "objects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence": {}
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "DataQualityRegisterFile": {
+      "type": "object",
+      "description": "v0.1.14: DQ findings on the RAW plane, each graded and owned. Authored by the data-plane harvest, which is why every finding carries `confidence` (C=measured live, cite the number; I=inferred; Q=needs-SME) and an `sme_owner` naming what that person must ratify — the doubt channel that existed here long before concept authoring had one.",
+      "required": [
+        "issues"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One finding.",
+            "required": [
+              "id",
+              "title",
+              "finding"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "severity": {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "confidence": {
+                "enum": [
+                  "C",
+                  "I",
+                  "Q"
+                ]
+              },
+              "finding": {
+                "type": "string"
+              },
+              "current_handling": {
+                "type": "string"
+              },
+              "residual_risk": {
+                "type": "string"
+              },
+              "sme_owner": {
+                "type": "string"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "ImpurityResolutionMapFile": {
+      "type": "object",
+      "description": "v0.1.14: which TRANSFORM resolves which DQ finding, and the guarantee the ontology may then rely on. The join between the quality plane and the transformation plane — without it a finding and its fix are two facts nobody relates, and the ontology cannot tell which impurities it may stop defending against.",
+      "required": [
+        "resolutions"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "resolutions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One finding -> its resolving transform(s).",
+            "required": [
+              "finding_id"
+            ],
+            "properties": {
+              "finding_id": {
+                "type": "string"
+              },
+              "coverage": {
+                "type": "string"
+              },
+              "resolving_transforms": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "guarantee": {
+                "type": "string"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "KnowledgeSectionsFile": {
+      "type": "object",
+      "description": "v0.1.14: SOURCE KNOWLEDGE extracted VERBATIM from a vendor document, sliced on the document's own heading numbering and carrying the source hash. The documents stay out of reach by design; what is published is what they SAY, quoted and attributed, so a reader can challenge a claim without being handed the PDF. Verbatim is not stylistic — it makes the register mechanically verifiable, which is impossible once someone has paraphrased.",
+      "required": [
+        "sections"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One extracted section.",
+            "required": [
+              "id",
+              "title"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "section": {},
+              "slug": {
+                "type": "string"
+              },
+              "source": {},
+              "aspects": {
+                "type": "object"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "PhaseFile": {
+      "type": "object",
+      "description": "v0.1.14: the rule-governance phase switch. BUILD = ontology CRUD permitted and a missing lock is GREEN; TUNE = default-DENY, where any un-blessed delta reds the gate and the agent PROPOSES rather than edits. Only the operator flips it. A bundle sitting in BUILD is not governed, and that is a fact worth being able to read mechanically.",
+      "required": [
+        "phase"
+      ],
+      "properties": {
+        "phase": {
+          "enum": [
+            "BUILD",
+            "TUNE"
+          ]
+        },
+        "lock": {},
+        "notes": {}
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "ShapesFile": {
+      "type": "object",
+      "description": "v0.1.14: DOMAIN shape invariants, held per-source and deliberately OUT of the framework's universal mac_shapes.yaml so the framework stays domain-pure. Same grammar as the universal shapes; different scope and different owner.",
+      "required": [
+        "shapes"
+      ],
+      "properties": {
+        "shapes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "description": "One shape.",
+            "required": [
+              "id",
+              "target"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "where": {
+                "type": "object"
+              },
+              "severity": {
+                "enum": [
+                  "error",
+                  "warning",
+                  "info"
+                ]
+              },
+              "constraint": {
+                "type": "object"
+              }
+            },
+            "patternProperties": {
+              "^x-": true
+            }
+          }
+        }
+      },
+      "patternProperties": {
+        "^x-": true
+      }
+    },
+    "ProtoSqlFile": {
+      "type": "object",
+      "description": "v0.1.14: a DETERMINISTIC SQL FRAGMENT declared as data rather than prose. Exists because a recipe re-implemented from memory is got wrong: fpl2 records the same latest-vintage collapse being wrong FOUR TIMES IN ONE DAY by careful parties, once moving a figure by 25%. NOTE — the framework ships `mac.canon.*` for exactly this, so a fragment here is usually a workaround for a canon that is missing or broken, and the better fix is upstream.",
+      "required": [
+        "rule"
+      ],
+      "properties": {
+        "metadata": {
+          "type": "object"
+        },
+        "rule": {
+          "type": "object"
+        }
+      },
       "patternProperties": {
         "^x-": true
       }

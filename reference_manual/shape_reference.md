@@ -598,4 +598,176 @@ acceptance:  # Where this source declares its test-verification artifacts for th
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
+### PropertiesFile
+
+*discriminator key:* `?:` · *required:* `properties`
+
+```yaml
+suite: <…>  # string
+
+version: <…>  # string
+
+generated: <…>
+
+settled_year: <…>
+
+engine:
+
+not_expressible: [ ... ]
+
+properties:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    family: <…>  # string
+    severity: <…>  # enum: blocker | major | minor
+    source: <…>  # string
+    statement: <…>  # REQUIRED · string
+    assertion:  # open: extra keys allowed
+    tolerance: <…>
+    sql: <…>  # REQUIRED · string
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### InterventionLedgerFile
+
+*discriminator key:* `?:` · *required:* `interventions`
+
+```yaml
+metadata:
+
+interventions:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    date: <…>
+    actor: <…>  # string
+    kind: <…>  # string
+    status: <…>  # string
+    what: <…>  # REQUIRED · string
+    why: <…>  # REQUIRED · string
+    objects: [ ... ]
+    dq_ids: [ ... ]
+    evidence: <…>
+    sme_owner: <…>  # string
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### VanillaDeltaFile
+
+*discriminator key:* `?:` · *required:* `deltas`
+
+```yaml
+metadata:
+
+deltas:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    file: <…>  # REQUIRED · string
+    locus: <…>  # string
+    baseline: <…>  # string
+    delta: <…>  # REQUIRED · string
+    why: <…>  # REQUIRED · string
+    status: <…>  # string
+    introduced: <…>
+    amended: <…>
+    ratified: <…>
+    ledger_ref: <…>  # string
+    objects: [ ... ]
+    evidence: <…>
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### DataQualityRegisterFile
+
+*discriminator key:* `?:` · *required:* `issues`
+
+```yaml
+metadata:
+
+issues:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    title: <…>  # REQUIRED · string
+    severity: <…>  # enum: high | medium | low
+    confidence: <…>  # enum: C | I | Q
+    finding: <…>  # REQUIRED · string
+    current_handling: <…>  # string
+    residual_risk: <…>  # string
+    sme_owner: <…>  # string
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### ImpurityResolutionMapFile
+
+*discriminator key:* `?:` · *required:* `resolutions`
+
+```yaml
+metadata:
+
+resolutions:  # REQUIRED
+  - <item>
+    finding_id: <…>  # REQUIRED · string
+    coverage: <…>  # string
+    resolving_transforms: [ ... ]
+    guarantee: <…>  # string
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### KnowledgeSectionsFile
+
+*discriminator key:* `?:` · *required:* `sections`
+
+```yaml
+metadata:
+
+sections:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    title: <…>  # REQUIRED · string
+    section: <…>
+    slug: <…>  # string
+    source: <…>
+    aspects:  # open: extra keys allowed
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### PhaseFile
+
+*discriminator key:* `?:` · *required:* `phase`
+
+```yaml
+phase: <…>  # REQUIRED · enum: BUILD | TUNE
+
+lock: <…>
+
+notes: <…>
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### ShapesFile
+
+*discriminator key:* `?:` · *required:* `shapes`
+
+```yaml
+shapes:  # REQUIRED
+  - <item>
+    id: <…>  # REQUIRED · string
+    description: <…>  # string
+    target: <…>  # REQUIRED · string
+    where:  # open: extra keys allowed
+    severity: <…>  # enum: error | warning | info
+    constraint:  # open: extra keys allowed
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
+### ProtoSqlFile
+
+*discriminator key:* `?:` · *required:* `rule`
+
+```yaml
+metadata:
+
+rule:  # REQUIRED
+# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+```
+
 <!-- END GENERATED:schema-shapes -->
