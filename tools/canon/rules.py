@@ -88,6 +88,20 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
     }
 
 
+def derive_name_params(concept: dict, source: str) -> dict:
+    """`refuse_unresolvable_name`'s parameters, READ from the concept rather than attached to a rule.
+
+    thing = concept.label (what a person calls it), code = concept.identity.canonical_key (what a
+    name must resolve to). Both are already declared on every conformant concept; attaching them to
+    a rule creates a second home that can — and did — disagree with the first.
+    """
+    c = concept or {}
+    ident = (c.get("identity") or {})
+    return {"source": source,
+            "thing": str(c.get("label") or c.get("name") or "").lower(),
+            "code": str(ident.get("canonical_key") or "")}
+
+
 def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "") -> dict:
     """A NAME does not resolve to a code — refuse rather than fuzzy-match.
 

@@ -147,6 +147,12 @@ rules:
     never: "silently substituting a near-miss; inventing a code"
     realized_by:
       udf: mac.canon.refuse_unresolvable_name
+      # `code` and `thing` are DERIVED, not attached: the code a name must resolve to IS the
+      # concept's `identity.canonical_key`, and the thing named is its label. Measured 2026-08-19 —
+      # 4 fpl2 concepts attached `code` as a canon parameter; the two that were right matched
+      # canonical_key exactly, and the two that were wrong (brand: "code", country: "market") had the
+      # correct value sitting in canonical_key while a regex over the rule prose guessed instead.
+      # A parameter that can be read from a declaration must never be attached beside it.
     why: >
       A near-miss substitution is the failure this prevents: answering about the Golf when the question
       said Golf Plus is worse than refusing, because the answer looks right.
