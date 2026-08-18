@@ -43,7 +43,7 @@ aggregation_effect:
   terms:
     additive: "SUM is correct across this axis."
     average:  "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
-    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is (the period end, the matching abstraction level, ...) is a RESOLUTION question the concept answers in its `resolve.*` rules — it is not an additivity fact and does not belong here."
+    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — OB-Reach resolving to a matching abstraction level — needs the concept to say."
 
 # ===========================================================================
 # mac.axis_kind — the KIND of an aggregation axis, for additivity purposes.

@@ -47,6 +47,31 @@ metadata:
   description: Behavioural contracts that hold for any conformant ontology.
 
 rules:
+  - id: mac.resolve.period_reading
+    subject: "How a bare period is read — determined by the measure's type, never restated per concept"
+    kind: mac.rule_kind.resolution
+    scope: { concept.class: measure }
+    confidence: C
+    when:  "a measure is asked for a bare period (a year, a quarter, a range) with no leaf grain named"
+    then:  "read it as the measure's TIME additivity dictates: `additive` -> the period is the SUM of
+            its leaf cells over [start, next); `none` -> the period is the single stored cell at its
+            END; `average` -> the mean over the window. The measure_type determines this; nothing about
+            the period does"
+    never: "end-pinning an `additive` measure to its last cell (a Flow read as a level under-reports a
+            year by roughly the number of periods in it); SUMming a `none` measure over its cells
+            (double-counts everything still standing in each one)"
+    why: >
+      MEASURED on fpl2: fifteen rules across four shapes — resolve.period_sum (5),
+      aggregate.by_registered_type (8), resolve.stock_period (2), resolve.target_period (1) — each
+      spelled out what its own `measure_type` already determines. Every clause after the dash was the
+      declaration read back: "SUM the months — DtC is a Flow, additive over time".
+
+      The vocabulary invited this. `none` said which row to read "is a RESOLUTION question the concept
+      answers in its resolve.* rules" — deferring a question that, on the TIME axis, has exactly one
+      answer for every measure of a given type. A level read at a point in time IS the period end;
+      that is not per-concept knowledge. The deferral belongs only where the answer genuinely varies
+      per concept — a non-time axis, such as OB-Reach resolving to a matching abstraction level.
+
   # ── the one that governs the other two, and everything else ──────────────────────────────────────
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
