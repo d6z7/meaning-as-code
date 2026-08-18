@@ -73,6 +73,7 @@ import check_reproduction as REPRO
 import check_vocabulary_drift as VOCAB
 import check_canon_binding as CANONB
 import check_common_rules as COMMON
+import check_cookbook_smells as COOKBOOK
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -118,6 +119,8 @@ PHASES = (
      "whether a bound rule's prose still says what its canon renders"),
     ("common_rules", ("MAC003", "MAC005", "MAC008"), "root",
      "whether a concept restates a law MAC already states for its class"),
+    ("cookbook", ("MAC003",), "root",
+     "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"),
 )
 
 
@@ -138,6 +141,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return CANONB.check_canon_binding(root)
     if name == "common_rules":
         return COMMON.check_common_rules(root)
+    if name == "cookbook":
+        return COOKBOOK.check_cookbook_smells(root)
     raise KeyError(name)                                     # PROGRAMMER error, not bundle content
 
 
