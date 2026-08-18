@@ -867,7 +867,14 @@ def _load_registers(root: Path) -> dict:
         stem = raw_stem[:-len(LOOKUP_SUFFIX)] if raw_stem.endswith(LOOKUP_SUFFIX) else raw_stem
         relpath = _rel(path, root)
         try:
-            reader = csv.DictReader(path.read_text(encoding="utf-8").splitlines())
+            # A register may carry a "#" preamble stating what it is, what generated it and what is
+            # known-defective about it — provenance a bare CSV cannot hold. Feeding those lines to
+            # DictReader takes the first comment as the header and every later one as a row: a 1.108-row
+            # register was read as 1.163 and its projected page published that number. Skip them here,
+            # once, so every consumer sees the same row set.
+            _lines = [l for l in path.read_text(encoding="utf-8").splitlines()
+                      if not l.lstrip().startswith("#")]
+            reader = csv.DictReader(_lines)
             fieldnames = tuple(reader.fieldnames or ())
             rows = tuple(RegisterRow(stem, i, dict(r), relpath)
                          for i, r in enumerate(reader, start=2))   # +2: the header is line 1

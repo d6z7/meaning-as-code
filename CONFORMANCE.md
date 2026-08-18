@@ -5,6 +5,8 @@ date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
   - mac.schema.json     # the machine-checkable schema this document governs
+  - tools/mac_diag.py   # the FROZEN diagnostic contract §5.1 reproduces (the code IS the contract)
+  - tools/mac_compile.py # the compiler §5 defines — one invocation, one finding list, one verdict
   - FRAMEWORK.md        # the why (READ FIRST)
   - CONCEPT_SPEC.md     # the prose key reference
   - MODELLERS_COOKBOOK.md
@@ -35,6 +37,11 @@ A file claims a level in `metadata` (`schema_version` pins the schema generation
 `confidence` carry L2/L3 state). **L1 is the new bar this release adds:** before v0.5 the validator
 checked placement and legality but not a closed key-set, so files drifted (e.g. eight ad-hoc
 `*_contract` keys). v0.5 closes that hole.
+
+A **level is claimed per file**; conformance is judged **per bundle**. The three gates below establish
+L1 for the files they reach — **§5 is what establishes it for the bundle as a whole**, names every way a
+bundle can fail (the closed diagnostic taxonomy, §5.1), and makes a clean result the *precondition* for
+running anything on it (§5.2). §5.4 is explicit about which of L0–L3 that does and does not cover.
 
 ### The three gates — structural · referential · constraint (the constraint gate is new in v0.1.6)
 
@@ -135,17 +142,150 @@ example is what migrates** (a Phase-C task):
   one canonical FK shape (explicit; feeds edge cardinality). Phase C migrates the example's terse
   `{column, references}` to it.
 
-## 5. Validating a file (Phase C wires this into the gate)
+## 5. Compiling a bundle — the compiler, the taxonomy, and the refusal
 
-```
+A single file can be checked on its own:
+
+```bash
 # parsed-YAML → schema check (dates loaded as strings; file type by location)
-python tools/validate_schema.py <path>      # to consume mac.schema.json + keep the semantic checks
+python tools/validate_schema.py <path>      # consumes mac.schema.json + keeps the semantic checks
 ```
 
-The structural gate (schema) proves **L1**. It does **not** prove correctness — `mac.schema.json` is
-silent on whether a column exists in the warehouse or a label means what you think. **L2** (execution
-validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A green schema is the
-*start* of trust, not the end.
+That answers *is this file legal*. It does not answer the question that decides whether a bundle may be
+used — **what is the state of the whole model**: what is defined, what is defined redundantly, what is
+not defined, on every criterion this standard has. A per-file check cannot answer it, and neither can a
+row of independent gates: each reports on the part it happened to look at, so a bundle can hold a green
+tick from every one of them and still be full of artifacts nothing ever validated. That is not a
+theoretical failure mode; it is the observed one, and it is why the **compiler** exists.
+
+```bash
+python tools/mac_compile.py <bundle-root> [--show error|warning|info] [--json <path>]
+# exit 0 = compiles · 1 = does not conform · 2 = the compiler could not run
+```
+
+**ONE invocation · ONE finding list · ONE verdict · ONE exit code.** Every finding is a `Diagnostic`
+(`tools/mac_diag.py`, the frozen contract) carrying a **code** from the closed taxonomy below, a
+one-sentence summary that is the finding itself, and **witnesses** — the places it is evidenced, each
+addressable as `file#path:line`.
+
+**Fanout is collapsed, always.** A finding evidenced in *N* files is **one** diagnostic carrying *N*
+witnesses — never *N* diagnostics. A report that prints one line per file gets muted within a week and
+its root cause dies with it. Anything that emits per-object findings is not conforming to this section.
+
+**The finding set MUST persist.** `--json <path>` writes the complete set — every diagnostic, every
+witness, every code in the taxonomy with whether it was **computed** — so that after any compile the
+whole state is readable at any later point, by anyone, without re-running it. A code that fired zero
+times and a code no check computed are **different facts** and the record keeps them apart; a report
+that renders them the same is lying by omission.
+
+### 5.1 The diagnostic taxonomy (closed)
+
+The **code is the contract**: its text may be reworded, its meaning may not change without a version
+bump, because suppressions and counts are keyed on it. Meanings are normative and reproduced verbatim
+from `tools/mac_diag.py`.
+
+| Code | Kind | Means | Default severity |
+|---|---|---|---|
+| | **what is not defined** | | |
+| **MAC001** | undefined-artifact | present in the bundle, carries no MAC definition, not declared out of scope | **error** — `info` for a file that *is* declared out of scope (the waiver, reported as a fact) |
+| **MAC002** | invalid-artifact | has a MAC definition and does not satisfy it | **error** — `warning` where a routed file's `schema_version` is outside the recognized set, so it claims a definition nothing checked |
+| **MAC009** | undeclared-extension | an `x-` key with no profile entry — §2: undeclared debt, not license | **error** |
+| | **what is defined redundantly** | | |
+| **MAC003** | fact-restated | one fact stated in more than one home; nothing keeps the copies in step | **warning** |
+| **MAC004** | fact-contradicted | statements of one fact disagree — something downstream is reading the wrong one | **error** |
+| | **what is offered and not taken** | | |
+| **MAC005** | capability-unadopted | MAC offers a mechanism for this and the bundle does not use it | **warning**, and **never error** — enforced structurally, the severity function cannot return `error`. `info` where the bundle has no applicable site, or where MAC itself cannot honour its own offer (framework debt — the bundle is not the subject) |
+| | **what is claimed without warrant** | | |
+| **MAC006** | claim-unearned | a conformance level or confidence asserted with no evidence behind it | **warning** |
+| **MAC010** | change-unprotocolled | an authored or tuned object with no entry in the change record | **error** — `warning` where the change record does not exist at all (there is nothing to be missing *from*) |
+| | **what points at nothing** | | |
+| **MAC007** | guard-dead | a rule or guard testing a value that cannot occur — it can never fire | **error** |
+| **MAC008** | reference-unresolved | a reference that resolves to nothing | **error** |
+| | **what is not covered** | | |
+| **MAC011** | coverage-missing | a required completeness the bundle does not reach | **error** — `warning` for the bands ruled legitimate (thin lineage, seed-only assembly) and where the completeness could not be measured |
+
+Severities mean exactly this, and nothing else:
+
+- **error** — the bundle **does not conform**. Nothing may run on it.
+- **warning** — conformant, but carrying a defect that becomes an error under a stated condition. The
+  condition belongs in the diagnostic's `note`, not in the reader's head.
+- **info** — a fact about the bundle worth reporting. Never blocks.
+
+A check the compiler has not yet absorbed natively runs **wrapped**, as a subprocess, and its failure
+becomes **one** diagnostic under the code its subject belongs to, carrying the gate's own output as
+witnesses. A wrapped gate is **debt**, and the compiler prints the wrapped list on every run so it
+stays visible. A wrapped gate that exits with a *setup* failure (exit 2) did not judge the bundle: its
+code is then **UNKNOWN, not clean**, and it is reported as a warning — failing a bundle nobody checked
+is a lie in the other direction.
+
+### 5.2 A bundle MUST compile before anything runs on it
+
+> **Normative.** A bundle with one or more **error**-severity diagnostics **does not conform**. No tool
+> in this framework, and no consumer of it, may project, publish, serve, seal or answer from such a
+> bundle. This is not advisory: **a check that does not block is not enforcement.**
+
+The refusal is wired at the point where a bundle stops being source and starts becoming artifacts — the
+**projector**. It compiles first, refuses on any error, and reports the **compiler's own rendered
+findings** as the reason (never a paraphrase — a gate that restates a finding in its own words is a
+second home for it, MAC003, and the two wordings drift). It persists the complete finding set beside the
+bundle on **every** attempt, refused runs included, so a refusal is as readable afterwards as a pass.
+
+**The override.** A human who knows what they are doing may proceed over a non-conformant bundle, and
+the escape is shaped so that using it is a decision somebody made and can be held to:
+
+- it is a **command-line flag**, never an environment variable or a config key — an env var is invisible
+  in the command somebody typed, and a config key drifts on and stays on;
+- its **value is the reason**, so the flag cannot be used without stating why;
+- it prints a **banner** that cannot be mistaken for normal output, listing the codes being ignored;
+- it is **recorded** — reason, username, timestamp, and the codes overridden — in the same persisted
+  compile record the findings live in, so an artifact built over a refusal carries the admission next to
+  the evidence, permanently.
+
+An override is a **statement**, not a setting. A bundle that needs one on every run is a bundle whose
+findings should have been cleared or declared.
+
+### 5.3 The declared escape — `conformance.out_of_scope`
+
+A bundle may legitimately own files this framework has no definition for (a testing plane, an
+application's own registers). MAC001 does not forbid that. It forbids it being **silent**. The bundle
+declares them, with a reason, in the manifest:
+
+```yaml
+# mac.project.yaml
+conformance:
+  out_of_scope:
+    - path: acceptance/**
+      reason: "testing plane; MAC has no schema for it — see decisions/00NN"
+```
+
+A declared path is reported as **info**, not error. The `reason` is not decoration: it is what makes the
+debt arguable in review, and what a later reader needs to decide whether it is still true. A broken
+manifest yields **no** waivers rather than silently waiving everything — an escape hatch that widens
+under a parse error is not an escape hatch.
+
+This is the same rule §2 states for `x-` keys, applied to whole artifacts: **declared debt is visible
+and arguable; silent debt is how a standard stops being one.**
+
+### 5.4 What a clean compile does and does not prove
+
+A clean compile proves **L1** and the data-free relational rules layered on it (§1's three gates). It
+does **not** prove correctness: nothing here knows whether a column exists in the warehouse, whether a
+number is sane, or whether a label means what you think.
+
+- **L2 (execution-validated) is NOT implemented in MAC.** No gate, shape, or diagnostic code in this
+  framework runs the query a model implies and checks the answer. The taxonomy has no code for it and
+  the compiler will never emit one, so **a clean compile must not be read as any L2 evidence at all.**
+  Applications do implement L2 — a suite of executable properties, each with the SQL that tests it and
+  the expected result — but they do so **outside MAC's sight**, in artifacts MAC has no definition for,
+  which means such a suite is itself an MAC001 until the bundle declares it out of scope. That is an
+  honest report of a hole in this framework, not a covered case. Bringing execution validation under a
+  definition — so that L2 evidence is *addressable* the way L1 findings are — is open framework work.
+- **L3 (expert-confirmed) is asserted, not proven.** `confidence: C` is a claim about a human act. The
+  compiler checks the claim for **warrant** (MAC006 — machine-written provenance asserting C with no
+  ratification on record) but it cannot manufacture the ratification. An SME still has to say yes.
+
+A green compile is the **start** of trust, not the end — and it is now also the *precondition*: the
+bundle must reach the start before anything is allowed to run.
 
 ## 6. schema_version discipline
 
@@ -227,6 +367,14 @@ validation) and **L3** (SME) remain mandatory and unchanged (FRAMEWORK §8). A g
   `example_shop_ontology` `ProductBundle` (grouping, no inline `definitions`) + the exploded
   `product_bundles` register. *(Were this to arrive bundled with a schema change, it would go out under the
   next additive number, `0.1.13`.)*
+- **The compiler (§5) — normative prose + tooling, no schema bump.** §5 defines the closed diagnostic
+  taxonomy (`tools/mac_diag.py`, frozen), the rule that a bundle MUST compile clean before anything runs,
+  and the `conformance.out_of_scope` escape. It adds **no key** to `mac.schema.json` — it states how the
+  existing contract is *enforced*, not what a file may contain — so per **RELEASING.md “When to bump”**
+  it does not move the `schema_version` and rides on the current generation. Two things it makes visible
+  rather than fixes, both recorded here so neither is mistaken for covered: `mac.schema.json` defines no
+  **profile** slot, so the §2 construct MAC009 enforces has no schema home and a bundle can only declare
+  it in the manifest; and **L2 is unimplemented** (§5.4).
 - The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.9`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's

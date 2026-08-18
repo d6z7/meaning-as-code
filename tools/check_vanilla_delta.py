@@ -19,7 +19,11 @@ anyone agreed to it". Those are different questions and they need different regi
 A delta entry is DELETED when the delta is removed. A ledger entry never is.
 
 WHAT IS CHECKED
-  A. ERROR — an object stamped `metadata.provenance: authored|tuned` with no delta entry.
+  A. ERROR — an object stamped `metadata.provenance: authored|tuned` with no delta entry. THE RULING
+             IS NOT MADE HERE: that is MAC010 change-unprotocolled, implemented once in
+             `mac_checks_semantic.unprotocolled()` and read by this gate and by
+             check_intervention_ledger alike. Both used to carry their own walk of the same objects,
+             which is the very shape (one fact, two homes) these gates exist to forbid.
   B. ERROR — a duplicate delta id; a missing required key; a status/ratified shape outside its set.
   C. ERROR — `file:` naming a path that does not exist, or `ledger_ref:` naming an unknown intervention.
   D. ERROR — an empty or placeholder `baseline:`. The baseline is the load-bearing field: an entry that
@@ -31,6 +35,14 @@ WHAT IS CHECKED
              reverted and the entry left behind).
 
 Warn-only until the register exists, so adopting it is never a breaking change.
+
+ONE BEHAVIOUR CHANGED when A was delegated, and it is a FIX, not a regression. This gate's own
+`_provenance()` read `metadata.provenance` raw; `mac_model.provenance_of` — the estate's single
+reader — case-folds. Measured on a probe bundle stamping `provenance: Authored`: the old reader ruled
+the object NOT manual and passed it silently, while check_intervention_ledger (which already folded)
+ruled it manual. Two readers of one field, opposite verdicts on the same byte. The delegated A now
+agrees with the ledger gate and reports it. Nothing else moved: the two gates are byte-identical to
+their pre-delegation selves across all six corpus bundles and five injected-defect variants.
 """
 from __future__ import annotations
 
@@ -41,6 +53,9 @@ try:
     import yaml
 except ImportError:  # pragma: no cover
     sys.exit("PyYAML required: pip install pyyaml")
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mac_checks_semantic as _semantic  # noqa: E402 — owns MAC010, the protocol question itself
 
 REGISTER = "interventions/vanilla_delta.yaml"
 LEDGER = "interventions/ledger.yaml"
@@ -121,7 +136,6 @@ def main(argv) -> int:
     errors: list[str] = []
     warns: list[str] = []
     seen: set[str] = set()
-    covered: set[str] = set()
 
     for i, e in enumerate(deltas):
         label = (e.get("id") if isinstance(e, dict) else None) or f"#{i}"
@@ -145,7 +159,6 @@ def main(argv) -> int:
         if not objs:
             errors.append(f"delta '{label}' names no objects")
         for obj in (str(o) for o in objs):
-            covered.add(obj)
             if obj not in stamps:
                 errors.append(f"delta '{label}' names object '{obj}', which is not on disk")
             elif stamps.get(obj) not in MANUAL:
@@ -176,7 +189,12 @@ def main(argv) -> int:
         elif "ratified" in e:
             errors.append(f"delta '{label}' has a `ratified` that is not a mapping of by/date")
 
-    for m in sorted(manual - covered):
+    # A — THE PROTOCOL QUESTION IS NOT ANSWERED HERE. "an authored/tuned object with no entry in the
+    # change record" is MAC010, implemented ONCE in mac_checks_semantic.unprotocolled(); this gate and
+    # check_intervention_ledger each used to walk the same objects to ask it. What remains this gate's
+    # own is the DELTA register's shape (B–F above), above all the placeholder-baseline rule, which is
+    # the one check that stops the register decaying into a list of titles.
+    for m in _semantic.unprotocolled(_semantic.M.load(root)).get(REGISTER, []):
         errors.append(f"object '{m}' is stamped '{stamps[m]}' — it differs from the generated bundle "
                       f"and has NO entry in {REGISTER}")
 

@@ -23,8 +23,16 @@ remain mandatory; see CONFORMANCE.md.
 Usage:  python3 tools/validate_schema.py [root] [--schema <mac.schema.json>] [--strict] [--all]
         --strict : warnings also fail the run.
 Exit:   0 = clean · 1 = schema violations (or warnings under --strict) · 2 = setup error (deps/schema)
+
+REUSABLE SURFACE (added 2026-08-18, for mac_checks_structure.py). The bundle ENUMERATION and the
+per-file VALIDATION are the two facts this file owns, and the diagnostic compiler needs both. They are
+exposed as `enumerate_bundle()` and `validate_files()`; `main()` is now a renderer over them and holds
+no selection logic of its own. A second enumerator would be a second answer to "what does MAC define",
+and the first bundle where the two disagreed would be unarguable — which is the defect this whole gate
+exists to catch.
 """
-import sys, os, glob, json, argparse
+import sys, os, glob, json, argparse, fnmatch
+from dataclasses import dataclass, field
 from mac_project import resolve
 
 
@@ -76,6 +84,154 @@ def _edge_enrichment_warnings(path, doc):
     return warns
 
 
+# ── the shared surface: ENUMERATION and VALIDATION ────────────────────────────────────────────────
+# Both were inline in main() until 2026-08-18. They are lifted out unchanged so the diagnostic compiler
+# (tools/mac_checks_structure.py) reads the SAME answer this gate prints, rather than re-deriving it.
+
+SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projections/ = generated exports, not source
+CURRENT = '0.1.13'                        # current MAC schema version = mac_vocabulary.yaml `version` (0.1.13 added the OPTIONAL typed-rule `subject` field + the vocab's aggregation_effect.averageable / MeasureType.Intensive; additive over 0.1.12's relationAliasBlock + business-edge shared_attribute + edge.resolved_by/aliases)
+RECOGNIZED = {CURRENT, '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
+                                          # migration (not orphaned). Drop older versions once all content reconforms —
+                                          # that finish is dev-only, not for main.
+
+
+def _skipped(p):
+    return any(part in SKIP for part in p.split(os.sep))
+
+
+@dataclass(frozen=True)
+class Enumeration:
+    """What the bundle CONTAINS vs what MAC DEFINES — the deny-unknown answer, as data."""
+    root: str
+    layout: object
+    routed: tuple = ()        # abs paths MAC has a schema definition for (the allowlist)
+    all_yaml: tuple = ()      # abs paths of every yaml in the bundle (SKIP dirs and dotfiles excluded)
+    declared: tuple = ()      # mac.project.yaml#conformance.out_of_scope path patterns, verbatim
+    unknown: tuple = ()       # bundle-relative: no definition, not declared out of scope
+    waived: tuple = ()        # bundle-relative: no definition, declared out of scope
+
+    def rel(self, abspath):
+        return os.path.relpath(abspath, self.root)
+
+
+def out_of_scope_patterns(root):
+    """The bundle's declared escape hatch. A broken manifest yields NONE — it must not silently widen
+    coverage by making every unknown file look waived."""
+    proj = os.path.join(root, 'mac.project.yaml')
+    if not os.path.exists(proj):
+        return []
+    try:
+        pd = _load_yaml_str_dates(proj) or {}
+    except Exception:
+        return []
+    return [str(e.get('path', '')) for e
+            in ((pd.get('conformance') or {}).get('out_of_scope') or []) if isinstance(e, dict)]
+
+
+def enumerate_bundle(root, layout=None):
+    """THE enumeration. Everything above `main` builds an ALLOWLIST of glob patterns and validates only
+    what matches. A file outside those patterns was never rejected and never skipped — it was never
+    looked at, while the summary printed "N/N checked file(s) clean", which reads as complete coverage.
+    Measured on a live bundle: 218 yaml files, 61 matched, 156 invisible — including a 142-file
+    acceptance plane and seven artifacts invented on top of the standard.
+
+    An allowlist validator cannot detect invention: you cannot violate a pattern you do not match.
+    CONFORMANCE.md §2 already rules that the only legal way to add something the core does not define is
+    a DECLARED extension — "an x- key with no profile entry is undeclared debt, not license". Nothing
+    implemented the enumeration that makes that rule enforceable. This does.
+
+    A bundle may still own files MAC does not define — but it must SAY SO, in mac.project.yaml:
+        conformance:
+          out_of_scope:
+            - path: acceptance/**
+              reason: "testing plane; MAC has no schema for it — see decisions/00NN"
+    Declared debt is visible and arguable. Silent debt is how a standard stops being one."""
+    layout = layout if layout is not None else resolve(root)
+    files = []
+    for pat in ('**/concepts/**/*.yaml', '**/rules.yaml', '**/edges.yaml', '**/tables/*.yaml'):
+        files += [f for f in glob.glob(os.path.join(root, pat), recursive=True) if not _skipped(f)]
+    files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not _skipped(f)]  # two-plane: data/datasets/
+    for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None)):   # data/transforms/, data/sources/
+        if extra:
+            files += [f for f in glob.glob(str(extra / '*.yaml')) if not _skipped(f)]
+    files = sorted(set(files))
+
+    all_yaml = sorted(set(f for f in glob.glob(os.path.join(root, '**', '*.yaml'), recursive=True)
+                          if not _skipped(f) and not os.path.basename(f).startswith('.')))
+    declared = out_of_scope_patterns(root)
+
+    def is_declared(relpath):
+        return any(fnmatch.fnmatch(relpath, d) or relpath.startswith(d.rstrip('*').rstrip('/') + '/')
+                   for d in declared if d)
+
+    known = {os.path.realpath(f) for f in files}
+    unknown, waived = [], []
+    for f in all_yaml:
+        if os.path.realpath(f) in known or os.path.basename(f) == 'mac.project.yaml':
+            continue
+        rel = os.path.relpath(f, root)
+        (waived if is_declared(rel) else unknown).append(rel)
+    return Enumeration(root=root, layout=layout, routed=tuple(files), all_yaml=tuple(all_yaml),
+                       declared=tuple(declared), unknown=tuple(unknown), waived=tuple(waived))
+
+
+@dataclass(frozen=True)
+class FileVerdict:
+    """One routed file's L1 outcome. `errors` carry the jsonschema keyword and schema path so a caller
+    can GROUP by violation kind instead of printing one line per file."""
+    path: str
+    definition: str                  # the $defs name it was routed to
+    schema_version: str
+    parse_error: str = None
+    skipped: bool = False            # schema_version not recognized (and --all not given)
+    errors: tuple = ()               # (yaml_path, message, keyword, schema_path)
+    warnings: tuple = ()             # verbatim strings from _edge_enrichment_warnings
+
+
+def load_schema(path=None):
+    """The schema, checked. Raises on a broken schema — that is programmer/setup error, not content."""
+    from jsonschema import Draft202012Validator
+    p = path or os.path.join(os.path.dirname(__file__), '..', 'mac.schema.json')
+    with open(p) as fh:
+        schema = json.load(fh)
+    Draft202012Validator.check_schema(schema)
+    return schema
+
+
+def validate_files(enum, schema=None, all_versions=False):
+    """Validate every ROUTED file against its definition. Returns one FileVerdict per file, in
+    enumeration order. No printing, no exit code — the callers differ on both."""
+    from jsonschema import Draft202012Validator
+    schema = schema if schema is not None else load_schema()
+
+    def sub(name):
+        s = {k: v for k, v in schema.items() if k != 'oneOf'}
+        s['$ref'] = f'#/$defs/{name}'
+        return s
+
+    out = []
+    for f in enum.routed:
+        try:
+            doc = _load_yaml_str_dates(f)
+        except Exception as e:
+            out.append(FileVerdict(path=f, definition='', schema_version='', parse_error=str(e)))
+            continue
+        if not isinstance(doc, dict):
+            continue
+        sv = str((doc.get('metadata') or {}).get('schema_version', ''))
+        which = _pick_def(f, enum.layout)
+        if not all_versions and sv not in RECOGNIZED:
+            out.append(FileVerdict(path=f, definition=which, schema_version=sv, skipped=True))
+            continue
+        errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))
+        warns = tuple(_edge_enrichment_warnings(f, doc)) if which == 'EdgesFile' else ()
+        out.append(FileVerdict(
+            path=f, definition=which, schema_version=sv, warnings=warns,
+            errors=tuple(('/'.join(map(str, e.path)) or '(root)', e.message, e.validator,
+                          '/'.join(map(str, e.absolute_schema_path))) for e in errs)))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('root', nargs='?', default='.',
@@ -90,65 +246,48 @@ def main():
 
     try:
         import yaml  # noqa: F401
-        from jsonschema import Draft202012Validator
+        import jsonschema  # noqa: F401
     except ImportError as e:
         print(f"[setup] missing dependency '{e.name}'. Install:  pip install jsonschema pyyaml",
               file=sys.stderr)
         sys.exit(2)
 
     try:
-        with open(args.schema) as fh:
-            schema = json.load(fh)
-        Draft202012Validator.check_schema(schema)
+        schema = load_schema(args.schema)
     except Exception as e:
         print(f"[setup] could not load/validate schema at {args.schema}: {e}", file=sys.stderr)
         sys.exit(2)
 
-    def sub(name):
-        s = {k: v for k, v in schema.items() if k != 'oneOf'}
-        s['$ref'] = f'#/$defs/{name}'
-        return s
+    enum = enumerate_bundle(args.root)              # flat, or two-plane (mac.project.yaml)
+    files, unknown, waived = enum.routed, list(enum.unknown), len(enum.waived)
 
-    SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projections/ = generated exports, not source
-    skip = lambda p: any(part in SKIP for part in p.split(os.sep))
-
-    layout = resolve(args.root)          # flat, or two-plane (mac.project.yaml)
-    files = []
-    for pat in ('**/concepts/**/*.yaml', '**/rules.yaml', '**/edges.yaml', '**/tables/*.yaml'):
-        files += [f for f in glob.glob(os.path.join(args.root, pat), recursive=True) if not skip(f)]
-    files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not skip(f)]  # two-plane: data/datasets/
-    for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None)):  # data/transforms/, data/sources/
-        if extra:
-            files += [f for f in glob.glob(str(extra / '*.yaml')) if not skip(f)]
-    files = sorted(set(files))
-
-    CURRENT = '0.1.13'                        # current MAC schema version = mac_vocabulary.yaml `version` (0.1.13 added the OPTIONAL typed-rule `subject` field + the vocab's aggregation_effect.averageable / MeasureType.Intensive; additive over 0.1.12's relationAliasBlock + business-edge shared_attribute + edge.resolved_by/aliases)
-    RECOGNIZED = {CURRENT, '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
-                                              # migration (not orphaned). Drop older versions once all content reconforms —
-                                              # that finish is dev-only, not for main.
     errors, warnings, clean, skipped = [], [], 0, 0
-    for f in files:
-        try:
-            doc = _load_yaml_str_dates(f)
-        except Exception as e:
-            errors.append(f"ERROR  {f}: YAML parse failed: {e}")
+    for v in validate_files(enum, schema, all_versions=args.all):
+        if v.parse_error:
+            errors.append(f"ERROR  {v.path}: YAML parse failed: {v.parse_error}")
             continue
-        if not isinstance(doc, dict):
-            continue
-        sv = str((doc.get('metadata') or {}).get('schema_version', ''))
-        if not args.all and sv not in RECOGNIZED:
+        if v.skipped:
             skipped += 1   # legacy / not-yet-migrated — incremental adoption (use --all to force)
             continue
-        which = _pick_def(f, layout)
-        errs = sorted(Draft202012Validator(sub(which)).iter_errors(doc), key=lambda e: list(e.path))
-        if which == 'EdgesFile':
-            warnings += _edge_enrichment_warnings(f, doc)
-        if not errs:
+        warnings += list(v.warnings)
+        if not v.errors:
             clean += 1
             continue
-        for e in errs:
-            loc = '/'.join(map(str, e.path)) or '(root)'
-            errors.append(f"ERROR  {f} [{which}] @{loc}: {e.message}")
+        for loc, msg, _kw, _sp in v.errors:
+            errors.append(f"ERROR  {v.path} [{v.definition}] @{loc}: {msg}")
+
+    # Deny-unknown reports as a ROOT plus witnesses, never one line per file: a gate that emits 157
+    # identical lines is muted within a week and its root cause dies with it.
+    if unknown:
+        import collections as _c
+        by_dir = _c.Counter(os.path.dirname(u) or '.' for u in unknown)
+        errors.append(f"ERROR  {len(unknown)} file(s) carry no MAC definition and are not declared "
+                      f"out of scope — MAC cannot validate, track or enforce them")
+        for d, n in sorted(by_dir.items(), key=lambda kv: -kv[1]):
+            ex = next(u for u in unknown if (os.path.dirname(u) or '.') == d)
+            errors.append(f"         {n:>4}  {d}/    e.g. {os.path.basename(ex)}")
+        errors.append("         declare them in mac.project.yaml#conformance.out_of_scope with a "
+                      "reason, or bring them under a schema definition")
 
     for w in warnings:
         print(w)
@@ -156,7 +295,8 @@ def main():
         print(e)
     checked = len(files) - skipped
     print(f"\n{len(errors)} error(s), {len(warnings)} warning(s); {clean}/{checked} checked file(s) clean, "
-          f"{skipped} skipped (schema_version not recognized — current {CURRENT}; use --all to include).  "
+          f"{skipped} skipped (schema_version not recognized — current {CURRENT}; use --all to include); "
+          f"{len(enum.all_yaml)} yaml in bundle, {len(unknown)} undefined, {waived} declared out of scope.  "
           f"(schema-driven L1 gate — not correctness; see CONFORMANCE.md.)")
     fail = bool(errors) or (args.strict and bool(warnings))
     sys.exit(1 if fail else 0)

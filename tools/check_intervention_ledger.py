@@ -20,7 +20,10 @@ This gate makes an unprotocolled manual change impossible to ship:
   C. ERROR — an `objects[]` entry that resolves to no file on disk (or carries an unknown type prefix).
   D. ERROR — a `dq_ids[]` entry absent from data/quality/data_quality_register.yaml.
   E. ERROR — an object stamped `authored`/`tuned` that NO intervention references (the core teeth: a
-             manual change with no protocol entry).
+             manual change with no protocol entry). THE RULING IS NOT MADE HERE: that is MAC010
+             change-unprotocolled, implemented once in `mac_checks_semantic.unprotocolled()` and read
+             by this gate and by check_vanilla_delta alike. Both used to carry their own walk of the
+             same objects, which is the very shape (one fact, two homes) these gates exist to forbid.
   F. WARN  — an object carrying no `metadata.provenance` stamp at all (adoption warning).
 
 OFFLINE + pure-structural (files on disk, no AWS).
@@ -38,6 +41,7 @@ except ImportError:  # pragma: no cover
     sys.exit("PyYAML required: pip install pyyaml")
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import mac_checks_semantic as _semantic  # noqa: E402 — owns MAC010, the protocol question itself
 from mac_project import resolve  # noqa: E402
 
 REQUIRED = ("id", "date", "actor", "kind", "objects", "what", "why", "status")
@@ -157,7 +161,8 @@ def main(argv) -> int:
     issue_ids = {i.get("id") for i in (reg.get("issues") or reg.get("findings") or [])
                  if isinstance(i, dict) and i.get("id")}
 
-    referenced: set[str] = set()
+    # (no `referenced` set here any more — the ledger's coverage of the manual objects is MAC010, and
+    #  mac_checks_semantic reads the register for it. This loop keeps only the ledger's SHAPE rules.)
     seen_ids: set[str] = set()
 
     for n, e in enumerate(entries, 1):
@@ -196,7 +201,6 @@ def main(argv) -> int:
                 errors.append(f"intervention '{label}' object '{o}' has unknown type '{otype}' — "
                               f"expected one of {sorted(dirs)}")
                 continue
-            referenced.add(f"{otype}:{stem}")
             # A RETIRED object is GONE by definition — its file must NOT exist. Requiring resolution
             # there would make it impossible to protocol a removal, which is exactly the kind of manual
             # change that most needs a record. So existence is only enforced for authored/tuned.
@@ -214,20 +218,23 @@ def main(argv) -> int:
                               f"data/quality/data_quality_register.yaml")
 
     # ---- E + F : every manual stamp is answered by the ledger -------------------------------------
-    unprotocolled: list[str] = []
+    # E — THE PROTOCOL QUESTION IS NOT ANSWERED HERE. "an authored/tuned object with no entry in the
+    # change record" is MAC010, and it is implemented ONCE, in mac_checks_semantic.unprotocolled(),
+    # because this gate and check_vanilla_delta each used to carry their own walk of the same objects
+    # and there is no version of that which does not eventually drift. What stays here is what is
+    # genuinely this gate's own: the LEDGER's shape rules (B/C/D above) and the wording of its report.
+    unprotocolled: list[str] = list(_semantic.unprotocolled(_semantic.M.load(root)).get(LEDGER, []))
+    for key in unprotocolled:
+        errors.append(f"{key} is stamped provenance '{stamps.get(key)}' but NO intervention in {LEDGER} "
+                      f"references it — a manual change with no protocol entry")
+    # F — adoption warnings remain here: they are about THIS gate's stamp vocabulary, not the protocol.
     for key, prov in sorted(stamps.items()):
         if prov is None:
             if key.split(":", 1)[0] != "lookup":
                 warnings.append(f"{key} carries no `metadata.provenance` stamp — mark it harvested / "
                                 f"authored / tuned so manual work is distinguishable from harvest output")
-            continue
-        if prov not in PROVENANCE:
+        elif prov not in PROVENANCE:
             warnings.append(f"{key} provenance '{prov}' not in {sorted(PROVENANCE)} — treated as unstamped")
-            continue
-        if prov in MANUAL and key not in referenced:
-            unprotocolled.append(key)
-            errors.append(f"{key} is stamped provenance '{prov}' but NO intervention in {LEDGER} "
-                          f"references it — a manual change with no protocol entry")
 
     print(f"── intervention-ledger gate ── {len(entries)} intervention(s), {len(stamps)} object(s) "
           f"[{n_harvested} harvested / {n_manual} authored+tuned / {n_unstamped} unstamped], "
