@@ -70,6 +70,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import mac_checks_adoption as ADOPTION            # noqa: E402
 import check_reproduction as REPRO
+import check_vocabulary_drift as VOCAB
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -109,6 +110,8 @@ PHASES = (
      "what MAC offers and the bundle does not take"),
     ("reproduction", ("MAC004", "MAC008", "MAC011"), "root",
      "whether the process RECORD still agrees with the artifacts"),
+    ("vocabulary", ("MAC008",), "root",
+     "whether the FRAMEWORK's own code still agrees with its closed vocabularies"),
 )
 
 
@@ -123,6 +126,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return ADOPTION.check(root, fw=framework, bundle=bundle_conf)
     if name == "reproduction":
         return REPRO.check_reproduction(root)
+    if name == "vocabulary":
+        return VOCAB.check_vocabulary_drift(root)
     raise KeyError(name)                                     # PROGRAMMER error, not bundle content
 
 

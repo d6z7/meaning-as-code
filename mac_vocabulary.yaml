@@ -23,12 +23,27 @@ metadata:
 aggregation_effect:
   kind: vocabulary
   closed: true
-  description: The effect of aggregating a measure along a single axis.
+  description: >
+    THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set
+    answers one question in one grammar: "how do I fold this measure along this axis?"
+
+    v0.1.15 REPLACED THE PREVIOUS FOUR. They answered the same question in three different grammars —
+    `additive` named a property, `averageable` named a capability, `non_aggregable` named a negated
+    capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a
+    reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale
+    (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was
+    one character from `non_aggregable`, in a different scale, meaning something else. Eight fpl2 rules
+    fell into exactly that gap and guarded on a value no register could hold.
+
+    `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: gross_stock says
+    "READ the level at the END of the period" and ob_reach says "READ as stored ... resolve to the
+    matching pre-computed abstraction level instead of folding". Both READ a stored row and refuse to
+    fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
+    concept's `resolve.*` rules, never in the fold vocabulary.
   terms:
-    additive:       "SUM is correct across this axis."
-    point_in_time:  "Non-additive over this axis: take the value at the leaf grain; never SUM across it."
-    averageable:    "Never SUM across this axis (summing double-counts / is meaningless); the correct fold is a mean / median / percentile. Distinct from point_in_time (which still SUMs on OTHER axes) and from non_aggregable (which forbids even an average)."
-    non_aggregable: "Do not aggregate across this axis; report per cell."
+    additive: "SUM is correct across this axis."
+    average:  "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is (the period end, the matching abstraction level, ...) is a RESOLUTION question the concept answers in its `resolve.*` rules — it is not an additivity fact and does not belong here."
 
 # ===========================================================================
 # mac.axis_kind — the KIND of an aggregation axis, for additivity purposes.
@@ -79,18 +94,23 @@ MeasureType:
     Stock:
       definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
       additivity:
-        time:        mac.aggregation_effect.point_in_time
+        time:        mac.aggregation_effect.none         # a year IS the end-of-period row — resolved, not folded
         categorical: mac.aggregation_effect.additive
     Intensive:
       definition: "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM."
       additivity:
-        time:        mac.aggregation_effect.averageable
-        categorical: mac.aggregation_effect.averageable
+        time:        mac.aggregation_effect.average
+        categorical: mac.aggregation_effect.average
+    Precomputed:
+      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the vendor's own words for OB-Reach are 'non additive (sum/average of OB-Reach measures doesn't equal to OB-Reach of sum/average inputs) and iteration based'. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
+      additivity:
+        time:        mac.aggregation_effect.none
+        categorical: mac.aggregation_effect.none
     Target:
       definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
       additivity:
-        time:        mac.aggregation_effect.non_aggregable
-        categorical: mac.aggregation_effect.non_aggregable
+        time:        mac.aggregation_effect.none
+        categorical: mac.aggregation_effect.none
 
 # ===========================================================================
 # mac.identity_kind — HOW a concept's canonical identity is established. Every concept declares
@@ -146,6 +166,8 @@ canon:
   description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
   members:
     composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
+    refuse_measure_no_row: { serves: exclusion_no_evidence,   needs_sqlglot: false, doc: "RENDER canon — a measure has no row for the resolved scope; emit the refusal clauses" }
+    refuse_unresolvable_name: { serves: exclusion_no_evidence, needs_sqlglot: false, doc: "RENDER canon — a name does not resolve to a code; emit the refusal clauses" }
     additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
     axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
     exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }

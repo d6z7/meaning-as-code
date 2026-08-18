@@ -125,11 +125,11 @@ else:
     b = canon.additivity_guard("SELECT SUM(units_on_hand) FROM inventory_snapshot "
                                "WHERE snapshot_date BETWEEN '2026-01-01' AND '2026-03-31'",
                                measure_column="units_on_hand",
-                               axis_effects={"snapshot_date": "point_in_time", "warehouse_id": "additive"})
+                               axis_effects={"snapshot_date": "none", "warehouse_id": "additive"})
     expect("additivity_guard (stock summed over time → reject)", len(b) == 1, f"got {b!r}")
     bp = canon.additivity_guard("SELECT SUM(units_on_hand) FROM inventory_snapshot WHERE snapshot_date = DATE '2026-03-31'",
                                 measure_column="units_on_hand",
-                                axis_effects={"snapshot_date": "point_in_time", "warehouse_id": "additive"})
+                                axis_effects={"snapshot_date": "none", "warehouse_id": "additive"})
     expect("additivity_guard (time pinned → pass)", bp == [], f"got {bp!r}")
 
     sql, params = canon.exclusion_filter("SELECT count(*) FROM product", column="product_id",

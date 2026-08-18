@@ -145,12 +145,16 @@ def _constrained(select, col: str) -> bool:
     return any(any(c.name == col for c in z.find_all(exp.Column)) for z in zones if z)
 
 
-NON_ADDITIVE = {"point_in_time", "non_aggregable"}
+# "which effects forbid a SUM" — every term EXCEPT `additive`. Stated as the complement so a new
+# vocabulary member is forbidden-by-default rather than silently permitted: a term this set has never
+# heard of must not slip through a guard that only knows how to reject the names it was born with.
+NO_SUM = {"average", "none"}
+NON_ADDITIVE = NO_SUM                      # back-compat alias for callers
 
 
 def additivity_guard(sql: str, *, measure_column: str, axis_effects, dialect: str = "trino"):
     """Generic canon for the semi_additive_balance pattern.
-    axis_effects: axis column -> mac.aggregation_effect ('additive'|'point_in_time'|'non_aggregable').
+    axis_effects: axis column -> mac.aggregation_effect ('additive'|'average'|'none').
     Rejects SUM(measure_column) that crosses a non-additive axis without pinning it to one value
     or grouping by it. Logic lives here once; a measure supplies (measure_column, axis_effects)."""
     _require_sqlglot("additivity_guard")

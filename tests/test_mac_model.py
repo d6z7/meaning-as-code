@@ -140,8 +140,8 @@ MEASURE_REGISTER = """\
 metric_code,family,flavour,unit,measure_type,additivity_time,additivity_categorical
 count_actual,count,actual,widgets,mac.MeasureType.Flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
 count_plan,count,plan,widgets,mac.MeasureType.Flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
-level_actual,level,actual,widgets,mac.MeasureType.Stock,mac.aggregation_effect.point_in_time,mac.aggregation_effect.additive
-level_plan,level,plan,widgets,mac.MeasureType.Stock,mac.aggregation_effect.point_in_time,mac.aggregation_effect.additive
+level_actual,level,actual,widgets,mac.MeasureType.Stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
+level_plan,level,plan,widgets,mac.MeasureType.Stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
 """
 
 
@@ -335,7 +335,7 @@ try:
     eq(Bf.relation("fact_widget").doc.kind, "dataset", "a descriptor's doc kind comes from LOCATION")
 
     law_stated = Bf.law.additivity("mac.MeasureType.Target", "mac.axis_kind.categorical")
-    eq(law_stated.value, "mac.aggregation_effect.non_aggregable", "the law is read as a Stated")
+    eq(law_stated.value, "mac.aggregation_effect.none", "the law is read as a Stated")
     check(law_stated.site.file.startswith(M.FRAMEWORK),
           f"the law's Site names the framework, not a bundle ({law_stated.site.file})")
     check(law_stated.site.line is not None, "the law's Site carries a real line number")

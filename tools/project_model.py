@@ -26,13 +26,30 @@ import yaml
 HERE = Path(__file__).resolve().parent
 MAC_VOCAB = HERE.parent / "mac_vocabulary.yaml"
 
-EFFECT = {  # mac.aggregation_effect term -> short label for the projection
-    "mac.aggregation_effect.additive":      "additive (sum)",
-    "mac.aggregation_effect.point_in_time": "point-in-time (as-of)",
-    "mac.aggregation_effect.averageable":   "averageable (avg / percentile)",
-    "mac.aggregation_effect.non_aggregable":"non-additive",
-    "mac.aggregation_effect.semi_additive": "semi-additive",
+# LABELS ONLY — the MEMBERS come from the vocabulary. This map used to enumerate them, and had
+# drifted: it carried `semi_additive`, which mac_vocabulary.yaml's CLOSED aggregation_effect has never
+# defined. A closed vocabulary whose members are hand-copied into code is N homes for one fact, and it
+# drifted by a whole term without anything noticing. `check_vocabulary_drift` now fails on that.
+_LABEL = {
+    "additive":    "additive (sum)",
+    "average":     "average (mean / median / percentile)",
+    "none":        "not foldable (resolve the stored row, or refuse)",
 }
+
+
+def _effects() -> dict:
+    """{mac.aggregation_effect.<term>: label} built FROM the vocabulary, never beside it."""
+    try:
+        from pathlib import Path as _P
+        import yaml as _y
+        terms = (_y.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
+                              .read_text(encoding="utf-8")) or {}).get("aggregation_effect", {}).get("terms", {})
+    except Exception:                                                      # noqa: BLE001
+        terms = {}
+    return {f"mac.aggregation_effect.{k}": _LABEL.get(k, k) for k in terms}
+
+
+EFFECT = _effects()
 
 
 def load(p: Path):
