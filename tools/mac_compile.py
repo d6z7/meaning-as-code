@@ -69,6 +69,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import mac_checks_adoption as ADOPTION            # noqa: E402
+import check_answerability as ANSWER              # noqa: E402
 import check_reproduction as REPRO
 import check_vocabulary_drift as VOCAB
 import check_canon_binding as CANONB
@@ -125,6 +126,8 @@ PHASES = (
      "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"),
     ("reference_basis", ("MAC008", "MAC003", "MAC002"), "root",
      "whether a rule's references — to a concept, a column, a relation — resolve and are declared"),
+    ("answerability", ("MAC011",), "root",
+     "whether each concept's answer path DERIVES, or is only sworn to in prose"),
     ("selfconform", ("MAC001", "MAC002"), "root",
      "whether the FRAMEWORK satisfies the rules it enforces on every bundle"),
 )
@@ -147,6 +150,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
         return CANONB.check_canon_binding(root)
     if name == "common_rules":
         return COMMON.check_common_rules(root)
+    if name == "answerability":
+        return ANSWER.check_answerability(root)
     if name == "cookbook":
         return COOKBOOK.check_cookbook_smells(root)
     if name == "reference_basis":
