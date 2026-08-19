@@ -24,6 +24,22 @@ C6 — EXPLODING RULE-COUNT
   Reported at >= 5 concepts. Not 2 or 3: a shape on two concepts is a coincidence, on three a pattern,
   and by five it is a law nobody has stated. fpl2's shapes at the time this shipped: 13, 8, 7, 5, 5.
 
+  AND WHERE THE LAW SHOULD GO — added 2026-08-19, because the finding alone was not actionable.
+  This check reported `resolve.collapse_role_snapshot` on 8 concepts for days. It was read, and not
+  acted on, because the note offered exactly two homes — a canon, or mac_rules.yaml — and neither fit.
+  The right home was a THIRD kind: a DECLARATION. `grounding.snapshot_rule` had been in mac.schema.json
+  all along, classified behaviour-bearing, with two pattern documents and a worked example. Nobody
+  looked, because an EMPTY SLOT IS INVISIBLE TO EVERY QUERY THAT RETURNS WHAT IS PRESENT.
+
+  So the finding now carries its own diagnosis. For each reported shape it computes the columns the
+  copies BIND that no concept DECLARES — not a key (grounding.sources[].key), not an axis
+  (semantics.axis_kinds). A law written N times about a column the ontology never types is not a
+  missing canon. It is a missing declaration, and the register of unfilled slots is where to look.
+
+  MEASURED on the two trees either side of that fix: before, the shape reported
+  `binds undeclared [config_reporting_month, role]` — the exact two columns whose declaration was
+  missing. After, the shape is gone and so is the diagnosis. The signal is specific, not decorative.
+
 C2 — A RULE FOR A STORED VALUE
   A rule whose `then` only READS something already declared — no derivation, no computation. The
   cookbook: "stored values that are merely filtered/aggregated need NO rule; the rules layer is for
@@ -69,9 +85,16 @@ def _rules(root):
 
 def check_cookbook_smells(root) -> list:
     out, shapes, stored = [], collections.defaultdict(list), []
+    bound = collections.defaultdict(set)     # shape -> the columns its copies bind
+    declared: set = set()                    # every column ANY concept types, bundle-wide
     for rel, doc, r in _rules(root):
         rid = str(r["id"])
         shape = ".".join(rid.split(".")[1:]) or rid
+        for s in ((doc.get("grounding") or {}).get("sources") or []):
+            k = s.get("key") if isinstance(s, dict) else None
+            declared |= {k} if isinstance(k, str) else set(k or ())
+        declared |= set(((doc.get("concept") or {}).get("semantics") or {}).get("axis_kinds") or {})
+        bound[shape] |= {c for c in (r.get("binds") or []) if isinstance(c, str)}
         if not r.get("realized_by"):        # a bound shape is already single-homed — exempt (see above)
             shapes[shape].append(D.Witness(file=rel, path=rid))
         then = " ".join(str(r.get("then") or "").split()).lower()
@@ -85,13 +108,29 @@ def check_cookbook_smells(root) -> list:
     for shape, ws in sorted(shapes.items(), key=lambda kv: -len(kv[1])):
         if len(ws) < SHAPE_THRESHOLD:
             continue
+        untyped = sorted(bound.get(shape, set()) - declared)
         out.append(D.Diagnostic(
             code="MAC003", severity=D.WARNING, source="check_cookbook_smells",
             summary=f"rule shape `{shape}` is written on {len(ws)} concepts — COOKBOOK C6, a law "
-                    f"nobody has stated",
-            note="Either bind them to a canon so the law lives once (realized_by), or lift the law to "
-                 "mac_rules.yaml if it holds for every ontology. The cookbook's test: a rising "
-                 "exception-count is a failing test for the data model, not business logic.",
+                    f"nobody has stated"
+                    + (f", governing {len(untyped)} column(s) no concept declares: "
+                       f"{', '.join(untyped)}" if untyped else ""),
+            note=("Three homes, in the order worth trying. (1) A DECLARATION, if the law is about a "
+                  "column or a property rather than a computation — the columns named above are typed "
+                  "nowhere in this bundle, which is what a missing declaration looks like from the "
+                  "outside. Check the unfilled-slot register (mac_checks_adoption) BEFORE writing "
+                  "anything: an empty slot is invisible to every query that returns what is present, "
+                  "and this exact shape was restated 8 times beside a slot MAC had shipped, "
+                  "documented and exampled. (2) A CANON, so the law lives once and renders (realized_by). "
+                  "(3) mac_rules.yaml, if it holds for EVERY ontology and not just this one. "
+                  "The cookbook's test: a rising exception-count is a failing test for the data model, "
+                  "not business logic."
+                  if untyped else
+                  "Either bind them to a canon so the law lives once (realized_by), or lift the law to "
+                  "mac_rules.yaml if it holds for every ontology. Check the unfilled-slot register "
+                  "(mac_checks_adoption) first — a law about a property, rather than a computation, "
+                  "usually belongs in a DECLARATION that MAC already offers. The cookbook's test: a "
+                  "rising exception-count is a failing test for the data model, not business logic."),
             witnesses=ws))
     if stored:
         out.append(D.Diagnostic(
