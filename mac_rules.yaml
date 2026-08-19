@@ -99,6 +99,39 @@ rules:
       per concept — a non-time axis, such as OB-Reach resolving to a matching abstraction level.
 
   # ── the one that governs the other two, and everything else ──────────────────────────────────────
+  # ── the key law: an identifier is for matching, a label is for reading ───────────────────────────
+  - id: mac.resolve.join_on_declared_key
+    subject: "Join and filter on the DECLARED key — a label column is for display, never for matching"
+    kind: mac.rule_kind.resolution
+    scope: { concept.class: "*" }
+    confidence: C
+    when:  "a relation carries an entity as BOTH an identifier column and a human-readable label or
+            description column, and a question names that entity"
+    then:  "join and filter through the column that `grounding.sources[].key` declares; read the label
+            column for display only"
+    never: "matching on a label or description string as a join or filter key while the declared key
+            column is available — a label is not a stable identifier: it is renamed, translated, cased
+            and padded without the key ever changing"
+    why: >
+      MEASURED on gaps/fpl2, 2026-08-19: five dimension concepts — body_type, brand_indicator,
+      fuel_type, registration_type, vehicle_segment — each carried a `resolve.by_id` rule saying "join
+      through fpl_lm_<x>_id (the surrogate key); use fpl_lm_<x> as the display label", while
+      `grounding.sources[].key` on that SAME concept already read `[fpl_lm_<x>_id]`. Each rule restated
+      its own file's key declaration and added one fact that is true of every relation in every
+      ontology ever written. Five copies of a universal, sitting beside the declaration it repeats.
+
+      This is the N-homes defect in its purest form, and it is worth stating why it survived review:
+      each copy was individually correct and individually useful-looking, so no reader of any ONE file
+      would object. Only the census across files makes it visible. That is precisely the class of
+      defect a common rule removes — not by being cleverer, but by giving the fact one address.
+
+      THE BOUNDARY, so this rule is not over-read: it governs the CHOICE between an identifier column
+      and a label column on a relation that carries both. It says nothing about WHICH lookup resolves a
+      name to a code, through which view, or under which filter — that is genuine per-concept routing
+      and stays in the concept. fpl2's `resolve.by_code_not_label` rules survive this rule untouched,
+      because they carry a lookup PATH (`geo_class=single_country`, `market_code ==
+      fpl_brand_country_code`, `name_norm` as the standardised search key) that no declaration holds.
+
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
     kind: mac.rule_kind.guarantee
