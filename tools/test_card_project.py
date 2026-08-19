@@ -296,6 +296,41 @@ def outputs(sql: str) -> list[str]:
     return [e.alias_or_name for e in (sel.expressions or []) if e.alias_or_name]
 
 
+# WHAT KIND OF CLAIM IS THIS? Operator: "are you testing fals positives , ... negatives ...
+# positives ... or what — you have to communicate that". A reader shown "42 cases, 2 failed" cannot
+# tell whether a number moved, an absence appeared, or the query was looking at nothing.
+#
+# DERIVED from the assertion, not declared, so it cannot drift from what the property actually does —
+# and cross-checked against the KIND. heading the author writes, so a mismatch is a finding.
+KIND_HINTS = {
+    "NEGATIVE":  ("must_be_zero",),   # asserts an absence — "we searched and found nothing"
+    "POSITIVE":  ("equals",),         # asserts a figure IS a named value
+    "REGRESSION": ("min_value", "max_value"),  # asserts the WRONG reading stays materially different
+}
+# A column whose name says it exists to prove the search could have succeeded.
+VACUITY_MARKERS = ("vacuity", "control", "populated", "not_vacuous", "anti_vacuity",
+                   "cases_run", "_in_scope", "_present")
+
+
+def declared_kind(statement: str) -> str | None:
+    """The KIND. heading the author wrote, if any."""
+    m = re.search(r"\bKIND\.\s*([A-Za-z\- ]+)", statement or "")
+    return m.group(1).strip().upper().split()[0] if m else None
+
+
+def derived_kind(prop: dict) -> dict:
+    """What the assertion actually claims, and whether it carries an anti-vacuity guard."""
+    at = ((prop.get("assertion") or {}).get("type")) or ""
+    kind = next((k for k, types in KIND_HINTS.items() if at in types), "INVARIANT")
+    sql = (prop.get("sql") or "").lower()
+    cols = [c.lower() for c in ((prop.get("assertion") or {}).get("columns") or [])]
+    guard = [m for m in VACUITY_MARKERS if any(m in c for c in cols)]
+    # a marker in the projection but NOT asserted is a control the reader can see and the runner
+    # ignores — worth distinguishing from one the assertion actually enforces
+    watched = [m for m in VACUITY_MARKERS if m in sql and m not in guard]
+    return {"kind": kind, "asserted_guard": guard, "unasserted_control": watched}
+
+
 def _first_sentence(text: str) -> str:
     """The authored one-liner. Everything after the first sentence is prose the card replaces."""
     t = " ".join((text or "").split())
@@ -319,6 +354,8 @@ def card(prop: dict, result: dict | None, root: str = ".") -> dict:
     params = parameters(sql)
     return {
         "selects": selects(sql),
+        "kind": derived_kind(prop),
+        "kind_declared": declared_kind(prop.get("statement", "")),
         "rules": firing_rules(root, sql, params),
         "id": prop.get("id"),
         "status": (result or {}).get("status", "NOT RUN"),
@@ -350,8 +387,16 @@ MARK = {"PASS": "✓", "FAIL": "✗", "ACCEPTED": "~", "ERROR": "!", "NOT RUN": 
 
 def render(c: dict, width: int = 84) -> str:
     L: list[str] = []
-    head = f"{c['id']}"
+    k = c.get("kind") or {}
+    tag = k.get("kind", "")
+    if k.get("asserted_guard"):
+        tag += " + anti-vacuity guard"
+    head = f"{c['id']}  [{tag}]" if tag else f"{c['id']}"
     L.append(f"{head}  {'·' * max(1, width - len(head) - len(c['status']) - 4)}  {c['status']}")
+    # A declared KIND that disagrees with what the assertion does is a finding, not a formatting nit:
+    # it means the prose describes a different claim from the one the runner checks.
+    if c.get("kind_declared") and c["kind_declared"] != k.get("kind"):
+        L.append(f"  ! declared KIND {c['kind_declared']} but the assertion is {k.get('kind')}")
     if c["purpose"]:
         L.append(f"  {c['purpose']}")
     L.append("")
