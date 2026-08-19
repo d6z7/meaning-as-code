@@ -68,6 +68,13 @@ def _pick_def(path, layout=None):
     }
     if base in _BY_BASE:
         return _BY_BASE[base]
+    # A SUITE IS A SHAPE, NOT A FILENAME. `properties.yaml` was routed by basename alone, so a bundle
+    # could hold exactly ONE property suite — and MODELLERS_COOKBOOK B9 tells a modeller to add a
+    # second (tier-1 warehouse invariants, tier-2 dimensional retrieval). gaps/fpl2 did, named it
+    # acceptance/retrieval.yaml, and it went MAC001: "carries no MAC definition". The framework asked
+    # for the file and then could not classify it.
+    if '/acceptance/' in p and base.endswith('.yaml'):
+        return 'PropertiesFile'
     if base.endswith('.sections.yaml'):
         return 'KnowledgeSectionsFile'
     if '/protosql/' in p:
@@ -198,7 +205,7 @@ def enumerate_bundle(root, layout=None):
     # interventions/); a source scaffolded from v0.1.16 puts them in one `governance/` plane. Routing
     # keys on BASENAME, so it already handled both — collection did not, and a definition nothing
     # enumerates is a definition nothing applies. Second time that half was the one missed.
-    for pat in ('acceptance/properties.yaml', 'interventions/ledger.yaml',
+    for pat in ('acceptance/*.yaml', 'interventions/ledger.yaml',
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
                 'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',
