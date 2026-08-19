@@ -124,9 +124,12 @@ check("snapshot_collapse (ordered tie-break)",
 #    retyping it, and check_references proves the anchor resolves — but resolving it needs bundle
 #    context this library deliberately lacks. Rendering it would emit the anchor as a column name.
 def _raises(fn):
+    """Refusing is refusing: a bad partition may surface as a ValueError (a value we reject) or a
+    TypeError (a parameter neither the binding nor the descriptor supplied). Both are the canon
+    declining to guess, which is the property under test."""
     try:
         fn()
-    except ValueError:
+    except (ValueError, TypeError):
         return True
     return False
 
@@ -136,6 +139,32 @@ expect("snapshot_collapse (unresolved descriptor anchor → refuses)",
            order_by="config_reporting_month")))
 expect("snapshot_collapse (empty partition → refuses)",
        _raises(lambda: canon.snapshot_collapse("t", natural_key=[], order_by="v")))
+
+# ── the dereference: a binding names WHERE its key lives instead of copying it ────────────────────
+# The defect this closes, from gaps/fpl2's own protosql header: the same latest-vintage collapse "got
+# WRONG FOUR TIMES IN ONE DAY by careful parties", every time by re-implementing a correct instruction
+# from memory at the call site — once moving a figure by 25 %. A seven-column partition copied into
+# eight concept files is eight chances to drop one, and dropping `role` folds six reporting
+# perspectives into one arbitrary row, silently.
+import tempfile as _tf, os as _os
+_root = _tf.mkdtemp()
+_os.makedirs(_os.path.join(_root, "data", "datasets"))
+with open(_os.path.join(_root, "data", "datasets", "sales_fact.yaml"), "w") as _fh:
+    _fh.write("table:\n  name: sales_fact\nx-grain:\n  cell_key: [region, product, day]\n")
+_concept = {"grounding": {"sources": [{"relation": "warehouse.sales_fact"}]}}
+
+check("render_sql (natural_key READ from the descriptor, not retyped)",
+      canon.render_sql("mac.canon.snapshot_collapse",
+                       {"table": "warehouse.sales_fact", "order_by": ["loaded_at", "written_at"]},
+                       concept=_concept, root=_root),
+      ("(SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY region, product, day "
+       "ORDER BY loaded_at DESC, written_at DESC) AS _rn FROM warehouse.sales_fact) WHERE _rn = 1)",
+       []))
+
+expect("render_sql (no declared cell_key → refuses, never guesses a partition)",
+       _raises(lambda: canon.render_sql(
+           "mac.canon.snapshot_collapse", {"table": "warehouse.other", "order_by": "loaded_at"},
+           concept={"grounding": {"sources": [{"relation": "warehouse.other"}]}}, root=_root)))
 
 d_ask = canon.ambiguity_gate("Europe", candidates=["continent_europe", "eu_members", "eu_sales_region"])
 expect("ambiguity_gate (>1 unpinned → ask)", d_ask.action == "ask" and d_ask.chosen is None)

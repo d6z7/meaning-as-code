@@ -133,29 +133,7 @@ CANONS = {
 }
 
 
-def _params_from_registry(udf: str) -> dict:
-    """{param: dotted concept path} declared in mac_vocabulary.yaml#canon.members[].params_from."""
-    try:
-        import yaml
-        from pathlib import Path as _P
-        f = _P(__file__).resolve().parent.parent.parent / "mac_vocabulary.yaml"
-        m = ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
-             .get("canon", {}).get("members", {}) or {}).get(udf.split(".")[-1]) or {}
-        return m.get("params_from") or {}
-    except Exception:                                                    # noqa: BLE001
-        return {}
-
-
-def _dig(doc, dotted: str):
-    cur = doc
-    for part in dotted.split("."):
-        if not isinstance(cur, dict):
-            return None
-        cur = cur.get(part)
-    return cur
-
-
-def render(udf: str, params: dict, concept: dict | None = None) -> dict:
+def render(udf: str, params: dict, concept: dict | None = None, root=None) -> dict:
     """Render a rule's authored clauses from its canon binding.
 
     DERIVED PARAMETERS ARE READ, NOT ATTACHED. The registry declares which of a canon's parameters
@@ -172,10 +150,5 @@ def render(udf: str, params: dict, concept: dict | None = None) -> dict:
     fn = CANONS.get(udf)
     if fn is None:
         raise KeyError(f"unknown canon {udf!r}; known: {sorted(CANONS)}")
-    merged = dict(params or {})
-    if concept is not None:
-        for prm, path in _params_from_registry(udf).items():
-            val = _dig(concept, path)
-            if val:
-                merged[prm] = val
-    return fn(**merged)
+    from . import resolve_params
+    return fn(**resolve_params(udf, params, concept, root))

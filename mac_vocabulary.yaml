@@ -188,7 +188,16 @@ canon:
     additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
     axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
     exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
-    snapshot_collapse:     { serves: scd_type_2,                needs_sqlglot: false, doc: "collapse a versioned relation to current / as-of one row per key" }
+    snapshot_collapse:
+      serves: scd_type_2
+      needs_sqlglot: false
+      doc: "collapse a versioned relation to current / as-of one row per key; the partition is a
+            COMPOSITE column list and the order accepts a tie-break (vintage, then written-at)"
+      params_from:
+        # READ the cell key from the relation's own descriptor — never retyped into the binding.
+        # A seven-column partition copied per concept is one chance per copy to drop a column, and
+        # dropping `role` folds six reporting perspectives into one arbitrary row, silently.
+        natural_key: 'descriptor#x-grain.cell_key'
     closure_anomaly_check: { serves: explicit_closure,          needs_sqlglot: false, doc: "for a closed value set, the query that finds out-of-set values (else None)" }
     scoped_latest:         { serves: tracking_vintage,          needs_sqlglot: false, doc: "MAX(date) over a scoped subset, not the whole table" }
     hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }

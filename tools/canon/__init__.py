@@ -274,3 +274,101 @@ CANONS = {
 NEEDS_SQLGLOT = {"composite_key_guard", "additivity_guard", "exclusion_filter", "axis_default"}
 
 CANON_NAMES = frozenset(CANONS)
+
+
+# ── declared parameters: READ from the model, never retyped into the binding ─────────────────────
+def _params_from_registry(udf: str) -> dict:
+    """{param: dotted concept path} declared in mac_vocabulary.yaml#canon.members[].params_from."""
+    try:
+        import yaml
+        from pathlib import Path as _P
+        f = _P(__file__).resolve().parent.parent.parent / "mac_vocabulary.yaml"
+        m = ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
+             .get("canon", {}).get("members", {}) or {}).get(udf.split(".")[-1]) or {}
+        return m.get("params_from") or {}
+    except Exception:                                                    # noqa: BLE001
+        return {}
+
+
+def _dig(doc, dotted: str):
+    """Dotted path with list indices — `grounding.sources.0.relation` reaches the first source."""
+    cur = doc
+    for part in dotted.split("."):
+        if isinstance(cur, list):
+            if not part.isdigit() or int(part) >= len(cur):
+                return None
+            cur = cur[int(part)]
+        elif isinstance(cur, dict):
+            cur = cur.get(part)
+        else:
+            return None
+    return cur
+
+
+def _descriptor(root, relation: str, anchor: str):
+    """Read a value out of the DATASET DESCRIPTOR of the relation a concept grounds.
+
+    THE POINT: a binding declares WHERE its key lives instead of retyping it. fpl2 records the same
+    latest-vintage collapse "got WRONG FOUR TIMES IN ONE DAY by careful parties", every time by
+    re-implementing a correct instruction from memory at the call site, once moving a figure by 25 %.
+    A seven-column partition copied into eight concept files is eight chances to drop `role` — and
+    dropping `role` folds six reporting perspectives into one arbitrary row, silently.
+
+    `relation` is schema-qualified as the concept grounds it (fpl2.v_fpl_kpi); the descriptor is
+    data/datasets/<stem>.yaml. Returns None if anything is missing — the caller then raises for the
+    unfilled parameter, which is a build error, never a silently empty binding."""
+    if not root or not isinstance(relation, str):
+        return None
+    import yaml
+    from pathlib import Path as _P
+    stem = relation.rsplit(".", 1)[-1]
+    for ext in ("yaml", "yml"):
+        f = _P(root) / "data" / "datasets" / f"{stem}.{ext}"
+        if f.exists():
+            try:
+                return _dig(yaml.safe_load(f.read_text(encoding="utf-8")) or {}, anchor)
+            except Exception:                                            # noqa: BLE001
+                return None
+    return None
+
+
+def resolve_params(udf: str, params: dict, concept=None, root=None) -> dict:
+    """Merge a binding's attached params with the ones the REGISTRY says live on the model.
+
+    Shared by BOTH canon registries — the prose canons in canon/rules.py and the query-shape canons
+    here — because `params_from` is declared once, in mac_vocabulary.yaml#canon.members, and a
+    parameter that a declaration already holds should be read the same way whichever kind of canon
+    consumes it. It lived in rules.py until 2026-08-19, which meant a params_from entry on a
+    query-shape canon (snapshot_collapse) named a mechanism that could not reach it.
+
+    A path of the form `descriptor#<dotted>` reads the DATASET DESCRIPTOR of the relation the concept
+    grounds, rather than the concept itself. That is what lets a binding say WHERE its key lives
+    instead of copying it: gaps/fpl2 records the same seven-column partition "got WRONG FOUR TIMES IN
+    ONE DAY by careful parties", every time by re-implementing a correct instruction from memory at
+    the call site.
+
+    An ATTACHED value never overrides a declared one — attaching it is not merely redundant, it is a
+    second home that drifts."""
+    merged = dict(params or {})
+    if concept is None:
+        return merged
+    for prm, path in _params_from_registry(udf).items():
+        if path.startswith("descriptor#"):
+            val = _descriptor(root, _dig(concept, "grounding.sources.0.relation"), path.split("#", 1)[1])
+        else:
+            val = _dig(concept, path)
+        if val:
+            merged[prm] = val
+    return merged
+
+
+def render_sql(udf: str, params: dict, concept=None, root=None):
+    """Render a QUERY-SHAPE canon, resolving declared parameters first. The SQL twin of
+    canon.rules.render, and the seam that was missing: nothing in the framework called these canons at
+    all, which is why a binding that emitted `PARTITION BY ['col', 'col']` — a Python list repr, not
+    SQL — sat in an applied bundle reporting clean."""
+    name = udf.split(".")[-1]
+    fn = CANONS.get(f"mac.canon.{name}") or CANONS.get(name)
+    if fn is None:
+        raise KeyError(f"unknown query-shape canon {udf!r}; known: {sorted(CANONS)}")
+    return fn(**resolve_params(udf, params, concept, root))
