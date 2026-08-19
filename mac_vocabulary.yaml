@@ -178,6 +178,15 @@ canon:
       params_from:
         label: concept.label
         null_is_real: concept.semantics.null_semantics
+    resolve_by_register:
+      serves: contaminated_code
+      needs_sqlglot: false
+      doc: "RENDER canon — resolve a NAME to a CODE through a declared register, never through the
+            display label. MEASURED on gaps/fpl2: four rules said this with different nouns, and each
+            existed because the register carries a human-readable column that LOOKS like an identity
+            (market_name_raw = INLAND for Germany; a model's display name where the search key is
+            name_norm). params: thing, code, register, search, display_label, scope, fact_join,
+            served_view."
     refuse_unresolvable_name:
       serves: exclusion_no_evidence
       needs_sqlglot: false

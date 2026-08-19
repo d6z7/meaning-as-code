@@ -127,9 +127,55 @@ def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "
     }
 
 
+def resolve_by_register(*, thing: str, code: str, register: str, search: str,
+                        display_label: str = "", scope: str = "", fact_join: str = "",
+                        served_view: str = "") -> dict:
+    """Resolve a NAME to a CODE through a declared register — never through the display label.
+
+    params
+      thing          what a question names ("country", "market", "model")
+      code           the identity it resolves to ("market_code", "fpl_model_code")
+      register       WHERE the resolution happens — an offline register, so an unresolvable name can
+                     be refused BEFORE a query rather than returning zero rows that read as "no data"
+      search         the column(s) a name is matched against ("name_en / name_de / iso2")
+      display_label  the column that must NEVER be used as a key. Optional only because a concept may
+                     not expose one; when it does, this is the clause that carries the actual trap.
+      scope          a filter the resolution is only valid under ("geo_class = single_country")
+      fact_join      the column the FACT joins on, when it differs from `code`
+      served_view    the in-warehouse alternative, for when a round trip is acceptable
+
+    WHY THIS EXISTS. MEASURED on gaps/fpl2, 2026-08-19: four rules said this with different nouns —
+    country and market resolve `name_en/name_de/iso2 -> market_code` through the SAME register and
+    forbid the SAME column (`market_name_raw`), differing only in which concept they sit on;
+    vehicle_model does it through `name_norm -> fpl_model_code`. One law, four spellings, and the
+    kind of repetition MODELLERS_COOKBOOK C6 calls "a law nobody has stated".
+
+    THE DISPLAY LABEL IS THE POINT. Each of those rules exists because the register carries a
+    human-readable column that LOOKS like an identity and is not — `market_name_raw` holds INLAND for
+    Germany, and a model's display name holds 'Golf Kurzheck' where the search key is GOLF. Matching
+    on it silently answers about the wrong thing.
+    """
+    where = f"in {register}" + (f" (where {scope})" if scope else "")
+    then = (f"resolve the named {thing} to `{{{code}}}` OFFLINE, {where}, on {search}")
+    if fact_join and fact_join != code:
+        then += f"; the fact joins on `{{{fact_join}}}`"
+    if served_view:
+        then += f". `{{{served_view}}}` carries the same rows if a warehouse round trip is acceptable"
+    never = (f"using {display_label} as the key — it is a display label, not an identity"
+             if display_label else
+             f"matching a raw display name as the identity; `{{{code}}}` is the stable one")
+    return {
+        "subject": f"Resolve a {thing} by its code, via the register — never by the display label",
+        "when": f"resolving or filtering the {thing} a question names",
+        "then": then,
+        "never": never,
+    }
+
+
 CANONS = {
     "mac.canon.refuse_measure_no_row": refuse_measure_no_row,
     "mac.canon.refuse_unresolvable_name": refuse_unresolvable_name,
+    "mac.canon.resolve_by_register": resolve_by_register,
 }
 
 
