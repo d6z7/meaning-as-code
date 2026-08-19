@@ -104,14 +104,27 @@ def main(argv) -> int:
         "transform": root / "data" / "transforms",
         "dataset": root / "data" / "datasets",
         "concept": root / "ontology" / "concepts",
+        # `lookup` was accepted in delta object refs and never enumerated here, so every lookup ref
+        # reported "not on disk" no matter what it named.
+        "lookup": root / "data" / "lookups",
     }
     stamps: dict[str, str | None] = {}
     for otype, d in dirs.items():
         if not d.is_dir():
             continue
-        found = sorted(d.rglob("*.yaml")) if otype == "concept" else sorted(d.glob("*.yaml"))
+        # A lookup is a CSV with a sibling .md — it has no .yaml descriptor, so globbing only yaml
+        # made the `lookup` object type UNRESOLVABLE BY CONSTRUCTION while the gate went on offering
+        # it. check_intervention_ledger resolves lookups by their csv; the two gates disagreed about
+        # what an object is, and the register was blamed for it.
+        if otype == "lookup":
+            found = sorted(d.glob("*.csv"))
+        elif otype == "concept":
+            found = sorted(d.rglob("*.yaml"))
+        else:
+            found = sorted(d.glob("*.yaml"))
         for p in found:
-            stamps.setdefault(f"{otype}:{p.stem}", _provenance(p))
+            stem = p.stem[:-7] if p.suffix == ".csv" and p.stem.endswith(".lookup") else p.stem
+            stamps.setdefault(f"{otype}:{stem}", _provenance(p))
 
     manual = {k for k, v in stamps.items() if v in MANUAL}
     n_harvested = sum(1 for v in stamps.values() if v == "harvested")
