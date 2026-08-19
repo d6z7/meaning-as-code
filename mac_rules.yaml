@@ -201,6 +201,40 @@ rules:
       a seventh term (`authoring`) may be the honest long-term home. That is a vocabulary change and
       belongs to the operator, so it is named here and not taken.
 
+  # ── where a period's boundary comes from, as opposed to how it folds ─────────────────────────────
+  - id: mac.resolve.relative_period_anchor
+    subject: "\"Latest\", \"last month\", \"YTD\" anchor to the DATA, never to the clock"
+    kind: mac.rule_kind.resolution
+    scope: { concept.class: measure }
+    confidence: C
+    when:  "a question names a period RELATIVE to now — latest, current, last month, last quarter,
+            year-to-date, the last N months — rather than an absolute date"
+    then:  "resolve the anchor from the measure's OWN data: the maximum of its date column, in the
+            relation it grounds, evaluated per measure. `latest` is that maximum; `year-to-date` runs
+            from the year start to it; `last complete quarter` is the last quarter that ends at or
+            before it"
+    never: "taking the anchor from the wall clock, or from a single maximum shared across relations —
+            a reader's today is not the warehouse's latest, and relations LAG each other"
+    why: >
+      Its twin `mac.resolve.period_reading` says how a period FOLDS once its bounds are known. Nothing
+      said where the bounds come from, so the most common reading of all — "how are we doing lately" —
+      was left to whatever the reader assumed the date was.
+
+      TWO FAILURES, and they are different. THE CLOCK: a model answering "latest" from its own sense of
+      today returns an empty result whenever the warehouse is ahead of it or behind it, and an empty
+      result reads as "no data" rather than "you pinned a month that does not exist here". Neither
+      party is wrong about the date; they are answering different questions.
+
+      THE SHARED MAXIMUM is the subtler one, and it is measured. gaps/fpl2 records relations lagging
+      each other by a full month — DQ-FPL-08, OB-Reach at 2026-07-31 against the KPI fact at 2026-08-31
+      — so one `SELECT MAX(...)` computed for the bundle and applied to every relation returns ZERO
+      ROWS from the lagging one, SILENTLY. The bundle's own protosql carries that as a never-clause;
+      it is a fact about relations, not about that bundle, and belongs here.
+
+      THE TEST: ask for the same measure as "latest" on two days a month apart, against a warehouse
+      that has not loaded in between. The two answers must be identical. If they differ, the anchor
+      came from the calendar.
+
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
     kind: mac.rule_kind.guarantee
