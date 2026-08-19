@@ -60,11 +60,31 @@ def _unit(concept: dict) -> str:
     return re.sub(r"[^a-z0-9]", "", str(u).lower())
 
 
+def _declared_aliases(doc: dict) -> set:
+    """Every NL surface the concept DECLARES, from values.aliases.map[*].multilingual — the auditable
+    trigger vocabulary (aliasBlock, mac.schema.json:840). Read before the prose heuristic below,
+    because a declared surface is evidence and a scraped one is a guess."""
+    out = set()
+    for spec in (((doc.get("values") or {}).get("aliases") or {}).get("map") or {}).values():
+        for arr in ((spec or {}).get("multilingual") or {}).values():
+            if isinstance(arr, list):
+                out |= {str(t) for t in arr}
+        for arr in ((spec or {}).get("scope_relative") or {}).values():
+            if isinstance(arr, list):
+                out |= {str(t) for t in arr}
+    return out
+
+
 def _surface_terms(concept: dict, doc: dict) -> set:
-    """Words this concept answers to: its name, label, german, and the capitalised German nouns its
-    own prose uses. Deliberately shallow — until `concept.aliases` exists these are scattered."""
-    out = {str(concept.get("name") or ""), str(concept.get("label") or ""),
-           str(concept.get("german") or "")}
+    """Words this concept answers to: its DECLARED aliases first, then its name, label, german, and —
+    only as a fallback — the capitalised German nouns its own prose uses.
+
+    The prose scrape was written with the note "deliberately shallow — until `concept.aliases` exists
+    these are scattered". They exist now: gaps/fpl2 declares 38 surfaces across 7 measures, sourced
+    from the gold ontology's SME-ratified map. A declared surface is evidence; a scraped one is a
+    guess that happened to work, and the scrape is kept only for concepts that declare none."""
+    out = _declared_aliases(doc) | {str(concept.get("name") or ""), str(concept.get("label") or ""),
+                                    str(concept.get("german") or "")}
     # CONTAINS, not endswith. German compounds put the stem anywhere: `Produktionsantrag` does not
     # end in "produktion" and an endswith filter dropped it, which lost the one overlap that makes
     # IstProd/Prodant a genuine confusion. The first cut of this check reported that real pair as
@@ -112,6 +132,25 @@ def check_rule_reference_basis(root) -> list:
         except Exception:                                               # noqa: BLE001
             pass
 
+    # ── a surface term claimed by more than one code ─────────────────────────────────────────────
+    # The aliasBlock contract is "a surface resolving to >1 code => ASK; never a silent bind". So a
+    # collision is legal but expensive: every question using that token stalls for a disambiguation.
+    # It is invisible without this check, because the two claims sit in two different files and
+    # neither knows about the other — the exact cost of holding the map per-concept instead of in one
+    # enumeration, and the reason that choice is affordable only with a gate on it.
+    claims: dict = {}
+    for name, info in concepts.items():
+        for code, spec in ((((info["doc"].get("values") or {}).get("aliases") or {}).get("map")) or {}).items():
+            for arr in ((spec or {}).get("multilingual") or {}).values():
+                if isinstance(arr, list):
+                    for term in arr:
+                        claims.setdefault(str(term).strip().lower(), set()).add((name, code, info["rel"]))
+    collisions = [D.Witness(
+        file=f"ontology/concepts/{sorted(v)[0][2]}", path=f"values.aliases.map",
+        detail=f"surface `{k}` is claimed by {len(v)} codes: "
+               + ", ".join(f"{c} ({n})" for n, c, _ in sorted(v)))
+        for k, v in sorted(claims.items()) if len({c for _, c, _ in v}) > 1]
+
     seen, unbased = set(), []
     for name, info in concepts.items():
         for r in ((info["doc"].get("contract") or {}).get("rules") or []):
@@ -135,9 +174,19 @@ def check_rule_reference_basis(root) -> list:
                 unbased.append(D.Witness(
                     file=f"ontology/concepts/{info['rel']}", path=str(r.get("id")),
                     detail=f"names {other} — no edge, {why}, no shared surface term"))
+    out = []
+    if collisions:
+        out.append(D.Diagnostic(
+            code="MAC003", severity=D.WARNING, source="check_rule_reference_basis",
+            summary=f"{len(collisions)} alias surface(s) resolve to more than one code",
+            note="The aliasBlock contract makes this legal — a surface hitting >1 code means ASK, "
+                 "never a silent bind. But every question using that token then stalls for a "
+                 "disambiguation, and the two claims live in different files, so nothing but this "
+                 "check can see the pair. Either narrow one surface, or accept the ASK deliberately.",
+            witnesses=collisions))
     if not unbased:
-        return []
-    return [D.Diagnostic(
+        return out
+    return out + [D.Diagnostic(
         code="MAC008", severity=D.WARNING, source="check_rule_reference_basis",
         summary=f"{len(unbased)} rule reference(s) assert a relationship the ontology does not model",
         note="Each names another concept with no edge between them and no shared surface term. Two "
