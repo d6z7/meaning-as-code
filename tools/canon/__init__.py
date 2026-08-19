@@ -90,14 +90,51 @@ def hierarchy_rollup(table, *, id_col, parent_col, root, dialect="trino"):
     return sql, [root]
 
 
+def _collist(v, what: str) -> str:
+    """One or many column names -> a SQL column list. Refuses an UNRESOLVED reference.
+
+    WHY THE REFUSAL. A binding may name its key by DEREFERENCE rather than by retyping it —
+    `natural_key: data/datasets/v_fpl_kpi.yaml#x-grain.cell_key`. check_references already proves such
+    an anchor resolves (a bogus one is an ERROR), but resolving it needs bundle context this library
+    deliberately does not have ("NOTHING HERE NAMES A BUNDLE"). So an anchor that reaches render time
+    was never dereferenced by the caller, and the only safe act is to fail loudly.
+
+    WHY THE LIST HANDLING. Interpolating the parameter raw is how this canon emitted
+    `PARTITION BY ['fpl_brand_country_code', 'fpl_model_code', ...]` — a Python list repr, invalid SQL
+    — from a binding whose YAML declared a perfectly ordinary list (gaps/fpl2, 2026-08-19, shipped and
+    reverted the same day). The declared form was right; the canon corrupted it."""
+    items = [v] if isinstance(v, str) else list(v or ())
+    if not items:
+        raise ValueError(f"snapshot_collapse: {what} is empty — a partition over nothing collapses "
+                         f"every row of the relation into one")
+    for i in items:
+        if not isinstance(i, str) or "#" in i or "/" in i:
+            raise ValueError(f"snapshot_collapse: {what} carries an UNRESOLVED reference ({i!r}). "
+                             f"Dereference it against the descriptor before calling — this library "
+                             f"has no bundle context and will not guess a partition.")
+    return ", ".join(items)
+
+
 def snapshot_collapse(table, *, natural_key, order_by, valid_from=None, valid_to=None, as_of=None):
     """Collapse a versioned relation to one row per natural_key: the version valid AS OF a bound date,
-    else the latest. Values BOUND (?), never interpolated (FRAMEWORK §6). Query-shape canon."""
+    else the latest. Values BOUND (?), never interpolated (FRAMEWORK §6). Query-shape canon.
+
+    `natural_key` and `order_by` each take one column or MANY. Many matters in both positions:
+      * a real cell key is composite — fpl2's v_fpl_kpi is SEVEN columns, and a partition missing one
+        of them (role) silently folds six reporting perspectives into one arbitrary row;
+      * the vintage rarely breaks ties alone. fpl2's own protosql records `fpl_created_at DESC is not
+        optional` beside `config_reporting_month DESC`, and this canon could not express it — which is
+        one of the two reasons that fragment exists at all. mac.schema.json says a ProtoSqlFile "is
+        usually a workaround for a canon that is missing or broken, and the better fix is upstream".
+        This is that fix."""
     if as_of is not None:
         pred = f"{valid_from} <= ? AND ({valid_to} IS NULL OR {valid_to} > ?)"
         return f"(SELECT * FROM {table} WHERE {pred})", [as_of, as_of]
+    part = _collist(natural_key, "natural_key")
+    cols = [order_by] if isinstance(order_by, str) else list(order_by or ())
+    order = ", ".join(f"{c} DESC" for c in _collist(cols, "order_by").split(", "))
     sql = (f"(SELECT * FROM (SELECT *, ROW_NUMBER() OVER "
-           f"(PARTITION BY {natural_key} ORDER BY {order_by} DESC) AS _rn "
+           f"(PARTITION BY {part} ORDER BY {order}) AS _rn "
            f"FROM {table}) WHERE _rn = 1)")
     return sql, []
 
