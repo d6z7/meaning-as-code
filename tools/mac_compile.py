@@ -123,8 +123,8 @@ PHASES = (
      "whether a concept restates a law MAC already states for its class"),
     ("cookbook", ("MAC003",), "root",
      "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"),
-    ("reference_basis", ("MAC008",), "root",
-     "whether a rule naming another concept has any reason to"),
+    ("reference_basis", ("MAC008", "MAC003", "MAC002"), "root",
+     "whether a rule's references — to a concept, a column, a relation — resolve and are declared"),
     ("selfconform", ("MAC001", "MAC002"), "root",
      "whether the FRAMEWORK satisfies the rules it enforces on every bundle"),
 )

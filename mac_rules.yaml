@@ -162,6 +162,45 @@ rules:
       meets a member called "Unspezifiziert" and decides it means "no data". That decision is behaviour,
       it is the same decision in every ontology, and this is where behaviour that holds everywhere lives.
 
+  # ── how a rule NAMES the model it governs ────────────────────────────────────────────────────────
+  - id: mac.authoring.reference_markup
+    subject: "A model identifier in a rule's prose is a REFERENCE — write it `{name}`, never bare"
+    kind: mac.rule_kind.resolution
+    scope: { concept.class: "*" }
+    confidence: C
+    when:  "a rule's when/then/never/subject names a column, a relation, or a concept of the model"
+    then:  "write it backtick-quoted and brace-enclosed — `{market_code}`, `{fpl2.dim_country_register}`
+            — so a reader can tell a reference from an English word, and every such token must resolve:
+            a column of the concept's own grounding, or a relation some concept in the bundle grounds"
+    never: "naming a model identifier as bare prose, or marking up a token that resolves to nothing"
+    why: >
+      OPERATOR RULING 2026-08-19. Bare `market_code` is indistinguishable from English, so nothing can
+      resolve it, rename it, or hold it against the rule's own `binds:`.
+
+      MEASURED, both failures live on gaps/fpl2 the day this shipped: 9 of 29 rules named a grounded
+      column in prose that `binds:` did not list; and an invented relation planted in rule prose
+      (fpl2.dim_country_TOTAL_FICTION) passed ALL ELEVEN compile phases clean. The grounding block was
+      validated; the sentence beside it was not read by anything.
+
+      THE OBJECTION, AND THE ANSWER, recorded because the objection was mine and it was overruled:
+      `binds:` already lists a rule's columns, so marking them up puts one fact in two places. The
+      answer is that the interceptor checks BOTH directions — a marked reference must resolve, and a
+      grounded column named in prose must appear in `binds:`. Two homes that are FORCED to agree are
+      not the defect two homes that MAY disagree are. Markup without the check would have been the
+      defect; markup with it is a second, cheaper reader of the same fact.
+
+      WHY BACKTICK AND BRACE, not one or the other: backticks alone already mean emphasis throughout
+      the corpus ("`role` is a discriminator column"), so they cannot signal a reference; braces alone
+      collide with the `{{ rules.<name>.template }}` injection MAC has carried since check_references.py
+      grew RULE_INJECT_RE.
+
+      A DECLARED STRETCH, surfaced rather than papered over: `mac.rule_kind` is a CLOSED six-term
+      vocabulary and every term describes answering behaviour — resolution, aggregation, default,
+      ambiguity, exclusion, guarantee. This rule governs AUTHORING. `resolution` is the closest legal
+      term and is used here on the reading that a marker is what makes an identifier resolvable at all;
+      a seventh term (`authoring`) may be the honest long-term home. That is a vocabulary change and
+      belongs to the operator, so it is named here and not taken.
+
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
     kind: mac.rule_kind.guarantee

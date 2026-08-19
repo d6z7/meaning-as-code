@@ -106,6 +106,144 @@ def _stems(terms: set) -> set:
     return out
 
 
+
+# ── binds conformance: the rule's DECLARED surface vs the one its prose actually uses ──────────────
+
+_IDENT = __import__("re").compile(r"\b[a-z][a-z0-9_]{2,}\b")
+
+
+def _prose(rule) -> str:
+    return " ".join(str(rule.get(k) or "") for k in ("subject", "when", "then", "never"))
+
+
+def _column_like(tok: str) -> bool:
+    """A token distinguishable from an English word: it carries an underscore or a digit.
+
+    CALIBRATED, not guessed. On gaps/fpl2 (29 rules, 70 grounded columns): intersecting prose with the
+    grounded column set alone flags 17 rules, of which 7 are false — `value` in "an empty result framed
+    as a real zero ... substituting another measure's value" is the English word, not v_fpl_kpi.value,
+    and `region` reads the same way. Requiring an underscore drops to 9, all genuine, but loses `iso2`
+    in market.resolve.by_code_not_label ("resolve name_en/name_de/iso2 -> market_code"), which is real.
+    Underscore-OR-digit keeps that one and none of the false ones.
+
+    THE HONEST BOUNDARY, stated rather than hidden: a single-word lowercase column — value, role,
+    region, market, kpi — is indistinguishable from prose and is deliberately NOT flagged. This check
+    under-reports on purpose. A gate that cried wolf on `value` in every refusal rule would be turned
+    off within a day, and a check nobody runs enforces nothing."""
+    return "_" in tok or any(c.isdigit() for c in tok)
+
+
+
+# ── the reference marker: `{name}` — backtick-quoted, brace-enclosed ───────────────────────────────
+#
+# OPERATOR RULING 2026-08-19. A model identifier inside a rule's prose is a REFERENCE, not a word, and
+# must look like one. Bare `market_code` is indistinguishable from English; `{market_code}` is not.
+#
+# I ARGUED AGAINST THIS and was overruled, so the reasoning is recorded rather than lost: `binds:`
+# already lists a rule's columns, so marking them up puts one fact in two places. The ruling answers
+# that objection instead of ignoring it — the interceptor checks BOTH directions, so the marked prose
+# and `binds:` are forced into step rather than left free to drift. Two homes that must agree are not
+# the same defect as two homes that may disagree.
+#
+# Backtick + brace, not one or the other: backticks alone are already used for emphasis throughout the
+# corpus ("`role` is a discriminator"), so they cannot signal a reference; braces alone collide with
+# the `{{ rules.X.template }}` injection MAC already has at check_references.py:74.
+
+_MARKED = __import__("re").compile(r"`\{([a-z][a-z0-9_.]*)\}`")
+
+
+def _bare_refs(prose: str, own: set, known_rel: set, known_schema: set) -> set:
+    """Model identifiers sitting in prose UNMARKED — the thing the ruling forbids.
+
+    Only identifiers this bundle can actually resolve are demanded: a column of the concept's own
+    grounding, or a relation some concept grounds. An unresolvable token is a different finding
+    (MAC008 below) and is not double-reported here."""
+    marked = {m for m in _MARKED.findall(prose)}
+    bare = {c for c in (set(_IDENT.findall(prose)) & own) if _column_like(c)} - marked
+    for sch in known_schema:
+        for tok in __import__("re").findall(rf"(?<![\w/`{{]){sch}\.([a-z_][a-z0-9_]*)\b", prose):
+            if f"{sch}.{tok}" in known_rel and f"{sch}.{tok}" not in marked:
+                bare.add(f"{sch}.{tok}")
+    return bare
+
+def _binds_conformance(concepts: dict) -> list:
+    """Three ways a rule's references can be wrong, none of which anything checked before.
+
+    MEASURED on gaps/fpl2 2026-08-19, all three live: 9 of 29 rules named a grounded column in prose
+    that `binds:` omitted; and a relation invented inside rule prose (fpl2.dim_country_TOTAL_FICTION,
+    injected as a probe) passed all eleven compile phases clean.
+
+    WHY THIS RATHER THAN TEMPLATED PROSE. The operator asked whether rule prose should mark its
+    identifiers in a jinja form — {{market_code}}, {{fpl2.dim_country_register}}. It should not: `binds:`
+    IS that declaration, sitting six lines above the sentence, and templating the prose would give one
+    fact two homes that can disagree. What was missing was never the notation; it was anything checking
+    that the two agree. Where a reference should genuinely be DEREFERENCED rather than marked, MAC
+    already does it one layer down — ontology/protosql's `descriptor:@rel:fact#x-grain.cell_key` reads
+    the key instead of restating it, which a template still would not."""
+    known_rel, known_schema = set(), set()
+    for info in concepts.values():
+        for s in ((info["doc"].get("grounding") or {}).get("sources") or []):
+            r = s.get("relation") if isinstance(s, dict) else None
+            if isinstance(r, str) and "." in r:
+                known_rel.add(r); known_schema.add(r.split(".", 1)[0])
+
+    undeclared, unresolved, unmarked = [], [], []
+    for name, info in concepts.items():
+        rel = f"ontology/concepts/{info['rel']}"
+        own = set()
+        for s in ((info["doc"].get("grounding") or {}).get("sources") or []):
+            own |= set(s.get("columns") or [])
+            k = s.get("key")
+            own |= {k} if isinstance(k, str) else set(k or ())
+        for r in ((info["doc"].get("contract") or {}).get("rules") or []):
+            rid, binds = str(r.get("id")), set(r.get("binds") or ())
+            prose = _prose(r)
+
+            marked = set(_MARKED.findall(prose))
+            for gap in sorted(c for c in ((set(_IDENT.findall(prose)) | marked) & own) - binds
+                              if _column_like(c)):
+                undeclared.append(D.Witness(file=rel, path=rid,
+                    detail=f"prose uses column `{gap}`; binds: does not list it"))
+            for bare in sorted(_bare_refs(prose, own, known_rel, known_schema)):
+                unmarked.append(D.Witness(file=rel, path=rid,
+                    detail=f"`{bare}` is a model identifier written as bare prose — write it `{{{bare}}}`"))
+            for sch in known_schema:
+                for tok in __import__("re").findall(rf"(?<![\w/]){sch}\.([a-z_][a-z0-9_]*)\b", prose):
+                    if f"{sch}.{tok}" not in known_rel:
+                        unresolved.append(D.Witness(file=rel, path=rid,
+                            detail=f"names relation `{sch}.{tok}` — no concept in this bundle grounds it"))
+
+    out = []
+    if undeclared:
+        out.append(D.Diagnostic(
+            code="MAC003", severity=D.WARNING, source="check_rule_reference_basis",
+            summary=f"{len(undeclared)} rule(s) govern a column their `binds:` does not declare",
+            note="What a rule operates on is stated twice — in `binds:` and in the sentence — and "
+                 "nothing kept them in step. `binds:` is the machine-readable one: it is what a reader "
+                 "filters, projects and impact-analyses on, so a column missing from it is invisible to "
+                 "every consumer that does not read English. Add it there rather than marking up the "
+                 "prose, which would make a third home for the same fact.",
+            witnesses=undeclared))
+    if unmarked:
+        out.append(D.Diagnostic(
+            code="MAC002", severity=D.ERROR, source="check_rule_reference_basis",
+            summary=f"{len(unmarked)} model identifier(s) in rule prose are not marked as references",
+            note="mac_rules.yaml#mac.authoring.reference_markup: a column, relation or concept named in "
+                 "a rule's prose is a REFERENCE and must be written `{name}` — backtick-quoted, "
+                 "brace-enclosed. Bare, it is indistinguishable from an English word, so nothing can "
+                 "resolve it, rename it, or check it against `binds:`. MEASURED: an invented relation "
+                 "(fpl2.dim_country_TOTAL_FICTION) sat in rule prose through all eleven compile phases "
+                 "before this existed.", witnesses=unmarked))
+    if unresolved:
+        out.append(D.Diagnostic(
+            code="MAC008", severity=D.ERROR, source="check_rule_reference_basis",
+            summary=f"{len(unresolved)} rule prose reference(s) name a relation nothing grounds",
+            note="A <schema>.<relation> token in a rule's prose that no concept in this bundle grounds. "
+                 "MEASURED: an invented relation in rule prose passed all eleven compile phases clean "
+                 "before this check existed — the grounding block was validated, the sentence beside it "
+                 "was not.", witnesses=unresolved))
+    return out
+
 def check_rule_reference_basis(root) -> list:
     import yaml
     R = Path(root)
@@ -174,7 +312,7 @@ def check_rule_reference_basis(root) -> list:
                 unbased.append(D.Witness(
                     file=f"ontology/concepts/{info['rel']}", path=str(r.get("id")),
                     detail=f"names {other} — no edge, {why}, no shared surface term"))
-    out = []
+    out = _binds_conformance(concepts)
     if collisions:
         out.append(D.Diagnostic(
             code="MAC003", severity=D.WARNING, source="check_rule_reference_basis",
