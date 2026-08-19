@@ -166,6 +166,51 @@ def _bare_refs(prose: str, own: set, known_rel: set, known_schema: set) -> set:
                 bare.add(f"{sch}.{tok}")
     return bare
 
+
+# ── a rule id named in prose that no longer exists ────────────────────────────────────────────────
+
+_RULE_ID = __import__("re").compile(
+    r"\b([a-z_]+\.(?:resolve|exclusion|exclude|guarantee|default|aggregate|read|classify)\.[a-z_]+)\b")
+
+
+def _dangling_rule_ids(root, concepts: dict) -> list:
+    """A concept's prose cites a sibling rule by id; the rule is later deleted; the citation stays.
+
+    MEASURED on gaps/fpl2, 2026-08-19: TWELVE dangling citations across twelve files, accumulated over
+    several sessions of consolidation — resolve.period_sum, resolve.stock_period, resolve.target_period,
+    guarantee.unspecified_is_real. Every one of those deletions was correct and protocolled; the
+    citations pointing at them were simply never swept, and no gate looked. A no_probe_guarantee that
+    tells a reader to see a rule which does not exist is worse than one that says nothing: it reads as
+    a promise that something else covers the case.
+
+    `mac.*` resolves against the framework's common rules, and a FAMILY prefix is accepted — citing
+    mac.exclusion.no_evidence when the leaves are .measure and .name is a reference to both, not a
+    typo."""
+    import yaml
+    live = {rid for info in concepts.values()
+            for rid in [str(r.get("id")) for r in ((info["doc"].get("contract") or {}).get("rules") or [])]}
+    try:
+        cf = Path(__file__).resolve().parent.parent / "mac_rules.yaml"
+        common = {str(r.get("id")) for r in ((yaml.safe_load(cf.read_text(encoding="utf-8")) or {})
+                                             .get("rules") or [])}
+    except Exception:                                                   # noqa: BLE001
+        common = set()
+
+    def known(rid: str) -> bool:
+        return rid in live or rid in common or any(c.startswith(rid + ".") for c in common)
+
+    out = []
+    for name, info in sorted(concepts.items()):
+        rel = f"ontology/concepts/{info['rel']}"
+        seen = set()
+        for rid in _RULE_ID.findall(str(info["doc"])):
+            if rid in seen or known(rid):
+                continue
+            seen.add(rid)
+            out.append(D.Witness(file=rel, path="contract",
+                                 detail=f"cites `{rid}`, which no concept in this bundle declares"))
+    return out
+
 def _binds_conformance(concepts: dict) -> list:
     """Three ways a rule's references can be wrong, none of which anything checked before.
 
@@ -313,6 +358,14 @@ def check_rule_reference_basis(root) -> list:
                     file=f"ontology/concepts/{info['rel']}", path=str(r.get("id")),
                     detail=f"names {other} — no edge, {why}, no shared surface term"))
     out = _binds_conformance(concepts)
+    dangling = _dangling_rule_ids(root, concepts)
+    if dangling:
+        out.append(D.Diagnostic(
+            code="MAC008", severity=D.ERROR, source="check_rule_reference_basis",
+            summary=f"{len(dangling)} prose citation(s) name a rule that does not exist",
+            note="Consolidation deletes rules; the citations pointing at them are not swept, and until "
+                 "now nothing looked. A guarantee that sends a reader to a rule which is gone reads as "
+                 "a promise that the case is covered elsewhere.", witnesses=dangling))
     if collisions:
         out.append(D.Diagnostic(
             code="MAC003", severity=D.WARNING, source="check_rule_reference_basis",
