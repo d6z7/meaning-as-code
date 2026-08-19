@@ -26,8 +26,20 @@ import subprocess
 import sys
 
 HIST = "acceptance/suite_history.jsonl"
-SUITES = {"acceptance/property_runs.json": "tier1",
-          "acceptance/retrieval_runs.json": "tier2"}
+# Discovered, not hardcoded. The list was tier1/tier2 and stayed that way while two new suites
+# landed carrying 11.378 cases — the trend would have gone on charting the old pair and silently
+# omitted the ones that matter, which is the same defect as a silently capped sweep.
+SUITE_NAMES = {"property_runs.json": "tier1", "retrieval_runs.json": "tier2",
+               "data_sanity_runs.json": "sanity", "ontology_runs.json": "ontology"}
+
+
+def _suites(root: str) -> dict:
+    import glob as _g
+    out = {}
+    for f in sorted(_g.glob(os.path.join(root, "acceptance", "*_runs.json"))):
+        b = os.path.basename(f)
+        out[os.path.join("acceptance", b)] = SUITE_NAMES.get(b, b[:-10])
+    return out or {"acceptance/property_runs.json": "tier1"}
 
 
 def _tally(doc: dict) -> dict:
@@ -40,7 +52,8 @@ def _tally(doc: dict) -> dict:
         if st in out:
             out[st] += 1
         props[r.get("id")] = r.get("status")
-    return {**out, "total": len(res), "properties": props}
+    cases = sum(len(r.get("rows") or []) for r in res)
+    return {**out, "total": len(res), "cases": cases, "properties": props}
 
 
 def _git(root: str, *args: str) -> str:
@@ -53,7 +66,7 @@ def from_git(root: str) -> list[dict]:
     if not top:
         return []
     rows = []
-    for rel, suite in SUITES.items():
+    for rel, suite in _suites(root).items():
         path = os.path.relpath(os.path.join(os.path.abspath(root), rel), top)
         log = _git(top, "log", "--follow", "--format=%H\t%cI", "--", path).strip()
         for line in [l for l in log.split("\n") if l.strip()]:
@@ -74,7 +87,7 @@ def from_git(root: str) -> list[dict]:
 def current(root: str) -> list[dict]:
     """The runs sitting on disk right now — a re-run the operator just triggered."""
     rows = []
-    for rel, suite in SUITES.items():
+    for rel, suite in _suites(root).items():
         p = os.path.join(root, rel)
         if not os.path.exists(p):
             continue
@@ -118,6 +131,7 @@ def chart(rows: list[dict], suite: str | None = None) -> str:
                + BAR["fail"] * r["fail"] + BAR["error"] * r["error"])
         out.append(f"  {r['run_at'][:16]}  {r['suite']}  {bar:<26} "
                    f"{r['pass']:>2}/{r['total']:<2} pass · {r['fail']} fail"
+                   + (f" · {r['cases']:>6} cases" if r.get("cases") else "")
                    + (f" · {r['accepted']} accepted" if r["accepted"] else "")
                    + f"   {r['commit']}")
     return "\n".join(out)
