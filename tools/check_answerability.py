@@ -185,3 +185,67 @@ def main() -> int:                                                      # pragma
 
 if __name__ == "__main__":                                              # pragma: no cover
     raise SystemExit(main())
+
+
+# ── the projection: the guarantee RENDERED from the path, so it cannot drift ──────────────────────
+
+def render_guarantee(name: str, doc: dict, raw: str, shared: bool) -> str:
+    """The no_probe_guarantee as a VIEW of the declarations, not a second copy of them.
+
+    Why render at all, when answer_path() already names every source: because a reader following
+    "values.aliases.map" has to go and read it. The rendered form carries the VALUES as well as their
+    addresses, which is what the hand-written blocks were for — minus the drift, because it is
+    regenerated from the same declarations the check verifies."""
+    c = doc.get("concept") or {}
+    g = doc.get("grounding") or {}
+    v = doc.get("values") or {}
+    ct = doc.get("contract") or {}
+    s = c.get("semantics") or {}
+    src = (g.get("sources") or [{}])[0]
+    path = answer_path(doc, raw, shared)
+    L = [f"GENERATED from this concept's declarations — do not edit; edit the declarations.",
+         f"To use {c.get('label') or name} an agent needs ONLY:"]
+    n = 0
+
+    amap = (v.get("aliases") or {}).get("map") or {}
+    if amap and shared:
+        n += 1
+        codes = ", ".join(sorted(amap))
+        surf = sorted({s2 for e in amap.values()
+                       for arr in (e.get("multilingual") or {}).values() for s2 in arr})
+        L.append(f"  {n}. SELECT the rows: {path['select'].split(': ')[0] if ': ' in path['select'] else path['select']}"
+                 f" — code {codes}"
+                 + (f"; recognised as {', '.join(surf[:6])}" + (" ..." if len(surf) > 6 else "") if surf else ""))
+    elif shared and path.get("select"):
+        n += 1
+        L.append(f"  {n}. SELECT the rows: {path['select']}")
+
+    if ct.get("default_reading"):
+        n += 1
+        L.append(f"  {n}. WHEN THE QUESTION IS SILENT: see contract.default_reading")
+
+    if c.get("class") in ("reference", "enumeration"):
+        n += 1
+        L.append(f"  {n}. RESOLVE a name to its code OFFLINE: {path['resolve']}")
+    else:
+        n += 1
+        L.append(f"  {n}. RESOLVE any named entity through its own concept, which resolves it offline")
+
+    if g.get("snapshot_rule"):
+        n += 1
+        udf = (g.get("realized_by") or {}).get("udf")
+        L.append(f"  {n}. COLLAPSE to one row per cell: grounding.snapshot_rule"
+                 + (f", realized by {udf}" if udf else ""))
+
+    if c.get("class") == "measure" and s.get("measure_type"):
+        n += 1
+        L.append(f"  {n}. READ A BARE PERIOD as {str(s['measure_type']).split('.')[-1]} dictates"
+                 f" (mac.resolve.period_reading)")
+
+    n += 1
+    L.append(f"  {n}. READ from {src.get('relation')}"
+             + (f", keyed on {', '.join(src['key']) if isinstance(src.get('key'), list) else src.get('key')}"
+                if src.get("key") else ""))
+    L.append("Never probe, and never filter a NAME literal against the fact — every name resolves to a "
+             "code first (mac.resolve.join_on_declared_key, mac.guarantee.never_guess).")
+    return "\n".join(L) + "\n"
