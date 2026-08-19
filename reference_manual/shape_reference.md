@@ -627,6 +627,7 @@ properties:  # REQUIRED
     assertion:  # open: extra keys allowed
     tolerance: <…>
     sql: <…>  # REQUIRED · string
+    validates: [ ... ]  # v0.1.17: the CONCEPTS this property holds to account — the attribution…
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 

@@ -2316,6 +2316,13 @@
               "tolerance": {},
               "sql": {
                 "type": "string"
+              },
+              "validates": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "v0.1.17: the CONCEPTS this property holds to account — the attribution link that makes L2 evidence usable. Without it a property passes and no concept learns anything: the suite proves the warehouse satisfies an assumption, but nothing records WHICH part of the model was thereby execution-validated, so FRAMEWORK.md §8's third rung cannot be measured for any object. Each entry is a concept.name. A property validating nothing is legal and means exactly that — a warehouse invariant no concept depends on, which is worth knowing."
               }
             },
             "patternProperties": {
