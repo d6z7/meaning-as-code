@@ -189,7 +189,105 @@ if __name__ == "__main__":                                              # pragma
 
 # ── the projection: the guarantee RENDERED from the path, so it cannot drift ──────────────────────
 
-def render_guarantee(name: str, doc: dict, raw: str, shared: bool) -> str:
+def resolvers(doc: dict, registry: dict) -> list:
+    """Which OTHER concepts this one resolves names through, and the register each resolves in.
+
+    DERIVED, not listed: a concept's grounding columns are matched against every other concept's
+    canonical key. A measure grounding `fpl_model_code` is resolving models, whether or not anyone
+    wrote that down — and the model concept already declares which register turns a name into that
+    code. Enumerating it here is what keeps a generated guarantee from telling a one-shot agent to go
+    and navigate three other files."""
+    g = doc.get("grounding") or {}
+    cols = set()
+    for s in (g.get("sources") or []):
+        cols |= set(s.get("columns") or [])
+        k = s.get("key")
+        cols |= {k} if isinstance(k, str) else set(k or ())
+    mine = ((doc.get("concept") or {}).get("name"))
+    out = []
+    for col in sorted(cols):
+        hit = registry.get(col)
+        if hit and hit[0] != mine:
+            out.append(hit)
+    seen, uniq = set(), []
+    for cname, reg in out:
+        if cname not in seen:
+            seen.add(cname); uniq.append((cname, reg))
+    return uniq
+
+
+def key_registry(concepts: dict) -> dict:
+    """canonical key column -> (concept name, the register that resolves a name to it)."""
+    reg = {}
+    for name, (_rel, d, raw) in concepts.items():
+        c = d.get("concept") or {}
+        if c.get("class") not in ("reference", "enumeration"):
+            continue
+        ck = (c.get("identity") or {}).get("canonical_key")
+        if not ck:
+            continue
+        csvs = sorted(set(re.findall(r"data/lookups/[\w.\-]+\.csv", raw)))
+        v = d.get("values") or {}
+        reg[ck] = (name, csvs[0] if csvs else
+                   (f"values.items on {name} ({len(v['items'])} members)" if v.get("items") else None))
+    return reg
+
+
+def consumers(doc: dict, concepts: dict) -> list:
+    """The relations that CONSUME this concept's canonical key — the outbound direction.
+
+    A dimension's guarantee has to say how it is attached to a fact, not only how its own names
+    resolve. Derived by scanning every other concept's grounding columns for this one's key, so it
+    stays correct when a new fact starts using the dimension."""
+    ck = ((doc.get("concept") or {}).get("identity") or {}).get("canonical_key")
+    mine = (doc.get("concept") or {}).get("name")
+    if not ck:
+        return []
+    out = set()
+    for name, (_rel, d, _raw) in concepts.items():
+        if name == mine:
+            continue
+        for s in ((d.get("grounding") or {}).get("sources") or []):
+            cols = set(s.get("columns") or [])
+            k = s.get("key")
+            cols |= {k} if isinstance(k, str) else set(k or ())
+            if ck in cols and s.get("relation"):
+                out.add(s["relation"])
+    return sorted(out)
+
+
+def edge_paths(name: str, edges: list) -> list:
+    """The declared joins this concept takes part in — MAC's own home for a join is the EDGE layer.
+
+    The first cut of this renderer derived the attach path from column overlap alone, which found the
+    fact joins and missed every dimension reached through another dimension: BodyType is joined via
+    dim_model, and its key never appears on the fact at all. Eleven concepts lost a relation that way.
+    The edges were there the whole time, carrying `join_rule`."""
+    out = []
+    for e in edges or []:
+        ep = e.get("endpoints") or {}
+        a = (ep.get("from") or {}).get("concept")
+        b = (ep.get("to") or {}).get("concept")
+        if name not in (a, b):
+            continue
+        other = b if a == name else a
+        out.append((other, e.get("join_rule") or e.get("edge_id") or "", e.get("level")))
+    return sorted(set(out))
+
+
+def load_edges(root):
+    import yaml
+    f = Path(root) / "ontology" / "edges.yaml"
+    if not f.exists():
+        return []
+    try:
+        return (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("edges") or []
+    except Exception:                                                    # noqa: BLE001
+        return []
+
+
+def render_guarantee(name: str, doc: dict, raw: str, shared: bool, registry: dict | None = None,
+                     concepts: dict | None = None, edges: list | None = None) -> str:
     """The no_probe_guarantee as a VIEW of the declarations, not a second copy of them.
 
     Why render at all, when answer_path() already names every source: because a reader following
@@ -222,14 +320,21 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool) -> str:
 
     if ct.get("default_reading"):
         n += 1
-        L.append(f"  {n}. WHEN THE QUESTION IS SILENT: see contract.default_reading")
+        dr = " ".join(str(ct["default_reading"]).split())
+        L.append(f"  {n}. WHEN THE QUESTION IS SILENT: {dr}")
 
     if c.get("class") in ("reference", "enumeration"):
         n += 1
         L.append(f"  {n}. RESOLVE a name to its code OFFLINE: {path['resolve']}")
     else:
         n += 1
-        L.append(f"  {n}. RESOLVE any named entity through its own concept, which resolves it offline")
+        rs = resolvers(doc, registry or {})
+        if rs:
+            L.append(f"  {n}. RESOLVE each named entity OFFLINE, never as a literal against the fact:")
+            for cname, reg in rs:
+                L.append(f"       {cname} -> {reg or 'NO OFFLINE REGISTER — this concept cannot refuse an unknown name'}")
+        else:
+            L.append(f"  {n}. RESOLVE any named entity through its own concept, which resolves it offline")
 
     if g.get("snapshot_rule"):
         n += 1
@@ -242,6 +347,15 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool) -> str:
         L.append(f"  {n}. READ A BARE PERIOD as {str(s['measure_type']).split('.')[-1]} dictates"
                  f" (mac.resolve.period_reading)")
 
+    cons = consumers(doc, concepts or {})
+    eps = edge_paths(name, edges or [])
+    if cons or eps:
+        n += 1
+        L.append(f"  {n}. ATTACH to other objects by the DECLARED joins:")
+        for r in cons:
+            L.append(f"       {r} — joins on the key above")
+        for other, rule, lvl in eps:
+            L.append(f"       {other} ({lvl}) — {rule}")
     n += 1
     L.append(f"  {n}. READ from {src.get('relation')}"
              + (f", keyed on {', '.join(src['key']) if isinstance(src.get('key'), list) else src.get('key')}"
