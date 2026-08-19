@@ -161,6 +161,15 @@ def main() -> int:
         added += save(a.root, current(a.root))
 
     rows = load(a.root)
+
+    # THE PROJECTION IS WRITTEN HERE, not by a shell wrapper. It was in run-tests.sh, so recording
+    # by calling this tool directly left the chart showing yesterday's slope while the log was
+    # current — a stale graph is worse than no graph, because it is read as fact.
+    if rows:
+        proj = os.path.join(a.root, "acceptance", "suite_history.json")
+        os.makedirs(os.path.dirname(proj), exist_ok=True)
+        with open(proj, "w", encoding="utf-8") as fh:
+            json.dump({"history": rows}, fh, indent=1, ensure_ascii=False)
     if a.json:
         print(json.dumps({"history": rows}, indent=1, ensure_ascii=False))
         return 0
