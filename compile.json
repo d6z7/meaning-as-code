@@ -1,0 +1,3055 @@
+{
+  "schema": "mac.diagnostics/compile/1",
+  "bundle": "/Users/e6db365/dev/meaning-as-code",
+  "generated_at": "2026-08-19T00:19:36.422715+00:00",
+  "duration_s": 1.926,
+  "verdict": "DOES_NOT_COMPILE",
+  "summary": {
+    "total": 13,
+    "by_severity": {
+      "error": 3,
+      "warning": 8,
+      "info": 2
+    },
+    "by_code": {
+      "MAC001": 1,
+      "MAC002": 1,
+      "MAC008": 2,
+      "MAC005": 9
+    },
+    "errors": 3,
+    "warnings": 8,
+    "witnesses": 437
+  },
+  "checks": {
+    "native": [
+      {
+        "check": "mac_checks_structure",
+        "codes": [
+          "MAC001",
+          "MAC002",
+          "MAC009",
+          "MAC008",
+          "MAC011"
+        ],
+        "what": "what is defined, and does it satisfy its definition"
+      },
+      {
+        "check": "mac_checks_semantic",
+        "codes": [
+          "MAC003",
+          "MAC004",
+          "MAC007",
+          "MAC006",
+          "MAC010"
+        ],
+        "what": "what is stated twice, contradicted, unwarranted, dead, or off the record"
+      },
+      {
+        "check": "mac_checks_adoption",
+        "codes": [
+          "MAC005"
+        ],
+        "what": "what MAC offers and the bundle does not take"
+      },
+      {
+        "check": "mac_checks_reproduction",
+        "codes": [
+          "MAC004",
+          "MAC008",
+          "MAC011"
+        ],
+        "what": "whether the process RECORD still agrees with the artifacts"
+      },
+      {
+        "check": "mac_checks_vocabulary",
+        "codes": [
+          "MAC008"
+        ],
+        "what": "whether the FRAMEWORK's own code still agrees with its closed vocabularies"
+      },
+      {
+        "check": "mac_checks_canon_binding",
+        "codes": [
+          "MAC004",
+          "MAC008"
+        ],
+        "what": "whether a bound rule's prose still says what its canon renders"
+      },
+      {
+        "check": "mac_checks_common_rules",
+        "codes": [
+          "MAC003",
+          "MAC005",
+          "MAC008"
+        ],
+        "what": "whether a concept restates a law MAC already states for its class"
+      },
+      {
+        "check": "mac_checks_cookbook",
+        "codes": [
+          "MAC003"
+        ],
+        "what": "the MODELLERS_COOKBOOK Part-C anti-patterns, enforced rather than described"
+      },
+      {
+        "check": "mac_checks_reference_basis",
+        "codes": [
+          "MAC008"
+        ],
+        "what": "whether a rule naming another concept has any reason to"
+      },
+      {
+        "check": "mac_checks_selfconform",
+        "codes": [
+          "MAC001",
+          "MAC002"
+        ],
+        "what": "whether the FRAMEWORK satisfies the rules it enforces on every bundle"
+      }
+    ],
+    "wrapped": [
+      {
+        "gate": "check_dq_resolution_sync",
+        "code": "MAC010",
+        "status": "PASS",
+        "duration_s": 0.028,
+        "why_this_code": "an impurity rule that dissolves a defect without declaring it resolves that defect is a change with no protocol behind it"
+      },
+      {
+        "gate": "check_enumeration_closure",
+        "code": "MAC006",
+        "status": "PASS",
+        "duration_s": 0.025,
+        "why_this_code": "a set CLAIMED closed while holding an unconfirmed member is a claim with no warrant behind it"
+      },
+      {
+        "gate": "check_lineage_coverage",
+        "code": "MAC011",
+        "status": "PASS",
+        "duration_s": 0.03,
+        "why_this_code": "a served dataset that explains none of its columns is a completeness the bundle does not reach"
+      },
+      {
+        "gate": "check_lookups",
+        "code": "MAC008",
+        "status": "PASS",
+        "duration_s": 0.029,
+        "why_this_code": "a cited lookup that is missing or empty is a reference resolving to nothing"
+      },
+      {
+        "gate": "check_measure_additivity_registry",
+        "code": "MAC004",
+        "status": "PASS",
+        "duration_s": 0.036,
+        "why_this_code": "a registry row that is not an exact projection of the framework law is two statements of one fact disagreeing"
+      },
+      {
+        "gate": "check_ontology_grounds_on_datasets",
+        "code": "MAC011",
+        "status": "PASS",
+        "duration_s": 0.027,
+        "why_this_code": "the raw->transform->dataset->ontology chain is a completeness requirement over the whole bundle"
+      },
+      {
+        "gate": "check_references",
+        "code": "MAC008",
+        "status": "EXIT 1",
+        "duration_s": 0.345,
+        "why_this_code": "its whole subject is a reference that resolves to nothing"
+      },
+      {
+        "gate": "check_relation_identity",
+        "code": "MAC008",
+        "status": "PASS",
+        "duration_s": 0.03,
+        "why_this_code": "a relation that is not identifiable is a reference nothing can resolve"
+      },
+      {
+        "gate": "check_schema_isolation",
+        "code": "MAC008",
+        "status": "PASS",
+        "duration_s": 0.03,
+        "why_this_code": "a grounding aimed at another source's schema resolves outside the relation it claims"
+      },
+      {
+        "gate": "check_served_name_distinct",
+        "code": "MAC002",
+        "status": "PASS",
+        "duration_s": 0.025,
+        "why_this_code": "a served name equal to its raw source violates the definition of what a served relation is"
+      },
+      {
+        "gate": "check_shapes",
+        "code": "MAC002",
+        "status": "PASS",
+        "duration_s": 0.087,
+        "why_this_code": "a shape IS a definition; a concept failing it has a definition it does not satisfy"
+      },
+      {
+        "gate": "check_transform_sql_extracted",
+        "code": "MAC011",
+        "status": "PASS",
+        "duration_s": 0.029,
+        "why_this_code": "a transform whose SQL is not extracted leaves the chain incomplete at the step that does the work"
+      }
+    ],
+    "absorbed": [
+      {
+        "gate": "check_conformance",
+        "by": "adoption — its bundle loader + framework introspection ARE the MAC005 check"
+      },
+      {
+        "gate": "check_intervention_ledger",
+        "by": "semantic MAC010 owns the protocol question; this gate's REMAINING register-shape rules (required keys, id uniqueness, dq cross-refs) are NOT yet covered by any native check — a known hole, not a claim"
+      },
+      {
+        "gate": "check_vanilla_delta",
+        "by": "semantic MAC010 owns the protocol question; its REMAINING delta-register shape rules (placeholder baselines, ratification state) are NOT yet covered by any native check — a known hole, not a claim"
+      },
+      {
+        "gate": "mac_diagnostics",
+        "by": "semantic — its fact analysis IS the MAC003/MAC004 check"
+      },
+      {
+        "gate": "validate_schema",
+        "by": "structure — its enumeration + per-file validation ARE the MAC001/MAC002 checks"
+      }
+    ],
+    "skipped_legacy": false
+  },
+  "codes": {
+    "MAC001": {
+      "kind": "undefined-artifact",
+      "meaning": "present in the bundle, carries no MAC definition, not declared out of scope",
+      "count": 1,
+      "computed": true
+    },
+    "MAC002": {
+      "kind": "invalid-artifact",
+      "meaning": "has a MAC definition and does not satisfy it",
+      "count": 1,
+      "computed": true
+    },
+    "MAC009": {
+      "kind": "undeclared-extension",
+      "meaning": "an x- key with no profile entry — CONFORMANCE.md §2: undeclared debt, not license",
+      "count": 0,
+      "computed": true
+    },
+    "MAC003": {
+      "kind": "fact-restated",
+      "meaning": "one fact stated in more than one home; nothing keeps the copies in step",
+      "count": 0,
+      "computed": true
+    },
+    "MAC004": {
+      "kind": "fact-contradicted",
+      "meaning": "statements of one fact disagree — something downstream is reading the wrong one",
+      "count": 0,
+      "computed": true
+    },
+    "MAC005": {
+      "kind": "capability-unadopted",
+      "meaning": "MAC offers a mechanism for this and the bundle does not use it",
+      "count": 9,
+      "computed": true
+    },
+    "MAC006": {
+      "kind": "claim-unearned",
+      "meaning": "a conformance level or confidence asserted with no evidence behind it",
+      "count": 0,
+      "computed": true
+    },
+    "MAC010": {
+      "kind": "change-unprotocolled",
+      "meaning": "an authored or tuned object with no entry in the change record",
+      "count": 0,
+      "computed": true
+    },
+    "MAC007": {
+      "kind": "guard-dead",
+      "meaning": "a rule or guard testing a value that cannot occur — it can never fire",
+      "count": 0,
+      "computed": true
+    },
+    "MAC008": {
+      "kind": "reference-unresolved",
+      "meaning": "a reference that resolves to nothing",
+      "count": 2,
+      "computed": true
+    },
+    "MAC011": {
+      "kind": "coverage-missing",
+      "meaning": "a required completeness the bundle does not reach",
+      "count": 0,
+      "computed": true
+    }
+  },
+  "timings_s": {
+    "load.model": 0.065,
+    "load.conformance+framework": 0.368,
+    "phase.structure": 0.193,
+    "phase.semantic": 0.0,
+    "phase.adoption": 0.508,
+    "phase.reproduction": 0.0,
+    "phase.vocabulary": 0.033,
+    "phase.canon_binding": 0.01,
+    "phase.common_rules": 0.005,
+    "phase.cookbook": 0.0,
+    "phase.reference_basis": 0.0,
+    "phase.selfconform": 0.019,
+    "legacy": 0.723
+  },
+  "diagnostics": [
+    {
+      "code": "MAC001",
+      "kind": "undefined-artifact",
+      "severity": "error",
+      "summary": "44 of 76 yaml file(s) in the bundle carry no MAC definition and are not declared out of scope — MAC cannot validate, track, project or enforce them",
+      "note": "by directory: 10 in tests/fixtures/; 8 in example_tpch_ontology/data/datasets/; 8 in tests/fixtures/shapes_lab/; 7 in example_shop_ontology/data/datasets/; 3 in ./; 2 in example_shop_ontology/; 1 in example_shop_ontology/data/sources/; 1 in example_shop_ontology/data/transforms/; 1 in example_tpch_ontology/; 1 in example_tpch_ontology/data/sources/; 1 in example_tpch_ontology/data/transforms/; 1 in tests/fixtures/shapes_lab/expectations/. Either bring each under a schema definition, or declare it in mac.project.yaml#conformance.out_of_scope with a reason — declared debt is visible and arguable, silent debt is how a standard stops being one",
+      "source": "mac_checks_structure",
+      "witnesses": [
+        {
+          "file": "tests/fixtures/bad_business_edge_type.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_edge_type.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_enum_item_no_code.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_enum_uses_wrapper.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_property_no_name.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_rule_no_render_kind.rules.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_seventh_class.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_transform_input_kind.transform.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_unknown_key.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/bad_value_set.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/customer.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/nation.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/orders.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/part.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/partsupp.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/region.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/supplier.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_edge_verified_by_dangling.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_join_rule_unresolved_col.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_partition_global.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_predicate_restated_in_rule.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_edge_verified_by.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_join_rule_grounded.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_partition.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_predicate_cites_edge.concept.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/categories.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/customers.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/product_bundles.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/products.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/refunds.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/shipping_carriers.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "mac_rules.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "mac_shapes.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "mac_vocabulary.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/mac.project.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/vocabulary.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/sources/orders_raw.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_shop_ontology/data/transforms/orders.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/mac.project.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/sources/lineitem_raw.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "example_tpch_ontology/data/transforms/lineitem.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/expectations/expectations.yaml",
+          "path": "",
+          "line": null,
+          "detail": ""
+        }
+      ]
+    },
+    {
+      "code": "MAC002",
+      "kind": "invalid-artifact",
+      "severity": "warning",
+      "summary": "2 routed file(s) were NOT validated — their metadata.schema_version is outside the recognized set, so they claim a definition nothing checked",
+      "note": "recognized: 0.1.10, 0.1.11, 0.1.12, 0.1.13, 0.1.9 (current 0.1.13); becomes an error when the migration these versions are transitional for is done",
+      "source": "mac_checks_structure",
+      "witnesses": [
+        {
+          "file": "tests/fixtures/flat_project/concepts/widget/widget.yaml",
+          "path": "metadata.schema_version",
+          "line": null,
+          "detail": "declares '0.1.6'"
+        },
+        {
+          "file": "tests/fixtures/flat_project/tables/widgets.yaml",
+          "path": "metadata.schema_version",
+          "line": null,
+          "detail": "declares '0.1.6'"
+        }
+      ]
+    },
+    {
+      "code": "MAC008",
+      "kind": "reference-unresolved",
+      "severity": "error",
+      "summary": "24 `edge.endpoint` reference(s) resolve to nothing — the model links the field to a target that is not in the bundle",
+      "note": "searched: concepts",
+      "source": "mac_checks_structure",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge order__placed_by__customer names concept 'Order'"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge order__placed_by__customer names concept 'Customer'"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[1]",
+          "line": null,
+          "detail": "edge product__belongs_to__category names concept 'Product'"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[1]",
+          "line": null,
+          "detail": "edge product__belongs_to__category names concept 'Category'"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[2]",
+          "line": null,
+          "detail": "edge product__related__product names concept 'Product'"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "edges[2]",
+          "line": null,
+          "detail": "edge product__related__product names concept 'Product'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge nation__in__region names concept 'Nation'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge nation__in__region names concept 'Region'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[1]",
+          "line": null,
+          "detail": "edge customer__from__nation names concept 'Customer'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[1]",
+          "line": null,
+          "detail": "edge customer__from__nation names concept 'Nation'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[2]",
+          "line": null,
+          "detail": "edge supplier__from__nation names concept 'Supplier'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[2]",
+          "line": null,
+          "detail": "edge supplier__from__nation names concept 'Nation'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[3]",
+          "line": null,
+          "detail": "edge partsupp__of__part names concept 'PartSupp'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[3]",
+          "line": null,
+          "detail": "edge partsupp__of__part names concept 'Part'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[4]",
+          "line": null,
+          "detail": "edge partsupp__from__supplier names concept 'PartSupp'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[4]",
+          "line": null,
+          "detail": "edge partsupp__from__supplier names concept 'Supplier'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[5]",
+          "line": null,
+          "detail": "edge orders__placed_by__customer names concept 'Orders'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[5]",
+          "line": null,
+          "detail": "edge orders__placed_by__customer names concept 'Customer'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[6]",
+          "line": null,
+          "detail": "edge lineitem__part_of__orders names concept 'LineItem'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[6]",
+          "line": null,
+          "detail": "edge lineitem__part_of__orders names concept 'Orders'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[7]",
+          "line": null,
+          "detail": "edge lineitem__supplied_via__partsupp names concept 'LineItem'"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "edges[7]",
+          "line": null,
+          "detail": "edge lineitem__supplied_via__partsupp names concept 'PartSupp'"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge order__of_customer names concept 'Order'"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/edges.yaml",
+          "path": "edges[0]",
+          "line": null,
+          "detail": "edge order__of_customer names concept 'Customer'"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "x- extension profile (CONFORMANCE §2) is offered and unused — 30 site(s) in this bundle where it would apply",
+      "note": "offered since undated; CONFORMANCE.md §2 — 'an x- key with no profile entry is undeclared debt, not license'  ·  INSTEAD → uses 2 x- key(s) (x-derived-from, x-subrole) at 30 site(s), none declared anywhere — the extension is visible and unexplained",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/data/datasets/categories.yaml.columns[1].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/customers.yaml.columns[1].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/customers.yaml.columns[2].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml.columns[4].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml.columns[5].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml.columns[6].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/orders.yaml.columns[7].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/product_bundles.yaml.columns[2].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/product_bundles.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/products.yaml.columns[1].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/products.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/refunds.yaml.columns[2].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/refunds.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/data/datasets/shipping_carriers.yaml.columns[1].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/customer.yaml.columns[4].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[4].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[5].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[6].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[7].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[10].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[11].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/lineitem.yaml.columns[12].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/orders.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/orders.yaml.columns[4].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/part.yaml.columns[6].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/partsupp.yaml.columns[2].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/partsupp.yaml.columns[3].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/data/datasets/supplier.yaml.columns[4].x-subrole",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "mac.schema.json.$defs.semantics.properties.additivity.x-derived-from",
+          "path": "",
+          "line": null,
+          "detail": "offered here, not filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "grounding.grain is offered and unused — 24 site(s) in this bundle where it would apply",
+      "note": "offered since 0.5; mac.schema.json — v0.5 PROMOTED to core: the committed leaf grain",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/category.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product_bundle.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/shipping_carrier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/nation.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/region.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/line_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/orders.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/return_flag.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/part.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/partsupp.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/market_segment.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/supplier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/flat_project/concepts/widget/widget.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "grounding.serves_from is offered and unused — 24 site(s) in this bundle where it would apply",
+      "note": "offered since 0.5; mac.schema.json — v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/category.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product_bundle.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/shipping_carrier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/nation.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/region.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/line_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/orders.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/return_flag.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/part.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/partsupp.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/market_segment.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/supplier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/flat_project/concepts/widget/widget.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "grounding.sources is offered and unused — 24 site(s) in this bundle where it would apply",
+      "note": "offered since 0.5; mac.schema.json — v0.5 agnostic source binding",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/category.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product_bundle.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/shipping_carrier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/nation.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/region.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/line_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/orders.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/return_flag.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/part.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/partsupp.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/market_segment.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/supplier.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/flat_project/concepts/widget/widget.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/customer/customer.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/concepts/order/order.yaml",
+          "path": "grounding",
+          "line": null,
+          "detail": "offered here, not filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "contract.rules[].subject is offered and unused — 5 site(s) in this bundle where it would apply",
+      "note": "offered since 0.1.13; mac.schema.json — v0.1.13: a SHORT email-subject-style headline naming the rule's objective",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "contract.rules[0]",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "contract.rules[0]",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "contract.rules[1]",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "contract.rules[0]",
+          "line": null,
+          "detail": "offered here, not filled"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "contract.rules[1]",
+          "line": null,
+          "detail": "offered here, not filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "mac.project.yaml#conformance.out_of_scope is offered and unused — 1 site(s) in this bundle where it would apply",
+      "note": "offered since undated; validate_schema.py reads it from the project manifest  ·  INSTEAD → declares nothing — every file MAC has no definition for is silent debt rather than arguable debt (the file-level witnesses belong to MAC001, not here)",
+      "source": "mac_checks_adoption",
+      "witnesses": []
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "warning",
+      "summary": "project shapes.yaml is offered and unused — 1 site(s) in this bundle where it would apply",
+      "note": "offered since undated; check_conformance.py searches for `shapes.yaml` by name",
+      "source": "mac_checks_adoption",
+      "witnesses": []
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "info",
+      "summary": "mac.aggregation_effect is offered and unused — no site in this bundle where it would apply",
+      "note": "offered since undated; mac_vocabulary.yaml, 3 terms — resolved by check_references; an unknown term is an ERROR",
+      "source": "mac_checks_adoption",
+      "witnesses": []
+    },
+    {
+      "code": "MAC005",
+      "kind": "capability-unadopted",
+      "severity": "info",
+      "summary": "194 optional schema slot(s) are unfilled here and MAC never dated any of them — the register cannot tell a seam from a prose field without a changelog entry",
+      "note": "FRAMEWORK: CONFORMANCE §6 records an addition against a generation; these were added without one. Date them, or accept that no derived register can classify them. Listed as ONE finding, not one per slot — a slot with no measured substitute in this bundle is not evidence of anything on its own",
+      "source": "mac_checks_adoption",
+      "witnesses": [
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.benchmark_baseline",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.data_domain",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.dataset",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.domain_label",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.kind",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.label",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.profiled_via",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "metadata.provenance",
+          "line": null,
+          "detail": "32 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "governance.approval_status",
+          "line": null,
+          "detail": "25 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "concept.german",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "concept.grounded_by",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "concept.notes",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "concept.related_axis",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.code_column",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.discriminator",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.family_resolution",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.join_rule",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.notes",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.primary_tables",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.row_count",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.snapshot_rule",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.tables",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.used_in",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.value_filter",
+          "line": null,
+          "detail": "24 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "concept.identity.note",
+          "line": null,
+          "detail": "21 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "semantics.scope",
+          "line": null,
+          "detail": "21 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].conditions",
+          "line": null,
+          "detail": "12 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].cross_references",
+          "line": null,
+          "detail": "12 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].federation_concept_id",
+          "line": null,
+          "detail": "12 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].verified_by",
+          "line": null,
+          "detail": "12 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].applied_as",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].closure",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].cross_references",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].disambiguation",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].edge_cases",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].relative_template",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].usage_template",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].view_ref",
+          "line": null,
+          "detail": "8 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values.canonicalization",
+          "line": null,
+          "detail": "6 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values.unmapped",
+          "line": null,
+          "detail": "6 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "columns[].confidence",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "columns[].description",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "columns[].enum_ref",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "columns[].notes",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "columns[].nullable",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.rules[].confidence",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.rules[].enforced_by",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.rules[].examples",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.rules[].scope",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.rules[].status",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "items.doc",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "items.german",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "items.required",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "items.type",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "items.value_domain",
+          "line": null,
+          "detail": "5 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.answer_rules",
+          "line": null,
+          "detail": "3 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "contract.axis_handling",
+          "line": null,
+          "detail": "3 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "table.confidence",
+          "line": null,
+          "detail": "3 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "table.description",
+          "line": null,
+          "detail": "3 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "lifecycle.states",
+          "line": null,
+          "detail": "2 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.multilingual.syn",
+          "line": null,
+          "detail": "1 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "AttributeItem.column",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "AttributeItem.confidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "AttributeItem.eav_attribute",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "AttributeItem.note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "AttributeItem.value_domain",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.brand_relative",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.multilingual",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.multilingual.de",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.multilingual.en",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.multilingual.syn",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.scope_relative",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "aliases.map.additionalProperties.stored",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "canonRef.applied_as",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "canonRef.note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "canonRef.params",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "changeLogEntry.by",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "changeLogEntry.rationale",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "conformance.out_of_scope",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "constraintEntry.machine_executable",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "constraintEntry.notes",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "constraintEntry.open_question",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "constraintEntry.severity",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "constraintEntry.sql_assertion",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].amended",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].baseline",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].evidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].introduced",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].ledger_ref",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].locus",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].objects",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].ratified",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "deltas[].status",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "derived_from.bakes_out",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "derived_from.notes",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "derived_from.serves_from",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "derived_from.sources",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].if.level",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "edges[].then.type",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "foreign_keys[].cardinality_at_to",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "foreign_keys[].confidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "foreign_keys[].enforced",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "foreign_keys[].notes",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "foreign_keys[].required",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounded_by_concepts[].concept",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounded_by_concepts[].ref",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounded_by_concepts[].role",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.sources[].columns",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "grounding.sources[].key",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].brand",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].confidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].derived_rule",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].label",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].members",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.definitions[].namespace",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.member_source",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.member_source.kind",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "groupingMembers.member_source.rule",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "if.concept",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "if.concept.class",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "inputs[].consumes",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "inputs[].descriptor",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "inputs[].kind",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "inputs[].note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "inputs[].role",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].actor",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].date",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].dq_ids",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].evidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].kind",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].objects",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].sme_owner",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "interventions[].status",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "issues[].confidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "issues[].current_handling",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "issues[].residual_risk",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "issues[].severity",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "issues[].sme_owner",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.category",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.cross_references",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.owner_for_resolution",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.priority",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.status",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "openQuestion.topic",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "produces.grain",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "produces.serves_ontology",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "produces.sql_file",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "profile.extensions.additionalProperties.applies_to",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "profile.extensions.additionalProperties.promotion_candidate",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].about",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].answer",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].answered_by",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].answered_on",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].owner",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "questions[].status",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.gate",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.gate.command",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.gate.must_exit",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.narrative",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.prohibited",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.prohibited[].enforced_by",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.stages[].billed",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.stages[].command",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.stages[].note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "reproduction.stages[].produces",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "resolutions[].coverage",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "resolutions[].guarantee",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "resolutions[].resolving_transforms",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "rules[].if.render_kind",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "sections[].aspects",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "sections[].section",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "sections[].slug",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "sections[].source",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "shapes[].constraint",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "shapes[].description",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "shapes[].severity",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "shapes[].where",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "then.concept",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].establishes_guarantee",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].impurity_class",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].raw_defect",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].resolves",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].rule",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].sql",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "transforms[].status",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].confidence",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].from",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].label",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].meaning",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].note",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        },
+        {
+          "file": "mac.schema.json",
+          "path": "values[][].open_question",
+          "line": null,
+          "detail": "0 applicable site(s), 0 filled"
+        }
+      ]
+    },
+    {
+      "code": "MAC008",
+      "kind": "reference-unresolved",
+      "severity": "error",
+      "summary": "wrapped gate `check_references` reports that the bundle does not satisfy its rule set (exit 1) — NOT YET NATIVE, its output is carried below verbatim rather than as addressable findings",
+      "note": "mapped to MAC008 because its whole subject is a reference that resolves to nothing. This gate is WRAPPED, not integrated: the compiler cannot attribute its lines to objects, so fanout is collapsed to one finding. Porting it into a native check is what removes this caveat",
+      "source": "mac_compile.legacy[check_references]",
+      "witnesses": [
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/category.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/catalog/category.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/catalog/product.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/catalog/product_bundle.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/catalog/product_bundle.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/customer/customer.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/customer/customer.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/finance/revenue.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/order/order.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/order/order_status.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/concepts/order/shipping_carrier.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/concepts/order/shipping_carrier.yaml grounding"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[0].realized_by"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[1].endpoints.from.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[1].endpoints.to.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[1].realized_by"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[2].endpoints.from.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/edges.yaml.edges[2].endpoints.to.ref"
+        },
+        {
+          "file": "example_shop_ontology/ontology/rules.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/rules.yaml rule:net_revenue"
+        },
+        {
+          "file": "example_shop_ontology/ontology/rules.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_shop_ontology/ontology/rules.yaml rule:related_products"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/finance/revenue.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/finance/revenue.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/nation.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/geography/nation.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/geography/region.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/geography/region.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/line_status.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/order/line_status.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/lineitem.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/order/lineitem.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/order_status.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/order/order_status.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/orders.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/order/orders.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/order/return_flag.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/order/return_flag.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/part.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/part/part.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/part/partsupp.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/part/partsupp.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/customer.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/party/customer.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/market_segment.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/party/market_segment.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/concepts/party/supplier.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/concepts/party/supplier.yaml grounding"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[0].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[1].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[1].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[1].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[2].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[2].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[2].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[3].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[3].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[3].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[4].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[4].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[4].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[5].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[5].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[5].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[6].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[6].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[6].realized_by"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[7].endpoints.from.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/edges.yaml.edges[7].endpoints.to.ref"
+        },
+        {
+          "file": "example_tpch_ontology/ontology/rules.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] example_tpch_ontology/ontology/rules.yaml rule:net_revenue"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_edge_verified_by_dangling.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/bad_edge_verified_by_dangling.edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_edge_verified_by_dangling.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/bad_edge_verified_by_dangling.edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_join_rule_unresolved_col.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/bad_join_rule_unresolved_col.edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/bad_join_rule_unresolved_col.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/bad_join_rule_unresolved_col.edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_edge_verified_by.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/good_edge_verified_by.edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_edge_verified_by.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/good_edge_verified_by.edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_join_rule_grounded.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/good_join_rule_grounded.edges.yaml.edges[0].endpoints.from.ref"
+        },
+        {
+          "file": "tests/fixtures/shapes_lab/good_join_rule_grounded.edges.yaml",
+          "path": "",
+          "line": null,
+          "detail": "[ERROR] tests/fixtures/shapes_lab/good_join_rule_grounded.edges.yaml.edges[0].endpoints.to.ref"
+        },
+        {
+          "file": "tools/check_references.py",
+          "path": "",
+          "line": null,
+          "detail": "RESULT: 66 error(s), 0 warning(s), 0 info"
+        }
+      ]
+    }
+  ]
+}

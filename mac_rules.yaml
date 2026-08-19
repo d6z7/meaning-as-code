@@ -132,6 +132,36 @@ rules:
       because they carry a lookup PATH (`geo_class=single_country`, `market_code ==
       fpl_brand_country_code`, `name_norm` as the standardised search key) that no declaration holds.
 
+  # ── the mirror of never_guess: a value you HAVE is not an absence ────────────────────────────────
+  - id: mac.guarantee.catalogued_member_is_real
+    subject: "A catalogued member is a real value — never drop it as missing, whatever it is called"
+    kind: mac.rule_kind.guarantee
+    scope: { concept.class: reference }
+    confidence: C
+    when:  "a value set carries a member whose label reads like an absence — Unspezifiziert, Unknown,
+            N/A, Other, Not specified — and a question counts, sums, lists or breaks down that set"
+    then:  "include it like any other member; it is a catalogued value with rows behind it, and the
+            answer is the population it actually has. Exclude it ONLY when the question explicitly asks
+            to leave unclassified rows out, and say so under assumptions when you do"
+    never: "silently dropping such a member from a count, a sum or a breakdown; treating a catalogued
+            member as missing data, a null, or a placeholder to be cleaned away"
+    why: >
+      The mirror image of never_guess. That rule bans inventing a value the data does not have; this one
+      bans discarding a value the data DOES have because its label sounds like an absence. Both failures
+      produce a number nobody can reproduce, and the second is the quieter of the two — a total that is
+      simply smaller than the truth, with nothing in the output to say members were removed.
+
+      MEASURED on gaps/fpl2, 2026-08-19: four reference concepts — body_type, fuel_type,
+      registration_type, vehicle_segment — carried BYTE-IDENTICAL `guarantee.unspecified_is_real` rules.
+      Identical `then`, identical `never`, differing only in which concept they sat on. In all four,
+      `Unspezifiziert` is a catalogued entry in that concept's own `values.items`, so the rule was
+      restating what the value set already says: a member of the list is a member of the list.
+
+      IT IS NOT DERIVABLE FROM THE DECLARATION ALONE, which is why it is a law here rather than a
+      deletion there. `values.items` says the member EXISTS. It does not say what to do when a reader
+      meets a member called "Unspezifiziert" and decides it means "no data". That decision is behaviour,
+      it is the same decision in every ontology, and this is where behaviour that holds everywhere lives.
+
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
     kind: mac.rule_kind.guarantee
