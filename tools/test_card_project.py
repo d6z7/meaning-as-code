@@ -172,6 +172,53 @@ def columns(sql: str) -> set[str]:
     return {c.name for c in tree.find_all(exp.Column) if c.name and c.name not in derived}
 
 
+def selects(sql: str) -> dict:
+    """WHAT THE QUERY IS ACTUALLY SELECTING — the disclosure a WHERE-clause list cannot give.
+
+    Operator, on a card that rendered "Parameters: none" for a sweep:
+      "i asked you to disclose what is your select statement!!! you said : parameters : none
+       this cannot be ... the question is what are you selecting!?!?!?!"
+
+    Correct. A test that pins nothing still SELECTS something, and for a grain test the whole claim
+    lives in the GROUP BY — those columns ARE the cell whose uniqueness is being asserted. Showing
+    only WHERE literals made the most important line of the query invisible and printed "none" over
+    the top of it.
+    """
+    tree = sqlglot.parse_one(sql, read=DIALECT)
+    derived = _derived_names(tree)
+    out = {"groups": [], "partitions": [], "aggregates": []}
+
+    for sel in tree.find_all(exp.Select):
+        grp = sel.args.get("group")
+        if not grp:
+            continue
+        proj = sel.expressions or []
+        cols = []
+        for e in (grp.expressions or []):
+            if isinstance(e, exp.Literal) and e.is_int:
+                i = int(e.this) - 1
+                if 0 <= i < len(proj):
+                    cols.append(proj[i].alias_or_name)
+            elif isinstance(e, exp.Column):
+                cols.append(e.name)
+        if cols and cols not in out["groups"]:
+            out["groups"].append(cols)
+
+    for w in tree.find_all(exp.Window):
+        cols = [c.name for c in (w.args.get("partition_by") or []) if isinstance(c, exp.Column)]
+        order = [o.this.name for o in (w.args.get("order").expressions if w.args.get("order") else [])
+                 if isinstance(o.this, exp.Column)]
+        if cols and {"cols": cols, "order": order} not in out["partitions"]:
+            out["partitions"].append({"cols": cols, "order": order})
+
+    for f in tree.find_all(exp.AggFunc):
+        name = f.sql(dialect=DIALECT)
+        if len(name) < 60 and name not in out["aggregates"]:
+            out["aggregates"].append(name)
+    out["aggregates"] = out["aggregates"][:8]
+    return out
+
+
 def firing_rules(root: str, sql: str, params: list) -> list[dict]:
     """Which ontology rules this one test EXERCISES — derived, not declared.
 
@@ -271,6 +318,7 @@ def card(prop: dict, result: dict | None, root: str = ".") -> dict:
     known = set(asserted)
     params = parameters(sql)
     return {
+        "selects": selects(sql),
         "rules": firing_rules(root, sql, params),
         "id": prop.get("id"),
         "status": (result or {}).get("status", "NOT RUN"),
@@ -285,6 +333,12 @@ def card(prop: dict, result: dict | None, root: str = ".") -> dict:
         "rows": rows,
         "n_rows": len(rows),
         "authored_words": len((prop.get("statement") or "").split()),
+        # THE QUERY ITSELF. Operator, three times: "i asked you to disclose what is your select
+        # statement!!!" / "the question is what are you selecting!?!?!?!" / "and you still do not
+        # provide what kind of sql are you firing ?!?!". The brief was "sql not interested on the
+        # surface ... but important for oracle or analysis" — which means COLLAPSED, not ABSENT. It
+        # was absent.
+        "sql": sql,
         "source": prop.get("source"),
         "validates": prop.get("validates") or [],
     }
@@ -316,6 +370,19 @@ def render(c: dict, width: int = 84) -> str:
         L.append("  READS")
         for r in c["reads"]:
             L.append(f"    {r}")
+
+    sel = c.get("selects") or {}
+    if sel.get("groups") or sel.get("partitions"):
+        L.append("")
+        L.append("  WHAT DEFINES A CELL  (this is what the query groups/partitions by)")
+        for g in sel.get("groups", []):
+            L.append(f"    GROUP BY      {', '.join(g)}   [{len(g)} col]")
+        for pt in sel.get("partitions", []):
+            L.append(f"    PARTITION BY  {', '.join(pt['cols'])}   [{len(pt['cols'])} col]")
+            if pt["order"]:
+                L.append(f"      ORDER BY    {', '.join(pt['order'])}")
+    if sel.get("aggregates"):
+        L.append(f"    COMPUTES      {' · '.join(sel['aggregates'])}")
 
     if c.get("rules"):
         L.append("")
