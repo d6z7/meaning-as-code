@@ -306,6 +306,54 @@ oddly, an attribute that's simply absent in one slice.
 
 ---
 
+## B9. Prove the model RETRIEVES — a dimensional property suite
+
+**When:** the ontology is grounded and structurally valid, and you want to know the thing validation
+cannot tell you: does it actually *retrieve*? This is the systematic form of Part D step 2, which
+sanity-checks ONE number by hand. It is the fix for **C7** — "validates cleanly" treated as "correct".
+
+**NOT a question corpus.** A corpus grades an answer to a sentence; this asserts an invariant over a
+SWEEP. The two are unrelated instruments and must not be compared: a corpus tells you the assistant
+phrased something well, a property tells you the model returns the right rows for every member of a
+dimension. Keep them in separate files with separate suite names.
+
+**Steps:**
+1. **Enumerate each dimension from its register, never by hand.** The brands are the rows of the brand
+   register; the measures are the families of the measure register; the geography is the country
+   register. A hand-typed list is a second home and drifts (C1) — and it silently shrinks: the sweep
+   stops covering what the register grew.
+2. **One property per DIMENSION, not per cell.** Hold every other dimension FIXED and sweep one. Five
+   brands is ONE property with one pass/fail, not five tests. That is what makes the oracle
+   maintainable: the expectation is a shape ("all five return exactly one non-null row, and they
+   differ"), not five numbers that go stale the next time the warehouse loads.
+3. **Give every property an ANTI-VACUITY clause.** Ask: what would make this pass while proving
+   nothing? Then assert against that. A brand sweep where all five figures come back IDENTICAL passes
+   a row-count check and proves the brand filter never bit. A measure sweep over a family with zero
+   rows passes trivially. Without this clause a green suite is evidence of nothing, which is C7
+   wearing a test harness.
+4. **Sweep the DEGENERATE members deliberately.** Every register has them: an entity that resolves to
+   two codes instead of one, a bucket that is not a country, a member with no rows. Those are where
+   retrieval breaks, and a sweep of only the well-behaved members is a sweep of the cases that were
+   never going to fail.
+5. **Assert each measure by ITS OWN reading rule**, not one rule for all: a Flow's year equals the sum
+   of its months, a Stock's equals its end-of-period cell, a Target and a Precomputed are read as
+   stored. Sweeping every measure with a single expectation tests the sweep, not the model.
+6. **Record what you cannot express.** A `not_expressible` list with the reason is part of the suite —
+   an invariant you decided not to test is a decision, and an undocumented one reads as coverage.
+
+**Validate:** every property must FAIL when you break the thing it tests. Run each one against a
+deliberately broken copy — drop the brand filter, remove a measure's `measure_type`, collapse a split
+market to one code — and confirm red. A guard nobody has seen fail is a guard nobody should trust; the
+same discipline the compiler's own checks are held to.
+
+**Canon:** Part D (both gates still run first) · C7 (the antipattern this closes) · FW §8 trust
+gradient — a property suite moves a fact from *structurally valid* to *execution-validated*, and no
+further. It cannot make a fact *expert-confirmed*; only an SME can.
+
+**Worked diff:** `acceptance/properties.yaml` in an applied bundle — `id · family · severity · source ·
+statement · sql · assertion · tolerance`, with the WHY IT MATTERS written into `statement` so a red
+result explains itself.
+
 # Part C — Antipatterns (smells & fixes)
 
 What to look for in review. Each: **smell → why wrong → fix.**
@@ -352,7 +400,9 @@ collapse the warehouse forces on you — is fine; a *pile* of them is the signal
 **Smell:** a concept marked `confidence: C` with a green validator but never run against data. **Why
 wrong:** structure ≠ correctness (FW §3.7, §8) — untested grounding can name a column that doesn't exist
 or a label that means something else. **Fix:** keep confidence low until **execution validation** (Part
-D); a discrepancy becomes a recorded finding that corrects the model.
+D); a discrepancy becomes a recorded finding that corrects the model. **Systematically: B9** — one
+execution-validated number proves one cell; a dimensional property suite proves the sweep, and its
+anti-vacuity clause is what stops a green suite from being this same smell wearing a test harness.
 
 ## C8. Inventing a seventh class (or reviving the old `type:` zoo)
 **Smell:** `class: hierarchical_grouping` / `enumerated_classification` / any value not in the six. **Why
@@ -369,6 +419,8 @@ reliably catches the inversion if it slips through.
 ---
 
 # Part D — Always finish here: validate, then execute
+
+> For the SYSTEMATIC form of step 2 — sweeping a dimension rather than checking one number — see **B9**.
 
 Two gates, in order — neither is optional (FW §8, SPEC §9):
 
@@ -393,6 +445,8 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 ---
 
 ## Quick index — symptom → where to go
+
+- *"it validates, but does it actually return the right rows?"* → **B9** (dimensional property suite)
 
 | You are… | Go to |
 | --- | --- |
