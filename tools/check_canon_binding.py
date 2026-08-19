@@ -89,6 +89,7 @@ def check_canon_binding(root) -> list:
         import yaml
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         from canon import rules as CR
+        import canon as CANON
     except Exception as exc:                                            # noqa: BLE001
         return [D.Diagnostic(code="MAC008", severity=D.WARNING, source="check_canon_binding",
                              summary=f"the canon library could not be loaded, so bindings are "
@@ -150,6 +151,34 @@ def check_canon_binding(root) -> list:
             if miss:
                 drifted.append(D.Witness(file=rel, path=r.get("id", ""),
                                          detail="; ".join(map(str, miss))))
+
+        # ── SLOT bindings, which nothing walked until 2026-08-19 ──────────────────────────────────
+        # `realized_by` is legal on a behaviour-bearing SLOT too — grounding (a snapshot_rule, a
+        # value_filter) and semantics (an additivity guard) — not only on a rule. This loop read
+        # contract.rules[] alone, so a slot binding was checked by nothing at all.
+        #
+        # MEASURED, and it is why this exists: an fpl2 binding of mac.canon.snapshot_collapse passed a
+        # FOUR-column partition where the relation's verified cell key is SEVEN, and rendered
+        # `PARTITION BY ['fpl_brand_country_code', ...]` — a Python list repr, not SQL. It shipped, and
+        # the compile reported clean, because no phase rendered it. Omitting `role` from that partition
+        # folds six reporting perspectives into one arbitrary row, silently.
+        for slot in ("grounding", "semantics"):
+            holder = doc.get(slot) if slot == "grounding" else (doc.get("concept") or {}).get(slot)
+            rb = (holder or {}).get("realized_by") if isinstance(holder, dict) else None
+            for b in ([rb] if isinstance(rb, dict) else (rb or [])):
+                if not isinstance(b, dict) or not b.get("udf"):
+                    continue
+                rel = str(f.relative_to(root))
+                try:
+                    CANON.render_sql(b["udf"], b.get("params") or {}, concept=doc, root=root)
+                except Exception as exc:                                # noqa: BLE001
+                    unresolved.append(D.Witness(file=rel, path=f"{slot}.realized_by",
+                                                detail=f"{b['udf']}: {str(exc)[:130]}"))
+                for prm, path in (PF.get(b.get("udf")) or {}).items():
+                    if prm in (b.get("params") or {}):
+                        restated.append(D.Witness(
+                            file=rel, path=f"{slot}.realized_by",
+                            detail=f"{prm} is attached but declared at {path} — read it, do not retype it"))
     out = []
     if unresolved:
         out.append(D.Diagnostic(
