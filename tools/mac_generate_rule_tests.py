@@ -33,7 +33,7 @@ import pathlib
 
 import yaml
 
-GEN = "mac_generate_rule_tests.py/1"
+GEN = "mac_generate_rule_tests.py/2"
 
 
 def rules_of(root: pathlib.Path):
@@ -101,10 +101,16 @@ def refusal_question(concept, rule, p) -> dict:
         },
         "about": [concept],
         "exercises": [rule["id"]],
+        # NO RATIONALE IS WRITTEN HERE. The first version hardcoded one sentence — "Bentley
+        # publishes no IstProd and no Prodant" — into all five questions, where it was FALSE for
+        # three of them: every brand publishes dtc and order_intake. A generated claim that is not
+        # generated FROM a measurement is exactly the defect this bundle spent 2026-08-20 removing,
+        # and it took an hour to reintroduce. The rationale is filled by measuring per rule; until
+        # then it says so.
         "rationale": (
-            f"MEASURED 2026-08-20: Bentley publishes no IstProd and no Prodant at all — zero rows "
-            f"across every reporting cycle. Asked plainly, the warehouse returns nothing, and "
-            f"nothing reads as zero. This is the shape of question that catches it."),
+            "PENDING MEASUREMENT — this question needs the empty case for ITS OWN measure, found by "
+            "asking the warehouse which scopes publish no row. Do not write a general sentence here: "
+            "the measures differ, and a shared rationale was wrong for three of the first five."),
         "stable": True,
     }
 

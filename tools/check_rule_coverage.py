@@ -44,6 +44,17 @@ import re
 
 import yaml
 
+GENERATORS: set[str] = set()
+
+
+def generators_available() -> set[str]:
+    """The canon udfs a generator can actually turn into a test.
+
+    17 canons are registered; two have generators. The rest are TRANSFORM canons — they rewrite a
+    sql string — so binding a rule to one produces no test at all."""
+    src = (pathlib.Path(__file__).parent / "mac_generate_rule_tests.py").read_text(encoding="utf-8")
+    return set(re.findall(r'udf\.endswith\("(\w+)"\)', src))
+
 
 def rules_of(root: pathlib.Path) -> list[dict]:
     out = []
@@ -56,7 +67,13 @@ def rules_of(root: pathlib.Path) -> list[dict]:
                 "id": str(r.get("id")), "concept": str(cn),
                 "kind": str(r.get("kind", "")).split(".")[-1],
                 "udf": str((rb or {}).get("udf") or "") if isinstance(rb, dict) else "",
-                "machine_readable": bool(r.get("realized_by") or r.get("enforced_by")),
+                # NOT the mere presence of the key. As first written this counted any rule
+                # carrying `realized_by`, so binding a rule to a canon with no generator moved the
+                # headline 8 -> 9 while `covered` stayed 8 — the metric was easiest to move by
+                # adding nothing that can fail. A rule is testable only if its udf has a generator.
+                "declares_directive": bool(r.get("realized_by") or r.get("enforced_by")),
+                "machine_readable": str((rb or {}).get("udf") or "").split(".")[-1] in GENERATORS
+                                    if isinstance(rb, dict) else False,
             })
     return out
 
@@ -68,8 +85,13 @@ def fragments_realizing(root: pathlib.Path) -> dict[str, set[str]]:
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         r = d.get("rule") or {}
         fid = str(r.get("id") or (d.get("metadata") or {}).get("id") or "")
-        if fid:
-            out[fid] = {fid}
+        if not fid:
+            continue
+        # A fragment credited a rule ONLY when the fragment id equalled the rule id, so
+        # snapshot.as_of_cycle — a fragment, not a concept rule — could never credit anything, and
+        # `composed` was pinned at 0 no matter how many properties composed it. A fragment now
+        # declares what it realizes; without that it credits only itself, as before.
+        out[fid] = {fid} | {str(x) for x in (r.get("realizes") or [])}
     return out
 
 
@@ -103,6 +125,8 @@ def main() -> int:
     a = ap.parse_args()
     root = pathlib.Path(a.root).resolve()
 
+    global GENERATORS
+    GENERATORS = generators_available()
     rules, props, corpus = rules_of(root), properties_of(root), corpus_of(root)
     frags = fragments_realizing(root)
     rows = []
@@ -152,7 +176,11 @@ def main() -> int:
     print(f"     derived  — generated from the rule        {deriv:>3}")
     print(f"     corpus   — a question names the rule      {behav:>3}")
     print(f"  named only, which is not coverage            {named:>3}")
-    print(f"  CEILING — rules with a machine-readable form {mr:>3} of {len(rules)}")
+    decl = sum(1 for r in rows if r["declares_directive"])
+    print(f"  CEILING — rules a generator can turn into a test {mr:>3} of {len(rules)}")
+    if decl > mr:
+        print(f"     ({decl} declare a directive; {decl - mr} name a canon with NO generator, so")
+        print(f"      binding them would move nothing that can fail)")
     print(f"\n  corpus questions naming a rule id            {linked:>3} of {len(corpus)}")
     if linked < len(corpus):
         print(f"     the other {len(corpus) - linked} say what they exercise in a SENTENCE, so no rule can")
