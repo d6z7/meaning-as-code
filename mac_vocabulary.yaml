@@ -329,11 +329,13 @@ diagnostic_code:
       group: "what is not covered"
       description: >-
         an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every
-        gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired:
-        three of four declared cell keys were false — v_fpl_kpi claimed 0 multi-row against
-        11.689.530, v_fpl_tm_kpi 0 against 176.279 (99,96 %), and v_fpl_kpi_current carried counts
-        for a table that does not exist. Not carelessness: a field no gate can reach costs nothing
-        to be wrong in. Three mechanical predicates identify the duplicate case — same subject,
+        gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO
+        of four declared cell keys were false — v_fpl_kpi claimed 0 multi-row against 11.689.530,
+        and v_fpl_tm_kpi 0 against 176.279 (99,96 %). The two that HELD are the two that a view
+        enforces: fpl_ob_reach_kpi, which withholds ambiguous cells, and v_fpl_kpi_current, whose
+        collapse makes the key true by construction (claimed 15.483.849, reproduces at 15.483.965,
+        +116). That is the shape of the defect: the declaration is false exactly where nothing makes
+        it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case — same subject,
         same value shape, same closed domain with non-empty overlap. Where there is NO core
         equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC,
         rather than declaring beside it. Enforced by tools/check_extension_keys.py, which exits

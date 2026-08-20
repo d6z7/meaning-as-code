@@ -19,11 +19,17 @@ relation. Measured the day it was retired, with the core schema untouched around
 
     v_fpl_kpi          declared 0 multi-row (VERIFIED 2026-08-16)  ->  11.689.530 multi-row
     v_fpl_tm_kpi       declared 0 multi-row, 0 divergent           ->  176.279 multi-row (99,96 %)
-    v_fpl_kpi_current  declared 15.483.849 cells, 0 multi-row      ->  THE TABLE DOES NOT EXIST
+    fpl_ob_reach_kpi   declared 0 ambiguous                        ->  0. HOLDS.
+    v_fpl_kpi_current  declared 15.483.849 cells                   ->  15.483.965 (+116). HOLDS.
 
-Three of four false, one of them about a relation that was never deployed. Not because anyone was
-careless — because the field was unreachable by every gate in the system, so being wrong cost
-nothing. That is the whole argument: an extension is not a small schema, it is an UNCHECKED one.
+Two of four false — and WHICH two is the interesting half. Both survivors are views that ENFORCE the
+key: fpl_ob_reach_kpi withholds ambiguous cells, and v_fpl_kpi_current collapses to one row per cell,
+so its key is true by construction. The two that rotted are the pass-through facts, where the
+declaration was the only thing standing between the reader and a doubled number.
+
+So the argument is not that anyone was careless. The field was unreachable by every gate in the
+system, so being wrong cost nothing and stayed invisible. An extension is not a small schema, it is
+an UNCHECKED one.
 
 ── THE THREE PREDICATES (C6) ─────────────────────────────────────────────────────────────────────
 Every `x-` key is an error. When it also DUPLICATES a core field, the message says which one, so the
@@ -141,8 +147,8 @@ def main() -> int:
     if found:
         files = len({f["file"] for f in found})
         print(f"\n✗ {len(found)} extension key(s) in {files} file(s). An `x-` key is outside every gate")
-        print("  MAC has, so nothing can check what it holds — which is how three of four declared")
-        print("  cell keys came to be false, one of them about a table that does not exist.")
+        print("  MAC has, so nothing can check what it holds — which is how two of four declared cell")
+        print("  keys came to be false, both of them on the relations where nothing enforced the key.")
         return 1
     print(f"✓ OK — no `x-` extension keys ({len(CORE)} core homes known)")
     return 0
