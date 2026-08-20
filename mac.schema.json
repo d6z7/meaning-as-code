@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.10",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.13 (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.14-develop",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
     {
@@ -2287,8 +2287,13 @@
             "description": "One invariant.",
             "required": [
               "id",
+              "family",
+              "test_kind",
+              "severity",
               "statement",
-              "sql"
+              "assertion",
+              "sql",
+              "validates"
             ],
             "properties": {
               "id": {
@@ -2311,7 +2316,43 @@
                 "type": "string"
               },
               "assertion": {
-                "type": "object"
+                "description": "WHAT IS CLAIMED, and one claim only. Was an untyped object: three unrelated questions could be collapsed into a single must_be_zero and a reader could not tell WHICH claim broke. `type` is closed; `columns` names the projected columns carrying the verdict; `expect` is used only by `equals`. A property making several claims is several properties.",
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type"
+                ],
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "must_be_zero",
+                      "min_value",
+                      "max_value",
+                      "equals"
+                    ],
+                    "description": "the closed set of pass/fail predicates the runner implements"
+                  },
+                  "columns": {
+                    "type": "array",
+                    "minItems": 1,
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "projected columns carrying the verdict; every one must be returned by `sql`"
+                  },
+                  "expect": {
+                    "type": "object",
+                    "description": "`equals` only: column -> expected value. A measured value, dated in `source`."
+                  },
+                  "tolerance": {
+                    "type": [
+                      "number",
+                      "string"
+                    ],
+                    "description": "the band. Meaningless for must_be_zero; required by min_value/max_value."
+                  }
+                }
               },
               "tolerance": {},
               "sql": {
@@ -2322,18 +2363,51 @@
                 "items": {
                   "type": "string"
                 },
-                "description": "v0.1.17: the CONCEPTS this property holds to account — the attribution link that makes L2 evidence usable. Without it a property passes and no concept learns anything: the suite proves the warehouse satisfies an assumption, but nothing records WHICH part of the model was thereby execution-validated, so FRAMEWORK.md §8's third rung cannot be measured for any object. Each entry is a concept.name. A property validating nothing is legal and means exactly that — a warehouse invariant no concept depends on, which is worth knowing."
+                "description": "v0.1.17: the CONCEPTS this property holds to account — the attribution link that makes L2 evidence usable. Without it a property passes and no concept learns anything: the suite proves the warehouse satisfies an assumption, but nothing records WHICH part of the model was thereby execution-validated, so FRAMEWORK.md §8's third rung cannot be measured for any object. Each entry is a concept.name. A property validating nothing is legal and means exactly that — a warehouse invariant no concept depends on, which is worth knowing. REQUIRED as of this generation: an artifact nobody tests is a claim. It was optional and stood unfilled on 0 of 59 properties."
+              },
+              "test_kind": {
+                "type": "string",
+                "description": "mac.test_kind.conformance | mac.test_kind.ground_truth. WHERE THE STANDARD COMES FROM, and the two have opposite obligations. conformance: every asserted value is RENDERED from a declaration at run time — a typed literal IS the defect. ground_truth: measures the world and must NOT be generated from the declaration's own claims, because its purpose is to disagree when the declaration is stale. A property that is both can be trusted for neither."
+              },
+              "accepted": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "a dated, signed decision to live with a red. NOT a pass. Already honoured by the runner; given a shape here so it cannot be an unsigned note.",
+                "required": [
+                  "dq_id",
+                  "reason",
+                  "by",
+                  "on"
+                ],
+                "properties": {
+                  "dq_id": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "by": {
+                    "enum": [
+                      "operator",
+                      "sme"
+                    ]
+                  },
+                  "on": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "expires": {
+                    "type": "string",
+                    "format": "date"
+                  }
+                }
               }
             },
-            "patternProperties": {
-              "^x-": true
-            }
+            "additionalProperties": false
           }
         }
       },
-      "patternProperties": {
-        "^x-": true
-      }
+      "additionalProperties": false
     },
     "InterventionLedgerFile": {
       "type": "object",

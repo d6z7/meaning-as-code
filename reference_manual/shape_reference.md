@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.13)
+## Structural shapes — generated (schema 0.1.14)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -620,15 +620,25 @@ not_expressible: [ ... ]
 properties:  # REQUIRED
   - <item>
     id: <…>  # REQUIRED · string
-    family: <…>  # string
-    severity: <…>  # enum: blocker | major | minor
+    family: <…>  # REQUIRED · string
+    severity: <…>  # REQUIRED · enum: blocker | major | minor
     source: <…>  # string
     statement: <…>  # REQUIRED · string
-    assertion:  # open: extra keys allowed
+    assertion:  # REQUIRED · WHAT IS CLAIMED, and one claim only  # closed: only keys above
+      type: <…>  # REQUIRED · enum: must_be_zero | min_value | max_value | equals · the closed set of pass/fail predicates the runner implements
+      columns: [ ... ]  # projected columns carrying the verdict; every one must be returned by…
+      expect:  # `equals` only: column -> expected value  # open: extra keys allowed
+      tolerance: <…>  # number|string · the band
     tolerance: <…>
     sql: <…>  # REQUIRED · string
-    validates: [ ... ]  # v0.1.17: the CONCEPTS this property holds to account — the attribution…
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
+    validates: [ ... ]  # REQUIRED · v0.1.17: the CONCEPTS this property holds to account — the attribution…
+    test_kind: <…>  # REQUIRED · string · mac.test_kind.conformance | mac.test_kind.ground_truth
+    accepted:  # a dated, signed decision to live with a red  # closed: only keys above
+      dq_id: <…>  # REQUIRED · string
+      reason: <…>  # REQUIRED · string
+      by: <…>  # REQUIRED · enum: operator | sme
+      on: <…>  # REQUIRED · string
+      expires: <…>  # string
 ```
 
 ### InterventionLedgerFile

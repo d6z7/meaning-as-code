@@ -116,8 +116,11 @@ def _edge_enrichment_warnings(path, doc):
 # (tools/mac_checks_structure.py) reads the SAME answer this gate prints, rather than re-deriving it.
 
 SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projections/ = generated exports, not source
-CURRENT = '0.1.13'                        # current MAC schema version = mac_vocabulary.yaml `version` (0.1.13 added the OPTIONAL typed-rule `subject` field + the vocab's aggregation_effect.averageable / MeasureType.Intensive; additive over 0.1.12's relationAliasBlock + business-edge shared_attribute + edge.resolved_by/aliases)
-RECOGNIZED = {CURRENT, '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during
+CURRENT = '0.1.14-develop'                        # current MAC schema version = mac_vocabulary.yaml `version` (0.1.13 added the OPTIONAL typed-rule `subject` field + the vocab's aggregation_effect.averageable / MeasureType.Intensive; additive over 0.1.12's relationAliasBlock + business-edge shared_attribute + edge.resolved_by/aliases)
+RECOGNIZED = {CURRENT, CURRENT.split('-')[0], '0.1.13', '0.1.12', '0.1.11', '0.1.10', '0.1.9'} # TRANSITIONAL: each bump is additive, so older content stays checked during. CURRENT may be a
+# PRE-RELEASE ('0.1.14-develop'); its BASE ('0.1.14') is kept too, because bundle files carry the
+# released number and would otherwise all fall out of the set the moment develop opens a
+# generation — 63 files silently skipped, which is worse than a red.
                                           # migration (not orphaned). Drop older versions once all content reconforms —
                                           # that finish is dev-only, not for main.
 
