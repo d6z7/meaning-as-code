@@ -47,12 +47,14 @@ import sys
 
 import yaml
 
-GEN = "mac_generate_ontology_tests.py/4"
+GEN = "mac_generate_ontology_tests.py/5"
 
 # concepts whose declared value set matches no grounded column — reported, never guessed
 UNMATCHED: list[tuple[str, str, str]] = []
 # concepts whose declared key is NOT the relation's grain — a finding, not a test
 NOT_GRAIN: list[tuple[str, str, str]] = []
+# concepts whose canonical_key is not a column of the relation they ground on
+NO_IDENT_COLUMN: list[tuple[str, str, str, str]] = []
 
 
 def measured_key(root: pathlib.Path, rel: str) -> list[str]:
@@ -161,6 +163,26 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
                  {"type": "must_be_zero", "columns": ["keys_holding_more_than_one_row"]})
 
     ident = (c.get("identity") or {}).get("canonical_key")
+    # DO NOT TEST A COLUMN THE RELATION DOES NOT HAVE. Three generated tests died as Athena
+    # COLUMN_NOT_FOUND: Brand identifies itself by `brand_letter` where the relation carries
+    # `fpl_brand_letter`; Market by `fpl_brand_country_code`, which dim_country_register has no
+    # column resembling; SalesArea declares no canonical_key at all and got a test regardless.
+    # Those are three real modelling gaps — reported, not thrown at the warehouse to discover.
+    if ident and srcs:
+        stem0 = _rel(srcs[0]).split(".")[-1]
+        have = set()
+        for dd in ("datasets", "sources"):
+            f0 = root / "data" / dd / f"{stem0}.yaml"
+            if f0.exists():
+                have = {str(x.get("name")) for x in
+                        (yaml.safe_load(f0.read_text(encoding="utf-8")) or {}).get("columns") or []}
+                break
+        if have and ident not in have:
+            NO_IDENT_COLUMN.append((name, _rel(srcs[0]), str(ident),
+                                    ", ".join(sorted(x for x in have if ident.split("_")[-1] in x)) or "nothing similar"))
+            ident = None
+    elif srcs and not ident:
+        NO_IDENT_COLUMN.append((name, _rel(srcs[0]), "(none declared)", "-"))
     if ident and srcs:
         rel = _rel(srcs[0])
         if rel:
@@ -239,6 +261,12 @@ def main() -> int:
 
     from collections import Counter
     print(f"  {len(props)} conformance properties from {seen} concept(s)")
+    if NO_IDENT_COLUMN:
+        print(f"\n  {len(NO_IDENT_COLUMN)} concept(s) identify themselves by a column their relation")
+        print(f"  does NOT have. No test generated — a query that cannot compile is not a finding:")
+        for nm, rel, key, near in NO_IDENT_COLUMN:
+            print(f"     {nm:<14}{rel:<28}{key:<26}nearest: {near}")
+        print()
     if NOT_GRAIN:
         print(f"\n  {len(NOT_GRAIN)} concept(s) key on something that is NOT the relation's grain.")
         print(f"  No key_grain test generated — the concept is a DISCRIMINATOR there, not the row")
