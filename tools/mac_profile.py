@@ -31,7 +31,13 @@ import sys
 
 import yaml
 
-TOOL = "mac_profile.py/1"
+TOOL = "mac_profile.py/2"
+
+# A column with at most this many distinct values is treated as BOUNDED and its full value set is
+# captured. Above it, membership is volume — a model-code list grows by design — and only the count
+# is kept. The threshold is deliberately generous: 18 delivery statuses and 21 measures must fit,
+# and enumerating 578 market codes is cheap insurance against a brand-scoped scheme changing.
+BOUNDED_MAX = 600
 
 # Types worth a min/max. A min/max over a free-text column is noise, not a fact.
 ORDERABLE = ("date", "time", "timestamp", "int", "bigint", "smallint", "tinyint",
@@ -60,6 +66,16 @@ def watermark_sql(relation: str, columns: list[dict]) -> str | None:
     return None
 
 
+def bounded_values_sql(relation: str, cols: list[str]) -> str:
+    """ALL bounded columns in ONE scan. One query per column meant ~13 additional passes over an
+    800-million-row table, ~10 GB each — the census itself costs 9,8 GB, so the value capture would
+    have cost thirteen times the thing it decorates. array_agg(DISTINCT) collects every set in the
+    same pass."""
+    sel = [f'array_join(array_sort(array_agg(DISTINCT CAST("{c}" AS varchar))), chr(31)) AS v{i}'
+           for i, c in enumerate(cols)]
+    return "SELECT " + ", ".join(sel) + f"\nFROM {relation}"
+
+
 def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> dict:
     """Fold the measurement into the descriptor. Only ever writes the two machine-owned blocks."""
     n = int(row["n_rows"])
@@ -67,6 +83,8 @@ def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> dict:
         prof = {"distinct": int(row[f"d{i}"]), "nulls": int(row[f"z{i}"])}
         if f"mn{i}" in row:
             prof["min"], prof["max"] = row.get(f"mn{i}"), row.get(f"mx{i}")
+        if c["name"] in (meta.get("bounded") or {}):
+            prof["values"] = meta["bounded"][c["name"]]
         for target in doc.get("columns") or []:
             if target.get("name") == c["name"]:
                 # preserve `determined_by` — it is written by the admission pass, not by the census
@@ -119,6 +137,18 @@ def main() -> int:
     ath = Athena(eng["profile"], eng["region"], eng["workgroup"], eng["database"])
 
     rows, meta = ath.query(sql)
+
+    # SECOND PASS, only for columns small enough to enumerate. The census says HOW MANY; for a
+    # bounded column the structure is WHICH, and a rename leaves the count untouched.
+    bounded, want = {}, [str(c["name"]) for i, c in enumerate(columns)
+                        if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX]
+    if want:
+        vr, vmeta = ath.query(bounded_values_sql(relation, want))
+        for i, name in enumerate(want):
+            raw = vr[0].get(f"v{i}")
+            bounded[name] = raw.split(chr(31)) if raw else []
+        meta["bytes_scanned"] = (meta.get("bytes_scanned") or 0) + (vmeta.get("bytes_scanned") or 0)
+
     wm_sql = watermark_sql(relation, columns)
     newest = None
     if wm_sql:
@@ -128,6 +158,7 @@ def main() -> int:
     doc = apply(doc, rows[0], columns, {
         "measured_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "newest_write": newest,
+        "bounded": bounded,
         "engine": f"{eng.get('database')}@{eng.get('region')}",
         "scanned_bytes": meta.get("bytes_scanned"),
     })

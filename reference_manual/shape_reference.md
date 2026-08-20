@@ -460,6 +460,7 @@ columns:  # REQUIRED
       min: <…>  # string|number|null · orderable columns only, as text
       max: <…>  # string|number|null
       determined_by: [ ... ]  # columns that FUNCTIONALLY DETERMINE this one
+      values: [ ... ]  # THE FULL VALUE SET, captured only where the column is BOUNDED (few…
 
 foreign_keys:
   - <item>

@@ -1974,6 +1974,18 @@
                     },
                     "uniqueItems": true,
                     "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: `brand_letter` is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
+                  },
+                  "values": {
+                    "type": "array",
+                    "items": {
+                      "type": [
+                        "string",
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "uniqueItems": true,
+                    "description": "THE FULL VALUE SET, captured only where the column is BOUNDED (few enough values to enumerate). For an enumeration the values ARE the structure and the count is not: `role: 6 distinct` cannot tell a seventh perspective appearing from one being RENAMED — both leave the count at 6. Absent on high-cardinality columns, deliberately: a model code list grows by design, so its membership is volume, not structure."
                   }
                 }
               }
