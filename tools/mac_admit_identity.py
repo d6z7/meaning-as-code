@@ -166,6 +166,12 @@ def main() -> int:
                     help="the column agreement is tested on. THE ONE BIT A HUMAN SUPPLIES — if it is "
                          "wrong, every classification below it is confidently wrong with full "
                          "evidence attached.")
+    ap.add_argument("--rule", action="append", default=[], metavar="COL=identity|delivery",
+                    help="record a HUMAN's ruling on a COLLAPSIBLE column. The tool measures and "
+                         "refuses to decide; this is how the decision comes back in, through the same "
+                         "tool, so the design fact and the evidence that prompted it stay together. "
+                         "Repeatable. Only the column ROLE is written — the ruling's provenance "
+                         "belongs in interventions/ledger.yaml, which is the change protocol.")
     ap.add_argument("--exclude", default="",
                     help="comma-separated columns kept OUT of the key search. Use it for a column "
                          "already ruled a DELIVERY axis: a concatenated surrogate wins every greedy "
@@ -268,7 +274,9 @@ def main() -> int:
         de = lambda v: f"{v:,}".replace(",", ".")
         print("   %-26s %14s %14s %14s  %-12s %s" % (c, de(g), de(sp), de(dg), cls, ratio))
 
-    collapsible = [c for c, v in verdict.items() if v in ("COLLAPSIBLE", "UNCLEAR")]
+    already = {x.partition("=")[0].strip() for x in a.rule}
+    collapsible = [c for c, v in verdict.items()
+                   if v in ("COLLAPSIBLE", "UNCLEAR") and c not in already]
     print()
     if collapsible:
         print("  THE IRREDUCIBLE RESIDUE — no statistic decides these, because the difference is what")
@@ -328,10 +336,27 @@ def main() -> int:
         from run_properties import source_watermark
         wm = (source_watermark(ath, [rel]).get(rel) or {}).get("newest_write")
 
+        ruled = {}
+        for spec in a.rule:
+            c, _, how = spec.partition("=")
+            if how not in ("identity", "delivery"):
+                print(f"  --rule {spec}: expected identity or delivery", file=sys.stderr)
+                return 2
+            if verdict.get(c.strip()) not in ("COLLAPSIBLE", "UNCLEAR"):
+                # Ruling a column the measurement already settled would let a human quietly overturn
+                # evidence through a flag meant for the residue. The residue is the only thing open.
+                print(f"  --rule {c.strip()}: not in the residue (measured "
+                      f"{verdict.get(c.strip(), 'not a candidate')}) — refusing", file=sys.stderr)
+                return 2
+            ruled[c.strip()] = how
+
         for col in doc.get("columns") or []:
             n = str(col["name"])
             v = verdict.get(n)
-            if v == "IDENTITY":
+            if n in ruled:
+                col["role"] = "composite_key_part" if ruled[n] == "identity" else "delivery_axis"
+                print(f"  RULED — {n}: {ruled[n]} → role: {col['role']}")
+            elif v == "IDENTITY":
                 col["role"] = "composite_key_part"
             # COLLAPSIBLE is deliberately NOT written. It is the residue, and a residue the machine
             # settles is not a residue. The column keeps whatever role it has — 'unknown' is already
@@ -349,9 +374,13 @@ def main() -> int:
             "measure": a.measure,
             "stratum": a.stratum,
             "excluded": sorted(drop) or None,
-            "key": [c for c in basis if verdict.get(c) == "IDENTITY"],
-            "delivery_axes": [c for c in basis
-                              if (doc_role(doc, c) == "delivery_axis")] or None,
+            # The key is what the MEASUREMENT settled PLUS what a human ruled into it. Writing only
+            # the measured half left `key` disagreeing with the column roles in the same file — the
+            # two-numbers-for-one-fact defect, reappearing inside the tool built to end it.
+            "key": [c for c in basis
+                    if verdict.get(c) == "IDENTITY" or ruled.get(c) == "identity"],
+            "delivery_axes": [c for c in basis if ruled.get(c) == "delivery"] or None,
+            "ruled": sorted(ruled) or None,
             "full_groups": full_groups,
             "columns": [{"name": c, "groups": int(by[c]["groups"]), "split": int(by[c]["split"]),
                          "disagree": int(by[c]["disagree"]), "verdict": verdict[c]}

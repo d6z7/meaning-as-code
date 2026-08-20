@@ -2216,6 +2216,14 @@
         }
        },
        "description": "per candidate: what leaving it out did"
+      },
+      "ruled": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "uniqueItems": true,
+       "description": "columns a HUMAN placed in the key or the delivery axes, which the measurement could not settle. Named separately from `key` so the two halves stay distinguishable: everything else in `key` was derived, these were decided. A later re-measurement must not silently overwrite a ruling, and a reader must be able to see which columns rest on evidence and which on a judgement."
       }
      }
     }

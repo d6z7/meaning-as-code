@@ -517,6 +517,7 @@ identity_evidence:  # v0.1.14 (C3): the PROOF behind the column roles — machin
       split: <…>  # REQUIRED · integer · of those, how many gained a second row
       disagree: <…>  # REQUIRED · integer · of those, how many carry DIFFERENT measure values
       verdict: <…>  # REQUIRED · enum: DEAD | IDENTITY | COLLAPSIBLE | UNCLEAR
+  ruled: [ ... ]  # columns a HUMAN placed in the key or the delivery axes, which the…
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
