@@ -113,7 +113,7 @@ def traces_to_warehouse(col: str, sql: str, tree, lit: set[str]) -> bool | None:
     return bool(real)
 
 
-def audit(prop: dict, resolve) -> list[str]:
+def audit(prop: dict, resolve, n_rows: int | None = None) -> list[str]:
     # A conformance property is not valid SQL until its declarations are rendered — `@n:` and
     # `@cols:` are substitution slots. Parsing before resolving reports the whole generated suite as
     # unparseable, which is a bug in the CHECKER masquerading as a finding about the tests.
@@ -140,6 +140,34 @@ def audit(prop: dict, resolve) -> list[str]:
                 produced[nm] = e
 
     findings = []
+    # ── A ROW-PER-CASE TABLE MUST CARRY ROW FACTS ─────────────────────────────────────────────
+    # Operator: "you cannot have cumulative value in every column". M-BRAND-KPI-01 returns 42 rows,
+    # one per brand x measure, and puts `cases_with_no_figure: 2` on ALL of them — so the table says
+    # "2" beside Audi, which is true of the run and meaningless of the row. A reader cannot see WHICH
+    # case failed, which is the only thing the table exists to show. It also fails the assertion 42
+    # times over instead of twice.
+    for col, e in produced.items():
+        if col not in want:
+            continue
+        sub = next((x for x in e.find_all(exp.Subquery)), None)
+        win = next((x for x in e.find_all(exp.Window)), None)
+        constant = False
+        if win is not None and not (win.args.get("partition_by") or win.args.get("order")):
+            constant = True
+        if sub is not None:
+            outer_tables = {t.name.lower() for t in (outer.args.get("from").find_all(exp.Table)
+                                                    if outer and outer.args.get("from") else [])}
+            inner_tables = {t.name.lower() for t in sub.find_all(exp.Table)}
+            if not (inner_tables & outer_tables):        # uncorrelated -> same value every row
+                constant = True
+        # ONLY WHERE THE PROPERTY EMITS MANY ROWS. A single-row summary may legitimately report a
+        # total — there is no other row for it to be wrong beside. Judged on the RECORDED RUN, which
+        # knows exactly how many rows came back; the first cut guessed from the SQL shape and flagged
+        # 318 of 300, most of them one-row generated properties.
+        if constant and (n_rows or 0) > 1:
+            findings.append(f"WHOLE-RESULT: `{col}` is the same on every row — a run-level total "
+                            f"repeated per row, so the table cannot show WHICH row failed")
+
     for col in want:
         if col not in produced:
             findings.append(f"ABSENT: assertion names `{col}`, which the SQL never returns")
@@ -179,6 +207,18 @@ def main() -> int:
         except Exception:
             pass
 
+    # how many rows each property actually returned, from the recorded runs
+    runs: dict[str, int] = {}
+    for rf in glob.glob(os.path.join(a.root, "acceptance", "*_runs.json")):
+        try:
+            doc = json.load(open(rf, encoding="utf-8"))
+        except Exception:
+            continue
+        for r in doc.get("results") or []:
+            rows = r.get("rows")
+            if isinstance(rows, list):
+                runs[r.get("id")] = len(rows)
+
     out, n = [], 0
     for f in sorted(glob.glob(os.path.join(a.root, "acceptance", "*.yaml"))):
         doc = yaml.safe_load(open(f, encoding="utf-8"))
@@ -188,7 +228,7 @@ def main() -> int:
             if not isinstance(p, dict):
                 continue
             n += 1
-            for msg in audit(p, resolve):
+            for msg in audit(p, resolve, runs.get(p.get("id"))):
                 out.append({"file": os.path.basename(f), "id": p.get("id"), "finding": msg})
     if a.json:
         print(json.dumps({"findings": out}, indent=1, ensure_ascii=False))
