@@ -110,7 +110,7 @@ concept:  # REQUIRED
   german: <…>  # string
   class: <…>  # REQUIRED · enum: entity | event | measure | enumeration | reference | grouping | meta · The closed seven-class vocabulary
   definition: <…>  # string
-  semantics:  # The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).  # closed: only keys above + x-*
+  semantics:  # The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).  # closed: only keys above
     purpose: <…>  # string
     scope: <…>  # string
     additivity:  # Per-dimension aggregation rule — the footgun-preventer  # open: extra keys allowed
@@ -118,7 +118,7 @@ concept:  # REQUIRED
     measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a mac.MeasureType…
     unit: <…>  # string
     null_semantics: <…>  # string
-    realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+    realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
       applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
@@ -126,7 +126,7 @@ concept:  # REQUIRED
   notes: <…>  # string
   grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
   related_axis: <…>  # string
-  identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above + x-*
+  identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above
     kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | resolved_axis | sme_pending · mac.identity_kind.<term> — how the canonical identity is established.
     canonical_key: <…>  # string · the column/expression that IS the identity (omit for resolved_axis /…
     note: <…>  # string
@@ -149,7 +149,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
       subject: <…>  # string · v0.1.13: a SHORT email-subject-style headline naming the rule's…
       binds: [ ... ]  # the grounded field(s) this rule governs — must be columns of the table…
       enforced_by: <…>  # string · deterministic backstop (e.g
-      realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+      realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
         udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
         params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
         applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
@@ -172,14 +172,14 @@ values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set 
       from: <…>  # string|array · raw source attribute(s) this value was conformed from (a list when…
   unmapped:  # the orphan-quarantine bucket — how raw values outside the closed set…  # open: extra keys allowed
   canonicalization: <…>  # string|object · how raw spellings/duplicates were conformed to the canonical codes.
-  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
     note: <…>  # string
-  aliases:  # v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a…  # closed: only keys above + x-*
+  aliases:  # v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a…  # closed: only keys above
     scope_key: <…>  # string · the dimension/column whose value selects a Tier-1 scope_relative row…
-    realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+    realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
       applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
@@ -222,7 +222,7 @@ members:  # one of: array | object · v0.5 grouping template — how a grouping 
       members: [ ... ]  # (explicit) the leaf codes in this set
       derived_rule: <…>  # string|object · (derived) how this set's members are computed
       confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
-  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
@@ -272,7 +272,7 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
   field_roles:  # v0.1.7: the WHITELIST of grounded columns that carry ontology meaning,…  # open: extra keys allowed
   note: <…>  # string
   notes: <…>  # string
-  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+  realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
@@ -310,7 +310,6 @@ open_questions:
     category: <…>  # string
     note: <…>  # string
     cross_references: <…>  # array|string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 **Per `concept.class` (conditional shape):**
@@ -360,7 +359,6 @@ rules:  # REQUIRED
     inspectable: <…>  # boolean
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     cross_references: <…>  # array|string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### EdgesFile
@@ -389,14 +387,14 @@ edges:  # REQUIRED
     edge_id: <…>  # string
     level: <…>  # REQUIRED · enum: physical | business | federation
     type: <…>  # REQUIRED · string
-    endpoints:  # REQUIRED  # closed: only keys above + x-*
-      from:  # REQUIRED · v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table  # closed: only keys above + x-*
+    endpoints:  # REQUIRED  # closed: only keys above
+      from:  # REQUIRED · v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table  # closed: only keys above
         source: <…>  # string · the source/ontology this concept belongs to (enables cross-source…
         concept: <…>  # REQUIRED · string · REQUIRED — the concept at this end of the edge.
         ref: <…>  # string · pointer to the concept definition (path#anchor), resolved cross-file by…
         role: <…>  # string · the relationship role/name read from this end (typically on `from`): e.g
         cardinality: <…>  # string
-      to:  # REQUIRED · v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table  # closed: only keys above + x-*
+      to:  # REQUIRED · v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table  # closed: only keys above
         source: <…>  # string · the source/ontology this concept belongs to (enables cross-source…
         concept: <…>  # REQUIRED · string · REQUIRED — the concept at this end of the edge.
         ref: <…>  # string · pointer to the concept definition (path#anchor), resolved cross-file by…
@@ -406,13 +404,13 @@ edges:  # REQUIRED
     verified_by: <…>  # string · (additive) a resolvable ref (path.yaml#id) to a data expectation that…
     realized_by: <…>
     resolved_by: <…>  # string · v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution…
-    aliases:  # v0.1.12 (additive): the auditable, first-class NL trigger vocabulary…  # closed: only keys above + x-*
-      realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above + x-*
+    aliases:  # v0.1.12 (additive): the auditable, first-class NL trigger vocabulary…  # closed: only keys above
+      realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
         udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
         params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
         applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
         note: <…>  # string
-      multilingual:  # scope-free NL surfaces by language that trigger this relation — the…  # closed: only keys above + x-*
+      multilingual:  # scope-free NL surfaces by language that trigger this relation — the…  # closed: only keys above
         de: [ ... ]
         en: [ ... ]
         syn: [ ... ]
@@ -421,7 +419,6 @@ edges:  # REQUIRED
     federation_concept_id: <…>  # string
     notes: <…>  # string
     cross_references: <…>  # array|string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### TableFile
@@ -485,7 +482,6 @@ governance:  # Housekeeping
       change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
       by: <…>  # string
       rationale: <…>  # string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### TransformFile
@@ -535,7 +531,6 @@ governance:  # Housekeeping
       change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
       by: <…>  # string
       rationale: <…>  # string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### ProjectFile
@@ -598,7 +593,6 @@ reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the
 acceptance:  # Where this source declares its test-verification artifacts for the…
 
 lookups: <…>  # string · data/lookups root — the value registers a concept may delegate to.
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### PropertiesFile
@@ -666,7 +660,6 @@ interventions:  # REQUIRED
     dq_ids: [ ... ]
     evidence: <…>
     sme_owner: <…>  # string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### VanillaDeltaFile
@@ -691,7 +684,6 @@ deltas:  # REQUIRED
     ledger_ref: <…>  # string
     objects: [ ... ]
     evidence: <…>
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### DataQualityRegisterFile
@@ -711,7 +703,6 @@ issues:  # REQUIRED
     current_handling: <…>  # string
     residual_risk: <…>  # string
     sme_owner: <…>  # string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### ImpurityResolutionMapFile
@@ -727,7 +718,6 @@ resolutions:  # REQUIRED
     coverage: <…>  # string
     resolving_transforms: [ ... ]
     guarantee: <…>  # string
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### KnowledgeSectionsFile
@@ -745,7 +735,6 @@ sections:  # REQUIRED
     slug: <…>  # string
     source: <…>
     aspects:  # open: extra keys allowed
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### PhaseFile
@@ -758,7 +747,6 @@ phase: <…>  # REQUIRED · enum: BUILD | TUNE
 lock: <…>
 
 notes: <…>
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### ShapesFile
@@ -774,7 +762,6 @@ shapes:  # REQUIRED
     where:  # open: extra keys allowed
     severity: <…>  # enum: error | warning | info
     constraint:  # open: extra keys allowed
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### ProtoSqlFile
@@ -785,7 +772,6 @@ shapes:  # REQUIRED
 metadata:
 
 rule:  # REQUIRED
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 ### SmeLedgerFile
@@ -807,7 +793,6 @@ questions:  # REQUIRED
     answer: <…>  # string
     answered_by: <…>  # string
     answered_on: <…>
-# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
 <!-- END GENERATED:schema-shapes -->

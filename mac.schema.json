@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
  "title": "Meaning-as-Code (MAC) — formal schema v0.1.14-develop",
- "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration).",
+ "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
  "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
  "oneOf": [
   {
@@ -89,9 +89,6 @@
        "description": "pointer to the consuming concept/ontology file (documentation only)"
       }
      },
-     "patternProperties": {
-      "^x-": true
-     },
      "additionalProperties": false
     },
     "inputs": {
@@ -130,9 +127,6 @@
        "note": {
         "type": "string"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       },
       "additionalProperties": false
      }
@@ -179,9 +173,6 @@
         "type": "string"
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     },
@@ -195,9 +186,6 @@
     "governance": {
      "$ref": "#/$defs/governance"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -235,9 +223,6 @@
     "cardinality": {
      "type": "string"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -300,9 +285,6 @@
      }
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "openQuestion": {
@@ -348,9 +330,6 @@
      ]
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "additivityAxis": {
@@ -391,9 +370,6 @@
     "note": {
      "type": "string"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -453,9 +429,6 @@
      "description": "v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero."
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "contract": {
@@ -507,9 +480,6 @@
        "kind"
       ],
       "additionalProperties": false,
-      "patternProperties": {
-       "^x-": true
-      },
       "properties": {
        "id": {
         "type": "string",
@@ -602,9 +572,6 @@
      }
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": true
   },
   "grounding": {
@@ -639,9 +606,6 @@
         "type": "array",
         "description": "the columns this concept uses"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       },
       "additionalProperties": true
      }
@@ -724,9 +688,6 @@
      "description": "v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter."
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "constraintEntry": {
@@ -758,9 +719,6 @@
     "notes": {
      "type": "string"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -841,9 +799,6 @@
      "description": "v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum."
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "aliasBlock": {
@@ -894,9 +849,6 @@
           }
          }
         },
-        "patternProperties": {
-         "^x-": true
-        },
         "additionalProperties": false
        },
        "scope_relative": {
@@ -908,9 +860,6 @@
         "description": "an authoring alias of scope_relative for brand-scoped enums (loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes."
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     }
@@ -918,9 +867,6 @@
    "required": [
     "map"
    ],
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": false
   },
   "aliasScopeMap": {
@@ -964,14 +910,8 @@
        }
       }
      },
-     "patternProperties": {
-      "^x-": true
-     },
      "additionalProperties": false
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -1003,9 +943,6 @@
      "description": "(optional) an enumeration this property's values must belong to"
     }
    },
-   "patternProperties": {
-    "^x-": true
-   },
    "additionalProperties": true
   },
   "AttributeItem": {
@@ -1034,9 +971,6 @@
     "note": {
      "type": "string"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": true
   },
@@ -1067,9 +1001,6 @@
        ],
        "description": "(rule) how membership is computed — a FK / transitive walk"
       }
-     },
-     "patternProperties": {
-      "^x-": true
      },
      "additionalProperties": true
     },
@@ -1113,9 +1044,6 @@
         "$ref": "#/$defs/confidence"
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": true
      }
     },
@@ -1123,9 +1051,6 @@
      "$ref": "#/$defs/canonBinding",
      "description": "v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree."
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": true
   },
@@ -1181,9 +1106,6 @@
        "type": "string",
        "description": "Free-text note on how the raw source was profiled (e.g. 'Glue + Athena profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp."
       }
-     },
-     "patternProperties": {
-      "^x-": true
      },
      "additionalProperties": false
     },
@@ -1259,14 +1181,8 @@
        "required": [
         "kind"
        ],
-       "additionalProperties": false,
-       "patternProperties": {
-        "^x-": true
-       }
+       "additionalProperties": false
       }
-     },
-     "patternProperties": {
-      "^x-": true
      },
      "additionalProperties": false
     },
@@ -1338,9 +1254,6 @@
        "type": "string"
       }
      },
-     "patternProperties": {
-      "^x-": true
-     },
      "additionalProperties": false
     },
     "individual_kpis": {
@@ -1369,9 +1282,6 @@
       "$ref": "#/$defs/openQuestion"
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false,
    "allOf": [
@@ -1569,9 +1479,6 @@
         ]
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false,
       "allOf": [
        {
@@ -1610,9 +1517,6 @@
       ]
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -1668,9 +1572,6 @@
          "to": {
           "$ref": "#/$defs/EdgeEndpoint"
          }
-        },
-        "patternProperties": {
-         "^x-": true
         },
         "additionalProperties": false
        },
@@ -1810,15 +1711,9 @@
         }
        }
       ],
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -1858,9 +1753,6 @@
        "$ref": "#/$defs/confidence"
       }
      },
-     "patternProperties": {
-      "^x-": true
-     },
      "additionalProperties": false
     },
     "derived_from": {
@@ -1885,9 +1777,6 @@
       "notes": {
        "type": "string"
       }
-     },
-     "patternProperties": {
-      "^x-": true
      },
      "additionalProperties": true
     },
@@ -1943,9 +1832,6 @@
         "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know Skoda's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'Skoda has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     },
@@ -1988,9 +1874,6 @@
         "type": "string"
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     },
@@ -2010,18 +1893,12 @@
         "description": "descriptive reverse-pointer role (e.g. primary_table, referenced, discriminator_column) — free text, not a load-bearing controlled vocabulary."
        }
       },
-      "patternProperties": {
-       "^x-": true
-      },
       "additionalProperties": false
      }
     },
     "governance": {
      "$ref": "#/$defs/governance"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    },
    "additionalProperties": false
   },
@@ -2260,10 +2137,7 @@
      "description": "data/lookups root — the value registers a concept may delegate to."
     }
    },
-   "additionalProperties": false,
-   "patternProperties": {
-    "^x-": true
-   }
+   "additionalProperties": false
   },
   "PropertiesFile": {
    "type": "object",
@@ -2482,15 +2356,9 @@
        "sme_owner": {
         "type": "string"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "VanillaDeltaFile": {
@@ -2549,15 +2417,9 @@
         }
        },
        "evidence": {}
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "DataQualityRegisterFile": {
@@ -2613,15 +2475,9 @@
        "sme_owner": {
         "type": "string"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "ImpurityResolutionMapFile": {
@@ -2658,15 +2514,9 @@
        "guarantee": {
         "type": "string"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "KnowledgeSectionsFile": {
@@ -2703,15 +2553,9 @@
        "aspects": {
         "type": "object"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "PhaseFile": {
@@ -2729,9 +2573,6 @@
     },
     "lock": {},
     "notes": {}
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "ShapesFile": {
@@ -2773,15 +2614,9 @@
        "constraint": {
         "type": "object"
        }
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "ProtoSqlFile": {
@@ -2797,9 +2632,6 @@
     "rule": {
      "type": "object"
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "SmeLedgerFile": {
@@ -2851,15 +2683,9 @@
         "type": "string"
        },
        "answered_on": {}
-      },
-      "patternProperties": {
-       "^x-": true
       }
      }
     }
-   },
-   "patternProperties": {
-    "^x-": true
    }
   },
   "ProfileFile": {
