@@ -160,6 +160,40 @@ rule_kind:
 # supplies only params — it never re-encodes the logic. Coverage, not completeness (AUTHORING A5): this
 # is the set built and validated so far; it extends by branch → PR with a witnessing pattern.
 # ===========================================================================
+# ── THE TWO KINDS OF TEST, and they must never be mixed ─────────────────────────────────────────
+# Operator ruling 2026-08-20: "seems to be important finding too. dont loose it ... as we will have
+# to split our test center like this".
+#
+# It came out of a concrete defect. S-GRAIN carried `7 AS key_columns_declared` — a literal, typed
+# by the assistant, connected to nothing. His question was the right one: "who is declaring key
+# columns? is it ontology or is it you ... who is guaranteeing me that another incarnation of you
+# will not declare 4, 6, or 16?" Nobody was. And the rule he drew from it — "these tests must be
+# exclusively based on what ontology say" — is correct but has a trap, which is why this exists:
+# a test rendered entirely from the ontology AGREES WITH THE ONTOLOGY, so a wrong declaration
+# produces a green suite. The resolution is that there are two kinds with opposite obligations.
+test_kind:
+  kind: vocabulary
+  closed: true
+  description: >
+    Which question a property answers. The two kinds have OPPOSITE rules about where their numbers
+    come from, and a property that tries to be both can be trusted for neither.
+  terms:
+    conformance: >
+      DOES THE MODEL DO WHAT IT SAYS? Every value it asserts is READ from a declaration at run time
+      and never typed. A typed literal IS the defect here: a later author types a different one and
+      the test passes while checking something else. Render the key, the enumeration, the codes —
+      and REFUSE if they cannot be resolved, rather than substituting nothing into a PARTITION BY.
+    ground_truth: >
+      IS WHAT IT SAYS TRUE? Measures the world and compares it against the declaration, so it must
+      NOT be generated from the declaration's own claims — its entire purpose is to DISAGREE with
+      the descriptor when the descriptor has gone stale. It still READS the declaration, to know
+      what to test, but never inherits its assertions; a measured literal is acceptable where it is
+      dated and re-checkable. EXAMPLE — S-GRAIN-KPI reads x-grain.cell_key to learn which columns
+      identify one figure, then asks the warehouse whether that holds, and it is the property that
+      caught v_fpl_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" while the data says
+      944.308. A conformance test rendered from that same descriptor would have confirmed the claim
+      rather than contradicted it.
+
 canon:
   kind: value_domain
   closed: false                    # extends as patterns surface new deterministic needs (A5)
