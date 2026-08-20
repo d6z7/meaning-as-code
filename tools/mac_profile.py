@@ -31,13 +31,30 @@ import sys
 
 import yaml
 
-TOOL = "mac_profile.py/2"
+TOOL = "mac_profile.py/3"
 
 # A column with at most this many distinct values is treated as BOUNDED and its full value set is
 # captured. Above it, membership is volume — a model-code list grows by design — and only the count
 # is kept. The threshold is deliberately generous: 18 delivery statuses and 21 measures must fit,
 # and enumerating 578 market codes is cheap insurance against a brand-scoped scheme changing.
 BOUNDED_MAX = 600
+
+# A column whose value is itself a collection. dim_model carries seven — brand, powertrains,
+# body_styles and so on are array(string). CAST(array AS varchar) is a type error in Trino, and the
+# first sweep failed on exactly that. They are still profiled: the count of distinct ARRAYS and the
+# nulls are real facts. Only the value-set capture needs the array flattened to text first.
+COMPLEX = ("array", "map", "row", "struct")
+
+
+def _is_complex(c: dict) -> bool:
+    return any(str(c.get("type", "")).lower().startswith(k) for k in COMPLEX)
+
+
+def _as_text(name: str, complex_: bool) -> str:
+    """Render a column as comparable text. An array becomes its sorted joined members, so two rows
+    carrying the same set in a different order count as one value rather than two."""
+    q = f'"{name}"'
+    return (f"array_join(array_sort({q}), ',')" if complex_ else f"CAST({q} AS varchar)")
 
 # Types worth a min/max. A min/max over a free-text column is noise, not a fact.
 ORDERABLE = ("date", "time", "timestamp", "int", "bigint", "smallint", "tinyint",
@@ -66,13 +83,13 @@ def watermark_sql(relation: str, columns: list[dict]) -> str | None:
     return None
 
 
-def bounded_values_sql(relation: str, cols: list[str]) -> str:
+def bounded_values_sql(relation: str, cols: list[tuple[str, str]]) -> str:
     """ALL bounded columns in ONE scan. One query per column meant ~13 additional passes over an
     800-million-row table, ~10 GB each — the census itself costs 9,8 GB, so the value capture would
     have cost thirteen times the thing it decorates. array_agg(DISTINCT) collects every set in the
     same pass."""
-    sel = [f'array_join(array_sort(array_agg(DISTINCT CAST("{c}" AS varchar))), chr(31)) AS v{i}'
-           for i, c in enumerate(cols)]
+    sel = [f"array_join(array_sort(array_agg(DISTINCT {expr})), chr(31)) AS v{i}"
+           for i, (c, expr) in enumerate(cols)]
     return "SELECT " + ", ".join(sel) + f"\nFROM {relation}"
 
 
@@ -140,11 +157,12 @@ def main() -> int:
 
     # SECOND PASS, only for columns small enough to enumerate. The census says HOW MANY; for a
     # bounded column the structure is WHICH, and a rename leaves the count untouched.
-    bounded, want = {}, [str(c["name"]) for i, c in enumerate(columns)
-                        if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX]
+    want = [(str(c["name"]), _as_text(str(c["name"]), _is_complex(c)))
+            for i, c in enumerate(columns) if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX]
+    bounded = {}
     if want:
         vr, vmeta = ath.query(bounded_values_sql(relation, want))
-        for i, name in enumerate(want):
+        for i, (name, _) in enumerate(want):
             raw = vr[0].get(f"v{i}")
             bounded[name] = raw.split(chr(31)) if raw else []
         meta["bytes_scanned"] = (meta.get("bytes_scanned") or 0) + (vmeta.get("bytes_scanned") or 0)
