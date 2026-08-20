@@ -2859,11 +2859,17 @@
    "description": "v0.1.14 (C10): everything MEASURED about one relation, in its own file under data/profiles/, written only by machine.\n\nWHY IT IS NOT IN THE DESCRIPTOR. The runtime inlines every data/datasets/*.yaml verbatim into its system block and keys its prompt cache on those files' size and mtime. Profiling rewrites a descriptor on EVERY run — `measured_at` always moves, by design — so each re-measurement invalidated the whole cache for a change no engine could observe. Measured before the split: 64,9 % of the descriptor bytes were profile, and of that 95,3 % was the value domain (which the reader does need, and which stays) against 4,7 % census (which it does not).\n\nIt is also the R3 rule made physical: DESIGN FACTS (column role, the domain) are ruled once and live with the meaning; EVIDENCE rots and lives here. A human editing this file is a MAC002 error.",
    "additionalProperties": false,
    "required": [
+    "metadata",
     "of",
     "relation",
     "profile"
    ],
    "properties": {
+    "metadata": {
+     "type": "object",
+     "description": "carries schema_version so the validator does not SKIP this file. A skipped file is an unvalidated one, which for a machine-written plane is the whole risk.",
+     "additionalProperties": true
+    },
     "of": {
      "type": "string",
      "description": "descriptor stem this measures. A profile whose descriptor is gone is a measurement of nothing."

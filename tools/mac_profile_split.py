@@ -21,6 +21,8 @@ import sys
 
 import yaml
 
+SCHEMA_VERSION = "0.1.14-develop"
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from mac_profile import _enumerable          # ONE definition of "worth enumerating", not a second copy
 
@@ -48,7 +50,10 @@ def split(path: pathlib.Path, outdir: pathlib.Path, apply: bool) -> tuple[int, i
     if not (census or tprof or ie):
         return 0, 0
 
-    prof = {"of": path.stem, "relation": rel}
+    prof = {"metadata": {"schema_version": (doc.get("metadata") or {}).get("schema_version")
+                                              or SCHEMA_VERSION,
+                         "generated_by": "mac_profile_split.py/1"},
+            "of": path.stem, "relation": rel}
     if tprof: prof["profile"] = tprof
     if census: prof["columns"] = census
     if ie: prof["identity_evidence"] = ie

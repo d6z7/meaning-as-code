@@ -198,7 +198,8 @@ def enumerate_bundle(root, layout=None):
     for pat in ('**/concepts/**/*.yaml', '**/rules.yaml', '**/edges.yaml', '**/tables/*.yaml'):
         files += [f for f in glob.glob(os.path.join(root, pat), recursive=True) if not _skipped(f)]
     files += [f for f in glob.glob(str(layout.descriptors / '*.yaml')) if not _skipped(f)]  # two-plane: data/datasets/
-    for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None)):   # data/transforms/, data/sources/
+    for extra in (getattr(layout, 'transforms', None), getattr(layout, 'sources', None),
+                  getattr(layout, 'profiles', None)):   # data/transforms/, data/sources/, data/profiles/
         if extra:
             files += [f for f in glob.glob(str(extra / '*.yaml')) if not _skipped(f)]
     proj = os.path.join(root, 'mac.project.yaml')                                     # the bundle MANIFEST

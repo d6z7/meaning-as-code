@@ -31,6 +31,8 @@ import sys
 
 import yaml
 
+SCHEMA_VERSION = "0.1.14-develop"
+
 TOOL = "mac_profile.py/5"
 
 # A column with at most this many distinct values is treated as BOUNDED and its full value set is
@@ -141,6 +143,7 @@ def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> tuple[dict, 
                 target.pop("profile", None)      # pre-split residue
     doc.pop("profile", None)
     prof = {
+        "metadata": {"schema_version": SCHEMA_VERSION, "generated_by": TOOL},
         "of": meta["stem"], "relation": meta["relation"],
         "profile": {k: v for k, v in {
             "measured_at": meta["measured_at"], "rows": n, "newest_write": meta.get("newest_write"),
