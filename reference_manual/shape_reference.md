@@ -640,6 +640,10 @@ properties:  # REQUIRED
       by: <…>  # REQUIRED · enum: operator | sme
       on: <…>  # REQUIRED · string
       expires: <…>  # string
+
+purpose: <…>  # string · what this suite is FOR, in one paragraph a reader can act on
+
+generated_by: <…>  # string · the tool that wrote this file, when nobody authored it
 ```
 
 ### InterventionLedgerFile

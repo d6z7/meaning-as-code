@@ -46,12 +46,29 @@ import yaml
 
 from mac_profile import _as_text, _is_complex   # ONE definition, not a second CAST
 
-GEN = "mac_generate_sanity.py/3"
+GEN = "mac_generate_sanity.py/4"
 DATEY = ("date", "timestamp", "time")
 
 
 def _q(v) -> str:
     return "'" + str(v).replace("'", "''") + "'"
+
+
+def concepts_on(root: pathlib.Path, stem: str) -> list[str]:
+    """The concepts grounding on this relation. `validates` takes a concept.name, and this generator
+    wrote the DATASET STEM into it for 206 properties — a name no concept has, so the attribution
+    resolved to nothing and the third rung of the trust gradient could not be measured for any object.
+    The field validated fine, because a stem is a string like any other."""
+    out = set()
+    for f in glob.glob(str(root / "ontology" / "concepts" / "*.yaml")):
+        d = yaml.safe_load(open(f, encoding="utf-8")) or {}
+        name = ((d.get("concept") or {}).get("name"))
+        if not name:
+            continue
+        for src in ((d.get("grounding") or {}).get("sources") or []):
+            if str(src.get("relation") or "").split(".")[-1] == stem:
+                out.add(str(name))
+    return sorted(out)
 
 
 def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
@@ -73,6 +90,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     tbl = doc.get("table") or {}
     rel = ".".join(x for x in (tbl.get("schema"), tbl.get("name")) if x)
     stem = path.stem
+    validates = concepts_on(root, stem)
     src = f"{ppath.relative_to(root)}#profile (measured {prof.get('measured_at','?')})"
     cols = [c for c in (doc.get("columns") or []) if c.get("profile")]
     out: list[dict] = []
@@ -82,7 +100,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     names = sorted(str(c["name"]) for c in cols)
     out.append({
         "id": f"G-{stem}-COLUMNS", "family": "shape", "test_kind": "mac.test_kind.ground_truth",
-        "severity": "blocker", "source": src, "validates": [stem],
+        "severity": "blocker", "source": src, "validates": validates,
         "statement": (
             f"Prove {rel} still has every column we recorded\n"
             f"QUESTION. Is this table still shaped the way we found it?\n"
@@ -113,7 +131,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         out.append({
             "id": f"G-{stem}-{n.upper()}-VALUES", "family": "enumeration",
             "test_kind": "mac.test_kind.ground_truth", "severity": "major",
-            "source": src, "validates": [stem],
+            "source": src, "validates": validates,
             "statement": (
                 f"Prove {n} still holds exactly the {len(vals)} values we found\n"
                 f"QUESTION. Has anything appeared, vanished or been renamed in this list?\n"
@@ -142,7 +160,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         out.append({
             "id": f"G-{stem}-NULLS", "family": "completeness",
             "test_kind": "mac.test_kind.ground_truth", "severity": "major",
-            "source": src, "validates": [stem],
+            "source": src, "validates": validates,
             "statement": (
                 f"Prove the {len(never_null)} always-filled columns are still always filled\n"
                 f"QUESTION. Has anything started arriving empty?\n"
@@ -172,7 +190,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         out.append({
             "id": f"G-{stem}-{n.upper()}-HISTORY", "family": "history",
             "test_kind": "mac.test_kind.ground_truth", "severity": "major",
-            "source": src, "validates": [stem],
+            "source": src, "validates": validates,
             "statement": (
                 f"Prove no history was dropped from {n}\n"
                 f"QUESTION. Does this table still go back as far as it did?\n"

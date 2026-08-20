@@ -2414,6 +2414,14 @@
       },
       "additionalProperties": false
      }
+    },
+    "purpose": {
+     "type": "string",
+     "description": "what this suite is FOR, in one paragraph a reader can act on. Authored, not generated."
+    },
+    "generated_by": {
+     "type": "string",
+     "description": "the tool that wrote this file, when nobody authored it. A generated suite that cannot name its generator is indistinguishable from a hand-written one that stopped being maintained."
     }
    },
    "additionalProperties": false
