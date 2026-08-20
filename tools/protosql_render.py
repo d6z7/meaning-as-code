@@ -145,13 +145,35 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
             # collapse partition is the one thing that must never be typed by hand — it was, as
             # x-grain.cell_key, and two of the four declarations were false against the warehouse
             # while still reading as VERIFIED.
-            if not spec.startswith(("descriptor:", "profile:")):
-                raise RefusedToRender(f"{slot}: only `descriptor:` or `profile:` column lists are "
-                                      f"supported, got {spec!r}")
-            src = "profile" if spec.startswith("profile:") else "descriptor"
+            if not spec.startswith(("descriptor:", "profile:", "concept:")):
+                raise RefusedToRender(f"{slot}: only `descriptor:`, `profile:` or `concept:` column "
+                                      f"lists are supported, got {spec!r}")
+            src = ("profile" if spec.startswith("profile:")
+                   else "concept" if spec.startswith("concept:") else "descriptor")
             ref, _, path = spec[len(src) + 1:].partition("#")
-            _, phys, d = rel_of(ref)
-            if src == "profile":
+            # A concept reference is NOT a relation — resolving it through rel_of read `plan_stage`
+            # as an unbound relation and refused. Only the descriptor and profile planes key on the
+            # bound fact.
+            d = None
+            if src != "concept":
+                _, phys, d = rel_of(ref)
+            if src == "concept":
+                # A fragment may need a VALUE SET, not a column list — the as-of collapse restricts
+                # to the plan stages the concept still admits. Reading it here means the fragment
+                # carries no literal: withdraw a label in plan_stage and the collapse follows.
+                cf = pathlib.Path(root) / "ontology" / "concepts" / f"{ref}.yaml"
+                if not cf.exists():
+                    raise RefusedToRender(f"{slot}: no concept at {cf}")
+                cdoc = yaml.safe_load(cf.read_text(encoding="utf-8")) or {}
+                if path.endswith("values.served_items"):
+                    cols = ["'" + str(i["code"]).replace("'", "''") + "'"
+                            for i in ((cdoc.get("values") or {}).get("items") or [])
+                            if isinstance(i, dict) and i.get("served") is not False and i.get("code")]
+                else:
+                    cols = _dig(cdoc, path)
+                srcfile = str(cf)
+                have = None            # value sets are not columns of the relation
+            elif src == "profile":
                 # `__file__` is stored RELATIVE to the bundle root (line 62), so it must be joined
                 # back onto root — resolving it against the cwd finds nothing unless you happen to be
                 # standing in the bundle, which is exactly the kind of works-on-my-machine path bug
@@ -183,7 +205,8 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
                     f"than rendered over an undeclared key")
             if not isinstance(cols, list) or not all(isinstance(c, str) for c in cols):
                 raise RefusedToRender(f"{slot}: {srcfile}#{path} is not a list of column names")
-            have = {c.get("name") for c in (d.get("columns") or []) if isinstance(c, dict)}
+            if src != "concept":
+                have = {c.get("name") for c in (d.get("columns") or []) if isinstance(c, dict)}
             missing = [c for c in cols if have and c not in have]
             if missing:
                 raise RefusedToRender(

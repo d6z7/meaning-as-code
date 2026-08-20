@@ -2284,6 +2284,10 @@
           "format": "date"
          }
         }
+       },
+       "notes": {
+        "type": "string",
+        "description": "a human note ON this property — why it is shaped as it is, what was changed and when. Distinct from `statement`, which says what the property PROVES: a reader needs the claim, a maintainer needs the history. Free prose, but the retired-vocabulary gate still reads it."
        }
       },
       "additionalProperties": false

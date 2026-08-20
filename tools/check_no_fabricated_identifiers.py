@@ -114,6 +114,26 @@ def concat_join_violations(sql: str, keys: dict[str, list[str]]) -> list[dict]:
     return found
 
 
+def _resolver(root):
+    """The bundle owns how its declarations resolve; this checker owns the analysis.
+
+    Without it the SQL is parsed with `@cols:` slots still in it, every parse fails, and each
+    failure is reported as a fabricated identifier — 3 findings became 56 the moment properties
+    started RENDERING their value sets instead of typing them. A checker that punishes the correct
+    pattern is worse than no checker.
+    """
+    import sys as _sys, os as _os
+    tools = _os.path.join(_os.path.abspath(root), "tools")
+    if _os.path.isdir(tools):
+        _sys.path.insert(0, tools)
+        try:
+            from run_properties import resolve_declared
+            return resolve_declared
+        except Exception:
+            pass
+    return lambda x: x
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -127,6 +147,7 @@ def main() -> int:
     keys = declared_key_columns(a.root)
     findings, checked = [], 0
     acc = os.path.join(a.root, "acceptance")
+    _RESOLVE = _resolver(a.root)
     for fn in sorted(os.listdir(acc)) if os.path.isdir(acc) else []:
         if not fn.endswith(".yaml"):
             continue
@@ -138,7 +159,7 @@ def main() -> int:
                 continue
             checked += 1
             try:
-                for v in concat_join_violations(p["sql"], keys):
+                for v in concat_join_violations(_RESOLVE(p["sql"]), keys):
                     findings.append({"where": f"acceptance/{fn}:{p.get('id')}", **v})
             except Exception as e:
                 findings.append({"where": f"acceptance/{fn}:{p.get('id')}",

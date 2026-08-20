@@ -634,6 +634,7 @@ properties:  # REQUIRED
       by: <…>  # REQUIRED · enum: operator | sme
       on: <…>  # REQUIRED · string
       expires: <…>  # string
+    notes: <…>  # string · a human note ON this property — why it is shaped as it is, what was…
 
 purpose: <…>  # string · what this suite is FOR, in one paragraph a reader can act on
 
