@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """MAC008 — every consumer that collapses a fact relation must use its DECLARED cell key.
 
-THE DEFECT, hit twice on gaps/fpl2 and reverted once already. `x-grain.cell_key` states the column
+THE DEFECT, hit twice on gaps/fpl2 and reverted once already. The measured key states the column
 tuple at which exactly one row of a fact relation exists. Eight `snapshot_rule` bindings dereference
-it (`params_from: descriptor#x-grain.cell_key`) and cannot drift. Every OTHER consumer retypes it —
+it (`params_from: profile#identity_evidence.key`) and cannot drift. Every OTHER consumer retypes it —
 and a retyped key is a key that is wrong eventually:
 
   INT-0029    a canon binding partitioned on FOUR columns against the verified seven; the rendered
@@ -57,10 +57,10 @@ def declared_keys(root: str) -> dict[str, tuple[str, set[str]]]:
     out = {}
     for f in sorted(glob.glob(os.path.join(root, "data", "datasets", "*.yaml"))):
         doc = yaml.safe_load(open(f, encoding="utf-8")) or {}
-        key = ((doc.get("x-grain") or {}).get("cell_key")) or []
+        stem = os.path.basename(f)[:-5]
+        key = _measured_key(root, stem)
         if not key:
             continue
-        stem = os.path.basename(f)[:-5]
         names = {stem}
         tbl = ((doc.get("table") or {}).get("name"))
         sch = ((doc.get("table") or {}).get("schema")) or ""
@@ -146,6 +146,22 @@ def collapse_keys(sql: str) -> list[tuple[str, set[str], set[str]]]:
     return found
 
 
+
+def _measured(root, stem):
+    """The relation's measured key, shaped like the block these gates used to read. ONE reader, so
+    the two gates cannot disagree about where the key lives."""
+    import pathlib as _pl
+    p = _pl.Path(root) / "data" / "profiles" / f"{stem}.yaml"
+    if not p.exists():
+        return None
+    d = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("identity_evidence") or {}
+    return {"cell_key": d.get("key"), "key": d.get("key")} if d.get("key") else None
+
+
+def _measured_key(root, stem):
+    m = _measured(root, stem)
+    return (m or {}).get("key") or []
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -158,7 +174,7 @@ def main() -> int:
 
     keys = declared_keys(a.root)
     if not keys:
-        print("✓ OK — no relation declares x-grain.cell_key; nothing to check")
+        print("✓ OK — no relation carries a measured key yet; nothing to check.\n  (If that is a surprise, run mac_admit_identity.py — this gate went green by losing its\n   subject once already, when x-grain was retired out from under it.)")
         return 0
 
     findings, checked = [], 0
@@ -195,7 +211,7 @@ def main() -> int:
                 sev = "ERROR" if missing else "WARNING"
                 findings.append({
                     "severity": sev, "where": f"acceptance/{fn}:{p.get('id')}",
-                    "msg": (f"{kind} over {rel} uses {len(cols)} column(s); {desc}#x-grain.cell_key "
+                    "msg": (f"{kind} over {rel} uses {len(cols)} column(s); the measured key "
                             f"declares {len(key)}"
                             + (f" — MISSING {', '.join(missing)}" if missing else "")
                             + (f" — EXTRA {', '.join(extra)}" if extra else "")),

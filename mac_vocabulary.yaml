@@ -188,11 +188,12 @@ test_kind:
       NOT be generated from the declaration's own claims — its entire purpose is to DISAGREE with
       the descriptor when the descriptor has gone stale. It still READS the declaration, to know
       what to test, but never inherits its assertions; a measured literal is acceptable where it is
-      dated and re-checkable. EXAMPLE — S-GRAIN-KPI reads x-grain.cell_key to learn which columns
-      identify one figure, then asks the warehouse whether that holds, and it is the property that
-      caught v_fpl_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" while the data says
-      944.308. A conformance test rendered from that same descriptor would have confirmed the claim
-      rather than contradicted it.
+      dated and re-checkable. EXAMPLE — S-GRAIN-KPI reads the relation's measured key to learn which
+      columns identify one figure, then asks the warehouse whether that still holds. It is the
+      property that caught v_fpl_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" against a
+      warehouse that had reached 11.689.530. A conformance test rendered from that same declaration
+      would have confirmed the claim rather than contradicted it — which is the entire distinction
+      between the two test kinds.
 
 canon:
   kind: value_domain
@@ -237,10 +238,14 @@ canon:
       doc: "collapse a versioned relation to current / as-of one row per key; the partition is a
             COMPOSITE column list and the order accepts a tie-break (vintage, then written-at)"
       params_from:
-        # READ the cell key from the relation's own descriptor — never retyped into the binding.
-        # A seven-column partition copied per concept is one chance per copy to drop a column, and
-        # dropping `role` folds six reporting perspectives into one arbitrary row, silently.
-        natural_key: 'descriptor#x-grain.cell_key'
+        # READ the cell key from the relation's MEASUREMENT — never retyped into the binding, and
+        # since 2026-08-20 never hand-declared either. A partition copied per concept is one chance
+        # per copy to drop a column, and dropping `role` folds six reporting perspectives into one
+        # arbitrary row, silently. Hand-DECLARING it turned out no safer: the previous home was an
+        # `x-` extension outside every gate, and two of its four declarations were false against the
+        # warehouse while still reading as VERIFIED. mac_admit_identity.py derives this key and dates
+        # it against the source watermark.
+        natural_key: 'profile#identity_evidence.key'
     closure_anomaly_check: { serves: explicit_closure,          needs_sqlglot: false, doc: "for a closed value set, the query that finds out-of-set values (else None)" }
     scoped_latest:         { serves: tracking_vintage,          needs_sqlglot: false, doc: "MAX(date) over a scoped subset, not the whole table" }
     hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }

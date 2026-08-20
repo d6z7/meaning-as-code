@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """MAC008 — the cell key DECLARATION must be well-formed, complete, and honest about its evidence.
 
-`x-grain.cell_key` states the columns at which exactly one row of a fact relation exists. Five tools,
+The MEASURED key (data/profiles/<stem>.yaml#identity_evidence.key) states the columns at which
+exactly one row of a fact relation exists. Five tools,
 eight canon bindings and every generated concept view now read it. Its declaration in
 mac.project.yaml#profile.extensions buys one thing only — silence from MAC009's undeclared-extension
 check — and constrains nothing:
@@ -78,39 +79,39 @@ def check(root: str) -> list[dict]:
         rel = os.path.relpath(f, root)
         stem = os.path.basename(f)[:-5]
         seen.add(stem)
-        grain = doc.get("x-grain")
+        grain = _measured(root, stem)
         cols = {c.get("name") for c in (doc.get("columns") or []) if isinstance(c, dict)}
 
         if grain is None:
             if stem in needed:
                 bad("ERROR", rel,
-                    f"no x-grain.cell_key, but concept:{needed[stem]} grounds a MEASURE on it",
+                    f"no measured key, but concept:{needed[stem]} grounds a MEASURE on it",
                     "declare the columns at which exactly one row exists, and verify them")
             continue
 
         if not isinstance(grain, dict):
-            bad("ERROR", rel, "x-grain is not a mapping", "it must carry cell_key")
+            bad("ERROR", rel, "identity_evidence is not a mapping", "it must carry key")
             continue
 
         key = grain.get("cell_key")
         # 1. SHAPE
         if not isinstance(key, list) or not key:
-            bad("ERROR", f"{rel}#x-grain.cell_key",
+            bad("ERROR", f"{rel}#identity_evidence.key",
                 f"is {type(key).__name__}, not a non-empty list", "give it the column tuple")
             continue
         if any(not isinstance(c, str) or not c.strip() for c in key):
-            bad("ERROR", f"{rel}#x-grain.cell_key", "holds a non-string or blank entry",
+            bad("ERROR", f"{rel}#identity_evidence.key", "holds a non-string or blank entry",
                 "every entry is a column name")
         dupes = sorted({c for c in key if key.count(c) > 1})
         if dupes:
-            bad("ERROR", f"{rel}#x-grain.cell_key", f"repeats {dupes}",
+            bad("ERROR", f"{rel}#identity_evidence.key", f"repeats {dupes}",
                 "a column cannot identify a figure twice")
 
         # 2. COLUMNS EXIST
         if cols:
             missing = [c for c in key if c not in cols]
             if missing:
-                bad("ERROR", f"{rel}#x-grain.cell_key",
+                bad("ERROR", f"{rel}#identity_evidence.key",
                     f"names {missing}, which the relation does not have",
                     "a key over columns that do not exist partitions nothing")
 
@@ -118,7 +119,7 @@ def check(root: str) -> list[dict]:
         cyc = [c for c in key if any(h in str(c).lower() for h in CYCLE_HINTS)]
         if cyc:
             sev = "ERROR" if grain.get("excludes_vintage") else "WARNING"
-            bad(sev, f"{rel}#x-grain.cell_key",
+            bad(sev, f"{rel}#identity_evidence.key",
                 f"contains {cyc} — a column identifying WHEN the figure was published"
                 + (" while excludes_vintage says it does not" if grain.get("excludes_vintage") else ""),
                 "partition on it and every republication becomes its own group, so nothing collapses")
@@ -146,6 +147,22 @@ def check(root: str) -> list[dict]:
                 "every relation the ontology reads must be described")
     return out
 
+
+
+def _measured(root, stem):
+    """The relation's measured key, shaped like the block these gates used to read. ONE reader, so
+    the two gates cannot disagree about where the key lives."""
+    import pathlib as _pl
+    p = _pl.Path(root) / "data" / "profiles" / f"{stem}.yaml"
+    if not p.exists():
+        return None
+    d = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("identity_evidence") or {}
+    return {"cell_key": d.get("key"), "key": d.get("key")} if d.get("key") else None
+
+
+def _measured_key(root, stem):
+    m = _measured(root, stem)
+    return (m or {}).get("key") or []
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,

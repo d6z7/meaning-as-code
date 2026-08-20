@@ -39,6 +39,7 @@ import argparse
 import glob
 import json
 import os
+import pathlib
 import re
 import sys
 
@@ -139,24 +140,48 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
             resolved[slot] = spec.split(":", 1)[1] if spec.startswith("cte:") else slot[2:]
 
         elif slot.startswith("@cols:"):
-            if not spec.startswith("descriptor:"):
-                raise RefusedToRender(f"{slot}: only `descriptor:` column lists are supported, got {spec!r}")
-            ref, _, path = spec[len("descriptor:"):].partition("#")
+            # TWO SOURCES since v0.1.14. `descriptor:` reads the meaning plane; `profile:` reads the
+            # MEASUREMENT plane, data/profiles/<stem>.yaml, which is where a DERIVED key lives. The
+            # collapse partition is the one thing that must never be typed by hand — it was, as
+            # x-grain.cell_key, and two of the four declarations were false against the warehouse
+            # while still reading as VERIFIED.
+            if not spec.startswith(("descriptor:", "profile:")):
+                raise RefusedToRender(f"{slot}: only `descriptor:` or `profile:` column lists are "
+                                      f"supported, got {spec!r}")
+            src = "profile" if spec.startswith("profile:") else "descriptor"
+            ref, _, path = spec[len(src) + 1:].partition("#")
             _, phys, d = rel_of(ref)
-            cols = _dig(d, path)
+            if src == "profile":
+                # `__file__` is stored RELATIVE to the bundle root (line 62), so it must be joined
+                # back onto root — resolving it against the cwd finds nothing unless you happen to be
+                # standing in the bundle, which is exactly the kind of works-on-my-machine path bug
+                # a REFUSED message makes look like a missing measurement.
+                stem = pathlib.Path(d["__file__"]).stem
+                pf = pathlib.Path(root) / "data" / "profiles" / f"{stem}.yaml"
+                if not pf.exists():
+                    raise RefusedToRender(
+                        f"{slot}: no measurement for {stem} at {pf} — run mac_admit_identity.py. The "
+                        f"collapse is REFUSED rather than rendered over a key nobody measured")
+                pdoc = yaml.safe_load(pf.read_text(encoding="utf-8")) or {}
+                pdoc["__file__"] = str(pf)
+                cols = _dig(pdoc, path)
+                srcfile = str(pf)
+            else:
+                cols = _dig(d, path)
+                srcfile = d["__file__"]
             if not cols:
                 raise RefusedToRender(
-                    f"{slot}: {d['__file__']} declares no {path} — the collapse is REFUSED rather "
+                    f"{slot}: {srcfile} declares no {path} — the collapse is REFUSED rather "
                     f"than rendered over an undeclared key")
             if not isinstance(cols, list) or not all(isinstance(c, str) for c in cols):
-                raise RefusedToRender(f"{slot}: {d['__file__']}#{path} is not a list of column names")
+                raise RefusedToRender(f"{slot}: {srcfile}#{path} is not a list of column names")
             have = {c.get("name") for c in (d.get("columns") or []) if isinstance(c, dict)}
             missing = [c for c in cols if have and c not in have]
             if missing:
                 raise RefusedToRender(
-                    f"{slot}: {d['__file__']}#{path} names {missing}, which the relation does not have")
+                    f"{slot}: {srcfile}#{path} names {missing}, which the relation does not have")
             resolved[slot] = ", ".join(cols)
-            prov["sources"].append({"slot": slot, "from": f"{d['__file__']}#{path}",
+            prov["sources"].append({"slot": slot, "from": f"{srcfile}#{path}",
                                     "value": cols, "n": len(cols)})
 
         elif slot.startswith("@col:"):
