@@ -110,13 +110,27 @@ def main() -> int:
         composed = [p["id"] for p in props
                     if any(f"@frag:{fid}" in p["sql"] for fid in frags if r["id"] in frags[fid])
                     or (r["udf"] and r["udf"] in p["sql"])]
+        # TWO GRADES, and rounding them together would flatter the number.
+        #   COMPOSED  the property reads the rule AT RUN TIME (@frag:, @cols:concept:). Change the
+        #             rule and the test changes with it, with no step in between.
+        #   DERIVED   the property was GENERATED FROM the rule. Change the rule and the test changes
+        #             on the next regeneration — real coverage, one step weaker, and the step is a
+        #             place where someone can forget.
+        # Anything else that merely mentions the id is NAMED, which is not coverage at all: R-VAR-01
+        # names a rule in its prose and would not move if that rule were deleted.
+        derived = [p["id"] for p in props if p["source"] == f"ontology rule {r['id']}"]
         named = [p["id"] for p in props
                  if r["id"] in p["source"] or r["id"] in p["statement"] or r["id"] in p["sql"]]
-        rows.append({**r, "composed_by": composed, "named_by": named,
-                     "covered": bool(composed)})
+        by_corpus = [c["file"] for c in corpus if r["id"] in c["exercises"]]
+        rows.append({**r, "composed_by": composed, "derived_by": derived,
+                     "named_by": named, "corpus": by_corpus,
+                     "covered": bool(composed or derived or by_corpus)})
 
     covered = sum(1 for r in rows if r["covered"])
-    named = sum(1 for r in rows if r["named_by"] and not r["composed_by"])
+    comp_n = sum(1 for r in rows if r["composed_by"])
+    deriv  = sum(1 for r in rows if r["derived_by"] and not r["composed_by"])
+    behav  = sum(1 for r in rows if r["corpus"])
+    named = sum(1 for r in rows if r["named_by"] and not (r["composed_by"] or r["derived_by"]))
     mr = sum(1 for r in rows if r["machine_readable"])
     # corpus linkage: a rule id appearing in an `exercises` field
     linked = sum(1 for c in corpus if any(r["id"] in c["exercises"] for r in rules))
@@ -125,24 +139,30 @@ def main() -> int:
     print(f"     {'rule':<46}{'kind':<12}{'directive':<10}{'covered by'}")
     print("     " + "-" * 92)
     for r in sorted(rows, key=lambda x: (not x["covered"], not x["machine_readable"], x["id"])):
-        how = (", ".join(r["composed_by"]) if r["composed_by"]
+        how = (f"composed · {', '.join(r['composed_by'])}" if r["composed_by"]
+               else f"derived · {', '.join(r['derived_by'])}" if r["derived_by"]
+               else f"corpus · {', '.join(r['corpus'])}" if r["corpus"]
                else f"named only by {', '.join(r['named_by'])}" if r["named_by"]
                else "—")
         print(f"     {r['id']:<46}{r['kind']:<12}"
               f"{'machine' if r['machine_readable'] else 'prose':<10}{how[:44]}")
 
-    print(f"\n  COVERED (a property composes the rule)      {covered:>3} of {len(rules)}")
-    print(f"  named only, not composed                    {named:>3}")
+    print(f"\n  COVERED                                     {covered:>3} of {len(rules)}")
+    print(f"     composed — reads the rule at run time     {comp_n:>3}")
+    print(f"     derived  — generated from the rule        {deriv:>3}")
+    print(f"     corpus   — a question names the rule      {behav:>3}")
+    print(f"  named only, which is not coverage            {named:>3}")
     print(f"  CEILING — rules with a machine-readable form {mr:>3} of {len(rules)}")
-    print(f"\n  corpus questions naming a rule id            {linked:>3} of {len(corpus)}"
-          f"  -> behavioural coverage is UNMEASURABLE:")
-    print(f"     every `exercises` field is a sentence, so no rule can know whether a question")
-    print(f"     covers it. Naming rule ids there is the smallest change that makes it countable.")
+    print(f"\n  corpus questions naming a rule id            {linked:>3} of {len(corpus)}")
+    if linked < len(corpus):
+        print(f"     the other {len(corpus) - linked} say what they exercise in a SENTENCE, so no rule can")
+        print(f"     know whether they cover it. Behavioural coverage counts only the linked ones.")
 
     if a.json:
         pathlib.Path(a.json).write_text(json.dumps({
             "rules": len(rules), "properties": len(props), "corpus": len(corpus),
-            "covered": covered, "named_only": named, "machine_readable": mr,
+            "covered": covered, "composed": comp_n, "derived": deriv, "behavioural": behav,
+            "named_only": named, "machine_readable": mr,
             "corpus_linked": linked, "detail": rows,
         }, indent=1, ensure_ascii=False), encoding="utf-8")
         print(f"\n  json -> {a.json}")
