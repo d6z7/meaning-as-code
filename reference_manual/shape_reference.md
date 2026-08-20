@@ -635,6 +635,11 @@ properties:  # REQUIRED
       on: <…>  # REQUIRED · string
       expires: <…>  # string
     notes: <…>  # string · a human note ON this property — why it is shaped as it is, what was…
+    frozen:  # repair of this property is DEFERRED, and that is different from…  # closed: only keys above
+      reason: <…>  # REQUIRED · string
+      until: <…>  # REQUIRED · string · the condition that ends the freeze — normally the rule id whose…
+      on: <…>  # REQUIRED · string
+      verdict_from: <…>  # string · the run whose verdict prompted the freeze, so a stale red is not…
 
 purpose: <…>  # string · what this suite is FOR, in one paragraph a reader can act on
 

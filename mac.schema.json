@@ -2288,6 +2288,33 @@
        "notes": {
         "type": "string",
         "description": "a human note ON this property — why it is shaped as it is, what was changed and when. Distinct from `statement`, which says what the property PROVES: a reader needs the claim, a maintainer needs the history. Free prose, but the retired-vocabulary gate still reads it."
+       },
+       "frozen": {
+        "type": "object",
+        "description": "repair of this property is DEFERRED, and that is different from accepting its red. `accepted` says the finding is real and tolerated. `frozen` says nobody has judged the finding yet, because the property itself is scheduled for replacement — it hand-implements a rule the ontology is about to make machine-readable, so repairing it now would re-encode that rule BY HAND and then delete it. Two kinds of red that look identical on a board and mean opposite things.\n\nIt exists because the alternative is worse: an untouched red drifts into being read as a known failure, and a repaired one costs the work twice. `until` names what unfreezes it, so a frozen property cannot quietly become permanent.",
+        "additionalProperties": false,
+        "required": [
+         "reason",
+         "until",
+         "on"
+        ],
+        "properties": {
+         "reason": {
+          "type": "string"
+         },
+         "until": {
+          "type": "string",
+          "description": "the condition that ends the freeze — normally the rule id whose conversion supersedes this property. A freeze with no exit is a deletion nobody agreed to."
+         },
+         "on": {
+          "type": "string",
+          "format": "date"
+         },
+         "verdict_from": {
+          "type": "string",
+          "description": "the run whose verdict prompted the freeze, so a stale red is not mistaken for a fresh one"
+         }
+        }
        }
       },
       "additionalProperties": false
