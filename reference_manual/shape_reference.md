@@ -454,6 +454,12 @@ columns:  # REQUIRED
     nullable: <…>  # boolean
     notes: <…>  # string
     enum_ref: <…>  # string
+    profile:  # THE CENSUS OF THIS COLUMN, measured — never authored  # closed: only keys above
+      distinct: <…>  # REQUIRED · integer · exact count of distinct values
+      nulls: <…>  # REQUIRED · integer · exact count of NULLs
+      min: <…>  # string|number|null · orderable columns only, as text
+      max: <…>  # string|number|null
+      determined_by: [ ... ]  # columns that FUNCTIONALLY DETERMINE this one
 
 foreign_keys:
   - <item>
@@ -484,6 +490,14 @@ governance:  # Housekeeping
       change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
       by: <…>  # string
       rationale: <…>  # string
+
+profile:  # WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN
+  measured_at: <…>  # REQUIRED · string · ISO-8601 with offset, when the scan ran
+  rows: <…>  # REQUIRED · integer · exact row count at that moment
+  newest_write: <…>  # string|null · the source's own high-water mark, where it has a write timestamp — this…
+  method: <…>  # REQUIRED · string · the tool and version that produced this
+  engine: <…>  # string|null · where it was measured
+  scanned_bytes: <…>  # integer|null · what the scan cost
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 
