@@ -41,10 +41,14 @@ def resolve(root):
         # data-plane descriptor dirs — present only when declared (transforms + raw sources)
         tfm = (root / m["transforms"]).resolve() if m.get("transforms") else None
         srcs = (root / m["sources"]).resolve() if m.get("sources") else None
+        # the MEASUREMENT plane. Defaults beside the descriptors rather than requiring a manifest
+        # entry, so an existing bundle gains it without editing anything.
+        profs = (root / (m.get("profiles") or "data/profiles")).resolve()
         return SimpleNamespace(root=root, ontology=onto.resolve(), descriptors=desc.resolve(),
-                               transforms=tfm, sources=srcs, planes=planes, two_plane=bool(planes))
+                               transforms=tfm, sources=srcs, profiles=profs,
+                               planes=planes, two_plane=bool(planes))
     return SimpleNamespace(root=root.resolve(), ontology=root.resolve(), descriptors=(root / "tables").resolve(),
-                           transforms=None, sources=None, planes={}, two_plane=False)
+                           transforms=None, sources=None, profiles=None, planes={}, two_plane=False)
 
 
 def field_meaning(concept_doc):

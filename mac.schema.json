@@ -1934,61 +1934,13 @@
        "enum_ref": {
         "type": "string"
        },
-       "profile": {
-        "description": "THE CENSUS OF THIS COLUMN, measured — never authored. A human editing these is a MAC002 error, because the whole point is that nobody re-types a number. `distinct` is EXACT, not a sketch: approx_distinct was measured returning 803.502.276 distinct values for an 800.821.485-row relation — an arithmetically impossible answer — and claiming 1.091 model codes against 1.090 ids where the exact check found no violation. Sketches rank; they never decide.",
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-         "distinct",
-         "nulls"
-        ],
-        "properties": {
-         "distinct": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "exact count of distinct values"
-         },
-         "nulls": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "exact count of NULLs"
-         },
-         "min": {
-          "type": [
-           "string",
-           "number",
-           "null"
-          ],
-          "description": "orderable columns only, as text"
-         },
-         "max": {
-          "type": [
-           "string",
-           "number",
-           "null"
-          ]
-         },
-         "determined_by": {
-          "type": "array",
-          "items": {
-           "type": "string"
-          },
-          "uniqueItems": true,
-          "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: `brand_letter` is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
-         },
-         "values": {
-          "type": "array",
-          "items": {
-           "type": [
-            "string",
-            "number",
-            "null"
-           ]
-          },
-          "uniqueItems": true,
-          "description": "THE FULL VALUE SET, captured only where the column is BOUNDED (few enough values to enumerate). For an enumeration the values ARE the structure and the count is not: `role: 6 distinct` cannot tell a seventh perspective appearing from one being RENAMED — both leave the count at 6. Absent on high-cardinality columns, deliberately: a model code list grows by design, so its membership is volume, not structure."
-         }
-        }
+       "values": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "uniqueItems": true,
+        "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know Skoda's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'Skoda has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
        }
       },
       "patternProperties": {
@@ -2066,166 +2018,6 @@
     },
     "governance": {
      "$ref": "#/$defs/governance"
-    },
-    "profile": {
-     "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures: the word VERIFIED in prose is a sentence, not a test.",
-     "type": "object",
-     "additionalProperties": false,
-     "required": [
-      "measured_at",
-      "rows",
-      "method"
-     ],
-     "properties": {
-      "measured_at": {
-       "type": "string",
-       "description": "ISO-8601 with offset, when the scan ran"
-      },
-      "rows": {
-       "type": "integer",
-       "minimum": 0,
-       "description": "exact row count at that moment"
-      },
-      "newest_write": {
-       "type": [
-        "string",
-        "null"
-       ],
-       "description": "the source's own high-water mark, where it has a write timestamp — this is what lets a later reader tell a stale measurement from a current one"
-      },
-      "method": {
-       "type": "string",
-       "description": "the tool and version that produced this"
-      },
-      "engine": {
-       "type": [
-        "string",
-        "null"
-       ],
-       "description": "where it was measured"
-      },
-      "scanned_bytes": {
-       "type": [
-        "integer",
-        "null"
-       ],
-       "description": "what the scan cost"
-      }
-     }
-    },
-    "identity_evidence": {
-     "type": "object",
-     "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
-     "additionalProperties": false,
-     "required": [
-      "measured_at",
-      "method",
-      "measure",
-      "key",
-      "full_groups",
-      "columns"
-     ],
-     "properties": {
-      "measured_at": {
-       "type": "string"
-      },
-      "source_watermark": {
-       "type": [
-        "string",
-        "null"
-       ],
-       "description": "the source's own high-water mark AT measurement — what the evidence is true OF. Without it a stale proof is indistinguishable from a fresh one."
-      },
-      "method": {
-       "type": "string"
-      },
-      "measure": {
-       "type": "string",
-       "description": "the column agreement was tested on. THE ONE BIT A HUMAN SUPPLIES; if it is wrong, every classification below it is confidently wrong with full evidence attached."
-      },
-      "stratum": {
-       "type": [
-        "string",
-        "null"
-       ],
-       "description": "the slice measured, if not all of it"
-      },
-      "excluded": {
-       "type": "array",
-       "items": {
-        "type": "string"
-       },
-       "uniqueItems": true,
-       "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (config_key = 'Audi|11.12.2025|1. Expectation') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
-      },
-      "key": {
-       "type": "array",
-       "items": {
-        "type": "string"
-       },
-       "uniqueItems": true,
-       "description": "the measured identity columns — the grain, DERIVED, not declared"
-      },
-      "delivery_axes": {
-       "type": "array",
-       "items": {
-        "type": "string"
-       },
-       "uniqueItems": true,
-       "description": "split rows, not figures; ruled by a human and recorded here"
-      },
-      "full_groups": {
-       "type": "integer"
-      },
-      "columns": {
-       "type": "array",
-       "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [
-         "name",
-         "groups",
-         "split",
-         "disagree",
-         "verdict"
-        ],
-        "properties": {
-         "name": {
-          "type": "string"
-         },
-         "groups": {
-          "type": "integer",
-          "description": "groups remaining when this column is left out"
-         },
-         "split": {
-          "type": "integer",
-          "description": "of those, how many gained a second row"
-         },
-         "disagree": {
-          "type": "integer",
-          "description": "of those, how many carry DIFFERENT measure values. Splitting is not enough: a delivery axis splits too, and the halves AGREE, because they are the same figure twice."
-         },
-         "verdict": {
-          "enum": [
-           "DEAD",
-           "IDENTITY",
-           "COLLAPSIBLE",
-           "UNCLEAR"
-          ]
-         }
-        }
-       },
-       "description": "per candidate: what leaving it out did"
-      },
-      "ruled": {
-       "type": "array",
-       "items": {
-        "type": "string"
-       },
-       "uniqueItems": true,
-       "description": "columns a HUMAN placed in the key or the delivery axes, which the measurement could not settle. Named separately from `key` so the two halves stay distinguishable: everything else in `key` was derived, these were decided. A later re-measurement must not silently overwrite a ruling, and a reader must be able to see which columns rest on evidence and which on a judgement."
-      }
-     }
     }
    },
    "patternProperties": {
@@ -3060,6 +2852,235 @@
    },
    "patternProperties": {
     "^x-": true
+   }
+  },
+  "ProfileFile": {
+   "type": "object",
+   "description": "v0.1.14 (C10): everything MEASURED about one relation, in its own file under data/profiles/, written only by machine.\n\nWHY IT IS NOT IN THE DESCRIPTOR. The runtime inlines every data/datasets/*.yaml verbatim into its system block and keys its prompt cache on those files' size and mtime. Profiling rewrites a descriptor on EVERY run — `measured_at` always moves, by design — so each re-measurement invalidated the whole cache for a change no engine could observe. Measured before the split: 64,9 % of the descriptor bytes were profile, and of that 95,3 % was the value domain (which the reader does need, and which stays) against 4,7 % census (which it does not).\n\nIt is also the R3 rule made physical: DESIGN FACTS (column role, the domain) are ruled once and live with the meaning; EVIDENCE rots and lives here. A human editing this file is a MAC002 error.",
+   "additionalProperties": false,
+   "required": [
+    "of",
+    "relation",
+    "profile"
+   ],
+   "properties": {
+    "of": {
+     "type": "string",
+     "description": "descriptor stem this measures. A profile whose descriptor is gone is a measurement of nothing."
+    },
+    "relation": {
+     "type": "string",
+     "description": "schema-qualified relation measured"
+    },
+    "profile": {
+     "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures: the word VERIFIED in prose is a sentence, not a test.",
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "measured_at",
+      "rows",
+      "method"
+     ],
+     "properties": {
+      "measured_at": {
+       "type": "string",
+       "description": "ISO-8601 with offset, when the scan ran"
+      },
+      "rows": {
+       "type": "integer",
+       "minimum": 0,
+       "description": "exact row count at that moment"
+      },
+      "newest_write": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "the source's own high-water mark, where it has a write timestamp — this is what lets a later reader tell a stale measurement from a current one"
+      },
+      "method": {
+       "type": "string",
+       "description": "the tool and version that produced this"
+      },
+      "engine": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "where it was measured"
+      },
+      "scanned_bytes": {
+       "type": [
+        "integer",
+        "null"
+       ],
+       "description": "what the scan cost"
+      }
+     }
+    },
+    "columns": {
+     "type": "array",
+     "description": "per-column census. Counts only — the value domain lives on the descriptor's column.",
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "name"
+      ],
+      "properties": {
+       "name": {
+        "type": "string"
+       },
+       "distinct": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "exact count of distinct values"
+       },
+       "nulls": {
+        "type": "integer",
+        "minimum": 0,
+        "description": "exact count of NULLs"
+       },
+       "min": {
+        "type": [
+         "string",
+         "number",
+         "null"
+        ],
+        "description": "orderable columns only, as text"
+       },
+       "max": {
+        "type": [
+         "string",
+         "number",
+         "null"
+        ]
+       },
+       "determined_by": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        },
+        "uniqueItems": true,
+        "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: `brand_letter` is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
+       }
+      }
+     }
+    },
+    "identity_evidence": {
+     "type": "object",
+     "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
+     "additionalProperties": false,
+     "required": [
+      "measured_at",
+      "method",
+      "measure",
+      "key",
+      "full_groups",
+      "columns"
+     ],
+     "properties": {
+      "measured_at": {
+       "type": "string"
+      },
+      "source_watermark": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "the source's own high-water mark AT measurement — what the evidence is true OF. Without it a stale proof is indistinguishable from a fresh one."
+      },
+      "method": {
+       "type": "string"
+      },
+      "measure": {
+       "type": "string",
+       "description": "the column agreement was tested on. THE ONE BIT A HUMAN SUPPLIES; if it is wrong, every classification below it is confidently wrong with full evidence attached."
+      },
+      "stratum": {
+       "type": [
+        "string",
+        "null"
+       ],
+       "description": "the slice measured, if not all of it"
+      },
+      "excluded": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "uniqueItems": true,
+       "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (config_key = 'Audi|11.12.2025|1. Expectation') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
+      },
+      "key": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "uniqueItems": true,
+       "description": "the measured identity columns — the grain, DERIVED, not declared"
+      },
+      "delivery_axes": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "uniqueItems": true,
+       "description": "split rows, not figures; ruled by a human and recorded here"
+      },
+      "full_groups": {
+       "type": "integer"
+      },
+      "columns": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "name",
+         "groups",
+         "split",
+         "disagree",
+         "verdict"
+        ],
+        "properties": {
+         "name": {
+          "type": "string"
+         },
+         "groups": {
+          "type": "integer",
+          "description": "groups remaining when this column is left out"
+         },
+         "split": {
+          "type": "integer",
+          "description": "of those, how many gained a second row"
+         },
+         "disagree": {
+          "type": "integer",
+          "description": "of those, how many carry DIFFERENT measure values. Splitting is not enough: a delivery axis splits too, and the halves AGREE, because they are the same figure twice."
+         },
+         "verdict": {
+          "enum": [
+           "DEAD",
+           "IDENTITY",
+           "COLLAPSIBLE",
+           "UNCLEAR"
+          ]
+         }
+        }
+       },
+       "description": "per candidate: what leaving it out did"
+      },
+      "ruled": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "uniqueItems": true,
+       "description": "columns a HUMAN placed in the key or the delivery axes, which the measurement could not settle. Named separately from `key` so the two halves stay distinguishable: everything else in `key` was derived, these were decided. A later re-measurement must not silently overwrite a ruling, and a reader must be able to see which columns rest on evidence and which on a judgement."
+      }
+     }
+    }
    }
   }
  }

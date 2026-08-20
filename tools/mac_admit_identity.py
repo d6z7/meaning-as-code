@@ -68,12 +68,18 @@ def _qs(v: str) -> str:
     return "'" + str(v).replace("'", "''") + "'"
 
 
+def load_profile(root: pathlib.Path, stem: str) -> dict:
+    """The measurement plane for one descriptor. Split out at v0.1.14 — see ProfileFile."""
+    p = root / "data" / "profiles" / f"{stem}.yaml"
+    return (yaml.safe_load(p.read_text(encoding="utf-8")) if p.exists() else {}) or {}
+
+
 def candidates(doc: dict) -> list[str]:
     """Columns worth testing: not the measure, not free-form, and actually discriminating something.
 
     Uses the census the profiler already wrote — a column with one distinct value cannot be part of
     any key, and one distinct per row is a row id, not a business identity."""
-    rows = (doc.get("profile") or {}).get("rows") or 0
+    rows = (doc.get("_profile") or {}).get("rows") or 0
     out = []
     for c in doc.get("columns") or []:
         p = c.get("profile") or {}

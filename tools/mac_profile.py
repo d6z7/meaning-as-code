@@ -31,7 +31,7 @@ import sys
 
 import yaml
 
-TOOL = "mac_profile.py/3"
+TOOL = "mac_profile.py/5"
 
 # A column with at most this many distinct values is treated as BOUNDED and its full value set is
 # captured. Above it, membership is volume — a model-code list grows by design — and only the count
@@ -44,6 +44,26 @@ BOUNDED_MAX = 600
 # first sweep failed on exactly that. They are still profiled: the count of distinct ARRAYS and the
 # nulls are real facts. Only the value-set capture needs the array flattened to text first.
 COMPLEX = ("array", "map", "row", "struct")
+
+
+# BOUNDED IS NOT THE SAME AS ENUMERABLE, and the first sweep conflated them. Under 600 distinct
+# values it captured the full domain of `fpl_date` (348 dates), `fpl_created_at` (310 load stamps)
+# and `config_key` (392 concatenated surrogates) — 56,6 % of all captured domain bytes, inlined into
+# every request, telling an engine nothing it could act on. Those columns are bounded only
+# ACCIDENTALLY, because this data happens to hold few values; none of them is a category a question
+# ever names. The domain is worth keeping when someone would FILTER by naming one of its members.
+def _enumerable(c: dict, cols: list[dict], excluded: set[str]) -> bool:
+    t = str(c.get("type", "")).lower()
+    n = str(c.get("name"))
+    if any(t.startswith(x) for x in ORDERABLE):
+        return False              # a continuum: min/max IS its domain, and the census already has it
+    if c.get("role") == "audit":
+        return False              # a load stamp is machinery, never an answer
+    if n in excluded:
+        return False              # held out of the key search as a surrogate (identity_evidence)
+    if n.endswith("_id") and any(str(o.get("name")) == n[:-3] for o in cols):
+        return False              # the label twin carries the meaning; the id is plumbing
+    return True
 
 
 def _is_complex(c: dict) -> bool:
@@ -93,27 +113,45 @@ def bounded_values_sql(relation: str, cols: list[tuple[str, str]]) -> str:
     return "SELECT " + ", ".join(sel) + f"\nFROM {relation}"
 
 
-def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> dict:
-    """Fold the measurement into the descriptor. Only ever writes the two machine-owned blocks."""
+def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> tuple[dict, dict]:
+    """Fold the measurement into (descriptor, profile).
+
+    TWO FILES, because they have two lifecycles. The descriptor keeps the value DOMAIN — the one
+    measured fact a reader needs, and whose absence let an engine invent 'C_INLAND' by concatenation.
+    Everything counted goes to data/profiles/, where `measured_at` can move on every run without
+    invalidating a prompt cache keyed on descriptor mtime."""
     n = int(row["n_rows"])
+    prev = {c.get("name"): c for c in (meta.get("prev_profile") or {}).get("columns") or []}
+    census = []
     for i, c in enumerate(columns):
-        prof = {"distinct": int(row[f"d{i}"]), "nulls": int(row[f"z{i}"])}
+        cell = {"name": str(c["name"]), "distinct": int(row[f"d{i}"]), "nulls": int(row[f"z{i}"])}
         if f"mn{i}" in row:
-            prof["min"], prof["max"] = row.get(f"mn{i}"), row.get(f"mx{i}")
-        if c["name"] in (meta.get("bounded") or {}):
-            prof["values"] = meta["bounded"][c["name"]]
+            cell["min"], cell["max"] = row.get(f"mn{i}"), row.get(f"mx{i}")
+        # `determined_by` is written by the ADMISSION pass, not the census — carry it, never clear it
+        keep = (prev.get(str(c["name"])) or {}).get("determined_by")
+        if keep:
+            cell["determined_by"] = keep
+        census.append(cell)
         for target in doc.get("columns") or []:
             if target.get("name") == c["name"]:
-                # preserve `determined_by` — it is written by the admission pass, not by the census
-                keep = (target.get("profile") or {}).get("determined_by")
-                if keep:
-                    prof["determined_by"] = keep
-                target["profile"] = prof
-    doc["profile"] = {k: v for k, v in {
-        "measured_at": meta["measured_at"], "rows": n, "newest_write": meta.get("newest_write"),
-        "method": TOOL, "engine": meta.get("engine"), "scanned_bytes": meta.get("scanned_bytes"),
-    }.items() if v is not None or k in ("newest_write",)}
-    return doc
+                if c["name"] in (meta.get("bounded") or {}):
+                    target["values"] = meta["bounded"][c["name"]]
+                else:
+                    target.pop("values", None)   # no longer bounded: the old domain is now a lie
+                target.pop("profile", None)      # pre-split residue
+    doc.pop("profile", None)
+    prof = {
+        "of": meta["stem"], "relation": meta["relation"],
+        "profile": {k: v for k, v in {
+            "measured_at": meta["measured_at"], "rows": n, "newest_write": meta.get("newest_write"),
+            "method": TOOL, "engine": meta.get("engine"), "scanned_bytes": meta.get("scanned_bytes"),
+        }.items() if v is not None or k in ("newest_write",)},
+        "columns": census,
+    }
+    ie = (meta.get("prev_profile") or {}).get("identity_evidence")
+    if ie:
+        prof["identity_evidence"] = ie          # the admission pass owns it; the census must not drop it
+    return doc, prof
 
 
 def main() -> int:
@@ -157,8 +195,17 @@ def main() -> int:
 
     # SECOND PASS, only for columns small enough to enumerate. The census says HOW MANY; for a
     # bounded column the structure is WHICH, and a rename leaves the count untouched.
+    excluded = set(((prev_peek := yaml.safe_load(
+        (root / "data" / "profiles" / f"{a.dataset}.yaml").read_text(encoding="utf-8"))
+        if (root / "data" / "profiles" / f"{a.dataset}.yaml").exists() else {}) or {})
+        .get("identity_evidence", {}).get("excluded") or [])
     want = [(str(c["name"]), _as_text(str(c["name"]), _is_complex(c)))
-            for i, c in enumerate(columns) if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX]
+            for i, c in enumerate(columns)
+            if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX and _enumerable(c, columns, excluded)]
+    skipped = [str(c["name"]) for i, c in enumerate(columns)
+               if 0 < int(rows[0][f"d{i}"]) <= BOUNDED_MAX and not _enumerable(c, columns, excluded)]
+    if skipped:
+        print(f"  bounded but not enumerable, no domain captured: {', '.join(skipped)}")
     bounded = {}
     if want:
         vr, vmeta = ath.query(bounded_values_sql(relation, want))
@@ -173,19 +220,28 @@ def main() -> int:
         wr, _ = ath.query(wm_sql)
         newest = wr[0]["w"]
 
-    doc = apply(doc, rows[0], columns, {
+    ppath = root / "data" / "profiles" / f"{a.dataset}.yaml"
+    prev = yaml.safe_load(ppath.read_text(encoding="utf-8")) if ppath.exists() else {}
+    doc, prof = apply(doc, rows[0], columns, {
         "measured_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "newest_write": newest,
         "bounded": bounded,
+        "stem": a.dataset,
+        "relation": relation,
+        "prev_profile": prev,
         "engine": f"{eng.get('database')}@{eng.get('region')}",
         "scanned_bytes": meta.get("bytes_scanned"),
     })
     path.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
                     encoding="utf-8")
-    p = doc["profile"]
+    ppath.parent.mkdir(parents=True, exist_ok=True)
+    ppath.write_text(yaml.safe_dump(prof, sort_keys=False, allow_unicode=True, width=100),
+                     encoding="utf-8")
+    p = prof["profile"]
     print(f"  {relation}  {p['rows']:,}".replace(",", ".") + " rows · "
           f"{len(columns)} columns profiled · newest write {p.get('newest_write')}")
-    print(f"  scanned {(p.get('scanned_bytes') or 0)/1e9:.1f} GB → {path.relative_to(root)}")
+    print(f"  scanned {(p.get('scanned_bytes') or 0)/1e9:.1f} GB → {ppath.relative_to(root)}"
+          f" (+ domains on {path.relative_to(root)})")
     return 0
 
 

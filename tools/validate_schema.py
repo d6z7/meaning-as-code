@@ -87,6 +87,8 @@ def _pick_def(path, layout=None):
     # two-plane data plane: transforms/ -> TransformFile; sources/ -> TableFile (raw schema-of-record)
     if layout is not None and getattr(layout, 'transforms', None) and d == str(layout.transforms):
         return 'TransformFile'
+    if layout is not None and getattr(layout, 'profiles', None) and d == str(layout.profiles):
+        return 'ProfileFile'
     if layout is not None and getattr(layout, 'sources', None) and d == str(layout.sources):
         return 'TableFile'
     descriptors_dir = getattr(layout, 'descriptors', None) if layout is not None else None

@@ -46,7 +46,7 @@ import yaml
 
 from mac_profile import _as_text, _is_complex   # ONE definition, not a second CAST
 
-GEN = "mac_generate_sanity.py/2"
+GEN = "mac_generate_sanity.py/3"
 DATEY = ("date", "timestamp", "time")
 
 
@@ -56,13 +56,24 @@ def _q(v) -> str:
 
 def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    prof = doc.get("profile")
+    # TWO PLANES since v0.1.14: the descriptor holds meaning + the value DOMAIN, data/profiles/ holds
+    # the census. A generator that reads only one of them silently emits half a suite.
+    ppath = root / "data" / "profiles" / f"{path.stem}.yaml"
+    pdoc = yaml.safe_load(ppath.read_text(encoding="utf-8")) if ppath.exists() else {}
+    prof = (pdoc or {}).get("profile")
     if not prof:
         return []
+    census = {str(c["name"]): c for c in (pdoc.get("columns") or [])}
+    for c in doc.get("columns") or []:
+        merged = dict(census.get(str(c["name"])) or {})
+        if c.get("values") is not None:
+            merged["values"] = c["values"]
+        if merged:
+            c["profile"] = merged        # in-memory only; neither file is rewritten
     tbl = doc.get("table") or {}
     rel = ".".join(x for x in (tbl.get("schema"), tbl.get("name")) if x)
     stem = path.stem
-    src = f"{path.relative_to(root)}#profile (measured {prof.get('measured_at','?')})"
+    src = f"{ppath.relative_to(root)}#profile (measured {prof.get('measured_at','?')})"
     cols = [c for c in (doc.get("columns") or []) if c.get("profile")]
     out: list[dict] = []
 
