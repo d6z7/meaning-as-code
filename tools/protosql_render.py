@@ -169,6 +169,14 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
             else:
                 cols = _dig(d, path)
                 srcfile = d["__file__"]
+            # A COLLAPSE PARTITION IS THE GRAIN MINUS WHAT IT COLLAPSES OVER. The grain identifies a
+            # row; the partition identifies the thing being reduced to one row. Subtracting is not
+            # optional: partition on the axis you are collapsing and every value becomes its own
+            # group, so the collapse does nothing — the fragment's own never_2 clause says exactly
+            # that about config_key.
+            over = [str(x) for x in (rule.get("collapses_over") or [])]
+            if over and isinstance(cols, list):
+                cols = [c for c in cols if c not in over]
             if not cols:
                 raise RefusedToRender(
                     f"{slot}: {srcfile} declares no {path} — the collapse is REFUSED rather "

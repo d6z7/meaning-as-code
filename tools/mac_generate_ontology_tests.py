@@ -47,7 +47,7 @@ import sys
 
 import yaml
 
-GEN = "mac_generate_ontology_tests.py/3"
+GEN = "mac_generate_ontology_tests.py/4"
 
 # concepts whose declared value set matches no grounded column — reported, never guessed
 UNMATCHED: list[tuple[str, str, str]] = []
@@ -137,7 +137,13 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
                                          f"[{', '.join(measured)}]"))
             keys = []
         if keys:
-            cols = ", ".join(f'"{k}"' for k in keys)
+            # RENDER the key from the concept, do not type it. Until v/4 this wrote the columns as
+            # literals while the STATEMENT BELOW claimed they were read at run time and warned that
+            # "a typed key would go on passing after the concept changed". The prose described the
+            # right design and the SQL did the opposite — the same shape of defect as x-grain's
+            # VERIFIED. The substitution needed list indices to reach grounding.sources.0.key; they
+            # did not exist, which is how the shortcut got taken.
+            cols = f"@cols:concept:{stem}.grounding.sources.{i}.key"
             prop("key_grain", f"O-{stem.upper()}-KEY{i or ''}",
                  f"Prove {name}'s declared key still identifies one row of {rel}\n"
                  f"QUESTION. Does the key this concept says it is identified by actually pick out a "

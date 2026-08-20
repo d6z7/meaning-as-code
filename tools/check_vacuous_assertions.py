@@ -16,6 +16,12 @@ structurally blind to a rename, which is the same lesson the profiler learned ab
 ── WHAT COUNTS AS VACUOUS ──────────────────────────────────────────────────────────────────────
     LITERAL-ONLY   every source the asserted column traces back to is an inline VALUES CTE or a
                    constant. Nothing in the warehouse can move it.
+    NEVER-ZERO     must_be_zero over `count(*) ... HAVING count(*) > 1`, i.e. "how many groups
+                   repeat". It returns 0 only if the grouping column is UNIQUE across the whole
+                   relation, so on a discriminator it can only ever return the number of distinct
+                   values. O-PERSPECTIVE-KEY asked whether `role` — six values over 800.821.485 rows
+                   — was unique, and answered 6, every time. A test with a fixed verdict is no more
+                   evidence than one that cannot fail; this is the same defect in the mirror.
     CONSTANT       the column IS a literal — `SELECT 0 AS violations` with must_be_zero on it.
     ABSENT         the assertion names a column the SQL never returns. It cannot fail either, and
                    for a different reason: there is nothing to compare.
@@ -31,6 +37,8 @@ import argparse
 import glob
 import json
 import os
+import pathlib
+import re
 import sys
 
 import yaml
@@ -113,7 +121,7 @@ def traces_to_warehouse(col: str, sql: str, tree, lit: set[str]) -> bool | None:
     return bool(real)
 
 
-def audit(prop: dict, resolve, n_rows: int | None = None) -> list[str]:
+def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> list[str]:
     # A conformance property is not valid SQL until its declarations are rendered — `@n:` and
     # `@cols:` are substitution slots. Parsing before resolving reports the whole generated suite as
     # unparseable, which is a bug in the CHECKER masquerading as a finding about the tests.
@@ -177,6 +185,32 @@ def audit(prop: dict, resolve, n_rows: int | None = None) -> list[str]:
                 isinstance(f, exp.Count) for f in e.find_all(exp.Func)):
             findings.append(f"CONSTANT: `{col}` is a literal — it cannot fail")
             continue
+        # a uniqueness assertion over a column that cannot be unique
+        if a.get("type") == "must_be_zero" and re.search(
+                r"HAVING\s+count\(\s*\*\s*\)\s*>\s*1", sql, re.I):
+            # A single-column uniqueness test is PERFECTLY VALID on a primary key — dim_body_type
+            # keyed on fpl_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
+            # cannot be unique, and the profile already measured that: distinct against rows. The
+            # first cut skipped the check and flagged 19, most of them real key tests.
+            grp = re.search(r"GROUP\s+BY\s+([^)\n]+)", sql, re.I)
+            rel = re.search(r"FROM\s+([\w.]+)", sql, re.I)
+            unique_possible = True
+            if grp and rel:
+                col = grp.group(1).strip().strip('"')
+                stem = rel.group(1).split(".")[-1]
+                pf = pathlib.Path(root) / "data" / "profiles" / f"{stem}.yaml"
+                if pf.exists():
+                    pd = yaml.safe_load(pf.read_text(encoding="utf-8")) or {}
+                    nrows = ((pd.get("profile") or {}).get("rows")) or 0
+                    for c in pd.get("columns") or []:
+                        if str(c.get("name")) == col and nrows:
+                            unique_possible = (c.get("distinct") or 0) >= nrows
+            if grp and not unique_possible and len(re.split(r",", grp.group(1))) == 1:
+                findings.append(f"NEVER-ZERO: `{col}` counts repeating groups over a SINGLE column "
+                                f"({grp.group(1).strip()}) — it returns 0 only if that column is "
+                                f"unique across the whole relation, so on a discriminator its "
+                                f"verdict is fixed")
+                continue
         reaches = traces_to_warehouse(col, sql, tree, lit)
         if reaches is False:
             findings.append(f"LITERAL-ONLY: `{col}` traces back only to rows the SQL typed — "
@@ -228,7 +262,7 @@ def main() -> int:
             if not isinstance(p, dict):
                 continue
             n += 1
-            for msg in audit(p, resolve, runs.get(p.get("id"))):
+            for msg in audit(p, resolve, runs.get(p.get("id")), a.root):
                 out.append({"file": os.path.basename(f), "id": p.get("id"), "finding": msg})
     if a.json:
         print(json.dumps({"findings": out}, indent=1, ensure_ascii=False))
@@ -236,7 +270,8 @@ def main() -> int:
     by = {}
     for o in out:
         by.setdefault(o["finding"].split(":")[0], []).append(o)
-    for kind in ("ABSENT", "CONSTANT", "LITERAL-ONLY", "UNPARSEABLE"):
+    for kind in ("ABSENT", "CONSTANT", "NEVER-ZERO", "WHOLE-RESULT", "LITERAL-ONLY",
+                 "UNRESOLVED", "UNPARSEABLE"):
         rows = by.get(kind) or []
         if not rows:
             continue
