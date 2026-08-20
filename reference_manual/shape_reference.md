@@ -448,7 +448,7 @@ columns:  # REQUIRED
   - <item>
     name: <…>  # REQUIRED · string
     type: <…>  # string
-    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | composite_key_part | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
+    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | composite_key_part | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     description: <…>  # string
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     nullable: <…>  # boolean
@@ -499,6 +499,24 @@ profile:  # WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN
   method: <…>  # REQUIRED · string · the tool and version that produced this
   engine: <…>  # string|null · where it was measured
   scanned_bytes: <…>  # integer|null · what the scan cost
+
+identity_evidence:  # v0.1.14 (C3): the PROOF behind the column roles — machine-written,…
+  measured_at: <…>  # REQUIRED · string
+  source_watermark: <…>  # string|null · the source's own high-water mark AT measurement — what the evidence is…
+  method: <…>  # REQUIRED · string
+  measure: <…>  # REQUIRED · string · the column agreement was tested on
+  stratum: <…>  # string|null · the slice measured, if not all of it
+  excluded: [ ... ]  # columns held OUT of the key search
+  key: [ ... ]  # REQUIRED · the measured identity columns — the grain, DERIVED, not declared
+  delivery_axes: [ ... ]  # split rows, not figures; ruled by a human and recorded here
+  full_groups: <…>  # REQUIRED · integer
+  columns:  # REQUIRED · per candidate: what leaving it out did
+    - <item>
+      name: <…>  # REQUIRED · string
+      groups: <…>  # REQUIRED · integer · groups remaining when this column is left out
+      split: <…>  # REQUIRED · integer · of those, how many gained a second row
+      disagree: <…>  # REQUIRED · integer · of those, how many carry DIFFERENT measure values
+      verdict: <…>  # REQUIRED · enum: DEAD | IDENTITY | COLLAPSIBLE | UNCLEAR
 # x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)
 ```
 

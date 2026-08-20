@@ -44,7 +44,9 @@ import sys
 
 import yaml
 
-GEN = "mac_generate_sanity.py/1"
+from mac_profile import _as_text, _is_complex   # ONE definition, not a second CAST
+
+GEN = "mac_generate_sanity.py/2"
 DATEY = ("date", "timestamp", "time")
 
 
@@ -115,7 +117,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
             "assertion": {"type": "must_be_zero", "columns": ["appeared", "vanished"]},
             "tolerance": 0,
             "sql": (f"WITH recorded (v) AS (VALUES {', '.join('(' + _q(v) + ')' for v in vals)}),\n"
-                    f"today AS (SELECT DISTINCT CAST(\"{n}\" AS varchar) AS v FROM {rel})\n"
+                    f"today AS (SELECT DISTINCT {_as_text(n, _is_complex(c))} AS v FROM {rel})\n"
                     f"SELECT (SELECT count(*) FROM today  WHERE v NOT IN (SELECT v FROM recorded)) AS appeared,\n"
                     f"       (SELECT count(*) FROM recorded WHERE v NOT IN (SELECT v FROM today))   AS vanished,\n"
                     f"       (SELECT count(*) FROM recorded) AS values_recorded,\n"
