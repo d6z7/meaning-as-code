@@ -98,9 +98,16 @@ def main() -> int:
         print(f"          nearest: {x['nearest']}")
     if found:
         print(f"\n✗ {len(found)} concept field(s) name a column their relation does not have.")
-        print("  The source is inconsistent about the `fpl_` prefix — v_fpl_kpi says `brand_letter`,")
-        print("  dim_brand_country_code says `fpl_brand_letter` — so both spellings look right and")
-        print("  only a machine notices which one the relation actually carries.")
+        pref = []
+        for x in found:
+            near = (x["nearest"].split(",")[0].strip() if x["nearest"] else "")
+            if near and (x["names"].endswith(near) or near.endswith(x["names"])):
+                pref.append((x["names"], near))
+        if pref:
+            print("  Most are a PREFIX disagreement between relations — the same thing spelled two")
+            print("  ways, so both look right and only a machine notices which one is carried:")
+            for a_, b_ in pref[:3]:
+                print(f"     {a_}  vs  {b_}")
         return 1
     n = len(glob.glob(str(root / "ontology" / "concepts" / "*.yaml")))
     print(f"✓ OK — every column named by {n} concept(s) exists on the relation it grounds on")

@@ -98,11 +98,19 @@ def profile_sql(relation: str, columns: list[dict]) -> str:
 
 def watermark_sql(relation: str, columns: list[dict]) -> str | None:
     """The source's own high-water mark, if it has one. This is what dates the evidence."""
-    names = {str(c["name"]).lower() for c in columns}
-    for cand in ("fpl_created_at", "created_at", "loaded_at", "ingested_at", "updated_at"):
-        if cand in names:
-            return f"SELECT CAST(max({cand}) AS varchar) AS w FROM {relation}"
-    return None
+    # DERIVED, NOT LISTED. This carried a hardcoded candidate list beginning with one source's
+    # column name — a source bleeding into the framework, which is the one thing the framework may
+    # not do. A write timestamp is something the DESCRIPTOR already describes: role `audit` on a
+    # time-typed column. A bundle that marks its audit columns gets a watermark; one that does not
+    # gets None and says so, rather than being guessed at through another source's vocabulary.
+    audit = [c for c in columns
+             if c.get("role") == "audit"
+             and any(str(c.get("type", "")).lower().startswith(k)
+                     for k in ("timestamp", "date", "time"))]
+    if not audit:
+        return None
+    col = str(audit[0]["name"])
+    return f'SELECT CAST(max("{col}") AS varchar) AS w FROM {relation}'
 
 
 def bounded_values_sql(relation: str, cols: list[tuple[str, str]]) -> str:
