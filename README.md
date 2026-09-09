@@ -43,6 +43,26 @@ flowchart LR
 columns from grounding — the deterministic half of an AI agent's job, pulled out of the model's head and
 into a file you can diff, gate, and trust.
 
+## Read the series
+
+The ideas in this framework are written up as a four-part series, published as a reading site:
+
+> ### 📖 [Meaning as Code — the article series](https://meaning-as-code.pages.dev/)
+> *Answers you can defend — from your own data.* Worked end-to-end on a public, MIT-licensed demo.
+>
+> 1. [The Layer You Deleted](https://meaning-as-code.pages.dev/articles/1) — an LLM can replace most of your application layer, but not the part that made the numbers mean anything.
+> 2. [Meaning as Code](https://meaning-as-code.pages.dev/articles/2) — what's in the home for meaning, and why we keep it like code.
+> 3. [From Data to Meaning](https://meaning-as-code.pages.dev/articles/3) — the model drafts structure from your data; you author the meaning it can't.
+> 4. [Meaning That Grows](https://meaning-as-code.pages.dev/articles/4) — the model shows you where it's thin; you teach it in plain language.
+>
+> See it running: the [`/ask` demo](https://meaning-as-code.pages.dev/ask-demo) (zero setup, real recorded
+> runs) and the [ontology explorer](https://meaning-as-code.pages.dev/explorer) (every concept, rule and
+> binding, clickable).
+
+Prose and figures for the series live in
+[d6z7/meaning-as-code-articles](https://github.com/d6z7/meaning-as-code-articles); the runnable system it
+describes is [d6z7/mac-ontology-contoso](https://github.com/d6z7/mac-ontology-contoso).
+
 ## What's in MAC
 
 - **Four layers** — Concept (what it means) · Physical (where it lives) · Edges (how it joins) · Rules
