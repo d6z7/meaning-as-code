@@ -148,12 +148,19 @@ expect("snapshot_collapse (empty partition → refuses)",
 # perspectives into one arbitrary row, silently.
 import tempfile as _tf, os as _os
 _root = _tf.mkdtemp()
-_os.makedirs(_os.path.join(_root, "data", "datasets"))
-with open(_os.path.join(_root, "data", "datasets", "sales_fact.yaml"), "w") as _fh:
-    _fh.write("table:\n  name: sales_fact\nx-grain:\n  cell_key: [region, product, day]\n")
+# THE HOME MOVED, AND THIS FIXTURE DID NOT FOLLOW IT. Until 2026-09-10 this wrote a dataset DESCRIPTOR
+# carrying `x-grain.cell_key`, which is where mac_vocabulary.yaml used to point. The registry now reads
+# `natural_key` from `profile#identity_evidence.key` — a MEASURED artifact, derived by
+# mac_admit_identity.py and dated against the source watermark — precisely because the `x-` extension
+# sat outside every gate and two of its four declarations were false against the warehouse while still
+# reading as VERIFIED. A fixture that keeps asserting the abandoned home tests nothing that ships: this
+# case raised TypeError from collection onward, so the whole file stopped running.
+_os.makedirs(_os.path.join(_root, "data", "profiles"))
+with open(_os.path.join(_root, "data", "profiles", "sales_fact.yaml"), "w") as _fh:
+    _fh.write("relation: warehouse.sales_fact\nidentity_evidence:\n  key: [region, product, day]\n")
 _concept = {"grounding": {"sources": [{"relation": "warehouse.sales_fact"}]}}
 
-check("render_sql (natural_key READ from the descriptor, not retyped)",
+check("render_sql (natural_key READ from the measured profile, not retyped)",
       canon.render_sql("mac.canon.snapshot_collapse",
                        {"table": "warehouse.sales_fact", "order_by": ["loaded_at", "written_at"]},
                        concept=_concept, root=_root),

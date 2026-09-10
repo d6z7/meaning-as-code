@@ -332,6 +332,36 @@ def _descriptor(root, relation: str, anchor: str):
     return None
 
 
+def _profile(root, relation: str, anchor: str):
+    """Read a value out of the MEASURED PROFILE of the relation a concept grounds.
+
+    The twin of _descriptor, and the home mac_vocabulary.yaml actually names for the one parameter
+    that uses this mechanism: `natural_key: 'profile#identity_evidence.key'`. The distinction is not
+    cosmetic — a dataset DESCRIPTOR is authored, a PROFILE is measured. identity_evidence is derived by
+    mac_admit_identity.py and dated against the source watermark, which is precisely why the registry
+    points the cell key here rather than at anything hand-written: the previous home was an `x-`
+    extension outside every gate, and two of its four declarations were false against the warehouse
+    while still reading as VERIFIED.
+
+    Without this branch the `profile#` form fell through to a concept-dotted lookup, which cannot match,
+    so `natural_key` silently never merged and every snapshot_collapse binding raised for a missing
+    argument. Returns None if anything is missing — the caller then raises for the unfilled parameter,
+    which is a build error, never a silently empty binding."""
+    if not root or not isinstance(relation, str):
+        return None
+    import yaml
+    from pathlib import Path as _P
+    stem = relation.rsplit(".", 1)[-1]
+    for ext in ("yaml", "yml"):
+        f = _P(root) / "data" / "profiles" / f"{stem}.{ext}"
+        if f.exists():
+            try:
+                return _dig(yaml.safe_load(f.read_text(encoding="utf-8")) or {}, anchor)
+            except Exception:                                            # noqa: BLE001
+                return None
+    return None
+
+
 def resolve_params(udf: str, params: dict, concept=None, root=None) -> dict:
     """Merge a binding's attached params with the ones the REGISTRY says live on the model.
 
@@ -355,6 +385,8 @@ def resolve_params(udf: str, params: dict, concept=None, root=None) -> dict:
     for prm, path in _params_from_registry(udf).items():
         if path.startswith("descriptor#"):
             val = _descriptor(root, _dig(concept, "grounding.sources.0.relation"), path.split("#", 1)[1])
+        elif path.startswith("profile#"):
+            val = _profile(root, _dig(concept, "grounding.sources.0.relation"), path.split("#", 1)[1])
         else:
             val = _dig(concept, path)
         if val:
