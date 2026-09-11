@@ -19,8 +19,8 @@ table:
 columns:
   - { name: refund_id,     type: string,  role: primary_key }
   - { name: order_id,      type: string,  role: foreign_key }
-  - { name: refund_amount, type: decimal, role: value, x-subrole: measure }
-  - { name: refunded_at,   type: timestamp, role: value, x-subrole: temporal }
+  - { name: refund_amount, type: decimal, role: value }
+  - { name: refunded_at,   type: timestamp, role: value }
 
 foreign_keys:
   - { name: fk_order, from_column: order_id, to_table: orders, to_column: order_id }

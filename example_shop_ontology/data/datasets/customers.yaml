@@ -18,8 +18,8 @@ table:
 
 columns:
   - { name: customer_id, type: string, role: primary_key }
-  - { name: email,       type: string, role: value, x-subrole: attribute }
-  - { name: created_at,  type: timestamp, role: value, x-subrole: temporal }
+  - { name: email,       type: string, role: value }
+  - { name: created_at,  type: timestamp, role: value }
 
 foreign_keys: []
 

@@ -20,11 +20,11 @@ columns:
   - { name: order_id,     type: string,    role: primary_key }
   - { name: customer_id,  type: string,    role: foreign_key }
   - { name: status,       type: string,    role: discriminator }
-  - { name: placed_at,    type: timestamp, role: value, x-subrole: temporal }
-  - { name: paid_at,      type: timestamp, role: value, x-subrole: temporal }
-  - { name: shipped_at,   type: timestamp, role: value, x-subrole: temporal }
-  - { name: delivered_at, type: timestamp, role: value, x-subrole: temporal }
-  - { name: gross_amount, type: decimal,   role: value, x-subrole: measure }
+  - { name: placed_at,    type: timestamp, role: value }
+  - { name: paid_at,      type: timestamp, role: value }
+  - { name: shipped_at,   type: timestamp, role: value }
+  - { name: delivered_at, type: timestamp, role: value }
+  - { name: gross_amount, type: decimal,   role: value }
 
 foreign_keys:
   - { name: fk_customer, from_column: customer_id, to_table: customers, to_column: customer_id }

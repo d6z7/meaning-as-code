@@ -18,9 +18,9 @@ table:
 
 columns:
   - { name: sku,         type: string, role: primary_key }
-  - { name: name,        type: string, role: value, x-subrole: attribute }
+  - { name: name,        type: string, role: value }
   - { name: category_id, type: string, role: foreign_key }
-  - { name: list_price,  type: decimal, role: value, x-subrole: attribute }
+  - { name: list_price,  type: decimal, role: value }
 
 foreign_keys:
   - { name: fk_category, from_column: category_id, to_table: categories, to_column: category_id }

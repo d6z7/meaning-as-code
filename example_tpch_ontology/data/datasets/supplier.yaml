@@ -20,7 +20,7 @@ columns:
   - { name: s_name,     type: string,  role: value }
   - { name: s_nationkey, type: integer, role: foreign_key }
   - { name: s_phone,    type: string,  role: value }
-  - { name: s_acctbal,  type: decimal, role: value, x-subrole: measure }
+  - { name: s_acctbal,  type: decimal, role: value }
   - { name: s_comment,  type: string,  role: value }
 
 foreign_keys:

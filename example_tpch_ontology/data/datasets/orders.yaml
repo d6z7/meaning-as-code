@@ -19,8 +19,8 @@ columns:
   - { name: o_orderkey,      type: integer, role: primary_key }
   - { name: o_custkey,       type: integer, role: foreign_key }
   - { name: o_orderstatus,   type: string,  role: discriminator }
-  - { name: o_totalprice,    type: decimal, role: value, x-subrole: measure }
-  - { name: o_orderdate,     type: date,    role: value, x-subrole: temporal }
+  - { name: o_totalprice,    type: decimal, role: value }
+  - { name: o_orderdate,     type: date,    role: value }
   - { name: o_orderpriority, type: string,  role: discriminator }
   - { name: o_comment,       type: string,  role: value }
 
