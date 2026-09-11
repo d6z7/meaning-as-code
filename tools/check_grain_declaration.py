@@ -4,7 +4,7 @@
 The MEASURED key (data/profiles/<stem>.yaml#identity_evidence.key) states the columns at which
 exactly one row of a fact relation exists. Five tools,
 eight canon bindings and every generated concept view now read it. Its declaration in
-mac.project.yaml#profile.extensions buys one thing only — silence from MAC009's undeclared-extension
+mac.project.yaml#profile.extensions is RETIRED (x- prohibited, MAC012; MAC009 withdrawn)
 check — and constrains nothing:
 
   · no shape        cell_key could be a string, a number, or []

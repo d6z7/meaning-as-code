@@ -19,17 +19,19 @@ exists and `CONCEPT_SPEC.md` describes every key in prose; **this** document plu
 say, normatively and machine-checkably, *exactly what a conformant file may contain*. The schema is the
 enforcer; this document is the rulebook around it.
 
-> **The core vocabulary is CLOSED.** A MAC file may use only the keys defined in `mac.schema.json`, plus
-> declared `x-` extensions (below). Any other key is a conformance error. This is the discipline that
-> makes the model legible to a developer, projectable to a platform, and safely authorable by an LLM —
-> an LLM cannot hallucinate a plausible-but-wrong key, because the schema rejects it.
+> **The core vocabulary is CLOSED, and nothing escapes it.** A MAC file may use only the keys defined
+> in `mac.schema.json`. Any other key is a conformance error — including a key in the `x-` namespace,
+> which is **prohibited** (§2, MAC012). This is the discipline that makes the model legible to a
+> developer, projectable to a platform, and safely authorable by an LLM — an LLM cannot hallucinate a
+> plausible-but-wrong key, because the schema rejects it, and there is no namespace it can reach for
+> when it does.
 
 ## 1. Conformance levels
 
 | Level | Name | Gate | Means |
 |---|---|---|---|
 | **L0** | well-formed | parses as YAML | structurally loadable |
-| **L1** | **core-conformant** | validates against `mac.schema.json` | only core keys + declared `x-` extensions; closed class/level/type/role vocabularies; required keys present |
+| **L1** | **core-conformant** | validates against `mac.schema.json` | core keys ONLY (no `x-`, §2); closed class/level/type/role vocabularies; required keys present |
 | **L2** | execution-validated | the query the model implies runs and the number is sane | the trust gradient's right end (FRAMEWORK §8) — schema **cannot** check this |
 | **L3** | expert-confirmed | an SME has ratified the meaning | `confidence: C` |
 
@@ -89,25 +91,53 @@ a *structural completeness* requirement layered on L1 for data-bound projects, *
 completeness check is the recorded follow-on (a referential-gate rule); the schema legalizes the
 construct it will enforce.
 
-## 2. The closed-core + `x-` extension rule (how we stay strict without ossifying)
+## 2. The closed core — and the only way to add a key
 
-Strictness is **layered**, not uniform:
+Strictness is **uniform**, not layered. There is one rule, and no namespace exempt from it:
 
-- **Core** — the universal constructs in `mac.schema.json`. Strict: unknown keys are **rejected**
-  (`additionalProperties: false` at every object level).
-- **Extension** — the **only** legal way to add a key the core doesn't define is the **`x-` namespace**
-  (e.g. `x-attribute-owner:`). The schema permits `^x-` keys everywhere via `patternProperties`. This is
-  the OpenAPI-style extension convention, chosen for the same reason: visible, namespaced, never
-  mistaken for core.
-- **Profile** — a project declares a **profile**: the list of `x-` keys it uses and what
-  each means. An `x-` key with no profile entry is undeclared debt, not license. (An application's
-  bespoke `x-attribute-owner`, its grounding annotations, and any source-specific blocks live here.)
+- **Core** — the universal constructs in `mac.schema.json`. Unknown keys are **rejected**
+  (`additionalProperties: false` at every object level) and — since **v0.1.14** — there is no
+  `patternProperties` hatch standing beside them. The core is closed, and closed with nothing behind it.
+- **`x-` keys are PROHIBITED.** An `x-` key is a conformance **error** wherever it appears, diagnosed
+  **MAC012** by `tools/check_extension_keys.py`. Not "discouraged", not "debt": prohibited. There is no
+  profile, register or declaration that makes one legal, because declaring a key changes nothing about
+  what can *check* it — and being checkable is the entire content of the word "conformant".
 
-**Promotion path.** An `x-` key that recurs across multiple sources/profiles, an agent reads directly,
-*and* projects cleanly onto all three target families (FRAMEWORK §10) earns **promotion to core** via a
-`schema_version` bump. That is exactly how the v0.5 `contract:` construct was born — the application
-invented it eight ways under no namespace; v0.5 promotes it. The rule going forward: invent under `x-`,
-prove it, promote it. **Never sprinkle a bare key into the core again.**
+> **This section used to say the opposite.** Until now it taught the `x-` namespace as "the **only**
+> legal way to add a key", described a `patternProperties` hatch the schema had already closed, and
+> offered a profile in which an extension could be *declared* rather than removed. That construct is
+> withdrawn, and MAC009 (`undeclared-extension`) is withdrawn with it (§5.1) — a code whose remedy was
+> "declare it" ratified the very thing MAC012 forbids, and a framework that encodes two opposite
+> policies on one construct has a defect, not a nuance.
+
+**Why the namespace was removed rather than governed.** MAC closes every structural plane and validates
+it. An `x-` key sits **by construction** outside that, so nothing checks what it holds — and what one
+was found holding was the *grain*: the single most consequential fact about a relation. Measured on the
+day the offending key was retired, with the core schema untouched around it, **two of four** declared
+cell keys were false while still reading as VERIFIED; the two that held were the two whose view
+*enforces* the key, so it was true by construction rather than by declaration. Nobody was careless. The
+field was unreachable by every gate in the system, so being wrong cost nothing and stayed invisible.
+**An extension is not a small schema. It is an unchecked one.**
+
+**The only way to add a key: PROPOSE A CORE KEY.** Where a construct seems to need a key the core does
+not define, that is a **MAC gap** — a wall worth naming — and the response is to change MAC, which is
+now the only mechanism that exists:
+
+1. **Name the wall.** What can the model not say? Record it as a decision, with the sites that hit it.
+2. **Show it recurs** across more than one source or bundle, and that an agent or projector reads it
+   directly — a key nothing consumes is a note, and a note belongs in prose.
+3. **Show it projects** cleanly onto all three target families (FRAMEWORK §10). A key that projects onto
+   one is that target's concern, not the core's.
+4. **Land it in `mac.schema.json`** as a core key, typed and constrained, with a `schema_version` bump
+   and a changelog entry in §6 — at which point every gate in this framework can reach it.
+
+Until step 4 lands, the model says it in prose or does not say it. That is a real cost and it is the
+intended one: it puts the pressure on the schema, where it can be resolved once, instead of on 478
+unreachable sites where it cannot be resolved at all. The v0.5 `contract:` construct is the worked
+example, and it is worth being precise about what it proves — the application had invented it **eight
+ways under no namespace**, and v0.5 resolved that by *promoting it into core*. The promotion was the
+fix; the eight private spellings were the defect. **Never sprinkle a bare key into the core, and never
+reach for a namespace instead.**
 
 ## 3. What changed in v0.5 (the formalization delta from 0.4)
 
@@ -189,7 +219,8 @@ from `tools/mac_diag.py`.
 | | **what is not defined** | | |
 | **MAC001** | undefined-artifact | present in the bundle, carries no MAC definition, not declared out of scope | **error** — `info` for a file that *is* declared out of scope (the waiver, reported as a fact) |
 | **MAC002** | invalid-artifact | has a MAC definition and does not satisfy it | **error** — `warning` where a routed file's `schema_version` is outside the recognized set, so it claims a definition nothing checked |
-| **MAC009** | undeclared-extension | an `x-` key with no profile entry — §2: undeclared debt, not license | **error** |
+| **MAC012** | extension-duplicates-core | an `x-` extension key. **Prohibited outright** (§2) — it sits by construction outside every gate MAC has, so nothing can check what it holds. Where it duplicates a core field the finding names that field; where it does not, it is a MAC gap to be proposed into core, not declared beside it | **error** |
+| **MAC009** | ~~undeclared-extension~~ | **WITHDRAWN.** It diagnosed an `x-` key *with no profile entry*, whose remedy was to declare it — a remedy that ratified the construct §2 now prohibits. Its subject is a strict subset of MAC012's (MAC012 reads every YAML in the bundle; MAC009 read only schema-routed files), so nothing is lost by withdrawing it and one contradiction is. **The code is burned, never reassigned** — counts and suppressions keyed on it must not silently start meaning something else | **retired** |
 | | **what is defined redundantly** | | |
 | **MAC003** | fact-restated | one fact stated in more than one home; nothing keeps the copies in step | **warning** |
 | **MAC004** | fact-contradicted | statements of one fact disagree — something downstream is reading the wrong one | **error** |
@@ -210,6 +241,13 @@ Severities mean exactly this, and nothing else:
 - **warning** — conformant, but carrying a defect that becomes an error under a stated condition. The
   condition belongs in the diagnostic's `note`, not in the reader's head.
 - **info** — a fact about the bundle worth reporting. Never blocks.
+
+**retired** is not a severity — it is the absence of one. A retired code is never emitted, never
+counted, and never reported as *clean*: "clean" means computed and found nothing, and a withdrawn code
+computes nothing at all. The compiler prints retired codes on their own line so a reader who remembers
+the code learns what replaced it instead of reading a green tick that means neither. **A retired code is
+never reassigned.** Closing the taxonomy means the code is the contract; re-pointing `MAC009` at some
+future defect would silently change the meaning of every count and suppression already keyed on it.
 
 A check the compiler has not yet absorbed natively runs **wrapped**, as a subprocess, and its failure
 becomes **one** diagnostic under the code its subject belongs to, carrying the gate's own output as
@@ -263,8 +301,13 @@ debt arguable in review, and what a later reader needs to decide whether it is s
 manifest yields **no** waivers rather than silently waiving everything — an escape hatch that widens
 under a parse error is not an escape hatch.
 
-This is the same rule §2 states for `x-` keys, applied to whole artifacts: **declared debt is visible
-and arguable; silent debt is how a standard stops being one.**
+**Declared debt is visible and arguable; silent debt is how a standard stops being one.** Note the
+limit of that principle, because §2 used to overreach it: declaring works for an artifact MAC has *no
+definition for* — the declaration is the only handle anything has on it, and it costs nothing to be
+honest about. It does **not** work for a key inside a file MAC *does* define, because there the
+declaration competes with a definition and loses: nothing validates what the key holds, so the
+declaration buys silence rather than coverage. That is why `conformance.out_of_scope` is a legitimate
+escape and the `x-` profile was not.
 
 ### 5.4 What a clean compile does and does not prove
 
@@ -291,8 +334,8 @@ bundle must reach the start before anything is allowed to run.
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
   one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.9'`**.
-- A **promotion** (an `x-` key entering core) or any **breaking** change to the core vocabulary bumps the
-  patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
+- A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
+  the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
 - **`0.1.7`** adds, on the same contract: the **two-plane project layout** (`data/` + `ontology/`, opt-in via
   `mac.project.yaml`; absent ⇒ flat); the **edge-endpoints-are-concepts** rule (`EdgeEndpoint` — view/table
@@ -367,14 +410,27 @@ bundle must reach the start before anything is allowed to run.
   `example_shop_ontology` `ProductBundle` (grouping, no inline `definitions`) + the exploded
   `product_bundles` register. *(Were this to arrive bundled with a schema change, it would go out under the
   next additive number, `0.1.13`.)*
+- **The `x-` prohibition (§2) — normative prose + tooling, no schema bump.** §2 withdraws the `x-`
+  extension namespace, the extension **profile**, and the "invent under `x-`, prove it, promote it"
+  promotion path, replacing them with the core-key proposal path. The enforcing gate is
+  `tools/check_extension_keys.py` (**MAC012**), now run by the compiler; **MAC009** is withdrawn (§5.1).
+  It adds **no key** to `mac.schema.json` and removes none — the schema had already closed `^x-` in
+  **v0.1.14**, in 58 places, and this is the prose and the taxonomy catching up with it — so per
+  **RELEASING.md "When to bump"** it does not move the `schema_version`. What it changes is the
+  **remedy** a bundle is handed: previously "declare the key in a profile", now "remove the key, or
+  propose it into core". Measured across the estate at the time of the ruling: **478 `x-` sites in 198
+  files across six bundles, and not one bundle declaring a profile** — so this escalates nothing that
+  was passing, it replaces an error that pointed the wrong way with one that points at the fix.
 - **The compiler (§5) — normative prose + tooling, no schema bump.** §5 defines the closed diagnostic
   taxonomy (`tools/mac_diag.py`, frozen), the rule that a bundle MUST compile clean before anything runs,
   and the `conformance.out_of_scope` escape. It adds **no key** to `mac.schema.json` — it states how the
   existing contract is *enforced*, not what a file may contain — so per **RELEASING.md “When to bump”**
-  it does not move the `schema_version` and rides on the current generation. Two things it makes visible
-  rather than fixes, both recorded here so neither is mistaken for covered: `mac.schema.json` defines no
-  **profile** slot, so the §2 construct MAC009 enforces has no schema home and a bundle can only declare
-  it in the manifest; and **L2 is unimplemented** (§5.4).
+  it does not move the `schema_version` and rides on the current generation. One thing it makes visible
+  rather than fixes, recorded here so it is not mistaken for covered: **L2 is unimplemented** (§5.4).
+  *(This bullet previously recorded a second item — that `mac.schema.json` had no home for the §2
+  extension profile. That is obsolete twice over: v0.1.14 both closed the `^x-` hatch and added a
+  `ProjectFile#profile.extensions` slot, and §2 has since withdrawn the profile construct outright. The
+  slot is now a place to declare a prohibited key, which MAC012 reads as a finding like any other.)*
 - The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.9`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's

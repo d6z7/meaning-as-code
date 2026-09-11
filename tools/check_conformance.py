@@ -350,7 +350,7 @@ def section_a(b: Bundle, fw: Framework) -> list:
                   "their references unresolved, their drift undetectable"),
             detail=[f"{dark[d]:4d}  {d}/" for d in planes],
             expires=("blocking once the schema defines a file type for the largest of these, or the project "
-                     "declares them in a profile as deliberately-ungoverned")))
+                     "declares them out of scope in mac.project.yaml#conformance.out_of_scope")))
 
     # --- L2: defined by the standard, implemented by nobody in the framework
     impl = sorted(rel for rel, d in b.docs.items() if _looks_like_execution_validation(d))
@@ -407,9 +407,12 @@ def section_a(b: Bundle, fw: Framework) -> list:
 # ═════════════════════════════ B — PROFILE + EXTENSION DISCIPLINE (§2)
 
 def _profile_of(b: Bundle) -> dict:
-    """CONFORMANCE §2: 'a project declares a PROFILE: the list of x- keys it uses and what each
-    means'. The standard names the construct and gives it no home, so this looks in the only
-    project-level document there is, under either spelling."""
+    """RETIRED. CONFORMANCE §2 used to say a project declares a PROFILE of the `x-` keys it uses.
+    That whole mechanism is withdrawn: `x-` keys are PROHIBITED (MAC012), the schema no longer
+    defines a profile slot, and MAC009 — whose remedy was "declare it" — is retired.
+
+    Kept as a stub returning {} so the declared-set plumbing below still works, and so a bundle
+    that still carries a legacy profile block is not silently credited for it."""
     man = b.docs.get("mac.project.yaml") or {}
     for key in ("profile", "x_profile", "extensions"):
         p = man.get(key)
@@ -431,29 +434,25 @@ def section_b(b: Bundle, fw: Framework) -> list:
                 used[k].append(f"{rel}{jpath}")
     undeclared = {k: v for k, v in used.items() if k not in declared}
 
-    if not profile:
+    # PROHIBITION, not declaration. There is exactly ONE thing to say about an `x-` key now, and
+    # this axis used to say the opposite: it reported "no profile is declared" as the defect and
+    # named declaring as the remedy. With MAC009 retired and the schema's profile slot removed,
+    # that advice pointed at a construct with no home and ratified a banned one. A framework must
+    # not encode opposite policies; this was one of the voices that did.
+    if used:
         out.append(Finding(
-            code="B1-no-profile", section="B", severity=BLOCKING if used else WARN,
-            blast=max(len(used), 1),
-            headline=(f"no profile is declared, and {len(used)} `x-` key(s) are in use "
-                      f"({sum(len(v) for v in used.values())} sites)"
-                      if used else "no profile is declared (and no `x-` key is in use)"),
-            cost=("CONFORMANCE §2: an x- key with no profile entry is undeclared debt, not license. "
-                  "Undeclared, nobody can tell an experiment from a promotion candidate, and the "
-                  "promotion path (§2 'invent under x-, prove it, promote it') has no input"),
+            code="B1-prohibited-x", section="B", severity=BLOCKING, blast=len(used),
+            headline=(f"{len(used)} `x-` key(s) in use at "
+                      f"{sum(len(v) for v in used.values())} site(s) — prohibited"),
+            cost=("`x-` extension keys are prohibited (MAC012). They are not easily verifiable and "
+                  "they are a weak point in the chain. There is no declaration that makes one legal: "
+                  "the key is removed, or the thing it carries earns a CORE key by proposal"),
             detail=([f"     {k}  x{len(v)}   {v[0]}" for k, v in sorted(used.items())]
-                    + ["", "     FRAMEWORK SIDE OF THIS: mac.schema.json defines no profile slot and no gate",
-                       "     reads one, so §2's central discipline is unenforceable by construction. The",
-                       "     bundle cannot comply with a construct that has no home."]),
-            expires=("blocking the moment MAC defines the profile slot; today the bundle has nowhere legal "
-                     "to declare, so it is reported against the FRAMEWORK first")))
-    elif undeclared:
-        out.append(Finding(
-            code="B2-undeclared-x", section="B", severity=BLOCKING, blast=len(undeclared),
-            headline=f"{len(undeclared)} `x-` key(s) in use with no profile entry",
-            cost="CONFORMANCE §2: undeclared debt, not license",
-            detail=[f"     {k}  x{len(v)}   {v[0]}" for k, v in sorted(undeclared.items())],
-            expires="blocking now — the profile exists, so declaring is a one-line change"))
+                    + ["", "     REMEDY: check whether the core already expresses it — measured on a real",
+                       "     bundle, every `x-` key there was either derivable from a declared type or",
+                       "     restating at the wrong layer something the core already owned. If the core",
+                       "     genuinely cannot express it, propose a core key (CONFORMANCE §2)."]),
+            expires="blocking now — prohibition, not debt"))
 
     # --- mac.* spec ids the bundle asserts that the framework does not define
     forged: dict[str, list] = defaultdict(list)
@@ -762,7 +761,7 @@ def build_capabilities(b: Bundle, fw: Framework) -> list:
                 xn += 1
                 xs.append(f"{rel}{jpath}.{k}")
     caps.append(Capability(
-        key="x- extension namespace (declared in a profile)",
+        key="x- extension namespace (RETIRED — prohibited, MAC012)",
         offered_by="schema patternProperties `^x-` at every object level (CONFORMANCE §2)",
         slot="any object; each key declared in the project profile",
         used=xn, sites=xs))
@@ -954,7 +953,7 @@ def section_c(b: Bundle, fw: Framework, ref: Bundle | None) -> tuple:
                      f"{', '.join(c.key.split('  ')[0] for c in sorted(proven, key=lambda c: -c.ref_used))}"]
                     if proven else []),
             expires=("blocking per-capability only when the project adopts it and then regresses; a bundle "
-                     "may legitimately decline a mechanism, but not silently — declining is a profile entry")))
+                     "may legitimately decline a mechanism, but not silently — declining is an out_of_scope entry with a reason")))
     if substituted:
         out.append(Finding(
             code="C2-substituted", section="C", severity=WARN, blast=len(substituted),
