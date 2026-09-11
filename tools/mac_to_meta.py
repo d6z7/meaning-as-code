@@ -615,7 +615,7 @@ def _concept_doc(name, spec, tables, source):
     return {
       "metadata": {
         "concept": name, "source": source.upper(), "schema_version": _framework_schema_version(),
-        "x-kind": _META_KIND, "x-generated-by": _META_GENERATED_BY, "x-note": _META_NOTE},
+        "description": _META_NOTE},
       "concept": {
         "name": name, "label": spec["label"], "class": _sub(_META_CLASS, source),
         "identity": identity, "definition": _sub(spec["definition"], source)},
@@ -625,7 +625,7 @@ def _concept_doc(name, spec, tables, source):
         "answers": _sub(spec["answers"], source),
         "example": _sub(spec["example"], source),
         "never": _sub(spec["never"], source)},
-      "governance": {"owner": "data-platform-team", "x-generated": True},
+      "governance": {"owner": "data-platform-team"},
     }
 
 
