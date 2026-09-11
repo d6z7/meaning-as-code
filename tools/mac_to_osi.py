@@ -50,7 +50,10 @@ def datasets(root):
         fields = []
         for c in cols:
             fld = {"name": c["name"], "expression": expr(c["name"])}
-            is_time = c.get("type") in TIME_TYPES or c.get("x-subrole") == "temporal"
+            # x-subrole is a BANNED extension key. Measured before removing the branch: all 10
+            # columns that carried `x-subrole: temporal` already declared a TIME_TYPE, so this
+            # fallback never decided anything — and code that reads a banned key invites it back.
+            is_time = c.get("type") in TIME_TYPES
             if is_time:
                 fld["dimension"] = {"is_time": True}
             if c.get("description"):
