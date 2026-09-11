@@ -42,6 +42,10 @@ import sys
 
 import yaml
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import mac_diag as D          # noqa: E402
+import mac_project as P       # noqa: E402
+
 # Columns that identify WHEN a figure was published rather than WHICH figure it is. A key containing
 # one of these makes every republication its own group, so the collapse collapses nothing.
 CYCLE_HINTS = ("reporting_month", "reporting_cycle", "config_key", "vintage", "snapshot",
@@ -64,14 +68,18 @@ def check(root: str) -> list[dict]:
 
     # which relations a measure concept grounds on — those MUST declare a key
     needed: dict[str, str] = {}
-    for f in sorted(glob.glob(os.path.join(root, "ontology", "concepts", "*.yaml"))):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares. Globbing flat found no measure concept on a foldered bundle, which
+    # silently disabled rule (4): "a relation any measure concept grounds on must declare a key"
+    # cannot fire when the set of measure concepts is empty by construction.
+    for f in P.concept_files(root):
         d = yaml.safe_load(open(f, encoding="utf-8")) or {}
         if ((d.get("concept") or {}).get("class")) != "measure":
             continue
         for s in ((d.get("grounding") or {}).get("sources") or []):
             rel = str(s.get("relation") or "")
             if rel:
-                needed.setdefault(rel.split(".")[-1], os.path.basename(f)[:-5])
+                needed.setdefault(rel.split(".")[-1], os.path.basename(str(f))[:-5])
 
     seen = set()
     for f in sorted(glob.glob(os.path.join(root, "data", "datasets", "*.yaml"))):
@@ -165,16 +173,29 @@ def _measured_key(root, stem):
     return (m or {}).get("key") or []
 
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
 
-    f = check(a.root)
+    # ZERO IS NOT A SCORE. This gate reads TWO populations — the concepts that make a key REQUIRED,
+    # and the dataset descriptors that declare one. An empty one used to print a tick.
+    nc = len(P.concept_files(a.root))
+    nd = len(glob.glob(os.path.join(a.root, "data", "datasets", "*.yaml")))
+    f = check(a.root) if (nc and nd) else []
     if a.json:
-        print(json.dumps({"findings": f}, indent=1, ensure_ascii=False))
-        return 1 if any(x["severity"] == "ERROR" for x in f) else 0
+        print(json.dumps({"findings": f, "concepts": nc, "datasets": nd,
+                          "measured_nothing": not (nc and nd)}, indent=1, ensure_ascii=False))
+        return D.EMPTY_EXIT if not (nc and nd) else (
+            1 if any(x["severity"] == "ERROR" for x in f) else 0)
+    if not nc:
+        return D.refuse_empty("check_grain_declaration", P.concepts_dir(a.root))
+    if not nd:
+        return D.refuse_empty("check_grain_declaration", os.path.join(a.root, "data", "datasets"),
+                              unit="dataset descriptor")
 
     for x in f:
         print(f"  [{x['severity']:<7}] {x['where']}")

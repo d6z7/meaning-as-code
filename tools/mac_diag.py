@@ -71,6 +71,52 @@ def _load_severities() -> dict:
 SEVERITY_DEFAULT = _load_severities()
 
 
+# ── the outage marker: "not computed" is not "clean" ──────────────────────────────────────────────
+# THE ONE HOME for this phrase. It used to live in mac_compile, which reads it back out of every
+# summary to decide which codes a compile left UNKNOWN — so every check that wants to be counted as
+# an outage has to spell it the same way. A literal copied into each check is a second home for a
+# fact (MAC003), and the failure mode is silent: reword one copy and that check's outages start
+# rendering as clean. It is declared here, with the contract it belongs to.
+UNKNOWN_MARK = "UNKNOWN — not absent"
+
+# A ZERO DENOMINATOR IS AN OUTAGE, NOT A RESULT. A gate that discovered nothing to measure has not
+# judged the bundle; it has failed to find it. Historically that printed the same shape as a clean
+# run ("0 of 0 concept(s) measured", exit 0) on every bundle whose concepts were foldered, which is
+# the loudest possible way to be silent: three operators read a green gate that had not run.
+EMPTY_EXIT = 2          # the toolchain's SETUP-failure code — mac_compile maps it to WARNING+UNKNOWN,
+                        # so a bundle nobody checked is never reported as a bundle that passed.
+
+
+def empty_mark(unit: str = "concept") -> str:
+    """The phrase that identifies an empty-denominator refusal for THIS unit, in one home.
+
+    A caller (a CI script, the compiler, this toolchain's own self-tests) has to tell "found nothing
+    to measure" apart from "measured everything and it was fine" — and, when a gate counts more than
+    one population, WHICH population was empty. The phrase is the signal; keep it verbatim."""
+    return f"found no {unit} under"
+
+
+def _empty_text(source: str, where: str, unit: str) -> str:
+    return (f"{source} {empty_mark(unit)} {where}, so it measured NOTHING — its verdict is "
+            f"{UNKNOWN_MARK}")
+
+
+def empty_denominator(code: str, source: str, where, *, unit: str = "concept", note: str = "") -> "Diagnostic":
+    """The finding a check returns INSTEAD of a clean result when its denominator is zero."""
+    return Diagnostic(
+        code=code, severity=WARNING, source=source,
+        summary=_empty_text(source, str(where), unit),
+        note=(note or f"either the bundle has no {unit} plane, or this gate is looking in the wrong "
+                      f"place — discovery goes through mac_project, which resolves both the flat and "
+                      f"the two-plane layout and walks nested folders."))
+
+
+def refuse_empty(source: str, where, *, unit: str = "concept") -> int:
+    """The same refusal for a print-and-exit gate. Prints ONE line, returns the setup-failure code."""
+    print(f"\u2717 NOT RUN \u2014 {_empty_text(source, str(where), unit)}")
+    return EMPTY_EXIT
+
+
 @dataclass(frozen=True)
 class Witness:
     """One place a diagnostic is evidenced. Carries enough to navigate to it."""

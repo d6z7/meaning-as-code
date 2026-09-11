@@ -80,7 +80,8 @@ import check_framework_selfconform as SELFCONF
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
-from mac_diag import CODES, ERROR, INFO, ORDER, WARNING, Diagnostic, Witness, render, summarise  # noqa: E402
+from mac_diag import (CODES, ERROR, INFO, ORDER, UNKNOWN_MARK, WARNING, Diagnostic, Witness,  # noqa: E402
+                      render, summarise)
 
 SOURCE = "mac_compile"
 SCHEMA_ID = "mac.diagnostics/compile/1"
@@ -92,7 +93,8 @@ SCHEMA_ID = "mac.diagnostics/compile/1"
 # carries for it (adding a field would be a contract change, which is not on the table). If the phrase
 # is ever reworded in a check module, this footer degrades in the SAFE direction: it reports a code as
 # clean that is actually unknown — so the phrase is treated as part of the convention, not as prose.
-UNKNOWN_MARK = "UNKNOWN — not absent"
+# UNKNOWN_MARK is IMPORTED from mac_diag (above), where the contract it belongs to lives — it used
+# to be declared here while every check module spelled the same phrase by hand.
 MAC_ROOT = Path(__file__).resolve().parent.parent
 TOOLS = MAC_ROOT / "tools"
 de = M.de
@@ -530,10 +532,20 @@ def main(argv=None) -> int:
         out.write_text(json.dumps(doc, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
         print(f"  finding set persisted → {out}  ({de(out.stat().st_size / 1024, 1)} kB)")
 
-    verdict = "DOES NOT COMPILE" if stats["errors"] else "COMPILES"
+    # THE HEADLINE CARRIES THE HOLE. "COMPILES — 0 error(s)" is a claim about codes that were
+    # COMPUTED, and the footer above has always distinguished those from the ones nobody established
+    # — but a reader who reads one line read the wrong one. MEASURED: on a bundle whose concepts a
+    # gate could not find, four codes went unknown under an unqualified COMPILES.
+    # The EXIT CODE is deliberately unchanged (0 = no error-severity finding, this file's contract):
+    # a bundle nobody checked must not be failed as if it had been judged and found wanting.
+    # `unknown` is the set computed for the footer above — READ, not recomputed.
+    verdict = "DOES NOT COMPILE" if stats["errors"] else (
+        "COMPILES, WITH HOLES" if unknown else "COMPILES")
     print(f"\n{verdict} — {de(stats['errors'])} error(s). "
           + ("Nothing may run on this bundle until they are cleared."
-             if stats["errors"] else "No error-severity finding."))
+             if stats["errors"] else "No error-severity finding.")
+          + (f" {de(len(unknown))} code(s) were NOT COMPUTED ({' '.join(sorted(unknown))}) — "
+             f"UNKNOWN, not clean." if unknown else ""))
     return 1 if stats["errors"] else 0
 
 

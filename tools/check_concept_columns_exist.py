@@ -30,6 +30,10 @@ import sys
 
 import yaml
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mac_diag as D          # noqa: E402
+import mac_project as P       # noqa: E402
+
 
 def columns_of(root: pathlib.Path, relation: str) -> set[str] | None:
     stem = relation.split(".")[-1]
@@ -49,7 +53,9 @@ def nearest(have: set[str], want: str) -> str:
 
 def scan(root: pathlib.Path) -> list[dict]:
     out = []
-    for f in sorted(glob.glob(str(root / "ontology" / "concepts" / "*.yaml"))):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares (mac_project.concept_files).
+    for f in P.concept_files(root):
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         c = d.get("concept") or {}
         name = str(c.get("name") or pathlib.Path(f).stem)
@@ -82,16 +88,24 @@ def scan(root: pathlib.Path) -> list[dict]:
 
 
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
     root = pathlib.Path(a.root).resolve()
-    found = scan(root)
+    # ZERO IS NOT A SCORE. "every column named by 0 concept(s) exists" was this gate's verdict on
+    # every foldered bundle — a sentence that is true of any directory on earth.
+    n = len(P.concept_files(root))
+    found = scan(root) if n else []
     if a.json:
-        print(json.dumps({"findings": found}, indent=1, ensure_ascii=False))
-        return 1 if found else 0
+        print(json.dumps({"findings": found, "concepts": n, "measured_nothing": not n},
+                         indent=1, ensure_ascii=False))
+        return D.EMPTY_EXIT if not n else (1 if found else 0)
+    if not n:
+        return D.refuse_empty("check_concept_columns_exist", P.concepts_dir(root))
     for x in found:
         print(f"  [ERROR] {x['concept']}.{x['field']}")
         print(f"          names {x['names']!r}, which {x['relation']} does not have")
@@ -109,7 +123,6 @@ def main() -> int:
             for a_, b_ in pref[:3]:
                 print(f"     {a_}  vs  {b_}")
         return 1
-    n = len(glob.glob(str(root / "ontology" / "concepts" / "*.yaml")))
     print(f"✓ OK — every column named by {n} concept(s) exists on the relation it grounds on")
     return 0
 

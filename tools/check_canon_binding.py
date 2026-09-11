@@ -40,6 +40,7 @@ import sys
 from pathlib import Path
 
 import mac_diag as D
+import mac_project as P
 
 # Each probe is a SET of spellings for one semantic element. A single literal was too narrow and
 # produced a false positive on the first real run: ob_reach writes "substituting 0 for a null
@@ -96,7 +97,14 @@ def check_canon_binding(root) -> list:
                                      f"UNVERIFIED, not clean: {exc!r}")]
     unresolved, drifted, restated, contradicted = [], [], [], []
     PF = _params_from()
-    for f in sorted((Path(root) / "ontology" / "concepts").glob("*.yaml")):
+    files = P.concept_files(root)
+    # ZERO IS NOT A SCORE — a run that found no concept has verified no binding.
+    if not files:
+        return [D.empty_denominator("MAC008", "check_canon_binding", P.concepts_dir(root))]
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares (mac_project.concept_files). Globbing `ontology/concepts/*.yaml` by hand
+    # measured ZERO on every foldered bundle and printed a clean verdict.
+    for f in files:
         try:
             doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001
@@ -105,7 +113,7 @@ def check_canon_binding(root) -> list:
             rb = r.get("realized_by")
             if not isinstance(rb, dict) or not rb.get("udf"):
                 continue
-            rel = str(f.relative_to(root))
+            rel = P.rel(root, f)
             # A PARAMETER THAT HAS A DECLARED HOME MUST NOT BE ATTACHED. If it agrees with the
             # declaration it is a restatement; if it disagrees, the binding and the concept are
             # saying different things and the binding is the one that RUNS. Measured: two fpl2
@@ -213,9 +221,13 @@ def check_canon_binding(root) -> list:
 
 
 def main() -> int:                                                      # pragma: no cover
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_canon_binding(root)
     print(D.render(d, root, show=D.INFO) or "check_canon_binding: no findings")
+    if any(D.UNKNOWN_MARK in x.summary for x in d):
+        return D.EMPTY_EXIT
     return 1 if any(x.severity == D.ERROR for x in d) else 0
 
 
