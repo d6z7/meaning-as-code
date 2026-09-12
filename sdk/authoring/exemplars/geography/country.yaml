@@ -1,0 +1,182 @@
+# FPL > geography > Country  (homogenized clean-state)
+#
+# TO-BE country concept. The raw model stores country as an EAV (dim_fpl_lm_country: one row
+# per (country × attribute) — fpl_country_code, fpl_brand_letter, attribute, value, fpl_country)
+# AND identifies a country by a sales-PERSPECTIVE label (market='INLAND', not 'DEUTSCHLAND').
+# The serving dim_country view (data/transforms/dim_country.sql) FLATTENS the EAV to columns and exposes
+# a STABLE ISO key (iso2/iso3) so the consumer resolves a country by ISO, never by a name literal.
+# This concept describes only that clean, flattened result. THE TEST: an AI must resolve any
+# country to its FPL fact rows from THIS FILE ALONE — no EAV pivot, no name guess, no probe.
+
+metadata:
+  concept: Country
+  source: FPL
+  # v0.4 = country.served_vs_catalog ('serve' = present in the KPI fact, not the dim_country catalog —
+  # W-meta4-served-vs-catalog, 2026-07-14)
+  version: '0.4'
+  schema_version: '0.1.13'
+  status: draft
+  owner: data-platform-team
+  confidence: C                 # C confirmed · I inferred · Q needs-SME (whole-file default)
+
+concept:
+  name: Country
+  label: Country
+  class: reference
+  identity:
+    kind: iso
+    canonical_key: iso2
+  definition: >
+    A country — the leaf of the FPL geography hierarchy. In FPL a country has ONE stable
+    identity: its ISO code (iso2 / iso3). The sales-perspective market label (e.g. INLAND for the
+    domestic-Germany perspective) and the cluster-scoped join key (fpl_brand_country_code) are
+    separate attributes ON the country, not its identity. The raw EAV is flattened to columns by
+    the serving view; the consumer filters by iso2/iso3 and never by a country-name string.
+
+# T2a: name->iso2 surface register at data/lookups/dim_country.lookup.csv (thin; widening to
+# fpl_brand_country_code/market is a warehouse follow-on;
+# drift: gen_country_lookup.py --check).
+
+# =========================================================================
+# THE GROUNDING — points at the SERVING VIEW (flattened dim), never the raw EAV
+# =========================================================================
+grounding:
+  sources:
+    - relation: fpl.dim_country
+      key: fpl_brand_country_code
+      columns: [fpl_brand_country_code, brand_letter, iso2, iso3, market, country_name_de]
+  # v0.1.7 whitelist: the columns carrying ontology meaning + their analytical role (gaps.* vocab,
+  # model/_shared/vocabulary.yaml). 'attribute' ⇒ display-only/never-filter; the behavioural specifics
+  # (iso2 IS the identity, market is NOT) stay as the typed contract.rules below.
+  field_roles:
+    fpl_brand_country_code: fpl.field_role.key
+    iso2:                   fpl.field_role.key
+    iso3:                   fpl.field_role.key
+    brand_letter:           fpl.field_role.dimension
+    market:                 fpl.field_role.dimension
+    country_name_de:        fpl.field_role.attribute
+  grain: >
+    ONE ROW PER (fpl_brand_country_code). The view PIVOTs the EAV (max(CASE WHEN attribute=… )) to
+    one flat row per cluster-scoped country key, so every attribute below is a plain column.
+  # NOTE: column metadata is single-homed in the Physical layer (tables/dim_country.yaml):
+  #   fpl_brand_country_code (key) · brand_letter (single-char cluster, do not substr) ·
+  #   iso2 (key, country identity) · iso3 (key) · market (perspective label, not identity,
+  #   Germany ≠ 'DEUTSCHLAND') · country_name_de (display only, never a filter key).
+  #   No region column — region is a derived, named additive rollup (see geography/region.yaml).
+
+# =========================================================================
+# THE CONTRACT — agent-facing binding rules (folds no_probe_guarantee +
+# identity_contract + grounding.guarantees; CONCEPT_SPEC v0.5)
+# =========================================================================
+contract:
+  no_probe_guarantee: |
+    To answer "what was <measure> for <country> …", an AI needs ONLY:
+      1. map the country name to its iso2/iso3;
+      2. filter dim_country on that ISO;
+      3. attach the KPI fact via edges.yaml#kpi__of_country.
+    NO EAV pivot, NO IsoCodeNN selection, NO guessing whether the country is 'DEUTSCHLAND' vs 'INLAND', NO country-name
+    literal anywhere. The view flattened the EAV, picked the canonical ISO, and exposed the perspective label
+    separately. If any of that is still needed, THIS FILE is incomplete and must be fixed; do not fall back to a probe.
+  # eav-pivot + iso-canonicalize + perspective-label-separate transforms (raw defects + how) live in the
+  # data-transformation layer
+  dissolved_by: data/transforms/dim_country.yaml
+  # SOURCE rules only — general rules + structure spec: see query_rules.yaml header.
+  applies: [resolve.by_semantic_identity, resolve.never_fabricate]
+  rules:
+    - id: country.resolve.iso
+      subject: "Resolve a country by ISO code, not its German display name"
+      kind: mac.rule_kind.resolution
+      confidence: C
+      scope: FPL
+      binds: [iso2, iso3]
+      when:  "resolving or filtering a country named in a question"
+      then:  "map the name -> iso2 (DE, ES, IT, FR, NL, ...) and filter dim_country.iso2 = '<iso2>' (or iso3); the
+              EAV's IsoCode01..IsoCode19 sprawl is collapsed to ONE canonical pair, so iso2/iso3 are the identity"
+      never: "emitting a country-name string as a SQL literal against this model (country_name_de, e.g. 'ITALIEN', is
+              HUMAN-READABLE display only, never a filter key; 'DEUTSCHLAND' returns 0 rows)"
+
+    - id: country.resolve.market_not_identity
+      subject: "Treat market as a sales-perspective descriptor, not country identity"
+      kind: mac.rule_kind.resolution
+      confidence: C
+      scope: FPL
+      binds: [market]
+      when:  "deciding whether to filter the 'market' column"
+      then:  "treat 'market' (e.g. 'INLAND' = the domestic-Germany sales perspective) as a SEPARATE attribute, not the
+              country identity; filter it ONLY when the QUESTION is about the perspective itself"
+      never: "using 'market' as the country key, or equating Germany with the string 'DEUTSCHLAND' (returns 0 rows)"
+
+    - id: country.served_vs_catalog
+      subject: "Count served countries by the fact join, not the catalog dim"
+      kind: mac.rule_kind.resolution
+      confidence: C
+      scope: FPL
+      binds: [iso2, fpl_brand_country_code]
+      when:  "a question asks which / how many markets or countries the dataset SERVES / covers / carries
+              data for — introspection over the served geography (e.g. 'How many markets (countries) does
+              the FPL dataset serve?'), or any answer that must distinguish a served market from a merely
+              catalogued one"
+      then:  "SERVED = PRESENT IN THE KPI FACT PLANE: a country counts as served iff at least one row of
+              the fact view fpl.v_fpl_kpi_current joins to it — the served-market count is
+              COUNT(DISTINCT c.iso2) FROM fpl.v_fpl_kpi_current k JOIN fpl.dim_country c ON
+              k.fpl_brand_country_code = c.fpl_brand_country_code. dim_country ALONE is the CATALOG: it
+              lists every country the dimension knows (incl. countries with zero fact rows), so its bare
+              distinct-iso2 count is the catalog size, not the served set. 'Market' here is the country
+              grain (iso2), the atomic geography; regions (VE, VD, EU27, ...) are brand-relative rollups
+              OVER these markets, not additional markets. Disclose the reading (served = appears in the
+              fact) in the answer."
+      never: "answering a 'does the dataset serve / how many markets does it serve' question with
+              COUNT(DISTINCT iso2) FROM fpl.dim_country alone (no fact join) — that returns the catalog
+              cardinality and overstates the served set (catalog 206 vs served 109, witnessed 2026-07-14);
+              nor counting fpl_brand_country_code rows (brand-scoped keys fan the same country out per
+              cluster — always collapse to DISTINCT iso2)"
+
+    - id: country.breakdown.null_iso2_labeled
+      subject: "In a per-market breakdown keyed on iso2, surface null-iso2 markets as one labeled bucket, never blank"
+      kind: mac.rule_kind.guarantee
+      confidence: C
+      scope: FPL
+      binds: [iso2, fpl_brand_country_code]
+      when:  "a question breaks a measure down PER market / country (one row per country) keyed on
+              dim_country.iso2 — INCLUDING a per-market COMPARISON whose shared axis is the country (iso2 is the
+              cross-brand alignment key). The DQ-GEO-04 supra-national clusters / channels (V_BALTIKUM,
+              V_DOM SAM, V_R SUEDAM, V_MEX DIRECT, and the wider DQ-GEO-06 set) carry REAL fact value but NULL iso2"
+      then:  "KEEP iso2 as the row key (the atomic country grain AND the cross-brand alignment key), and render
+              the NULL-iso2 rows as ONE explicitly-labeled bucket — COALESCE(c.iso2, '(unmapped / supra-national
+              markets)') (or surface the underlying market codes) — disclosing in ASSUMPTIONS that iso2-less
+              markets are grouped as unmapped. The value STAYS in the result so the measure total is complete.
+              AGGREGATE AT THE iso2 GRAIN IN ONE SCOPE: JOIN dim_country and GROUP BY c.iso2 in the SAME
+              (aggregating) query as the conditional SUM(CASE WHEN <series> THEN value ELSE 0 END), so BOTH
+              entities for one market collapse into a SINGLE row. A cross-brand comparison's two entities live
+              under DIFFERENT fpl_brand_country_code namespaces (Golf -> V_<MKT>, Octavia -> C_<MKT>) that map
+              to the SAME iso2 — so iso2 must be the GROUP BY grain, resolved BEFORE/DURING the aggregation,
+              never after"
+      never: "rendering the null-iso2 rows as a BLANK / NULL market cell (an unlabeled row that reads as a data
+              error); silently DROPPING them with WHERE iso2 IS NOT NULL (that undercounts the measure — the
+              clusters carry real value); or GROUP BY fpl_brand_country_code to dodge the null — it is a
+              brand-scoped '<brand_letter>_<MARKET>' composite (brand_country_code.yaml) that fans one country
+              into per-brand-cluster rows and MISALIGNS a cross-brand comparison; aggregating the conditional
+              SUM on the raw fpl_brand_country_code (or ANY brand-scoped fact key) in an inner scope and
+              resolving iso2 only in an OUTER projection — the two brands' keys (V_DE vs C_DE) never share a
+              group, so the outer iso2 mapping emits the SAME market TWICE (one row per model, each with the
+              other model 0), never merged"
+
+    - id: country.region_derived_not_stored
+      subject: "Country is the atomic grain; regions are derived, not stored"
+      kind: mac.rule_kind.guarantee
+      confidence: C
+      scope: FPL
+      binds: []
+      when:  "a question rolls a country up to a region"
+      then:  "treat Country as the ATOMIC grain and derive the region per query as a NAMED, ADDITIVE rollup of member
+              countries under one brand's definition (see geography/region.yaml)"
+      never: "expecting or reading a region column on the country — region is NOT stored here"
+  inherited_guarantees: >
+    From the serving view (data/transforms/dim_country.yaml), relied on here and not re-derived: the EAV is
+    flattened to one flat row per fpl_brand_country_code; the IsoCode01..IsoCode19 sprawl is collapsed to
+    ONE canonical iso2/iso3 pair (country identity); the sales-perspective label is exposed separately as
+    'market' (INLAND), not as the identity; country_name_de is retained as a human-readable attribute only.
+
+governance:
+  owner: data-platform-team
+  last_reviewed: 2026-07-14
