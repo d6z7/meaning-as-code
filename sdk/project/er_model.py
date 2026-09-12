@@ -13,7 +13,7 @@ All of that is already authored and was simply never projected:
 
   * dataset columns carry ``role`` — primary_key / foreign_key / composite_key_part / discriminator
   * ``ontology/edges.yaml`` physical edges carry ``cardinality`` on BOTH endpoints ("1", "0..N") and a
-    ``join_rule`` naming the columns: ``v_fpl_kpi.fpl_brand_country_code_id = dim_brand_country_code.…``
+    ``join_rule`` naming the columns: ``v_acme_kpi.acme_brand_country_code_id = dim_brand_country_code.…``
 
 So the crow's feet are not decoration and not inferred — they are the authored cardinality, rendered.
 If a diagram shows "many DtC to one Market", that claim is `dtc__of_market` in edges.yaml, and it is
@@ -269,8 +269,8 @@ def build(datasets: dict, concepts: dict, ont_edges: list, ds_relation: dict | N
     for k, r in merged.items():
         r["realized_by"].sort(key=lambda x: x["edge_id"] or "")
         # The synthetic id MUST be derived from the merge key, not from the entity pair alone: two
-        # different joins can connect the same two tables (v_fpl_kpi -> dim_brand_country_code on
-        # fpl_brand_country_code_id AND on brand_letter_id). Keying on the pair gave them the SAME id,
+        # different joins can connect the same two tables (v_acme_kpi -> dim_brand_country_code on
+        # acme_brand_country_code_id AND on brand_letter_id). Keying on the pair gave them the SAME id,
         # and a renderer that identifies edges by id then cannot tell them apart — one of them silently
         # stopped responding to selection.
         lvl, fe, fc, te, tc = k

@@ -1,4 +1,4 @@
-"""Unit tests for the de-FPL source-identity resolver: gaps/fpl resolves to the exact strings
+"""Unit tests for the de-ACME source-identity resolver: <domain>/<dataset> resolves to the exact strings
 that used to be hardcoded (so the projection stays byte-identical), and a bare/new source falls
 back gracefully with no source literal baked in."""
 
@@ -13,14 +13,14 @@ def _w(p: Path, s: str) -> Path:
     return p
 
 
-def test_real_gaps_fpl_resolves_to_hardcoded_strings():
+def test_a_declared_bundle_resolves_to_its_manifest_strings():
     repo = Path(__file__).resolve().parents[2]
-    ident = si.resolve(repo / "sources" / "gaps" / "fpl")
+    ident = si.resolve(repo / "sources" / "acme" / "acme")
     # exactly the values that were literals in data_plane / project_data / edges before Phase 6
-    assert ident.data_domain == "gaps"
-    assert ident.dataset == "fpl"
-    assert ident.label == "FPL"
-    assert ident.view_schema == "fpl"
+    assert ident.data_domain == "acme"
+    assert ident.dataset == "acme"
+    assert ident.label == "ACME"
+    assert ident.view_schema == "acme"
 
 
 def test_label_from_runtime_source_wins(tmp_path):

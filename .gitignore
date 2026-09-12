@@ -16,3 +16,10 @@ compile.json
 # The infra-handle register is per-estate and must never be published: a detector that
 # names what it forbids is a register of those secrets. Only the .example ships.
 sdk/gate/infra_handles.txt
+
+# The source-token register is per-estate and must never be published — same rule as the
+# infra-handle register. Only the .example ships.
+sdk/gate/source_tokens.txt
+
+# The shared-schema register is per-estate — same rule as the other two.
+sdk/gate/shared_schemas.txt

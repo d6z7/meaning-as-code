@@ -11,7 +11,7 @@ serving surface, in the source's OWN schema:
 
 BOTH are OWN-SCHEMA ONLY. The hard guardrail (``assert_own_schema``) REFUSES to touch a schema
 that is empty or a KNOWN SHARED / gold schema — the durable fix for the 2026-08-13 incident where a
-new source (fpl2) left its ``view_database`` at the shared gold ``fpl`` and its
+new source (acme2) left its ``view_database`` at the shared gold ``acme`` and its
 ``CREATE OR REPLACE VIEW`` OVERWROTE gold's ``dim_country`` / ``dim_model``.
 
 OFFLINE-FIRST + testable: the planning functions (``plan_materialization`` / ``plan_lookups``) and the
@@ -35,9 +35,23 @@ from sdk.authoring.connection import load_connection
 from sdk.authoring.data_plane import canonical_relation_name
 
 # Schemas a source may NOT materialize into: empty, or a shared/gold schema owned by another source.
-# The 2026-08-13 incident (fpl2 -> shared `fpl`) is why this is a HARD refuse, not a warning. A source
-# owns exactly ONE schema (default its dataset name, e.g. `fpl2`); it never writes to a shared one.
-KNOWN_SHARED_SCHEMAS = frozenset({"fpl", "gaps", "gold", "default", "public", "information_schema"})
+# The 2026-08-13 incident (acme2 -> shared `acme`) is why this is a HARD refuse, not a warning. A source
+# owns exactly ONE schema (default its dataset name, e.g. `acme2`); it never writes to a shared one.
+# GENERIC shared-schema names only. An estate's own shared schemas are instance specifics and are
+# declared in the source-token register, never listed here.
+_GENERIC_SHARED_SCHEMAS = frozenset({"gold", "default", "public", "information_schema"})
+
+
+def known_shared_schemas() -> frozenset:
+    """Generic shared-schema names, plus any this estate declares.
+
+    NOT the source-token register: that one lists instance names which must not appear in the
+    generic instrument, and a source's OWN name is exactly the schema it is supposed to materialize
+    into. Conflating the two made `assert_own_schema` refuse every source by its own name.
+    """
+    from sdk import registers
+
+    return _GENERIC_SHARED_SCHEMAS | {t.lower() for t in registers.load("shared_schemas")}
 
 _CREATE_VIEW_RE = re.compile(r"(?is)\bCREATE\s+(?:OR\s+REPLACE\s+)?VIEW\b.*?\bAS\b\s*")
 
@@ -75,12 +89,12 @@ def assert_own_schema(view_schema: str) -> None:
             "connection.yaml view_schema/view_database is EMPTY — refusing to materialize (no "
             "own target schema). Set it to this source's own schema (default the dataset name)."
         )
-    if vs.lower() in KNOWN_SHARED_SCHEMAS:
+    if vs.lower() in known_shared_schemas():
         raise MaterializeRefused(
             f"view_schema {vs!r} is a KNOWN SHARED schema — refusing to CREATE views there. "
-            f"Incident (2026-08-13): a new source left view_database at the shared gold `fpl` and "
+            f"Incident (2026-08-13): a new source left view_database at a shared GOLD schema and "
             f"its CREATE OR REPLACE VIEW OVERWROTE gold's dim_country/dim_model. A source must "
-            f"materialize ONLY into its OWN dedicated schema (default the dataset name, e.g. fpl2). "
+            f"materialize ONLY into its OWN dedicated schema (default: the dataset name). "
             f"Set connection.yaml view_schema to this source's own schema."
         )
 

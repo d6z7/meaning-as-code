@@ -4,13 +4,13 @@
 THE INVARIANT
 -------------
 The framework (this repo's projectors + serving code) manages ontologies for ANY source. It must
-therefore contain NO source literal: no `fpl2.`, no `"fpl"`, no `gaps/fpl` spliced into executable
+therefore contain NO source literal: no `acme2.`, no `"acme"`, no `<domain>/<dataset>` spliced into executable
 code. A hardcoded schema does not fail loudly — it silently mis-reports on every OTHER source, which
 is the worst failure mode a shared instrument can have.
 
 This is not hypothetical. On 2026-08-16 the plane-health chain check shipped with
-`f"fpl2.{table_name}"`; on any bundle whose schema was not `fpl2` it reported EVERY dataset as having
-no transformation. Two more `f"fpl.{stem}"` fallbacks had been sitting in objects.py before that.
+`f"acme2.{table_name}"`; on any bundle whose schema was not `acme2` it reported EVERY dataset as having
+no transformation. Two more `f"<source>.{stem}"` fallbacks had been sitting in objects.py before that.
 Nothing caught either: the only source-coupling gate in the estate lives in a different repo
 (mac-runtime), scoped to that runtime's closure.
 
@@ -36,35 +36,40 @@ import sys
 import tokenize
 from pathlib import Path
 
+from sdk import registers
 from sdk.gate import contract
 
 # directories that make up the generic instrument
 SCAN_DIRS = ("sdk/project", "sdk/authoring", "sdk/cli", "sdk/container")
-SOURCE_TOKENS = ("fpl2", "fpl", "hifa")
+# The instance names this instrument must not contain. They live in a gitignored register, NOT
+# here: a detector that names what it forbids is a register of those names, and this repo is
+# published. With none declared the token class examines nothing — which the verdict line says.
+SOURCE_TOKENS = registers.Live("source_tokens")
 # TEST files legitimately name a fixture source — exercising the instrument is not coupling it.
 SKIP_FILE = re.compile(r"(^|/)(test_|conftest)")
 # RATCHET: file -> (allowed_count, why). Pre-existing coupling is frozen at today's count so it cannot
 # GROW, while the instrument stays green and the backlog stays visible. Lower a count as you fix one;
 # a count that drops to 0 should be deleted. Adding a NEW file here needs a real reason, not convenience.
 ALLOW: dict[str, tuple[int, str]] = {
-    "sdk/project/vocabulary.py": (
-        1,
-        "the `fpl.field_role.*` VOCABULARY namespace, not a schema — needs a grammar decision to generalise",
-    ),
-    "sdk/authoring/data_plane.py": (
-        6,
-        "legacy harvest-authoring defaults that predate source_ident; replace with the resolved label",
-    ),
-    "sdk/authoring/materialize.py": (
-        1,
-        "legacy default schema in the materialize path; should come from connection.yaml",
+    "sdk/project/ontology_quality.py": (
+        4,
+        "the ENGLISH WORD — `answerable['gaps']` is the list of answer-path steps a concept cannot "
+        "supply. It collides with one estate's domain name, which is exactly why this gate matches "
+        "substrings: a `\\b`-bounded pattern could not see `v_<source>_kpi` or `<source>2`. A "
+        "detector that cannot be fooled by an identifier will sometimes be fooled by a dictionary.",
     ),
 }
 
-# a source REFERENCE, not merely the letters: a schema prefix (`fpl2.`), a bundle path (`gaps/fpl`),
-# or the bare name standing alone as an identifier ("fpl2").
-_TOK = "|".join(SOURCE_TOKENS)
-_TOKEN_RE = re.compile(rf"(\b({_TOK})\s*\.|gaps/({_TOK})\b|^['\"]({_TOK})['\"]$)", re.I)
+# a source REFERENCE, not merely the letters: a schema prefix (`acme2.`), a bundle path (`<domain>/<dataset>`),
+# or the bare name standing alone as an identifier ("acme2").
+def _token_re():
+    """Built per call: the register is read live, and the DOMAIN segment of a bundle path is derived
+    from the declared tokens rather than hardcoded (it used to be one estate's literal domain)."""
+    toks = [re.escape(t) for t in SOURCE_TOKENS]
+    if not toks:
+        return None
+    tok = "|".join(toks)
+    return re.compile(rf"(\b({tok})\s*\.|[A-Za-z0-9_-]+/({tok})\b|^['\"]({tok})['\"]$)", re.I)
 
 
 def _string_literals(path: Path):
@@ -117,6 +122,9 @@ def main(argv) -> int:
     print(f"── source-coupling gate ── the framework must name NO source ── {root} ──\n")
     violations: list[str] = []
     hits: dict[str, list[str]] = {}
+    # Built ONCE per run from the live register. None means no tokens are declared, so the token
+    # class examines nothing — reported in the verdict rather than passed over in silence.
+    token_re = _token_re()
     scanned = 0
     for d in SCAN_DIRS:
         for p in sorted((root / d).rglob("*.py")):
@@ -126,7 +134,7 @@ def main(argv) -> int:
                 scanned -= 1
                 continue
             for lineno, text in _string_literals(p):
-                if not _TOKEN_RE.search(text):
+                if token_re is None or not token_re.search(text):
                     continue
                 hits.setdefault(rel, []).append(f"{rel}:{lineno}  {text.strip()[:88]}")
 
@@ -147,13 +155,17 @@ def main(argv) -> int:
     print()
     if violations:
         print(
-            f"✗ {len(violations)} source literal(s) in {scanned} framework file(s) — derive the name "
+            f"✗ {len(violations)} source literal(s) in {scanned} framework file(s), "
+            f"{len(list(SOURCE_TOKENS))} token(s) declared — derive the name "
             f"(source_ident / the descriptor's own schema) instead of hardcoding it"
         )
         return 1
     print(
-        f"✓ OK — {scanned} framework file(s) add no NEW source literal "
+        f"✓ OK — {scanned} framework file(s) add no NEW source literal, "
+        f"{len(list(SOURCE_TOKENS))} token(s) declared "
         f"({frozen} pre-existing, frozen by the ratchet — see ALLOW)"
+        + ("\n  [no source-token register: the token class examined NOTHING]"
+           if not len(list(SOURCE_TOKENS)) else "")
     )
     return 0
 
@@ -178,10 +190,22 @@ def _sc_run(root: Path):
     return contract.Outcome(1 if code == 1 else 0, scanned)
 
 
+#: The self-test's own declared token. SYNTHETIC: the register is gitignored, so a fresh checkout
+#: declares none and a self-test reading it would exercise the token class against an empty list --
+#: and pass, having checked nothing. It is also not a real source name, so counting it costs the
+#: gate's own tally nothing.
+_SYNTHETIC_TOKEN = "zzsynthsourcezz"
+
+
 def _self_test() -> int:
-    # Derived, never typed: this gate COUNTS source literals, so a self-test that spelled one out
-    # would add to the number it reports.
-    token = SOURCE_TOKENS[0]
+    import os as _os
+
+    # Declared to the gate under test via the register's own env override — the same mechanism an
+    # estate or a CI runner uses, exercised rather than bypassed.
+    _reg = Path(__file__).resolve().parent / ".source_tokens.selftest"
+    _reg.write_text(f"{_SYNTHETIC_TOKEN}\n", encoding="utf-8")
+    _os.environ[registers.REGISTERS["source_tokens"][1]] = str(_reg)
+    token = _SYNTHETIC_TOKEN
     c = contract.GateContract(
         name="check_source_coupling",
         clean=_sc_clean,

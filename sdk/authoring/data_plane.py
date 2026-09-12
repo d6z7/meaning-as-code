@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Data-plane authoring — the harvest's "step 1": turn a raw Glue table (+ live Athena
-profiling + SME context) into the MAC DATA PLANE, matching cap-ontology-fpl/data:
+profiling + SME context) into the MAC DATA PLANE, matching a bundle's data/ plane:
 
   data/sources/<t>.yaml     observed raw schema-of-record  (TableFile)
   data/quality/register     the DQ issues found            (free YAML)
@@ -59,12 +59,12 @@ _ORDERABLE = (
     "numeric",
 )
 
-# DE-FPL'd (Phase 6): the source LABEL and the curated view SCHEMA are no longer hardcoded —
+# DE-ACME'd (Phase 6): the source LABEL and the curated view SCHEMA are no longer hardcoded —
 # they are read from mac.project.yaml via sdk.project.source_ident and substituted into the two
 # `{{SOURCE_LABEL}}` / `{{VIEW_SCHEMA}}` sentinels below by dp_sys_prompt(). `.replace()` (not an
 # f-string / %-format) is used deliberately: the prompt body carries literal `{` `}` (YAML dict
 # examples) and a literal `%` ("null in 9.8% of rows"), either of which would break format-string
-# interpolation. For gaps/fpl the sentinels resolve to `FPL` / `fpl`, so the emitted shape is
+# interpolation. For <domain>/<dataset> the sentinels resolve to `ACME` / `acme`, so the emitted shape is
 # byte-identical to the prior hardcoded prompt.
 _DP_SYS_TEMPLATE = """You are a MAC data-engineer. Given ONE raw Glue table (its schema, LIVE column profile, and SME context), author the MAC DATA PLANE for it: the observed source, the data-quality issues, the proposed cleansing transform, the produced clean dataset, and the full realizing view SQL. Emit ONE YAML document with exactly these five top-level keys: `source`, `dq_issues`, `transform`, `dataset`, `transform_sql`.
 
@@ -322,7 +322,7 @@ def author(
 ) -> dict:
     """Author the four-key data-plane YAML for one table via ONE LLM call.
 
-    The system prompt is DE-FPL'd — the source label + view schema are substituted from the
+    The system prompt is DE-ACME'd — the source label + view schema are substituted from the
     caller (resolved from mac.project.yaml). The Bedrock call routes through the shared
     harvest_model layer: a single model-swappable builder (dispatch on id prefix, thinking_budget
     knob) wrapped by an optional content-addressed ``cache`` so an unchanged input re-runs

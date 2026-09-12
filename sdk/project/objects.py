@@ -324,7 +324,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
     # reverse is not, which left the data plane unable to answer "who uses this view?" — the exact
     # question you must answer before changing or retiring one. Index it here, once, while the
     # concepts are already loaded. Matched on the bare relation name so it holds whether the concept
-    # writes `fpl2.dim_model` or the stem.
+    # writes `acme2.dim_model` or the stem.
     ds_concepts: dict = {}
     for cstem, c in concepts.items():
         ctitle = (
@@ -332,7 +332,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         )
         seen_here = set()
         # BOTH grounding shapes. Reading only `sources[]` meant a concept using the legacy `table`
-        # key was linked to NO dataset — measured: 13 of fpl2's datasets carry a concept link
+        # key was linked to NO dataset — measured: 13 of acme2's datasets carry a concept link
         # because it uses `sources[]`, and 0 of tpch's do because it uses `table`. The dataset
         # descriptors declared `grounded_by_concepts` the whole time; nothing read it, and nothing
         # read the legacy key either, so the data plane and the ontology plane sat unconnected.
@@ -773,7 +773,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
                 "quality": [],
             }
         )
-        # ---- VOCABULARY object (the glossary: what every fpl.*/mac.* term means) ----
+        # ---- VOCABULARY object (the glossary: what every <source>.*/mac.* term means) ----
         objects.append(
             {
                 "id": "vocabulary",

@@ -42,7 +42,7 @@ VALIDATED at startup, before any Athena/Bedrock call, so a typo fails loud for $
 Writes into <content-root>/{data,ontology}. Requires AWS creds (Bedrock + Glue + Athena) — this
 is the build-time seat, run in VSC, never from the browser. Example:
 
-  python -m sdk.cli.harvest --content-root sources/gaps/fpl --databases <glue_db> --mode data
+  python -m sdk.cli.harvest --content-root sources/<domain>/<dataset> --databases <glue_db> --mode data
 
 NOTE: this is the orchestration relocated out of the GUI (console_api). It carries the same
 authoring calls that ran there; a live AWS smoke is the remaining verification (billable).
@@ -186,7 +186,7 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
     """Assemble ONE concept's authoring input from the DATA TRANSFORMATION LAYER (not raw Glue):
     the clean serving relation's schema + roles + declared FKs, the transform SQL that builds it,
     and the upstream raw source schema(s) it derives from. This is the richer signal the user asked
-    us to 'respect' — the FPL views + their transforms, grounded back to the raw DBs."""
+    us to 'respect' — the ACME views + their transforms, grounded back to the raw DBs."""
     cr = data_dir.parent
     d = _read_yaml(ds_path)
     tbl = d.get("table", {}) or {}
@@ -227,7 +227,7 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
         f"{c.get('description', '')} |"
         for c in cols
     )
-    md = [f"# {produces_relation}  —  CLEAN serving relation (FPL data transformation layer)"]
+    md = [f"# {produces_relation}  —  CLEAN serving relation (ACME data transformation layer)"]
     if grain:
         md.append(f"\ngrain: {grain}")
     md += [
@@ -266,7 +266,7 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
 
 
 def _lineage_flows(cr: Path) -> list:
-    """FPL-style column-level lineage flows for this source via meaning-as-code's
+    """ACME-style column-level lineage flows for this source via meaning-as-code's
     lineage_project.py. MUST be threaded into the projection: build_data() without it
     silently flips every data object's `lineage` flag to False and drops the Lineage
     view tab (regression seen 2026-08-13). Returns [] only if the tool is truly absent."""
@@ -583,7 +583,7 @@ planes:
   ontology: ontology  # ONTOLOGY plane root (concepts under ontology/concepts, rules inline)
   governance: governance  # GOVERNANCE plane root — PHASE + lock, the SME ledger, the
                           # intervention ledger + vanilla delta, warehouse properties,
-                          # decisions/. ONE home for the controls: fpl2 grew these across
+                          # decisions/. ONE home for the controls: acme2 grew these across
                           # four separate places and each was found late, by hand.
 sources: data/sources
 transforms: data/transforms
@@ -592,7 +592,7 @@ lookups: data/lookups   # name->code registers (built by `harvest --mode lookups
 
 # RUNTIME — what an answering engine needs to answer with THIS source (resolved from the bundle).
 runtime:
-  source: {label}                    # the source LABEL (badges objects; de-FPL identity)
+  source: {label}                    # the source LABEL (badges objects; de-ACME identity)
   connection: connection.yaml        # the shared data-source connection contract
 
 # PUBLISH — the served surface compiled into the immutable artifact (manifest-driven).
@@ -630,8 +630,8 @@ output: null
 catalog: AwsDataCatalog
 
 # OWN SCHEMA (isolation): view_database/view_schema DEFAULT to this source's dataset name — its OWN
-# dedicated serving schema — NEVER a shared/gold schema (e.g. `fpl`, `gaps`, `default`). Shared-schema
-# incident (2026-08-13): a new source left view_database at the shared gold `fpl` and its
+# dedicated serving schema — NEVER a shared/gold schema (e.g. a warehouse's `gold` or `default`). Shared-schema
+# incident (2026-08-13): a new source left view_database at a shared GOLD schema and its
 # CREATE OR REPLACE VIEW OVERWROTE gold's dim_country/dim_model. The materialize step (`--mode
 # materialize`) REFUSES to CREATE into a known shared schema, so keep this the source's own schema.
 view_database: '{dataset}'               # this source's OWN curated serving-view schema (the ontology binds here)
@@ -665,13 +665,13 @@ thinking_budget: null
 
 # ── the GOVERNANCE plane ──────────────────────────────────────────────────────────────────────────
 # One plane for every control mechanism, declared in the manifest alongside data/ and ontology/.
-# fpl2 grew these across four homes (bundle root, ontology/, acceptance/, interventions/) and each
+# acme2 grew these across four homes (bundle root, ontology/, acceptance/, interventions/) and each
 # was found late and by hand. A source born with them starts governed instead of retrofitted.
 
 _SCAFFOLD_SME_LEDGER = """# SME LEDGER — the DOUBT CHANNEL. The single highest-value file in this plane.
 #
 # WHY IT EXISTS: a harvest that has nowhere to put an uncertainty writes it out as a confident fact.
-# Measured on gaps/fpl2, which had no ledger: 17 of 22 concepts arrived stamped confidence C
+# Measured on acme/acme2, which had no ledger: 17 of 22 concepts arrived stamped confidence C
 # (CONFIRMED) with an owner who had never seen them, and one of those unreviewed claims produced a
 # wrong value anchor that stood for weeks. An open question is a SUCCESSFUL outcome of authoring.
 #
@@ -775,7 +775,7 @@ def scaffold_source(cr, *, data_domain=None, dataset=None, label=None) -> dict:
         # OWN-schema default: view_database/view_schema = the dataset name (never a shared/gold schema).
         "connection.example.yaml": _SCAFFOLD_CONNECTION.format(dataset=dataset),
         "harvest.yaml": _SCAFFOLD_HARVEST.format(model=_MODEL, effort=_EFFORT),
-        # THE GOVERNANCE PLANE. Every one of these was learned the hard way on gaps/fpl2 and added
+        # THE GOVERNANCE PLANE. Every one of these was learned the hard way on acme/acme2 and added
         # late, by hand, after the defect it prevents had already been paid for. A source is born
         # with them so the first harvest lands into a governed bundle rather than a bare one.
         "governance/sme_ledger.yaml": _SCAFFOLD_SME_LEDGER.format(label=label),
@@ -805,7 +805,7 @@ def _register_digest(cr: Path, cap: int = 400) -> str:
     """A COMPACT view of data/lookups/*.csv for the plan pass.
 
     WHY THE PLAN NEEDS THIS — measured live, 2026-08-18. Run without it, the plan proposed ONE measure
-    concept for `v_fpl_kpi`; fpl2 models FOURTEEN concepts from that relation. The dataset descriptor
+    concept for `v_acme_kpi`; acme2 models FOURTEEN concepts from that relation. The dataset descriptor
     shows a `kpi` column and a `value` column and says nothing about what `kpi` CONTAINS, so a model
     reading only descriptors cannot know the relation carries eight distinct business measures. It was
     not under-thinking; it was blind.
@@ -874,7 +874,7 @@ def harvest_concepts(
         os.environ.setdefault("AWS_PROFILE", _PROFILE)
     if _REGION:
         os.environ.setdefault("AWS_REGION", _REGION)
-    ident = source_ident.resolve(cr)  # de-FPL: source label from mac.project.yaml
+    ident = source_ident.resolve(cr)  # de-ACME: source label from mac.project.yaml
     cache = cache if cache is not None else _make_cache(cr, refresh)
     data = cr / "data"
     ex = _EXEMPLAR.read_text() if _EXEMPLAR.exists() else ""
@@ -888,7 +888,7 @@ def harvest_concepts(
     inputs: dict = {}  # per-input sha256 for the reproducibility ledger
     # ── PASS 1: PLAN. One call over the WHOLE inventory decides what the NOTIONS are. ───────────
     # Concept:relation is M:N (operator ruling 2026-08-18). The old loop authored one concept per
-    # dataset, which made it 1:1 by construction — gaps/fpl is exactly 20 concepts from 20 datasets.
+    # dataset, which made it 1:1 by construction — one measured bundle is exactly 20 concepts from 20 datasets.
     by_stem = {}
     for p in ds_paths:
         info = _dataset_input(p, data)
@@ -968,7 +968,7 @@ def harvest_concepts(
         )
     # EDGES: lift the data layer's foreign_keys into physical edges between the authored concepts.
     phys = edges.physical_edges(ds_info, concept_of)
-    ef = edges.make_edges_file(phys, source=ident.label)  # de-FPL: label from the manifest
+    ef = edges.make_edges_file(phys, source=ident.label)  # de-ACME: label from the manifest
     pe = operations.persist_edges(cr / "ontology", ef)
     print(
         f"  edges: {ef['edges']} physical foreign_key -> "
@@ -1014,7 +1014,7 @@ def harvest_data(
         os.environ.setdefault("AWS_PROFILE", _PROFILE)
     if _REGION:
         os.environ.setdefault("AWS_REGION", _REGION)
-    ident = source_ident.resolve(cr)  # de-FPL: source label + view schema from manifest
+    ident = source_ident.resolve(cr)  # de-ACME: source label + view schema from manifest
     cache = cache if cache is not None else _make_cache(cr, refresh)
     sess = _session()
     glue, athena = (
@@ -1161,7 +1161,7 @@ def onboard(
     #
     #     python -m sdk.cli.harvest --content-root <root> --mode concepts
     #
-    # (Removed 2026-08-18. gaps/fpl is exactly 20 concepts from 20 datasets — what the chained stage
+    # (Removed 2026-08-18. one measured bundle is exactly 20 concepts from 20 datasets — what the chained stage
     #  produces when nobody is looking.)
     if _stage_present(cr, "ontology/concepts"):
         print("  concepts: present — untouched (onboarding never authors concepts)")

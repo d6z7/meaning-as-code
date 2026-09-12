@@ -77,7 +77,7 @@ TIER_ORDER = ["Low", "Low-Medium", "Medium", "High", "Very High"]
 _TIER_RANK = {t: i for i, t in enumerate(TIER_ORDER)}
 
 # (category, tier, compiled signal) — ordered low→high; the highest-tier hit wins, ties keep the
-# earlier row. Signals match the question text (lowercased) OR a tag. Rubric = the fpl C1..C11 taxonomy.
+# earlier row. Signals match the question text (lowercased) OR a tag. Rubric = the bundle's own C1..C11 question taxonomy.
 _RULES = [
     ("direct-retrieval", "Low", r"\b(what|how much)\b.*\b(did|was|is|have|had)\b"),
     (

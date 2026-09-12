@@ -2,7 +2,7 @@
 """check_rule_lock.py — BUILD/TUNE drift lock over one source's ontology plane.
 
 Parameterized by --content-root (a `sources/<domain>/<dataset>` dir), so ONE gate serves
-every source — unlike the FPL gate, which derived its paths from its own __file__ location.
+every source — unlike the ACME gate, which derived its paths from its own __file__ location.
 
 It hashes every `ontology/**/*.yaml` file AND each typed rule (`contract.rules[].id`) into
 `<content-root>/ontology/rules.lock`. `<content-root>/ontology/PHASE.yaml` sets the phase:
@@ -10,7 +10,7 @@ It hashes every `ontology/**/*.yaml` file AND each typed rule (`contract.rules[]
   * TUNE  — default-DENY: any un-blessed file/rule delta REDS the gate (exit 1).
 `--bless` recomputes the lock (an operator action).
 
-HONEST LIMIT (identical to the FPL gate it mirrors): in a single-identity repo the author
+HONEST LIMIT (identical to the ACME gate it mirrors): in a single-identity repo the author
 can run `--bless`, so this DETECTS-and-BLOCKS drift; it does not cryptographically AUTHORIZE.
 The only unforgeable authorization is out-of-repo (branch protection + required CI) — see
 boundaries.yaml:authorization_out_of_band. Exit 0 clean/build, 1 on TUNE drift or error.

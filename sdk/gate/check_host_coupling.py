@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """check_host_coupling.py — is a HOST (wiki / runtime) coupled to a specific source? (ADR 2026-08-13)
 
-The existing mac-runtime `check_source_coupling` is an FPL-marker grep (hardcoded `brand_letter`,
-`v_fpl`, …) and is import-AST only — it can't certify a NON-FPL source and is blind to `subprocess`/`-m`
+The existing mac-runtime `check_source_coupling` is an ACME-marker grep (hardcoded `brand_letter`,
+`v_acme`, …) and is import-AST only — it can't certify a NON-ACME source and is blind to `subprocess`/`-m`
 shell-outs (the adversary's #6). This gate is SOURCE-NEUTRAL: it derives the "source tokens" from the
 ACTUAL sources on disk (each `mac.project.yaml`'s data_domain/dataset + connection handles), so it works
 for any source, and it flags three coupling classes a separated host must not have:

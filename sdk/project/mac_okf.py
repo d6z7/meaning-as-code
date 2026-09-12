@@ -453,7 +453,7 @@ def load_concepts(src: Path):
 def bundle_title(src: Path) -> str:
     """The concept index's title, READ from the bundle's own manifest.
 
-    It used to be the string "FPL geography" — one instance's name, hardcoded, so EVERY bundle this
+    It used to be the string "ACME geography" — one instance's name, hardcoded, so EVERY bundle this
     projector touched got a concept index titled after a bundle it has nothing to do with. It reached
     the public example ontologies that way. The manifest already carries the identity the console
     addresses the container by; this reads it there rather than inventing a second home for it.

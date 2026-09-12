@@ -21,9 +21,9 @@ WHY ``rules`` IS A FOURTH FLAG AND NOT A WIDENING OF ``pins``
     Nothing checked whether the engine broke a rule the ONTOLOGY already states about the MODEL,
     for every question that touches it. That gap was measured, not supposed:
     ``vehicle_model.resolve.by_code_not_name`` carries the never-clause "matching on the raw
-    display name as the identity — name_norm is the search key, fpl_model_code is the stable
+    display name as the identity — name_norm is the search key, acme_model_code is the stable
     identity", the engine filtered ``name_resolved = 'Golf Kurzheck'`` in three statements of
-    ``FPL_C1.1``, and the board called that question ``proven``. ``pins`` could not see it: the
+    ``ACME_C1.1``, and the board called that question ``proven``. ``pins`` could not see it: the
     oracle's ``must_pin`` names axes to CONSTRAIN, and this is a prohibition on a column the oracle
     never mentions. Different authority, different claim, its own square.
 
@@ -221,7 +221,7 @@ def evaluate(
 
     The fourth flag joins that ladder with the SAME precedence as the other three and no special
     case: a broken never-clause makes the row ``failed`` however green the other squares are, which
-    is the whole point — ``FPL_C1.1`` was ``proven`` on three passing flags while violating a rule
+    is the whole point — ``ACME_C1.1`` was ``proven`` on three passing flags while violating a rule
     the ontology states.
 
     The load-bearing invariant that falls out of it, and that a test pins: a question whose
@@ -732,8 +732,8 @@ def _clause_parts(never: str) -> tuple:
 def _mentions(column: str, text: str) -> bool:
     """True when ``text`` names ``column`` as a whole identifier.
 
-    The underscore guards are load-bearing: ``fpl_lm_body_type`` must match inside "the
-    fpl_lm_body_type label string" and must NOT match inside ``fpl_lm_body_type_id``, which is the
+    The underscore guards are load-bearing: ``acme_lm_body_type`` must match inside "the
+    acme_lm_body_type label string" and must NOT match inside ``acme_lm_body_type_id``, which is the
     column the same rule prescribes. A substring test would forbid the prescribed key.
     """
     if not column:
@@ -796,7 +796,7 @@ def _classify_never(rule: dict) -> dict:
 
         # THE ONE INFERENCE THIS MODULE MAKES, AND IT IS LABELLED AS ONE. When the prohibition
         # names no column but the rationale enumerates the SANCTIONED ones ("name_norm is the
-        # search key, fpl_model_code is the stable identity"), the governed set closes: `binds` is
+        # search key, acme_model_code is the stable identity"), the governed set closes: `binds` is
         # by MAC's own definition the set of fields the rule governs, so a governed column the
         # clause does not sanction is not a sanctioned key under this rule. Evidence carries
         # `basis: "governed-set closure"` and the sanctioned list, so a reader can see the
@@ -851,7 +851,7 @@ def _clause_violations(clause: dict, stmts: list) -> list:
     deliberately. ``pins`` asks whether the statement that COMPUTED the answer constrained the
     axes, so demanding it of a dimension probe would be nonsense. A never-clause is a prohibition:
     the ontology does not say "do not match the display name in the statement that answers", it
-    says do not match it. ``FPL_C1.1`` breaks it in a CTE and in a probe, and both are the same
+    says do not match it. ``ACME_C1.1`` breaks it in a CTE and in a probe, and both are the same
     defect.
     """
     out: list = []

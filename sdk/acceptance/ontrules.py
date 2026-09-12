@@ -4,7 +4,7 @@ WHAT THIS IS FOR
     The first three acceptance flags check the ORACLE's assertions: how the question should have
     been disposed of, which axes it names, what number an anchor derives. Nothing checked whether
     the engine broke a rule the ONTOLOGY itself already states — and the ontology states 83 of them
-    in the reference bundle, each with an explicit ``never`` clause. ``FPL_C1.1`` filtered on the
+    in the reference bundle, each with an explicit ``never`` clause. ``ACME_C1.1`` filtered on the
     raw display name while ``vehicle_model.resolve.by_code_not_name`` says never to, and the board
     called that question ``proven``.
 
@@ -48,7 +48,7 @@ CONCEPTS_SUBDIR = ("ontology", "concepts")
 
 
 def _bare_relation(value) -> str | None:
-    """``fpl2.dim_model`` / ``"cat"."schema"."t"`` -> ``dim_model`` / ``t``.
+    """``acme2.dim_model`` / ``"cat"."schema"."t"`` -> ``dim_model`` / ``t``.
 
     The last dotted segment, unquoted and lowercased — exactly the form ``sqlfacts`` reports for a
     table reference, because an ontology names a relation while a query names a schema-qualified,

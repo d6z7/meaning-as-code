@@ -75,47 +75,19 @@ _ACCOUNT_CONTEXT = re.compile(r"(?i)account|acct|:aws:")
 # nothing — so the count travels into the verdict line and the reader sees `0 handle(s) declared`
 # rather than an unqualified PASS. The shape-based classes (key formats, entropy) are unaffected and
 # keep running, which is why this is a narrowed denominator and not a could-not-run.
-_HANDLE_REGISTER = Path(__file__).resolve().parent / "infra_handles.txt"
+from sdk import registers
 
-#: Points the register somewhere else. CI needs this -- the register is gitignored, so a checkout
-#: has none, and a runner must be able to supply one without committing it. Tests use it to declare
-#: a SYNTHETIC handle, which is also why no test needs to write a real one into a fixture any more.
-HANDLE_REGISTER_ENV = "MAC_INFRA_HANDLES"
+#: Kept as names because callers and tests import them.
+HANDLE_REGISTER_ENV = registers.REGISTERS["infra_handles"][1]
 
 
-def load_deny(register: Path | None = None) -> list[str]:
-    """The declared infra handles, or [] when none are declared. Never a literal in this file."""
-    import os as _os
-
-    if register is None:
-        env = _os.environ.get(HANDLE_REGISTER_ENV)
-        register = Path(env) if env else _HANDLE_REGISTER
-    if not register.is_file():
-        return []
-    return [
-        ln.strip()
-        for ln in register.read_text(encoding="utf-8").splitlines()
-        if ln.strip() and not ln.lstrip().startswith("#")
-    ]
+def load_deny(register=None) -> list[str]:
+    """The declared infra handles, or [] when none are declared. See sdk/registers.py."""
+    return registers.load("infra_handles", register)
 
 
-#: Resolved at CALL time, never frozen at import: a module-level snapshot would ignore the env
-#: override in any process that imported this before the register was named.
-class _Deny(list):
-    def _live(self):
-        return load_deny()
-
-    def __iter__(self):
-        return iter(self._live())
-
-    def __len__(self):
-        return len(self._live())
-
-    def __contains__(self, x):
-        return x in self._live()
-
-
-_DEFAULT_DENY = _Deny()
+#: Live: re-read per use, so an env override set after import is honoured.
+_DEFAULT_DENY = registers.Live("infra_handles")
 
 # Basenames where non-secret reference HANDLES may live (account ids + generic secrets still blocked).
 _CONFIG_ALLOWLIST = {
@@ -276,7 +248,7 @@ def main(argv=None):
     ap.add_argument(
         "--deny-file",
         help="newline-separated infra handles to block outside the connection config "
-        "(default: the built-in gaps/fpl handle list)",
+        "(default: the built-in <domain>/<dataset> handle list)",
     )
     ap.add_argument(
         "--entropy",

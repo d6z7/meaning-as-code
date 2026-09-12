@@ -88,7 +88,7 @@ def make_edges_file(edges: list, *, source: str) -> dict:
 
     ``source`` is the source LABEL, REQUIRED and passed in by the caller (resolved from
     mac.project.yaml via sdk.project.source_ident) — this generic module carries no source
-    literal of its own (de-FPL, Phase 6)."""
+    literal of its own (de-ACME, Phase 6)."""
     obj = {
         "metadata": {
             "source": source,

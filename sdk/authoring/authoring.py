@@ -55,8 +55,8 @@ A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and re
 Shape of a concept file:
 - metadata: {concept, source, version, schema_version: '0.1.13', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
 - concept: {name, label, class, identity?, definition}   # class is EXACTLY one of: entity | event | measure | enumeration | reference | grouping ; identity.kind ∈ iso|code|namespace_code|fk_name|composite|resolved_axis|sme_pending
-- grounding: {sources: [{relation, key, columns: [...]}], field_roles: {<col>: fpl.field_role.key|dimension|attribute|measure}, grain: "one row per ..."}
-- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.rule_kind.resolution|guarantee|exclusion|ambiguity, confidence, scope: FPL, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
+- grounding: {sources: [{relation, key, columns: [...]}], field_roles: {<col>: <source>.field_role.key|dimension|attribute|measure}, grain: "one row per ..."}
+- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.rule_kind.resolution|guarantee|exclusion|ambiguity, confidence, scope: ACME, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
 CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and schema-enforced:
@@ -90,7 +90,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
         over: <the LEAF concept this rolls up — e.g. Country, Car Model>   # REQUIRED — the grouped concept
         member_source:
           kind: rule        # 'rule' = membership computed via a FK / transitive walk; 'enumerated' = explicit named sets
-          rule: <one line: how membership is computed, e.g. "region groups countries via fpl_brand_country_code">
+          rule: <one line: how membership is computed, e.g. "region groups countries via acme_brand_country_code">
   `members:` is a TOP-LEVEL OBJECT with a REQUIRED `over:` key (sibling of `concept:` / `grounding:` / `contract:`), NEVER a bare list and NEVER nested under `concept:`. (Placement reference: `semantics` is nested UNDER `concept:`; but `values`, `members`, and `lifecycle` are TOP-LEVEL siblings of `concept:`.)
 - a plain dimension / identifier table (keys + attributes, not a closed code list) → class: reference or entity (no extra required block).
 
@@ -129,7 +129,7 @@ Authoring rules:
 # WHY THIS EXISTS. Authoring used to run one call per dataset, which made the concept/relation mapping
 # 1:1 by construction — the prompt said "exactly ONE concept for the given target table", the driver
 # looped per dataset, and the file was named after the dataset stem. Three independent enforcements of
-# the same wrong shape. Measured: gaps/fpl is exactly 20 concepts from 20 datasets. A per-table unit of
+# the same wrong shape. Measured: one measured bundle is exactly 20 concepts from 20 datasets. A per-table unit of
 # work cannot express a notion spanning two relations, cannot let one relation serve two notions, and
 # cannot decline to make a concept for a bridge table.
 #
@@ -424,7 +424,7 @@ def _autofix(obj: dict) -> list[str]:
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 # INSTRUCTION COMPLIANCE — schema-valid is not instruction-followed
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
-# MEASURED on gaps/fpl2, 2026-08-18. SYS_PROMPT asks for two things it does not get:
+# MEASURED on acme/acme2, 2026-08-18. SYS_PROMPT asks for two things it does not get:
 #
 #   "Give every meaningful column a field_role"      -> field_roles present on 0 of 22 concepts
 #   "metadata.confidence in C|I|Q ... Q=needs-SME"   -> 17 of 22 stamped C, none reviewed
@@ -496,7 +496,7 @@ def check_instruction_compliance(obj: dict) -> tuple[list, list]:
 
     # A RULE MAC HAS A CANON FOR MUST BIND, NOT BE RETOLD IN PROSE.
     #
-    # Measured on fpl2: 13 concepts each wrote their own copy of ONE refusal law — 13 distinct `when`
+    # Measured on acme2: 13 concepts each wrote their own copy of ONE refusal law — 13 distinct `when`
     # wordings, 13 `then`, 12 `never`. Every copy individually well-formed, so no gate saw anything.
     # One of them (`market`) ended up with a BARE `then`: no refusal message and no "never guess",
     # so it could not produce the answer the other twelve promise. That defect was documented in the
@@ -584,7 +584,7 @@ def process(
     # ONE corrective retry. A compliance failure is something only a re-author can fix, and the model
     # is not told what it got wrong unless we tell it — so a silent give-up here would report a
     # deficiency the pipeline could have repaired for one extra call. Measured need: field_roles is
-    # absent on 22 of 22 fpl2 concepts despite SYS_PROMPT requiring it three times.
+    # absent on 22 of 22 acme2 concepts despite SYS_PROMPT requiring it three times.
     retried = False
     if failures:
         retried = True

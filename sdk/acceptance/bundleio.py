@@ -47,7 +47,7 @@ def is_safe_qid(qid: object) -> bool:
     """True iff ``qid`` may be used to build a path inside ``acceptance/``.
 
     ``".."`` is rejected EXPLICITLY as well as by the pattern. The pattern has to allow dots
-    (real ids look like ``FPL_C1.1``), and a dotted id is exactly the shape a traversal hides in,
+    (real ids look like ``ACME_C1.1``), and a dotted id is exactly the shape a traversal hides in,
     so the one check that is load-bearing for containment gets belt and braces rather than a
     lone regex that a later "harmless" widening could open up.
     """

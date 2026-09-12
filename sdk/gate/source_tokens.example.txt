@@ -1,0 +1,21 @@
+# source_tokens.txt — the instance names that must NOT appear in the generic instrument.
+#
+# Copy to `source_tokens.txt` beside this file and list your own. That file is gitignored and must
+# stay that way: a detector that names what it forbids is a register of those names, and this
+# repository is published.
+#
+# One token per line. Blank lines and #-comments ignored. Matched as SUBSTRINGS in the positions
+# that make a string a source REFERENCE — `<token>.` as a schema prefix, `<dir>/<token>` as a bundle
+# path, or the bare token alone as a string literal. Substring and not \b-bounded, deliberately: a
+# bounded pattern cannot see `v_<token>_kpi` or `<token>2`, and a planted leak using an identifier
+# did not turn the gate red.
+#
+# EXPECT FALSE POSITIVES when a token is also an ordinary English word. That is the trade, and the
+# ALLOW ratchet in check_source_coupling.py is where you record each one WITH ITS REASON.
+#
+# WITH NO tokens declared the token class examines NOTHING, and the gate says so rather than
+# printing a bare OK.
+
+# <your-dataset-name>
+# <your-dataset-name-with-suffix>
+# <your-data-domain>

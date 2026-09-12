@@ -24,7 +24,7 @@ def _mk_result(status):
 def main():
     failures = []
     with tempfile.TemporaryDirectory() as td:
-        base = Path(td) / "sources" / "gaps" / "fpl"
+        base = Path(td) / "sources" / "acme" / "acme"
         concepts = base / "ontology" / "concepts"
         data = base / "data"
 

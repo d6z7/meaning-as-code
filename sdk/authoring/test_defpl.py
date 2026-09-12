@@ -22,12 +22,19 @@ def test_dp_prompt_has_no_default_identity_and_no_frozen_rendering():
     assert not hasattr(data_plane, "DP_SYS_PROMPT")       # no frozen per-source rendering
 
 
-def test_dp_prompt_swaps_source_and_schema_with_no_fpl_residue():
+def test_dp_prompt_carries_only_the_identity_it_was_given():
+    """The rendered prompt names the caller's source and NO other. It used to be asserted against a
+    hardcoded default that had to be absent; there is no default now, so the property is stated
+    directly: render with one identity, and nothing of a second identity appears."""
     p = dp_sys_prompt("ACME_SALES", "acme_curated")
     assert "source: ACME_SALES," in p
     assert "relation: acme_curated.<bare_name>" in p  # canonical: BASE name (no _clean), own schema
     assert "schema: acme_curated, type: view" in p
-    assert "FPL" not in p and "fpl" not in p  # no source literal leaks through
+
+    other = dp_sys_prompt("OTHER_SOURCE", "other_curated")
+    assert "OTHER_SOURCE" not in p and "other_curated" not in p
+    assert "ACME_SALES" not in other and "acme_curated" not in other
+
     assert "{{" not in p and "}}" not in p  # every sentinel was substituted
 
 

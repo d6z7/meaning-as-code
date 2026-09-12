@@ -86,7 +86,7 @@ def test_manifest_is_a_sidecar_excluded_from_publish_and_gate(tmp_path):
             "stage": "data",
             "model": "eu.anthropic.claude-sonnet-4-5-v1",
             "region": "eu-west-1",
-            "databases": ["catalog_gaps_prd_fpl_gaps_redshift"],
+            "databases": ["zz-synthetic-infra-handle-zz"],
             "cache": {"hits": 0, "misses": 3},
         },
     )

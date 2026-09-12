@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 """source_ident.py — resolve a source's IDENTITY strings from its ``mac.project.yaml`` so
 the generic instrument (data-plane authoring prompt, edges, the read-view projector) carries
-NO source literal. De-FPLs the harvest: instead of a hardcoded ``'FPL'`` / ``'fpl.'`` /
-``'gaps'``, each generic step reads what THIS project is from its manifest.
+NO source literal. De-ACMEs the harvest: instead of a hardcoded ``'ACME'`` / ``'acme.'`` /
+a hardcoded source name, each generic step reads what THIS project is from its manifest.
 
 Resolved fields:
-  * ``data_domain`` — ``metadata.data_domain`` (e.g. ``gaps``)
-  * ``dataset``     — ``metadata.dataset``     (e.g. ``fpl``)
+  * ``data_domain`` — ``metadata.data_domain`` (e.g. ``sales``)
+  * ``dataset``     — ``metadata.dataset``     (e.g. ``orders``)
   * ``label``       — the human/source label: ``runtime.source``, else the first key under
-    ``sources.yaml:sources``, else the dataset upper-cased (e.g. ``FPL``)
+    ``sources.yaml:sources``, else the dataset upper-cased (e.g. ``ACME``)
   * ``view_schema`` — the curated serving-view database/schema the ontology binds to:
     ``connection.yaml:view_schema`` (else ``view_database``), else ``dataset``
-    (for gaps/fpl this is ``fpl`` — matches the data-plane prompt's ``schema: fpl`` /
-    ``relation: fpl.<view>``)
+    (for ``<domain>/<dataset>`` this is ``<dataset>`` — matches the data-plane prompt's ``schema: <dataset>`` /
+    ``relation: <dataset>.<view>``)
 
-REFACTOR-SAFE: for the existing gaps/fpl project this resolves to
-``(gaps, fpl, FPL, fpl)`` — exactly the strings that were hardcoded — so the projection is
+REFACTOR-SAFE: for an existing project this resolves to
+``(acme, acme, ACME, acme)`` — exactly the strings that were hardcoded — so the projection is
 BYTE-IDENTICAL. Missing manifest fields fall back gracefully (a bare tmp dir never crashes).
 Deterministic, stdlib+yaml only, no AWS.
 """

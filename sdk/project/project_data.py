@@ -12,7 +12,7 @@ Emits, cross-linked, into <out>/:
 
 Lineage follows the gold's real shape — a transform's `inputs[].descriptor` names its
 source(s); a dataset's `derived_from.pipeline` names its transform — so names may differ
-(dim_fpl_lm_country → dim_country). The impurity→resolution cross-link is read from
+(dim_acme_lm_country → dim_country). The impurity→resolution cross-link is read from
 `data/quality/impurity_resolution_map.yaml` (harvest finding → gold transform). Lifecycle /
 confidence / severity / resolution ride as frontmatter `tags` so the read server renders
 them as chips. Deterministic — no LLM, no AWS; safe to re-run any time.
@@ -42,7 +42,7 @@ def _load(p: Path):
 
 
 def _rel_bare_name(rel) -> str:
-    """`fpl2.dim_model` -> `dim_model` (the served view's bare name)."""
+    """`acme2.dim_model` -> `dim_model` (the served view's bare name)."""
     return str(rel or "").split(".")[-1]
 
 
@@ -96,9 +96,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     data_dir = Path(data_dir)
     out = data_dir
     root = data_dir.parent
-    # DE-FPL (Phase 6): the source LABEL that badges every projected object (its frontmatter
+    # DE-ACME (Phase 6): the source LABEL that badges every projected object (its frontmatter
     # `tags` + the index title) is read from mac.project.yaml, not hardcoded. (The lineage-format
-    # descriptor in _lineage_cols_md used to read "FPL-style" — kept deliberately as a methodology
+    # descriptor in _lineage_cols_md used to read "ACME-style" — kept deliberately as a methodology
     # reference to the gold rather than a source identity. That held while projections stayed in one
     # private estate; it stopped holding the moment this projector wrote into a PUBLIC example
     # bundle, where an instance's name means nothing to the reader and is an operator handle in a

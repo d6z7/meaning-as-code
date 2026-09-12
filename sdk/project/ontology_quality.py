@@ -51,7 +51,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
     # key asserts WHAT GOES WRONG if you ignore the relationship — a stronger statement, and the one an
     # answering engine actually executes. Counting only edges made this metric report a concept as
     # "isolated" while eight measures were pinning it by rule, and the only way to satisfy it was to
-    # restate in edges what the rules already said (2026-08-16, fpl2 `perspective`). So relationships
+    # restate in edges what the rules already said (2026-08-16, acme2 `perspective`). So relationships
     # expressed as rules count too, in both directions: the rule connects its subject AND its object.
     key_owner: dict[str, set[str]] = {}
     for stem, c in concepts.items():
@@ -232,7 +232,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
             )
 
     # ---- RATIFICATIONS AWAITING A HUMAN, lifted from the intervention ledger. -------------------
-    # MEASURED on fpl2 2026-08-18: 25 of 25 ledger entries carry an `sme_owner` naming a person and
+    # MEASURED on acme2 2026-08-18: 25 of 25 ledger entries carry an `sme_owner` naming a person and
     # what they must ratify, and NOT ONE surfaced anywhere. SME questions were generated from exactly
     # two conditions (unknown enum closure, identity.kind = sme_pending), so every judgement call made
     # while tuning the bundle sat in a file nobody reads as a question.
@@ -261,7 +261,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                         "kind": "ratification",
                         "current": str(e.get("status") or "applied"),
                         "owner": who.strip() or "domain-owner",
-                        # MEASURED: 4 of 25 fpl2 entries name an owner with no "— <what to ratify>".
+                        # MEASURED: 4 of 25 acme2 entries name an owner with no "— <what to ratify>".
                         # An owner without an ask is a half-recorded question; rendering the owner
                         # AS the question would make it look answered when nobody knows what was asked.
                         "question": (

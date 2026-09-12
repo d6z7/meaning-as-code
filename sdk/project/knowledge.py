@@ -19,6 +19,7 @@ normative belongs in a separate claims layer, so that extraction and interpretat
 from __future__ import annotations
 
 import re
+import re as _re
 from pathlib import Path
 
 try:
@@ -36,8 +37,16 @@ ASPECT_ORDER = (
 )
 
 
+#: Acronyms that must not be title-cased into nonsense. GENERIC ones only — an estate's own domain
+#: acronym is an instance specific and belongs in its bundle, not compiled into the instrument.
+_ACRONYMS = ("dax", "sql", "api", "kpi", "etl")
+
+
 def _pretty(key: str) -> str:
-    return key.replace("_", " ").replace("gaps", "GAPS").replace("dax", "DAX").capitalize()
+    out = key.replace("_", " ").capitalize()
+    for a in _ACRONYMS:
+        out = _re.sub(rf"\b{a}\b", a.upper(), out, flags=_re.I)
+    return out
 
 
 def _order(aspects: dict) -> list:
