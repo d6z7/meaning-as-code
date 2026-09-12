@@ -23,6 +23,7 @@ move, the SOURCE moved.
 """
 from __future__ import annotations
 
+import os
 import argparse
 import datetime as dt
 import json
@@ -30,6 +31,9 @@ import pathlib
 import sys
 
 import yaml
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
 
 SCHEMA_VERSION = "0.1.14-develop"
 
@@ -196,8 +200,13 @@ def main() -> int:
         print(sql)
         return 0
 
-    sys.path.insert(0, str(root / "tools"))
-    from run_properties import Athena  # the bundle owns the connection; MAC owns the algorithm
+    # The bundle owns the connection; MAC owns the algorithm. Declared-but-unusable must exit 2
+    # rather than let the bundle's SystemExit become this tool's verdict. See tools/_plugin.py.
+    try:
+        Athena = _plugin.required(root, "Athena")
+    except _plugin.PluginUnavailable as exc:
+        print(f"could not run: {root} {exc}", file=sys.stderr)
+        return 2
     eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
            or {}).get("engine") or {}
     ath = Athena(eng["profile"], eng["region"], eng["workgroup"], eng["database"])

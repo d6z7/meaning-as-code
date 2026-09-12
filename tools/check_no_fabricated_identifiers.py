@@ -114,6 +114,10 @@ def concat_join_violations(sql: str, keys: dict[str, list[str]]) -> list[dict]:
     return found
 
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
+
+
 def _resolver(root):
     """The bundle owns how its declarations resolve; this checker owns the analysis.
 
@@ -121,17 +125,15 @@ def _resolver(root):
     failure is reported as a fabricated identifier — 3 findings became 56 the moment properties
     started RENDERING their value sets instead of typing them. A checker that punishes the correct
     pattern is worse than no checker.
+
+    That is also why this may not fall back SILENTLY. It used to guard the import with
+    `except Exception: pass` and degrade to identity, which reproduced the 56-finding state on any
+    machine missing the plugin's dependencies — and `SystemExit`, which is what the plugin actually
+    raises for a missing dependency, is not an Exception and escaped the guard entirely. The seam
+    now lives in `_plugin`: declared-but-unusable is UNRUNNABLE, and only a bundle that declares no
+    plugin gets identity. Raises PluginUnavailable; the caller turns that into exit 2.
     """
-    import sys as _sys, os as _os
-    tools = _os.path.join(_os.path.abspath(root), "tools")
-    if _os.path.isdir(tools):
-        _sys.path.insert(0, tools)
-        try:
-            from run_properties import resolve_declared
-            return resolve_declared
-        except Exception:
-            pass
-    return lambda x: x
+    return _plugin.optional(root, "resolve_declared", lambda x: x)
 
 
 def main() -> int:
@@ -147,7 +149,13 @@ def main() -> int:
     keys = declared_key_columns(a.root)
     findings, checked = [], 0
     acc = os.path.join(a.root, "acceptance")
-    _RESOLVE = _resolver(a.root)
+    try:
+        _RESOLVE = _resolver(a.root)
+    except _plugin.PluginUnavailable as exc:
+        # NOT a finding: with slots unresolved every parse fails and each failure would read
+        # as a fabricated identifier — a false report of an invariant breach.
+        print(f"could not run: {a.root} {exc}", file=sys.stderr)
+        return 2
     for fn in sorted(os.listdir(acc)) if os.path.isdir(acc) else []:
         if not fn.endswith(".yaml"):
             continue

@@ -48,12 +48,16 @@ closed questions and refuses to answer those itself.
 """
 from __future__ import annotations
 
+import os
 import argparse
 import datetime as dt
 import pathlib
 import sys
 
 import yaml
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
 
 TOOL = "mac_admit_identity.py/1"
 IDENTITY_AT = 0.10      # removing it makes the measure disagree in >=10 % of collapsed groups
@@ -205,8 +209,14 @@ def main() -> int:
         print(f"{path.name}: no candidate columns", file=sys.stderr)
         return 2
 
-    sys.path.insert(0, str(root / "tools"))
-    from run_properties import Athena
+    # An AUTHOR tool may hard-require the bundle's warehouse connection — the bundle owns the
+    # connection, MAC owns the algorithm — but it must then exit 2, not propagate the bundle's
+    # own SystemExit as this tool's verdict. See tools/_plugin.py.
+    try:
+        Athena = _plugin.required(root, "Athena")
+    except _plugin.PluginUnavailable as exc:
+        print(f"could not run: {root} {exc}", file=sys.stderr)
+        return 2
     eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
            or {}).get("engine") or {}
     ath = Athena(eng["profile"], eng["region"], eng["workgroup"], eng["database"])
@@ -339,7 +349,7 @@ def main() -> int:
         stamp = dt.datetime.now().astimezone().isoformat(timespec="seconds")
         # What the evidence is TRUE OF. Not wrapped in a bare except: a proof that quietly loses
         # its watermark is exactly the stale-but-confident artifact this block exists to prevent.
-        from run_properties import source_watermark
+        source_watermark = _plugin.required(root, "source_watermark")
         wm = (source_watermark(ath, [rel]).get(rel) or {}).get("newest_write")
 
         ruled = {}
