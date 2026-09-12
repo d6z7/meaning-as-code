@@ -564,7 +564,12 @@ def payload(root: str, diags: list, rows: list, timings: dict, *, started, durat
     doc = dict(extra or {})
     doc.update({
         "schema": SCHEMA_ID,
-        "bundle": root,
+        # The bundle's NAME, never its path. `root` is an ABSOLUTE path on whoever ran the compile,
+        # and compile.json is a COMMITTED artifact — it put an author's home directory into every
+        # bundle's compile record, including bundles in public repositories. The name is the identity
+        # a reader needs; the path is the operator's, not the bundle's. Same defect, same fix, as
+        # ontology/diagnostics.json.
+        "bundle": Path(root).name,
         "generated_at": started.isoformat(),
         "duration_s": round(duration, 3),
         "verdict": "DOES_NOT_COMPILE" if stats["errors"] else "COMPILES",
