@@ -6,3 +6,9 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+
+# A compile writes the schema description text into this file, and that text carries
+# customer identifiers — so a compile in a fresh clone produces a committable public leak.
+# It is a build artifact: regenerate it with `mac-compile <bundle>`, never commit it.
+compile.json
+**/compile.json

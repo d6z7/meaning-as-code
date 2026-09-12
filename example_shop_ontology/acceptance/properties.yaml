@@ -1,0 +1,116 @@
+# SHOP (example) — Acceptance plane: properties whose identifiers are LOOKED UP, never built.
+#
+# Synthetic example — illustrates the acceptance layer. Not real data, and no engine is configured,
+# so these are not executed here. They exist so that MAC008 (check_no_fabricated_identifiers) has a
+# real, non-zero subject INSIDE this repository.
+#
+# Why that matters: the gate was reviewed and found to print a tick and exit 0 against a nonexistent
+# directory, and to examine ZERO properties against both example bundles and pass. A gate with no
+# subject cannot fail, and a pass over nothing reads exactly like a clean result — which is the very
+# defect MAC008 exists to catch. It now exits 2 when it cannot measure; this plane is what lets it
+# measure something here.
+#
+# Every join below reads a key some descriptor DECLARES:
+#   category_id  <- data/datasets/products.yaml   FK -> categories
+#   customer_id  <- data/datasets/orders.yaml     FK -> customers
+#   order_id     <- data/datasets/refunds.yaml    FK -> orders
+#   parent_id    <- data/datasets/categories.yaml FK -> categories
+#
+# To see the gate alive, replace a looked-up key with an assembled one, e.g.
+#     WHERE o.customer_id = c.region || '_' || c.seq
+# and run:  python3 ../tools/check_no_fabricated_identifiers.py .
+# It reports the built column, the descriptor that declares it, and exits 1.
+
+suite: shop-example-acceptance
+version: '1.0'
+purpose: >
+  Referential properties for the example shop bundle. Each asserts that a declared foreign key
+  resolves against the register that owns it, using the key as declared.
+
+properties:
+  - id: P-ORDER-CUSTOMER-01
+    test_kind: mac.test_kind.ground_truth
+    family: referential_integrity
+    severity: blocker
+    statement: >
+      QUESTION. Does every order belong to a customer that exists?
+      ANSWER SHAPE. One row, the count of orders whose customer_id resolves to no customer.
+      EXPECTED. Zero.
+    assertion: { type: equals, expect: { orphan_orders: 0 } }
+    sql: |
+      SELECT COUNT(*) AS orphan_orders
+      FROM shop_warehouse.orders o
+      LEFT JOIN shop_warehouse.customers c
+        ON o.customer_id = c.customer_id
+      WHERE c.customer_id IS NULL
+    validates: [Order, Customer]
+
+  - id: P-REFUND-ORDER-01
+    test_kind: mac.test_kind.ground_truth
+    family: referential_integrity
+    severity: blocker
+    statement: >
+      QUESTION. Does every refund point at an order that exists?
+      ANSWER SHAPE. One row, the count of refunds whose order_id resolves to no order.
+      EXPECTED. Zero.
+    assertion: { type: equals, expect: { orphan_refunds: 0 } }
+    sql: |
+      SELECT COUNT(*) AS orphan_refunds
+      FROM shop_warehouse.refunds r
+      LEFT JOIN shop_warehouse.orders o
+        ON r.order_id = o.order_id
+      WHERE o.order_id IS NULL
+    validates: [Refund, Order]
+
+  - id: P-PRODUCT-CATEGORY-01
+    test_kind: mac.test_kind.ground_truth
+    family: referential_integrity
+    severity: blocker
+    statement: >
+      QUESTION. Is every product filed under a category that exists?
+      ANSWER SHAPE. One row, the count of products whose category_id resolves to no category.
+      EXPECTED. Zero.
+    assertion: { type: equals, expect: { orphan_products: 0 } }
+    sql: |
+      SELECT COUNT(*) AS orphan_products
+      FROM shop_warehouse.products p
+      LEFT JOIN shop_warehouse.categories k
+        ON p.category_id = k.category_id
+      WHERE k.category_id IS NULL
+    validates: [Product, Category]
+
+  - id: P-CATEGORY-PARENT-01
+    test_kind: mac.test_kind.ground_truth
+    family: referential_integrity
+    severity: blocker
+    statement: >
+      QUESTION. Does every child category name a parent that exists?
+      ANSWER SHAPE. One row, the count of categories whose parent_id is set but resolves to nothing.
+      EXPECTED. Zero. The self-referential FK is declared on categories itself.
+    assertion: { type: equals, expect: { orphan_children: 0 } }
+    sql: |
+      SELECT COUNT(*) AS orphan_children
+      FROM shop_warehouse.categories child
+      LEFT JOIN shop_warehouse.categories parent
+        ON child.parent_id = parent.category_id
+      WHERE child.parent_id IS NOT NULL
+        AND parent.category_id IS NULL
+    validates: [Category]
+
+  - id: P-ORDER-CUSTOMER-COVERAGE-01
+    test_kind: mac.test_kind.ground_truth
+    family: coverage
+    severity: minor
+    statement: >
+      QUESTION. How many distinct customers placed at least one order?
+      ANSWER SHAPE. One row, a count, joined through the declared key.
+      EXPECTED. A positive number no greater than the customer count.
+    assertion: { type: min_value, expect: { ordering_customers: 1 } }
+    sql: |
+      SELECT COUNT(DISTINCT c.customer_id) AS ordering_customers
+      FROM shop_warehouse.customers c
+      JOIN shop_warehouse.orders o
+        ON o.customer_id = c.customer_id
+    validates: [Customer, Order]
+
+not_expressible: []
