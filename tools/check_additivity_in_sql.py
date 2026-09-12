@@ -43,6 +43,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import mac_diag as D          # noqa: E402
 import mac_project as P       # noqa: E402
 
+import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
+
 
 def law(fw: pathlib.Path) -> dict:
     v = yaml.safe_load((fw / "mac_vocabulary.yaml").read_text(encoding="utf-8"))
@@ -99,14 +101,13 @@ def main() -> int:
     ms = measures(root, law(fw))
     # the axis columns a measure is actually keyed on, from the measured grain
     NON_ADDITIVE_ALWAYS = {"role": "none"}
-    resolve = lambda x: x
-    tools = root / "tools"
-    if tools.is_dir():
-        sys.path.insert(0, str(tools))
-        try:
-            from run_properties import resolve_declared as resolve
-        except Exception:
-            pass
+    # Declared-but-unusable is UNRUNNABLE, not identity: with slots unresolved every parse
+    # fails and each failure reads as a finding. See tools/_plugin.py.
+    try:
+        resolve = _plugin.optional(root, "resolve_declared", lambda x: x)
+    except _plugin.PluginUnavailable as exc:
+        print(f"could not run: {root} {exc}", file=sys.stderr)
+        return 2
 
     findings, checked = [], 0
     for f in sorted(glob.glob(str(root / "acceptance" / "*.yaml"))):

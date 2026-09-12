@@ -43,6 +43,9 @@ import sys
 
 import yaml
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
+
 try:
     import sqlglot
     from sqlglot import exp
@@ -232,14 +235,12 @@ def main() -> int:
         return 0
 
     # MAC owns the analysis; the BUNDLE owns how its declarations resolve. Same split as mac_profile.
-    resolve = lambda x: x
-    tools = os.path.join(os.path.abspath(a.root), "tools")
-    if os.path.isdir(tools):
-        sys.path.insert(0, tools)
-        try:
-            from run_properties import resolve_declared as resolve   # noqa: F401
-        except Exception:
-            pass
+    # Declared-but-unusable is UNRUNNABLE, not identity. See tools/_plugin.py.
+    try:
+        resolve = _plugin.optional(a.root, "resolve_declared", lambda x: x)  # noqa: F841
+    except _plugin.PluginUnavailable as exc:
+        print(f"could not run: {a.root} {exc}", file=sys.stderr)
+        return 2
 
     # how many rows each property actually returned, from the recorded runs
     runs: dict[str, int] = {}
