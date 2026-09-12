@@ -1,0 +1,370 @@
+{
+  "counts": {
+    "concept": 13,
+    "concepts_multi_grounded": 0,
+    "dataset": 8,
+    "edges": 22,
+    "lookup": 0,
+    "source": 8
+  },
+  "edges": [
+    {
+      "from": "ds:customer",
+      "kind": "grounds",
+      "to": "con:customer"
+    },
+    {
+      "from": "ds:customer",
+      "kind": "grounds",
+      "to": "con:market_segment"
+    },
+    {
+      "from": "ds:lineitem",
+      "kind": "grounds",
+      "to": "con:line_status"
+    },
+    {
+      "from": "ds:lineitem",
+      "kind": "grounds",
+      "to": "con:lineitem"
+    },
+    {
+      "from": "ds:lineitem",
+      "kind": "grounds",
+      "to": "con:return_flag"
+    },
+    {
+      "from": "ds:lineitem",
+      "kind": "grounds",
+      "to": "con:revenue"
+    },
+    {
+      "from": "ds:nation",
+      "kind": "grounds",
+      "to": "con:nation"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "grounds",
+      "to": "con:order_status"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "grounds",
+      "to": "con:orders"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "derives_from",
+      "to": "ds:lineitem"
+    },
+    {
+      "from": "ds:part",
+      "kind": "grounds",
+      "to": "con:part"
+    },
+    {
+      "from": "ds:partsupp",
+      "kind": "grounds",
+      "to": "con:partsupp"
+    },
+    {
+      "from": "ds:region",
+      "kind": "grounds",
+      "to": "con:region"
+    },
+    {
+      "from": "ds:supplier",
+      "kind": "grounds",
+      "to": "con:supplier"
+    },
+    {
+      "from": "src:customer_raw",
+      "kind": "feeds",
+      "to": "ds:customer"
+    },
+    {
+      "from": "src:lineitem_raw",
+      "kind": "feeds",
+      "to": "ds:lineitem"
+    },
+    {
+      "from": "src:nation_raw",
+      "kind": "feeds",
+      "to": "ds:nation"
+    },
+    {
+      "from": "src:orders_raw",
+      "kind": "feeds",
+      "to": "ds:orders"
+    },
+    {
+      "from": "src:part_raw",
+      "kind": "feeds",
+      "to": "ds:part"
+    },
+    {
+      "from": "src:partsupp_raw",
+      "kind": "feeds",
+      "to": "ds:partsupp"
+    },
+    {
+      "from": "src:region_raw",
+      "kind": "feeds",
+      "to": "ds:region"
+    },
+    {
+      "from": "src:supplier_raw",
+      "kind": "feeds",
+      "to": "ds:supplier"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "src:customer_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "customer_raw",
+      "relation": "tpch_raw.customer_raw",
+      "title": "customer_raw"
+    },
+    {
+      "id": "src:lineitem_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "lineitem_raw",
+      "relation": "tpch_raw.lineitem_raw",
+      "title": "lineitem_raw"
+    },
+    {
+      "id": "src:nation_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "nation_raw",
+      "relation": "tpch_raw.nation_raw",
+      "title": "nation_raw"
+    },
+    {
+      "id": "src:orders_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "orders_raw",
+      "relation": "tpch_raw.orders_raw",
+      "title": "orders_raw"
+    },
+    {
+      "id": "src:part_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "part_raw",
+      "relation": "tpch_raw.part_raw",
+      "title": "part_raw"
+    },
+    {
+      "id": "src:partsupp_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "partsupp_raw",
+      "relation": "tpch_raw.partsupp_raw",
+      "title": "partsupp_raw"
+    },
+    {
+      "id": "src:region_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "region_raw",
+      "relation": "tpch_raw.region_raw",
+      "title": "region_raw"
+    },
+    {
+      "id": "src:supplier_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "supplier_raw",
+      "relation": "tpch_raw.supplier_raw",
+      "title": "supplier_raw"
+    },
+    {
+      "id": "ds:customer",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "customer",
+      "relation": "tpch.customer",
+      "title": "customer",
+      "transform": "customer"
+    },
+    {
+      "id": "ds:lineitem",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "lineitem",
+      "relation": "tpch.lineitem",
+      "title": "lineitem",
+      "transform": "lineitem"
+    },
+    {
+      "id": "ds:nation",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "nation",
+      "relation": "tpch.nation",
+      "title": "nation",
+      "transform": "nation"
+    },
+    {
+      "id": "ds:orders",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "orders",
+      "relation": "tpch.orders",
+      "title": "orders",
+      "transform": "orders"
+    },
+    {
+      "id": "ds:part",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "part",
+      "relation": "tpch.part",
+      "title": "part",
+      "transform": "part"
+    },
+    {
+      "id": "ds:partsupp",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "partsupp",
+      "relation": "tpch.partsupp",
+      "title": "partsupp",
+      "transform": "partsupp"
+    },
+    {
+      "id": "ds:region",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "region",
+      "relation": "tpch.region",
+      "title": "region",
+      "transform": "region"
+    },
+    {
+      "id": "ds:supplier",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "supplier",
+      "relation": "tpch.supplier",
+      "title": "supplier",
+      "transform": "supplier"
+    },
+    {
+      "class": "entity",
+      "id": "con:customer",
+      "kind": "concept",
+      "ref": "customer",
+      "rules": 0,
+      "title": "Customer"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:line_status",
+      "kind": "concept",
+      "ref": "line_status",
+      "rules": 0,
+      "title": "Line Status"
+    },
+    {
+      "class": "event",
+      "id": "con:lineitem",
+      "kind": "concept",
+      "ref": "lineitem",
+      "rules": 2,
+      "title": "Order Line"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:market_segment",
+      "kind": "concept",
+      "ref": "market_segment",
+      "rules": 0,
+      "title": "Market Segment"
+    },
+    {
+      "class": "entity",
+      "id": "con:nation",
+      "kind": "concept",
+      "ref": "nation",
+      "rules": 0,
+      "title": "Nation"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:order_status",
+      "kind": "concept",
+      "ref": "order_status",
+      "rules": 0,
+      "title": "Order Status"
+    },
+    {
+      "class": "entity",
+      "id": "con:orders",
+      "kind": "concept",
+      "ref": "orders",
+      "rules": 0,
+      "title": "Order"
+    },
+    {
+      "class": "entity",
+      "id": "con:part",
+      "kind": "concept",
+      "ref": "part",
+      "rules": 0,
+      "title": "Part"
+    },
+    {
+      "class": "entity",
+      "id": "con:partsupp",
+      "kind": "concept",
+      "ref": "partsupp",
+      "rules": 0,
+      "title": "Part-Supplier"
+    },
+    {
+      "class": "entity",
+      "id": "con:region",
+      "kind": "concept",
+      "ref": "region",
+      "rules": 0,
+      "title": "Region"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:return_flag",
+      "kind": "concept",
+      "ref": "return_flag",
+      "rules": 0,
+      "title": "Return Flag"
+    },
+    {
+      "class": "measure",
+      "id": "con:revenue",
+      "kind": "concept",
+      "ref": "revenue",
+      "rules": 0,
+      "title": "Revenue"
+    },
+    {
+      "class": "entity",
+      "id": "con:supplier",
+      "kind": "concept",
+      "ref": "supplier",
+      "rules": 0,
+      "title": "Supplier"
+    }
+  ],
+  "orphans": {
+    "concepts_grounded_in_nothing": [],
+    "datasets_bound_by_no_concept": [],
+    "datasets_with_no_input": [],
+    "sources_feeding_nothing": []
+  }
+}

@@ -1,0 +1,2476 @@
+{
+  "counts": {
+    "concept": 13,
+    "dataset": 8,
+    "lookup": 0,
+    "quality": 0,
+    "source": 8
+  },
+  "er_model": {
+    "counts": {
+      "business": 0,
+      "cardinality_conflicts": 0,
+      "concept_edges": 8,
+      "entities": 8,
+      "isolated_entities": 0,
+      "physical": 8,
+      "relationships": 8,
+      "side_inferred": 8,
+      "with_cardinality": 8
+    },
+    "duplicate_ids": [],
+    "entities": [
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "c_custkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "c_name",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "c_nationkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "c_phone",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "c_acctbal",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "c_mktsegment",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "c_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "customer",
+        "keys": [
+          "c_custkey"
+        ],
+        "stem": "customer",
+        "title": "customer"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "l_orderkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "l_linenumber",
+            "role": "composite_key_part",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "l_partkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "l_suppkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_quantity",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_extendedprice",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_discount",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_tax",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_returnflag",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_linestatus",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_shipdate",
+            "role": "value",
+            "type": "date"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_commitdate",
+            "role": "value",
+            "type": "date"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_receiptdate",
+            "role": "value",
+            "type": "date"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_shipmode",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "l_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "lineitem",
+        "keys": [
+          "l_linenumber"
+        ],
+        "stem": "lineitem",
+        "title": "lineitem"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "n_nationkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "n_name",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "n_regionkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "n_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "nation",
+        "keys": [
+          "n_nationkey"
+        ],
+        "stem": "nation",
+        "title": "nation"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "o_orderkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "o_custkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "o_orderstatus",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "o_totalprice",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "o_orderdate",
+            "role": "value",
+            "type": "date"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "o_orderpriority",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "o_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "orders",
+        "keys": [
+          "o_orderkey"
+        ],
+        "stem": "orders",
+        "title": "orders"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "p_partkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_name",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_mfgr",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_brand",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_type",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_size",
+            "role": "value",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_retailprice",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "p_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "part",
+        "keys": [
+          "p_partkey"
+        ],
+        "stem": "part",
+        "title": "part"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "ps_partkey",
+            "role": "composite_key_part",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "ps_suppkey",
+            "role": "composite_key_part",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "ps_availqty",
+            "role": "value",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "ps_supplycost",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "ps_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "partsupp",
+        "keys": [
+          "ps_partkey",
+          "ps_suppkey"
+        ],
+        "stem": "partsupp",
+        "title": "partsupp"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "r_regionkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "r_name",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "r_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "region",
+        "keys": [
+          "r_regionkey"
+        ],
+        "stem": "region",
+        "title": "region"
+      },
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "s_suppkey",
+            "role": "primary_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "s_name",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "s_nationkey",
+            "role": "foreign_key",
+            "type": "integer"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "s_phone",
+            "role": "value",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "s_acctbal",
+            "role": "value",
+            "type": "decimal"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "s_comment",
+            "role": "value",
+            "type": "string"
+          }
+        ],
+        "id": "supplier",
+        "keys": [
+          "s_suppkey"
+        ],
+        "stem": "supplier",
+        "title": "supplier"
+      }
+    ],
+    "relationships": [
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "c_nationkey"
+          ],
+          "concept": "Customer",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "customer"
+        },
+        "id": "customer__from__nation",
+        "join_rule": "customer.c_nationkey = nation.n_nationkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "customer__from__nation",
+            "from_concept": "Customer",
+            "to_concept": "Nation",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "n_nationkey"
+          ],
+          "concept": "Nation",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "nation"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "l_orderkey"
+          ],
+          "concept": "LineItem",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "lineitem"
+        },
+        "id": "lineitem__part_of__orders",
+        "join_rule": "lineitem.l_orderkey = orders.o_orderkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "lineitem__part_of__orders",
+            "from_concept": "LineItem",
+            "to_concept": "Orders",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "o_orderkey"
+          ],
+          "concept": "Orders",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "orders"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "l_partkey",
+            "l_suppkey"
+          ],
+          "concept": "LineItem",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "lineitem"
+        },
+        "id": "lineitem__supplied_via__partsupp",
+        "join_rule": "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "lineitem__supplied_via__partsupp",
+            "from_concept": "LineItem",
+            "to_concept": "PartSupp",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "ps_partkey",
+            "ps_suppkey"
+          ],
+          "concept": "PartSupp",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "partsupp"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "n_regionkey"
+          ],
+          "concept": "Nation",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "nation"
+        },
+        "id": "nation__in__region",
+        "join_rule": "nation.n_regionkey = region.r_regionkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "nation__in__region",
+            "from_concept": "Nation",
+            "to_concept": "Region",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "r_regionkey"
+          ],
+          "concept": "Region",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "region"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "o_custkey"
+          ],
+          "concept": "Orders",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "orders"
+        },
+        "id": "orders__placed_by__customer",
+        "join_rule": "orders.o_custkey = customer.c_custkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "orders__placed_by__customer",
+            "from_concept": "Orders",
+            "to_concept": "Customer",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "c_custkey"
+          ],
+          "concept": "Customer",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "customer"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "ps_partkey"
+          ],
+          "concept": "PartSupp",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "partsupp"
+        },
+        "id": "partsupp__of__part",
+        "join_rule": "partsupp.ps_partkey = part.p_partkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "partsupp__of__part",
+            "from_concept": "PartSupp",
+            "to_concept": "Part",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "p_partkey"
+          ],
+          "concept": "Part",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "part"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "ps_suppkey"
+          ],
+          "concept": "PartSupp",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "partsupp"
+        },
+        "id": "partsupp__from__supplier",
+        "join_rule": "partsupp.ps_suppkey = supplier.s_suppkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "partsupp__from__supplier",
+            "from_concept": "PartSupp",
+            "to_concept": "Supplier",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "s_suppkey"
+          ],
+          "concept": "Supplier",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "supplier"
+        },
+        "type": "foreign_key"
+      },
+      {
+        "dangling": [],
+        "from": {
+          "cardinality": "0..N",
+          "columns": [
+            "s_nationkey"
+          ],
+          "concept": "Supplier",
+          "crow": {
+            "label": "0..N",
+            "max": "many",
+            "min": "zero"
+          },
+          "entity": "supplier"
+        },
+        "id": "supplier__from__nation",
+        "join_rule": "supplier.s_nationkey = nation.n_nationkey",
+        "level": "physical",
+        "realized_by": [
+          {
+            "edge_id": "supplier__from__nation",
+            "from_concept": "Supplier",
+            "to_concept": "Nation",
+            "type": "foreign_key"
+          }
+        ],
+        "side_inferred": true,
+        "to": {
+          "cardinality": "1",
+          "columns": [
+            "n_nationkey"
+          ],
+          "concept": "Nation",
+          "crow": {
+            "label": "1",
+            "max": "one",
+            "min": "one"
+          },
+          "entity": "nation"
+        },
+        "type": "foreign_key"
+      }
+    ],
+    "unknown_cardinalities": []
+  },
+  "lineage_graph": {
+    "counts": {
+      "concept": 13,
+      "concepts_multi_grounded": 0,
+      "dataset": 8,
+      "edges": 22,
+      "lookup": 0,
+      "source": 8
+    },
+    "edges": [
+      {
+        "from": "ds:customer",
+        "kind": "grounds",
+        "to": "con:customer"
+      },
+      {
+        "from": "ds:customer",
+        "kind": "grounds",
+        "to": "con:market_segment"
+      },
+      {
+        "from": "ds:lineitem",
+        "kind": "grounds",
+        "to": "con:line_status"
+      },
+      {
+        "from": "ds:lineitem",
+        "kind": "grounds",
+        "to": "con:lineitem"
+      },
+      {
+        "from": "ds:lineitem",
+        "kind": "grounds",
+        "to": "con:return_flag"
+      },
+      {
+        "from": "ds:lineitem",
+        "kind": "grounds",
+        "to": "con:revenue"
+      },
+      {
+        "from": "ds:nation",
+        "kind": "grounds",
+        "to": "con:nation"
+      },
+      {
+        "from": "ds:orders",
+        "kind": "grounds",
+        "to": "con:order_status"
+      },
+      {
+        "from": "ds:orders",
+        "kind": "grounds",
+        "to": "con:orders"
+      },
+      {
+        "from": "ds:orders",
+        "kind": "derives_from",
+        "to": "ds:lineitem"
+      },
+      {
+        "from": "ds:part",
+        "kind": "grounds",
+        "to": "con:part"
+      },
+      {
+        "from": "ds:partsupp",
+        "kind": "grounds",
+        "to": "con:partsupp"
+      },
+      {
+        "from": "ds:region",
+        "kind": "grounds",
+        "to": "con:region"
+      },
+      {
+        "from": "ds:supplier",
+        "kind": "grounds",
+        "to": "con:supplier"
+      },
+      {
+        "from": "src:customer_raw",
+        "kind": "feeds",
+        "to": "ds:customer"
+      },
+      {
+        "from": "src:lineitem_raw",
+        "kind": "feeds",
+        "to": "ds:lineitem"
+      },
+      {
+        "from": "src:nation_raw",
+        "kind": "feeds",
+        "to": "ds:nation"
+      },
+      {
+        "from": "src:orders_raw",
+        "kind": "feeds",
+        "to": "ds:orders"
+      },
+      {
+        "from": "src:part_raw",
+        "kind": "feeds",
+        "to": "ds:part"
+      },
+      {
+        "from": "src:partsupp_raw",
+        "kind": "feeds",
+        "to": "ds:partsupp"
+      },
+      {
+        "from": "src:region_raw",
+        "kind": "feeds",
+        "to": "ds:region"
+      },
+      {
+        "from": "src:supplier_raw",
+        "kind": "feeds",
+        "to": "ds:supplier"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "src:customer_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "customer_raw",
+        "relation": "tpch_raw.customer_raw",
+        "title": "customer_raw"
+      },
+      {
+        "id": "src:lineitem_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "lineitem_raw",
+        "relation": "tpch_raw.lineitem_raw",
+        "title": "lineitem_raw"
+      },
+      {
+        "id": "src:nation_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "nation_raw",
+        "relation": "tpch_raw.nation_raw",
+        "title": "nation_raw"
+      },
+      {
+        "id": "src:orders_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "orders_raw",
+        "relation": "tpch_raw.orders_raw",
+        "title": "orders_raw"
+      },
+      {
+        "id": "src:part_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "part_raw",
+        "relation": "tpch_raw.part_raw",
+        "title": "part_raw"
+      },
+      {
+        "id": "src:partsupp_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "partsupp_raw",
+        "relation": "tpch_raw.partsupp_raw",
+        "title": "partsupp_raw"
+      },
+      {
+        "id": "src:region_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "region_raw",
+        "relation": "tpch_raw.region_raw",
+        "title": "region_raw"
+      },
+      {
+        "id": "src:supplier_raw",
+        "issues": 0,
+        "kind": "source",
+        "ref": "supplier_raw",
+        "relation": "tpch_raw.supplier_raw",
+        "title": "supplier_raw"
+      },
+      {
+        "id": "ds:customer",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "customer",
+        "relation": "tpch.customer",
+        "title": "customer",
+        "transform": "customer"
+      },
+      {
+        "id": "ds:lineitem",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "lineitem",
+        "relation": "tpch.lineitem",
+        "title": "lineitem",
+        "transform": "lineitem"
+      },
+      {
+        "id": "ds:nation",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "nation",
+        "relation": "tpch.nation",
+        "title": "nation",
+        "transform": "nation"
+      },
+      {
+        "id": "ds:orders",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "orders",
+        "relation": "tpch.orders",
+        "title": "orders",
+        "transform": "orders"
+      },
+      {
+        "id": "ds:part",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "part",
+        "relation": "tpch.part",
+        "title": "part",
+        "transform": "part"
+      },
+      {
+        "id": "ds:partsupp",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "partsupp",
+        "relation": "tpch.partsupp",
+        "title": "partsupp",
+        "transform": "partsupp"
+      },
+      {
+        "id": "ds:region",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "region",
+        "relation": "tpch.region",
+        "title": "region",
+        "transform": "region"
+      },
+      {
+        "id": "ds:supplier",
+        "issues": 0,
+        "kind": "dataset",
+        "ref": "supplier",
+        "relation": "tpch.supplier",
+        "title": "supplier",
+        "transform": "supplier"
+      },
+      {
+        "class": "entity",
+        "id": "con:customer",
+        "kind": "concept",
+        "ref": "customer",
+        "rules": 0,
+        "title": "Customer"
+      },
+      {
+        "class": "enumeration",
+        "id": "con:line_status",
+        "kind": "concept",
+        "ref": "line_status",
+        "rules": 0,
+        "title": "Line Status"
+      },
+      {
+        "class": "event",
+        "id": "con:lineitem",
+        "kind": "concept",
+        "ref": "lineitem",
+        "rules": 2,
+        "title": "Order Line"
+      },
+      {
+        "class": "enumeration",
+        "id": "con:market_segment",
+        "kind": "concept",
+        "ref": "market_segment",
+        "rules": 0,
+        "title": "Market Segment"
+      },
+      {
+        "class": "entity",
+        "id": "con:nation",
+        "kind": "concept",
+        "ref": "nation",
+        "rules": 0,
+        "title": "Nation"
+      },
+      {
+        "class": "enumeration",
+        "id": "con:order_status",
+        "kind": "concept",
+        "ref": "order_status",
+        "rules": 0,
+        "title": "Order Status"
+      },
+      {
+        "class": "entity",
+        "id": "con:orders",
+        "kind": "concept",
+        "ref": "orders",
+        "rules": 0,
+        "title": "Order"
+      },
+      {
+        "class": "entity",
+        "id": "con:part",
+        "kind": "concept",
+        "ref": "part",
+        "rules": 0,
+        "title": "Part"
+      },
+      {
+        "class": "entity",
+        "id": "con:partsupp",
+        "kind": "concept",
+        "ref": "partsupp",
+        "rules": 0,
+        "title": "Part-Supplier"
+      },
+      {
+        "class": "entity",
+        "id": "con:region",
+        "kind": "concept",
+        "ref": "region",
+        "rules": 0,
+        "title": "Region"
+      },
+      {
+        "class": "enumeration",
+        "id": "con:return_flag",
+        "kind": "concept",
+        "ref": "return_flag",
+        "rules": 0,
+        "title": "Return Flag"
+      },
+      {
+        "class": "measure",
+        "id": "con:revenue",
+        "kind": "concept",
+        "ref": "revenue",
+        "rules": 0,
+        "title": "Revenue"
+      },
+      {
+        "class": "entity",
+        "id": "con:supplier",
+        "kind": "concept",
+        "ref": "supplier",
+        "rules": 0,
+        "title": "Supplier"
+      }
+    ],
+    "orphans": {
+      "concepts_grounded_in_nothing": [],
+      "datasets_bound_by_no_concept": [],
+      "datasets_with_no_input": [],
+      "sources_feeding_nothing": []
+    }
+  },
+  "objects": [
+    {
+      "id": "questions",
+      "key": "acceptance:questions:questions",
+      "kind": "questions",
+      "lineage": false,
+      "paths": {
+        "corpus": "acceptance/questions.yaml",
+        "dashboard": "acceptance/questions_dashboard.json"
+      },
+      "plane": "acceptance",
+      "quality": [],
+      "relation": null,
+      "title": "Question Lighthouse",
+      "views": [
+        "dashboard"
+      ]
+    },
+    {
+      "id": "mac_compile",
+      "key": "bundle:compile:mac_compile",
+      "kind": "compile",
+      "lineage": false,
+      "paths": {
+        "dashboard": "compile.json"
+      },
+      "plane": "bundle",
+      "quality": [],
+      "relation": null,
+      "title": "Compiler Report",
+      "views": [
+        "dashboard"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "customer",
+          "title": "Customer"
+        },
+        {
+          "id": "market_segment",
+          "title": "Market Segment"
+        }
+      ],
+      "id": "customer",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "customer_raw"
+        }
+      ],
+      "key": "data:dataset:customer",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/customer.md",
+        "doc": "data/datasets/customer.md",
+        "sample": null,
+        "schema": "data/datasets/customer.yaml",
+        "sql": "data/transforms/customer.sql",
+        "transform": "data/transforms/customer.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.customer",
+      "sources": [
+        "customer_raw"
+      ],
+      "title": "customer",
+      "transform": "customer",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "line_status",
+          "title": "Line Status"
+        },
+        {
+          "id": "lineitem",
+          "title": "Order Line"
+        },
+        {
+          "id": "return_flag",
+          "title": "Return Flag"
+        },
+        {
+          "id": "revenue",
+          "title": "Revenue"
+        }
+      ],
+      "id": "lineitem",
+      "inputs": [
+        {
+          "kind": "dataset",
+          "ref": "orders"
+        },
+        {
+          "kind": "source",
+          "ref": "lineitem_raw"
+        }
+      ],
+      "key": "data:dataset:lineitem",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/lineitem.md",
+        "doc": "data/datasets/lineitem.md",
+        "sample": null,
+        "schema": "data/datasets/lineitem.yaml",
+        "sql": "data/transforms/lineitem.sql",
+        "transform": "data/transforms/lineitem.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.lineitem",
+      "sources": [
+        "lineitem_raw"
+      ],
+      "title": "lineitem",
+      "transform": "lineitem",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "nation",
+          "title": "Nation"
+        }
+      ],
+      "id": "nation",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "nation_raw"
+        }
+      ],
+      "key": "data:dataset:nation",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/nation.md",
+        "doc": "data/datasets/nation.md",
+        "sample": null,
+        "schema": "data/datasets/nation.yaml",
+        "sql": "data/transforms/nation.sql",
+        "transform": "data/transforms/nation.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.nation",
+      "sources": [
+        "nation_raw"
+      ],
+      "title": "nation",
+      "transform": "nation",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "order_status",
+          "title": "Order Status"
+        },
+        {
+          "id": "orders",
+          "title": "Order"
+        }
+      ],
+      "id": "orders",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "orders_raw"
+        }
+      ],
+      "key": "data:dataset:orders",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/orders.md",
+        "doc": "data/datasets/orders.md",
+        "sample": null,
+        "schema": "data/datasets/orders.yaml",
+        "sql": "data/transforms/orders.sql",
+        "transform": "data/transforms/orders.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.orders",
+      "sources": [
+        "orders_raw"
+      ],
+      "title": "orders",
+      "transform": "orders",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "part",
+          "title": "Part"
+        }
+      ],
+      "id": "part",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "part_raw"
+        }
+      ],
+      "key": "data:dataset:part",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/part.md",
+        "doc": "data/datasets/part.md",
+        "sample": null,
+        "schema": "data/datasets/part.yaml",
+        "sql": "data/transforms/part.sql",
+        "transform": "data/transforms/part.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.part",
+      "sources": [
+        "part_raw"
+      ],
+      "title": "part",
+      "transform": "part",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "partsupp",
+          "title": "Part-Supplier"
+        }
+      ],
+      "id": "partsupp",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "partsupp_raw"
+        }
+      ],
+      "key": "data:dataset:partsupp",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/partsupp.md",
+        "doc": "data/datasets/partsupp.md",
+        "sample": null,
+        "schema": "data/datasets/partsupp.yaml",
+        "sql": "data/transforms/partsupp.sql",
+        "transform": "data/transforms/partsupp.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.partsupp",
+      "sources": [
+        "partsupp_raw"
+      ],
+      "title": "partsupp",
+      "transform": "partsupp",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "region",
+          "title": "Region"
+        }
+      ],
+      "id": "region",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "region_raw"
+        }
+      ],
+      "key": "data:dataset:region",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/region.md",
+        "doc": "data/datasets/region.md",
+        "sample": null,
+        "schema": "data/datasets/region.yaml",
+        "sql": "data/transforms/region.sql",
+        "transform": "data/transforms/region.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.region",
+      "sources": [
+        "region_raw"
+      ],
+      "title": "region",
+      "transform": "region",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "concepts": [
+        {
+          "id": "supplier",
+          "title": "Supplier"
+        }
+      ],
+      "id": "supplier",
+      "inputs": [
+        {
+          "kind": "source",
+          "ref": "supplier_raw"
+        }
+      ],
+      "key": "data:dataset:supplier",
+      "kind": "dataset",
+      "lineage": true,
+      "paths": {
+        "cleaning": "data/transforms/supplier.md",
+        "doc": "data/datasets/supplier.md",
+        "sample": null,
+        "schema": "data/datasets/supplier.yaml",
+        "sql": "data/transforms/supplier.sql",
+        "transform": "data/transforms/supplier.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch.supplier",
+      "sources": [
+        "supplier_raw"
+      ],
+      "title": "supplier",
+      "transform": "supplier",
+      "treats": [],
+      "views": [
+        "doc",
+        "schema",
+        "cleaning",
+        "sql",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "customer"
+      ],
+      "id": "customer_raw",
+      "key": "data:source:customer_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/customer_raw.md",
+        "sample": null,
+        "schema": "data/sources/customer_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.customer_raw",
+      "title": "customer_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "lineitem"
+      ],
+      "id": "lineitem_raw",
+      "key": "data:source:lineitem_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/lineitem_raw.md",
+        "sample": null,
+        "schema": "data/sources/lineitem_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.lineitem_raw",
+      "title": "lineitem_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "nation"
+      ],
+      "id": "nation_raw",
+      "key": "data:source:nation_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/nation_raw.md",
+        "sample": null,
+        "schema": "data/sources/nation_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.nation_raw",
+      "title": "nation_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "orders"
+      ],
+      "id": "orders_raw",
+      "key": "data:source:orders_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/orders_raw.md",
+        "sample": null,
+        "schema": "data/sources/orders_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.orders_raw",
+      "title": "orders_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "part"
+      ],
+      "id": "part_raw",
+      "key": "data:source:part_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/part_raw.md",
+        "sample": null,
+        "schema": "data/sources/part_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.part_raw",
+      "title": "part_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "partsupp"
+      ],
+      "id": "partsupp_raw",
+      "key": "data:source:partsupp_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/partsupp_raw.md",
+        "sample": null,
+        "schema": "data/sources/partsupp_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.partsupp_raw",
+      "title": "partsupp_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "region"
+      ],
+      "id": "region_raw",
+      "key": "data:source:region_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/region_raw.md",
+        "sample": null,
+        "schema": "data/sources/region_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.region_raw",
+      "title": "region_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "feeds": [
+        "supplier"
+      ],
+      "id": "supplier_raw",
+      "key": "data:source:supplier_raw",
+      "kind": "source",
+      "lineage": true,
+      "paths": {
+        "doc": "data/sources/supplier_raw.md",
+        "sample": null,
+        "schema": "data/sources/supplier_raw.yaml"
+      },
+      "plane": "data",
+      "quality": [],
+      "relation": "tpch_raw.supplier_raw",
+      "title": "supplier_raw",
+      "views": [
+        "doc",
+        "schema",
+        "lineage"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "customer",
+          "sources": [
+            "customer_raw"
+          ],
+          "title": "customer",
+          "transform": "customer"
+        }
+      ],
+      "id": "customer",
+      "joins": {
+        "in": [
+          {
+            "concept": "orders",
+            "join_rule": "orders.o_custkey = customer.c_custkey",
+            "on": "c_custkey",
+            "title": "Order"
+          }
+        ],
+        "out": [
+          {
+            "concept": "nation",
+            "join_rule": "customer.c_nationkey = nation.n_nationkey",
+            "on": "c_nationkey",
+            "title": "Nation"
+          }
+        ]
+      },
+      "key": "ontology:concept:customer",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/customer.md",
+        "schema": "ontology/concepts/party/customer.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Customer",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "enumeration",
+      "grounds": [
+        {
+          "id": "lineitem",
+          "sources": [
+            "lineitem_raw"
+          ],
+          "title": "lineitem",
+          "transform": "lineitem"
+        }
+      ],
+      "id": "line_status",
+      "joins": {
+        "in": [],
+        "out": []
+      },
+      "key": "ontology:concept:line_status",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/line_status.md",
+        "schema": "ontology/concepts/order/line_status.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Line Status",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "event",
+      "grounds": [
+        {
+          "id": "lineitem",
+          "sources": [
+            "lineitem_raw"
+          ],
+          "title": "lineitem",
+          "transform": "lineitem"
+        }
+      ],
+      "id": "lineitem",
+      "joins": {
+        "in": [],
+        "out": [
+          {
+            "concept": "orders",
+            "join_rule": "lineitem.l_orderkey = orders.o_orderkey",
+            "on": "l_orderkey",
+            "title": "Order"
+          },
+          {
+            "concept": "partsupp",
+            "join_rule": "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey",
+            "on": "l_partkey",
+            "title": "Part-Supplier"
+          }
+        ]
+      },
+      "key": "ontology:concept:lineitem",
+      "kind": "concept",
+      "lineage": false,
+      "no_probe_guarantee": "To read a line you need only its columns here; revenue is net of discount (see net_revenue), and the fulfilment state is read from the dates/flags \u2014 no warehouse probe is needed.\n",
+      "paths": {
+        "doc": "ontology/concepts/lineitem.md",
+        "schema": "ontology/concepts/order/lineitem.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [
+        {
+          "binds": [
+            "l_extendedprice",
+            "l_discount"
+          ],
+          "confidence": null,
+          "id": "lineitem.revenue.net_of_discount",
+          "kind": "aggregation",
+          "never": "summing l_extendedprice alone \u2014 that is gross, not revenue",
+          "scope": null,
+          "subject": "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)",
+          "then": "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)",
+          "when": "computing revenue from order lines"
+        },
+        {
+          "binds": [
+            "l_receiptdate",
+            "l_linestatus"
+          ],
+          "confidence": null,
+          "id": "lineitem.state.received_iff_receiptdate",
+          "kind": "resolution",
+          "never": null,
+          "scope": null,
+          "subject": "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment",
+          "then": "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment",
+          "when": "deciding whether a line has been received (the IN_FLIGHT \u2192 CLOSED boundary)"
+        }
+      ],
+      "title": "Order Line",
+      "views": [
+        "doc",
+        "schema",
+        "rules",
+        "chain"
+      ]
+    },
+    {
+      "class": "enumeration",
+      "grounds": [
+        {
+          "id": "customer",
+          "sources": [
+            "customer_raw"
+          ],
+          "title": "customer",
+          "transform": "customer"
+        }
+      ],
+      "id": "market_segment",
+      "joins": {
+        "in": [],
+        "out": []
+      },
+      "key": "ontology:concept:market_segment",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/market_segment.md",
+        "schema": "ontology/concepts/party/market_segment.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Market Segment",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "nation",
+          "sources": [
+            "nation_raw"
+          ],
+          "title": "nation",
+          "transform": "nation"
+        }
+      ],
+      "id": "nation",
+      "joins": {
+        "in": [
+          {
+            "concept": "customer",
+            "join_rule": "customer.c_nationkey = nation.n_nationkey",
+            "on": "n_nationkey",
+            "title": "Customer"
+          },
+          {
+            "concept": "supplier",
+            "join_rule": "supplier.s_nationkey = nation.n_nationkey",
+            "on": "n_nationkey",
+            "title": "Supplier"
+          }
+        ],
+        "out": [
+          {
+            "concept": "region",
+            "join_rule": "nation.n_regionkey = region.r_regionkey",
+            "on": "n_regionkey",
+            "title": "Region"
+          }
+        ]
+      },
+      "key": "ontology:concept:nation",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/nation.md",
+        "schema": "ontology/concepts/geography/nation.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Nation",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "enumeration",
+      "grounds": [
+        {
+          "id": "orders",
+          "sources": [
+            "orders_raw"
+          ],
+          "title": "orders",
+          "transform": "orders"
+        }
+      ],
+      "id": "order_status",
+      "joins": {
+        "in": [],
+        "out": []
+      },
+      "key": "ontology:concept:order_status",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/order_status.md",
+        "schema": "ontology/concepts/order/order_status.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Order Status",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "orders",
+          "sources": [
+            "orders_raw"
+          ],
+          "title": "orders",
+          "transform": "orders"
+        }
+      ],
+      "id": "orders",
+      "joins": {
+        "in": [
+          {
+            "concept": "lineitem",
+            "join_rule": "lineitem.l_orderkey = orders.o_orderkey",
+            "on": "o_orderkey",
+            "title": "Order Line"
+          }
+        ],
+        "out": [
+          {
+            "concept": "customer",
+            "join_rule": "orders.o_custkey = customer.c_custkey",
+            "on": "o_custkey",
+            "title": "Customer"
+          }
+        ]
+      },
+      "key": "ontology:concept:orders",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/orders.md",
+        "schema": "ontology/concepts/order/orders.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Order",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "part",
+          "sources": [
+            "part_raw"
+          ],
+          "title": "part",
+          "transform": "part"
+        }
+      ],
+      "id": "part",
+      "joins": {
+        "in": [
+          {
+            "concept": "partsupp",
+            "join_rule": "partsupp.ps_partkey = part.p_partkey",
+            "on": "p_partkey",
+            "title": "Part-Supplier"
+          }
+        ],
+        "out": []
+      },
+      "key": "ontology:concept:part",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/part.md",
+        "schema": "ontology/concepts/part/part.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Part",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "partsupp",
+          "sources": [
+            "partsupp_raw"
+          ],
+          "title": "partsupp",
+          "transform": "partsupp"
+        }
+      ],
+      "id": "partsupp",
+      "joins": {
+        "in": [
+          {
+            "concept": "lineitem",
+            "join_rule": "lineitem.l_partkey = partsupp.ps_partkey AND lineitem.l_suppkey = partsupp.ps_suppkey",
+            "on": "ps_suppkey",
+            "title": "Order Line"
+          }
+        ],
+        "out": [
+          {
+            "concept": "part",
+            "join_rule": "partsupp.ps_partkey = part.p_partkey",
+            "on": "ps_partkey",
+            "title": "Part"
+          },
+          {
+            "concept": "supplier",
+            "join_rule": "partsupp.ps_suppkey = supplier.s_suppkey",
+            "on": "ps_suppkey",
+            "title": "Supplier"
+          }
+        ]
+      },
+      "key": "ontology:concept:partsupp",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/partsupp.md",
+        "schema": "ontology/concepts/part/partsupp.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Part-Supplier",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "region",
+          "sources": [
+            "region_raw"
+          ],
+          "title": "region",
+          "transform": "region"
+        }
+      ],
+      "id": "region",
+      "joins": {
+        "in": [
+          {
+            "concept": "nation",
+            "join_rule": "nation.n_regionkey = region.r_regionkey",
+            "on": "r_regionkey",
+            "title": "Nation"
+          }
+        ],
+        "out": []
+      },
+      "key": "ontology:concept:region",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/region.md",
+        "schema": "ontology/concepts/geography/region.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Region",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "enumeration",
+      "grounds": [
+        {
+          "id": "lineitem",
+          "sources": [
+            "lineitem_raw"
+          ],
+          "title": "lineitem",
+          "transform": "lineitem"
+        }
+      ],
+      "id": "return_flag",
+      "joins": {
+        "in": [],
+        "out": []
+      },
+      "key": "ontology:concept:return_flag",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/return_flag.md",
+        "schema": "ontology/concepts/order/return_flag.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Return Flag",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "measure",
+      "grounds": [
+        {
+          "id": "lineitem",
+          "sources": [
+            "lineitem_raw"
+          ],
+          "title": "lineitem",
+          "transform": "lineitem"
+        }
+      ],
+      "id": "revenue",
+      "joins": {
+        "in": [],
+        "out": []
+      },
+      "key": "ontology:concept:revenue",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/revenue.md",
+        "schema": "ontology/concepts/finance/revenue.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Revenue",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "class": "entity",
+      "grounds": [
+        {
+          "id": "supplier",
+          "sources": [
+            "supplier_raw"
+          ],
+          "title": "supplier",
+          "transform": "supplier"
+        }
+      ],
+      "id": "supplier",
+      "joins": {
+        "in": [
+          {
+            "concept": "partsupp",
+            "join_rule": "partsupp.ps_suppkey = supplier.s_suppkey",
+            "on": "s_suppkey",
+            "title": "Part-Supplier"
+          }
+        ],
+        "out": [
+          {
+            "concept": "nation",
+            "join_rule": "supplier.s_nationkey = nation.n_nationkey",
+            "on": "s_nationkey",
+            "title": "Nation"
+          }
+        ]
+      },
+      "key": "ontology:concept:supplier",
+      "kind": "concept",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/concepts/supplier.md",
+        "schema": "ontology/concepts/party/supplier.yaml"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rules": [],
+      "title": "Supplier",
+      "views": [
+        "doc",
+        "schema",
+        "chain"
+      ]
+    },
+    {
+      "id": "ontology_quality",
+      "key": "ontology:ontquality:ontology_quality",
+      "kind": "ontquality",
+      "lineage": false,
+      "paths": {
+        "dashboard": "ontology/ontology_quality.json"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "title": "Ontology Quality",
+      "views": [
+        "dashboard"
+      ]
+    },
+    {
+      "id": "sme_questions",
+      "key": "ontology:smeq:sme_questions",
+      "kind": "smeq",
+      "lineage": false,
+      "paths": {
+        "doc": "ontology/SME-QUESTIONS.md"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "title": "SME Questions",
+      "views": [
+        "doc"
+      ]
+    },
+    {
+      "id": "vocabulary",
+      "key": "ontology:vocab:vocabulary",
+      "kind": "vocab",
+      "lineage": false,
+      "paths": {
+        "ref": "ontology/vocabulary.json"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "title": "Vocabulary",
+      "views": [
+        "ref"
+      ]
+    },
+    {
+      "id": "rules/lineitem.revenue.net_of_discount",
+      "key": "ontology:rule:rules/lineitem.revenue.net_of_discount",
+      "kind": "rule",
+      "lineage": false,
+      "parent": "lineitem",
+      "paths": {
+        "doc": "ontology/concepts/rules/lineitem.revenue.net_of_discount.md"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rule_kind": "aggregation",
+      "title": "lineitem.revenue.net_of_discount",
+      "views": [
+        "doc"
+      ]
+    },
+    {
+      "id": "rules/lineitem.state.received_iff_receiptdate",
+      "key": "ontology:rule:rules/lineitem.state.received_iff_receiptdate",
+      "kind": "rule",
+      "lineage": false,
+      "parent": "lineitem",
+      "paths": {
+        "doc": "ontology/concepts/rules/lineitem.state.received_iff_receiptdate.md"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "rule_kind": "resolution",
+      "title": "lineitem.state.received_iff_receiptdate",
+      "views": [
+        "doc"
+      ]
+    },
+    {
+      "id": "semantic_diagnostics",
+      "key": "ontology:diagnostics:semantic_diagnostics",
+      "kind": "diagnostics",
+      "lineage": false,
+      "paths": {
+        "dashboard": "ontology/diagnostics.json"
+      },
+      "plane": "ontology",
+      "quality": [],
+      "relation": null,
+      "title": "Semantic Diagnostics",
+      "views": [
+        "dashboard"
+      ]
+    }
+  ]
+}

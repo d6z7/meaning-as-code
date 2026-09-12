@@ -1,0 +1,25 @@
+# TPC-H (example) — data plane / TRANSFORMS: how the `nation` dataset is made.
+# A PASSTHROUGH. TPC-H base tables arrive complete and typed from the generator, so this
+# pipeline asserts identity rather than inventing a cleaning step: every served column
+# descends 1:1 from its raw counterpart. Declaring it is what gives the dataset LINEAGE —
+# without a producer, `nation` had none, and the graph showed it unrelated to its input.
+metadata:
+  pipeline: nation
+  source: TPCH
+  layer: data-transformation
+  schema_version: 0.1.14
+  status: verified
+  owner: example-team
+produces:
+  relation: tpch.nation
+  sql_file: data/transforms/nation.sql
+  grain: one row per n_nationkey
+  serves_ontology: ontology/concepts/geography/nation.yaml
+inputs:
+- relation: tpch_raw.nation_raw
+  kind: raw_source
+  role: raw_rows
+  descriptor: data/sources/nation_raw.yaml
+governance:
+  owner: example-team
+  last_reviewed: '2026-09-12'

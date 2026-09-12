@@ -1,0 +1,235 @@
+{
+  "groups": [
+    {
+      "group": "Field roles",
+      "namespace": "shop.field_role.*",
+      "note": "What each column DOES in a concept's grounding (source-namespaced \u2014 every source defines its own).",
+      "terms": [
+        {
+          "count": 2,
+          "meaning": "An identity / join column \u2014 how a row is identified and how relations join.",
+          "term": "key"
+        },
+        {
+          "count": 1,
+          "meaning": "A filterable, group-by attribute \u2014 you slice and pivot the data by it.",
+          "term": "dimension"
+        },
+        {
+          "count": 0,
+          "meaning": "Display-only detail \u2014 carried for context, not a key and not aggregated.",
+          "term": "attribute"
+        },
+        {
+          "count": 1,
+          "meaning": "An additive numeric fact \u2014 the number you sum / average.",
+          "term": "measure"
+        }
+      ]
+    },
+    {
+      "group": "Rule kinds",
+      "namespace": "mac.rule_kind.*",
+      "note": "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
+      "terms": [
+        {
+          "count": 1,
+          "meaning": "How to resolve / interpret a value \u2014 routing, canonicalisation, which column to trust.",
+          "term": "resolution"
+        },
+        {
+          "count": 1,
+          "meaning": "How a measure rolls up across an axis (sum / average / not-additive).",
+          "term": "aggregation"
+        },
+        {
+          "count": 0,
+          "meaning": "The assumption to apply when something isn't specified in the question.",
+          "term": "default"
+        },
+        {
+          "count": 0,
+          "meaning": "How to handle a genuinely ambiguous case (which reading wins, or refuse).",
+          "term": "ambiguity"
+        },
+        {
+          "count": 1,
+          "meaning": "Rows or values to exclude / filter out of an answer.",
+          "term": "exclusion"
+        },
+        {
+          "count": 0,
+          "meaning": "An invariant the data is guaranteed to hold \u2014 relied on without re-checking.",
+          "term": "guarantee"
+        }
+      ]
+    },
+    {
+      "group": "Concept class",
+      "namespace": "class",
+      "note": "What kind of thing a concept is (MAC-core). Chosen first; drives which blocks are required.",
+      "terms": [
+        {
+          "count": 1,
+          "meaning": "A real-world thing with its own identity.",
+          "term": "entity"
+        },
+        {
+          "count": 1,
+          "meaning": "Something that happens \u2014 a lifecycle with states / phases.",
+          "term": "event"
+        },
+        {
+          "count": 1,
+          "meaning": "A numeric fact you aggregate (needs an additivity block).",
+          "term": "measure"
+        },
+        {
+          "count": 2,
+          "meaning": "A closed set of coded values \u2014 a lookup / code list (needs a values block).",
+          "term": "enumeration"
+        },
+        {
+          "count": 1,
+          "meaning": "A dimension / lookup that identifies and describes.",
+          "term": "reference"
+        },
+        {
+          "count": 2,
+          "meaning": "A rollup that groups a leaf concept \u2014 e.g. region over country (needs a members block).",
+          "term": "grouping"
+        },
+        {
+          "count": 0,
+          "meaning": "A meta-plane concept \u2014 about the model itself, not the business data.",
+          "term": "meta"
+        }
+      ]
+    },
+    {
+      "group": "Concept confidence",
+      "namespace": "metadata.confidence",
+      "note": "How trustworthy a concept's definition is \u2014 the maturity signal on the Ontology Quality dashboard.",
+      "terms": [
+        {
+          "count": 8,
+          "meaning": "Confirmed by an SME \u2014 authoritative.",
+          "term": "C"
+        },
+        {
+          "count": 0,
+          "meaning": "Inferred by the harvest (machine) \u2014 plausible but not SME-confirmed.",
+          "term": "I"
+        },
+        {
+          "count": 0,
+          "meaning": "Needs SME input \u2014 a known open question / gap.",
+          "term": "Q"
+        }
+      ]
+    },
+    {
+      "group": "Rule confidence",
+      "namespace": "contract.rules[].confidence",
+      "note": "How trustworthy a single rule is (a different scale from concept confidence).",
+      "terms": [
+        {
+          "count": 0,
+          "meaning": "Confirmed \u2014 an SME has signed it off.",
+          "term": "C"
+        },
+        {
+          "count": 0,
+          "meaning": "Proposed \u2014 authored from the schema/context, not yet confirmed (the default).",
+          "term": "P"
+        },
+        {
+          "count": 0,
+          "meaning": "Rejected \u2014 kept for the record but NOT active.",
+          "term": "R"
+        }
+      ]
+    },
+    {
+      "group": "Identity kind",
+      "namespace": "concept.identity.kind",
+      "note": "How a concept's rows are uniquely identified (MAC-core).",
+      "terms": [
+        {
+          "count": 0,
+          "meaning": "An ISO standard code (e.g. iso2 / iso3 for country).",
+          "term": "iso"
+        },
+        {
+          "count": 4,
+          "meaning": "A plain coded key.",
+          "term": "code"
+        },
+        {
+          "count": 0,
+          "meaning": "A code namespaced by another dimension (e.g. brand-scoped country code).",
+          "term": "namespace_code"
+        },
+        {
+          "count": 4,
+          "meaning": "Identity via a foreign-key name.",
+          "term": "fk_name"
+        },
+        {
+          "count": 0,
+          "meaning": "Identity is the composite of several columns (typical for fact / KPI grain).",
+          "term": "composite"
+        },
+        {
+          "count": 0,
+          "meaning": "Identity resolved along an axis at query time.",
+          "term": "resolved_axis"
+        },
+        {
+          "count": 0,
+          "meaning": "Identity not yet decided \u2014 needs an SME.",
+          "term": "sme_pending"
+        }
+      ]
+    },
+    {
+      "group": "Additivity",
+      "namespace": "concept.semantics.additivity",
+      "note": "Per axis, whether a measure can be summed (MAC-core; only these two values exist).",
+      "terms": [
+        {
+          "count": 5,
+          "meaning": "Can be summed across this axis (e.g. volume over time).",
+          "term": "additive"
+        },
+        {
+          "count": 0,
+          "meaning": "Cannot be summed across this axis (a stock, or unlike KPI types together).",
+          "term": "non-additive"
+        }
+      ]
+    },
+    {
+      "group": "Edge level",
+      "namespace": "edges[].level",
+      "note": "The stage a relationship lives at (MAC-core).",
+      "terms": [
+        {
+          "count": 2,
+          "meaning": "A stored foreign-key join between the relations.",
+          "term": "physical"
+        },
+        {
+          "count": 1,
+          "meaning": "A semantic relationship between concepts (identity / shared_attribute).",
+          "term": "business"
+        },
+        {
+          "count": 0,
+          "meaning": "A cross-source relationship (same real-world thing across sources).",
+          "term": "federation"
+        }
+      ]
+    }
+  ]
+}

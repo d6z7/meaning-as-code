@@ -1,0 +1,209 @@
+{
+  "counts": {
+    "concept": 8,
+    "concepts_multi_grounded": 0,
+    "dataset": 7,
+    "edges": 9,
+    "lookup": 0,
+    "source": 1
+  },
+  "edges": [
+    {
+      "from": "ds:categories",
+      "kind": "grounds",
+      "to": "con:category"
+    },
+    {
+      "from": "ds:customers",
+      "kind": "grounds",
+      "to": "con:customer"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "grounds",
+      "to": "con:order"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "grounds",
+      "to": "con:order_status"
+    },
+    {
+      "from": "ds:orders",
+      "kind": "grounds",
+      "to": "con:revenue"
+    },
+    {
+      "from": "ds:product_bundles",
+      "kind": "grounds",
+      "to": "con:product_bundle"
+    },
+    {
+      "from": "ds:products",
+      "kind": "grounds",
+      "to": "con:product"
+    },
+    {
+      "from": "ds:shipping_carriers",
+      "kind": "grounds",
+      "to": "con:shipping_carrier"
+    },
+    {
+      "from": "src:orders_raw",
+      "kind": "feeds",
+      "to": "ds:orders"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "src:orders_raw",
+      "issues": 0,
+      "kind": "source",
+      "ref": "orders_raw",
+      "relation": "shop_raw.orders_raw",
+      "title": "orders_raw"
+    },
+    {
+      "id": "ds:categories",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "categories",
+      "relation": "shop_warehouse.categories",
+      "title": "categories",
+      "transform": null
+    },
+    {
+      "id": "ds:customers",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "customers",
+      "relation": "shop_warehouse.customers",
+      "title": "customers",
+      "transform": null
+    },
+    {
+      "id": "ds:orders",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "orders",
+      "relation": "shop_warehouse.orders",
+      "title": "orders",
+      "transform": "orders"
+    },
+    {
+      "id": "ds:product_bundles",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "product_bundles",
+      "relation": "shop_warehouse.product_bundles",
+      "title": "product_bundles",
+      "transform": null
+    },
+    {
+      "id": "ds:products",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "products",
+      "relation": "shop_warehouse.products",
+      "title": "products",
+      "transform": null
+    },
+    {
+      "id": "ds:refunds",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "refunds",
+      "relation": "shop_warehouse.refunds",
+      "title": "refunds",
+      "transform": null
+    },
+    {
+      "id": "ds:shipping_carriers",
+      "issues": 0,
+      "kind": "dataset",
+      "ref": "shipping_carriers",
+      "relation": "shop_warehouse.shipping_carriers",
+      "title": "shipping_carriers",
+      "transform": null
+    },
+    {
+      "class": "grouping",
+      "id": "con:category",
+      "kind": "concept",
+      "ref": "category",
+      "rules": 0,
+      "title": "Category"
+    },
+    {
+      "class": "entity",
+      "id": "con:customer",
+      "kind": "concept",
+      "ref": "customer",
+      "rules": 0,
+      "title": "Customer"
+    },
+    {
+      "class": "event",
+      "id": "con:order",
+      "kind": "concept",
+      "ref": "order",
+      "rules": 2,
+      "title": "Order"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:order_status",
+      "kind": "concept",
+      "ref": "order_status",
+      "rules": 0,
+      "title": "Order Status"
+    },
+    {
+      "class": "reference",
+      "id": "con:product",
+      "kind": "concept",
+      "ref": "product",
+      "rules": 0,
+      "title": "Product"
+    },
+    {
+      "class": "grouping",
+      "id": "con:product_bundle",
+      "kind": "concept",
+      "ref": "product_bundle",
+      "rules": 0,
+      "title": "Product Bundle"
+    },
+    {
+      "class": "measure",
+      "id": "con:revenue",
+      "kind": "concept",
+      "ref": "revenue",
+      "rules": 1,
+      "title": "Revenue"
+    },
+    {
+      "class": "enumeration",
+      "id": "con:shipping_carrier",
+      "kind": "concept",
+      "ref": "shipping_carrier",
+      "rules": 0,
+      "title": "Shipping Carrier"
+    }
+  ],
+  "orphans": {
+    "concepts_grounded_in_nothing": [],
+    "datasets_bound_by_no_concept": [
+      "refunds"
+    ],
+    "datasets_with_no_input": [
+      "categories",
+      "customers",
+      "product_bundles",
+      "products",
+      "refunds",
+      "shipping_carriers"
+    ],
+    "sources_feeding_nothing": []
+  }
+}

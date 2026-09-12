@@ -1,0 +1,25 @@
+# TPC-H (example) — data plane / TRANSFORMS: how the `partsupp` dataset is made.
+# A PASSTHROUGH. TPC-H base tables arrive complete and typed from the generator, so this
+# pipeline asserts identity rather than inventing a cleaning step: every served column
+# descends 1:1 from its raw counterpart. Declaring it is what gives the dataset LINEAGE —
+# without a producer, `partsupp` had none, and the graph showed it unrelated to its input.
+metadata:
+  pipeline: partsupp
+  source: TPCH
+  layer: data-transformation
+  schema_version: 0.1.14
+  status: verified
+  owner: example-team
+produces:
+  relation: tpch.partsupp
+  sql_file: data/transforms/partsupp.sql
+  grain: one row per partsupp
+  serves_ontology: ontology/concepts/part/partsupp.yaml
+inputs:
+- relation: tpch_raw.partsupp_raw
+  kind: raw_source
+  role: raw_rows
+  descriptor: data/sources/partsupp_raw.yaml
+governance:
+  owner: example-team
+  last_reviewed: '2026-09-12'

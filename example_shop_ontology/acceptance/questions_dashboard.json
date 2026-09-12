@@ -1,0 +1,118 @@
+{
+  "schema": "mac.questions_dashboard/4",
+  "generated_at": "2026-09-12T21:52:28Z",
+  "bundle": "meaning-as-code/example_shop_ontology",
+  "ontology_fingerprint": "b175932ad2d4c14d",
+  "acceptance_fingerprint": "e3b0c44298fc1c14",
+  "flag_ids": [
+    "outcome",
+    "pins",
+    "value",
+    "rules"
+  ],
+  "flag_states": [
+    "pass",
+    "fail",
+    "na",
+    "unchecked",
+    "disputed"
+  ],
+  "verdicts": [
+    "proven",
+    "routed",
+    "unproven",
+    "failed",
+    "error",
+    "unrun",
+    "no-oracle",
+    "oracle-error"
+  ],
+  "run_statuses": [
+    "unrun",
+    "answered",
+    "composed",
+    "executed",
+    "refused",
+    "error"
+  ],
+  "warning_codes": [
+    "question_text_drift",
+    "outcome_contradiction",
+    "shape_outcome_contradiction",
+    "evidence_stale"
+  ],
+  "anchors": {
+    "total": 0,
+    "graded": 0,
+    "advisory": 0,
+    "unlinked": 0,
+    "unlinked_ids": [],
+    "errors": []
+  },
+  "ontology_rules": {
+    "total": 0,
+    "concepts": 0,
+    "errors": []
+  },
+  "stats": {
+    "total": 0,
+    "run": 0,
+    "by_run_status": {
+      "unrun": 0,
+      "answered": 0,
+      "composed": 0,
+      "executed": 0,
+      "refused": 0,
+      "error": 0
+    },
+    "by_verdict": {
+      "proven": 0,
+      "routed": 0,
+      "unproven": 0,
+      "failed": 0,
+      "error": 0,
+      "unrun": 0,
+      "no-oracle": 0,
+      "oracle-error": 0
+    },
+    "by_flag": {
+      "outcome": {
+        "pass": 0,
+        "fail": 0,
+        "na": 0,
+        "unchecked": 0,
+        "disputed": 0
+      },
+      "pins": {
+        "pass": 0,
+        "fail": 0,
+        "na": 0,
+        "unchecked": 0,
+        "disputed": 0
+      },
+      "value": {
+        "pass": 0,
+        "fail": 0,
+        "na": 0,
+        "unchecked": 0,
+        "disputed": 0
+      },
+      "rules": {
+        "pass": 0,
+        "fail": 0,
+        "na": 0,
+        "unchecked": 0,
+        "disputed": 0
+      }
+    },
+    "by_warning": {
+      "question_text_drift": 0,
+      "outcome_contradiction": 0,
+      "shape_outcome_contradiction": 0,
+      "evidence_stale": 0
+    },
+    "warnings_total": 0,
+    "anchored_questions": 0
+  },
+  "questions": []
+}

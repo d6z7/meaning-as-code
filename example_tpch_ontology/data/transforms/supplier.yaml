@@ -1,0 +1,25 @@
+# TPC-H (example) — data plane / TRANSFORMS: how the `supplier` dataset is made.
+# A PASSTHROUGH. TPC-H base tables arrive complete and typed from the generator, so this
+# pipeline asserts identity rather than inventing a cleaning step: every served column
+# descends 1:1 from its raw counterpart. Declaring it is what gives the dataset LINEAGE —
+# without a producer, `supplier` had none, and the graph showed it unrelated to its input.
+metadata:
+  pipeline: supplier
+  source: TPCH
+  layer: data-transformation
+  schema_version: 0.1.14
+  status: verified
+  owner: example-team
+produces:
+  relation: tpch.supplier
+  sql_file: data/transforms/supplier.sql
+  grain: one row per s_suppkey
+  serves_ontology: ontology/concepts/party/supplier.yaml
+inputs:
+- relation: tpch_raw.supplier_raw
+  kind: raw_source
+  role: raw_rows
+  descriptor: data/sources/supplier_raw.yaml
+governance:
+  owner: example-team
+  last_reviewed: '2026-09-12'
