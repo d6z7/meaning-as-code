@@ -1,0 +1,14 @@
+# TRANSIT (example) — MEASURED grain for transit.rides.
+#
+# This is evidence, not a claim: the cell key below is what the relation was observed to be unique
+# on. check_grain_key_consistency reads it and refuses any collapse in the acceptance plane that
+# uses a NARROWER key, because such a collapse double-counts every SUM taken over it.
+identity_evidence:
+  relation: transit.rides
+  key: [line_code, service_month]
+  observed_rows: 60
+  observed_distinct_cells: 60
+  method: >
+    GROUP BY the candidate key and assert no group holds more than one row. Reproduced by
+    P-RIDES-GRAIN-01 in the acceptance plane, which is the same assertion as data.
+  measured_on: 2026-09-12

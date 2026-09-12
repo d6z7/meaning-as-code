@@ -1,0 +1,41 @@
+# TRANSIT (example) — Physical layer: the rides fact descriptor.
+metadata:
+  table: rides
+  source: TRANSIT
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: rides
+  schema: transit
+  type: table
+  description: >
+    One row per (line_code, service_month). The fact Ridership is measured over. Its cell key is
+    BOTH columns: a collapse over line alone double-counts across months, and vice versa.
+
+columns:
+  - { name: line_code,     type: string,  role: foreign_key }
+  - { name: service_month, type: date,    role: period }
+  - { name: ride_count,    type: integer, role: measure }
+  - { name: ride_minutes,  type: double,  role: measure }
+
+foreign_keys:
+  - name: fk_line
+    from_column: line_code
+    to_table: line_register
+    to_column: line_code
+    notes: >
+      Declares line_code as a LOOKED-UP identifier. Any query comparing or joining a built string
+      against it is a fabricated identifier (MAC008).
+
+grounded_by_concepts:
+  - { concept: Ridership, role: primary_table }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-09-12
+  change_log:
+    - { date: 2026-09-12, change: "Created — transit reference bundle.", change_type: CREATION, by: example-team }

@@ -1,0 +1,29 @@
+# TRANSIT (example) — observed RAW input. Schema-of-record for what arrives, before any cleaning.
+metadata:
+  table: ride_events_raw
+  source: TRANSIT
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+  confidence: C
+
+table:
+  name: ride_events_raw
+  schema: transit_raw
+  type: table
+  description: >
+    One row per boarding event as delivered by the fare system. Line is carried as a free-text
+    label, and duration in seconds — both normalised by the rides pipeline.
+
+columns:
+  - { name: event_id,       type: string,  role: primary_key }
+  - { name: line_label,     type: string,  role: value }
+  - { name: boarded_at,     type: string,  role: value }
+  - { name: duration_secs,  type: integer, role: value }
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-09-12
+  change_log:
+    - { date: 2026-09-12, change: "Created — transit reference bundle.", change_type: CREATION, by: example-team }

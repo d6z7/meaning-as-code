@@ -1,0 +1,6 @@
+line_code,line_label,mode
+L01,Red Line,rail
+L02,Blue Line,rail
+L03,Green Line,rail
+B10,Crosstown,bus
+B11,Riverside,bus

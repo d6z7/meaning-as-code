@@ -1,0 +1,53 @@
+# TRANSIT (example) > transit > Ridership — the `measure` class (derived).
+metadata:
+  concept: Ridership
+  source: TRANSIT
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Ridership
+  label: Ridership
+  class: measure
+  identity:
+    kind: code
+  definition: >
+    The number of boardings, counted per line per service month. "Ridership" without qualification
+    means this count. It is COMPUTED (see rules.yaml > total_ridership) from the ride_count column
+    of transit.rides, never read as a stored total.
+  semantics:
+    purpose: >
+      The headline operational measure — sliced by line and by month, and summed over either.
+    unit: boardings
+    measure_type: mac.MeasureType.Flow
+    additivity: { time: additive, line: additive }
+    axis_kinds:
+      time: mac.axis_kind.time
+      line: mac.axis_kind.categorical
+    null_semantics: >
+      A (line, month) cell with no boardings is ABSENT from the fact, not zero. A question about a
+      line with no rides must therefore distinguish "no rows" from "zero rides" — the register says
+      the line exists, so absence is genuine zero ridership rather than an unknown line.
+
+derived_by_rule: total_ridership
+
+grounding:
+  kind: sql_table
+  sources:
+    - relation: rides
+      key: [line_code, service_month]
+      columns: [line_code, service_month, ride_count, ride_minutes]
+  schema: transit
+  key_column: line_code
+  field_roles:
+    ride_count: mac.field_role.measure
+    service_month: mac.field_role.period
+    line_code: mac.field_role.dimension
+
+governance:
+  last_reviewed: 2026-09-12
+  change_log:
+    - { date: 2026-09-12, change: "Created — transit reference bundle.", change_type: CREATION, by: example-team }

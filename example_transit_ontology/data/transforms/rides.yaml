@@ -1,0 +1,45 @@
+# TRANSIT (example) — data plane / TRANSFORMS: how the rides fact is made.
+metadata:
+  pipeline: rides
+  source: TRANSIT
+  layer: data-transformation
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+
+produces:
+  relation: transit.rides
+  sql_file: data/transforms/rides.sql
+  grain: "one row per (line_code, service_month)"
+  serves_ontology: ontology/concepts/transit/ridership.yaml
+
+inputs:
+  - relation: transit_raw.ride_events_raw
+    kind: raw_source
+    role: boarding_events
+    descriptor: data/sources/ride_events_raw.yaml
+    consumes:
+      duration_secs: duration-seconds-to-minutes
+      line_label: line-label-resolved-through-register
+  - relation: transit.line_register
+    kind: dataset
+    role: line_resolution
+    descriptor: data/datasets/line_register.yaml
+
+transforms:
+  - id: duration-seconds-to-minutes
+    impurity: unit_mismatch
+    rule: "divide duration_secs by 60 — the ontology's unit for ride_minutes is minutes"
+    establishes: "ride_minutes is in minutes, so Ridership's declared unit is true of the column"
+  - id: line-label-resolved-through-register
+    impurity: identifier_not_declared
+    rule: >
+      join the free-text line_label to transit.line_register to obtain the line_code. The code is
+      LOOKED UP, never assembled from the label.
+    establishes: >
+      every line_code in transit.rides exists in the register, so a join on it cannot silently
+      return nothing for a code that was invented.
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-09-12

@@ -1,0 +1,24 @@
+# TRANSIT (example) — data plane / TRANSFORMS: how the line register is made.
+metadata:
+  pipeline: line_register
+  source: TRANSIT
+  layer: data-transformation
+  schema_version: '0.1.9'
+  status: verified
+  owner: example-team
+
+produces:
+  relation: transit.line_register
+  sql_file: data/transforms/line_register.sql
+  grain: "one row per line_code"
+  serves_ontology: ontology/concepts/transit/line.yaml
+
+inputs:
+  - relation: transit_raw.line_lookup
+    kind: raw_source
+    role: declared_lines
+    descriptor: data/lookups/line.lookup.csv
+
+governance:
+  owner: example-team
+  last_reviewed: 2026-09-12

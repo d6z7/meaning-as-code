@@ -1,0 +1,45 @@
+# TRANSIT (example) > transit > Line — the `entity` class, with a CLOSED member set drawn from a register.
+metadata:
+  concept: Line
+  source: TRANSIT
+  version: '1.0'
+  schema_version: '0.1.9'
+  status: production
+  owner: example-team
+  confidence: C
+
+concept:
+  name: Line
+  label: Transit line
+  class: entity
+  identity:
+    kind: code
+    canonical_key: line_code
+  definition: >
+    One scheduled transit line, identified by its line_code. The set of lines is CLOSED and is
+    defined by the register: a code that is not in the register does not name a line, and asking the
+    fact about one returns nothing — which is indistinguishable from a line with no rides. That is
+    why the code must be looked up.
+
+values:
+  closure: closed
+  realized_by:
+    kind: register
+    params:
+      register: data/lookups/line.lookup.csv
+      code_column: line_code
+      label_column: line_label
+
+grounding:
+  kind: sql_table
+  sources:
+    - relation: line_register
+      key: line_code
+      columns: [line_code, line_label, mode]
+  schema: transit
+  key_column: line_code
+
+governance:
+  last_reviewed: 2026-09-12
+  change_log:
+    - { date: 2026-09-12, change: "Created — transit reference bundle.", change_type: CREATION, by: example-team }

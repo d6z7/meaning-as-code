@@ -1,0 +1,27 @@
+# mac.project.yaml — the MAC Ontology Container manifest for the transit reference bundle.
+#
+# WHY THIS BUNDLE EXISTS. Every other bundle in this estate fails a check: the two older examples do
+# not compile, and the reference bundle compiles while four SEMANTIC checkers report 71 findings
+# against it. Nothing demonstrated that the toolchain CAN produce a consistent ontology — so this one
+# is authored from scratch, small, and driven green against EVERY checker rather than against
+# `mac_compile` alone. `COMPILES` means "conforms to the grammar"; it does not mean "is consistent",
+# and that gap is what this bundle exists to close.
+#
+# The domain is public transit ridership: a public, instantly legible schema with no customer content
+# of any kind, so it can live in the public standard permanently.
+spec_version: mac.container/1
+
+metadata:
+  project: transit-reference
+  data_domain: transit
+  dataset: ridership
+  label: transit
+
+planes:
+  data: data
+  ontology: ontology
+
+descriptors: data/datasets     # produced relations the ontology binds to (the seam)
+transforms: data/transforms    # the pipelines: source -> dataset (how the data is made)
+sources: data/sources          # observed raw-input schema-of-record (what comes in)
+lookups: data/lookups          # registers: the declared identifiers, looked up and never built

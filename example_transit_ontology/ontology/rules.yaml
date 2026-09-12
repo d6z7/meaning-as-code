@@ -1,0 +1,36 @@
+# TRANSIT (example) — the ontology's rules. One derivation, one refusal.
+metadata:
+  source: TRANSIT
+  schema_version: '0.1.9'
+  owner: example-team
+
+rules:
+  - id: total_ridership
+    kind: mac.rule_kind.aggregation
+    decision: COMMIT
+    derives: Ridership
+    over: [Ridership]
+    when: "computing ridership over any set of (line, month) cells"
+    then: >
+      SUM(ride_count). The fact is already one row per (line_code, service_month), so a SUM over
+      whole cells is correct; summing after collapsing to line alone, or to month alone, would
+      double-count because the other half of the cell key is dropped.
+    never: >
+      reading ride_count from a single row as though it were a total for the line, or summing
+      ride_minutes when the question asked for boardings.
+    binds: [ride_count]
+    template: "SUM(ride_count)"
+    conditions:
+      - "The cell key is (line_code, service_month); any GROUP BY must name both or aggregate over both."
+      - "Ridership is a Flow and additive over time and line, so no axis forbids the sum."
+
+  - id: line_code_must_be_looked_up
+    kind: mac.rule_kind.resolution
+    decision: REFUSE
+    when: "a question names a line by label, or by anything other than a register code"
+    then: >
+      resolve the label through data/lookups/line.lookup.csv to obtain the line_code, and use that.
+    never: >
+      assembling a line_code from parts, or comparing a built string against line_code. A code that
+      does not exist returns no rows, and no rows looks exactly like a line with no ridership.
+    binds: [line_code]
