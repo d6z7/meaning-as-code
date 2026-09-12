@@ -25,7 +25,7 @@ A bare (unqualified) relation carries no foreign-schema risk and passes.
 Usage:  python3 tools/check_schema_isolation.py <bundle-root>
         exit 0 = all groundings/descriptors target the own schema ; exit 1 = a foreign schema found.
 
-Wire into cap-ontology-workbench/tools/check_all.sh (guarded on the two-plane data layout):
+Wire into your bundle's offline gate chain (guarded on the two-plane data layout):
     if [ -d "$SOURCE_ROOT/data/datasets" ]; then
       echo "▶ schema-isolation (check_schema_isolation.py $SOURCE_ROOT)"
       "$PY" "$FW/tools/check_schema_isolation.py" "$SOURCE_ROOT" || rc=1

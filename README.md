@@ -69,7 +69,8 @@ describes is [d6z7/mac-ontology-contoso](https://github.com/d6z7/mac-ontology-co
   (how it's computed). One artifact, four kinds of fact.
 - **Six closed concept classes** — entity · event · measure · enumeration · reference · grouping. A short
   menu, so a reader — or an LLM — always knows what kind of thing it's looking at.
-- **A closed core an LLM can't hallucinate** — only schema-defined keys (plus namespaced `x-` extensions)
+- **A closed core an LLM can't hallucinate** — only schema-defined keys; `x-` extension keys are
+  a conformance error wherever they appear (CONFORMANCE.md §2)
   are legal; an invented key is *rejected*. Safe machine authoring, by construction.
 - **Three data-free gates** — structural (the schema) · referential (every cross-file reference resolves) ·
   constraint/shapes (relational invariants declared as DATA, run by one generic engine).
@@ -126,9 +127,9 @@ six independent verdicts. (Outputs live under each example's `projections/`.)
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
 | [FRAMEWORK_STRUCTURE_MAP.md](FRAMEWORK_STRUCTURE_MAP.md) | The visual companion — diagrams of the object types, layers, and concept anatomy. |
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
-| [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.1.9) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
-| [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core + `x-` extension contract, and the v0.1.9 change list. |
-| [tools/validate_schema.py](tools/validate_schema.py) | The **structural** validator — schema-driven (MAC v0.1.9): checks every model file against `mac.schema.json` (closed vocabulary, required keys, naming contract, edge legality). |
+| [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.1.14) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
+| [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core contract, and the v0.1.9 change list. |
+| [tools/validate_schema.py](tools/validate_schema.py) | The **structural** validator — schema-driven (MAC v0.1.14): checks every model file against `mac.schema.json` (closed vocabulary, required keys, naming contract, edge legality). |
 | [tools/check_references.py](tools/check_references.py) | A **referential** validator — its companion; checks that every cross-file reference resolves (no orphans). Together: well-formed *and* internally whole. |
 | [tools/check_shapes.py](tools/check_shapes.py) | A **constraint** validator (new in v0.1.6) — runs *shapes* (constraints declared as DATA in [mac_shapes.yaml](mac_shapes.yaml)) that the schema can't express, e.g. the relational invariant "the values here ⊆ a set declared there". The third gate: structural + referential + **constraint**. |
 | [mac_shapes.yaml](mac_shapes.yaml) · [mac.shapes.schema.json](mac.shapes.schema.json) | The **built-in constraint shapes** + the meta-schema governing their form — universal MAC invariants run by `check_shapes.py`; applications add domain/dialect shapes via `--shapes`. |
@@ -159,7 +160,7 @@ pip install jsonschema pyyaml      # one-time
 # …or each gate on its own (point any of them at YOUR model's root to validate it):
 # 1. STRUCTURAL — validate every file against the formal schema (mac.schema.json)
 python3 tools/validate_schema.py example_shop_ontology
-#   enforces files at the current schema_version (0.1.9) and skips the rest; --all checks everything, --strict fails on warnings
+#   enforces files at the current schema_version (0.1.14) and skips the rest; --all checks everything, --strict fails on warnings
 
 # 2. REFERENTIAL — every cross-file reference (realized_by / grounding / over: / value_domain) resolves
 python3 tools/check_references.py example_shop_ontology
@@ -206,7 +207,7 @@ for the honest trade-offs and when *not* to use it.
 convention being pressure-tested, not a stable release to build on yet. Read every claim here as *"true so
 far, on the cases we've tried,"* not *"proven for yours."*
 
-What exists today, at **v0.1.9**: a machine-checkable schema
+What exists today, at **v0.1.14**: a machine-checkable schema
 ([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), three data-free gates
 (structural, referential, constraint/shapes) with negative + layout tests, the two-plane layout
 (data / ontology), and six self-validating projectors (OSI · RDF/OWL · SHACL · openCypher · OKF · Mermaid),

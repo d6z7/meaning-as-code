@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.9)
-version: '0.1.9'
+title: MAC Conformance — the strict-syntax contract (v0.1.14)
+version: '0.1.14'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -333,7 +333,7 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.9'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.14'`**.
 - A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
   the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
@@ -431,7 +431,7 @@ bundle must reach the start before anything is allowed to run.
   extension profile. That is obsolete twice over: v0.1.14 both closed the `^x-` hatch and added a
   `ProjectFile#profile.extensions` slot, and §2 has since withdrawn the profile construct outright. The
   slot is now a place to declare a prohibited key, which MAC012 reads as a finding like any other.)*
-- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.9`)
+- The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.14`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's
   own `0.1.x` line (it sorts below them — a relabel, not a forward bump). The historical deltas below
