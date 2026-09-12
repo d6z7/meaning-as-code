@@ -1056,6 +1056,14 @@ def render(b: Bundle, fw: Framework, findings: list, caps: list, ref: Bundle | N
           + ("  — blocking-class findings present and --strict given" if fail else
              f"  — warn-first; {len(blocking)} blocking-class finding(s) would fail under --strict"))
     print(BAR)
+    # CORE §2 wants exactly one PASS:/FAIL: line, LAST, carrying a denominator. Every number above
+    # already exists; this restates none of them, it only closes the report with the one line a
+    # caller (this framework's own gate runner, CI) can grep for.
+    verdict = "FAIL" if fail else "PASS"
+    mode = "strict" if strict else "warn-first"
+    print(f"{verdict}: check_conformance — {len(adopted)} of {len(caps)} MAC capabilities adopted, "
+          f"{de(outside)} of {de(len(yamls))} yaml file(s) outside L1, {len(blocking)} "
+          f"blocking-class finding(s) ({mode})")
     return 1 if fail else 0
 
 
@@ -1073,17 +1081,39 @@ def _print_finding(f: Finding):
 
 # ═════════════════════════════════════════════════════════════════ main
 
-def main():
+def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("bundle")
+    ap.add_argument("bundle", nargs="?",
+                    help="the bundle to measure (required unless --self-test)")
     ap.add_argument("--reference", help="a second bundle, read ONLY for adoption evidence")
     ap.add_argument("--strict", action="store_true", help="blocking-class findings fail the run")
     ap.add_argument("--json", action="store_true", help="machine-readable findings")
+    ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
+    if args.self_test:
+        return _self_test()
+
+    # A GATE MUST NEVER BE ABLE TO PASS HAVING MEASURED NOTHING. `load_bundle` walks the root with
+    # `Path.rglob`, which silently yields zero files for a path that does not exist — so a typo'd or
+    # deleted bundle used to produce a full conformance report of zeroes ("0 of 0 yaml files outside
+    # L1", 31 capabilities "offered and unused") ending in "EXIT 0", indistinguishable from a real,
+    # clean, tiny bundle. Both are COULD-NOT-RUN.
+    if not args.bundle:
+        ap.error("the following arguments are required: bundle (unless --self-test is given)")
+    bundle_root = Path(args.bundle).resolve()
+    if not bundle_root.is_dir():
+        print(f"could not run: {bundle_root} is not a directory", file=sys.stderr)
+        return 2
+    ref_root = None
+    if args.reference:
+        ref_root = Path(args.reference).resolve()
+        if not ref_root.is_dir():
+            print(f"could not run: --reference {ref_root} is not a directory", file=sys.stderr)
+            return 2
 
     fw = introspect_framework()
-    b = load_bundle(Path(args.bundle).resolve())
-    ref = load_bundle(Path(args.reference).resolve()) if args.reference else None
+    b = load_bundle(bundle_root)
+    ref = load_bundle(ref_root) if ref_root else None
 
     findings = section_a(b, fw) + section_b(b, fw)
     caps, cfind = section_c(b, fw, ref)
@@ -1098,6 +1128,101 @@ def main():
         return 1 if (args.strict and any(f.severity == BLOCKING for f in findings)) else 0
 
     return render(b, fw, findings, caps, ref, args.strict)
+
+
+# ---------------------------------------------------------------------------------------------
+# self-test: one mutant per reject class this CLI wrapper is responsible for, plus a clean fixture
+# that must reach a real verdict. section_a/b/c and render() are exercised as-is, unmodified by
+# this fix — only the missing-root / missing-reference refusals and the final PASS:/FAIL: line are
+# new. Fixtures are domain-neutral on purpose: this repo is public.
+# ---------------------------------------------------------------------------------------------
+
+def _minimal_bundle(root) -> str:
+    """The smallest tree `load_bundle` can walk without crashing: a manifest and one concept."""
+    import pathlib as _pl
+
+    import yaml as _yaml
+
+    r = _pl.Path(root)
+    (r / "ontology" / "concepts").mkdir(parents=True, exist_ok=True)
+    (r / "mac.project.yaml").write_text(_yaml.safe_dump({"name": "self-test-bundle"}),
+                                        encoding="utf-8")
+    (r / "ontology" / "concepts" / "widget.yaml").write_text(_yaml.safe_dump({
+        "concept": {"name": "Widget", "class": "entity"},
+        # confidence "I" (inferred), deliberately NOT "C" (expert-confirmed) — a "C" with no
+        # ratification evidence is itself a BLOCKING finding (A4-l3-unratified) this fixture is not
+        # trying to provoke; that reject class belongs to section_c's own tests, not this CLI
+        # wrapper's could-not-run refusals.
+        "metadata": {"provenance": "hand-authored", "confidence": "I"},
+    }), encoding="utf-8")
+    return str(r)
+
+
+def _run(argv: list) -> int:
+    saved = sys.argv
+    sys.argv = ["check_conformance.py", *argv]
+    try:
+        return main()
+    except SystemExit as exc:
+        # argparse's own `ap.error()` (a malformed invocation) raises SystemExit(2) rather than
+        # returning — caught here so the missing-bundle-argument case is a comparable exit code
+        # like every other reject class, not a self-test that aborts itself.
+        return exc.code if isinstance(exc.code, int) else 1
+    finally:
+        sys.argv = saved
+
+
+def _self_test() -> int:
+    import tempfile
+
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+
+        # 1 · no bundle argument at all, and not --self-test — a usage error, exit 2 (argparse's
+        #     own could-not-run code), never a silent pass.
+        got = _run([])
+        if got != 2:
+            failures.append(f"no-bundle-argument: expected exit 2, got {got}")
+
+        # 2 · a bundle path that does not exist — the defect this fix exists for: it used to walk
+        #     to zero files and print a full report ending EXIT 0.
+        missing = base / "does-not-exist"
+        got = _run([str(missing)])
+        if got != 2:
+            failures.append(f"nonexistent-bundle: expected exit 2, got {got}")
+
+        # 3 · a real bundle, but a --reference that does not exist.
+        clean = _minimal_bundle(base / "clean")
+        got = _run([clean, "--reference", str(base / "no-such-reference")])
+        if got != 2:
+            failures.append(f"nonexistent-reference: expected exit 2, got {got}")
+
+        # 4 · clean fixture: a real, minimal bundle reaches an actual verdict (warn-first, so a
+        #     bundle adopting nothing still exits 0 — see CONFORMANCE.md).
+        got = _run([clean])
+        if got != 0:
+            failures.append(f"clean-bundle: expected exit 0 (warn-first), got {got}")
+
+        # 5 · liveness under --strict: without a single MAC capability adopted, section C's
+        #     C1-unadopted finding is WARN-class, not BLOCKING, so --strict must still exit 0 here —
+        #     this asserts the plumbing carries --strict through rather than asserting a specific
+        #     blocking class exists in this minimal fixture (that population belongs to section_c's
+        #     own tests, not this CLI wrapper's).
+        got = _run([clean, "--strict"])
+        if got != 0:
+            failures.append(f"clean-bundle --strict: expected exit 0, got {got}")
+
+    total = 5
+    if failures:
+        print(f"FAIL: check_conformance self-test — {len(failures)} of {total} assertions failed")
+        for f in failures:
+            print(f"  {f}", file=sys.stderr)
+        return 1
+    print(f"PASS: check_conformance self-test — {total}/{total} (missing bundle argument, a "
+          f"nonexistent bundle, and a nonexistent --reference all refuse; a minimal real bundle "
+          f"reaches a verdict under both default and --strict)")
+    return 0
 
 
 if __name__ == "__main__":
