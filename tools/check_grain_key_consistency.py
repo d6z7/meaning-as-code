@@ -167,19 +167,36 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--json", action="store_true")
+    ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args()
+    if a.self_test:
+        return _self_test()
     if sqlglot is None:
         print("sqlglot is required", file=sys.stderr)
         return 2
 
+    if not os.path.isdir(a.root):
+        print(f"could not run: {a.root!r} is not a directory", file=sys.stderr)
+        return 2
+
     keys = declared_keys(a.root)
     if not keys:
-        print("✓ OK — no relation carries a measured key yet; nothing to check.\n  (If that is a surprise, run mac_admit_identity.py — this gate went green by losing its\n   subject once already, when x-grain was retired out from under it.)")
-        return 0
+        # This WAS a tick and exit 0, with the adjacent text admitting the gate "went green by
+        # losing its subject once already, when x-grain was retired out from under it". A pass with
+        # no subject is the zero-denominator pass this estate's denominator rule exists to catch —
+        # sitting inside the gate that guards double-counting. It is could-not-run.
+        print("could not run: no relation in this bundle carries a measured key, so no collapse "
+              "can be judged — run mac_admit_identity.py. This gate lost its subject once before, "
+              "when x-grain was retired out from under it, and reported a tick.", file=sys.stderr)
+        return 2
 
     findings, checked = [], 0
     acc = os.path.join(a.root, "acceptance")
-    for fn in sorted(os.listdir(acc)) if os.path.isdir(acc) else []:
+    if not os.path.isdir(acc):
+        print(f"could not run: {a.root} has no acceptance plane, so no SQL can be examined",
+              file=sys.stderr)
+        return 2
+    for fn in sorted(os.listdir(acc)):
         if not fn.endswith(".yaml"):
             continue
         doc = yaml.safe_load(open(os.path.join(acc, fn), encoding="utf-8")) or {}
@@ -196,7 +213,13 @@ def main() -> int:
                                  "msg": f"SQL does not parse: {type(e).__name__}: {e}"})
                 continue
             for kind, cols, rels in collapses:
-                hit = [(r, keys[r]) for r in rels if r in keys]
+                # sorted(), because `rels` is a set[str] and set iteration order over
+                # strings is HASH-SEEDED. Taking hit[0] from it made this gate report 62
+                # narrower-key collapses under PYTHONHASHSEED=2 and 66 under 0/1/3/7/11 —
+                # same commit, same input, different verdict, and which relation got blamed
+                # varied too. A gate whose count moves between runs cannot be ratcheted,
+                # cited in a record, or used as an admission criterion.
+                hit = sorted(((r, keys[r]) for r in rels if r in keys), key=lambda x: x[0])
                 if not hit:
                     continue
                 rel, (desc, key) = hit[0]
@@ -224,13 +247,146 @@ def main() -> int:
             print(f"  [{f['severity']:<7}] {f['where']}\n            {f['msg']}")
         errs = sum(1 for f in findings if f["severity"] == "ERROR")
         warns = len(findings) - errs
+        # CORE §2 wants ONE PASS:/FAIL: line carrying its denominator. This gate printed a ✗/✓
+        # glyph and a numerator with nothing to divide by, so the share of affected collapses could
+        # not be computed from its own output — an arithmetic several reviews attempted anyway.
+        if not checked and not findings:
+            print(f"could not run: {a.root} — 0 collapse(s) landed on a declared cell key, so "
+                  f"nothing was judged", file=sys.stderr)
+            return 2
         if errs:
-            print(f"\n✗ {errs} collapse(s) use a key NARROWER than the declared cell key "
-                  f"— every SUM over them double-counts ({warns} warning(s))")
+            print(f"\nFAIL: check_grain_key_consistency — {errs} collapse(s) use a key NARROWER "
+                  f"than the declared cell key over {checked} collapse(s) examined; every SUM over "
+                  f"them double-counts ({warns} warning(s))")
         else:
-            print(f"\n✓ OK — {checked} collapse(s) over a declared cell key, all consistent "
-                  f"({warns} warning(s))")
+            print(f"\nPASS: check_grain_key_consistency — 0 narrower collapse(s) over "
+                  f"{checked} collapse(s) examined ({warns} warning(s))")
+    if not checked and not findings:
+        return 2
     return 1 if any(f["severity"] == "ERROR" for f in findings) else 0
+
+# ---------------------------------------------------------------------------------------------
+# self-test: one mutant per reject class, plus the determinism property this gate lacked.
+# ---------------------------------------------------------------------------------------------
+
+_DATASET = """\
+table:
+  name: sales_fact
+  schema: warehouse
+columns:
+  - { name: region_code, type: string }
+  - { name: period,      type: string }
+  - { name: amount,      type: double }
+"""
+
+_PROFILE = """\
+identity_evidence:
+  key: [region_code, period]
+"""
+
+# A GROUP BY is only a GRAIN CLAIM here when it counts the group's size AND compares that count
+# against 1 -- see collapse_keys. A plain `SUM(...) GROUP BY ...` says nothing about the cell key,
+# and the first draft of these fixtures used exactly that, so collapse_keys returned [] and every
+# case came back "could not run". The fixtures must speak the gate's language.
+#
+# NOTE, and it is a real gap: the claim is only recognised when HAVING references the COUNT's
+# ALIAS (`HAVING n > 1`). The idiomatic `HAVING COUNT(*) > 1` carries no Column node, so the
+# `cols & counted` test cannot match and the gate is blind to it. Widening that is a BEHAVIOUR
+# change that would move this gate's finding count, so it is recorded rather than slipped in here.
+#: a uniqueness probe over BOTH declared key columns -- consistent with the measured key
+_SQL_OK = ("SELECT region_code, period, COUNT(*) AS n FROM warehouse.sales_fact "
+           "GROUP BY region_code, period HAVING n > 1")
+#: the same probe over ONE of the two -- narrower, so it collapses rows it should not
+_SQL_NARROW = ("SELECT region_code, COUNT(*) AS n FROM warehouse.sales_fact "
+               "GROUP BY region_code HAVING n > 1")
+
+
+def _seed(root, sql: str, *, with_profile: bool = True) -> str:
+    import pathlib as _pl
+
+    r = _pl.Path(root)
+    (r / "data" / "datasets").mkdir(parents=True, exist_ok=True)
+    (r / "data" / "datasets" / "sales_fact.yaml").write_text(_DATASET, encoding="utf-8")
+    if with_profile:
+        (r / "data" / "profiles").mkdir(parents=True, exist_ok=True)
+        (r / "data" / "profiles" / "sales_fact.yaml").write_text(_PROFILE, encoding="utf-8")
+    (r / "acceptance").mkdir(parents=True, exist_ok=True)
+    (r / "acceptance" / "properties.yaml").write_text(
+        yaml.safe_dump({"properties": [{"id": "P-1", "sql": sql}]}, sort_keys=False),
+        encoding="utf-8")
+    return str(r)
+
+
+def _run(root: str) -> int:
+    import contextlib
+    import io as _io
+
+    argv = sys.argv
+    sys.argv = ["check_grain_key_consistency.py", root]
+    buf = _io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            return main()
+    finally:
+        sys.argv = argv
+
+
+def _self_test() -> int:
+    import subprocess
+    import tempfile
+
+    if sqlglot is None:
+        print("could not run: sqlglot is required for the self-test", file=sys.stderr)
+        return 2
+
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        cases = {
+            # name                        (seeder, expected exit)
+            "clean-consistent-collapse":  (lambda d: _seed(d, _SQL_OK), 0),
+            "narrower-than-declared-key": (lambda d: _seed(d, _SQL_NARROW), 1),
+            "unparseable-sql":            (lambda d: _seed(d, "SELECT FROM FROM"), 1),
+            # the class that used to print a tick: no measured key anywhere
+            "no-declared-key-at-all":     (lambda d: _seed(d, _SQL_OK, with_profile=False), 2),
+        }
+        for name, (seed, expect) in cases.items():
+            root = os.path.join(tmp, name)
+            os.makedirs(root, exist_ok=True)
+            seed(root)
+            # prove the fixture really seeded what the class needs
+            has_key = bool(declared_keys(root))
+            if (name == "no-declared-key-at-all") == has_key:
+                failures.append(f"fixture {name!r} was not seeded as intended")
+                continue
+            got = _run(root)
+            if got != expect:
+                failures.append(f"{name}: expected exit {expect}, got {got}")
+
+        # THE property this gate lacked: the same input must give the same answer. Run in
+        # subprocesses, because PYTHONHASHSEED is fixed at interpreter start.
+        root = os.path.join(tmp, "determinism")
+        os.makedirs(root, exist_ok=True)
+        _seed(root, _SQL_NARROW)
+        seen = set()
+        for sd in ("0", "1", "2", "3", "7"):
+            env = {**os.environ, "PYTHONHASHSEED": sd}
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), root],
+                               capture_output=True, text=True, env=env)
+            seen.add((r.returncode, r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""))
+        if len(seen) != 1:
+            failures.append(f"non-deterministic across PYTHONHASHSEED: {len(seen)} distinct "
+                            f"verdicts — {sorted(v[1][:60] for v in seen)}")
+
+    total = len(_FIX_TOTAL := 4) + 1 + 1 if False else 4 + 4 + 1
+    if failures:
+        print(f"FAIL: check_grain_key_consistency self-test — {len(failures)} of {total} failed")
+        for f in failures:
+            print(f"  {f}", file=sys.stderr)
+        return 1
+    print(f"PASS: check_grain_key_consistency self-test — {total}/{total} "
+          f"(4 reject classes incl. the lost-subject refusal, 4 seeding assertions, and the same "
+          f"verdict under 5 hash seeds)")
+    return 0
 
 
 if __name__ == "__main__":
