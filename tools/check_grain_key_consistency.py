@@ -190,7 +190,7 @@ def main() -> int:
               "when x-grain was retired out from under it, and reported a tick.", file=sys.stderr)
         return 2
 
-    findings, checked = [], 0
+    findings, checked, attempted = [], 0, 0
     acc = os.path.join(a.root, "acceptance")
     if not os.path.isdir(acc):
         print(f"could not run: {a.root} has no acceptance plane, so no SQL can be examined",
@@ -206,10 +206,18 @@ def main() -> int:
             sql = p.get("sql") or ""
             if not sql:
                 continue
+            attempted += 1
             try:
                 collapses = collapse_keys(sql)
             except Exception as e:
-                findings.append({"severity": "ERROR", "where": f"acceptance/{fn}:{p.get('id')}",
+                # Its OWN class, with its OWN denominator. Lumped in with narrower-key collapses
+                # this produced "62 collapse(s) use a key NARROWER than the declared cell key over
+                # 11 collapse(s) examined" — a numerator five times its denominator, because 55 of
+                # the 62 were properties whose SQL never parsed. A property the gate could not read
+                # is not a property that double-counts, and every review that quoted the 62 as
+                # grain errors inherited the conflation.
+                findings.append({"severity": "ERROR", "kind": "unparseable",
+                                 "where": f"acceptance/{fn}:{p.get('id')}",
                                  "msg": f"SQL does not parse: {type(e).__name__}: {e}"})
                 continue
             for kind, cols, rels in collapses:
@@ -233,20 +241,25 @@ def main() -> int:
                     continue
                 sev = "ERROR" if missing else "WARNING"
                 findings.append({
-                    "severity": sev, "where": f"acceptance/{fn}:{p.get('id')}",
+                    "severity": sev, "kind": "narrower-key",
+                    "where": f"acceptance/{fn}:{p.get('id')}",
                     "msg": (f"{kind} over {rel} uses {len(cols)} column(s); the measured key "
                             f"declares {len(key)}"
                             + (f" — MISSING {', '.join(missing)}" if missing else "")
                             + (f" — EXTRA {', '.join(extra)}" if extra else "")),
                 })
 
+    unparseable = [f for f in findings if f.get("kind") == "unparseable"]
+    grain = [f for f in findings if f.get("kind") == "narrower-key"]
+
     if a.json:
-        print(json.dumps({"checked": checked, "findings": findings}, indent=1))
+        print(json.dumps({"attempted": attempted, "checked": checked,
+                          "unparseable": len(unparseable), "findings": findings}, indent=1))
     else:
         for f in findings:
             print(f"  [{f['severity']:<7}] {f['where']}\n            {f['msg']}")
-        errs = sum(1 for f in findings if f["severity"] == "ERROR")
-        warns = len(findings) - errs
+        errs = sum(1 for f in grain if f["severity"] == "ERROR")
+        warns = sum(1 for f in grain if f["severity"] != "ERROR")
         # CORE §2 wants ONE PASS:/FAIL: line carrying its denominator. This gate printed a ✗/✓
         # glyph and a numerator with nothing to divide by, so the share of affected collapses could
         # not be computed from its own output — an arithmetic several reviews attempted anyway.
@@ -254,13 +267,17 @@ def main() -> int:
             print(f"could not run: {a.root} — 0 collapse(s) landed on a declared cell key, so "
                   f"nothing was judged", file=sys.stderr)
             return 2
-        if errs:
-            print(f"\nFAIL: check_grain_key_consistency — {errs} collapse(s) use a key NARROWER "
-                  f"than the declared cell key over {checked} collapse(s) examined; every SUM over "
-                  f"them double-counts ({warns} warning(s))")
+        # Two populations, two denominators. Reported on one line so neither can be quoted
+        # without the other.
+        census = (f"{errs} narrower over {checked} collapse(s) examined, "
+                  f"{len(unparseable)} unreadable over {attempted} propert(ies) attempted")
+        if errs or unparseable:
+            print(f"\nFAIL: check_grain_key_consistency — {census} "
+                  f"({warns} warning(s)); a narrower key double-counts, an unreadable property is "
+                  f"UNKNOWN rather than clean")
         else:
-            print(f"\nPASS: check_grain_key_consistency — 0 narrower collapse(s) over "
-                  f"{checked} collapse(s) examined ({warns} warning(s))")
+            print(f"\nPASS: check_grain_key_consistency — 0 narrower over {checked} collapse(s) "
+                  f"examined, 0 unreadable over {attempted} propert(ies) ({warns} warning(s))")
     if not checked and not findings:
         return 2
     return 1 if any(f["severity"] == "ERROR" for f in findings) else 0
