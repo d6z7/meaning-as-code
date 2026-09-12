@@ -26,7 +26,7 @@ def test_infra_handle_literal_is_coupling(tmp_path):
     repo = _repo_with_source(tmp_path)
     host = tmp_path / "host"
     host.mkdir()
-    (host / "server.py").write_text("PROFILE = 'acme-prod-operator'  # hardcoded infra handle\n")
+    (host / "server.py").write_text("PROFILE = 'zz-synthetic-infra-handle-zz'  # hardcoded infra handle\n")
     assert any(k.startswith("infra_handle") for _, _, k, _ in g.check(host, repo)["infra_handles"])
 
 
@@ -43,5 +43,5 @@ def test_gate_and_test_files_are_not_flagged(tmp_path):
     host = tmp_path / "host"
     host.mkdir()
     # a denylist/gate file names the handle by design — must NOT be counted as host coupling
-    (host / "check_secrets.py").write_text("DENY = ['acme-prod-operator']\n")
+    (host / "check_secrets.py").write_text("DENY = ['zz-synthetic-infra-handle-zz']\n")
     assert not g.check(host, repo)["infra_handles"]

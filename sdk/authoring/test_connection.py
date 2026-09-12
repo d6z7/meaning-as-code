@@ -20,9 +20,9 @@ def test_aws_chain_returns_empty_spec_never_a_value(tmp_path):
 
 
 def test_profile_mode_uses_named_profile(tmp_path):
-    _w(tmp_path / "connection.yaml", "credentials:\n  mode: profile\n  ref: acme-prod-operator\n")
+    _w(tmp_path / "connection.yaml", "credentials:\n  mode: profile\n  ref: zz-example-profile-zz\n")
     assert cx.resolve_credentials(cx.load_connection(tmp_path)) == {
-        "profile_name": "acme-prod-operator"
+        "profile_name": "zz-example-profile-zz"
     }
 
 

@@ -244,12 +244,38 @@ def _write_lookup_csv(cr, relpath: str, text: str) -> Path:
 # --------------------------------------------------------------------------------------------------
 
 
+def _conn(cr) -> dict:
+    """The bundle's own connection contract. The warehouse a bundle is served from is a fact ABOUT
+    THAT BUNDLE, never a constant in the tooling."""
+    from sdk.authoring.connection import load_connection
+
+    return load_connection(cr)
+
+
+def _conn_region(cr) -> str:
+    r = _conn(cr).get("region")
+    if not r:
+        raise RuntimeError(f"no region: set $AWS_REGION or declare `region:` in {cr}/connection.yaml")
+    return r
+
+
+def _conn_workgroup(cr) -> str:
+    w = _conn(cr).get("workgroup")
+    if not w:
+        raise RuntimeError(
+            f"no Athena workgroup: set $MAC_ATHENA_WORKGROUP or declare `workgroup:` in "
+            f"{cr}/connection.yaml -- the tooling ships no default, because a workgroup belongs to "
+            f"the ontology being served, not to the SDK serving it"
+        )
+    return w
+
+
 def _new_athena_client(cr):
     """A boto3 Athena client from the ambient chain (Glue/Athena region). Isolated + boto3-only so
     it is trivially stubbable in a test; imports boto3 lazily so the module loads with no AWS SDK."""
     import boto3
 
-    region = os.environ.get("MAC_GLUE_REGION") or os.environ.get("AWS_REGION") or "eu-west-1"
+    region = os.environ.get("MAC_GLUE_REGION") or os.environ.get("AWS_REGION") or _conn_region(cr)
     profile = os.environ.get("AWS_PROFILE")
     sess = boto3.Session(profile_name=profile) if profile else boto3.Session()
     return sess.client("athena", region_name=region)
@@ -272,7 +298,7 @@ def _athena_executor(cr, view_schema: str):
     from chat.sql import AthenaSQL, is_read_only
 
     athena = _new_athena_client(cr)
-    wg = os.environ.get("MAC_ATHENA_WORKGROUP") or "acme-analytics-wg"
+    wg = os.environ.get("MAC_ATHENA_WORKGROUP") or _conn_workgroup(cr)
     eng = AthenaSQL(
         athena=athena, workgroup=wg, output_location=None, max_rows=100000, timeout_s=300
     )

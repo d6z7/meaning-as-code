@@ -75,11 +75,17 @@ from sdk.project.harvest_cache import HarvestCache
 # CLI flag > per-source harvest.yaml > env > these defaults (see _resolve_harvest_config).
 _MODEL = "global.anthropic.claude-opus-4-6-v1"
 _EFFORT = "medium"
-_REGION = os.environ.get("AWS_REGION", "eu-central-1")
-_PROFILE = os.environ.get("AWS_PROFILE", "acme-prod-operator")
-_GLUE_REGION = os.environ.get(
-    "MAC_GLUE_REGION", "eu-west-1"
-)  # Glue/Athena in eu-west-1; Bedrock in eu-central-1
+# NO INSTANCE VALUE IS A DEFAULT IN THE TOOLING. Connection and identity belong to the
+# ONTOLOGY -- connection.yaml for how to reach the warehouse, mac.project.yaml for what the
+# source is called -- and the SDK reads them per bundle. A module-level default cannot be
+# bundle-aware by construction, so every one of them was one ontology's configuration baked
+# into the tooling that serves all of them.
+# These stay ENV-ONLY: an operator may point a run at a profile/region, but the tooling ships no
+# opinion about which. Absent, they are None and boto's ambient chain decides -- which is exactly
+# what connection.yaml's `credentials.mode: aws-chain` already means.
+_REGION = os.environ.get("AWS_REGION")
+_PROFILE = os.environ.get("AWS_PROFILE")
+_GLUE_REGION = os.environ.get("MAC_GLUE_REGION") or _REGION
 _EXEMPLAR = _REPO / "sdk" / "authoring" / "exemplars" / "geography" / "country.yaml"
 _MANIFEST_SIDECAR = ".harvest_manifest.yaml"  # reproducibility ledger; NOT served/hashed/published
 
@@ -864,8 +870,10 @@ def harvest_concepts(
     produced dataset from the transformation layer, then LIFT the data layer's foreign_keys into
     physical ontology EDGES between those concepts. All authoring routes through the status-gated
     operations writer; edges are grammar-validated. Concepts need no Glue — only Bedrock is billed."""
-    os.environ.setdefault("AWS_PROFILE", _PROFILE)
-    os.environ.setdefault("AWS_REGION", _REGION)
+    if _PROFILE:
+        os.environ.setdefault("AWS_PROFILE", _PROFILE)
+    if _REGION:
+        os.environ.setdefault("AWS_REGION", _REGION)
     ident = source_ident.resolve(cr)  # de-FPL: source label from mac.project.yaml
     cache = cache if cache is not None else _make_cache(cr, refresh)
     data = cr / "data"
@@ -1002,8 +1010,10 @@ def harvest_data(
     refresh=False,
     project_anyway=None,
 ):
-    os.environ.setdefault("AWS_PROFILE", _PROFILE)
-    os.environ.setdefault("AWS_REGION", _REGION)
+    if _PROFILE:
+        os.environ.setdefault("AWS_PROFILE", _PROFILE)
+    if _REGION:
+        os.environ.setdefault("AWS_REGION", _REGION)
     ident = source_ident.resolve(cr)  # de-FPL: source label + view schema from manifest
     cache = cache if cache is not None else _make_cache(cr, refresh)
     sess = _session()

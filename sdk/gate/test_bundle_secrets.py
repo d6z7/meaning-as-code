@@ -15,12 +15,12 @@ def test_catches_novel_aws_access_key(tmp_path):
 
 
 def test_catches_infra_handle_outside_config(tmp_path):
-    _w(tmp_path / "data.yaml", "cut_by: acme-prod-operator\n")
+    _w(tmp_path / "data.yaml", "cut_by: zz-synthetic-infra-handle-zz\n")
     assert any(k.startswith("infra_handle") for _, _, k, _ in g.check(tmp_path))
 
 
 def test_allows_reference_handle_inside_connection_yaml(tmp_path):
-    _w(tmp_path / "connection.yaml", "credentials:\n  mode: aws-chain\n  ref: acme-prod-operator\n")
+    _w(tmp_path / "connection.yaml", "credentials:\n  mode: aws-chain\n  ref: zz-synthetic-infra-handle-zz\n")
     assert not any(k.startswith("infra_handle") for _, _, k, _ in g.check(tmp_path))
 
 
@@ -45,5 +45,5 @@ def test_skips_nonshipped_context_and_artifacts(tmp_path):
     (tmp_path / ".context").mkdir()
     _w(tmp_path / ".context" / "doc.md", "account: 123456789012\n")
     (tmp_path / "artifacts" / "v1").mkdir(parents=True)
-    _w(tmp_path / "artifacts" / "v1" / "d.yaml", "cut_by: acme-prod-operator\n")
+    _w(tmp_path / "artifacts" / "v1" / "d.yaml", "cut_by: zz-synthetic-infra-handle-zz\n")
     assert g.check(tmp_path) == []

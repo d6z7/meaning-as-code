@@ -131,17 +131,19 @@ RULES:
 - Output ONLY the YAML document (the five keys), no prose, no fences."""
 
 
-def dp_sys_prompt(source_label: str = "FPL", view_schema: str = "fpl") -> str:
+def dp_sys_prompt(source_label: str, view_schema: str) -> str:
     """The data-plane system prompt with the source LABEL + curated view SCHEMA substituted
-    from mac.project.yaml (via sdk.project.source_ident). Defaults preserve the historical
-    gaps/fpl text for any caller that doesn't pass an identity."""
+    from mac.project.yaml (via sdk.project.source_ident).
+
+    Both are REQUIRED, as `edges.make_edges_file` already requires its `source`. They used to
+    default to one ontology's identity, and a module constant `DP_SYS_PROMPT` froze that rendering
+    at import time -- so the generic instrument shipped with a specific source's name compiled into
+    it, reachable by any caller that simply passed nothing.
+    """
     return _DP_SYS_TEMPLATE.replace("{{SOURCE_LABEL}}", source_label).replace(
         "{{VIEW_SCHEMA}}", view_schema
     )
 
-
-# Backward-compatible module constant (the gaps/fpl rendering) for external importers.
-DP_SYS_PROMPT = dp_sys_prompt()
 
 
 def canonical_relation_name(name: str) -> str:
@@ -207,11 +209,18 @@ def _lift_transform_sql(doc: dict) -> str | None:
     return str(body) if body and str(body).strip() else None
 
 
-def profile_table(athena, db: str, table: str, cols: list[dict], timeout_s: float = 150.0) -> dict:
-    """One Athena scan -> {row_count, columns:{col:{null_frac,distinct,min?,max?}}}."""
+def profile_table(
+    athena, db: str, table: str, cols: list[dict], timeout_s: float = 150.0, *, workgroup: str
+) -> dict:
+    """One Athena scan -> {row_count, columns:{col:{null_frac,distinct,min?,max?}}}.
+
+    `workgroup` is REQUIRED and comes from the bundle's connection.yaml. It used to fall back to a
+    literal workgroup name -- one ontology's Athena workgroup, compiled into the tooling that serves
+    every ontology, and reached by any bundle whose own config was missing.
+    """
     from chat.sql import AthenaSQL
 
-    wg = os.environ.get("MAC_ATHENA_WORKGROUP") or "acme-analytics-wg"
+    wg = workgroup
     eng = AthenaSQL(
         athena=athena, workgroup=wg, output_location=None, max_rows=5, timeout_s=timeout_s
     )
@@ -307,8 +316,8 @@ def author(
     effort: str,
     region: str,
     thinking_budget: int | None = None,
-    source_label: str = "FPL",
-    view_schema: str = "fpl",
+    source_label: str,
+    view_schema: str,
     cache=None,
 ) -> dict:
     """Author the four-key data-plane YAML for one table via ONE LLM call.
@@ -364,12 +373,12 @@ def process(
     effort: str,
     region: str,
     thinking_budget: int | None = None,
-    source_label: str = "FPL",
-    view_schema: str = "fpl",
+    source_label: str,
+    view_schema: str,
     cache=None,
 ) -> dict:
     """Profile + author + validate the 4 data-plane files for one table."""
-    prof = profile_table(athena, db, table, cols)
+    prof = profile_table(athena, db, table, cols, workgroup=workgroup)
     context = grep_context(ctx_dir, terms) if ctx_dir else ""
     doc = author(
         db,

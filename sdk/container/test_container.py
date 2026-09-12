@@ -123,7 +123,7 @@ def _bundle(root: Path, *, handle: bool = False, account: bool = False) -> Path:
     (root / "ontology" / "concept.yaml").write_text("concept:\n  name: Thing\n", encoding="utf-8")
     if handle:
         # a credential HANDLE outside its declared home: a real finding, but not a value
-        (root / "notes.md").write_text("run with profile acme-prod-operator\n", encoding="utf-8")
+        (root / "notes.md").write_text("run with profile zz-synthetic-infra-handle-zz\n", encoding="utf-8")
     if account:
         # a VALUE. Forbidden at every strictness, including a read-only mount.
         (root / "deploy.md").write_text("account 123456789012 in eu-west-1\n", encoding="utf-8")
@@ -141,7 +141,7 @@ def test_a_leaked_handle_warns_a_reader_but_refuses_an_answering_host(tmp_path: 
 
     read = loader.open_container(root)
     assert read["ok"] is True, read["errors"]
-    assert any("acme-prod-operator" in str(w) for w in read["warnings"])
+    assert any("zz-synthetic-infra-handle-zz" in str(w) for w in read["warnings"])
 
     answer = loader.open_container(root, require_trust="signed-verified")
     assert answer["ok"] is False

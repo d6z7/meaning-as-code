@@ -77,9 +77,19 @@ _ACCOUNT_CONTEXT = re.compile(r"(?i)account|acct|:aws:")
 # keep running, which is why this is a narrowed denominator and not a could-not-run.
 _HANDLE_REGISTER = Path(__file__).resolve().parent / "infra_handles.txt"
 
+#: Points the register somewhere else. CI needs this -- the register is gitignored, so a checkout
+#: has none, and a runner must be able to supply one without committing it. Tests use it to declare
+#: a SYNTHETIC handle, which is also why no test needs to write a real one into a fixture any more.
+HANDLE_REGISTER_ENV = "MAC_INFRA_HANDLES"
 
-def load_deny(register: Path = _HANDLE_REGISTER) -> list[str]:
+
+def load_deny(register: Path | None = None) -> list[str]:
     """The declared infra handles, or [] when none are declared. Never a literal in this file."""
+    import os as _os
+
+    if register is None:
+        env = _os.environ.get(HANDLE_REGISTER_ENV)
+        register = Path(env) if env else _HANDLE_REGISTER
     if not register.is_file():
         return []
     return [
@@ -89,7 +99,23 @@ def load_deny(register: Path = _HANDLE_REGISTER) -> list[str]:
     ]
 
 
-_DEFAULT_DENY = load_deny()
+#: Resolved at CALL time, never frozen at import: a module-level snapshot would ignore the env
+#: override in any process that imported this before the register was named.
+class _Deny(list):
+    def _live(self):
+        return load_deny()
+
+    def __iter__(self):
+        return iter(self._live())
+
+    def __len__(self):
+        return len(self._live())
+
+    def __contains__(self, x):
+        return x in self._live()
+
+
+_DEFAULT_DENY = _Deny()
 
 # Basenames where non-secret reference HANDLES may live (account ids + generic secrets still blocked).
 _CONFIG_ALLOWLIST = {
