@@ -29,8 +29,8 @@ table:
 columns:
   - { name: bundle_code, type: string,  role: composite_key_part }   # the group key — the ProductBundle identity each set is keyed by
   - { name: product,     type: string,  role: composite_key_part }   # the member — a leaf Product sku collected into the set's array
-  - { name: label,       type: string,  role: value, x-subrole: attribute }   # per-bundle scalar carried through
-  - { name: featured,    type: boolean, role: value, x-subrole: attribute }   # per-bundle scalar carried through
+  - { name: label,       type: string,  role: value }   # per-bundle scalar carried through
+  - { name: featured,    type: boolean, role: value }   # per-bundle scalar carried through
 
 grounded_by_concepts:
   - { concept: ProductBundle, role: primary_table }

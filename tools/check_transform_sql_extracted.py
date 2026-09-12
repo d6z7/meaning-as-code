@@ -25,7 +25,7 @@ This gate is OFFLINE and pure-structural (no AWS). It parses the YAML with a rea
 Usage:  python3 tools/check_transform_sql_extracted.py <bundle-root>
         exit 0 = every transform's SQL is extracted ; exit 1 = inline body or dangling pointer.
 
-Wire into cap-ontology-workbench/tools/check_all.sh (guarded on the transforms dir):
+Wire into your bundle's offline gate chain (guarded on the transforms dir):
     if [ -d "$SOURCE_ROOT/data/transforms" ]; then
       echo "▶ transform-sql-extracted (check_transform_sql_extracted.py $SOURCE_ROOT)"
       "$PY" "$FW/tools/check_transform_sql_extracted.py" "$SOURCE_ROOT" || rc=1

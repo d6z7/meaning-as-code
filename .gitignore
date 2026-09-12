@@ -1,3 +1,8 @@
 .DS_Store
 __pycache__/
 *.pyc
+
+# Python packaging build artifacts (pyproject.toml, added 2026-09-10)
+build/
+dist/
+*.egg-info/

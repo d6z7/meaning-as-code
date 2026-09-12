@@ -18,7 +18,7 @@ table:
 
 columns:
   - { name: category_id, type: string, role: primary_key }
-  - { name: name,        type: string, role: value, x-subrole: attribute }
+  - { name: name,        type: string, role: value }
   - { name: parent_id,   type: string, role: foreign_key }
 
 foreign_keys:

@@ -42,7 +42,13 @@ import os
 import pathlib
 import re
 
+import sys
+
 import yaml
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mac_diag as D          # noqa: E402
+import mac_project as P       # noqa: E402
 
 GENERATORS: set[str] = set()
 
@@ -58,7 +64,9 @@ def generators_available() -> set[str]:
 
 def rules_of(root: pathlib.Path) -> list[dict]:
     out = []
-    for f in sorted(glob.glob(str(root / "ontology" / "concepts" / "*.yaml"))):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares (mac_project.concept_files).
+    for f in P.concept_files(root):
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         cn = (d.get("concept") or {}).get("name")
         for r in (d.get("contract") or {}).get("rules") or []:
@@ -118,6 +126,8 @@ def corpus_of(root: pathlib.Path) -> list[dict]:
 
 
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
@@ -127,7 +137,15 @@ def main() -> int:
 
     global GENERATORS
     GENERATORS = generators_available()
+    # ZERO IS NOT A SCORE. The verdict below is `covered == len(rules)`, which is TRUE of an empty
+    # rule set: on a foldered bundle this gate found no concept, therefore no rule, and reported
+    # complete coverage of nothing at exit 0.
+    if not P.concept_files(root):
+        return D.refuse_empty("check_rule_coverage", P.concepts_dir(root))
     rules, props, corpus = rules_of(root), properties_of(root), corpus_of(root)
+    if not rules:
+        return D.refuse_empty("check_rule_coverage", P.concepts_dir(root),
+                              unit="contract rule on any concept")
     frags = fragments_realizing(root)
     rows = []
     for r in rules:

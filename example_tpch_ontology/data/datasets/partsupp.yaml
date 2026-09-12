@@ -18,8 +18,8 @@ table:
 columns:
   - { name: ps_partkey,   type: integer, role: composite_key_part }
   - { name: ps_suppkey,   type: integer, role: composite_key_part }
-  - { name: ps_availqty,  type: integer, role: value, x-subrole: measure }
-  - { name: ps_supplycost, type: decimal, role: value, x-subrole: measure }
+  - { name: ps_availqty,  type: integer, role: value }
+  - { name: ps_supplycost, type: decimal, role: value }
   - { name: ps_comment,   type: string,  role: value }
 
 foreign_keys:

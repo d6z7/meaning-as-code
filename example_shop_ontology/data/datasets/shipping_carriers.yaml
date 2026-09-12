@@ -23,7 +23,7 @@ table:
 
 columns:
   - { name: code,  type: string, role: primary_key }              # the value code — the enumeration's key column
-  - { name: label, type: string, role: value, x-subrole: attribute }
+  - { name: label, type: string, role: value }
 
 grounded_by_concepts:
   - { concept: ShippingCarrier, role: primary_table }

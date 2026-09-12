@@ -48,6 +48,7 @@ import sys
 from pathlib import Path
 
 import mac_diag as D
+import mac_project as P
 
 _STOP = {"the", "and", "for", "with", "per", "not", "its"}
 
@@ -201,7 +202,7 @@ def _dangling_rule_ids(root, concepts: dict) -> list:
 
     out = []
     for name, info in sorted(concepts.items()):
-        rel = f"ontology/concepts/{info['rel']}"
+        rel = info["rel"]
         seen = set()
         for rid in _RULE_ID.findall(str(info["doc"])):
             if rid in seen or known(rid):
@@ -234,7 +235,7 @@ def _binds_conformance(concepts: dict) -> list:
 
     undeclared, unresolved, unmarked = [], [], []
     for name, info in concepts.items():
-        rel = f"ontology/concepts/{info['rel']}"
+        rel = info["rel"]
         own = set()
         for s in ((info["doc"].get("grounding") or {}).get("sources") or []):
             own |= set(s.get("columns") or [])
@@ -293,14 +294,21 @@ def check_rule_reference_basis(root) -> list:
     import yaml
     R = Path(root)
     concepts = {}
-    for f in sorted(glob.glob(str(R / "ontology" / "concepts" / "*.yaml"))):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane the
+    # project declares. `rel` carries the ROOT-RELATIVE path (not just the file name) so a witness on
+    # a foldered bundle addresses the file that actually holds the rule.
+    files = P.concept_files(root)
+    if not files:
+        # ZERO IS NOT A SCORE — no concept read means no reference was resolved.
+        return [D.empty_denominator("MAC008", "check_rule_reference_basis", P.concepts_dir(root))]
+    for f in files:
         try:
             doc = yaml.safe_load(Path(f).read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001
             continue
         c = doc.get("concept") or {}
         if c.get("name"):
-            concepts[c["name"]] = {"doc": doc, "label": c.get("label"), "rel": str(Path(f).name),
+            concepts[c["name"]] = {"doc": doc, "label": c.get("label"), "rel": P.rel(root, f),
                                    "unit": _unit(c),
                                    "surface": _stems(_surface_terms(c, doc))}
     edges = set()
@@ -329,7 +337,7 @@ def check_rule_reference_basis(root) -> list:
                     for term in arr:
                         claims.setdefault(str(term).strip().lower(), set()).add((name, code, info["rel"]))
     collisions = [D.Witness(
-        file=f"ontology/concepts/{sorted(v)[0][2]}", path=f"values.aliases.map",
+        file=sorted(v)[0][2], path=f"values.aliases.map",
         detail=f"surface `{k}` is claimed by {len(v)} codes: "
                + ", ".join(f"{c} ({n})" for n, c, _ in sorted(v)))
         for k, v in sorted(claims.items()) if len({c for _, c, _ in v}) > 1]
@@ -355,7 +363,7 @@ def check_rule_reference_basis(root) -> list:
                 why = f"units differ ({info['unit'] or '?'} vs {oi['unit'] or '?'})" if (
                     info["unit"] or oi["unit"]) else "neither declares a unit"
                 unbased.append(D.Witness(
-                    file=f"ontology/concepts/{info['rel']}", path=str(r.get("id")),
+                    file=info["rel"], path=str(r.get("id")),
                     detail=f"names {other} — no edge, {why}, no shared surface term"))
     out = _binds_conformance(concepts)
     dangling = _dangling_rule_ids(root, concepts)
@@ -389,10 +397,12 @@ def check_rule_reference_basis(root) -> list:
 
 
 def main() -> int:                                                      # pragma: no cover
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_rule_reference_basis(root)
     print(D.render(d, root, show=D.INFO) or "check_rule_reference_basis: no findings")
-    return 0
+    return D.EMPTY_EXIT if any(D.UNKNOWN_MARK in x.summary for x in d) else 0
 
 
 if __name__ == "__main__":                                              # pragma: no cover

@@ -18,7 +18,7 @@ This gate is OFFLINE and pure-structural (no AWS): it checks files on disk, neve
 Usage:  python3 tools/check_lookups.py <bundle-root>
         exit 0 = lookups plane whole ; exit 1 = a missing/empty lookup or a dangling source_view.
 
-Wire into cap-ontology-workbench/tools/check_all.sh (guarded on the two-plane data layout):
+Wire into your bundle's offline gate chain (guarded on the two-plane data layout):
     if [ -d "$SOURCE_ROOT/data/datasets" ]; then
       echo "▶ lookups plane (check_lookups.py $SOURCE_ROOT)"
       "$PY" "$FW/tools/check_lookups.py" "$SOURCE_ROOT" || rc=1

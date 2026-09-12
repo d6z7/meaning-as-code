@@ -20,6 +20,8 @@ import sys
 from pathlib import Path
 
 import yaml
+import mac_diag as D
+import mac_project as P
 from mac_project import resolve
 
 try:                                   # the SQL-parsing kinds (join_rule_grounded, no_predicate_restatement)
@@ -241,6 +243,8 @@ def load_shapes(extra):
 
 
 def main():
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     ap = argparse.ArgumentParser()
     ap.add_argument("root", help="MAC ontology root (a dir containing concepts/)")
     ap.add_argument("--shapes", nargs="*", default=[], help="extra application shape files")
@@ -256,10 +260,17 @@ def main():
                     if ln.strip() and not ln.lstrip().startswith("#")}
 
     shapes = load_shapes(a.shapes)
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER. This gate already knew about the two layouts, but
+    # spelled the walk itself — `*/*.yaml` + `*.yaml`, i.e. exactly two depths — so a concept one
+    # folder deeper than the examples happen to go was invisible AND uncounted, in a gate whose
+    # headline is the count.
     L = resolve(a.root)
-    concepts_dir = L.ontology / "concepts"                   # flat: root/concepts; two-plane: root/ontology/concepts
-    files = sorted(concepts_dir.glob("*/*.yaml")) + \
-            sorted(concepts_dir.glob("*.yaml"))
+    concepts_dir = P.concepts_dir(a.root)
+    files = P.concept_files(a.root)
+    # ZERO IS NOT A SCORE: "9 shape(s) × 0 concept(s) … ✓ OK — all shapes satisfied" is vacuously
+    # true and reads as a pass.
+    if not files:
+        return D.refuse_empty("check_shapes", concepts_dir)
     # a shape is dispatched to its target: concept files (default) vs the edges file.
     concept_shapes = [s for s in shapes if s.get("target", "concept") != "edges"]
     edge_shapes = [s for s in shapes if s.get("target") == "edges"]

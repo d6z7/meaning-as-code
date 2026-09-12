@@ -20,7 +20,7 @@ columns:
   - { name: c_name,       type: string,  role: value }
   - { name: c_nationkey,  type: integer, role: foreign_key }
   - { name: c_phone,      type: string,  role: value }
-  - { name: c_acctbal,    type: decimal, role: value, x-subrole: measure }
+  - { name: c_acctbal,    type: decimal, role: value }
   - { name: c_mktsegment, type: string,  role: discriminator }
   - { name: c_comment,    type: string,  role: value }
 

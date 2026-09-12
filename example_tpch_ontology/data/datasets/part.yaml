@@ -22,7 +22,7 @@ columns:
   - { name: p_brand,       type: string,  role: discriminator }
   - { name: p_type,        type: string,  role: discriminator }
   - { name: p_size,        type: integer, role: value }
-  - { name: p_retailprice, type: decimal, role: value, x-subrole: measure }
+  - { name: p_retailprice, type: decimal, role: value }
   - { name: p_comment,     type: string,  role: value }
 
 grounded_by_concepts:

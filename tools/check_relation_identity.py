@@ -27,7 +27,7 @@ this gate is specifically about NAME DIVERGENCE among relations that DO exist.
 Usage:  python3 tools/check_relation_identity.py <bundle-root>
         exit 0 = all relation names aligned ; exit 1 = at least one divergence.
 
-Wire into the offline gate chain (cap-ontology-workbench/tools/check_all.sh), guarded on the two-plane
+Wire into your bundle's offline gate chain, guarded on the two-plane
 data layout so it is a no-op for flat sources:
     if [ -d "$SOURCE_ROOT/data/datasets" ]; then
       echo "▶ relation-identity (check_relation_identity.py $SOURCE_ROOT)"

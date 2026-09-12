@@ -64,6 +64,7 @@ import sys
 from pathlib import Path
 
 import mac_diag as D
+import mac_project as P
 
 SHAPE_THRESHOLD = 5
 _DECLARED_SLOTS = ("measure_type", "additivity", "grain", "closure", "axis_kind")
@@ -73,17 +74,23 @@ _COMPUTE_VERBS = ("derive", "comput", "sum ", "collapse", "refuse", "rollup", "r
 
 def _rules(root):
     import yaml
-    for f in sorted((Path(root) / "ontology" / "concepts").glob("*.yaml")):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares (mac_project.concept_files). Globbing `ontology/concepts/*.yaml` by hand
+    # measured ZERO on every foldered bundle and printed a clean verdict.
+    for f in P.concept_files(root):
         try:
             doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001
             continue
         for r in ((doc.get("contract") or {}).get("rules") or []):
             if isinstance(r, dict) and r.get("id"):
-                yield str(f.relative_to(root)), doc, r
+                yield P.rel(root, f), doc, r
 
 
 def check_cookbook_smells(root) -> list:
+    # ZERO IS NOT A SCORE — no concept found means no smell could have been seen.
+    if not P.concept_files(root):
+        return [D.empty_denominator("MAC003", "check_cookbook_smells", P.concepts_dir(root))]
     out, shapes, stored = [], collections.defaultdict(list), []
     bound = collections.defaultdict(set)     # shape -> the columns its copies bind
     declared: set = set()                    # every column ANY concept types, bundle-wide
@@ -144,10 +151,12 @@ def check_cookbook_smells(root) -> list:
 
 
 def main() -> int:                                                      # pragma: no cover
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_cookbook_smells(root)
     print(D.render(d, root, show=D.INFO) or "check_cookbook_smells: no findings")
-    return 0
+    return D.EMPTY_EXIT if any(D.UNKNOWN_MARK in x.summary for x in d) else 0
 
 
 if __name__ == "__main__":                                              # pragma: no cover

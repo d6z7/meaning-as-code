@@ -40,6 +40,9 @@ import yaml
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
+import mac_diag as D          # noqa: E402
+import mac_project as P       # noqa: E402
+
 
 def law(fw: pathlib.Path) -> dict:
     v = yaml.safe_load((fw / "mac_vocabulary.yaml").read_text(encoding="utf-8"))
@@ -49,7 +52,9 @@ def law(fw: pathlib.Path) -> dict:
 def measures(root: pathlib.Path, law_: dict) -> list[dict]:
     """Each measure concept, with the axis effects its declared type implies."""
     out = []
-    for f in sorted(glob.glob(str(root / "ontology" / "concepts" / "*.yaml"))):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares (mac_project.concept_files).
+    for f in P.concept_files(root):
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         c = d.get("concept") or {}
         if str(c.get("class")) != "measure":
@@ -71,6 +76,8 @@ def measures(root: pathlib.Path, law_: dict) -> list[dict]:
 
 
 def main() -> int:
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
@@ -84,6 +91,11 @@ def main() -> int:
         print(f"canon unavailable: {e}", file=sys.stderr)
         return 0
 
+    # ZERO IS NOT A SCORE. Two populations are counted here — the measure concepts that carry the
+    # law, and the properties judged against it — and an empty one used to print "(0 checked)"
+    # beside a tick. Each is refused on its own line so the caller knows WHICH was missing.
+    if not P.concept_files(root):
+        return D.refuse_empty("check_additivity_in_sql", P.concepts_dir(root))
     ms = measures(root, law(fw))
     # the axis columns a measure is actually keyed on, from the measured grain
     NON_ADDITIVE_ALWAYS = {"role": "none"}
@@ -143,8 +155,14 @@ def main() -> int:
                     pass
                 break
     if a.json:
-        print(json.dumps({"checked": checked, "findings": findings}, indent=1, ensure_ascii=False))
-        return 1 if findings else 0
+        print(json.dumps({"checked": checked, "findings": findings, "measures": len(ms),
+                          "measured_nothing": not (checked and ms)}, indent=1, ensure_ascii=False))
+        return D.EMPTY_EXIT if not (checked and ms) else (1 if findings else 0)
+    if not ms:
+        return D.refuse_empty("check_additivity_in_sql", P.concepts_dir(root), unit="measure concept")
+    if not checked:
+        return D.refuse_empty("check_additivity_in_sql", root / "acceptance",
+                              unit="judgeable acceptance property")
     seen = set()
     for x in findings:
         k = (x["id"], x["msg"])

@@ -7,3 +7,15 @@ planes:
 descriptors: data/datasets      # produced relations the ontology binds to (the seam)
 transforms: data/transforms     # the pipelines: source -> dataset (how the data is made)
 sources: data/sources           # observed raw-input schema-of-record (what comes in)
+
+# The escape hatch, used honestly rather than to widen coverage. vocabulary.yaml is this example's
+# APPLICATION vocabulary: the framework owns the resolver, the field_roles slot and the gate, while
+# the application owns its terms. MAC deliberately does not define its shape — so it is declared out
+# of scope with the reason, rather than left invisible to the enumeration.
+conformance:
+  out_of_scope:
+    - path: vocabulary.yaml
+      reason: >-
+        Application-owned vocabulary, not framework mac.*. The v0.1.7 mechanism this example exists
+        to demonstrate: MAC owns the slot and the gate; the domain owns its terms. No MAC definition
+        applies, and inventing one would make the framework own what it deliberately delegates.

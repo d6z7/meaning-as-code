@@ -1,0 +1,75 @@
+# Packaging for the MAC framework — option C of
+# decisions/2026-09-10_packaging-and-release-surface.md.
+#
+# The repo is flat by design: every checker in tools/ resolves its own data with
+# Path(__file__).resolve().parent.parent, i.e. it assumes it sits directly beside
+# mac.schema.json. So this maps the repo root ITSELF as the package `meaning_as_code`.
+# Nothing moves, that assumption holds identically in a checkout and in a wheel, and the
+# 971 path-based call sites across the estate keep working during the transition.
+#
+# The version is single-homed in VERSION and read at build time — there is deliberately no
+# second place asserting it, because tools/version.py exists to stop exactly that drift.
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meaning-as-code"
+dynamic = ["version"]
+description = "Meaning-as-Code (MAC): the schema, closed vocabularies and conformance checkers for ontologies that a machine can verify."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Drazen Zubovic" }]
+keywords = ["ontology", "semantic-layer", "conformance", "data-modelling", "meaning-as-code"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = ["PyYAML>=6.0"]
+
+[project.urls]
+Homepage = "https://github.com/d6z7/meaning-as-code"
+Source = "https://github.com/d6z7/meaning-as-code"
+
+[project.scripts]
+mac-compile = "meaning_as_code.tools.mac_compile:main"
+mac-regen-projections = "meaning_as_code.tools.regen_projections:main"
+mac-lineage-project = "meaning_as_code.tools.lineage_project:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "meaning_as_code.__pep440_version__" }
+
+[tool.setuptools]
+# The root IS the package. `tools` becomes an importable subpackage so the console scripts can
+# name real functions; everything else the checkers read travels as package data.
+packages = ["meaning_as_code", "meaning_as_code.tools"]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+meaning_as_code = "."
+"meaning_as_code.tools" = "tools"
+
+[tool.setuptools.package-data]
+# Explicit allowlist. Without it a root-mapped package sweeps in articles/, tests/ and the
+# example ontologies; the wheel must carry the payload the checkers read, and nothing else.
+meaning_as_code = [
+  "VERSION",
+  "mac.schema.json",
+  "mac.rules.schema.json",
+  "mac.shapes.schema.json",
+  "mac.vocabulary.schema.json",
+  "mac_rules.yaml",
+  "mac_shapes.yaml",
+  "mac_vocabulary.yaml",
+  "CONFORMANCE.md",
+  "FRAMEWORK.md",
+  "CONCEPT_SPEC.md",
+  "MODELLERS_COOKBOOK.md",
+  "QUALITY.md",
+]
+"meaning_as_code.tools" = ["canon/*.py", "*.html", "*.js"]

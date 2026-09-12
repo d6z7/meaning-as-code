@@ -54,6 +54,7 @@ import sys
 from pathlib import Path
 
 import mac_diag as D
+import mac_project as P
 
 # The steps an agent needs to use ANY concept, and the declaration each is derived from. Ordered as an
 # agent meets them. Kept here, once — the projection renders these, the check reports the unfillable.
@@ -63,13 +64,16 @@ STEPS = ("read", "select", "resolve", "grain", "period")
 def _load(root):
     import yaml
     out = {}
-    for f in sorted((Path(root) / "ontology" / "concepts").glob("*.yaml")):
+    # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
+    # the project declares. This line used to glob `<root>/ontology/concepts/*.yaml` by hand and
+    # found nothing on any foldered bundle, including the framework's own worked examples.
+    for f in P.concept_files(root):
         try:
             d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001
             continue
         if (d.get("concept") or {}).get("name"):
-            out[d["concept"]["name"]] = (str(f.relative_to(root)), d, f.read_text(encoding="utf-8"))
+            out[d["concept"]["name"]] = (P.rel(root, f), d, f.read_text(encoding="utf-8"))
     return out
 
 
@@ -134,6 +138,10 @@ def answer_path(doc: dict, raw: str, shared: bool) -> dict:
 
 def check_answerability(root) -> list:
     concepts = _load(root)
+    # ZERO IS NOT A SCORE. "0 of 0 concept(s) measured" is what this check printed on a foldered
+    # bundle for as long as it globbed flat — a pass shape for a run that never happened.
+    if not concepts:
+        return [D.empty_denominator("MAC011", "check_answerability", P.concepts_dir(root))]
     users = collections.Counter()
     for _n, (_rel, d, _raw) in concepts.items():
         for src in ((d.get("grounding") or {}).get("sources") or []):
@@ -177,10 +185,12 @@ def check_answerability(root) -> list:
 
 
 def main() -> int:                                                      # pragma: no cover
+    if "--self-test" in sys.argv[1:]:
+        return P.selftest_discovery(__file__)
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_answerability(root)
     print(D.render(d, root, show=D.INFO) or "check_answerability: every concept's answer path derives")
-    return 0
+    return D.EMPTY_EXIT if any(D.UNKNOWN_MARK in x.summary for x in d) else 0
 
 
 if __name__ == "__main__":                                              # pragma: no cover

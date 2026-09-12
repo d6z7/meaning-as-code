@@ -10,8 +10,8 @@ scope: GENERIC methodology — domain-independent and vendor-neutral. Contains N
 supersedes: FRAMEWORK_v0.4_partial.md, ONTOLOGY_FRAMEWORK.md (both retired to archive/)
 companions:
   - CONCEPT_SPEC.md     # the detailed, key-by-key reference (appendix to this document)
-  - mac.schema.json     # v0.1.9: the machine-checkable schema — the strict, enforceable contract
-  - CONFORMANCE.md      # v0.1.9: conformance levels + the closed-core / `x-` extension rule
+  - mac.schema.json     # v0.1.14: the machine-checkable schema — the strict, enforceable contract
+  - CONFORMANCE.md      # v0.1.14: conformance levels + the closed-core rule (x- is PROHIBITED)
   - FRAMEWORK_STRUCTURE_MAP.md  # the visual companion (diagrams)
   - example_shop_ontology/   # a worked, validated example on a neutral domain — "this framework, applied"
 ---

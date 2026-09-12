@@ -562,8 +562,11 @@ runtime:
 
 publish:
 
-profile:  # CONFORMANCE.md §2: the core is CLOSED; an application extends it under…
-  extensions:  # REQUIRED · x- key -> what it means and why it exists.  # open: extra keys allowed
+serving:  # v0.1.15: THE BUNDLE'S SERVING CONTRACT — how this bundle spells the…
+  naming:  # The serving-name convention THIS bundle keeps  # closed: only keys above
+    marker: <…>  # REQUIRED · string · The token that makes this bundle's served relations addressable as ITS…
+    roles:  # relation KIND -> how this bundle spells that kind's role prefix, and…  # open: extra keys allowed
+    example: <…>  # string · One worked raw->served rename, quoted VERBATIM by the gate at the point…
 
 conformance:  # What this bundle declares about its own conformance
   out_of_scope:
