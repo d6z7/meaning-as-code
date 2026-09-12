@@ -146,9 +146,31 @@ def main() -> int:
         print("sqlglot is required", file=sys.stderr)
         return 2
 
+    # ------------------------------------------------------------------------------------------
+    # A gate must never be able to pass having measured nothing. Run against a nonexistent
+    # directory this printed a tick and exited 0; run against either of the framework's own
+    # example bundles it examined ZERO properties and passed. Both are the failure this gate was
+    # written to catch, committed by the gate. Each condition below is therefore COULD NOT RUN.
+    # ------------------------------------------------------------------------------------------
+    if not os.path.isdir(a.root):
+        print(f"could not run: {a.root!r} is not a directory", file=sys.stderr)
+        return 2
+
     keys = declared_key_columns(a.root)
-    findings, checked = [], 0
+    if not keys:
+        # With no declared identifier there is nothing a concatenation could fabricate, so a pass
+        # here would mean "found none" when it means "could not look".
+        print(f"could not run: {a.root} declares no looked-up identifier — no foreign key, no "
+              f"x-grain cell key and no register under data/lookups", file=sys.stderr)
+        return 2
+
     acc = os.path.join(a.root, "acceptance")
+    if not os.path.isdir(acc):
+        print(f"could not run: {a.root} has no acceptance plane, so no SQL can be examined",
+              file=sys.stderr)
+        return 2
+
+    findings, checked = [], 0
     try:
         _RESOLVE = _resolver(a.root)
     except _plugin.PluginUnavailable as exc:
@@ -156,7 +178,7 @@ def main() -> int:
         # as a fabricated identifier — a false report of an invariant breach.
         print(f"could not run: {a.root} {exc}", file=sys.stderr)
         return 2
-    for fn in sorted(os.listdir(acc)) if os.path.isdir(acc) else []:
+    for fn in sorted(os.listdir(acc)):
         if not fn.endswith(".yaml"):
             continue
         doc = yaml.safe_load(open(os.path.join(acc, fn), encoding="utf-8")) or {}
@@ -173,6 +195,11 @@ def main() -> int:
                 findings.append({"where": f"acceptance/{fn}:{p.get('id')}",
                                  "column": "?", "declared_by": [f"SQL did not parse: {e}"],
                                  "built_from": [], "sql": ""})
+
+    if not checked:
+        print(f"could not run: {a.root} has an acceptance plane but no property carries SQL — "
+              f"0 examined, which is not the same as clean", file=sys.stderr)
+        return 2
 
     if a.json:
         print(json.dumps({"checked": checked, "findings": findings}, indent=1, ensure_ascii=False))
@@ -191,5 +218,113 @@ def main() -> int:
     return 0
 
 
+# -------------------------------------------------------------------------------------------------
+# self-test: one mutant per reject class, plus a clean fixture that must pass. The gate had none,
+# and §6.4 of the review found it passing on a nonexistent directory and on both example bundles.
+# Fixtures are domain-neutral on purpose: this repository is public.
+# -------------------------------------------------------------------------------------------------
+
+_DATASET = """\
+name: sales_fact
+foreign_keys:
+  - from_column: region_code
+    to_table: region_register
+"""
+
+_CLEAN_SQL = "SELECT n FROM sales_fact WHERE region_code = 'NORTH_A'"
+_BUILT_SQL = "SELECT n FROM sales_fact WHERE region_code = country_code || '_' || 'NORTH'"
+
+
+def _fixture(base: str, kind: str) -> str:
+    """Seed one bundle. Returns its root. `kind` names the reject class being provoked."""
+    root = os.path.join(base, kind)
+    ds = os.path.join(root, "data", "datasets")
+    acc = os.path.join(root, "acceptance")
+
+    if kind != "not-a-directory":
+        os.makedirs(ds, exist_ok=True)
+        if kind != "no-declared-key":
+            with open(os.path.join(ds, "sales_fact.yaml"), "w", encoding="utf-8") as fh:
+                fh.write(_DATASET)
+        else:
+            # a dataset that declares no key at all
+            with open(os.path.join(ds, "sales_fact.yaml"), "w", encoding="utf-8") as fh:
+                fh.write("name: sales_fact\n")
+
+    if kind not in ("not-a-directory", "no-acceptance-plane", "no-declared-key"):
+        os.makedirs(acc, exist_ok=True)
+        props = []
+        if kind == "zero-properties-with-sql":
+            props = [{"id": "P-NO-SQL", "note": "carries no sql key"}]
+        elif kind == "fabricated-identifier":
+            props = [{"id": "P-BUILT", "sql": _BUILT_SQL}]
+        elif kind == "clean":
+            props = [{"id": "P-LOOKED-UP", "sql": _CLEAN_SQL}]
+        with open(os.path.join(acc, "properties.yaml"), "w", encoding="utf-8") as fh:
+            yaml.safe_dump({"properties": props}, fh, sort_keys=False)
+    elif kind == "no-acceptance-plane":
+        os.makedirs(ds, exist_ok=True)
+    return root
+
+
+def _run(root: str) -> int:
+    """Invoke main() exactly as a caller would, with argv swapped."""
+    argv = sys.argv
+    sys.argv = ["check_no_fabricated_identifiers.py", root]
+    try:
+        return main()
+    finally:
+        sys.argv = argv
+
+
+#: reject class -> the exit code the contract requires
+_EXPECT = {
+    "not-a-directory":          2,
+    "no-declared-key":          2,
+    "no-acceptance-plane":      2,
+    "zero-properties-with-sql": 2,
+    "fabricated-identifier":    1,   # liveness: the gate must still FIRE on the real defect
+    "clean":                    0,
+}
+
+
+def _self_test() -> int:
+    import tempfile
+
+    if sqlglot is None:
+        print("FAIL: check_no_fabricated_identifiers self-test — sqlglot is required", file=sys.stderr)
+        return 2
+
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        for kind, expect in _EXPECT.items():
+            root = _fixture(tmp, kind)
+
+            # A mutant that did not mutate passes for the wrong reason. Assert the seeding.
+            seeded = os.path.isdir(root)
+            if (kind == "not-a-directory") == seeded:
+                failures.append(f"fixture {kind!r} was not seeded as intended")
+                continue
+            if kind == "no-acceptance-plane" and os.path.isdir(os.path.join(root, "acceptance")):
+                failures.append("fixture 'no-acceptance-plane' has an acceptance plane")
+                continue
+
+            got = _run(root)
+            if got != expect:
+                failures.append(f"{kind}: expected exit {expect}, got {got}")
+
+    total = len(_EXPECT) + 2
+    if failures:
+        print(f"FAIL: check_no_fabricated_identifiers self-test — "
+              f"{len(failures)} of {total} assertions failed")
+        for f in failures:
+            print(f"  {f}", file=sys.stderr)
+        return 1
+    print(f"PASS: check_no_fabricated_identifiers self-test — {total}/{total} "
+          f"({sum(1 for v in _EXPECT.values() if v == 2)} could-not-run classes refuse, "
+          f"the fabrication still fires, the clean fixture passes, seeding asserted)")
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(_self_test() if "--self-test" in sys.argv else main())
