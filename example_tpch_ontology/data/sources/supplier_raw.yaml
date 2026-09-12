@@ -1,0 +1,36 @@
+metadata:
+  table: supplier_raw
+  source: TPCH
+  version: '1.0'
+  schema_version: 0.1.14
+  status: verified
+  owner: example-team
+  confidence: C
+table:
+  name: supplier_raw
+  schema: tpch_raw
+  type: table
+  description: One row per supplier as delivered by the TPC-H generator (dbgen). Schema-of-record
+    for the raw input; the supplier dataset is a passthrough load of it.
+columns:
+- name: s_suppkey
+  type: string
+  role: value
+- name: s_name
+  type: string
+  role: value
+- name: s_nationkey
+  type: string
+  role: value
+- name: s_phone
+  type: string
+  role: value
+- name: s_acctbal
+  type: string
+  role: value
+- name: s_comment
+  type: string
+  role: value
+governance:
+  owner: example-team
+  last_reviewed: '2026-09-12'

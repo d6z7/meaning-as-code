@@ -206,7 +206,9 @@ def check_common_rules(root) -> list:
             by_class.setdefault(cls, []).append(c)
 
     restated, params_only, uncompared = [], [], []
-    for p in sorted((Path(root) / "ontology" / "concepts").glob("*.yaml")):
+    # rglob, like the other nine concept readers in this directory. Flat, this checker examined 0
+    # concepts in any bundle that files them by domain — and a check over 0 subjects passes.
+    for p in sorted((Path(root) / "ontology" / "concepts").rglob("*.yaml")):
         try:
             doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001

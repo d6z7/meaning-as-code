@@ -1,0 +1,515 @@
+{
+  "counts": {
+    "concepts": 13,
+    "findings": 34,
+    "rules": 0,
+    "sme_questions": 1
+  },
+  "findings": [
+    {
+      "category": "answerability",
+      "concept": "Customer",
+      "concept_title": "Customer",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Customer.read",
+      "severity": "high",
+      "title": "Customer: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Customer",
+      "concept_title": "Customer",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Customer.grain",
+      "severity": "high",
+      "title": "Customer: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "LineItem",
+      "concept_title": "LineItem",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.LineItem.read",
+      "severity": "high",
+      "title": "LineItem: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "LineItem",
+      "concept_title": "LineItem",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.LineItem.grain",
+      "severity": "high",
+      "title": "LineItem: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "LineStatus",
+      "concept_title": "LineStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.LineStatus.read",
+      "severity": "high",
+      "title": "LineStatus: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "LineStatus",
+      "concept_title": "LineStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.LineStatus.grain",
+      "severity": "high",
+      "title": "LineStatus: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "MarketSegment",
+      "concept_title": "MarketSegment",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.MarketSegment.read",
+      "severity": "high",
+      "title": "MarketSegment: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "MarketSegment",
+      "concept_title": "MarketSegment",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.MarketSegment.grain",
+      "severity": "high",
+      "title": "MarketSegment: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Nation",
+      "concept_title": "Nation",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Nation.read",
+      "severity": "high",
+      "title": "Nation: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Nation",
+      "concept_title": "Nation",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Nation.grain",
+      "severity": "high",
+      "title": "Nation: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "OrderStatus",
+      "concept_title": "OrderStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.OrderStatus.read",
+      "severity": "high",
+      "title": "OrderStatus: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "OrderStatus",
+      "concept_title": "OrderStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.OrderStatus.grain",
+      "severity": "high",
+      "title": "OrderStatus: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Orders",
+      "concept_title": "Orders",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Orders.read",
+      "severity": "high",
+      "title": "Orders: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Orders",
+      "concept_title": "Orders",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Orders.grain",
+      "severity": "high",
+      "title": "Orders: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Part",
+      "concept_title": "Part",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Part.read",
+      "severity": "high",
+      "title": "Part: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Part",
+      "concept_title": "Part",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Part.grain",
+      "severity": "high",
+      "title": "Part: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "PartSupp",
+      "concept_title": "PartSupp",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.PartSupp.read",
+      "severity": "high",
+      "title": "PartSupp: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "PartSupp",
+      "concept_title": "PartSupp",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.PartSupp.grain",
+      "severity": "high",
+      "title": "PartSupp: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Region",
+      "concept_title": "Region",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Region.read",
+      "severity": "high",
+      "title": "Region: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Region",
+      "concept_title": "Region",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Region.grain",
+      "severity": "high",
+      "title": "Region: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ReturnFlag",
+      "concept_title": "ReturnFlag",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ReturnFlag.read",
+      "severity": "high",
+      "title": "ReturnFlag: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ReturnFlag",
+      "concept_title": "ReturnFlag",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ReturnFlag.grain",
+      "severity": "high",
+      "title": "ReturnFlag: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Revenue",
+      "concept_title": "Revenue",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Revenue.read",
+      "severity": "high",
+      "title": "Revenue: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Revenue",
+      "concept_title": "Revenue",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Revenue.grain",
+      "severity": "high",
+      "title": "Revenue: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Supplier",
+      "concept_title": "Supplier",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Supplier.read",
+      "severity": "high",
+      "title": "Supplier: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Supplier",
+      "concept_title": "Supplier",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Supplier.grain",
+      "severity": "high",
+      "title": "Supplier: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "connectivity",
+      "concept": "line_status",
+      "concept_title": "Line Status",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.line_status",
+      "severity": "medium",
+      "title": "Line Status has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "market_segment",
+      "concept_title": "Market Segment",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.market_segment",
+      "severity": "medium",
+      "title": "Market Segment has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "order_status",
+      "concept_title": "Order Status",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.order_status",
+      "severity": "medium",
+      "title": "Order Status has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "return_flag",
+      "concept_title": "Return Flag",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.return_flag",
+      "severity": "medium",
+      "title": "Return Flag has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "revenue",
+      "concept_title": "Revenue",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.revenue",
+      "severity": "medium",
+      "title": "Revenue has no relationships"
+    },
+    {
+      "category": "rule-coverage",
+      "concept": "revenue",
+      "concept_title": "Revenue",
+      "detail": "How it rolls up across its axes is unspecified.",
+      "id": "noagg.revenue",
+      "severity": "medium",
+      "title": "Measure Revenue has no aggregation rule"
+    },
+    {
+      "category": "relationship-depth",
+      "concept": null,
+      "concept_title": null,
+      "detail": "Only foreign-key relationships are modelled; semantic (identity / shared_attribute) and cross-source (federation) edges are absent.",
+      "id": "edges.physicalonly",
+      "severity": "low",
+      "title": "All edges are physical (no business / federation)"
+    },
+    {
+      "category": "rule-coverage",
+      "concept": null,
+      "concept_title": null,
+      "detail": "These contract-rule kinds appear on no concept \u2014 an ontology-wide coverage gap.",
+      "id": "rulekinds.absent",
+      "severity": "low",
+      "title": "Rule kinds never used: default, ambiguity, exclusion, guarantee"
+    }
+  ],
+  "rule_links": [],
+  "score": {
+    "answerability": {
+      "derives": 0,
+      "exempt": [],
+      "gaps": [
+        {
+          "concept": "Customer",
+          "detail": "Customer: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Customer",
+          "detail": "Customer: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "LineItem",
+          "detail": "LineItem: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "LineItem",
+          "detail": "LineItem: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "LineStatus",
+          "detail": "LineStatus: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "LineStatus",
+          "detail": "LineStatus: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "MarketSegment",
+          "detail": "MarketSegment: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "MarketSegment",
+          "detail": "MarketSegment: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Nation",
+          "detail": "Nation: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Nation",
+          "detail": "Nation: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "OrderStatus",
+          "detail": "OrderStatus: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "OrderStatus",
+          "detail": "OrderStatus: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Orders",
+          "detail": "Orders: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Orders",
+          "detail": "Orders: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Part",
+          "detail": "Part: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Part",
+          "detail": "Part: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "PartSupp",
+          "detail": "PartSupp: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "PartSupp",
+          "detail": "PartSupp: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Region",
+          "detail": "Region: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Region",
+          "detail": "Region: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "ReturnFlag",
+          "detail": "ReturnFlag: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "ReturnFlag",
+          "detail": "ReturnFlag: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Revenue",
+          "detail": "Revenue: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Revenue",
+          "detail": "Revenue: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Supplier",
+          "detail": "Supplier: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Supplier",
+          "detail": "Supplier: no declaration supplies the `grain` step",
+          "step": "grain"
+        }
+      ],
+      "measured": true,
+      "pct": 0,
+      "total": 13
+    },
+    "connectivity": {
+      "by_edge": 8,
+      "by_rule": 0,
+      "edges": {
+        "physical": 8
+      },
+      "linked": 8,
+      "pct": 62,
+      "refuse_stubs": [],
+      "rule_links": 0,
+      "total": 13
+    },
+    "documentation": {
+      "cols_described": 0,
+      "cols_total": 55,
+      "pct": 0
+    },
+    "execution_validation": {
+      "measured": false
+    },
+    "maturity": {
+      "concept_confirmed_pct": 100,
+      "concepts": {
+        "C": 13,
+        "I": 0,
+        "Q": 0
+      },
+      "rule_confirmed_pct": 0,
+      "rules": {
+        "C": 0,
+        "P": 0,
+        "R": 0
+      }
+    },
+    "rule_kinds": {
+      "absent": [
+        "default",
+        "ambiguity",
+        "exclusion",
+        "guarantee"
+      ],
+      "present": [
+        "aggregation",
+        "resolution"
+      ],
+      "total": 6
+    }
+  },
+  "sme_questions": [
+    {
+      "concept": "revenue",
+      "concept_title": "Revenue",
+      "current": "\u2014",
+      "id": "agg.revenue",
+      "kind": "aggregation",
+      "question": "How does the measure \u201cRevenue\u201d aggregate across its axes (sum / average / non-additive)?"
+    }
+  ]
+}

@@ -611,6 +611,7 @@
           }
         },
         "table": {
+          "description": "LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding \u2014 use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale.",
           "type": "string"
         },
         "tables": {

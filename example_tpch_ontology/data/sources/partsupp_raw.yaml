@@ -1,0 +1,33 @@
+metadata:
+  table: partsupp_raw
+  source: TPCH
+  version: '1.0'
+  schema_version: 0.1.14
+  status: verified
+  owner: example-team
+  confidence: C
+table:
+  name: partsupp_raw
+  schema: tpch_raw
+  type: table
+  description: One row per partsupp as delivered by the TPC-H generator (dbgen). Schema-of-record
+    for the raw input; the partsupp dataset is a passthrough load of it.
+columns:
+- name: ps_partkey
+  type: string
+  role: value
+- name: ps_suppkey
+  type: string
+  role: value
+- name: ps_availqty
+  type: string
+  role: value
+- name: ps_supplycost
+  type: string
+  role: value
+- name: ps_comment
+  type: string
+  role: value
+governance:
+  owner: example-team
+  last_reviewed: '2026-09-12'

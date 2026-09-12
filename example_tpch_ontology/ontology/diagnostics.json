@@ -1,0 +1,156 @@
+{
+  "schema": "mac.diagnostics/1",
+  "bundle": "example_tpch_ontology",
+  "phase": "semantic",
+  "stats": {
+    "facts": 5,
+    "restated": 5,
+    "single_homed": 0,
+    "errors": 0,
+    "warnings": 5
+  },
+  "note": "5 of 5 additivity fact(s) are stated in more than one home",
+  "derivable_but_restated": 5,
+  "by_file": [
+    {
+      "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+      "statements": 5
+    },
+    {
+      "file": "ontology/concepts/finance/revenue.yaml",
+      "statements": 5
+    }
+  ],
+  "findings": [
+    {
+      "code": "single-source/restated",
+      "severity": "warn",
+      "family": "measure.additivity",
+      "subject": "Revenue",
+      "axis": "customer",
+      "values": [
+        "additive",
+        "additive"
+      ],
+      "message": "Revenue.customer is stated in 2 places and they agree (additive) \u2014 nothing keeps them in step",
+      "sites": [
+        {
+          "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+          "path": "MeasureType.members.Flow.additivity.categorical",
+          "line": 93,
+          "value": "mac.aggregation_effect.additive"
+        },
+        {
+          "file": "ontology/concepts/finance/revenue.yaml",
+          "path": "concept.semantics.additivity.customer",
+          "line": null,
+          "value": "additive"
+        }
+      ]
+    },
+    {
+      "code": "single-source/restated",
+      "severity": "warn",
+      "family": "measure.additivity",
+      "subject": "Revenue",
+      "axis": "geography",
+      "values": [
+        "additive",
+        "additive"
+      ],
+      "message": "Revenue.geography is stated in 2 places and they agree (additive) \u2014 nothing keeps them in step",
+      "sites": [
+        {
+          "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+          "path": "MeasureType.members.Flow.additivity.categorical",
+          "line": 93,
+          "value": "mac.aggregation_effect.additive"
+        },
+        {
+          "file": "ontology/concepts/finance/revenue.yaml",
+          "path": "concept.semantics.additivity.geography",
+          "line": null,
+          "value": "additive"
+        }
+      ]
+    },
+    {
+      "code": "single-source/restated",
+      "severity": "warn",
+      "family": "measure.additivity",
+      "subject": "Revenue",
+      "axis": "part",
+      "values": [
+        "additive",
+        "additive"
+      ],
+      "message": "Revenue.part is stated in 2 places and they agree (additive) \u2014 nothing keeps them in step",
+      "sites": [
+        {
+          "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+          "path": "MeasureType.members.Flow.additivity.categorical",
+          "line": 93,
+          "value": "mac.aggregation_effect.additive"
+        },
+        {
+          "file": "ontology/concepts/finance/revenue.yaml",
+          "path": "concept.semantics.additivity.part",
+          "line": null,
+          "value": "additive"
+        }
+      ]
+    },
+    {
+      "code": "single-source/restated",
+      "severity": "warn",
+      "family": "measure.additivity",
+      "subject": "Revenue",
+      "axis": "supplier",
+      "values": [
+        "additive",
+        "additive"
+      ],
+      "message": "Revenue.supplier is stated in 2 places and they agree (additive) \u2014 nothing keeps them in step",
+      "sites": [
+        {
+          "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+          "path": "MeasureType.members.Flow.additivity.categorical",
+          "line": 93,
+          "value": "mac.aggregation_effect.additive"
+        },
+        {
+          "file": "ontology/concepts/finance/revenue.yaml",
+          "path": "concept.semantics.additivity.supplier",
+          "line": null,
+          "value": "additive"
+        }
+      ]
+    },
+    {
+      "code": "single-source/restated",
+      "severity": "warn",
+      "family": "measure.additivity",
+      "subject": "Revenue",
+      "axis": "time",
+      "values": [
+        "additive",
+        "additive"
+      ],
+      "message": "Revenue.time is stated in 2 places and they agree (additive) \u2014 nothing keeps them in step",
+      "sites": [
+        {
+          "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
+          "path": "MeasureType.members.Flow.additivity.time",
+          "line": 92,
+          "value": "mac.aggregation_effect.additive"
+        },
+        {
+          "file": "ontology/concepts/finance/revenue.yaml",
+          "path": "concept.semantics.additivity.time",
+          "line": null,
+          "value": "additive"
+        }
+      ]
+    }
+  ]
+}

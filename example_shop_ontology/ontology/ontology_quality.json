@@ -1,0 +1,473 @@
+{
+  "counts": {
+    "concepts": 8,
+    "findings": 32,
+    "rules": 0,
+    "sme_questions": 1
+  },
+  "findings": [
+    {
+      "category": "answerability",
+      "concept": "Category",
+      "concept_title": "Category",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Category.read",
+      "severity": "high",
+      "title": "Category: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Category",
+      "concept_title": "Category",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Category.grain",
+      "severity": "high",
+      "title": "Category: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Customer",
+      "concept_title": "Customer",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Customer.read",
+      "severity": "high",
+      "title": "Customer: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Customer",
+      "concept_title": "Customer",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Customer.grain",
+      "severity": "high",
+      "title": "Customer: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Order",
+      "concept_title": "Order",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Order.read",
+      "severity": "high",
+      "title": "Order: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Order",
+      "concept_title": "Order",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Order.grain",
+      "severity": "high",
+      "title": "Order: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "OrderStatus",
+      "concept_title": "OrderStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.OrderStatus.read",
+      "severity": "high",
+      "title": "OrderStatus: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "OrderStatus",
+      "concept_title": "OrderStatus",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.OrderStatus.grain",
+      "severity": "high",
+      "title": "OrderStatus: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Product",
+      "concept_title": "Product",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Product.read",
+      "severity": "high",
+      "title": "Product: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Product",
+      "concept_title": "Product",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Product.resolve",
+      "severity": "high",
+      "title": "Product: the `resolve` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Product",
+      "concept_title": "Product",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Product.grain",
+      "severity": "high",
+      "title": "Product: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ProductBundle",
+      "concept_title": "ProductBundle",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ProductBundle.read",
+      "severity": "high",
+      "title": "ProductBundle: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ProductBundle",
+      "concept_title": "ProductBundle",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ProductBundle.grain",
+      "severity": "high",
+      "title": "ProductBundle: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Revenue",
+      "concept_title": "Revenue",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Revenue.read",
+      "severity": "high",
+      "title": "Revenue: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "Revenue",
+      "concept_title": "Revenue",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.Revenue.grain",
+      "severity": "high",
+      "title": "Revenue: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ShippingCarrier",
+      "concept_title": "ShippingCarrier",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ShippingCarrier.read",
+      "severity": "high",
+      "title": "ShippingCarrier: the `read` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ShippingCarrier",
+      "concept_title": "ShippingCarrier",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ShippingCarrier.resolve",
+      "severity": "high",
+      "title": "ShippingCarrier: the `resolve` step of the answer path is not declared"
+    },
+    {
+      "category": "answerability",
+      "concept": "ShippingCarrier",
+      "concept_title": "ShippingCarrier",
+      "detail": "An agent cannot reach this step without probing, and no declaration supplies it. A no_probe_guarantee asserting otherwise is a promise nothing keeps \u2014 supply the declaration instead.",
+      "id": "answerpath.ShippingCarrier.grain",
+      "severity": "high",
+      "title": "ShippingCarrier: the `grain` step of the answer path is not declared"
+    },
+    {
+      "category": "completeness",
+      "concept": "shipping_carrier",
+      "concept_title": "Shipping Carrier",
+      "detail": "closure = closed \u2014 the full valid-value set is not captured.",
+      "id": "enum.shipping_carrier",
+      "severity": "medium",
+      "title": "Shipping Carrier value set is not fully enumerated"
+    },
+    {
+      "category": "connectivity",
+      "concept": "order_status",
+      "concept_title": "Order Status",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.order_status",
+      "severity": "medium",
+      "title": "Order Status has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "product_bundle",
+      "concept_title": "Product Bundle",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.product_bundle",
+      "severity": "medium",
+      "title": "Product Bundle has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "revenue",
+      "concept_title": "Revenue",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.revenue",
+      "severity": "medium",
+      "title": "Revenue has no relationships"
+    },
+    {
+      "category": "connectivity",
+      "concept": "shipping_carrier",
+      "concept_title": "Shipping Carrier",
+      "detail": "Neither an ontology edge nor a contract rule relates it to another concept \u2014 it stands alone in the model.",
+      "id": "isolated.shipping_carrier",
+      "severity": "medium",
+      "title": "Shipping Carrier has no relationships"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "category",
+      "concept_title": "category",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.category",
+      "severity": "medium",
+      "title": "category has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "customer",
+      "concept_title": "customer",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.customer",
+      "severity": "medium",
+      "title": "customer has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "order",
+      "concept_title": "order",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.order",
+      "severity": "medium",
+      "title": "order has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "order_status",
+      "concept_title": "order_status",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.order_status",
+      "severity": "medium",
+      "title": "order_status has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "product",
+      "concept_title": "product",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.product",
+      "severity": "medium",
+      "title": "product has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "product_bundle",
+      "concept_title": "product_bundle",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.product_bundle",
+      "severity": "medium",
+      "title": "product_bundle has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "revenue",
+      "concept_title": "revenue",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.revenue",
+      "severity": "medium",
+      "title": "revenue has never been checked against the warehouse"
+    },
+    {
+      "category": "execution-validation",
+      "concept": "shipping_carrier",
+      "concept_title": "shipping_carrier",
+      "detail": "No property in acceptance/ names this concept in `validates`. It may be authored and structurally valid and still wrong about the data \u2014 FRAMEWORK.md \u00a78: structure is not correctness.",
+      "id": "execval.shipping_carrier",
+      "severity": "medium",
+      "title": "shipping_carrier has never been checked against the warehouse"
+    },
+    {
+      "category": "rule-coverage",
+      "concept": null,
+      "concept_title": null,
+      "detail": "These contract-rule kinds appear on no concept \u2014 an ontology-wide coverage gap.",
+      "id": "rulekinds.absent",
+      "severity": "low",
+      "title": "Rule kinds never used: default, ambiguity, guarantee"
+    }
+  ],
+  "rule_links": [],
+  "score": {
+    "answerability": {
+      "derives": 0,
+      "exempt": [],
+      "gaps": [
+        {
+          "concept": "Category",
+          "detail": "Category: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Category",
+          "detail": "Category: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Customer",
+          "detail": "Customer: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Customer",
+          "detail": "Customer: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Order",
+          "detail": "Order: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Order",
+          "detail": "Order: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "OrderStatus",
+          "detail": "OrderStatus: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "OrderStatus",
+          "detail": "OrderStatus: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Product",
+          "detail": "Product: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Product",
+          "detail": "Product: no declaration supplies the `resolve` step",
+          "step": "resolve"
+        },
+        {
+          "concept": "Product",
+          "detail": "Product: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "ProductBundle",
+          "detail": "ProductBundle: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "ProductBundle",
+          "detail": "ProductBundle: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "Revenue",
+          "detail": "Revenue: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "Revenue",
+          "detail": "Revenue: no declaration supplies the `grain` step",
+          "step": "grain"
+        },
+        {
+          "concept": "ShippingCarrier",
+          "detail": "ShippingCarrier: no declaration supplies the `read` step",
+          "step": "read"
+        },
+        {
+          "concept": "ShippingCarrier",
+          "detail": "ShippingCarrier: no declaration supplies the `resolve` step",
+          "step": "resolve"
+        },
+        {
+          "concept": "ShippingCarrier",
+          "detail": "ShippingCarrier: no declaration supplies the `grain` step",
+          "step": "grain"
+        }
+      ],
+      "measured": true,
+      "pct": 0,
+      "total": 8
+    },
+    "connectivity": {
+      "by_edge": 4,
+      "by_rule": 0,
+      "edges": {
+        "business": 1,
+        "physical": 2
+      },
+      "linked": 4,
+      "pct": 50,
+      "refuse_stubs": [],
+      "rule_links": 0,
+      "total": 8
+    },
+    "documentation": {
+      "cols_described": 0,
+      "cols_total": 28,
+      "pct": 0
+    },
+    "execution_validation": {
+      "covered": 0,
+      "measured": true,
+      "pct": 0,
+      "properties": 5,
+      "run": null,
+      "total": 8,
+      "uncovered": [
+        "category",
+        "customer",
+        "order",
+        "order_status",
+        "product",
+        "product_bundle",
+        "revenue",
+        "shipping_carrier"
+      ]
+    },
+    "maturity": {
+      "concept_confirmed_pct": 100,
+      "concepts": {
+        "C": 8,
+        "I": 0,
+        "Q": 0
+      },
+      "rule_confirmed_pct": 0,
+      "rules": {
+        "C": 0,
+        "P": 0,
+        "R": 0
+      }
+    },
+    "rule_kinds": {
+      "absent": [
+        "default",
+        "ambiguity",
+        "guarantee"
+      ],
+      "present": [
+        "aggregation",
+        "exclusion",
+        "resolution"
+      ],
+      "total": 6
+    }
+  },
+  "sme_questions": [
+    {
+      "concept": "shipping_carrier",
+      "concept_title": "Shipping Carrier",
+      "current": "closed",
+      "id": "enum.shipping_carrier",
+      "kind": "enumeration",
+      "question": "Is \u201cShipping Carrier\u201d a CLOSED set? If so, what are all its valid values?"
+    }
+  ]
+}

@@ -69,7 +69,11 @@ def build(root) -> dict:
 
     return {
         "schema": SCHEMA,
-        "bundle": str(root),
+        # The bundle's NAME, never its path. `str(root)` is an ABSOLUTE path on whoever ran the
+        # projection, and this artifact is committed — it shipped an author's home directory into a
+        # public example bundle. The name is the identity a reader needs; the path is theirs, not the
+        # bundle's.
+        "bundle": Path(root).name,
         "phase": "semantic",
         "stats": {
             # AN EMPTY FAMILY IS A RESULT, NOT A BLANK. This module compares the STATEMENTS of one

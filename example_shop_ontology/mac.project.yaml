@@ -1,6 +1,17 @@
 # mac.project.yaml — declares the two-plane layout (see ../reference_manual/data_plane.md).
 # Data plane (how the data is made) vs ontology plane (what it means); the ontology may reference
 # data/datasets/ (the seam) and nothing else of the data plane.
+# The container identity. The console addresses a container as {data_domain}/{dataset} and reads
+# both from here; without them `POST /open` refuses the bundle outright. `spec_version` is the
+# format contract a host validates on Open.
+spec_version: mac.container/1
+
+metadata:
+  project: example/shop
+  data_domain: example
+  dataset: shop
+  label: Shop (example)
+
 planes:
   data: data
   ontology: ontology

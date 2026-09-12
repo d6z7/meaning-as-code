@@ -2,6 +2,17 @@
 # tpch is a two-plane OPTION B project: the data/datasets/ descriptors are structure-only, and every
 # column's meaning lives in the ontology — measure semantics as field-anchored rules (LineItem), and the
 # discriminator code-sets as closed enumeration concepts (OrderStatus, LineStatus, ReturnFlag, MarketSegment).
+# The container identity. The console addresses a container as {data_domain}/{dataset} and reads
+# both from here; without them `POST /open` refuses the bundle outright. `spec_version` is the
+# format contract a host validates on Open.
+spec_version: mac.container/1
+
+metadata:
+  project: example/tpch
+  data_domain: example
+  dataset: tpch
+  label: TPC-H (example)
+
 planes:
   data: data
   ontology: ontology
