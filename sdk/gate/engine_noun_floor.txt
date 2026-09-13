@@ -1,0 +1,50 @@
+# engine_noun_floor.txt — UNIT 2. The PATH SET that is today allowed to name an engine.
+# Read by sdk/gate/check_engine_coupling.py. LOWER IT, NEVER RAISE IT.
+#
+# DECLARED: 2026-09-13
+# OWNER: Track B stage B3, the connector seam — this unit carries its OWN owner, never unit 1's
+# RECORD: decisions/PROPOSED-2026-09-13_connector-plugin-architecture.md §10.4 and §12
+# REVIEW BY: 2026-12-13
+#
+# A second unit with no owner is a second permanent exemption, which is why the two headers are not
+# shared: an owner borrowed from another file is an owner nobody agreed to.
+#
+# WHY THIS FILE EXISTS AT ALL. Four import-shaped reject classes would one day have printed `4 -> 0`,
+# and that zero would have been quoted as "MAC no longer knows the warehouse". Measured the same day,
+# SEVENTEEN files under sdk/ and tools/ carry an engine noun — in a string literal, in a model
+# prompt, or as a PERSISTED EVIDENCE KEY written into every acceptance document. The import-shaped
+# gate imports none of them and can see none of them. Two units, two floors, printed together.
+#
+# WHY A SEPARATE FILE AND NOT A SECOND SECTION IN engine_coupling_floor.txt. The two units are
+# lowered independently and on different axes. One file with two sections invites lowering the cheap
+# half and quoting the total, which is the same defect in a smaller font.
+#
+# MEASURED 2026-09-13: 17 file(s) over 83 instrument file(s) (sdk/ + tools/, excluding sdk/gate/,
+# sdk/connector/, and check_*/test_*/conftest — a gate and a fixture may NAME an engine; that is
+# what a denylist IS). 148 hits in total.
+#
+# A literal-only scan of this same tree reports 13 and calls the other four clean: `athena_ddl` is a
+# function name, `botocore_config` is a parameter name, `_new_athena_client` is a method. The scan is
+# therefore over file TEXT, and the inline column below is where a false positive gets recorded with
+# its reason rather than argued away.
+#
+# MOST OF THIS SET IS DELIBERATELY OUT OF SCOPE for the connector work (§12) and is listed anyway,
+# because a floor that omits the population it cannot fix is a floor that under-reports the debt.
+
+sdk/acceptance/grade.py           # eng.get(...) read + sqlglot read="trino" (:294)
+sdk/acceptance/run.py             # writes the engine flag into EVERY persisted evidence document (:253)
+sdk/acceptance/sqlfacts.py        # DIALECT pinned (:52) — a live correctness defect on its own axis (§12)
+sdk/authoring/authoring.py        # botocore_config parameter name, twice
+sdk/authoring/data_plane.py       # the MODEL PROMPT names the engine (:68,:75,:77) — §4.2
+sdk/authoring/harvest_model.py    # botocore_config parameter name; the invoker seam
+sdk/authoring/materialize.py      # 33 hits — the densest file in the tree
+sdk/authoring/operations.py       # comments only, today — but a comment is one edit from a literal
+sdk/cli/harvest.py                # 37 hits — the harvest path
+sdk/project/knowledge.py          # an engine noun as an ASPECT KEY (:35) — a persisted vocabulary member
+sdk/project/questions.py          # reads the engine flag (:257)
+tools/_plugin.py                  # names an engine in its own fixture (:200,:208)
+tools/canon/__init__.py           # dialect= default on 7 canon builders
+tools/mac_admit_identity.py       # _plugin.required(root, <engine>) — §8.1's forbidden pattern, live
+tools/mac_generate_ontology_tests.py
+tools/mac_profile.py              # _plugin.required(...) + a dialect note
+tools/mac_to_meta.py              # the meta-plane DDL emitter, on a different axis (§12)

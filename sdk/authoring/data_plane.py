@@ -369,6 +369,7 @@ def process(
     ctx_dir: Path | None,
     terms: list[str],
     *,
+    workgroup: str,
     model: str,
     effort: str,
     region: str,
@@ -377,7 +378,19 @@ def process(
     view_schema: str,
     cache=None,
 ) -> dict:
-    """Profile + author + validate the 4 data-plane files for one table."""
+    """Profile + author + validate the 4 data-plane files for one table.
+
+    `workgroup` is REQUIRED and travels through from the caller's bundle (harvest_data reads it from
+    that bundle's connection.yaml). It is a parameter rather than a default because `profile_table`
+    made it required for a reason -- see its docstring -- and a caller that cannot supply one must
+    fail loudly at the top of the harvest, not silently profile someone else's warehouse.
+
+    It was NOT a parameter for eight hours on 2026-09-13, and the body referenced the bare name
+    `workgroup` anyway: every call raised NameError before reaching Athena. Nothing caught it,
+    because the path below this line is unimportable in this repo (`chat.sql` lives elsewhere) and
+    so no test could execute it. test_data_plane_callable.py is the instrument that now does --
+    it resolves the names without running the function.
+    """
     prof = profile_table(athena, db, table, cols, workgroup=workgroup)
     context = grep_context(ctx_dir, terms) if ctx_dir else ""
     doc = author(

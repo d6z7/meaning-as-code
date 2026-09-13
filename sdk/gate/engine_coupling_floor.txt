@@ -1,0 +1,43 @@
+# engine_coupling_floor.txt — UNIT 1. The PATH SET that is today allowed to carry engine driver
+# coupling. Read by sdk/gate/check_engine_coupling.py. LOWER IT, NEVER RAISE IT.
+#
+# DECLARED: 2026-09-13
+# OWNER: Track B stage B3, the connector seam — emptying this file IS that stage's exit criterion
+# RECORD: decisions/PROPOSED-2026-09-13_connector-plugin-architecture.md §10.4
+# REVIEW BY: 2026-12-13
+# STANDING: 7    couplings on the four paths below, on the day this floor was declared
+#
+# WHY A SET AND NOT A NUMBER. `tools/check_mac_public.py:108` reads its floor as an int and passes on
+# `len(hits) <= floor`, so "lower it, never raise it" is a string in the PASS line enforced by
+# nobody. A number is identity-blind: remove one driver import, add another elsewhere in the same
+# commit, and the count never moves. The record's own staging schedules exactly that move (the
+# `botocore` import, down into harvest_model.py, on the model axis). Compared as a SET, that move is
+# a `coupling-relocated` finding instead of free progress.
+#
+# WHY THERE IS A NAMED OWNER AND A DATE, AND WHY THE OWNER IS A ROLE. A floor with neither is a
+# permanent exemption (§10.4, Risk 8) and the gate refuses to enforce one — exit 2, not a shrug.
+# The owner is a stage rather than a person because this repository is public and a colleague's
+# name is one of the things `check_mac_public`'s denylist was built to remove.
+#
+# MEASURED 2026-09-13, by AST walk with nesting depth recorded:
+#     module-level driver imports ....  0
+#     function-local driver imports ..  7
+#     distinct modules ...............  4   <- the four lines below
+#
+# §10.4 predicted that a top-level-only scan "reports 2 today and is wrong". Re-measured, it reports
+# ZERO. Every driver import in this repository is already inside a function. The defect was worse
+# than the record stated, which is the single strongest argument for walking the AST.
+#
+# WHY THERE IS A STANDING COUNT AS WELL AS A SET, measured on this tree and not assumed. A path set
+# alone cannot see the relocation the record actually schedules: move `botocore` out of
+# data_plane.py and that path does NOT clear, because it still carries `chat.sql` at :221. Compared
+# by set difference alone the gate reported "1 path added, 0 cleared" and labelled the record's own
+# scheduled move `lazy-import-evasion`. It failed — with the wrong name on it, which for a ratchet is
+# most of the damage. A relocation is now "the path set grew and the TOTAL did not", and that is why
+# this number is here. It is also the only thing that sees coupling DEEPENING inside a path already
+# in the set. Lower it whenever it can be lowered; the gate prints the instruction when it can.
+
+sdk/authoring/authoring.py      # botocore.config, twice, function-local (:194, :335) — model axis (§12)
+sdk/authoring/data_plane.py     # chat.sql AthenaSQL (:221) + botocore.config (:340) — two axes, one file
+sdk/authoring/materialize.py    # boto3 (:290) + chat.sql AthenaSQL (:312) — the DDL seam
+sdk/cli/harvest.py              # boto3 (:147) — the harvest session

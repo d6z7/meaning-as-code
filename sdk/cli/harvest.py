@@ -1015,6 +1015,17 @@ def harvest_data(
     if _REGION:
         os.environ.setdefault("AWS_REGION", _REGION)
     ident = source_ident.resolve(cr)  # de-ACME: source label + view schema from manifest
+    # The Athena WORKGROUP belongs to the bundle being harvested, not to the SDK harvesting it:
+    # resolved HERE, from this bundle's connection.yaml, and threaded down to profile_table, which
+    # requires it (it used to fall back to one ontology's workgroup literal, compiled into the
+    # tooling that serves every ontology). Two things this line settles deliberately:
+    #   * it reuses materialize's resolver rather than re-reading connection.yaml, so the refusal
+    #     ("the tooling ships no default, because a workgroup belongs to the ontology being served")
+    #     keeps ONE home and cannot drift into two differently-worded versions of the same rule;
+    #   * it resolves BEFORE the Glue listing and the per-table loop, so a bundle with no workgroup
+    #     fails on line one of the run instead of after N-1 billed tables.
+    # Same precedence as materialize.py: an explicit operator override, else the bundle's contract.
+    workgroup = os.environ.get("MAC_ATHENA_WORKGROUP") or materialize._conn_workgroup(cr)
     cache = cache if cache is not None else _make_cache(cr, refresh)
     sess = _session()
     glue, athena = (
@@ -1044,6 +1055,7 @@ def harvest_data(
             athena,
             ctx if ctx.exists() else None,
             terms,
+            workgroup=workgroup,
             model=model,
             effort=effort,
             region=region,
