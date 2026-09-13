@@ -259,6 +259,14 @@ def main(argv=None):
         "--warn", action="store_true", help="report but exit 0 (default: exit 1 on any finding)"
     )
     a = ap.parse_args(argv)
+    if not a.self_test and a.root is None:
+        # `root` is optional so the gate can be invoked bare by a runner. Bare, it used to reach
+        # Path(None) and die with a TypeError — a traceback is not a verdict, and a runner reading
+        # exit codes cannot tell a crash from a refusal.
+        return contract.could_not_run(
+            "check_bundle_secrets",
+            "no root given — 0 examined is not the same as clean (usage: check_bundle_secrets <dir>)",
+        )
     if a.self_test:
         return _self_test()
     # Exit 2 in main() only: publish.py:113 calls `check(stage)` in process and treats the returned

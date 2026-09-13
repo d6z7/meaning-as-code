@@ -125,6 +125,15 @@ def main(argv) -> int:
     # Built ONCE per run from the live register. None means no tokens are declared, so the token
     # class examines nothing — reported in the verdict rather than passed over in silence.
     token_re = _token_re()
+    if token_re is None:
+        # No tokens declared means the token class has no subject. It used to print a tick with a
+        # note underneath; a note is not a refusal, and a runner grepping for PASS/FAIL read it as
+        # green. This gate lost its subject once before and reported a tick — never again.
+        return contract.could_not_run(
+            "check_source_coupling",
+            "no source-token register — 0 tokens declared, so 0 literals could be found; "
+            "that is not the same as none existing. See registers/ and sdk/registers.py.",
+        )
     scanned = 0
     for d in SCAN_DIRS:
         for p in sorted((root / d).rglob("*.py")):
