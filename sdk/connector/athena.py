@@ -314,6 +314,28 @@ class AthenaConnector(SqlConnector):
         if isinstance(resp, Mapping):
             code = str((resp.get("Error") or {}).get("Code") or "")
         reason = _ERROR_CODE_REASON.get(code) or _ERROR_CODE_REASON.get(type(exc).__name__)
+
+        # TLS TRUST IS A LOCAL FACT, NOT A SOURCE FAILURE, and reporting it as "unreachable" sends
+        # the reader to look at the warehouse when the problem is on their own machine. Measured on
+        # one operator's laptop: 15 corporate root certificates in the macOS system keychain, and
+        # Python verifying against certifi's public-CA bundle, which never consults that keychain —
+        # so a TLS-intercepting corporate proxy presents a chain Python cannot verify. The endpoint
+        # answered; the handshake did not complete.
+        #
+        # The remedy is one environment variable, so the message carries it rather than leaving a
+        # raw `[SSL: CERTIFICATE_VERIFY_FAILED] unable to get local issuer certificate`.
+        if "SSL" in type(exc).__name__ or "CERTIFICATE_VERIFY_FAILED" in str(exc):
+            return SourceError(
+                SourceErrorReason.UNREACHABLE,
+                f"athena TLS trust failure while {what}: this machine's Python cannot verify the "
+                f"endpoint's certificate chain. That is a LOCAL trust-store fact, not a fact about "
+                f"the warehouse — the endpoint answered. If a TLS-intercepting proxy is in the path, "
+                f"its root is in the OS keychain and Python does not read that store: build a bundle "
+                f"(certifi's cacert.pem + `security find-certificate -a -p`) and set $AWS_CA_BUNDLE "
+                f"to it. Underlying: {exc}",
+                engine_request_id=request_id,
+            )
+
         if reason is None:
             # Unknown => could-not-run, never a finding. An unrecognised failure means we do not
             # know that the source judged anything, and publishing that as exit 1 is the exact
