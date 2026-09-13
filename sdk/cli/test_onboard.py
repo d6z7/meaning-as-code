@@ -7,6 +7,7 @@ import pytest
 
 from sdk.cli import harvest, publish
 from sdk.gate import check_bundle_secrets
+from sdk.testing import assert_clean_over
 
 # --- --scaffold: stamp a new source skeleton, idempotently -----------------------------------
 
@@ -97,7 +98,14 @@ def test_manifest_is_a_sidecar_excluded_from_publish_and_gate(tmp_path):
     # and the secret gate skips it (it records glue db handles that only belong in connection config)
     assert harvest._MANIFEST_SIDECAR in check_bundle_secrets._SKIP_FILES
     # a source-tree scan therefore stays clean even though the sidecar names a denylisted handle
-    assert check_bundle_secrets.check(cr) == []
+    # This assertion HAD GONE VACUOUS: once the handle register moved out of the repo, the
+    # sidecar's handle was no longer declared anywhere a test could see, so "clean" held whether or
+    # not the skip logic worked. The denominator restores it.
+    assert_clean_over(
+        check_bundle_secrets.check(cr),
+        examined=check_bundle_secrets.examined(cr),
+        what="text file",
+    )
 
 
 # --- onboard DRY-RUN makes NO AWS call; --accept resumes present stages ------------------------

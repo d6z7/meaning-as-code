@@ -2,6 +2,7 @@
 quiet on a clean connection config where reference handles legitimately travel."""
 
 from sdk.gate import check_bundle_secrets as g
+from sdk.testing import assert_clean_over
 
 
 def _w(p, s):
@@ -21,7 +22,10 @@ def test_catches_infra_handle_outside_config(tmp_path):
 
 def test_allows_reference_handle_inside_connection_yaml(tmp_path):
     _w(tmp_path / "connection.yaml", "credentials:\n  mode: aws-chain\n  ref: zz-synthetic-infra-handle-zz\n")
-    assert not any(k.startswith("infra_handle") for _, _, k, _ in g.check(tmp_path))
+    # The DENOMINATOR is the declared handles: "no handle found" is vacuous against an empty
+    # register, which is exactly the state of a fresh checkout.
+    handles = [f for f in g.check(tmp_path) if f[2].startswith("infra_handle")]
+    assert_clean_over(handles, examined=len(list(g._DEFAULT_DENY)), what="declared handle")
 
 
 def test_blocks_account_id_even_inside_connection_yaml(tmp_path):
@@ -38,12 +42,17 @@ def test_catches_private_key_and_inline_password(tmp_path):
 def test_clean_connection_config_is_silent(tmp_path):
     _w(tmp_path / "connection.yaml", "engine: athena\nregion: eu-west-1\nworkgroup: primary\n")
     _w(tmp_path / "data.yaml", "cut_by: athena-profile  # handle lives in connection.yaml\n")
-    assert g.check(tmp_path) == []
+    assert_clean_over(g.check(tmp_path), examined=g.examined(tmp_path), what="text file")
 
 
 def test_skips_nonshipped_context_and_artifacts(tmp_path):
+    # A SHIPPED file, so the gate has something to examine. Without it every file in this fixture
+    # lives in a skipped directory, `examined()` is 0, and "clean" is vacuous — the assertion would
+    # hold with the skip logic deleted, or with the scanner deleted. assert_clean_over found this.
+    (tmp_path / "ontology").mkdir()
+    _w(tmp_path / "ontology" / "concept.yaml", "concept:\n  name: Thing\n")
     (tmp_path / ".context").mkdir()
     _w(tmp_path / ".context" / "doc.md", "account: 123456789012\n")
     (tmp_path / "artifacts" / "v1").mkdir(parents=True)
     _w(tmp_path / "artifacts" / "v1" / "d.yaml", "cut_by: zz-synthetic-infra-handle-zz\n")
-    assert g.check(tmp_path) == []
+    assert_clean_over(g.check(tmp_path), examined=g.examined(tmp_path), what="text file")

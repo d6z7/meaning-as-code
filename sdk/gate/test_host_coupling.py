@@ -1,6 +1,7 @@
 """Unit tests for the source-neutral host-coupling gate (ADR 2026-08-13)."""
 
 from sdk.gate import check_host_coupling as g
+from sdk.testing import assert_clean_over
 
 
 def _repo_with_source(tmp_path, domain="acme", dataset="sales"):
@@ -44,4 +45,10 @@ def test_gate_and_test_files_are_not_flagged(tmp_path):
     host.mkdir()
     # a denylist/gate file names the handle by design — must NOT be counted as host coupling
     (host / "check_secrets.py").write_text("DENY = ['zz-synthetic-infra-handle-zz']\n")
-    assert not g.check(host, repo)["infra_handles"]
+    from sdk.gate import check_bundle_secrets as _bs
+
+    assert_clean_over(
+        g.check(host, repo)["infra_handles"],
+        examined=len(list(_bs._DEFAULT_DENY)),
+        what="declared handle",
+    )
