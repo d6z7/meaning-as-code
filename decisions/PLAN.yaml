@@ -2,9 +2,12 @@
 # Read by .claude/skills/tactics/plan.py. Update when anything lands.
 
 goal: >
-  meaning-as-code becomes one public product repo — the declarations plus the mac-sdk modules it
-  builds — carrying zero instance specifics, with data sources reached through connectors so the
-  ontology stays generic.
+  TWO PROGRAMMES, in this order. (1) CONSOLIDATION, nearly landed: meaning-as-code becomes one
+  public product repo — the declarations plus the mac-sdk modules it builds — carrying zero instance
+  specifics, with data sources reached through connectors so the ontology stays generic.
+  (2) TESTING, now in flight and steered by TESTING.md: every claim this estate makes is classified
+  by where its expectation comes from, carries its denominator, and routes its red to a named desk.
+  The lighthouse is TESTING.md §7; the overview is mac-platform/docs/08-SPEC-testing-surface.md.
 
 items:
   - id: consolidate
@@ -83,7 +86,14 @@ items:
 
   - id: retire-the-fork
     what: delete mac-platform/packages/mac-sdk; point mac-console at the MAC distribution
-    state: runnable
+    state: done
+    landed: mac-platform develop @ 0b58fc5
+    evidence: >
+      the directory was already gone; FOUR readers still named it. Makefile PACKAGES (so `make
+      install`, `make test` and `make check` ALL hard-failed), the mypy burn-down table, the
+      TYPECHECKED filter, pyproject ruff scope, and run_all_gates.sh invoking 9 gates with a
+      PYTHONPATH into the deleted tree — which counted 9 ModuleNotFoundErrors as 9 failing gates.
+      `make check: all green` afterwards.
     ruled: R12 = one SDK, the one in MAC
     note: >
       Not a ruling either. TWO copies exist because the consolidation COPIED rather than moved, and
@@ -93,7 +103,174 @@ items:
       on today's measurements the DEFAULT is the plain registry already being built; the full plugin
       system is the exception requiring R14 = yes
 
+  # ---------------------------------------------------------------------------------------------
+  # PROGRAMME 2 — TESTING. Ordered by "what makes the NEXT thing visible", not by severity, because
+  # invisible work dies here: 47 initiative folders, 3 done, 8 untouched for 70 days.
+  #
+  # TWO STANDING RULES, both operator instructions, both encoded here rather than remembered:
+  #   ADDITIVE FIRST — "do NEW pages first before retiring old testing and quality". No existing
+  #     operator-facing surface is removed until its replacement is live and working. Every retire
+  #     item below is therefore BLOCKED on the thing that replaces it.
+  #   ONE OVERVIEW — "quality belongs to the same overview, do not separate it". Data quality is the
+  #     FITNESS row; ontology quality is the COMPLETENESS row. There is no second Quality surface.
+  # ---------------------------------------------------------------------------------------------
+
+  - id: P0-money
+    what: the five billed entry points with no consent guard; the browser path that bills directly
+    state: runnable
+    track: testing
+    measured: >
+      6 paths reach a billed sink and 1 demands accept_cost (h_test_connection). Unguarded:
+      h_ask, h_advise, h_explore, h_run_questions, _handle_advise_stream. Plus chatApi.js bills
+      from the BROWSER, where no server guard can reach. Enforcement today is 11 pytest functions
+      asserting from 1 of 43 entry points, and no gate at all.
+    note: first because money is irreversible and this needs no concept and no ruling
+
+  - id: P0-tokens
+    what: the two tracked lines carrying a real username, and the gate that cannot see them
+    state: runnable
+    track: testing
+    measured: >
+      mac-platform/tools/check_secrets.py has no home-path pattern, no register, no floor, no
+      --self-test, no exit-2 path and no PASS: prefix, and its suffix list excludes all 117
+      .js/.jsx files. One of the two exposed lines is a placeholder= rendered to the operator.
+      The working counterpart to copy is meaning-as-code/tools/check_mac_public.py.
+    note: second because these repos go public; the fix is to copy a gate that already works
+
+  - id: P1-dialect
+    what: the console reads the live bundle — dialect B plus adopt the dated runs/ directory
+    state: runnable
+    track: testing
+    ruled: dialect B is the standard AND A's runs/ is adopted into it
+    measured: >
+      the views read acceptance/questions_dashboard.json and <suite>_runs.json; the live bundle has
+      neither filename. Dialect B matches 13 of 13 console path literals and owns the 21 anchors and
+      291 properties; dialect A owns the 49 dated run records and matches 1 of 13.
+    note: >
+      accepted migration cost: a group-metadata sidecar for 55 fields, a 91-file b_answers ->
+      answers rename, and four bundles that must declare their zero denominator instead of
+      rendering healthy and empty.
+
+  - id: P1-runs
+    what: commit run records at all
+    state: runnable
+    track: testing
+    measured: >
+      acceptance/*_runs.json has ZERO instances across all of git history, while suite_history.py
+      asserts "The run records are committed". The suites and the generators already exist; nothing
+      keeps the answer.
+    note: nearly free, and it is what populates the board on day one
+
+  - id: P1-board
+    what: the new overview — one screen, categories, denominators, the one true number and its date
+    state: blocked
+    blocked_on: [P1-dialect, P1-runs]
+    track: testing
+    note: >
+      C (answer chain) as the landing screen, D (dispatch board) one click away; adopt B's hatched
+      void for "no instrument declared" and E's AGREED band. ADDITIVE — it is built BESIDE the
+      existing testing pages and the Quality section, which keep working untouched.
+    exit: >
+      the operator opens the console and sees "35 of 82 graded at with-b, 2026-07-15" with its
+      category breakdown, and can watch it change.
+
+  - id: P2-authority
+    what: parse the spreadsheet into oracle authority — 6 named reviewers, 68 human answers
+    state: runnable
+    track: testing
+    measured: >
+      0 of 398 oracles carry authority: sme; 297 carry no authority key at all. FOUR independent
+      channels exist and none is wired: the .xlsx no code parses, sme_ledger.yaml bound to concepts
+      rather than questions, 21 raw-table anchors referenced by 0 of 101 oracles, and anchor: A1
+      cited by 10 oracles and defined in no file on this machine.
+    note: >
+      the highest-value single move. The 24 value divergences are UNJUDGED, not broken — a red
+      nobody has judged, because TRUTH routes to a named human and there is none.
+
+  - id: P2-enum
+    what: close the outcome-class vocabulary in the schema
+    state: runnable
+    track: testing
+    measured: >
+      mac.schema.json contains no COMMIT/ASK/REFUSE/BLOCK enum. DECLINE (14) and REFUSE (4) coexist
+      in one bundle for one concept, so grepping REFUSE finds 4 where 18 are declared. A population
+      that cannot be enumerated cannot have a denominator.
+
+  - id: P3-runner
+    what: fix the runner inversion
+    state: runnable
+    track: testing
+    measured: >
+      the 3 sdk gates in NO runner (check_engine_coupling, check_entry_points, check_seam_agreement)
+      are the ONLY three with full mutant attribution (55/55, 37/37, 45/45). The 8 the runner does
+      invoke are exactly the 8 printing "BY FINDING COUNT ONLY ... UNVERIFIED; main() not exercised".
+    note: hours, and the cheapest credibility win available
+
+  - id: P3-mutants
+    what: a mutant per reject class, so a green means the check could have failed
+    state: blocked
+    blocked_on: [P3-runner, R16]
+    track: testing
+    measured: 11 of 51 gates satisfy the full contract, and the intersection EQUALS the mutant clause
+    note: ruled FALSIFIABLE, not observed. The numbers get worse the day it lands; that is the point.
+
+  - id: P3-lint
+    what: point the console lint at the files that exist — MEASURE, do not block
+    state: runnable
+    track: testing
+    measured: >
+      0 of 116 frontend files carry a single rule. eslint.config.js scopes to **/*.{ts,tsx} and the
+      tree holds none; --print-config returns rules: 0; all 79 .jsx are explicitly ignored; the only
+      output is a "rule not found" config error; npm run lint is in no make target and no runner.
+    blocked_test_on: [R12-eslint]
+    note: >
+      why build-green blank pages recur — rules-of-hooks has never run here. Blocking on the 187
+      findings is a separate ruling; pointing the glob and printing the count is not.
+
+  - id: P4-denominators
+    what: close the four open denominators
+    state: blocked
+    blocked_on: [P1-board, P2-enum]
+    track: testing
+    measured: >
+      1 144 of 1 195 declared files neither validated nor waived; 577 of 664 seams enumerated but
+      not scored; 423 of 433 rules with no invariant; 2 of 32 results with a comparable fingerprint.
+    note: >
+      the rules half is a DECLARATION-STANDARD change in MAC, not a test-harness change: the
+      generator already exists and the rules are ungeneratable BY SHAPE.
+
+  - id: P5-retire
+    what: retire the superseded testing pages and the separate Quality surface
+    state: blocked
+    blocked_on: [P1-board]
+    track: testing
+    note: >
+      ADDITIVE FIRST, per the operator: new pages before any retirement. This item exists so the
+      cleanup is not forgotten, and is blocked so it cannot happen early. Scope when unblocked:
+      the averaged `score` goes; ontology_quality.json becomes a READER of verdicts rather than a
+      second store; DQ-*.md prose attaches to the FITNESS entry it describes. The per-test views
+      (PropertySuiteView, QuestionLighthousePane) are NOT retired — the operator has accepted them.
+
 rulings:
+  - id: R16
+    verdict: 'PROPOSED — recommended BINDING'
+    gates: [P3-mutants]
+    question: >
+      is the admission test binding — "name the gate that exits 2 when this artifact is absent or
+      stale, in the same paragraph that proposes it, or do not create it"?
+    measured: >
+      adoption without it: authority: sme 0 of 398, question_id 0 of 21, QUALITY.md 183 commits and
+      zero appends. Adoption WITH the same shape: accepted:/frozen: at 26 blocks, adopted because a
+      red could not move without one.
+    options:
+      - 'binding — costs two proposed widgets now, saves a fourth zero-adoption channel'  # recommended
+      - 'advisory — it will be cited when convenient'
+    consequence: >
+      it is also the rule that would have stopped four re-inventions in a single day —
+      SourceErrorReason beside AdapterErrorReason, mac.test_type beside mac.test_kind, eight
+      presentation invariants already shipped in two console views, and a DESIGN.md written beside
+      the 396-line ontology/planes/testing.md it duplicated.
+
   - id: R11
     verdict: 'RULED: not a ruling — a bug, fixed'
     gates: [A3]
