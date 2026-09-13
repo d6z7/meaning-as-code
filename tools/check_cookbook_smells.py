@@ -4,7 +4,7 @@
 WHY THIS EXISTS
 ---------------
 MAC has diagnosed these for months, in prose, in MODELLERS_COOKBOOK.md Part C. Nothing checked them.
-Measured on gaps/fpl2 over one working session, every substantive finding was already an entry:
+Measured on <domain>/<dataset> over one working session, every substantive finding was already an entry:
 
     13 copies of ONE refusal law              -> C6  exploding rule-count
     15 rules restating what measure_type says -> C2  a rule for a stored value
@@ -22,7 +22,7 @@ C6 — EXPLODING RULE-COUNT
   genuine foundational rule is fine; a PILE of them is the signal."
 
   Reported at >= 5 concepts. Not 2 or 3: a shape on two concepts is a coincidence, on three a pattern,
-  and by five it is a law nobody has stated. fpl2's shapes at the time this shipped: 13, 8, 7, 5, 5.
+  and by five it is a law nobody has stated. <dataset>'s shapes at the time this shipped: 13, 8, 7, 5, 5.
 
   AND WHERE THE LAW SHOULD GO — added 2026-08-19, because the finding alone was not actionable.
   This check reported `resolve.collapse_role_snapshot` on 8 concepts for days. It was read, and not
@@ -52,7 +52,7 @@ WHAT THESE WOULD FALSELY FIRE ON, and the legitimate case that must not fire
   one until its parts were separated — and turned out to be derivable after all. The check reports a
   CANDIDATE and says what to do with it; it never asserts the rules are wrong. Warning, never error.
 * C6 on rules already bound to a canon: those ARE the single-homed form, so a bound shape is exempt.
-  Without that exemption fpl2's 13 exclusion rules would be reported forever after being fixed.
+  Without that exemption <dataset>'s 13 exclusion rules would be reported forever after being fixed.
 * C2 on a rule that reads a stored value AND adds a real constraint (a default, a disambiguation).
   Hence the verb test: a `then` containing derive/compute/sum/collapse/refuse is never reported.
 """
@@ -145,7 +145,7 @@ def check_cookbook_smells(root) -> list:
             summary=f"{len(stored)} rule(s) only READ a fact the concept already declares — COOKBOOK C2",
             note="The rules layer is for COMPUTED things. A rule that restates measure_type, "
                  "additivity, grain or closure adds a second home for a fact and can drift from it — "
-                 "which is how eight fpl2 rules came to guard on a token no register held.",
+                 "which is how eight <dataset> rules came to guard on a token no register held.",
             witnesses=stored))
     return out
 

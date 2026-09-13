@@ -8,7 +8,7 @@
 #   mac_shapes.yaml   CONSTRAINT  invariants true of any conformant ontology
 #   mac_rules.yaml    BEHAVIOUR   how to ACT, true of any conformant ontology     <- this file
 #
-# MEASURED, and it is why this exists. gaps/fpl2 carried the SAME refusal law thirteen times, once per
+# MEASURED, and it is why this exists. <domain>/<dataset> carried the SAME refusal law thirteen times, once per
 # measure concept — 13 distinct `when` wordings, 13 `then`, 12 `never`. Every copy individually
 # well-formed, so no gate ever saw anything; one (`market`) ended up with a BARE `then` promising an
 # evidence-boundary answer it could not produce; and THREE of the thirteen carried no information at
@@ -60,9 +60,9 @@ rules:
     never: "declaring per-pair which measures may be combined, or which are confusable with which — a
             pairwise list grows as the square of the measures and drifts at every edge"
     why: >
-      MEASURED on fpl2, which had no unit algebra and hand-wrote the pairs instead. Seven rules
+      MEASURED on <dataset>, which had no unit algebra and hand-wrote the pairs instead. Seven rules
       carried "never confuse X with Y"; FOUR of them named deliveries as the foil, and the units say
-      why that is nonsense — DtC is `vehicles`, Order Intake is `orders`. The three pairs a domain
+      why that is nonsense — the delivery measure is `vehicles`, Order Intake is `orders`. The three pairs a domain
       owner confirmed as real confusions are exactly the three with equal units (GrossStock/IdealStock
       and IstProd/Prodant both `vehicles`, OrderBook/OrderIntake both `orders`).
 
@@ -87,16 +87,16 @@ rules:
             year by roughly the number of periods in it); SUMming a `none` measure over its cells
             (double-counts everything still standing in each one)"
     why: >
-      MEASURED on fpl2: fifteen rules across four shapes — resolve.period_sum (5),
+      MEASURED on <dataset>: fifteen rules across four shapes — resolve.period_sum (5),
       aggregate.by_registered_type (8), resolve.stock_period (2), resolve.target_period (1) — each
       spelled out what its own `measure_type` already determines. Every clause after the dash was the
-      declaration read back: "SUM the months — DtC is a Flow, additive over time".
+      declaration read back: "SUM the months — <measure> is a Flow, additive over time".
 
       The vocabulary invited this. `none` said which row to read "is a RESOLUTION question the concept
       answers in its resolve.* rules" — deferring a question that, on the TIME axis, has exactly one
       answer for every measure of a given type. A level read at a point in time IS the period end;
       that is not per-concept knowledge. The deferral belongs only where the answer genuinely varies
-      per concept — a non-time axis, such as OB-Reach resolving to a matching abstraction level.
+      per concept — a non-time axis, such as a reach measure resolving to a matching abstraction level.
 
   # ── the one that governs the other two, and everything else ──────────────────────────────────────
   # ── the key law: an identifier is for matching, a label is for reading ───────────────────────────
@@ -113,10 +113,10 @@ rules:
             column is available — a label is not a stable identifier: it is renamed, translated, cased
             and padded without the key ever changing"
     why: >
-      MEASURED on gaps/fpl2, 2026-08-19: five dimension concepts — body_type, brand_indicator,
+      MEASURED on <domain>/<dataset>, 2026-08-19: five dimension concepts — body_type, brand_indicator,
       fuel_type, registration_type, vehicle_segment — each carried a `resolve.by_id` rule saying "join
-      through fpl_lm_<x>_id (the surrogate key); use fpl_lm_<x> as the display label", while
-      `grounding.sources[].key` on that SAME concept already read `[fpl_lm_<x>_id]`. Each rule restated
+      through <source>_lm_<x>_id (the surrogate key); use <source>_lm_<x> as the display label", while
+      `grounding.sources[].key` on that SAME concept already read `[<source>_lm_<x>_id]`. Each rule restated
       its own file's key declaration and added one fact that is true of every relation in every
       ontology ever written. Five copies of a universal, sitting beside the declaration it repeats.
 
@@ -128,9 +128,9 @@ rules:
       THE BOUNDARY, so this rule is not over-read: it governs the CHOICE between an identifier column
       and a label column on a relation that carries both. It says nothing about WHICH lookup resolves a
       name to a code, through which view, or under which filter — that is genuine per-concept routing
-      and stays in the concept. fpl2's `resolve.by_code_not_label` rules survive this rule untouched,
+      and stays in the concept. <dataset>'s `resolve.by_code_not_label` rules survive this rule untouched,
       because they carry a lookup PATH (`geo_class=single_country`, `market_code ==
-      fpl_brand_country_code`, `name_norm` as the standardised search key) that no declaration holds.
+      <source>_brand_country_code`, `name_norm` as the standardised search key) that no declaration holds.
 
   # ── the mirror of never_guess: a value you HAVE is not an absence ────────────────────────────────
   - id: mac.guarantee.catalogued_member_is_real
@@ -151,7 +151,7 @@ rules:
       produce a number nobody can reproduce, and the second is the quieter of the two — a total that is
       simply smaller than the truth, with nothing in the output to say members were removed.
 
-      MEASURED on gaps/fpl2, 2026-08-19: four reference concepts — body_type, fuel_type,
+      MEASURED on <domain>/<dataset>, 2026-08-19: four reference concepts — body_type, fuel_type,
       registration_type, vehicle_segment — carried BYTE-IDENTICAL `guarantee.unspecified_is_real` rules.
       Identical `then`, identical `never`, differing only in which concept they sat on. In all four,
       `Unspezifiziert` is a catalogued entry in that concept's own `values.items`, so the rule was
@@ -169,7 +169,7 @@ rules:
     scope: { concept.class: "*" }
     confidence: C
     when:  "a rule's when/then/never/subject names a column, a relation, or a concept of the model"
-    then:  "write it backtick-quoted and brace-enclosed — `{market_code}`, `{fpl2.dim_country_register}`
+    then:  "write it backtick-quoted and brace-enclosed — `{market_code}`, `{<dataset>.dim_country_register}`
             — so a reader can tell a reference from an English word, and every such token must resolve:
             a column of the concept's own grounding, or a relation some concept in the bundle grounds"
     never: "naming a model identifier as bare prose, or marking up a token that resolves to nothing"
@@ -177,9 +177,9 @@ rules:
       OPERATOR RULING 2026-08-19. Bare `market_code` is indistinguishable from English, so nothing can
       resolve it, rename it, or hold it against the rule's own `binds:`.
 
-      MEASURED, both failures live on gaps/fpl2 the day this shipped: 9 of 29 rules named a grounded
+      MEASURED, both failures live on <domain>/<dataset> the day this shipped: 9 of 29 rules named a grounded
       column in prose that `binds:` did not list; and an invented relation planted in rule prose
-      (fpl2.dim_country_TOTAL_FICTION) passed ALL ELEVEN compile phases clean. The grounding block was
+      (<dataset>.dim_country_TOTAL_FICTION) passed ALL ELEVEN compile phases clean. The grounding block was
       validated; the sentence beside it was not read by anything.
 
       THE OBJECTION, AND THE ANSWER, recorded because the objection was mine and it was overruled:
@@ -225,8 +225,8 @@ rules:
       result reads as "no data" rather than "you pinned a month that does not exist here". Neither
       party is wrong about the date; they are answering different questions.
 
-      THE SHARED MAXIMUM is the subtler one, and it is measured. gaps/fpl2 records relations lagging
-      each other by a full month — DQ-FPL-08, OB-Reach at 2026-07-31 against the KPI fact at 2026-08-31
+      THE SHARED MAXIMUM is the subtler one, and it is measured. <domain>/<dataset> records relations lagging
+      each other by a full month — one measured DQ finding: a reach fact at 2026-07-31 against the KPI fact at 2026-08-31
       — so one `SELECT MAX(...)` computed for the bundle and applied to every relation returns ZERO
       ROWS from the lagging one, SILENTLY. The bundle's own protosql carries that as a never-clause;
       it is a fact about relations, not about that bundle, and belongs here.
@@ -285,7 +285,7 @@ rules:
       udf: mac.canon.refuse_unresolvable_name
       # `code` and `thing` are DERIVED, not attached: the code a name must resolve to IS the
       # concept's `identity.canonical_key`, and the thing named is its label. Measured 2026-08-19 —
-      # 4 fpl2 concepts attached `code` as a canon parameter; the two that were right matched
+      # 4 <dataset> concepts attached `code` as a canon parameter; the two that were right matched
       # canonical_key exactly, and the two that were wrong (brand: "code", country: "market") had the
       # correct value sitting in canonical_key while a regex over the rule prose guessed instead.
       # A parameter that can be read from a declaration must never be attached beside it.

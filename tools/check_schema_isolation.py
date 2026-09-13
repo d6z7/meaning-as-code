@@ -4,7 +4,7 @@ check_schema_isolation.py — the OWN-SCHEMA isolation gate (prevents the shared
 
 Right-first-time harvest invariant #5 (docs/HARVEST_RIGHT_FIRST_TIME.md): a source's serving relations
 live in the source's OWN dedicated schema, NEVER another source's schema. The incident this guards
-against: fpl2's views were written into gold's shared `fpl` schema and overwrote gold's dim_country /
+against: <dataset>'s views were written into gold's shared `<source>` schema and overwrote gold's dim_country /
 dim_model. The rule: every schema-qualified relation this source binds to must carry THIS bundle's own
 `view_schema` (from connection.yaml) — a foreign schema prefix is a collision waiting to happen.
 

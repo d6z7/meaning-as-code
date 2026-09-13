@@ -333,7 +333,7 @@
       "additionalProperties": false
     },
     "additivityAxis": {
-      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why OB-Reach's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.MeasureType where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
+      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.MeasureType where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
       "oneOf": [
         {
           "enum": [
@@ -1830,7 +1830,7 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know Skoda's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'Skoda has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
+                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know that one brand's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'that brand has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
               }
             },
             "additionalProperties": false
@@ -1905,7 +1905,7 @@
     },
     "ProjectFile": {
       "type": "object",
-      "description": "v0.1.14: THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and `^x-` remains the sanctioned way to extend. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It now carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on fpl2's REPRODUCTION.md).",
+      "description": "v0.1.14: THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and `^x-` remains the sanctioned way to extend. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It now carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on <dataset>'s REPRODUCTION.md).",
       "required": [
         "planes"
       ],
@@ -1913,7 +1913,7 @@
         "spec_version": {
           "type": "string",
           "pattern": "^mac\\.container/[0-9]+$",
-          "description": "Absent on bundles predating the container spec (cap-ontology-fpl); required going forward."
+          "description": "Absent on bundles predating the container spec; required going forward."
         },
         "metadata": {
           "type": "object",
@@ -2076,7 +2076,7 @@
         },
         "reproduction": {
           "type": "object",
-          "description": "How this bundle is rebuilt — as DATA, so a gate can check the artifacts still match the record. Prose cannot: fpl2's REPRODUCTION.md carried two stale claims simultaneously (a prohibition naming one of the two commands that trigger it, and a gate list naming three of eleven checkers, retired). Both read as authoritative.",
+          "description": "How this bundle is rebuilt — as DATA, so a gate can check the artifacts still match the record. Prose cannot: <dataset>'s REPRODUCTION.md carried two stale claims simultaneously (a prohibition naming one of the two commands that trigger it, and a gate list naming three of eleven checkers, retired). Both read as authoritative.",
           "required": [
             "stages"
           ],
@@ -2104,7 +2104,7 @@
                       "hand",
                       "model-then-hand"
                     ],
-                    "description": "WHO authors this stage's outputs. `tool` = deterministic/mechanical (projection, scaffolding). `model` = an LLM authors them from live metadata + SME context — this is what 'harvest' MEANS, and it is NOT mechanical: the data-plane prompt asks a model to author descriptors, DQ findings, cleansing rules and view SQL. `hand` = a human or agent authors from business sources. `model-then-hand` = model draft, human refinement — the honest state of most harvested bundles. ADDED after `tool` was measured to be a false claim about the data plane on fpl2: calling LLM authoring 'mechanical' is what lets 17 of 22 concepts carry an unreviewed CONFIRMED stamp without anyone noticing a claim had been made."
+                    "description": "WHO authors this stage's outputs. `tool` = deterministic/mechanical (projection, scaffolding). `model` = an LLM authors them from live metadata + SME context — this is what 'harvest' MEANS, and it is NOT mechanical: the data-plane prompt asks a model to author descriptors, DQ findings, cleansing rules and view SQL. `hand` = a human or agent authors from business sources. `model-then-hand` = model draft, human refinement — the honest state of most harvested bundles. ADDED after `tool` was measured to be a false claim about the data plane on <dataset>: calling LLM authoring 'mechanical' is what lets 17 of 22 concepts carry an unreviewed CONFIRMED stamp without anyone noticing a claim had been made."
                   },
                   "command": {
                     "type": "string",
@@ -2180,7 +2180,7 @@
     },
     "PropertiesFile": {
       "type": "object",
-      "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. P-ADD-01 on fpl2 asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",
+      "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. P-ADD-01 on <dataset> asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",
       "required": [
         "properties"
       ],
@@ -2691,7 +2691,7 @@
     },
     "ProtoSqlFile": {
       "type": "object",
-      "description": "v0.1.14: a DETERMINISTIC SQL FRAGMENT declared as data rather than prose. Exists because a recipe re-implemented from memory is got wrong: fpl2 records the same latest-vintage collapse being wrong FOUR TIMES IN ONE DAY by careful parties, once moving a figure by 25%. NOTE — the framework ships `mac.canon.*` for exactly this, so a fragment here is usually a workaround for a canon that is missing or broken, and the better fix is upstream.",
+      "description": "v0.1.14: a DETERMINISTIC SQL FRAGMENT declared as data rather than prose. Exists because a recipe re-implemented from memory is got wrong: <dataset> records the same latest-vintage collapse being wrong FOUR TIMES IN ONE DAY by careful parties, once moving a figure by 25%. NOTE — the framework ships `mac.canon.*` for exactly this, so a fragment here is usually a workaround for a canon that is missing or broken, and the better fix is upstream.",
       "required": [
         "rule"
       ],
@@ -2783,7 +2783,7 @@
           "description": "schema-qualified relation measured"
         },
         "profile": {
-          "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures: the word VERIFIED in prose is a sentence, not a test.",
+          "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures: the word VERIFIED in prose is a sentence, not a test.",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -2872,14 +2872,14 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: `brand_letter` is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
+                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: a brand-code column is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
               }
             }
           }
         },
         "identity_evidence": {
           "type": "object",
-          "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_fpl_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
+          "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
           "additionalProperties": false,
           "required": [
             "measured_at",
@@ -2920,7 +2920,7 @@
                 "type": "string"
               },
               "uniqueItems": true,
-              "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (config_key = 'Audi|11.12.2025|1. Expectation') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
+              "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (config_key = 'Brand|11.12.2025|1. Expectation') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
             },
             "key": {
               "type": "array",

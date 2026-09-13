@@ -17,7 +17,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "meaning-as-code"
 dynamic = ["version"]
-description = "Meaning-as-Code (MAC): the schema, closed vocabularies and conformance checkers for ontologies that a machine can verify."
+description = "Meaning-as-Code (MAC): the schema, closed vocabularies and conformance checkers for ontologies that a machine can verify, and the SDK that authors, compiles and serves them."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -30,7 +30,8 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["PyYAML>=6.0"]
+# PyYAML is the grammar's own need. jsonschema arrives with `sdk`, which validates against it.
+dependencies = ["PyYAML>=6.0", "jsonschema>=4.0"]
 
 [project.urls]
 Homepage = "https://github.com/d6z7/meaning-as-code"
@@ -47,7 +48,25 @@ version = { attr = "meaning_as_code.__pep440_version__" }
 [tool.setuptools]
 # The root IS the package. `tools` becomes an importable subpackage so the console scripts can
 # name real functions; everything else the checkers read travels as package data.
-packages = ["meaning_as_code", "meaning_as_code.tools"]
+#
+# `sdk` ships ALONGSIDE it, from this same repo. It used to live in another repository and find
+# this one at runtime by guessing a sibling checkout; when that guess went wrong it fell through in
+# silence to a vendored fork of the grammar, under which 22 of 22 reference concepts failed. One
+# distribution means there is no resolution step to go wrong and nothing to vendor from — the
+# grammar is simply on the path. `check_grammar_home` holds the invariant: exactly one grammar in
+# this tree, and it is the one that governs.
+packages = [
+  "meaning_as_code",
+  "meaning_as_code.tools",
+  "sdk",
+  "sdk.acceptance",
+  "sdk.authoring",
+  "sdk.cli",
+  "sdk.container",
+  "sdk.gate",
+  "sdk.grammar",
+  "sdk.project",
+]
 include-package-data = false
 
 [tool.setuptools.package-dir]

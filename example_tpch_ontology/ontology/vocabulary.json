@@ -230,6 +230,73 @@
           "term": "federation"
         }
       ]
+    },
+    {
+      "group": "Diagnostic codes",
+      "namespace": "mac.diagnostic_code.*",
+      "note": "Every finding the MAC compiler can report \u2014 the CLOSED taxonomy, whether or not it fired on this source. A code is the contract: suppressions and counts are keyed on it, so its meaning cannot change without a version bump.",
+      "terms": [
+        {
+          "count": 0,
+          "meaning": "undefined-artifact \u2014 present in the bundle, carries no MAC definition, not declared out of scope",
+          "term": "MAC001"
+        },
+        {
+          "count": 0,
+          "meaning": "invalid-artifact \u2014 has a MAC definition and does not satisfy it",
+          "term": "MAC002"
+        },
+        {
+          "count": 0,
+          "meaning": "undeclared-extension \u2014 an x- key with no profile entry \u2014 CONFORMANCE.md \u00a72: undeclared debt, not license",
+          "term": "MAC009"
+        },
+        {
+          "count": 0,
+          "meaning": "fact-restated \u2014 one fact stated in more than one home; nothing keeps the copies in step",
+          "term": "MAC003"
+        },
+        {
+          "count": 0,
+          "meaning": "fact-contradicted \u2014 statements of one fact disagree \u2014 something downstream is reading the wrong one",
+          "term": "MAC004"
+        },
+        {
+          "count": 0,
+          "meaning": "capability-unadopted \u2014 MAC offers a mechanism for this and the bundle does not use it",
+          "term": "MAC005"
+        },
+        {
+          "count": 0,
+          "meaning": "claim-unearned \u2014 a conformance level or confidence asserted with no evidence behind it",
+          "term": "MAC006"
+        },
+        {
+          "count": 0,
+          "meaning": "change-unprotocolled \u2014 an authored or tuned object with no entry in the change record",
+          "term": "MAC010"
+        },
+        {
+          "count": 0,
+          "meaning": "guard-dead \u2014 a rule or guard testing a value that cannot occur \u2014 it can never fire",
+          "term": "MAC007"
+        },
+        {
+          "count": 0,
+          "meaning": "reference-unresolved \u2014 a reference that resolves to nothing",
+          "term": "MAC008"
+        },
+        {
+          "count": 0,
+          "meaning": "coverage-missing \u2014 a required completeness the bundle does not reach",
+          "term": "MAC011"
+        },
+        {
+          "count": 0,
+          "meaning": "extension-duplicates-core \u2014 an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO of four declared cell keys were false \u2014 v_<source>_kpi claimed 0 multi-row against 11.689.530, and v_<source>_tm_kpi 0 against 176.279 (99,96 %). The two that HELD are the two that a view enforces: <source>_reach_kpi, which withholds ambiguous cells, and v_<source>_kpi_current, whose collapse makes the key true by construction (claimed 15.483.849, reproduces at 15.483.965, +116). That is the shape of the defect: the declaration is false exactly where nothing makes it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case \u2014 same subject, same value shape, same closed domain with non-empty overlap. Where there is NO core equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC, rather than declaring beside it. Enforced by tools/check_extension_keys.py, which exits non-zero, because a check that does not block is not enforcement.",
+          "term": "MAC012"
+        }
+      ]
     }
   ]
 }

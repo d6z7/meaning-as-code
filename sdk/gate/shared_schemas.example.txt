@@ -1,0 +1,12 @@
+# shared_schemas.txt — the warehouse schemas NO source may materialize into.
+#
+# Copy to `shared_schemas.txt` beside this file. Gitignored: your warehouse's schema names are
+# instance specifics and this repository is published.
+#
+# NOT the same list as source_tokens.txt. That one names instances which must not be hardcoded in
+# the instrument; this one names schemas that are SHARED, so a source materializing into one would
+# write into everybody's. A source's own name belongs here only if it is also a shared/gold schema.
+#
+# `gold`, `default`, `public` and `information_schema` are generic and already built in.
+
+# <your-shared-gold-schema>

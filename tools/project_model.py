@@ -612,7 +612,7 @@ def _reference_section(root: Path, doc: dict, identity: dict, register_name: str
             card[f"{ck}_surface"] = distinct_ck            # iso2_surface
             card["served_markets"] = None
         else:
-            card[_plural(_strip_source(ck, source))] = distinct_ck   # fpl_model_code -> model_codes
+            card[_plural(_strip_source(ck, source))] = distinct_ck   # <source>_model_code -> model_codes
 
     complete = served_rule is None
     note = None
@@ -760,7 +760,7 @@ def region_grouping(root: Path) -> dict:
         carry      = params.get("carry") or []
         int_cols   = set(params.get("int") or [])
         empty_null = bool(params.get("null_if_empty"))
-        join_key   = _member_join_key(doc)          # e.g. fpl_brand_country_code — from the grounding
+        join_key   = _member_join_key(doc)          # e.g. <source>_brand_country_code — from the grounding
 
         rows = _read_register(root, register)
         if not rows:

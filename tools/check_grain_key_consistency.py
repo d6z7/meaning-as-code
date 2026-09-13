@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MAC008 — every consumer that collapses a fact relation must use its DECLARED cell key.
 
-THE DEFECT, hit twice on gaps/fpl2 and reverted once already. The measured key states the column
+THE DEFECT, hit twice on <domain>/<dataset> and reverted once already. The measured key states the column
 tuple at which exactly one row of a fact relation exists. Eight `snapshot_rule` bindings dereference
 it (`params_from: profile#identity_evidence.key`) and cannot drift. Every OTHER consumer retypes it —
 and a retyped key is a key that is wrong eventually:
@@ -21,10 +21,10 @@ that one relation, so hoisting it onto the ontology object would make eight copi
 drift, restated. The gap is that a test's SQL is a static string and cannot dereference anything. So
 the key stays single-homed and the CONSUMERS get compared to it.
 
-AND A SINGLE SOURCE IS ONLY AS GOOD AS THE FACT IN IT: measured 2026-08-19, `brand_letter` and
-`fpl_plan_level` add ZERO discrimination to v_fpl_kpi's declared seven — grouping by five yields the
-identical 12.345.147 groups. Propagating a key perfectly would have propagated two dead columns with
-more confidence, which is why the key itself now carries a property (P-GRAIN-01).
+AND A SINGLE SOURCE IS ONLY AS GOOD AS THE FACT IN IT: measured 2026-08-19, `brand_code` and
+`<source>_plan_level` add ZERO discrimination to v_<source>_kpi's declared seven — grouping by five
+yields the identical 12.345.147 groups. Propagating a key perfectly would have propagated two dead
+columns with more confidence, which is why the key itself now carries a property (P-GRAIN-01).
 
 SEVERITY IS ASYMMETRIC, on purpose:
   ERROR   a consumer's key is a strict SUBSET of the declared one — it collapses rows that are

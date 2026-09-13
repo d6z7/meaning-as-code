@@ -154,9 +154,9 @@ def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> li
     # ── A ROW-PER-CASE TABLE MUST CARRY ROW FACTS ─────────────────────────────────────────────
     # Operator: "you cannot have cumulative value in every column". M-BRAND-KPI-01 returns 42 rows,
     # one per brand x measure, and puts `cases_with_no_figure: 2` on ALL of them — so the table says
-    # "2" beside Audi, which is true of the run and meaningless of the row. A reader cannot see WHICH
-    # case failed, which is the only thing the table exists to show. It also fails the assertion 42
-    # times over instead of twice.
+    # "2" beside one brand, which is true of the run and meaningless of the row. A reader cannot
+    # see WHICH case failed, which is the only thing the table exists to show. It also fails the
+    # assertion 42 times over instead of twice.
     for col, e in produced.items():
         if col not in want:
             continue
@@ -192,7 +192,7 @@ def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> li
         if a.get("type") == "must_be_zero" and re.search(
                 r"HAVING\s+count\(\s*\*\s*\)\s*>\s*1", sql, re.I):
             # A single-column uniqueness test is PERFECTLY VALID on a primary key — dim_body_type
-            # keyed on fpl_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
+            # keyed on <source>_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
             # cannot be unique, and the profile already measured that: distinct against rows. The
             # first cut skipped the check and flagged 19, most of them real key tests.
             grp = re.search(r"GROUP\s+BY\s+([^)\n]+)", sql, re.I)

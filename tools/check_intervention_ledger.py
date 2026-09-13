@@ -110,7 +110,7 @@ def main(argv) -> int:
     }
 
     # ---- index every object in the data + ontology planes, with its provenance stamp --------------
-    # The concepts plane may be flat (fpl2) or foldered by domain (the gold: concepts/brand/brand.yaml),
+    # The concepts plane may be flat (<dataset>) or foldered by domain (the gold: concepts/brand/brand.yaml),
     # so it is walked recursively; the data planes are flat by contract.
     files: dict[str, Path] = {}                 # "<type>:<stem>" -> file
     stamps: dict[str, str | None] = {}          # "<type>:<stem>" -> provenance | None

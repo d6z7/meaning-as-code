@@ -17,7 +17,7 @@ run_properties resolves it against the concept at run time. Edit the concept, an
 reads it moves with it — which is exactly what a conformance test is for.
 
 ── WHAT IT CAN GENERATE, and the ceiling ───────────────────────────────────────────────────────
-Measured on fpl2 (22 concepts, 30 rules):
+Measured on <dataset> (22 concepts, 30 rules):
 
     ALREADY ENFORCED OFFLINE, so deliberately NOT generated — 58 assertions. Column existence for
     rules[].binds, grounding.columns and properties[] is a SHAPE (rule-binds-grounded,
@@ -72,7 +72,7 @@ def value_column(root: pathlib.Path, rel: str, declared: list[str], ident: str) 
     """WHICH column actually holds this concept's value set — matched, not assumed.
 
     The first run assumed `identity.canonical_key`. On body_type that produced a test comparing
-    `fpl_lm_body_type_id` (int) against 'Cabrio/Roadster' — because the concept identifies itself by
+    `<source>_lm_body_type_id` (int) against 'Cabrio/Roadster' — because the concept identifies itself by
     the ID and enumerates the LABEL column. Both facts are true; nothing had ever compared them.
 
     So the column is found by matching the declared set against each grounded column's measured
@@ -146,8 +146,8 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         # declared key against identity_evidence.key rather than guessing from the relation name.
         # THE SAME GUARD THE IDENTITY FAMILY GOT, and it needed to be in both places. /5 checked
         # only canonical_key, so O-SALES_AREA-KEY still shipped and died as COLUMN_NOT_FOUND on
-        # `fpl_group_country_code` — dim_country_register spells it `group_code`. A guard applied to
-        # one of two families is a guard that looks present and is not.
+        # `<source>_group_country_code` — dim_country_register spells it `group_code`. A guard
+        # applied to one of two families is a guard that looks present and is not.
         have = relation_columns(rel)
         absent = [k for k in keys if have and k not in have]
         if absent:
@@ -186,9 +186,9 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
 
     ident = (c.get("identity") or {}).get("canonical_key")
     # DO NOT TEST A COLUMN THE RELATION DOES NOT HAVE. Three generated tests died as Athena
-    # COLUMN_NOT_FOUND: Brand identifies itself by `brand_letter` where the relation carries
-    # `fpl_brand_letter`; Market by `fpl_brand_country_code`, which dim_country_register has no
-    # column resembling; SalesArea declares no canonical_key at all and got a test regardless.
+    # COLUMN_NOT_FOUND: Brand identifies itself by `brand_code` where the relation carries
+    # `<source>_brand_code`; Market by `<source>_brand_country_code`, which dim_country_register has
+    # no column resembling; SalesArea declares no canonical_key at all and got a test regardless.
     # Those are three real modelling gaps — reported, not thrown at the warehouse to discover.
     if ident and srcs:
         stem0 = _rel(srcs[0]).split(".")[-1]
@@ -317,7 +317,7 @@ def main() -> int:
            or {}).get("engine") or {}
     out = root / a.out
     out.write_text(yaml.safe_dump({
-        "suite": "fpl2-ontology-generated", "version": "1.0",
+        "suite": "<dataset>-ontology-generated", "version": "1.0",
         "purpose": ("DOES THE WAREHOUSE STILL MATCH WHAT THE ONTOLOGY CLAIMS? Every assertion here is "
                     "RENDERED from a concept at run time, never typed — so a concept edit moves its "
                     "tests with it. The opposite obligation to the data-sanity suite, which must not "

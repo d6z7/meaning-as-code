@@ -17,13 +17,13 @@ MAC closes every structural plane and validates it. An `x-` key is BY CONSTRUCTI
 nothing checks it — and the thing it held was the grain, the single most consequential fact about a
 relation. Measured the day it was retired, with the core schema untouched around it:
 
-    v_fpl_kpi          declared 0 multi-row (VERIFIED 2026-08-16)  ->  11.689.530 multi-row
-    v_fpl_tm_kpi       declared 0 multi-row, 0 divergent           ->  176.279 multi-row (99,96 %)
-    fpl_ob_reach_kpi   declared 0 ambiguous                        ->  0. HOLDS.
-    v_fpl_kpi_current  declared 15.483.849 cells                   ->  15.483.965 (+116). HOLDS.
+    v_<source>_kpi          declared 0 multi-row (VERIFIED 2026-08-16)  ->  11.689.530 multi-row
+    v_<source>_tm_kpi       declared 0 multi-row, 0 divergent           ->  176.279 multi-row (99,96 %)
+    <source>_reach_kpi   declared 0 ambiguous                        ->  0. HOLDS.
+    v_<source>_kpi_current  declared 15.483.849 cells                   ->  15.483.965 (+116). HOLDS.
 
 Two of four false — and WHICH two is the interesting half. Both survivors are views that ENFORCE the
-key: fpl_ob_reach_kpi withholds ambiguous cells, and v_fpl_kpi_current collapses to one row per cell,
+key: <source>_reach_kpi withholds ambiguous cells, and v_<source>_kpi_current collapses to one row per cell,
 so its key is true by construction. The two that rotted are the pass-through facts, where the
 declaration was the only thing standing between the reader and a doubled number.
 

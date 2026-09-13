@@ -16,7 +16,7 @@ This is the front end. It:
   1. LOADS THE BUNDLE ONCE and hands the same parsed object to every check — `mac_model.load`'s memo,
      `validate_schema`'s enumeration cache, the conformance `Bundle` and the framework introspection
      are built once and shared, instead of once per gate.
-     MEASURED on fpl2 (218 yaml / 641 files), counting real file opens per run, one process each:
+     MEASURED on <dataset> (218 yaml / 641 files), counting real file opens per run, one process each:
         nine gates, nine processes ................ 2.356 opens
         the three native phases, three processes .. 1.272 opens
         THIS COMPILER, three native phases ........ 1.104 opens   (-168, -13 %)
@@ -338,7 +338,7 @@ LEGACY = {
                                           "a registry row that is not an exact projection of the "
                                           "framework law is two statements of one fact disagreeing"),
     # ADDED 2026-08-18 after an adversarial pass found EIGHT gates the compiler neither ran nor named —
-    # one of them (check_mac_public) FAILING on fpl2 at the time. The verdict line is the whole product
+    # one of them (check_mac_public) FAILING on <dataset> at the time. The verdict line is the whole product
     # of this file: "DOES NOT COMPILE" was trustworthy only by luck, and a future "COMPILES" would have
     # been a lie while a red gate sat outside the inventory. A gate that exists and is not listed is
     # worse than a wrapped one, because the report's silence reads as coverage.
@@ -368,7 +368,7 @@ LEGACY = {
                                       "a transform whose SQL is not extracted leaves the chain "
                                       "incomplete at the step that does the work"),
     # check_mac_public is DELIBERATELY NOT HERE. It is a gate on the FRAMEWORK repo — "meaning-as-code
-    # is a PUBLIC framework repo: it must never carry a VW / GAPS / FPL / source-specific token" — and
+    # is a PUBLIC framework repo: it must never carry a token belonging to one customer or source" — and
     # it defaults to MAC's own root. Wrapping it and aiming it at a customer bundle made it fail on the
     # bundle's own domain vocabulary, which is what a bundle is FOR. That was a category error (added
     # and removed 2026-08-18): a gate's SCOPE is part of its contract, and adding gates to this table

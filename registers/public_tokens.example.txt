@@ -1,0 +1,20 @@
+# public_tokens.txt — every identity string that must NOT appear in this public repository.
+#
+# Copy this file to `public_tokens.txt` beside it and list your own. That file is GITIGNORED, and
+# that is the whole point: the gate which keeps an estate's identity out of a public repo used to
+# hold the complete list of that identity IN the public repo — every brand, the operator's systems,
+# an infra bucket, a colleague's name.
+#
+# FORMAT: label | regex | flags      (flags: `i` = ignore case, `-` = case-sensitive)
+#
+# The label groups findings; the regex is matched per line. Split is on the FIRST and LAST `|` only,
+# so a regex may contain alternation.
+#
+# Use CASE-SENSITIVE where a token collides with an English word, or ordinary prose false-positives.
+#
+# WITH NO REGISTER the gate reports COULD NOT RUN (exit 2) and refuses to call the tree clean.
+
+# <your-source-token>      | <source-name>                | i
+# <your-org>               | <org-name>                   | i
+# <a-brand>                | \b(<brand-a>|<brand-b>)\b    | i
+# <a-system-abbrev>        | \b<ABBREV>\b                 | -

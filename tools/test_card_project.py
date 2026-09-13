@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project an acceptance property into a READABLE CARD — what it searches, with what parameters.
 
-THE DEFECT THIS REPAIRS, measured on gaps/fpl2: 31 properties carried 5.161 words of `statement`
+THE DEFECT THIS REPAIRS, measured on <domain>/<dataset>: 31 properties carried 5.161 words of `statement`
 prose — median 96 words, worst 489, only 4 of 31 under 60. Asked what a test checks, a reader got an
 essay. Operator, verbatim: "the prosa you provide in R-BRAND-02 is too long and unreadable ... this
 shoudl be focused to the point what are you searchingi and with what parameters ... maybe in a table.
@@ -43,13 +43,39 @@ import yaml
 
 DIALECT = "trino"
 
-# Columns whose literal bindings are the ones a reader actually recognises, in the order a person
-# says them. Anything not listed still shows — this only fixes the ORDER, never the content.
-PARAM_ORDER = [
-    "role", "brand_letter", "brand", "fpl_brand_country_code", "market", "region",
-    "kpi", "measure", "fpl_plan_level", "config_data_status", "config_reporting_month",
-    "fpl_date", "fpl_model_code",
+# Columns whose literal bindings are the ones a reader recognises, in the order a person says them.
+# Anything not listed still shows — this only fixes the ORDER, never the content.
+#
+# GENERIC NAMES ONLY. This list is MATCHED against real column names (`for key in PARAM_ORDER: if
+# key in found`), so an entry that cannot equal a column name is dead weight that silently drops its
+# parameter into the alphabetical tail. The token cleanse put four angle-bracket placeholders here —
+# `<source>_date` can never match anything — and the entries that named one estate's columns were
+# instance configuration in the generic instrument to begin with.
+#
+# An estate that wants its own columns ordered declares them in registers/card_param_order.txt;
+# these are the names any bundle might carry.
+PARAM_ORDER_GENERIC = [
+    "role", "brand", "market", "region", "country",
+    "kpi", "measure", "metric", "period", "month", "year", "date", "status",
 ]
+
+
+def param_order() -> list:
+    """The generic order, extended by whatever this estate declares. Estate entries come FIRST:
+    a bundle's own column names are the ones its readers recognise."""
+    import os
+    from pathlib import Path as _P
+
+    reg = _P(os.environ.get("MAC_CARD_PARAM_ORDER")
+             or (_P(__file__).resolve().parent.parent / "registers" / "card_param_order.txt"))
+    extra = []
+    if reg.is_file():
+        extra = [ln.strip() for ln in reg.read_text(encoding="utf-8").splitlines()
+                 if ln.strip() and not ln.lstrip().startswith("#")]
+    return extra + [k for k in PARAM_ORDER_GENERIC if k not in extra]
+
+
+PARAM_ORDER = param_order()
 
 # The de-DE display the operator requires everywhere numbers are shown.
 def de(v):
@@ -225,7 +251,7 @@ def firing_rules(root: str, sql: str, params: list) -> list[dict]:
     A rule already declares the columns it governs (`binds`). A test already touches columns and
     PINS some of them. So the link needs no new field and cannot go stale: a rule is exercised when
     every column it binds is present in the test's SQL, and PINNED when the test also fixes one of
-    them to a literal. The distinction matters — 28 of 29 fpl2 rules bind `role` or a fact column,
+    them to a literal. The distinction matters — 28 of 29 <dataset> rules bind `role` or a fact column,
     so an unranked overlap would name half the ontology for every test and mean nothing.
 
     Deliberately NOT claimed: that an exercised rule is a rule the test would CATCH the violation of.
@@ -251,7 +277,7 @@ def firing_rules(root: str, sql: str, params: list) -> list[dict]:
 
         # GUARD 2 — a measure concept is keyed on a kpi code. If the test pinned kpi and this
         # concept's codes are not among them, its rules are not in play, however many columns
-        # they share: ideal_stock's rules were matching a test that reads only dtc_act_exp.
+        # they share: one measure's rules were matching a test that reads only another's code.
         codes = set(((doc.get("values") or {}).get("aliases") or {}).get("map") or {})
         if pinned_kpi and codes and not (codes & pinned_kpi):
             continue

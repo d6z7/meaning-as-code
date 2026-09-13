@@ -7,7 +7,7 @@ WHY THIS SHAPE, and not the obvious one
 BESIDE it as the human twin, which raises the question this check answers: what stops the twin
 drifting from the canon it claims to be governed by?
 
-The obvious check — compare the strings — was MEASURED and rejected. Across fpl2's 13 copies of
+The obvious check — compare the strings — was MEASURED and rejected. Across <dataset>'s 13 copies of
 `exclusion.no_evidence` the mean similarity to the rendered canon is 0,88, and chasing it higher made
 things WORSE: reordering one clause to match `country` dropped `brand` from 0,93 to 0,77. The copies
 disagree on clause ORDER and on label wording ("IstProd" vs "Actual Production") — differences that
@@ -20,7 +20,8 @@ So this checks MEANING: every semantic element the author wrote must survive in 
 
 BOTH DIRECTIONS. The prose losing an element the canon renders is drift (the twin stopped saying what
 governs it); the prose carrying one the canon cannot render is a missing parameter. The first cut
-checked only the second, and a probe that stripped a confusable out of dtc's `never` passed clean.
+checked only the second, and a probe that stripped a confusable out of a delivery measure's `never`
+passed clean.
 
 Measured on the same 13: string fit 0,88, meaning preserved 13/13. That gap is the whole argument.
 
@@ -43,8 +44,8 @@ import mac_diag as D
 import mac_project as P
 
 # Each probe is a SET of spellings for one semantic element. A single literal was too narrow and
-# produced a false positive on the first real run: ob_reach writes "substituting 0 for a null
-# ob_reach" where the canon renders "coercing ... to 0" — same ban, and `zero` matched neither.
+# produced a false positive on the first real run: a reach measure writes "substituting 0 for a
+# null reach" where the canon renders "coercing ... to 0" — same ban, and `zero` matched neither.
 _PROBES = [("REFUSE", ("refuse",)),
            ("no-guess", ("guess", "estimat")),
            ("no-zero-fill", ("zero", " 0 ", "to 0", "coerc")),
@@ -116,7 +117,7 @@ def check_canon_binding(root) -> list:
             rel = P.rel(root, f)
             # A PARAMETER THAT HAS A DECLARED HOME MUST NOT BE ATTACHED. If it agrees with the
             # declaration it is a restatement; if it disagrees, the binding and the concept are
-            # saying different things and the binding is the one that RUNS. Measured: two fpl2
+            # saying different things and the binding is the one that RUNS. Measured: two <dataset>
             # bindings attached `code` and both disagreed with identity.canonical_key.
             for prm, path in (PF.get(rb.get("udf")) or {}).items():
                 if prm not in (rb.get("params") or {}):
@@ -146,10 +147,10 @@ def check_canon_binding(root) -> list:
                 continue
             # SYMMETRIC, and it took a failed probe to notice. The first cut only asked "does the
             # render lose something the author wrote", which misses the direction that matters more:
-            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution ban
-            # out of dtc's `never` passed cleanly, because the element was then absent from BOTH
-            # sides. A one-directional check on a two-directional relationship reports the half it
-            # was built to see.
+            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution
+            # ban out of a delivery measure's `never` passed cleanly, because the element was then
+            # absent from BOTH sides. A one-directional check on a two-directional relationship
+            # reports the half it was built to see.
             miss = [f"render lacks {label}" for label, sp in _PROBES
                     if _has(authored, sp) and not _has(rendered, sp)]
             miss += [f"prose lacks {label}" for label, sp in _PROBES
@@ -165,9 +166,9 @@ def check_canon_binding(root) -> list:
         # value_filter) and semantics (an additivity guard) — not only on a rule. This loop read
         # contract.rules[] alone, so a slot binding was checked by nothing at all.
         #
-        # MEASURED, and it is why this exists: an fpl2 binding of mac.canon.snapshot_collapse passed a
+        # MEASURED, and it is why this exists: an <dataset> binding of mac.canon.snapshot_collapse passed a
         # FOUR-column partition where the relation's verified cell key is SEVEN, and rendered
-        # `PARTITION BY ['fpl_brand_country_code', ...]` — a Python list repr, not SQL. It shipped, and
+        # `PARTITION BY ['<source>_brand_country_code', ...]` — a Python list repr, not SQL. It shipped, and
         # the compile reported clean, because no phase rendered it. Omitting `role` from that partition
         # folds six reporting perspectives into one arbitrary row, silently.
         for slot in ("grounding", "semantics"):

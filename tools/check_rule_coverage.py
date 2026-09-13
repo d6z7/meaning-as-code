@@ -4,7 +4,7 @@
 Operator: *"the coverage of real ontology cases is still very low … how much is still open to audit,
 review, and semantically confirm these which we have — that they follow ontology and are sound?"*
 
-The property count answers none of that. Measured on fpl2 the day this was written: 288 properties,
+The property count answers none of that. Measured on <dataset> the day this was written: 288 properties,
 of which ONE composes an ontology fragment and 54 render any value from a declaration. So 234 of them
 contain no reference to the model at all — they are SQL that happens to live in a bundle.
 

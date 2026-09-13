@@ -6,7 +6,7 @@ column small enough to enumerate. The measurement — census counts, the table p
 evidence — moves to its own file, because the two have different lifecycles and the runtime pays for
 mixing them.
 
-MEASURED, on the 25 fpl2 descriptors: 64,9 % of their bytes were profile. Of that, 95,3 % was the
+MEASURED, on the 25 <dataset> descriptors: 64,9 % of their bytes were profile. Of that, 95,3 % was the
 value domain and only 4,7 % the census. So this moves the SMALL half — which is the point. The token
 saving is noise; the reason is that `mac_profile.py` rewrites a descriptor on every run (measured_at
 always moves) and the runtime keys its prompt cache on descriptor mtime, so each re-measurement

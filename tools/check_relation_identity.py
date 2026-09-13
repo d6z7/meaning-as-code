@@ -10,8 +10,8 @@ relation there is exactly ONE name in all five places —
   4. the concept  grounding.sources[].relation  TAIL
   5. any lookup's  source_view
 The name is the raw table's base name, with NO `_clean`/`clean_` prefix or suffix (the source's own
-schema already separates serving from raw). A divergence — e.g. stem `v_fpl_gold_layer_kpi` vs
-table.name `v_fpl_gold_layer_kpi_clean` — is the cross-reference break this gate reds on.
+schema already separates serving from raw). A divergence — e.g. stem `v_<source>_gold_layer_kpi` vs
+table.name `v_<source>_gold_layer_kpi_clean` — is the cross-reference break this gate reds on.
 
 This gate is OFFLINE and pure-structural (no AWS): it asserts the NAMES agree across files. Whether the
 physical view actually exists live is the harvest's materialize step, NOT a gate (gates stay AWS-free).

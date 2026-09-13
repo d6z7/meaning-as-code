@@ -103,10 +103,10 @@ def refusal_question(concept, rule, p) -> dict:
         "exercises": [rule["id"]],
         # NO RATIONALE IS WRITTEN HERE. The first version hardcoded one sentence — "Bentley
         # publishes no IstProd and no Prodant" — into all five questions, where it was FALSE for
-        # three of them: every brand publishes dtc and order_intake. A generated claim that is not
-        # generated FROM a measurement is exactly the defect this bundle spent 2026-08-20 removing,
-        # and it took an hour to reintroduce. The rationale is filled by measuring per rule; until
-        # then it says so.
+        # three of them: every brand publishes a delivery measure and order_intake. A generated
+        # claim that is not generated FROM a measurement is exactly the defect this bundle spent
+        # 2026-08-20 removing, and it took an hour to reintroduce. The rationale is filled by
+        # measuring per rule; until then it says so.
         "rationale": (
             "PENDING MEASUREMENT — this question needs the empty case for ITS OWN measure, found by "
             "asking the warehouse which scopes publish no row. Do not write a general sentence here: "
@@ -152,7 +152,7 @@ def main() -> int:
     eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
            or {}).get("engine") or {}
     out.write_text(yaml.safe_dump({
-        "suite": "fpl2-rules-generated", "version": "1.0",
+        "suite": "<dataset>-rules-generated", "version": "1.0",
         "purpose": ("DOES THE WAREHOUSE STILL SATISFY THE RULES THE ONTOLOGY DECLARES? Generated FROM "
                     "the rules, one property per machine-readable data-shape rule. Behaviour rules "
                     "cannot be tested here and are generated as corpus questions instead."),

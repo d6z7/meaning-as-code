@@ -1,0 +1,19 @@
+# infra_handles.txt — the infra handles THIS estate forbids in a bundle.
+#
+# Copy this file to `infra_handles.txt` beside it and put your own handles in. That file is
+# gitignored and must stay that way: a detector that names what it forbids is a register of those
+# secrets, and this repository is published. The integration kit makes the same rule for its
+# instance-token register — "a public method must not carry them".
+#
+# One handle per line. Blank lines and #-comments ignored. Substring match, deliberately: a
+# `\b`-bounded pattern could not see `v_<source>_kpi` or `<source>2`, so a planted leak using an
+# identifier did not turn the gate red.
+#
+# WITH NO handles declared, the handle class examines NOTHING. The gate says so in its verdict
+# ("0 handle(s) declared") rather than printing an unqualified PASS. The shape-based classes — key
+# formats, entropy — do not depend on this file and keep running either way.
+
+# <sso-or-cli-profile-name>
+# <athena-workgroup-family>
+# <prod-results-bucket>
+# <another-source-warehouse-db>

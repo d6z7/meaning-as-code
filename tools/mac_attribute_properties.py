@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fill `validates` and `test_kind` on a property suite — by DERIVATION, and never by guess.
 
-Both fields became required and 59 properties across four fpl2 suites stood without them, which is
+Both fields became required and 59 properties across four <dataset> suites stood without them, which is
 126 of the bundle's validator errors from one cause. The temptation is to write them in by hand, 59
 times. That is how the interventions ledger acquired 65 defects in a single day, twelve of which
 asserted the operator's approval in a closed-vocabulary field.

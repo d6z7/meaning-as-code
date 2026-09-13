@@ -83,7 +83,7 @@ def build(root) -> dict:
             # the family is empty and every counter is legitimately 0.
             #
             # Reported bare, that is indistinguishable from "the check did not run", and a reader
-            # seeing five zeros reasonably concludes the page is broken. It happened on gaps/fpl2 the
+            # seeing five zeros reasonably concludes the page is broken. It happened on <domain>/<dataset> the
             # day the last authored additivity block was removed. `note` states the denominator so a
             # zero can be read as the success it is.
             "facts": len(facts),

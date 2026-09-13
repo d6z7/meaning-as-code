@@ -3,8 +3,9 @@
 
 The meaning-plane twin of the data warehouse (epic #85, A1). It reads the model's self-description
 (A0's projection) and emits one NDJSON table per section, plus `CREATE EXTERNAL TABLE` DDL — so an
-introspection question ("what measures / dimensions / regions / rules exist", "countries in VW's VE")
-runs as deterministic SQL over the model STRUCTURE, never LLM-authored.
+introspection question ("what measures / dimensions / regions / rules exist", "which countries are in
+a named region of one brand's own scheme") runs as deterministic SQL over the model STRUCTURE, never
+LLM-authored.
 
 Generic: names no source; a section that is absent/empty yields an empty table. NDJSON is Athena-native
 (JSON SerDe) and loads straight into SQLite/DuckDB for offline validation.
@@ -82,6 +83,8 @@ def t_brand_members(d):
                    "in_fact_data": mem.get("in_fact_data"), "confidence": mem.get("confidence")}
 
 
+# `region_definition_used` is a definition's identity string, 'namespace:code' — the one key these two
+# extractors share with the model projection that writes the introspection.
 def t_region_definitions(d):
     for r in d.get("region_definitions", []):
         yield {**{k: r.get(k) for k in ("region_definition_used", "namespace", "code", "brand", "label",
@@ -92,7 +95,7 @@ def t_region_definitions(d):
 def t_region_members(d):
     for m in d.get("region_members", []):
         yield {k: m.get(k) for k in ("region_definition_used", "namespace", "code", "member",
-                                     "member_kind", "iso2", "fpl_brand_country_code")}
+                                     "member_kind", "iso2", "<source>_brand_country_code")}
 
 
 def t_rules(d):
@@ -173,33 +176,34 @@ def reflect(introspection: dict):
 
 # Semantic annotations for the meaning-plane grounding: which introspection question each relation
 # serves + a canonical example query. The relation set is fixed; columns are auto-derived from the data,
-# so the grounding can never drift from the tables. Edit here if the question-mapping changes.
+# so the grounding can never drift from the tables. Edit here if the question-mapping changes. `{src}`
+# in an example is substituted with the source at emit time — no source literal is written here.
 _GROUNDING = {
- "meta_measures": ("what measures / KPIs exist; a measure's type, additivity, and DEFINITION — what a KPI like Order Book (OB) or Prodant MEANS",
-                   "SELECT measure, type, additivity_time, definition, surface FROM fpl.meta_measures WHERE stem IN ('ob','prodant')"),
+ "meta_measures": ("what measures / KPIs exist; a measure's type, additivity, and DEFINITION — what an opaque KPI name MEANS",
+                   "SELECT measure, type, additivity_time, definition, surface FROM {src}.meta_measures WHERE stem IN ('revenue','orders')"),
  "meta_kpi_variants": ("the tracking variants (actual / plan / budget) of a measure — the budget-vs-plan distinction",
-                   "SELECT DISTINCT variant, suffix, is_default FROM fpl.meta_kpi_variants ORDER BY variant"),
+                   "SELECT DISTINCT variant, suffix, is_default FROM {src}.meta_kpi_variants ORDER BY variant"),
  "meta_dimensions": ("what dimensions exist and their cardinality (e.g. how many model families, how many markets)",
-                   "SELECT dimension, json_extract_scalar(cardinality,'$.families') AS families FROM fpl.meta_dimensions WHERE dimension='VehicleModel'"),
+                   "SELECT dimension, json_extract_scalar(cardinality,'$.families') AS families FROM {src}.meta_dimensions WHERE dimension='VehicleModel'"),
  "meta_brand_members": ("the brand clusters, their brands, and which are served — the brand-count distinctions (cluster vs brand vs served)",
-                   "SELECT count(DISTINCT cluster_code) AS clusters, count(DISTINCT CASE WHEN lower(in_fact_data) IN ('true','1') THEN cluster_code END) AS served FROM fpl.meta_brand_members"),
- "meta_region_definitions": ("the region / structure DEFINITIONS per brand + member counts + cross-brand collisions (VW's Europe vs Audi's Europe)",
-                   "SELECT namespace, member_count FROM fpl.meta_region_definitions WHERE code='VE' ORDER BY namespace"),
- "meta_region_members": ("which countries / markets are IN a named region or structure (e.g. VW's VE, Skoda's Region 3). region_definition_used = 'namespace:code'",
-                   "SELECT member FROM fpl.meta_region_members WHERE region_definition_used='vw_bereich:VE'"),
+                   "SELECT count(DISTINCT cluster_code) AS clusters, count(DISTINCT CASE WHEN lower(in_fact_data) IN ('true','1') THEN cluster_code END) AS served FROM {src}.meta_brand_members"),
+ "meta_region_definitions": ("the region / structure DEFINITIONS per brand + member counts + cross-brand collisions (one brand's Europe vs another's)",
+                   "SELECT namespace, member_count FROM {src}.meta_region_definitions WHERE code='VE' ORDER BY namespace"),
+ "meta_region_members": ("which countries / markets are IN a named region or structure (e.g. one brand's VE, another's Region 3). region_definition_used = 'namespace:code'",
+                   "SELECT member FROM {src}.meta_region_members WHERE region_definition='brand_a_region:VE'"),
  "meta_rules": ("what business rules exist and what a rule SAYS (its when/then/never) — e.g. how planning accuracy is defined",
-                   "SELECT then_text FROM fpl.meta_rules WHERE rule_id LIKE '%variance%'"),
+                   "SELECT then_text FROM {src}.meta_rules WHERE rule_id LIKE '%variance%'"),
  "meta_rule_refs": ("the concepts / columns a rule binds or derives over",
-                   "SELECT ref_value FROM fpl.meta_rule_refs WHERE ref_kind='over' AND rule_id LIKE '%variance%'"),
- "meta_decision_policy": ("the ASK / COMMIT / REFUSE routing slots and their policies", "SELECT slot, policy FROM fpl.meta_decision_policy"),
- "meta_rule_kinds": ("the closed rule-kind vocabulary", "SELECT term, governs FROM fpl.meta_rule_kinds"),
- "meta_edges": ("the relationships / joins declared between concepts", "SELECT edge_id, from_concept, to_concept, cardinality FROM fpl.meta_edges"),
- "meta_edge_join_clauses": ("the join columns for a relationship edge", "SELECT * FROM fpl.meta_edge_join_clauses WHERE edge_id=?"),
- "meta_provenance": ("which ontology bytes (sha256) produced this meaning-plane reflection", "SELECT input_path, input_sha256 FROM fpl.meta_provenance"),
+                   "SELECT ref_value FROM {src}.meta_rule_refs WHERE ref_kind='over' AND rule_id LIKE '%variance%'"),
+ "meta_decision_policy": ("the ASK / COMMIT / REFUSE routing slots and their policies", "SELECT slot, policy FROM {src}.meta_decision_policy"),
+ "meta_rule_kinds": ("the closed rule-kind vocabulary", "SELECT term, governs FROM {src}.meta_rule_kinds"),
+ "meta_edges": ("the relationships / joins declared between concepts", "SELECT edge_id, from_concept, to_concept, cardinality FROM {src}.meta_edges"),
+ "meta_edge_join_clauses": ("the join columns for a relationship edge", "SELECT * FROM {src}.meta_edge_join_clauses WHERE edge_id=?"),
+ "meta_provenance": ("which ontology bytes (sha256) produced this meaning-plane reflection", "SELECT input_path, input_sha256 FROM {src}.meta_provenance"),
 }
 
 
-def grounding_yaml(tables: dict, source: str = "fpl") -> str:
+def grounding_yaml(tables: dict, source: str = "<source>") -> str:
     """The meaning-plane GROUNDING the interpreter inlines — one grounded relation per meta_* table with
     its columns, what question it answers, and a canonical example query. Generated (never hand-edited)."""
     import yaml as _yaml
@@ -207,7 +211,8 @@ def grounding_yaml(tables: dict, source: str = "fpl") -> str:
     for name, rows in tables.items():
         cols = sorted({k for r in rows for k in r.keys()})
         answers, example = _GROUNDING.get(name, ("(introspection relation)", f"SELECT * FROM {source}.{name}"))
-        rels.append({"relation": f"{source}.{name}", "answers": answers, "columns": cols, "example": example})
+        rels.append({"relation": f"{source}.{name}", "answers": _sub(answers, source),
+                     "columns": cols, "example": _sub(example, source)})
     doc = {
       "metadata": {"concept": "MeaningPlane", "source": source.upper(), "kind": "meaning-plane-grounding",
                    "generated_by": "meaning-as-code/tools/mac_to_meta.py::grounding_yaml",
@@ -226,7 +231,7 @@ def grounding_yaml(tables: dict, source: str = "fpl") -> str:
     return _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)
 
 
-def dataset_descriptors(tables: dict, source: str = "fpl") -> dict:
+def dataset_descriptors(tables: dict, source: str = "<source>") -> dict:
     """{table_name: yaml_text} — a Physical-layer schema-of-record descriptor per meta_* relation, the
     twin of the warehouse dim descriptors (data/datasets/<rel>.yaml). The shapes gate resolves a grounded
     concept's columns CROSS-FILE from these (check_shapes.grounded_columns_for_relation); without them the
@@ -254,10 +259,10 @@ def dataset_descriptors(tables: dict, source: str = "fpl") -> dict:
 # MEANING-PLANE CONCEPTS (epic #86) — the model as 7 first-class MAC concepts.
 #
 # Each meta_* relation is grouped into a natural concept; the concept is a NORMAL MAC concept
-# (same shape as geography/region.yaml, kpi/obreach.yaml) whose SUBJECT is the model itself. Its
-# COLUMNS are auto-derived from the reflection (`reflect()` output) — they can never drift from the
-# tables. Its SEMANTICS (class / identity / definition / the field-role of each column / the
-# answers·example·never contract) are FIXED per-concept annotations, authored once below.
+# (same shape as a hand-authored geography/region.yaml or kpi/<measure>.yaml) whose SUBJECT is the
+# model itself. Its COLUMNS are auto-derived from the reflection (`reflect()` output) — they can never
+# drift from the tables. Its SEMANTICS (class / identity / definition / the field-role of each column
+# / the answers·example·never contract) are FIXED per-concept annotations, authored once below.
 #
 # GENERIC: `source` is a parameter — no source literal appears in the emit LOGIC. Every place a
 # source token is needed (relation prefix, class prefix, field_role prefix, an example's FROM) uses
@@ -292,13 +297,13 @@ _META_CONCEPTS = {
      "grounds_relation": "attribute", "realized_from": "attribute", "closure": "attribute",
      "suffix": "attribute", "is_default": "attribute"},
    "definition": (
-     "A KPI/measure that the FPL model itself defines — its measure_type (Flow / Stock / Target), its "
+     "A KPI/measure that the <SOURCE> model itself defines — its measure_type (Flow / Stock / Target), its "
      "additivity behaviour on the time and categorical axes, the serving relation it grounds on, its "
      "natural-language surface terms, its tracking variants (actual / plan / budget), and its prose "
-     "DEFINITION (what Order Book, Prodant, DtC actually MEAN). The subject is the MODEL, not the "
-     "warehouse: this is the model's own register of measures, reflected as a queryable relation "
-     "(meta_measures + meta_kpi_variants). A measure's type, additivity and meaning are READ from "
-     "meta_measures — never authored as a SQL literal in an answer."),
+     "DEFINITION (what an opaque KPI name — a volume measure, a reach measure — actually MEANS). The "
+     "subject is the MODEL, not the warehouse: this is the model's own register of measures, reflected "
+     "as a queryable relation (meta_measures + meta_kpi_variants). A measure's type, additivity and "
+     "meaning are READ from meta_measures — never authored as a SQL literal in an answer."),
    "grain": (
      "one row per measure ({src}.meta_measures); its tracking variants fan out to one row per "
      "(stem × variant) = kpi_code in {src}.meta_kpi_variants, joined back on `stem`. No numeric fact — "
@@ -306,20 +311,20 @@ _META_CONCEPTS = {
    "answers": (
      "what measures/KPIs the model defines, and — for a named measure — its type (Flow/Stock/Target), "
      "its additivity on the time and categorical axes, its serving relation and surface terms, its "
-     "tracking variants (the actual/plan/budget distinction), and its DEFINITION: what a KPI like Order "
-     "Book (OB), Prodant or DtC actually MEANS."),
+     "tracking variants (the actual/plan/budget distinction), and its DEFINITION: what a KPI whose name "
+     "is an opaque code — a volume measure, a reach measure — actually MEANS."),
    "example": (
      "SELECT measure, type, additivity_time, additivity_categorical, definition, surface\n"
      "FROM {src}.meta_measures\n"
-     "WHERE stem IN ('ob', 'prodant');\n"
+     "WHERE stem IN ('revenue', 'orders');\n"
      "SELECT DISTINCT variant, suffix, is_default\n"
      "FROM {src}.meta_kpi_variants\n"
-     "WHERE stem = 'ob'\n"
+     "WHERE stem = 'revenue'\n"
      "ORDER BY variant;"),
    "never": (
      "Authoring a measure's definition, type or additivity as a SQL string literal — these are READ from "
      "{src}.meta_measures (definition, measure_type, additivity_time), never written into the answer. "
-     "Querying a warehouse fact/dim view (v_fpl_kpi_current, dim_*) for the model's self-description — "
+     "Querying a warehouse fact/dim view (v_<source>_kpi_current, dim_*) for the model's self-description — "
      "those carry the KPI NUMBERS, not the KPI's MEANING (two-planes-never-mixed): a measure-definition "
      "question stays on meta_*, and a warehouse-number question never routes here."),
  },
@@ -333,7 +338,7 @@ _META_CONCEPTS = {
      "realized_from": "attribute", "cardinality": "measure",
      "multi_brand": "attribute", "in_fact_data": "attribute", "confidence": "attribute"},
    "definition": (
-     "A named DIMENSION the FPL model defines — an axis the model can slice by (Brand, VehicleModel, "
+     "A named DIMENSION the <SOURCE> model defines — an axis the model can slice by (Brand, VehicleModel, "
      "Region, Country, BrandCluster), together with the concept it realizes, its grain, identity kind, "
      "canonical key, the register it is realized_from, and its CARDINALITY: how many families / model "
      "codes / clusters / markets it spans (a JSON payload, e.g. VehicleModel -> "
@@ -357,7 +362,7 @@ _META_CONCEPTS = {
      "FROM {src}.meta_brand_members;"),
    "never": (
      "authoring a dimension's cardinality, grain, or brand membership as a SQL string literal; querying a "
-     "warehouse fact/dim view (dim_model, dim_country, v_fpl_kpi_current) to count families / markets / "
+     "warehouse fact/dim view (dim_model, dim_country, v_<source>_kpi_current) to count families / markets / "
      "clusters — these are READ from {src}.meta_dimensions / {src}.meta_brand_members, never hand-written "
      "and never computed off the warehouse plane."),
  },
@@ -368,7 +373,7 @@ _META_CONCEPTS = {
    "roles": {
      "concept": "dimension", "value": "dimension", "label": "attribute"},
    "definition": (
-     "A member of a closed VALUE DOMAIN the FPL model defines — the actual enumerable values of a "
+     "A member of a closed VALUE DOMAIN the <SOURCE> model defines — the actual enumerable values of a "
      "categorical dimension (the body types, fuel classes, vehicle segments, platforms, brands, plan "
      "stages, …), each with its human LABEL. The subject is the MODEL's own value register, reflected as "
      "a queryable relation ({src}.meta_enum): one row per (concept, value). The set of valid values for a "
@@ -399,13 +404,13 @@ _META_CONCEPTS = {
      "label": "attribute", "member_kind": "attribute", "confidence": "attribute",
      "brand_relative": "attribute", "collides_with": "attribute"},
    "definition": (
-     "A named region or structure scheme OF THE FPL MODEL — one brand's own way of grouping countries "
-     "into a region, identified as namespace:code (e.g. vw_bereich:VE = 'Europe excl. Germany', 34 "
+     "A named region or structure scheme OF THE <SOURCE> MODEL — one brand's own way of grouping countries "
+     "into a region, identified as namespace:code (e.g. brand_a_region:VE = 'Europe excl. Germany', 34 "
      "member countries), plus the absolute cross-brand sets (standard:/political:). Each brand-relative "
      "definition is disclosed WITH its member_count and its cross-brand collisions: the SAME code means "
-     "DIFFERENT country sets across brands (vw_bereich:VE=34 vs audi_region:VE=32 — same 'VE' label, "
-     "different membership), which is exactly why the model identifies a definition by (namespace, code). "
-     "This is the model's own scheme register, reflected as a queryable relation "
+     "DIFFERENT country sets across brands (brand_a_region:VE=34 vs brand_b_region:VE=32 — same 'VE' "
+     "label, different membership), which is exactly why the model identifies a definition by "
+     "(namespace, code). This is the model's own scheme register, reflected as a queryable relation "
      "({src}.meta_region_definitions) — never the warehouse, and never authored as a literal."),
    "grain": (
      "one row per region definition (namespace × code) — the definitions across all namespaces in "
@@ -413,8 +418,8 @@ _META_CONCEPTS = {
      "recompute it by rolling up countries from a fact view. collides_with is a JSON-array string."),
    "answers": (
      "which region/structure definitions the model carries and for which brand, how many countries each "
-     "contains (member_count), and where the SAME code collides across brands (VW's Europe vs Audi's "
-     "Europe) — a question ABOUT the model's structure."),
+     "contains (member_count), and where the SAME code collides across brands (one brand's Europe vs "
+     "another brand's Europe) — a question ABOUT the model's structure."),
    "example": (
      "SELECT namespace, code, brand, member_count, collides_with\n"
      "FROM {src}.meta_region_definitions\n"
@@ -423,7 +428,7 @@ _META_CONCEPTS = {
    "never": (
      "authoring a region definition, its member_count, or a collision as a SQL string literal (the answer "
      "is READ from {src}.meta_region_definitions, never hand-written); querying a warehouse fact/dim view "
-     "(dim_fpl_lm_country, v_fpl_region_rollup, v_fpl_region_membership) for the model's region SCHEMES — "
+     "(dim_<source>_lm_country, v_<source>_region_rollup, v_<source>_region_membership) for the model's region SCHEMES — "
      "those views carry country facts and memberships, not the model's self-description of its "
      "definitions. Two-planes: this concept lives on meta_* only."),
  },
@@ -434,32 +439,34 @@ _META_CONCEPTS = {
    "roles": {
      "region_definition_used": "dimension", "namespace": "dimension", "code": "dimension",
      "member": "dimension",
-     "member_kind": "attribute", "iso2": "attribute", "fpl_brand_country_code": "attribute"},
+     "member_kind": "attribute", "iso2": "attribute", "<source>_brand_country_code": "attribute"},
    "definition": (
      "A country or market that belongs to a NAMED region or structure definition (namespace:code) of the "
-     "FPL MODEL — e.g. a country in VW's VE (Europe excl. Germany, vw_bereich:VE) or a market in Skoda's "
-     "Region 3 (skoda_structure:Region 3). This is the model's OWN membership register, reflected as a "
-     "queryable relation, never the warehouse. Membership is scoped by region_definition_used = "
-     "'namespace:code' (the collision-proof identity: vw_bereich:VE and audi_region:VE are DIFFERENT "
-     "country sets); member_kind tells how the member is expressed — 'raw_token' brand-scheme markets "
-     "(carrying fpl_brand_country_code) vs 'iso2' standard/political sets (carrying iso2). The answer is "
-     "READ from this relation, never hand-listed as a literal."),
+     "<SOURCE> MODEL — e.g. a country in one brand's VE (Europe excl. Germany, brand_a_region:VE) or a "
+     "market in another brand's Region 3 (brand_b_structure:Region 3). This is the model's OWN membership "
+     "register, reflected as a queryable relation, never the warehouse. Membership is scoped by "
+     "region_definition_used = 'namespace:code' (the collision-proof identity: brand_a_region:VE and "
+     "brand_b_region:VE are DIFFERENT country sets); member_kind tells how the member is expressed — "
+     "'raw_token' brand-scheme markets (carrying <source>_brand_country_code) vs 'iso2' "
+     "standard/political sets (carrying iso2). The answer is READ from this relation, never hand-listed "
+     "as a literal."),
    "grain": (
-     "one row per (region_definition_used × member) — the exploded membership register in "
+     "one row per (region_definition × member) — the exploded membership register in "
      "{src}.meta_region_members. 'raw_token' rows are brand-scheme markets keyed by "
-     "fpl_brand_country_code (iso2 null); 'iso2' rows are cross-brand standard/political sets keyed by "
-     "iso2 (fpl_brand_country_code null). Parent definitions live in RegionDefinition; join on "
-     "region_definition_used."),
+     "<source>_brand_country_code (iso2 null); 'iso2' rows are cross-brand standard/political sets keyed by "
+     "iso2 (<source>_brand_country_code null). Parent definitions live in RegionDefinition; join on "
+     "region_definition."),
    "answers": (
-     "which countries/markets are in a named region or structure (VW VE, Audi VE, Skoda Region 3), and — "
-     "via region_definition_used = 'namespace:code' — under WHICH brand's definition."),
-   "example": "SELECT member FROM {src}.meta_region_members WHERE region_definition_used = 'vw_bereich:VE'",
+     "which countries/markets are in a named region or structure (brand_a_region:VE, brand_b_region:VE, "
+     "brand_c_structure:Region 3), and — via region_definition_used = 'namespace:code' — under WHICH brand's "
+     "definition."),
+   "example": "SELECT member FROM {src}.meta_region_members WHERE region_definition_used = 'brand_a_region:VE'",
    "never": (
      "authoring a region's membership as a SQL string literal (the members are READ from this reflection "
-     "— never hand-enumerated in the answer, which would fabricate/omit countries and mask the VW-VE vs "
-     "Audi-VE collision); querying a warehouse fact/dim view for membership (the fact tables do not carry "
-     "the model's region definitions — a two-planes breach; RegionMember grounds only on "
-     "{src}.meta_region_members)."),
+     "— never hand-enumerated in the answer, which would fabricate/omit countries and mask the "
+     "brand_a_region:VE vs brand_b_region:VE collision); querying a warehouse fact/dim view for "
+     "membership (the fact tables do not carry the model's region definitions — a two-planes breach; "
+     "RegionMember grounds only on {src}.meta_region_members)."),
  },
  "Rule": {
    "label": "Rule (model behaviour / derived-measure law)",
@@ -475,7 +482,7 @@ _META_CONCEPTS = {
      "slot": "dimension", "policy": "dimension", "governing_rule": "attribute", "on_missing": "attribute",
      "term": "dimension", "governs": "attribute", "closed": "attribute"},
    "definition": (
-     "A Rule of the FPL model — one behavioural or derived-measure law the model enforces, identified by "
+     "A Rule of the <SOURCE> model — one behavioural or derived-measure law the model enforces, identified by "
      "its dotted rule_id (e.g. region.collision, measure.period_mandatory, plan_vs_actual_variance). It "
      "carries the rule's own when/then/never clauses, its subject line, its KIND (from the closed rule-"
      "kind vocabulary — resolution / aggregation / default / ambiguity / exclusion / guarantee), its "
@@ -490,7 +497,7 @@ _META_CONCEPTS = {
      "back on rule_id); {src}.meta_rule_kinds one row per kind term (joined on term = kind_term). All "
      "columns are VARCHAR text reflected from the ontology source."),
    "answers": (
-     "What rules the FPL model enforces and what a rule SAYS (its when/then/never/subject); what KIND a "
+     "What rules the <SOURCE> model enforces and what a rule SAYS (its when/then/never/subject); what KIND a "
      "rule is and the closed kind vocabulary; the concepts and columns a rule BINDS or derives OVER; and "
      "the ASK / COMMIT / REFUSE decision policy — e.g. 'how is planning accuracy / plan-vs-actual "
      "variance defined?', 'which rules govern Order Book?', 'which axes MUST be asked for (no default)?'."),
@@ -523,9 +530,9 @@ _META_CONCEPTS = {
      "ordinal": "attribute", "left_relation": "attribute", "left_column": "attribute",
      "right_relation": "attribute", "right_column": "attribute"},
    "definition": (
-     "An Edge is a DECLARED relationship between two concepts of the FPL model — the join that lets one "
+     "An Edge is a DECLARED relationship between two concepts of the <SOURCE> model — the join that lets one "
      "concept be read alongside another (e.g. Measurement —N:1→ Country, joined on "
-     "fpl_brand_country_code). Each edge names its from_concept / to_concept, its type (foreign_key, "
+     "<source>_brand_country_code). Each edge names its from_concept / to_concept, its type (foreign_key, "
      "shared_attribute), cardinality (N:1, N:N), and level (physical, business), and carries the join "
      "predicate; a multi-hop join decomposes into ORDERED join clauses. This is the model's OWN "
      "relationship graph — the same edges authored in edges.yaml — reflected as a queryable relation, "
@@ -559,7 +566,7 @@ _META_CONCEPTS = {
      "source": "dimension", "input_path": "dimension",
      "input_sha256": "attribute", "mac_version": "attribute", "schema_version": "attribute"},
    "definition": (
-     "A single ontology INPUT byte-source of the FPL model — a concept file or register CSV — together "
+     "A single ontology INPUT byte-source of the <SOURCE> model — a concept file or register CSV — together "
      "with the sha256 of its bytes and the mac/schema version that produced this reflection. Provenance "
      "is the model's own FRESHNESS/DRIFT ledger: it records WHICH bytes were reflected into the meaning "
      "plane, so a reader can tell whether the meta_* views are current with the ontology sources or a "
@@ -635,7 +642,7 @@ def _meta_str_representer(dumper, data):
     return dumper.represent_scalar("tag:yaml.org,2002:str", data, style=style)
 
 
-def emit_meta_concepts_from_tables(tables: dict, source: str = "fpl") -> dict:
+def emit_meta_concepts_from_tables(tables: dict, source: str = "<source>") -> dict:
     """{ConceptName: yaml_text} for the 7 meaning-plane concepts, from a `reflect()` tables dict.
     Columns AUTO-derived from `tables`; semantics FIXED in _META_CONCEPTS; `source` a parameter."""
     import yaml
@@ -662,7 +669,7 @@ def emit_meta_concepts_from_tables(tables: dict, source: str = "fpl") -> dict:
     return out
 
 
-def emit_meta_concepts(introspection: dict, source: str = "fpl") -> dict:
+def emit_meta_concepts(introspection: dict, source: str = "<source>") -> dict:
     """{ConceptName: yaml_text} for the 7 meaning-plane concepts, from a model.introspection.json dict.
     Reflects the introspection into meta_* tables, then emits — columns can never drift from the tables.
     GENERIC: `source` is a parameter; no source literal appears in the logic (invariant #4)."""

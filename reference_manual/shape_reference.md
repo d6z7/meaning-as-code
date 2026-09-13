@@ -538,7 +538,7 @@ governance:  # Housekeeping
 *discriminator key:* `?:` · *required:* `planes`
 
 ```yaml
-spec_version: <…>  # string · Absent on bundles predating the container spec (cap-ontology-fpl);…
+spec_version: <…>  # string · Absent on bundles predating the container spec; required going forward.
 
 metadata:
   project: <…>  # REQUIRED · string

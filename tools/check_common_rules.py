@@ -9,7 +9,7 @@ selector rather than a source name. It is not a new construct. A concept matchin
 a common rule's `scope` gets that behaviour whether or not it writes anything. So a concept that
 writes the rule out again is not adding a contract — it is adding a COPY of one, and copies drift.
 
-MEASURED on gaps/fpl2: thirteen concepts each wrote the same refusal law. 13 distinct `when` wordings,
+MEASURED on <domain>/<dataset>: thirteen concepts each wrote the same refusal law. 13 distinct `when` wordings,
 13 `then`, 12 `never`. Three of the thirteen carried NO information beyond the concept's own name, and
 one (`market`) ended up with a bare `then` promising an answer it could not produce. None of that was
 visible to any gate, because every copy was individually well-formed.
@@ -46,9 +46,10 @@ WHAT COUNTS AS THE SAME RULE NOW — positive evidence only, in two tiers:
      of semantic elements (REFUSE · no-guess · no-zero-fill · substitution ban · null branch · via a
      register), that set carrying at least TWO of them.
        · EQUALITY, not overlap. A local rule carrying an element the common rule lacks is an OVERRIDE
-         (ob_reach's refusal has a second branch — a resolved row whose null IS the answer — that the
-         generic law does not mention), and an override is the point of allowing local rules at all. A
-         local rule carrying FEWER elements is saying something narrower, and narrower is not a copy.
+         (a reach measure's refusal has a second branch — a resolved row whose null IS the answer —
+         that the generic law does not mention), and an override is the point of allowing local rules
+         at all. A local rule carrying FEWER elements is saying something narrower, and narrower is
+         not a copy.
        · TWO, not one. MEASURED on a second bundle while fixing this: a rule about an unresolved-name
          FLAG matched the catalogued-member law on the single element `null branch`, because both are
          guarantees and both contain the word "null". One element in common is a shared word, not a

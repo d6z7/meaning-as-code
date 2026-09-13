@@ -7,11 +7,11 @@ Structure and cardinality are already checked: `binds` resolves to real columns
 (rule-binds-grounded), pinned literals occur in the register they cite (MAC007), a shape written on
 many concepts is reported (COOKBOOK C6). None of that can see whether a rule makes SENSE.
 
-Measured case, gaps/fpl2. `order_intake.resolve.kpi_code` carried
-"never confusing Order Intake with ... DtC (deliveries, not placements)". Structurally perfect.
-Semantically vacuous: an order PLACED and a car DELIVERED are opposite ends of one lifecycle, and
-nobody confuses them. It was machine-written (`provenance: harvested`) and self-stamped
-`confidence: C`. Four of seven kpi_code rules warned against confusing something with deliveries —
+Measured case, <domain>/<dataset>. `order_intake.resolve.kpi_code` carried
+"never confusing Order Intake with ... the delivery measure (deliveries, not placements)".
+Structurally perfect. Semantically vacuous: an order PLACED and a unit DELIVERED are opposite ends of
+one lifecycle, and nobody confuses them. It was machine-written (`provenance: harvested`) and
+self-stamped `confidence: C`. Four of seven kpi_code rules warned against confusing something with deliveries —
 a template reaching for a foil, not knowledge.
 
 WHAT MAKES A REFERENCE LEGITIMATE
@@ -23,20 +23,21 @@ ontology can show:
     THE SAME UNIT                               they measure the same kind of thing, so comparing,
                                                 differencing or confusing them is meaningful
     a SHARED SURFACE TERM                       they answer to the same word (the residue the unit
-                                                cannot settle — IstProd and DtC are both `vehicles`
-                                                and still not confusable)
+                                                cannot settle — a production measure and a delivery
+                                                measure are both `units` and still not confusable)
 
-CO-GROUNDING IS NOT A BASIS, and this is the whole trick. 14 of fpl2's 22 concepts ground on
-`v_fpl_kpi`; counting a shared fact table as a relationship makes every pair of measures look related
+CO-GROUNDING IS NOT A BASIS, and this is the whole trick. 14 of <dataset>'s 22 concepts ground on
+`v_<source>_kpi`; counting a shared fact table as a relationship makes every pair of measures look related
 and hides exactly the case this check exists to find. An earlier cut did count it, and duly missed
-the DtC reference that prompted the check.
+the delivery-measure reference that prompted the check.
 
 WHAT IT WOULD FALSELY FIRE ON, and the legitimate case that must not fire
 ------------------------------------------------------------------------
 * A REAL relationship that the edge layer has not modelled yet. LEGITIMATE and common — the first run
-  found OBReach -> OrderBook (reach IS a property of the order book) and DtC -> TotalMarket (market
-  share is their ratio), neither with an edge. These are findings about the EDGE layer, not about the
-  rule, and the diagnostic says so: add the edge, or drop the reference.
+  found a reach measure -> the order book it measures (reach IS a property of the order book) and a
+  delivery measure -> total market (market share is their ratio), neither with an edge. These are
+  findings about the EDGE layer, not about the rule, and the diagnostic says so: add the edge, or
+  drop the reference.
 * A concept name appearing as an ordinary English word. Guarded by requiring a word-boundary match on
   the concept NAME or its LABEL, not on fragments.
 """
@@ -55,7 +56,7 @@ _STOP = {"the", "and", "for", "with", "per", "not", "its"}
 
 def _unit(concept: dict) -> str:
     """The measure's declared unit, normalised. THE PRIMARY BASIS — and it was sitting in
-    `semantics.unit` on all 9 fpl2 measures while the first cut of this check scraped German nouns
+    `semantics.unit` on all 9 <dataset> measures while the first cut of this check scraped German nouns
     out of prose to guess the same thing, badly. MAC declared it; nothing read it."""
     u = ((concept.get("semantics") or {}).get("unit") or "")
     return re.sub(r"[^a-z0-9]", "", str(u).lower())
@@ -81,7 +82,7 @@ def _surface_terms(concept: dict, doc: dict) -> set:
     only as a fallback — the capitalised German nouns its own prose uses.
 
     The prose scrape was written with the note "deliberately shallow — until `concept.aliases` exists
-    these are scattered". They exist now: gaps/fpl2 declares 38 surfaces across 7 measures, sourced
+    these are scattered". They exist now: <domain>/<dataset> declares 38 surfaces across 7 measures, sourced
     from the gold ontology's SME-ratified map. A declared surface is evidence; a scraped one is a
     guess that happened to work, and the scrape is kept only for concepts that declare none."""
     out = _declared_aliases(doc) | {str(concept.get("name") or ""), str(concept.get("label") or ""),
@@ -120,9 +121,9 @@ def _prose(rule) -> str:
 def _column_like(tok: str) -> bool:
     """A token distinguishable from an English word: it carries an underscore or a digit.
 
-    CALIBRATED, not guessed. On gaps/fpl2 (29 rules, 70 grounded columns): intersecting prose with the
+    CALIBRATED, not guessed. On <domain>/<dataset> (29 rules, 70 grounded columns): intersecting prose with the
     grounded column set alone flags 17 rules, of which 7 are false — `value` in "an empty result framed
-    as a real zero ... substituting another measure's value" is the English word, not v_fpl_kpi.value,
+    as a real zero ... substituting another measure's value" is the English word, not v_<source>_kpi.value,
     and `region` reads the same way. Requiring an underscore drops to 9, all genuine, but loses `iso2`
     in market.resolve.by_code_not_label ("resolve name_en/name_de/iso2 -> market_code"), which is real.
     Underscore-OR-digit keeps that one and none of the false ones.
@@ -177,7 +178,7 @@ _RULE_ID = __import__("re").compile(
 def _dangling_rule_ids(root, concepts: dict) -> list:
     """A concept's prose cites a sibling rule by id; the rule is later deleted; the citation stays.
 
-    MEASURED on gaps/fpl2, 2026-08-19: TWELVE dangling citations across twelve files, accumulated over
+    MEASURED on <domain>/<dataset>, 2026-08-19: TWELVE dangling citations across twelve files, accumulated over
     several sessions of consolidation — resolve.period_sum, resolve.stock_period, resolve.target_period,
     guarantee.unspecified_is_real. Every one of those deletions was correct and protocolled; the
     citations pointing at them were simply never swept, and no gate looked. A no_probe_guarantee that
@@ -215,12 +216,12 @@ def _dangling_rule_ids(root, concepts: dict) -> list:
 def _binds_conformance(concepts: dict) -> list:
     """Three ways a rule's references can be wrong, none of which anything checked before.
 
-    MEASURED on gaps/fpl2 2026-08-19, all three live: 9 of 29 rules named a grounded column in prose
-    that `binds:` omitted; and a relation invented inside rule prose (fpl2.dim_country_TOTAL_FICTION,
+    MEASURED on <domain>/<dataset> 2026-08-19, all three live: 9 of 29 rules named a grounded column in prose
+    that `binds:` omitted; and a relation invented inside rule prose (<dataset>.dim_country_TOTAL_FICTION,
     injected as a probe) passed all eleven compile phases clean.
 
     WHY THIS RATHER THAN TEMPLATED PROSE. The operator asked whether rule prose should mark its
-    identifiers in a jinja form — {{market_code}}, {{fpl2.dim_country_register}}. It should not: `binds:`
+    identifiers in a jinja form — {{market_code}}, {{<dataset>.dim_country_register}}. It should not: `binds:`
     IS that declaration, sitting six lines above the sentence, and templating the prose would give one
     fact two homes that can disagree. What was missing was never the notation; it was anything checking
     that the two agree. Where a reference should genuinely be DEREFERENCED rather than marked, MAC
@@ -278,7 +279,7 @@ def _binds_conformance(concepts: dict) -> list:
                  "a rule's prose is a REFERENCE and must be written `{name}` — backtick-quoted, "
                  "brace-enclosed. Bare, it is indistinguishable from an English word, so nothing can "
                  "resolve it, rename it, or check it against `binds:`. MEASURED: an invented relation "
-                 "(fpl2.dim_country_TOTAL_FICTION) sat in rule prose through all eleven compile phases "
+                 "(<dataset>.dim_country_TOTAL_FICTION) sat in rule prose through all eleven compile phases "
                  "before this existed.", witnesses=unmarked))
     if unresolved:
         out.append(D.Diagnostic(
@@ -391,8 +392,8 @@ def check_rule_reference_basis(root) -> list:
         note="Each names another concept with no edge between them and no shared surface term. Two "
              "dispositions, and the ontology cannot tell them apart: the relationship is REAL and the "
              "edge layer is missing it (add the edge), or the reference is a machine-written foil "
-             "(delete it). Co-grounding is deliberately NOT accepted as a basis — 14 fpl2 concepts "
-             "share v_fpl_kpi, which would make every pair look related.",
+             "(delete it). Co-grounding is deliberately NOT accepted as a basis — 14 <dataset> concepts "
+             "share v_<source>_kpi, which would make every pair look related.",
         witnesses=unbased)]
 
 
