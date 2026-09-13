@@ -10,14 +10,14 @@ moves. It answers *does this column split anything*.
 
 DEPENDENCE (functional): is this column determined by some other column? It answers *why not*.
 
-Running only the first is what produced today's near-miss. `brand_letter` splits NOTHING — 5 columns
-and 7 columns give the identical 12.345.252 groups — so a discrimination-only profiler drops it,
-measurably justified and semantically wrong. The dependence probe says why: it is determined TWICE
-over, by two different kinds of fact.
+Running only the first is what produced today's near-miss. A one-letter brand code (`brand_code`)
+splits NOTHING — 5 columns and 7 columns give the identical 12.345.252 groups — so a
+discrimination-only profiler drops it, measurably justified and semantically wrong. The dependence
+probe says why: it is determined TWICE over, by two different kinds of fact.
 
 MEASURED 2026-08-20 on v_<source>_kpi, and it corrected the guess this file was first written around.
-`brand_letter` is determined by `<source>_model_code_id` ALONE. It is NOT determined by `role` — Group
-spans nine letters — and, against the standing assumption, NOT by `market` either, so the "578 market
+`brand_code` is determined by `<source>_model_code_id` ALONE. It is NOT determined by `role` — Group
+spans nine codes — and, against the standing assumption, NOT by `market` either, so the "578 market
 codes each belong to exactly one brand" convention DOES NOT HOLD as a functional dependency in this
 relation. The distinction the probe exists to draw is still the right one:
 
@@ -143,7 +143,7 @@ def dependence_sql(relation: str, determinants: list[str], dependents: list[str]
     """Which columns FUNCTIONALLY DETERMINE which. One grouped pass per determinant, unioned.
 
     a -> b holds when no single value of `a` ever carries two different values of `b`. This is the
-    probe no group count can stand in for, and the reason it exists is a near-miss: `brand_letter`
+    probe no group count can stand in for, and the reason it exists is a near-miss: `brand_code`
     splits nothing, so discrimination alone drops it. Dependence says WHY — determined by `role` for
     the five brand perspectives (a LAW), and separately by the market code because 578 codes each
     belong to one brand (a CONVENTION). Redundant-by-convention must stay in a key; redundant-by-law
@@ -223,9 +223,9 @@ def main() -> int:
 
     # ── GROW A MINIMAL KEY FIRST ───────────────────────────────────────────────────────────────
     # Leave-one-out over ALL candidate columns is useless and the first run proved it: with
-    # config_key and fpl_created_at in the basis every row is already unique, so omitting any single
-    # column changes nothing and all 19 report DEAD. The basis must be a MINIMAL key, grown, not the
-    # full column list.
+    # config_key and <source>_created_at in the basis every row is already unique, so omitting any
+    # single column changes nothing and all 19 report DEAD. The basis must be a MINIMAL key, grown,
+    # not the full column list.
     drop = {x.strip() for x in a.exclude.split(",") if x.strip()}
     if drop:
         basis = [c for c in basis if c not in drop]

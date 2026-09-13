@@ -178,9 +178,27 @@ def main() -> int:
         # the tokens they forbid -- the same division-of-labour constraint that shaped
         # tools/check_generic.py in the kit. So the criterion is ZERO NEW findings above a declared,
         # measured floor, which is the instrument this estate already uses elsewhere.
+        # THE WITNESSES TRAVEL WITH THE VERDICT. This branch used to print the COUNT alone, so every
+        # finding under the floor was invisible from the command people actually run -- the debt the
+        # floor exists to make visible was the one thing the gate hid. A reader had to import scan()
+        # to see what was still leaking.
+        if hits:
+            print(f"  {len(hits)} finding(s) under the floor — still to scrub:", file=sys.stderr)
+            for rel, lineno, label, line in hits:
+                print(f"    {rel}:{lineno}: [{label}] {line}", file=sys.stderr)
+        # A FLOOR THAT SITS ABOVE THE MEASUREMENT IS NOT A RATCHET. It permits every finding between
+        # the count and the floor to be re-introduced silently, which is exactly the headroom a
+        # ratchet exists to remove. The file's own rule is "lower it, never raise it"; this makes
+        # failing to lower it visible instead of comfortable.
+        slack = (floor - len(hits)) if floor is not None else 0
+        if slack > 0:
+            print(f"  [RATCHET] the floor is {floor} but only {len(hits)} finding(s) remain — "
+                  f"{slack} finding(s) of slack. Lower {FLOOR_FILE.name} to {len(hits)}.",
+                  file=sys.stderr)
         print(f"PASS: check_mac_public — {len(hits)} leak(s) over {examined} tracked file(s) "
               f"examined, at or below the declared floor of {floor} "
-              f"({FLOOR_FILE.name} — lower it, never raise it)")
+              f"({FLOOR_FILE.name} — lower it, never raise it)"
+              + (f"  [{slack} of slack]" if slack > 0 else ""))
         return 0
     over = f", {len(hits) - floor} ABOVE the declared floor of {floor}" if floor is not None else ""
     print(f"check_mac_public: {len(hits)} leak(s){over} — the public repo must carry NO "

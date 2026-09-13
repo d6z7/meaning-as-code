@@ -29,9 +29,10 @@ WHY ``rules`` IS A FOURTH FLAG AND NOT A WIDENING OF ``pins``
 
     THE HONEST LIMIT, STATED UP FRONT: a never-clause is PROSE. Of the 83 clauses in the reference
     ontology, 9 reduce to a structural claim this module can decide against ``sqlfacts`` roles and
-    74 do not ("confusing DtC with Total Market", "inventing a model code"). Those 74 are reported
-    as ``unchecked`` WITH the clause verbatim and the reason it could not be evaluated. They are
-    never guessed at, never counted as covered, and no ``pass`` claims them.
+    74 do not ("confusing a delivery measure with a market-total measure", "inventing a model
+    code"). Those 74 are reported as ``unchecked`` WITH the clause verbatim and the reason it
+    could not be evaluated. They are never guessed at, never counted as covered, and no ``pass``
+    claims them.
 
 THE VOCABULARIES BELOW ARE A FROZEN CROSS-WORKSTREAM CONTRACT
     ``sdk/project/questions.py`` copies them into ``questions_dashboard.json`` (schema

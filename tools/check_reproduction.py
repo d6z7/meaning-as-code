@@ -23,9 +23,9 @@ claims move into `mac.project.yaml#reproduction` as DATA, and this check evaluat
 WHAT IT WOULD FALSELY FIRE ON, and the legitimate case that must not fire
 ------------------------------------------------------------------------
 * `produces` globs matching nothing. A freshly scaffolded bundle has run no stage, so every glob is
-  empty and every stage would look broken. LEGITIMATE CASE: fpl3 on day one. Hence a stage is only
-  reported when SOME of its globs match and others do not — a partially-run stage is a real finding,
-  an unrun one is not. Severity is warning, never error.
+  empty and every stage would look broken. LEGITIMATE CASE: the next `<dataset>` on day one. Hence a
+  stage is only reported when SOME of its globs match and others do not — a partially-run stage is a
+  real finding, an unrun one is not. Severity is warning, never error.
 * `enforced_by` on provenance. A concept HARVESTED and then reworked by hand may legitimately keep
   `provenance: harvested` as its origin stamp. LEGITIMATE CASE: none in <dataset> that can be
   distinguished from a violation — and that is precisely the finding. The diagnostic therefore states

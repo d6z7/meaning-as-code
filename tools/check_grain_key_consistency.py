@@ -21,10 +21,10 @@ that one relation, so hoisting it onto the ontology object would make eight copi
 drift, restated. The gap is that a test's SQL is a static string and cannot dereference anything. So
 the key stays single-homed and the CONSUMERS get compared to it.
 
-AND A SINGLE SOURCE IS ONLY AS GOOD AS THE FACT IN IT: measured 2026-08-19, `brand_letter` and
-`fpl_plan_level` add ZERO discrimination to v_<source>_kpi's declared seven — grouping by five yields the
-identical 12.345.147 groups. Propagating a key perfectly would have propagated two dead columns with
-more confidence, which is why the key itself now carries a property (P-GRAIN-01).
+AND A SINGLE SOURCE IS ONLY AS GOOD AS THE FACT IN IT: measured 2026-08-19, `brand_code` and
+`<source>_plan_level` add ZERO discrimination to v_<source>_kpi's declared seven — grouping by five
+yields the identical 12.345.147 groups. Propagating a key perfectly would have propagated two dead
+columns with more confidence, which is why the key itself now carries a property (P-GRAIN-01).
 
 SEVERITY IS ASYMMETRIC, on purpose:
   ERROR   a consumer's key is a strict SUBSET of the declared one — it collapses rows that are

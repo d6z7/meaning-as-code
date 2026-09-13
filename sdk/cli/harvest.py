@@ -840,10 +840,10 @@ def _concept_stem(name: str) -> str:
     """PascalCase notion name -> snake_case file stem. The file is named after the NOTION; naming it
     after a dataset was the third place 1:1 was enforced (prompt, loop, filename)."""
     raw = str(name).strip().replace(" ", "")
-    # split at lower->UPPER and at the end of an ACRONYM RUN (OBReach -> OB|Reach), never inside one
+    # split at lower->UPPER and at the end of an ACRONYM RUN (KPIValue -> KPI|Value), never inside one
     s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", raw).lower()
     words = [w for w in re.sub(r"[^a-z0-9_]+", "_", s).split("_") if w]
-    # a one-letter word is the tail of an acronym the split broke (DtC -> dt|c) — glue it back
+    # a one-letter word is the tail of an acronym the split broke (PoC -> po|c) — glue it back
     out = []
     for w in words:
         if len(w) == 1 and out:

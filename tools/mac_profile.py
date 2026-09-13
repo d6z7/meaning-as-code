@@ -45,17 +45,17 @@ TOOL = "mac_profile.py/5"
 # and enumerating 578 market codes is cheap insurance against a brand-scoped scheme changing.
 BOUNDED_MAX = 600
 
-# A column whose value is itself a collection. dim_model carries seven — brand, powertrains,
-# body_styles and so on are array(string). CAST(array AS varchar) is a type error in Trino, and the
-# first sweep failed on exactly that. They are still profiled: the count of distinct ARRAYS and the
-# nulls are real facts. Only the value-set capture needs the array flattened to text first.
+# A column whose value is itself a collection. One real dimension table carries seven — its
+# product-category attributes are array(string). CAST(array AS varchar) is a type error in Trino,
+# and the first sweep failed on exactly that. They are still profiled: the count of distinct ARRAYS
+# and the nulls are real facts. Only the value-set capture needs the array flattened to text first.
 COMPLEX = ("array", "map", "row", "struct")
 
 
 # BOUNDED IS NOT THE SAME AS ENUMERABLE, and the first sweep conflated them. Under 600 distinct
-# values it captured the full domain of `fpl_date` (348 dates), `fpl_created_at` (310 load stamps)
-# and `config_key` (392 concatenated surrogates) — 56,6 % of all captured domain bytes, inlined into
-# every request, telling an engine nothing it could act on. Those columns are bounded only
+# values it captured the full domain of `<source>_date` (348 dates), `<source>_created_at` (310 load
+# stamps) and `config_key` (392 concatenated surrogates) — 56,6 % of all captured domain bytes,
+# inlined into every request, telling an engine nothing it could act on. Those columns are bounded only
 # ACCIDENTALLY, because this data happens to hold few values; none of them is a category a question
 # ever names. The domain is worth keeping when someone would FILTER by naming one of its members.
 def _enumerable(c: dict, cols: list[dict], excluded: set[str]) -> bool:

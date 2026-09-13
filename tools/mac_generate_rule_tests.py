@@ -103,10 +103,10 @@ def refusal_question(concept, rule, p) -> dict:
         "exercises": [rule["id"]],
         # NO RATIONALE IS WRITTEN HERE. The first version hardcoded one sentence — "Bentley
         # publishes no IstProd and no Prodant" — into all five questions, where it was FALSE for
-        # three of them: every brand publishes dtc and order_intake. A generated claim that is not
-        # generated FROM a measurement is exactly the defect this bundle spent 2026-08-20 removing,
-        # and it took an hour to reintroduce. The rationale is filled by measuring per rule; until
-        # then it says so.
+        # three of them: every brand publishes a delivery measure and order_intake. A generated
+        # claim that is not generated FROM a measurement is exactly the defect this bundle spent
+        # 2026-08-20 removing, and it took an hour to reintroduce. The rationale is filled by
+        # measuring per rule; until then it says so.
         "rationale": (
             "PENDING MEASUREMENT — this question needs the empty case for ITS OWN measure, found by "
             "asking the warehouse which scopes publish no row. Do not write a general sentence here: "

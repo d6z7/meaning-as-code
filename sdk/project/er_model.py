@@ -16,7 +16,7 @@ All of that is already authored and was simply never projected:
     ``join_rule`` naming the columns: ``v_acme_kpi.acme_brand_country_code_id = dim_brand_country_code.…``
 
 So the crow's feet are not decoration and not inferred — they are the authored cardinality, rendered.
-If a diagram shows "many DtC to one Market", that claim is `dtc__of_market` in edges.yaml, and it is
+If a diagram shows "many KPI rows to one Market", that claim is `kpi__of_market` in edges.yaml, and
 challengeable in the same place every other claim in this ontology is.
 
 RESOLUTION. The join_rule names TABLES, so it identifies the entity pair directly — more reliable than
@@ -270,7 +270,7 @@ def build(datasets: dict, concepts: dict, ont_edges: list, ds_relation: dict | N
         r["realized_by"].sort(key=lambda x: x["edge_id"] or "")
         # The synthetic id MUST be derived from the merge key, not from the entity pair alone: two
         # different joins can connect the same two tables (v_acme_kpi -> dim_brand_country_code on
-        # acme_brand_country_code_id AND on brand_letter_id). Keying on the pair gave them the SAME id,
+        # acme_brand_country_code_id AND on brand_code_id). Keying on the pair gave them the SAME id,
         # and a renderer that identifies edges by id then cannot tell them apart — one of them silently
         # stopped responding to selection.
         lvl, fe, fc, te, tc = k

@@ -20,7 +20,8 @@ So this checks MEANING: every semantic element the author wrote must survive in 
 
 BOTH DIRECTIONS. The prose losing an element the canon renders is drift (the twin stopped saying what
 governs it); the prose carrying one the canon cannot render is a missing parameter. The first cut
-checked only the second, and a probe that stripped a confusable out of dtc's `never` passed clean.
+checked only the second, and a probe that stripped a confusable out of a delivery measure's `never`
+passed clean.
 
 Measured on the same 13: string fit 0,88, meaning preserved 13/13. That gap is the whole argument.
 
@@ -43,8 +44,8 @@ import mac_diag as D
 import mac_project as P
 
 # Each probe is a SET of spellings for one semantic element. A single literal was too narrow and
-# produced a false positive on the first real run: ob_reach writes "substituting 0 for a null
-# ob_reach" where the canon renders "coercing ... to 0" — same ban, and `zero` matched neither.
+# produced a false positive on the first real run: a reach measure writes "substituting 0 for a
+# null reach" where the canon renders "coercing ... to 0" — same ban, and `zero` matched neither.
 _PROBES = [("REFUSE", ("refuse",)),
            ("no-guess", ("guess", "estimat")),
            ("no-zero-fill", ("zero", " 0 ", "to 0", "coerc")),
@@ -146,10 +147,10 @@ def check_canon_binding(root) -> list:
                 continue
             # SYMMETRIC, and it took a failed probe to notice. The first cut only asked "does the
             # render lose something the author wrote", which misses the direction that matters more:
-            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution ban
-            # out of dtc's `never` passed cleanly, because the element was then absent from BOTH
-            # sides. A one-directional check on a two-directional relationship reports the half it
-            # was built to see.
+            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution
+            # ban out of a delivery measure's `never` passed cleanly, because the element was then
+            # absent from BOTH sides. A one-directional check on a two-directional relationship
+            # reports the half it was built to see.
             miss = [f"render lacks {label}" for label, sp in _PROBES
                     if _has(authored, sp) and not _has(rendered, sp)]
             miss += [f"prose lacks {label}" for label, sp in _PROBES

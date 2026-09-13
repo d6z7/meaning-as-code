@@ -8,10 +8,10 @@ Structure and cardinality are already checked: `binds` resolves to real columns
 many concepts is reported (COOKBOOK C6). None of that can see whether a rule makes SENSE.
 
 Measured case, <domain>/<dataset>. `order_intake.resolve.kpi_code` carried
-"never confusing Order Intake with ... DtC (deliveries, not placements)". Structurally perfect.
-Semantically vacuous: an order PLACED and a car DELIVERED are opposite ends of one lifecycle, and
-nobody confuses them. It was machine-written (`provenance: harvested`) and self-stamped
-`confidence: C`. Four of seven kpi_code rules warned against confusing something with deliveries —
+"never confusing Order Intake with ... the delivery measure (deliveries, not placements)".
+Structurally perfect. Semantically vacuous: an order PLACED and a unit DELIVERED are opposite ends of
+one lifecycle, and nobody confuses them. It was machine-written (`provenance: harvested`) and
+self-stamped `confidence: C`. Four of seven kpi_code rules warned against confusing something with deliveries —
 a template reaching for a foil, not knowledge.
 
 WHAT MAKES A REFERENCE LEGITIMATE
@@ -23,20 +23,21 @@ ontology can show:
     THE SAME UNIT                               they measure the same kind of thing, so comparing,
                                                 differencing or confusing them is meaningful
     a SHARED SURFACE TERM                       they answer to the same word (the residue the unit
-                                                cannot settle — IstProd and DtC are both `vehicles`
-                                                and still not confusable)
+                                                cannot settle — a production measure and a delivery
+                                                measure are both `units` and still not confusable)
 
 CO-GROUNDING IS NOT A BASIS, and this is the whole trick. 14 of <dataset>'s 22 concepts ground on
 `v_<source>_kpi`; counting a shared fact table as a relationship makes every pair of measures look related
 and hides exactly the case this check exists to find. An earlier cut did count it, and duly missed
-the DtC reference that prompted the check.
+the delivery-measure reference that prompted the check.
 
 WHAT IT WOULD FALSELY FIRE ON, and the legitimate case that must not fire
 ------------------------------------------------------------------------
 * A REAL relationship that the edge layer has not modelled yet. LEGITIMATE and common — the first run
-  found OBReach -> OrderBook (reach IS a property of the order book) and DtC -> TotalMarket (market
-  share is their ratio), neither with an edge. These are findings about the EDGE layer, not about the
-  rule, and the diagnostic says so: add the edge, or drop the reference.
+  found a reach measure -> the order book it measures (reach IS a property of the order book) and a
+  delivery measure -> total market (market share is their ratio), neither with an edge. These are
+  findings about the EDGE layer, not about the rule, and the diagnostic says so: add the edge, or
+  drop the reference.
 * A concept name appearing as an ordinary English word. Guarded by requiring a word-boundary match on
   the concept NAME or its LABEL, not on fragments.
 """

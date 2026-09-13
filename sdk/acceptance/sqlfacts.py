@@ -13,7 +13,7 @@ WHY A FACT SHEET AND NOT A CHECKER
     to be argued in ``flags.py``, where the rollup rules are written down.
 
 NO BUNDLE LITERALS, EVER
-    Not one column name, relation name, brand letter or question id appears in the CODE below. The
+    Not one column name, relation name, brand code or question id appears in the CODE below. The
     vocabulary of what to look for arrives at runtime from the bundle's own oracles
     (``expected.must_pin``). A framework that knows one source's column names is not a framework.
     Where the prose here cites a measured count or a file from one bundle, that is historical

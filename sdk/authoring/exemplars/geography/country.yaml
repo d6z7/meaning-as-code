@@ -1,7 +1,7 @@
 # ACME > geography > Country  (homogenized clean-state)
 #
 # TO-BE country concept. The raw model stores country as an EAV (dim_acme_lm_country: one row
-# per (country × attribute) — acme_country_code, acme_brand_letter, attribute, value, acme_country)
+# per (country × attribute) — acme_country_code, acme_brand_code, attribute, value, acme_country)
 # AND identifies a country by a sales-PERSPECTIVE label (market='INLAND', not 'DEUTSCHLAND').
 # The serving dim_country view (data/transforms/dim_country.sql) FLATTENS the EAV to columns and exposes
 # a STABLE ISO key (iso2/iso3) so the consumer resolves a country by ISO, never by a name literal.
@@ -44,7 +44,7 @@ grounding:
   sources:
     - relation: acme.dim_country
       key: acme_brand_country_code
-      columns: [acme_brand_country_code, brand_letter, iso2, iso3, market, country_name_de]
+      columns: [acme_brand_country_code, brand_code, iso2, iso3, market, country_name_de]
   # v0.1.7 whitelist: the columns carrying ontology meaning + their analytical role (acme.* vocab,
   # model/_shared/vocabulary.yaml). 'attribute' ⇒ display-only/never-filter; the behavioural specifics
   # (iso2 IS the identity, market is NOT) stay as the typed contract.rules below.
@@ -52,14 +52,14 @@ grounding:
     acme_brand_country_code: acme.field_role.key
     iso2:                   acme.field_role.key
     iso3:                   acme.field_role.key
-    brand_letter:           acme.field_role.dimension
+    brand_code:             acme.field_role.dimension
     market:                 acme.field_role.dimension
     country_name_de:        acme.field_role.attribute
   grain: >
     ONE ROW PER (acme_brand_country_code). The view PIVOTs the EAV (max(CASE WHEN attribute=… )) to
     one flat row per cluster-scoped country key, so every attribute below is a plain column.
   # NOTE: column metadata is single-homed in the Physical layer (tables/dim_country.yaml):
-  #   acme_brand_country_code (key) · brand_letter (single-char cluster, do not substr) ·
+  #   acme_brand_country_code (key) · brand_code (single-char cluster, do not substr) ·
   #   iso2 (key, country identity) · iso3 (key) · market (perspective label, not identity,
   #   Germany ≠ 'DEUTSCHLAND') · country_name_de (display only, never a filter key).
   #   No region column — region is a derived, named additive rollup (see geography/region.yaml).
@@ -154,7 +154,7 @@ contract:
       never: "rendering the null-iso2 rows as a BLANK / NULL market cell (an unlabeled row that reads as a data
               error); silently DROPPING them with WHERE iso2 IS NOT NULL (that undercounts the measure — the
               clusters carry real value); or GROUP BY acme_brand_country_code to dodge the null — it is a
-              brand-scoped '<brand_letter>_<MARKET>' composite (brand_country_code.yaml) that fans one country
+              brand-scoped '<brand_code>_<MARKET>' composite (brand_country_code.yaml) that fans one country
               into per-brand-cluster rows and MISALIGNS a cross-brand comparison; aggregating the conditional
               SUM on the raw acme_brand_country_code (or ANY brand-scoped fact key) in an inner scope and
               resolving iso2 only in an OUTER projection — the two brands' keys (V_DE vs C_DE) never share a

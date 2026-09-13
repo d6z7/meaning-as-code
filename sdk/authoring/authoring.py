@@ -145,7 +145,7 @@ A concept is a business notion, NOT a table. The mapping is M:N:
 - one relation may serve SEVERAL notions;
 - a pure mapping/bridge table backs NO notion — it dissolves into a rule or an edge;
 - A NOTION OFTEN HAS NO TABLE OF ITS OWN. This is the most commonly MISSED case, so work it deliberately: for every FACT relation, walk its columns and ask of each dimension/discriminator column whether it names a thing the business talks about. If it does, that is a NOTION, and it grounds on the fact relation that carries the column.
-  Worked example of the shape: a fact relation with columns `role`, `plan_level`, `brand_letter`, `country_code` carries FOUR notions — a Perspective (which view of the world the row is stated from), a PlanStage (how firm the number is), a Brand and a Country — none of which has a table. A register in the VALUE REGISTERS section naming that column's members is strong evidence the notion exists.
+  Worked example of the shape: a fact relation with columns `role`, `plan_level`, `brand_code`, `country_code` carries FOUR notions — a Perspective (which view of the world the row is stated from), a PlanStage (how firm the number is), a Brand and a Country — none of which has a table. A register in the VALUE REGISTERS section naming that column's members is strong evidence the notion exists.
   Do this pass EXPLICITLY before you finish: list the fact relations' dimension columns and confirm each is either already a notion or deliberately not one.
 
 Emit ONE YAML document, exactly these two top-level keys:
@@ -471,7 +471,7 @@ def _canon_shapes() -> dict:
 
 
 def _shape_of(rule_id: str) -> str:
-    """`dtc.exclusion.no_evidence` -> `exclusion_no_evidence`, the form `serves` uses."""
+    """`<concept>.exclusion.no_evidence` -> `exclusion_no_evidence`, the form `serves` uses."""
     parts = str(rule_id or "").split(".")
     return "_".join(parts[1:]) if len(parts) > 1 else ""
 

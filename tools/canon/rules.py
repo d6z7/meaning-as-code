@@ -8,9 +8,9 @@ Measured on a live bundle: 46 of 83 concept rules are six shapes, hand-copied pe
 distinct `never` clauses and eleven distinct `when` clauses. Every copy is individually well-formed, so
 no syntax gate sees anything wrong, and nothing can tell whether they still mean the same thing.
 
-They already do not. `DtC` forbids "substituting another measure's figure"; `GrossStock` does not.
-`Market` carries no refusal message at all, so it cannot produce the answer the other twelve promise.
-Copies drift in whichever clause each author happened to touch.
+They already do not. `Deliveries` forbids "substituting another measure's figure"; `GrossStock` does
+not. `Market` carries no refusal message at all, so it cannot produce the answer the other twelve
+promise. Copies drift in whichever clause each author happened to touch.
 
 A checker over the copies is the wrong instrument — it fires on rewording as loudly as on redefinition.
 The fix is to stop having copies: define the rule once here, attach it with
@@ -186,7 +186,7 @@ def render(udf: str, params: dict, concept: dict | None = None, root=None) -> di
     live on the concept (`params_from`); those are filled from `concept` here, and an ATTACHED value
     never overrides a declared one — that is what makes attaching them pointless rather than merely
     redundant. Measured 2026-08-19: `label` was attached on 5 <dataset> bindings and disagreed with
-    concept.label on THREE of them ("DtC" vs "Deliveries to Customer", "IstProd" vs "Actual
+    concept.label on THREE of them ("DelCust" vs "Deliveries to Customer", "IstProd" vs "Actual
     Production", "Prodant" vs "Production Request"), so the refusal message named the measure
     something its own concept does not call it.
 

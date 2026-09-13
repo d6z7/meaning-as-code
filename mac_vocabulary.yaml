@@ -36,14 +36,14 @@ aggregation_effect:
     fell into exactly that gap and guarded on a value no register could hold.
 
     `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: gross_stock says
-    "READ the level at the END of the period" and ob_reach says "READ as stored ... resolve to the
+    "READ the level at the END of the period" and a reach measure says "READ as stored ... resolve to the
     matching pre-computed abstraction level instead of folding". Both READ a stored row and refuse to
     fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
     concept's `resolve.*` rules, never in the fold vocabulary.
   terms:
     additive: "SUM is correct across this axis."
     average:  "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
-    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — OB-Reach resolving to a matching abstraction level — needs the concept to say."
+    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
 
 # ===========================================================================
 # mac.axis_kind — the KIND of an aggregation axis, for additivity purposes.
@@ -102,7 +102,7 @@ MeasureType:
         time:        mac.aggregation_effect.average
         categorical: mac.aggregation_effect.average
     Precomputed:
-      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the vendor's own words for OB-Reach are 'non additive (sum/average of OB-Reach measures doesn't equal to OB-Reach of sum/average inputs) and iteration based'. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
+      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the vendor's own words for one such reach measure are 'non additive (sum/average of <measure> measures doesn't equal to <measure> of sum/average inputs) and iteration based'. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
       additivity:
         time:        mac.aggregation_effect.none
         categorical: mac.aggregation_effect.none
@@ -204,7 +204,7 @@ canon:
     # `params_from` names the DECLARATION each parameter is readable from. A binding that attaches
     # one of these is stating a fact that already has a home — MAC003 if it agrees, MAC004 if it does
     # not. Measured 2026-08-19: two <dataset> bindings attached `code` and BOTH disagreed with
-    # identity.canonical_key (code='code' vs brand_letter; code='market' vs iso2), because a regex
+    # identity.canonical_key (code='code' vs <brand_code>; code='market' vs iso2), because a regex
     # over rule prose had guessed what the concept already declared.
     refuse_measure_no_row:
       serves: exclusion_no_evidence

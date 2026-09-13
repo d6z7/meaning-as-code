@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """check_host_coupling.py — is a HOST (wiki / runtime) coupled to a specific source? (ADR 2026-08-13)
 
-The existing mac-runtime `check_source_coupling` is an ACME-marker grep (hardcoded `brand_letter`,
+The existing mac-runtime `check_source_coupling` is an ACME-marker grep (hardcoded `brand_code`,
 `v_acme`, …) and is import-AST only — it can't certify a NON-ACME source and is blind to `subprocess`/`-m`
 shell-outs (the adversary's #6). This gate is SOURCE-NEUTRAL: it derives the "source tokens" from the
 ACTUAL sources on disk (each `mac.project.yaml`'s data_domain/dataset + connection handles), so it works

@@ -10,12 +10,13 @@ That is a COMPLETENESS TEST. <domain>/<dataset> answered it the way every bundle
 per concept — twenty-two blocks reciting the steps an agent should take. Every step of every one of
 them restates a declaration that already exists.
 
-MEASURED on that bundle, 2026-08-19, walking DtC clause by clause: the kpi codes and the default are
-`values.aliases.map` + `contract.default_reading`; the role pin and the vintage collapse are the
-Perspective concept + `grounding.snapshot_rule`; the name resolutions are the referenced concepts'
-own lookup registers; the period reading is `semantics.measure_type` x `axis_kinds` through
-mac.resolve.period_reading; the read is `grounding.sources[]`; and the closing "no probing, no name
-literal" is mac.resolve.join_on_declared_key + mac.guarantee.never_guess. Residue: NONE.
+MEASURED on that bundle, 2026-08-19, walking one delivery measure clause by clause: the kpi codes
+and the default are `values.aliases.map` + `contract.default_reading`; the role pin and the vintage
+collapse are the Perspective concept + `grounding.snapshot_rule`; the name resolutions are the
+referenced concepts' own lookup registers; the period reading is `semantics.measure_type` x
+`axis_kinds` through mac.resolve.period_reading; the read is `grounding.sources[]`; and the closing
+"no probing, no name literal" is mac.resolve.join_on_declared_key + mac.guarantee.never_guess.
+Residue: NONE.
 
 AND IT DRIFTS, which is the argument. In one working session, three separate sweeps were needed
 inside those blocks alone: eight step-2 clauses repointed after a rule family was deleted, a model
@@ -36,8 +37,8 @@ already draws elsewhere:
 
   A DEDICATED RELATION NEEDS NO DISCRIMINATOR. A concept that is the sole user of its relation is
   selected BY that relation; demanding a discriminator would report a gap that cannot exist. Without
-  this, <dataset>'s OBReach is reported incomplete — it is served from its own relation and its own file
-  says so ("there is no `kpi` code here"). Measured: 1 false finding.
+  this, <dataset>'s reach measure is reported incomplete — it is served from its own relation and
+  its own file says so ("there is no `kpi` code here"). Measured: 1 false finding.
 
   A REFUSE-STUB IS AUTHORED TO BE UNANSWERABLE. `identity.kind = sme_pending` declares a concept that
   exists so a question about it gets a grounded refusal instead of a hallucination. Reporting it as

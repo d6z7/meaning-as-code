@@ -368,7 +368,7 @@ LEGACY = {
                                       "a transform whose SQL is not extracted leaves the chain "
                                       "incomplete at the step that does the work"),
     # check_mac_public is DELIBERATELY NOT HERE. It is a gate on the FRAMEWORK repo — "meaning-as-code
-    # is a PUBLIC framework repo: it must never carry a VW / GAPS / <SOURCE> / source-specific token" — and
+    # is a PUBLIC framework repo: it must never carry a token belonging to one customer or source" — and
     # it defaults to MAC's own root. Wrapping it and aiming it at a customer bundle made it fail on the
     # bundle's own domain vocabulary, which is what a bundle is FOR. That was a category error (added
     # and removed 2026-08-18): a gate's SCOPE is part of its contract, and adding gates to this table

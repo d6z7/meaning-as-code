@@ -122,11 +122,11 @@ def snapshot_collapse(table, *, natural_key, order_by, valid_from=None, valid_to
     `natural_key` and `order_by` each take one column or MANY. Many matters in both positions:
       * a real cell key is composite — <dataset>'s v_<source>_kpi is SEVEN columns, and a partition missing one
         of them (role) silently folds six reporting perspectives into one arbitrary row;
-      * the vintage rarely breaks ties alone. <dataset>'s own protosql records `fpl_created_at DESC is not
-        optional` beside `config_reporting_month DESC`, and this canon could not express it — which is
-        one of the two reasons that fragment exists at all. mac.schema.json says a ProtoSqlFile "is
-        usually a workaround for a canon that is missing or broken, and the better fix is upstream".
-        This is that fix."""
+      * the vintage rarely breaks ties alone. <dataset>'s own protosql records `<source>_created_at
+        DESC is not optional` beside `config_reporting_month DESC`, and this canon could not express
+        it — which is one of the two reasons that fragment exists at all. mac.schema.json says a
+        ProtoSqlFile "is usually a workaround for a canon that is missing or broken, and the better
+        fix is upstream". This is that fix."""
     if as_of is not None:
         pred = f"{valid_from} <= ? AND ({valid_to} IS NULL OR {valid_to} > ?)"
         return f"(SELECT * FROM {table} WHERE {pred})", [as_of, as_of]

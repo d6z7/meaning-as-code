@@ -333,7 +333,7 @@
       "additionalProperties": false
     },
     "additivityAxis": {
-      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why OB-Reach's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.MeasureType where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
+      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.MeasureType where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
       "oneOf": [
         {
           "enum": [
@@ -1830,7 +1830,7 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know Skoda's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'Skoda has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
+                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know that one brand's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'that brand has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
               }
             },
             "additionalProperties": false
@@ -2872,7 +2872,7 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: `brand_letter` is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
+                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: a brand-code column is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
               }
             }
           }

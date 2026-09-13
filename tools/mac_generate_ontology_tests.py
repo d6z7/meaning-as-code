@@ -146,8 +146,8 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         # declared key against identity_evidence.key rather than guessing from the relation name.
         # THE SAME GUARD THE IDENTITY FAMILY GOT, and it needed to be in both places. /5 checked
         # only canonical_key, so O-SALES_AREA-KEY still shipped and died as COLUMN_NOT_FOUND on
-        # `fpl_group_country_code` — dim_country_register spells it `group_code`. A guard applied to
-        # one of two families is a guard that looks present and is not.
+        # `<source>_group_country_code` — dim_country_register spells it `group_code`. A guard
+        # applied to one of two families is a guard that looks present and is not.
         have = relation_columns(rel)
         absent = [k for k in keys if have and k not in have]
         if absent:
@@ -186,9 +186,9 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
 
     ident = (c.get("identity") or {}).get("canonical_key")
     # DO NOT TEST A COLUMN THE RELATION DOES NOT HAVE. Three generated tests died as Athena
-    # COLUMN_NOT_FOUND: Brand identifies itself by `brand_letter` where the relation carries
-    # `fpl_brand_letter`; Market by `<source>_brand_country_code`, which dim_country_register has no
-    # column resembling; SalesArea declares no canonical_key at all and got a test regardless.
+    # COLUMN_NOT_FOUND: Brand identifies itself by `brand_code` where the relation carries
+    # `<source>_brand_code`; Market by `<source>_brand_country_code`, which dim_country_register has
+    # no column resembling; SalesArea declares no canonical_key at all and got a test regardless.
     # Those are three real modelling gaps — reported, not thrown at the warehouse to discover.
     if ident and srcs:
         stem0 = _rel(srcs[0]).split(".")[-1]

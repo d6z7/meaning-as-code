@@ -49,8 +49,8 @@ def _load_yaml_str_dates(path):
 def _pick_def(path, layout=None):
     p = path.replace(os.sep, '/')
     # basename-EXACT: only the canonical ontology files are Rules/Edges docs. A data-plane
-    # descriptor for a VIEW that happens to be named *_rules/*_edges (fpl.meta_rules,
-    # fpl.meta_edges) is a TableFile and fell through this suffix match before.
+    # descriptor for a VIEW that happens to be named *_rules/*_edges (<dataset>.meta_rules,
+    # <dataset>.meta_edges) is a TableFile and fell through this suffix match before.
     base = os.path.basename(p)
     if base == 'mac.project.yaml':
         return 'ProjectFile'
