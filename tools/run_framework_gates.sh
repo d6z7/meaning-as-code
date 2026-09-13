@@ -83,9 +83,31 @@ run_capped() {
   fi
 }
 
+# GATES WHOSE SUBJECT IS THIS REPOSITORY, NOT A BUNDLE.
+#
+# This runner had ONE calling convention -- every gate gets <bundle-root> as argv[1] -- and gates
+# have more than one. That mismatch was INVISIBLE while gates mis-read the argument instead of
+# refusing it. Measured, and it is the worst kind of false green: `check_protocol`'s subject is this
+# repo's own commit history, so `git log` read the bundle path as a PATHSPEC, the gate judged 7
+# commits against a floor measured over 38, and PRINTED PASS. A wrong denominator silently
+# substituted by the runner's own convention.
+#
+# It is now a DECLARED SET with its size printed, not a silent special case. A gate added here must
+# be one whose subject is the repository; anything else belongs on the bundle path. And drift stays
+# visible in both directions: a gate NOT listed here that refuses a bundle root still exits 2 and
+# still fails this suite, so nothing is quietly forgiven by omission.
+REPO_SUBJECT_GATES=(check_protocol.py)
+
+repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
+  local n="$1" g
+  for g in "${REPO_SUBJECT_GATES[@]}"; do [ "$n" = "$g" ] && return 0; done
+  return 1
+}
+
 PASS=0
 FAIL=0
 CNR=0
+REPO_SUBJ=0
 declare -a NOTES
 
 T0=$(date +%s)
@@ -101,7 +123,12 @@ for checker in "$HERE"/check_*.py; do
     st_rc=$?
   fi
 
-  run_capped "$checker" "$BUNDLE_ROOT" >"$out_run" 2>&1
+  if repo_subject "$name"; then
+    REPO_SUBJ=$((REPO_SUBJ + 1))
+    run_capped "$checker" >"$out_run" 2>&1
+  else
+    run_capped "$checker" "$BUNDLE_ROOT" >"$out_run" 2>&1
+  fi
   run_rc=$?
 
   last_run="$(grep -E '^(PASS|FAIL):|could not run:' "$out_run" | tail -1)"
@@ -143,9 +170,12 @@ fi
 
 echo
 if [ "$FAIL" -eq 0 ] && [ "$CNR" -eq 0 ]; then
-  echo "PASS: run_framework_gates — ${PASS}/${TOTAL} green over ${BUNDLE_ROOT} ($((T1 - T0))s)"
+  echo "PASS: run_framework_gates — ${PASS}/${TOTAL} green over ${BUNDLE_ROOT}," \
+       "$((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this repository" \
+       "($((T1 - T0))s)"
   exit 0
 fi
 echo "FAIL: run_framework_gates — ${PASS}/${TOTAL} green, ${FAIL} failing, ${CNR} could-not-run" \
-     "over ${BUNDLE_ROOT} ($((T1 - T0))s)"
+     "over ${BUNDLE_ROOT}, $((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this" \
+     "repository ($((T1 - T0))s)"
 exit 1
