@@ -20,7 +20,17 @@ def main():
         return 2
     p = Path(sys.argv[1])
     try:
-        obj = yaml.safe_load(p.read_text())
+        text = p.read_text()
+    except OSError as e:
+        # `read_text()` used to sit inside the `try` below, which catches ONLY yaml.YAMLError, so
+        # every OSError escaped as a traceback: a missing path -> FileNotFoundError, a directory
+        # -> IsADirectoryError. A traceback is not a verdict, and a runner reading exit codes
+        # cannot tell a crash from a refusal. Exit 2 = could-not-run, matching this module's own
+        # usage exit above and the estate contract (0 clean / 1 finding / 2 could-not-run).
+        print(f"could not run: cannot read {sys.argv[1]}: {e}", file=sys.stderr)
+        return 2
+    try:
+        obj = yaml.safe_load(text)
     except yaml.YAMLError as e:
         print(f"FAIL — not valid YAML: {e}")
         return 1

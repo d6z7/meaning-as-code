@@ -1,0 +1,104 @@
+# check_entry_points RATCHET FLOOR — the measured crash count this tree is allowed to carry,
+# AND the exact witnesses it is allowed to be made of.
+#
+# 4 is measured, 2026-09-13, on the first run this instrument ever had:
+#
+#   FAIL: check_entry_points — 4 violation(s) over 28 entry point(s) examined, 68 invocation(s)
+#   [class(es): crashes-with-traceback] — 28 of 32 entry points exercised (68 invocation(s)),
+#   4 skipped as billed, 2 crashed; positional fixture: example_tpch_ontology
+#
+# THE COUNT IS 4 CRASHING INVOCATIONS ACROSS 2 MODULES, and that is the number this file ratchets.
+# The POPULATION is not ratcheted and must not be: it is discovered per run, so it grows whenever
+# someone adds an entry point. It grew the same afternoon — a concurrent track added
+# sdk/gate/check_seam_agreement.py and the denominator went 32 -> 33 entry points / 68 -> 70
+# invocations while the crash count stayed at 4. A floor on the DENOMINATOR would have fired there;
+# a floor on the crash WITNESSES correctly did not.
+#
+# There is no earlier number to ratchet down from, because before today NOTHING had ever invoked
+# these entry points: 31 modules under sdk/ carry a main() or __main__, and 14 of them are named in
+# no test at all. `pytest sdk -q` is 183 green and covers none of it — pytest IMPORTS a module,
+# and the __main__ block is by construction the one block an import never reaches.
+#
+# WHY THIS FLOOR NAMES ITS WITNESSES, WHICH tools/mac_public_floor.txt DOES NOT.
+# That file declares a COUNT. A count-only floor has a hole: at a floor of 4, fixing one crash and
+# introducing a different one keeps the count at 4 and the gate still prints PASS. At 300 findings
+# that hole is a rounding error; at 4 it is 100% of the signal. So each expected crash is named
+# below as `<module> <mode>`, and a crash at any witness NOT on this list fails the gate even when
+# the total has not moved. Lower the number and delete the line together, never the number alone.
+#
+# ===============================================================================================
+# UPDATE 2026-09-13 (later the same day): THE FLOOR IS NOW 0 AND CARRIES NO WITNESSES.
+#
+# All 4 crashing invocations across both modules were diagnosed and REPAIRED. Both were real
+# defects in code, not gate artefacts; the refutation that settled each one is recorded beside it
+# in the two entries below. Measured after the repair, same instrument, same root:
+#
+#   PASS: check_entry_points — 0 violation(s) over 29 entry point(s) examined, 70 invocation(s)
+#   — 29 of 33 entry points exercised (70 invocation(s)), 4 skipped as billed, 0 crashed;
+#   positional fixture: example_tpch_ontology
+#
+# The number and the witness lines were lowered TOGETHER, which is what the paragraph below
+# instructs. Lowering them was not optional housekeeping: with the floor left at 4 naming these 4
+# witnesses, a REGRESSION at any of them would have been pre-forgiven — `len(findings) <= count`
+# and the witness already declared, so `report()` returns PASS over a live crash. That is the
+# silent headroom this file was written to avoid, and at 4 findings it was 100% of the signal.
+#
+# The 4 skipped-as-billed modules remain UNMEASURED and are not evidence of anything. `0 crashed`
+# is a statement about the 29 exercised, never about the 33.
+# ===============================================================================================
+#
+# THE FOUR, AND WHY EACH ONE WAS A REAL DEFECT RATHER THAN A GATE ARTEFACT (all now FIXED):
+#
+#   sdk/authoring/validate_one.py:23 — `yaml.safe_load(p.read_text())` inside a `try` that catches
+#       only `yaml.YAMLError`. Every OSError from `read_text()` escapes. `--help` becomes
+#       Path("--help") -> FileNotFoundError; a directory argument -> IsADirectoryError. The module
+#       already returns 2 correctly for NO argument (validate_one.py:18) — it is the BAD argument
+#       that crashes. This is the exact defect class check_bundle_secrets.py:264 was repaired for:
+#       "a traceback is not a verdict, and a runner reading exit codes cannot tell a crash from a
+#       refusal."
+#       REFUTED AS A GATE ARTEFACT: the crash does not depend on this gate's `--help` convention at
+#       all. `python3 -m sdk.authoring.validate_one /no/such/concept.yaml` — an ordinary bad path,
+#       no convention involved — raises the same FileNotFoundError.
+#       FIXED: `read_text()` moved into its own `try` catching OSError, returning 2 with a
+#       "could not run: cannot read <path>" line. Exit 2 is this module's OWN existing convention
+#       for could-not-run (validate_one.py:18) and the estate contract's (0 clean / 1 finding /
+#       2 could-not-run), so the code was not a judgement call. Verified: --help, a missing path
+#       and a directory all exit 2; malformed YAML still exits 1; three real example_tpch concepts
+#       still exit 0 with PASS.
+#
+#   sdk/gate/test_operations_refuses_invalid.py:37 — its own fixture builds
+#       <tmp>/sources/acme/acme/... with no mac.project.yaml in any ancestor, so
+#       operations.persist_concept raises `Refused` and the module dies on its own happy path. It
+#       has been broken while looking covered: pytest COLLECTS the file (it is named test_*.py) but
+#       collects ZERO tests from it, because the body lives in `main()` and not in a `test_`
+#       function. Measured: `pytest sdk/gate/test_operations_refuses_invalid.py --collect-only -q`
+#       -> "no tests collected". Both modes crash identically; --help never reaches argparse
+#       because the module has none.
+#       ROOT CAUSE: a STALE FIXTURE, not a defect in operations.py. `_assert_in_sources` used to
+#       accept any path CONTAINING the substring "sources" — which is exactly the shape this
+#       fixture builds (<tmp>/sources/acme/acme) — and was deliberately changed to require a
+#       `mac.project.yaml` ancestor, per its own docstring ("a guard whose verdict depends on what
+#       a checkout was called is not a containment guard; it is a coincidence"). The fixture was
+#       not moved with it.
+#       FIXED: the fixture now declares the bundle by writing `mac.project.yaml` at `base`.
+#       PLACEMENT IS LOAD-BEARING AND WAS PROVEN, not guessed: declared at `base`, all six steps
+#       pass; declared one level up at `td` instead, step 5 reports "CONTAINMENT BREACH: write
+#       outside bundle was ALLOWED", because td/escape.yaml would then sit inside a declared
+#       bundle. `base` is also where a real bundle keeps it — example_tpch_ontology/mac.project.yaml
+#       sits beside example_tpch_ontology/ontology/concepts. Both modes now exit 0 with PASS.
+#
+#       STILL OPEN, DELIBERATELY NOT FIXED HERE — NEEDS A RULING: this module remains named
+#       `test_*.py` while exposing its body through `main()`, so pytest still collects ZERO tests
+#       from it and the unit suite still does not assert any of it. Fixing the crash did not fix
+#       that. The repair is one of two, and which one is a question of intent this track does not
+#       own: (a) add `def test_operations_refuses_invalid(): assert main() == 0`, which puts six
+#       real assertions into the unit suite and changes what CI enforces, or (b) rename it away
+#       from the `test_` prefix, since its docstring says "Run: python3 sdk/gate/test_...py" and
+#       it lives in sdk/gate/ among the gates. Guessing between those would be marking my own exam.
+#
+# NOT ON THIS LIST, AND DELIBERATELY NOT A FINDING: sdk/project/references.py WRITES into the
+# current working directory (bare -> ./references/, --help -> a directory literally named
+# `--help`). That is disclosed separately by the gate, because the property this gate judges is
+# "it exits rather than crashes" and folding a second cause into one verdict makes the verdict
+# unreadable. It is also why the gate runs every invocation in a throwaway cwd.
+0

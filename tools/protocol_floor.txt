@@ -1,0 +1,101 @@
+# protocol_floor.txt — the ORPHANED COMMITS this tree may carry, BY IDENTITY. Read by
+# tools/check_protocol.py. REMOVE SHAS AS THE BACKFILL LANDS; NEVER ADD ONE.
+#
+# DECLARED: 2026-09-13
+# OWNER: the protocol backfill — emptying this file IS its exit criterion
+# RECORD: protocol/2026-09-13/063 (why a floor is a SET and not an integer); the WHY block below
+# REVIEW BY: 2026-12-13
+# STANDING: 9    orphaned commits, on the day this floor was declared
+# BASE: 599b6c1ba21467248ff23f2153cfea0d0f3576d4    the PARENT of aca8a4d, the oldest commit this
+#                floor declares as debt. The judged population is BASE..HEAD and NOTHING ELSE.
+#
+# An ORPHANED commit changed code and no protocol entry says why. The operator's diagnosis of
+# working that way, which is why this gate exists:
+#
+#   "so far we we working on adhock basis. i ask you do. but the donwside is that no ruling remains
+#    what we did and why and what is requested and expected functionality."
+#
+# ==============================================================================================
+# WHY THIS FILE CHANGED SHAPE, 2026-09-13. It held ONE INTEGER, `9`, and check_protocol took its
+# revision range from the CALLER. So the same tree, the same 49 entries and this same floor
+# produced five different answers:
+#
+#     HEAD~12..HEAD           12 examined,  7 orphaned    PASS   (7 <= 9)
+#     HEAD~20..HEAD           29 examined,  7 orphaned    PASS   (7 <= 9)
+#     HEAD~25..HEAD           38 examined, 10 orphaned    FAIL
+#     HEAD~40..HEAD           52 examined, 24 orphaned    FAIL
+#     example_tpch_ontology    7 examined,  2 orphaned    PASS   <- not a range at all: `git log`
+#                                                                  reads a bare token as a PATHSPEC,
+#                                                                  so run_framework_gates.sh judged
+#                                                                  seven commits against a floor
+#                                                                  measured over thirty-eight.
+#
+# A floor that moves with the question it is asked is not a floor. Three defects, all fixed:
+#
+#   1. THE POPULATION WAS THE CALLER'S. The range is now keyed to `BASE:` above. check_protocol
+#      accepts any SPELLING that resolves to that population and REFUSES every other range with
+#      exit 2. `--survey <range>` still measures an arbitrary range — and always exits 2, because
+#      no floor is declared over it and a count is not a verdict.
+#
+#   2. `HEAD~N` IS NOT A FIXED RANGE, even as a string. This file's previous revision declared
+#      "9 over HEAD~25..HEAD" and recorded 37 examined. ONE COMMIT LATER the identical string
+#      measures 38 and 10, because the window slid forward over c0782f9. A declared range must have
+#      an IMMUTABLE base, so BASE: is a sha.
+#
+#   3. AN INTEGER IS IDENTITY-BLIND — the argument this file already made at length, against
+#      itself. `len(orphans) <= 9` cannot tell "one orphan paid off" from "one paid off and another
+#      introduced". The floor is now the SET below, and progress is a set difference printed in
+#      both directions as `cleared` and `added by identity`.
+#
+# The header shape (DECLARED / OWNER / RECORD / REVIEW BY / STANDING, and exit 2 rather than a shrug
+# when one is missing) is sdk/gate/engine_coupling_floor.txt's, reused. BASE: is the one key that
+# floor does not need. STANDING must AGREE with the number of shas listed; a floor whose two
+# statements of its own size disagree is refused, not half-believed.
+# ==============================================================================================
+#
+# MEASURED 2026-09-13, AFTER THE BACKFILL, over the declared BASE..HEAD:
+#
+#     38 code-bearing commit(s) examined, 28 covered, 10 orphaned, over 49 entr(y/ies)
+#
+# Ten, against a declared nine. The tenth is c0782f9, which landed AFTER this floor was declared and
+# is NOT listed below, so check_protocol is RED. That is the ratchet working: under the integer
+# floor, c0782f9 was invisible at HEAD~12..HEAD and HEAD~20..HEAD because 7 <= 9 — the count had
+# room for a new orphan, which is exactly what an identity-blind floor buys you. It is not being
+# added here. A floor is lowered, never raised; whoever writes the entry for c0782f9 clears it.
+#
+# Nothing was paid by writing new narrative. All 49 entries already NAMED their commits inside their
+# own EVIDENCE sections ("git show -s 439f41e") — the contract had simply gained `commits:` AFTER
+# they were written, so the accounting existed in prose the gate cannot read. The backfill moved
+# that citation into front matter, one line per entry, touching no body. 72 citations in all: 31
+# usable local shas, and 41 that resolve only in sibling repos (mac-platform 21,
+# mac-integration-kit 13, mac-ontology-contoso 4, a customer bundle 3), written `<repo>:<sha>` so
+# they can never be mistaken for coverage here. Two shas are named by more than one entry, which is
+# correct: b4092e5 carried four separate acts of wiki-compiler work in one commit, and b20c49a
+# carried both the hygiene ratchet and the console requirement.
+#
+# THEY ARE NOT BEING CLEARED BY INVENTING ENTRIES FOR THEM. protocol/README.md: "A protocol
+# reconstructed from memory is a summary, and a summary is exactly what the verbatim rule exists to
+# prevent." Each of these has a detailed commit message; an entry written from it today would carry
+# no EVIDENCE that was not already in the commit, and would claim the four fields it cannot honestly
+# fill. Whoever next touches that code writes the entry then.
+#
+# The target is an EMPTY file, and at empty the rule is simply: code changes with a record, or it
+# does not change.
+
+# FIVE that post-date the protocol and simply have no entry yet. Live debt, not history.
+9f3818b  # fix(connector): the TLS diagnosis names the store the machine already trusts
+ac5eb36  # fix(connector): a TLS trust failure is a local fact, not an unreachable warehouse
+13381a6  # fix(connector): one credential vocabulary, not two — and the profile was load-bearing
+99b4f57  # fix(connector): an unprovable config is not an invalid one
+66a4eff  # fix(container): a capability is a claim — a filename is not evidence for it
+
+# ONE that is this gate itself, which is the joke and also the point: the commit that installs the
+# protocol cannot cite its own sha, because the sha does not exist until the commit is written.
+ef6608c  # feat(method): enforce the protocol — a record, or the code does not change
+
+# THREE that predate the protocol by days and whose entries were never written. aca8a4d is the
+# oldest, and BASE: above is its PARENT — the subject of this gate starts at the oldest declared
+# debt, so narrowing the range can never quietly drop something this file calls debt.
+dad3038  # fix(gates): stop three gates passing without measuring anything
+d01079e  # feat(packaging): make the framework pip-installable (option C)
+aca8a4d  # fix(canon): resolve params_from 'profile#' — snapshot_collapse could never bind it

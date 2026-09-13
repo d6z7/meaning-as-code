@@ -53,7 +53,12 @@ SCHEMA_NAME = "mac.schema.json"
 #: Derived, never authored: anything under these is a BUILD PRODUCT or a foreign tree, and a copy of
 #: the grammar there is expected rather than a second home for it.
 EXCLUDED_PARTS = frozenset(
-    {".git", "build", "dist", "node_modules", "__pycache__", ".venv", ".tox", "site-packages"}
+    {".git", "build", "dist", "node_modules", "__pycache__", ".venv", ".tox", "site-packages",
+     # A GIT WORKTREE IS NOT A SECOND HOME. `.claude/worktrees/<id>/` is a checkout of THIS
+     # repository at another commit — every file in it is by construction the same file. Counting
+     # them made this gate report "3 copies of the grammar in one tree" the moment two agents worked
+     # in parallel, which is a true statement about paths and a false one about forks.
+     "worktrees"}
 )
 
 TREE_ROOT = Path(__file__).resolve().parents[2]
@@ -189,6 +194,14 @@ def _self_test() -> int:
         if judge(root, gov_of(root))[0] != 0:
             failures.append("false positive: a build-output copy was counted as a second home")
 
+    # 3a - a WORKTREE copy is another checkout, not a fork. Must stay green.
+    with tempfile.TemporaryDirectory() as t:
+        root = fixture(Path(t))
+        (root / ".claude" / "worktrees" / "wf_x-1").mkdir(parents=True)
+        shutil.copy(real, root / ".claude" / "worktrees" / "wf_x-1" / SCHEMA_NAME)
+        if judge(root, gov_of(root))[0] != 0:
+            failures.append("false positive: a git worktree copy was counted as a second home")
+
     # 3 - an egg-info copy is likewise derived. Must stay green.
     with tempfile.TemporaryDirectory() as t:
         root = fixture(Path(t))
@@ -216,7 +229,7 @@ def _self_test() -> int:
         if judge(root, (Path(outside) / SCHEMA_NAME, n_real, ""))[0] != 1:
             failures.append("mutant not caught: a grammar outside the tree governed and passed")
 
-    total = 8
+    total = 9
     if failures:
         print(f"FAIL: check_grammar_home self-test — {len(failures)} of {total} assertions failed")
         for f in failures:
@@ -225,7 +238,8 @@ def _self_test() -> int:
     print(
         f"PASS: check_grammar_home self-test — {total}/{total} "
         "(4 mutants reject: second copy, empty tree, stale grammar, out-of-tree governor; "
-        "2 derived-copy false positives stay green; 2 clean fixtures pass)"
+        "3 derived-copy false positives stay green — build output, egg-info, git worktree; "
+        "2 clean fixtures pass)"
     )
     return 0
 
