@@ -73,8 +73,40 @@ def load_patterns(register: Path = None):
     return out
 
 
+# THE BUILT-IN TABLE — universal SHAPES, and why these may live in this file when no token may.
+#
+# The register above holds IDENTITIES: brands, systems, a colleague's name. Those cannot be written
+# here, because listing them inside the public repo IS the leak this gate exists to prevent.
+#
+# An absolute home path is a different kind of fact. It names a SHAPE -- "a path that carries some
+# human's account name" -- not any particular human, so writing the shape down leaks nothing. And it
+# MUST live in code rather than the register, because the register is gitignored: a fresh clone and
+# CI carry `public_tokens.example.txt` with no values, so anything expressed only as a register entry
+# is absent exactly where the going-public check matters most.
+#
+# MEASURED, and it is why this table exists. The gate printed
+#     PASS: check_mac_public — 0 leak(s) over 613 tracked file(s) examined
+# while a tracked `compile.json` carried an author's real home directory on line 3. The FILE
+# denominator was complete -- 613 is exactly `git ls-files | wc -l`. The PATTERN denominator was
+# not: 16 register entries, all identity tokens, none matching a home path. "0 leaks over 613
+# files" did not mean "no home paths"; it meant "none of 16 identities, over 613 files". That is a
+# zero-denominator pass one level up -- the property, not the file, was the empty set.
+#
+# `(?!<)` IS LOAD-BEARING. Ten tracked lines legitimately quote `/Users/<someone>/dev/...` and
+# `/Users/<user>/dev/` -- placeholders in protocol entries and wiki pages describing this very
+# defect class. A pattern that flagged those would punish the documentation of the bug.
+BUILTIN_PATTERNS = [
+    ("absolute home path (posix)", r"/(?:Users|home)/(?!<)[A-Za-z0-9._-]{2,}/", 0),
+    ("absolute home path (windows)", r"C:\\Users\\(?!<)[A-Za-z0-9._-]{2,}", I),
+]
+
 PATTERNS = load_patterns()
-COMPILED = [(label, re.compile(p, f)) for (label, p, f) in PATTERNS]
+
+# Built-ins FIRST, and never conditional on the register: the register may be absent, but these
+# hold for any public tree. An empty register still refuses (see main) -- a shape floor is not a
+# substitute for the identity table, only a guarantee that travels with a clone.
+COMPILED = ([(label, re.compile(p, f)) for (label, p, f) in BUILTIN_PATTERNS]
+            + [(label, re.compile(p, f)) for (label, p, f) in PATTERNS])
 
 
 def scan(root: Path):
@@ -289,14 +321,44 @@ def _self_test() -> int:
         if _candidates(base / "nope"):
             failures.append("candidates found files under a nonexistent root")
 
-    total = 5
+        # 5 - THE BUILT-IN CLASS: an absolute home path is a leak even with NO register.
+        #     This is the class the gate missed while printing 0 over 613 files, so the mutant is
+        #     the real committed shape: a JSON field holding an author's home directory. Assembled
+        #     from parts so this source carries no such path of its own.
+        home = base / "home"
+        _seed_repo(home)
+        sep = "/"
+        (home / "diag.json").write_text(
+            '{"bundle": "' + sep + "Users" + sep + "someuser" + sep + 'dev' + sep + 'x"}\n',
+            encoding="utf-8")
+        _git(home, "add", "-A")
+        home_hits = [h for h in scan(home) if "home path" in h[2]]
+        if not home_hits:
+            failures.append("mutant not caught: an absolute home path in a tracked file")
+
+        # 6 - AND THE FALSE POSITIVE THAT WOULD PUNISH THE DOCS. Ten tracked lines quote
+        #     `<someone>`/`<user>` placeholders while describing this defect; flagging those makes
+        #     documenting the bug the same offence as committing it.
+        ph = base / "placeholder"
+        _seed_repo(ph)
+        (ph / "entry.md").write_text(
+            "how " + sep + "Users" + sep + "<someone>" + sep + "dev came to sit inside\n",
+            encoding="utf-8")
+        _git(ph, "add", "-A")
+        if [h for h in scan(ph) if "home path" in h[2]]:
+            failures.append("false positive: a <placeholder> home path was reported as a leak")
+
+    total = 7
     if failures:
         print(f"FAIL: check_mac_public self-test — {len(failures)} of {total} failed")
         for f in failures:
             print(f"  {f}", file=sys.stderr)
         return 1
-    print(f"PASS: check_mac_public self-test — {total}/{total} (a tracked leak is caught, a "
-          f"gitignored build copy is NOT, the clean fixture passes over a non-zero denominator)")
+    print(f"PASS: check_mac_public self-test — {total}/{total} over "
+          f"{len(BUILTIN_PATTERNS)} built-in shape(s) + {len(PATTERNS)} register token(s): a "
+          f"tracked token leak is caught, a tracked HOME PATH is caught with no register needed, "
+          f"a <placeholder> home path is NOT, a gitignored build copy is NOT, and the clean "
+          f"fixture passes over a non-zero denominator")
     return 0
 
 
