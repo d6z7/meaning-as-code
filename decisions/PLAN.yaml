@@ -1,0 +1,109 @@
+# PLAN — the strategic goal, decomposed so capacity can be pointed at it without asking.
+# Read by .claude/skills/tactics/plan.py. Update when anything lands.
+
+goal: >
+  meaning-as-code becomes one public product repo — the declarations plus the mac-sdk modules it
+  builds — carrying zero instance specifics, with data sources reached through connectors so the
+  ontology stays generic.
+
+items:
+  - id: consolidate
+    what: SDK into the framework repo; vendored grammar fork deleted
+    state: done
+    landed: develop @ 066dab6
+
+  - id: cleanse
+    what: no instance specifics in MAC; four detector registers externalised
+    state: done
+    landed: develop @ 066dab6
+    evidence: check_mac_public 0 leaks, floor 300 -> 0
+
+  - id: spec
+    what: connector plugin architecture, PROPOSED
+    state: done
+    landed: develop @ 6d07081
+
+  - id: A0
+    what: repair the gate harness so it can attribute a finding to a reject class
+    state: done
+    landed: feat/connection-grammar @ b780b48
+
+  - id: A1
+    what: fix the unbound-name crash; land the two-unit engine-coupling ratchet
+    state: done
+    landed: feat/connection-grammar @ efac30b
+
+  - id: A2
+    what: declare runtime.connector, zero schema change
+    state: done
+    landed: cap-ontology-sources @ 47d5415
+
+  - id: connector-classes
+    what: Connector protocol, SqlConnector, DuckDB + Athena, plain registry
+    state: in-flight
+    workflow: w7hwqhwqu
+    testable_now: DuckDB against a local bundle — offline and free
+    blocked_test_on: [R14]
+
+  - id: schema-half
+    what: the connection-envelope $defs, runtime retyped, connector namespace registered
+    state: in-flight
+    workflow: w7hwqhwqu
+    blocked_test_on: [R11]
+
+  - id: console-page
+    what: recycle ConnectionView — connector-driven fields, tier, Test-connection button
+    state: in-flight
+    workflow: w7hwqhwqu
+    blocked_test_on: [R12]
+
+  - id: A3
+    what: wire the tier so answerable is backed offline; the first red build is correct
+    state: blocked
+    blocked_on: [R11]
+    note: turns at least one currently-green bundle red, and that is the point
+
+  - id: A4
+    what: enforce in CI, delete the inference reader
+    state: blocked
+    blocked_on: [A3]
+    note: minimum two calendar weeks after A3
+
+  - id: track-b
+    what: entry-point discovery, hostile-connector suite, permissions, probe
+    state: blocked
+    blocked_on: [R12, R14]
+    note: >
+      on today's measurements the DEFAULT is the plain registry already being built; the full plugin
+      system is the exception requiring R14 = yes
+
+rulings:
+  - id: R11
+    gates: [A3]
+    question: a production bundle claims answerable:true and it is unbacked today
+    options:
+      - declare the interpreter (the file already exists)  # recommended
+      - drop the claim
+    consequence: either way the first gate run turns a green bundle red, and that is correct
+
+  - id: R12
+    gates: [track-b, console-page]
+    question: which SDK is live — meaning-as-code/sdk or mac-platform/packages/mac-sdk
+    measured: two live, already diverged
+    consequence: if both stay live, every Track B stage is done twice or the fork widens
+    prerequisite: read mac-runtime/adapters/ (527 lines) and okf_core/sources.py (201) in full
+
+  - id: R14
+    gates: [track-b]
+    question: is a third-party connector a requirement now
+    measured: the word "connector" appears zero times in BOARD.md, ROADMAP.md, TARGET.md
+    options:
+      - "no — a dict of two classes in registry.py, ~one-fifth the effort"   # recommended
+      - "yes — entry points, guarded_import, 13-class hostile suite, 2-3 days"
+
+backlog:
+  - examples out of MAC — needs a fixture corpus first, or the gates lose their only subject
+  - mac-runtime exists twice (repo 40 py, package 65 py, 3 shared filenames) — one thing or two
+  - two sibling bundles will hit the container-identity 422 that contoso hit
+  - tests/ cannot be collected by pytest (sys.exit at import) — pre-existing, verified at 3 commits
+  - 14 of 34 framework checkers still have no self-test
