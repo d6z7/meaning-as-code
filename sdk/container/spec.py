@@ -33,18 +33,47 @@ def _read_yaml(p: Path) -> dict:
         return {}
 
 
+def _nonempty(p: Path) -> bool:
+    """A file that exists and carries something. EXISTENCE IS NOT CONTENT.
+
+    `answerable` was backed by `.exists()` alone, so a ZERO-BYTE connection.yaml backed
+    `answerable: true` — the capability system's own version of the zero-denominator pass this estate
+    keeps finding elsewhere. A capability is a claim about what a container can DO; a filename is not
+    evidence for it.
+    """
+    try:
+        return p.is_file() and p.stat().st_size > 0
+    except OSError:
+        return False
+
+
 def _backed_capabilities(cr: Path, m: dict) -> dict:
-    """What the container's CONTENTS actually support — the ground truth capabilities are checked against."""
+    """What the container's CONTENTS actually support — the ground truth capabilities are checked against.
+
+    WHAT `answerable` MEANS, and it is narrower than it sounds: this container CARRIES what answering
+    needs — an interpreter, and a declared connection. It is checked OFFLINE and it costs nothing.
+
+    It does NOT mean the warehouse answers. That is a claim about the world, it is billed, and it is
+    established once when a runtime spawns and then held — never re-tested per question, and never on
+    a page load. Two different claims, two different lifecycles; conflating them is how a browse
+    becomes a bill.
+
+    THE FILENAME FALLBACK IS GONE. `rt.get("connection") or "connection.yaml"` meant an UNDECLARED
+    file silently became the container's connection — which is how a manifest came to declare a
+    connection whose value was byte-identical to the fallback, a declaration carrying no information.
+    A connection must now be DECLARED to count.
+    """
     planes = m.get("planes") or {}
     onto = cr / (planes.get("ontology") or "ontology")
     data = cr / (planes.get("data") or "data")
     rt = m.get("runtime") or {}
     interp = rt.get("interpreter")
-    conn = rt.get("connection") or "connection.yaml"
+    conn = rt.get("connection")                       # no fallback: undeclared is undeclared
     return {
-        "readable": onto.exists() and data.exists(),
-        "renderable": (cr / "objects.json").exists(),
-        "answerable": bool(interp) and (cr / str(interp)).exists() and (cr / str(conn)).exists(),
+        "readable": onto.is_dir() and data.is_dir(),
+        "renderable": _nonempty(cr / "objects.json"),
+        "answerable": bool(interp) and _nonempty(cr / str(interp))
+        and bool(conn) and _nonempty(cr / str(conn)),
         "annotatable": True,  # a container can always receive plane-3 annotations (stored outside it)
     }
 
