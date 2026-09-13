@@ -17,7 +17,7 @@ run_properties resolves it against the concept at run time. Edit the concept, an
 reads it moves with it — which is exactly what a conformance test is for.
 
 ── WHAT IT CAN GENERATE, and the ceiling ───────────────────────────────────────────────────────
-Measured on fpl2 (22 concepts, 30 rules):
+Measured on <dataset> (22 concepts, 30 rules):
 
     ALREADY ENFORCED OFFLINE, so deliberately NOT generated — 58 assertions. Column existence for
     rules[].binds, grounding.columns and properties[] is a SHAPE (rule-binds-grounded,
@@ -72,7 +72,7 @@ def value_column(root: pathlib.Path, rel: str, declared: list[str], ident: str) 
     """WHICH column actually holds this concept's value set — matched, not assumed.
 
     The first run assumed `identity.canonical_key`. On body_type that produced a test comparing
-    `fpl_lm_body_type_id` (int) against 'Cabrio/Roadster' — because the concept identifies itself by
+    `<source>_lm_body_type_id` (int) against 'Cabrio/Roadster' — because the concept identifies itself by
     the ID and enumerates the LABEL column. Both facts are true; nothing had ever compared them.
 
     So the column is found by matching the declared set against each grounded column's measured
@@ -187,7 +187,7 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     ident = (c.get("identity") or {}).get("canonical_key")
     # DO NOT TEST A COLUMN THE RELATION DOES NOT HAVE. Three generated tests died as Athena
     # COLUMN_NOT_FOUND: Brand identifies itself by `brand_letter` where the relation carries
-    # `fpl_brand_letter`; Market by `fpl_brand_country_code`, which dim_country_register has no
+    # `fpl_brand_letter`; Market by `<source>_brand_country_code`, which dim_country_register has no
     # column resembling; SalesArea declares no canonical_key at all and got a test regardless.
     # Those are three real modelling gaps — reported, not thrown at the warehouse to discover.
     if ident and srcs:
@@ -317,7 +317,7 @@ def main() -> int:
            or {}).get("engine") or {}
     out = root / a.out
     out.write_text(yaml.safe_dump({
-        "suite": "fpl2-ontology-generated", "version": "1.0",
+        "suite": "<dataset>-ontology-generated", "version": "1.0",
         "purpose": ("DOES THE WAREHOUSE STILL MATCH WHAT THE ONTOLOGY CLAIMS? Every assertion here is "
                     "RENDERED from a concept at run time, never typed — so a concept edit moves its "
                     "tests with it. The opposite obligation to the data-sanity suite, which must not "

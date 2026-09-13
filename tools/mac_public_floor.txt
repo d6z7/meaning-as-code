@@ -298,4 +298,8 @@ tools/version.py (NOT rglob):
 # the previous 611 included 311 findings in build/, a directory with zero tracked files.
 #
 # LOWER this number as debt is paid. Never raise it.
-300
+
+# LOWERED 2026-09-13 from 300 -> 146. The consolidation cleanse removed 154 findings: the SDK's
+# instance tokens, the normative grammar's prose, and tools/. The remainder is measured, not
+# assumed. Lower it further as debt is paid; never raise it.
+146

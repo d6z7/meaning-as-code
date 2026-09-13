@@ -148,14 +148,14 @@ def check_fact_homes(b) -> list:
 
     A LEGITIMATE CASE THAT MUST NOT FIRE: a measure that declares its additivity on an axis the law
     says nothing about (no declared axis_kind, or a measure_selector axis). One statement, one home —
-    the fact is stated exactly once and deriving it was never possible. Measured on fpl2: 8 of 35
+    the fact is stated exactly once and deriving it was never possible. Measured on <dataset>: 8 of 35
     facts are in exactly that state and none of them is reported.
 
-    MEASURED: fpl2 27 restated / 0 contradicted over 35 facts; contoso 6; the two framework examples
+    MEASURED: <dataset> 27 restated / 0 contradicted over 35 facts; contoso 6; the two framework examples
     3 and 5. GOLD IS 0 OF 9, and the reason is worth knowing before anyone reads it as cleanliness:
     not one of gold's three measures declares `semantics.measure_type`, so the law can never be aimed
     at its axes and each of its 9 additivity statements is genuinely its own only home. Gold's
-    additivity is AUTHORED where fpl2's is DERIVABLE — a different state, not a better one, and the
+    additivity is AUTHORED where <dataset>'s is DERIVABLE — a different state, not a better one, and the
     unadopted `measure_type` behind it is MAC005's business, not this check's.
     """
     out: list = []
@@ -298,11 +298,11 @@ def check_dead_guards(b) -> list:
     value that never occurs in the register is itself worth a look.
 
     A LEGITIMATE CASE THAT MUST NOT FIRE: a rule citing the same register and pinning a term that is a
-    lawful member of the framework vocabulary the column uses but which no row carries today. On fpl2
+    lawful member of the framework vocabulary the column uses but which no row carries today. On <dataset>
     that is `mac.aggregation_effect.average` — a real term of the closed domain, 0 rows. A guard
     on it is waiting for a row, not dead, and the widening in `_legal_domain` is what keeps it silent.
 
-    MEASURED on fpl2 (83 rules, 22 concepts): 8 hits, all one shape — `additivity_time = non_additive`
+    MEASURED on <dataset> (83 rules, 22 concepts): 8 hits, all one shape — `additivity_time = non_additive`
     in the 8 copies of the by-registered-type aggregation rule. The register's domain is {additive,
     non_aggregable, point_in_time} and the framework's is {additive, averageable, non_aggregable,
     point_in_time}; `non_additive` is in neither. Every one of those 8 rules therefore tells a reader
@@ -416,16 +416,16 @@ def check_confidence_earned(b) -> list:
 
     A LEGITIMATE CASE THAT MUST NOT FIRE: a harvested object honestly stamped `I` (inferred) or `Q`
     (needs SME) — the machine saying what it actually knows. Also a `C` on an `authored`/`tuned`
-    object: a human wrote it and is answerable for it. Measured on fpl2: 6 of 22 concepts are human
+    object: a human wrote it and is answerable for it. Measured on <dataset>: 6 of 22 concepts are human
     provenance and none is reported.
 
-    MEASURED on fpl2: 16 of 22 concepts are harvested + C with no ratification (16 self-certified /
+    MEASURED on <dataset>: 16 of 22 concepts are harvested + C with no ratification (16 self-certified /
     0 honestly marked / 0 ratified / 6 human-authored or tuned). The brief carried 17 from an earlier
     measurement; 6 concepts have since moved to human provenance and the number today is 16.
 
     A ZERO HERE IS NOT A CLEAN BILL, and this is measured, not hedging. The check's precondition is a
-    `metadata.provenance` stamp, and fpl2 is the ONLY bundle in the corpus that carries one: gold has
-    20 of 31 concepts claiming C with no provenance stamp at all, hifa 13 of 14, contoso 8 of 8. All
+    `metadata.provenance` stamp, and <dataset> is the ONLY bundle in the corpus that carries one: gold has
+    20 of 31 concepts claiming C with no provenance stamp at all, <source2> 13 of 14, contoso 8 of 8. All
     41 are invisible to MAC006 by construction and every one of them is caught by
     check_conformance.py's A4, which asks the weaker question. Widening this check to cover them would
     put one ruling in two homes — the exact defect MAC003 exists to report — so it stays narrow and
@@ -564,9 +564,9 @@ def check_change_protocol(b) -> list:
     A LEGITIMATE CASE THAT MUST NOT FIRE: a harvested object with no entry anywhere. Re-harvest
     overwrites it, there is nothing for a human to be answerable for, and demanding a record of it
     would bury the manual changes in noise — which is precisely what makes a register unreadable.
-    Measured on fpl2: 42 of 76 objects are harvested and none is reported.
+    Measured on <dataset>: 42 of 76 objects are harvested and none is reported.
 
-    MEASURED on fpl2: 18 manual objects (7 authored + 11 tuned) over 76; the ledger's 24 interventions
+    MEASURED on <dataset>: 18 manual objects (7 authored + 11 tuned) over 76; the ledger's 24 interventions
     name 46 objects and the delta register's 13 entries cover 19 — 0 unprotocolled in either. Green,
     and green on a real question rather than by not asking it.
     """

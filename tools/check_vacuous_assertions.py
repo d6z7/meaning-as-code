@@ -192,7 +192,7 @@ def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> li
         if a.get("type") == "must_be_zero" and re.search(
                 r"HAVING\s+count\(\s*\*\s*\)\s*>\s*1", sql, re.I):
             # A single-column uniqueness test is PERFECTLY VALID on a primary key — dim_body_type
-            # keyed on fpl_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
+            # keyed on <source>_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
             # cannot be unique, and the profile already measured that: distinct against rows. The
             # first cut skipped the check and flagged 19, most of them real key tests.
             grp = re.search(r"GROUP\s+BY\s+([^)\n]+)", sql, re.I)

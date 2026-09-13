@@ -94,14 +94,14 @@ def _collist(v, what: str) -> str:
     """One or many column names -> a SQL column list. Refuses an UNRESOLVED reference.
 
     WHY THE REFUSAL. A binding may name its key by DEREFERENCE rather than by retyping it —
-    `natural_key: data/datasets/v_fpl_kpi.yaml#x-grain.cell_key`. check_references already proves such
+    `natural_key: data/datasets/v_<source>_kpi.yaml#x-grain.cell_key`. check_references already proves such
     an anchor resolves (a bogus one is an ERROR), but resolving it needs bundle context this library
     deliberately does not have ("NOTHING HERE NAMES A BUNDLE"). So an anchor that reaches render time
     was never dereferenced by the caller, and the only safe act is to fail loudly.
 
     WHY THE LIST HANDLING. Interpolating the parameter raw is how this canon emitted
-    `PARTITION BY ['fpl_brand_country_code', 'fpl_model_code', ...]` — a Python list repr, invalid SQL
-    — from a binding whose YAML declared a perfectly ordinary list (gaps/fpl2, 2026-08-19, shipped and
+    `PARTITION BY ['<source>_brand_country_code', '<source>_model_code', ...]` — a Python list repr, invalid SQL
+    — from a binding whose YAML declared a perfectly ordinary list (<domain>/<dataset>, 2026-08-19, shipped and
     reverted the same day). The declared form was right; the canon corrupted it."""
     items = [v] if isinstance(v, str) else list(v or ())
     if not items:
@@ -120,9 +120,9 @@ def snapshot_collapse(table, *, natural_key, order_by, valid_from=None, valid_to
     else the latest. Values BOUND (?), never interpolated (FRAMEWORK §6). Query-shape canon.
 
     `natural_key` and `order_by` each take one column or MANY. Many matters in both positions:
-      * a real cell key is composite — fpl2's v_fpl_kpi is SEVEN columns, and a partition missing one
+      * a real cell key is composite — <dataset>'s v_<source>_kpi is SEVEN columns, and a partition missing one
         of them (role) silently folds six reporting perspectives into one arbitrary row;
-      * the vintage rarely breaks ties alone. fpl2's own protosql records `fpl_created_at DESC is not
+      * the vintage rarely breaks ties alone. <dataset>'s own protosql records `fpl_created_at DESC is not
         optional` beside `config_reporting_month DESC`, and this canon could not express it — which is
         one of the two reasons that fragment exists at all. mac.schema.json says a ProtoSqlFile "is
         usually a workaround for a canon that is missing or broken, and the better fix is upstream".
@@ -308,13 +308,13 @@ def _dig(doc, dotted: str):
 def _descriptor(root, relation: str, anchor: str):
     """Read a value out of the DATASET DESCRIPTOR of the relation a concept grounds.
 
-    THE POINT: a binding declares WHERE its key lives instead of retyping it. fpl2 records the same
+    THE POINT: a binding declares WHERE its key lives instead of retyping it. <dataset> records the same
     latest-vintage collapse "got WRONG FOUR TIMES IN ONE DAY by careful parties", every time by
     re-implementing a correct instruction from memory at the call site, once moving a figure by 25 %.
     A seven-column partition copied into eight concept files is eight chances to drop `role` — and
     dropping `role` folds six reporting perspectives into one arbitrary row, silently.
 
-    `relation` is schema-qualified as the concept grounds it (fpl2.v_fpl_kpi); the descriptor is
+    `relation` is schema-qualified as the concept grounds it (<dataset>.v_<source>_kpi); the descriptor is
     data/datasets/<stem>.yaml. Returns None if anything is missing — the caller then raises for the
     unfilled parameter, which is a build error, never a silently empty binding."""
     if not root or not isinstance(relation, str):
@@ -373,7 +373,7 @@ def resolve_params(udf: str, params: dict, concept=None, root=None) -> dict:
 
     A path of the form `descriptor#<dotted>` reads the DATASET DESCRIPTOR of the relation the concept
     grounds, rather than the concept itself. That is what lets a binding say WHERE its key lives
-    instead of copying it: gaps/fpl2 records the same seven-column partition "got WRONG FOUR TIMES IN
+    instead of copying it: <domain>/<dataset> records the same seven-column partition "got WRONG FOUR TIMES IN
     ONE DAY by careful parties", every time by re-implementing a correct instruction from memory at
     the call site.
 

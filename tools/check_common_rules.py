@@ -9,7 +9,7 @@ selector rather than a source name. It is not a new construct. A concept matchin
 a common rule's `scope` gets that behaviour whether or not it writes anything. So a concept that
 writes the rule out again is not adding a contract — it is adding a COPY of one, and copies drift.
 
-MEASURED on gaps/fpl2: thirteen concepts each wrote the same refusal law. 13 distinct `when` wordings,
+MEASURED on <domain>/<dataset>: thirteen concepts each wrote the same refusal law. 13 distinct `when` wordings,
 13 `then`, 12 `never`. Three of the thirteen carried NO information beyond the concept's own name, and
 one (`market`) ended up with a bare `then` promising an answer it could not produce. None of that was
 visible to any gate, because every copy was individually well-formed.

@@ -27,7 +27,7 @@ refusing because a NAME does not resolve to a code, are different rules with dif
 hid the difference; the canon makes it explicit.
 
 NOTHING HERE NAMES A BUNDLE. `source`, `label`, `slot` and the rest are parameters. A canon that
-hardcoded an fpl2 column would be a framework rule about one customer's data.
+hardcoded an <dataset> column would be a framework rule about one customer's data.
 """
 from __future__ import annotations
 
@@ -47,7 +47,7 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
     """A MEASURE has no row for the resolved scope — refuse at the evidence boundary.
 
     params
-      source        the bundle's own name, as it appears to a reader ("FPL2")
+      source        the bundle's own name, as it appears to a reader ("<DATASET>")
       label         the measure as a human says it ("Deliveries to Customer")
       slot          what was resolved and found empty — "scope", "country", ...
       confusable    measures a tired reader might substitute instead. Named explicitly because the
@@ -106,9 +106,9 @@ def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "
     """A NAME does not resolve to a code — refuse rather than fuzzy-match.
 
     params
-      source  the bundle's own name ("FPL2")
+      source  the bundle's own name ("<DATASET>")
       thing   what was named and could not be resolved ("model", "market", "brand")
-      code    the identity it should have resolved to ("fpl_model_code")
+      code    the identity it should have resolved to ("<source>_model_code")
       via     the register the resolution goes THROUGH, when the concept names one. `country` and
               `market` both say "via the register" and the canon had no way to carry it, so binding
               them would have dropped the clause that says WHERE the lookup happens.
@@ -134,7 +134,7 @@ def resolve_by_register(*, thing: str, code: str, register: str, search: str,
 
     params
       thing          what a question names ("country", "market", "model")
-      code           the identity it resolves to ("market_code", "fpl_model_code")
+      code           the identity it resolves to ("market_code", "<source>_model_code")
       register       WHERE the resolution happens — an offline register, so an unresolvable name can
                      be refused BEFORE a query rather than returning zero rows that read as "no data"
       search         the column(s) a name is matched against ("name_en / name_de / iso2")
@@ -144,10 +144,10 @@ def resolve_by_register(*, thing: str, code: str, register: str, search: str,
       fact_join      the column the FACT joins on, when it differs from `code`
       served_view    the in-warehouse alternative, for when a round trip is acceptable
 
-    WHY THIS EXISTS. MEASURED on gaps/fpl2, 2026-08-19: four rules said this with different nouns —
+    WHY THIS EXISTS. MEASURED on <domain>/<dataset>, 2026-08-19: four rules said this with different nouns —
     country and market resolve `name_en/name_de/iso2 -> market_code` through the SAME register and
     forbid the SAME column (`market_name_raw`), differing only in which concept they sit on;
-    vehicle_model does it through `name_norm -> fpl_model_code`. One law, four spellings, and the
+    vehicle_model does it through `name_norm -> <source>_model_code`. One law, four spellings, and the
     kind of repetition MODELLERS_COOKBOOK C6 calls "a law nobody has stated".
 
     THE DISPLAY LABEL IS THE POINT. Each of those rules exists because the register carries a
@@ -185,7 +185,7 @@ def render(udf: str, params: dict, concept: dict | None = None, root=None) -> di
     DERIVED PARAMETERS ARE READ, NOT ATTACHED. The registry declares which of a canon's parameters
     live on the concept (`params_from`); those are filled from `concept` here, and an ATTACHED value
     never overrides a declared one — that is what makes attaching them pointless rather than merely
-    redundant. Measured 2026-08-19: `label` was attached on 5 fpl2 bindings and disagreed with
+    redundant. Measured 2026-08-19: `label` was attached on 5 <dataset> bindings and disagreed with
     concept.label on THREE of them ("DtC" vs "Deliveries to Customer", "IstProd" vs "Actual
     Production", "Prodant" vs "Production Request"), so the refusal message named the measure
     something its own concept does not call it.

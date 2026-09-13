@@ -12,10 +12,10 @@ check — and constrains nothing:
   · no column tie   nothing required it to name columns the relation actually has
   · "VERIFIED"      the descriptions SAY they were checked against Athena; that is prose
 
-All four holes produced real defects before this existed. fpl_ob_reach_kpi declared
+All four holes produced real defects before this existed. <source>_reach_kpi declared
 `excludes_vintage: true` and put the reporting cycle INSIDE its own key, so a collapse partitioned on
 it would separate every cycle into its own group and collapse nothing at all — caught only when
-protosql_render refused to render it. v_fpl_kpi.yaml still carries "VERIFIED 2026-08-16: 12.345.098
+protosql_render refused to render it. v_<source>_kpi.yaml still carries "VERIFIED 2026-08-16: 12.345.098
 cells, 0 multi-row" while the data now says 944.308 figures are multi-row: the word VERIFIED is a
 sentence, not a test, and it went stale the moment a second business status arrived.
 

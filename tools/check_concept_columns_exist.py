@@ -5,14 +5,14 @@ Nothing checked this, and five concepts had been wrong for as long as anyone can
 found the hard way: a generated test compiled into SQL and Athena answered COLUMN_NOT_FOUND.
 
     Brand      identity.canonical_key  brand_letter            relation has fpl_brand_letter
-    Market     identity.canonical_key  fpl_brand_country_code  relation has nothing resembling it
+    Market     identity.canonical_key  <source>_brand_country_code  relation has nothing resembling it
     SalesArea  grounding.key           fpl_group_country_code  relation has group_code
     OBReach    identity.canonical_key  (none declared)
     SalesArea  identity.canonical_key  (none declared)
 
-THE CAUSE IS NOT CARELESSNESS. The source is inconsistent about the `fpl_` prefix: v_fpl_kpi spells
+THE CAUSE IS NOT CARELESSNESS. The source is inconsistent about the `fpl_` prefix: v_<source>_kpi spells
 it `brand_letter` while dim_brand_country_code spells the same thing `fpl_brand_letter`, and
-v_fpl_kpi is inconsistent WITH ITSELF (`brand_letter` unprefixed, `fpl_brand_country_code`
+v_<source>_kpi is inconsistent WITH ITSELF (`brand_letter` unprefixed, `<source>_brand_country_code`
 prefixed). A concept written against the fact's spelling and grounded on the dimension is wrong in a
 way no reader would notice, because both names look right.
 

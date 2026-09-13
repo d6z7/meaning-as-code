@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render a protosql fragment — the collapse you cannot type wrong, because you do not type it.
 
-THE FRAGMENT WAS ALREADY WRITTEN. gaps/fpl2 authored ontology/protosql/snapshot.pin_latest_per_cell
+THE FRAGMENT WAS ALREADY WRITTEN. <domain>/<dataset> authored ontology/protosql/snapshot.pin_latest_per_cell
 on 2026-08-16, with `PARTITION BY @cols:cell_key` and a slot that dereferences the relation's own
 declared key. Its header explains itself:
 
@@ -233,7 +233,7 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
     # THE never_2 GUARD, self-detecting: the fragment binds both the key and the vintage column, so
     # the renderer never needs telling which column is the vintage. If the key CONTAINS it, every
     # vintage becomes its own partition and the collapse collapses nothing — the fragment says so in
-    # its own words, and until now nothing enforced it. Caught fpl_ob_reach_kpi on the first run:
+    # its own words, and until now nothing enforced it. Caught <source>_reach_kpi on the first run:
     # its descriptor declares `excludes_vintage: true` AND lists config_reporting_month in cell_key.
     vintage = resolved.get("@col:vintage")
     for slot, spec in slots.items():

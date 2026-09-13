@@ -232,7 +232,7 @@ def main() -> int:
            or {}).get("engine") or {}
     out = root / a.out
     out.write_text(yaml.safe_dump({
-        "suite": "fpl2-data-sanity-generated",
+        "suite": "<dataset>-data-sanity-generated",
         "version": "1.0",
         "generated": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "generated_by": GEN,

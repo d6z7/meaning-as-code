@@ -70,7 +70,7 @@ def _pick_def(path, layout=None):
         return _BY_BASE[base]
     # A SUITE IS A SHAPE, NOT A FILENAME. `properties.yaml` was routed by basename alone, so a bundle
     # could hold exactly ONE property suite — and MODELLERS_COOKBOOK B9 tells a modeller to add a
-    # second (tier-1 warehouse invariants, tier-2 dimensional retrieval). gaps/fpl2 did, named it
+    # second (tier-1 warehouse invariants, tier-2 dimensional retrieval). <domain>/<dataset> did, named it
     # acceptance/retrieval.yaml, and it went MAC001: "carries no MAC definition". The framework asked
     # for the file and then could not classify it.
     if '/acceptance/' in p and base.endswith('.yaml'):
@@ -207,7 +207,7 @@ def enumerate_bundle(root, layout=None):
         files.append(proj)
     # v0.1.14 — the nine artifacts MAC gained definitions for. COLLECTED here, routed in _pick_def.
     # Both halves are needed: a definition nothing enumerates is a definition nothing applies.
-    # BOTH LAYOUTS. fpl2 grew these across four homes (bundle root, ontology/, acceptance/,
+    # BOTH LAYOUTS. <dataset> grew these across four homes (bundle root, ontology/, acceptance/,
     # interventions/); a source scaffolded from v0.1.16 puts them in one `governance/` plane. Routing
     # keys on BASENAME, so it already handled both — collection did not, and a definition nothing
     # enumerates is a definition nothing applies. Second time that half was the one missed.

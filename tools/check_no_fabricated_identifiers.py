@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MAC008 — an identifier a register declares may not be BUILT by string concatenation.
 
-THE DEFECT, caught by the operator four times in one day on gaps/fpl2. Each time a declaration
+THE DEFECT, caught by the operator four times in one day on <domain>/<dataset>. Each time a declaration
 existed and was not read; each time a plausible pattern was inferred instead:
 
   the cell key       five columns typed from what "a cell" felt like, against a declared seven

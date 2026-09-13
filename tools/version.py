@@ -9,7 +9,7 @@ times and was not, because nothing checked:
     mac.schema.json title       v0.1.10
     mac.schema.json description v0.1.13
     tools/validate_schema.py      0.1.13
-    64 fpl2 bundle files          0.1.13
+    64 <dataset> bundle files          0.1.13
     mac_shapes.yaml mentions      0.1.18
 
 Four generations shipped in prose with no tag. And validate_schema.py:119 documents its own source

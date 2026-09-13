@@ -23,3 +23,6 @@ sdk/gate/source_tokens.txt
 
 # The shared-schema register is per-estate — same rule as the other two.
 sdk/gate/shared_schemas.txt
+
+# The public-token register IS the identity it protects. Never tracked.
+registers/public_tokens.txt

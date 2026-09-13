@@ -20,12 +20,12 @@ Usage:
   python3 tools/lineage_project.py [roots...] [--check <golden.json>] [--out <path>]
 
   (no args)         emit the aggregated model for the default sibling roots to stdout
-  --out <path>      write the aggregated full model (all FPL+HIFA flows) as JSON
+  --out <path>      write the aggregated full model (all <SOURCE>+HIFA flows) as JSON
   --check <golden>  emit ONLY the 3 golden flows and compare to <golden> on the 5-key edge subset
                     {src_table,src_col,to_col,rule_id,kind} + kinds + predicates + derived. HARD-HALT
                     (exit 1) if the 3 golden flows do not conform.
 
-Default roots (relative to CWD): ../cap-ontology-fpl ../cap-ontology-hifa
+Default roots (relative to CWD): ../a reference bundle ../cap-ontology-hifa
 """
 import argparse
 import json
@@ -47,7 +47,7 @@ DERIVED_KINDS = {"seed", "const"}
 #
 # WHY `dataset` belongs here: the enforced chain — raw source -> transformation -> dataset -> ontology
 # concept — has MULTIPLE LEVELS. A served dataset is itself a legitimate parent of the next dataset (a
-# "view-of-view": fpl2.country_bucket_membership is built on the served fpl2.dim_country_register, not on
+# "view-of-view": <dataset>.country_bucket_membership is built on the served <dataset>.dim_country_register, not on
 # any raw table). Treating only `raw_source` as an edge source silently collapsed those flows to
 # edges=0 with every output column falling back to derived/const — lineage that says NOTHING.
 # A dataset input resolves its columns from the upstream DATASET descriptor (data/datasets/<stem>.yaml)
@@ -58,11 +58,11 @@ DERIVED_KINDS = {"seed", "const"}
 # input is decoration bound in at build time, not a parent the column's meaning flows down from.
 EDGE_INPUT_KINDS = ("raw_source", "dataset")
 
-DEFAULT_ROOTS = ["../cap-ontology-fpl", "../cap-ontology-hifa"]
+DEFAULT_ROOTS = ["../a reference bundle", "../cap-ontology-hifa"]
 
 # The 3 golden flows (by produced relation) — the frozen conformance set.
 GOLDEN_TRANSFORMS = [
-    "fpl.v_fpl_ob_reach_current",
+    "fpl.v_<source>_ob_reach_current",
     "hifa.v_hifa_checkpoint_events",
     "hifa.v_hifa_kpi_scheduling",
 ]
@@ -502,7 +502,7 @@ def run_check(roots, golden_path):
 # ── main ────────────────────────────────────────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser(description="Project the MAC data plane onto a column-level lineage model (offline).")
-    ap.add_argument("roots", nargs="*", help="source repo roots (default: ../cap-ontology-fpl ../cap-ontology-hifa)")
+    ap.add_argument("roots", nargs="*", help="source repo roots (default: ../a reference bundle ../cap-ontology-hifa)")
     ap.add_argument("--check", metavar="GOLDEN", help="compare the 3 golden flows to GOLDEN and HARD-HALT on mismatch")
     ap.add_argument("--out", metavar="PATH", help="write the aggregated full model JSON")
     a = ap.parse_args()

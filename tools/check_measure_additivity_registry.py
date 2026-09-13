@@ -14,7 +14,7 @@ resolving the vocabulary. Materializing is fine; DIVERGING is not.
 
 WHY THIS EXISTS
 ---------------
-On 2026-08-16 the fpl2 registry was populated by HAND rather than derived, and drifted immediately:
+On 2026-08-16 the <dataset> registry was populated by HAND rather than derived, and drifted immediately:
 Stock's time axis was written ``non_additive`` instead of ``point_in_time``, and Target was written
 additive on the categorical axis when the law says a Target is ``non_aggregable`` on BOTH — i.e. the
 registry claimed Ideal Stock could be summed across markets. Nothing caught it, because the only

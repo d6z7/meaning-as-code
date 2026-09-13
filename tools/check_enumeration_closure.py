@@ -11,7 +11,7 @@ and "I made part of it up" in the same breath — and the consumer only reads th
 
 WHY THIS EXISTS
 ---------------
-On 2026-08-16 fpl2's ``perspective.yaml`` declared ``closure: closed`` over two members, while marking
+On 2026-08-16 <dataset>'s ``perspective.yaml`` declared ``closure: closed`` over two members, while marking
 the second one ``confidence: I`` with the note "it may be a literal such as 'Brand' or the brand's own
 letter; do not assume without confirming". Nothing flagged it. A probe of the fact showed the real
 domain had SIX members — one Group role and five NAMED brands. Worse, because the file believed

@@ -289,7 +289,7 @@ def provenance_of(obj) -> str | None:
 
     Measured 2026-08-17: the estate held two readers of `metadata.provenance`, one case-folding and
     one raw, and on a probe bundle stamping `Authored` they returned OPPOSITE verdicts on the same
-    byte. This is the case-folding one; adopting it is byte-neutral on the whole corpus (fpl2 carries
+    byte. This is the case-folding one; adopting it is byte-neutral on the whole corpus (<dataset> carries
     harvested x43 / authored x7 / tuned x10, all already lower-case; the other three bundles carry
     only free-text sentences and None, outside the vocabulary under either reader).
     """
@@ -913,7 +913,7 @@ def _axis_role(axis_name: str, selectors: frozenset) -> str:
     selects a different measure, so the additivity law has nothing to say about it.
 
     MEASURED 2026-08-17: without this derivation the additivity family reports 9 contradicting
-    axis-facts on the fpl2 bundle; with it, 2 (the real ones). A 7x over-fire — the same class of
+    axis-facts on the <dataset> bundle; with it, 2 (the real ones). A 7x over-fire — the same class of
     defect this module was built to stop, produced by the module itself if the role is ignored.
     """
     return "measure_selector" if axis_name in selectors else "aggregation_axis"

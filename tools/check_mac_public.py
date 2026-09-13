@@ -17,6 +17,7 @@ Exit 0 = clean; 1 = at least one leak (each printed as path:line: [rule] text).
 Escape hatch: append `mac-public-allow` in a comment on a line to whitelist a genuine, reviewed use.
 """
 from __future__ import annotations
+import os
 import re
 import argparse
 import shutil
@@ -35,31 +36,44 @@ TEXT_EXT = {
 ALLOW = "mac-public-allow"
 
 I = re.IGNORECASE
-# (rule-label, regex, flags). Case-SENSITIVE where the token collides with an English word
-# (VW / SEAT / GAPS) so "seat", "gaps" etc. never false-positive.
-PATTERNS = [
-    # --- source / product identity ---
-    ("fpl-token",            r"fpl",                        I),   # fpl, FPL_C…, v_fpl, fpl_date
-    ("ob-reach",             r"ob[\-_ ]?reach",             I),
-    ("dtc-measure",          r"\bdtc\b",                    I),
-    ("brand-letter",         r"brand[_ ]letters?",          I),
-    ("region-partition-col", r"region_definition_used",     I),
-    ("nadin-source",         r"\bnadin\b",                  I),
-    ("vwdfive-org",          r"vwdfive",                    I),
-    # --- VW / brands ---
-    ("volkswagen",           r"volkswagen",                 I),
-    ("brand-name",           r"\b(sk[oó]da|cupra|audi)\b",  I),
-    ("vw-abbrev",            r"\bVW\b",                     0),   # case-sensitive: the brand, not a word
-    ("seat-brand",           r"\bSEAT\b",                   0),   # case-sensitive: the brand, not "seat"
-    ("gaps-system",          r"\bGAPS\b",                   0),   # case-sensitive: the system, not "gaps"
-    # --- infra / secrets shapes ---
-    ("athena-bucket",        r"cat-prd-athena",             I),
-    ("nadin-catalog",        r"catalog_vorraum",            I),
-    # --- automotive domain vocab ---
-    ("powertrain",           r"powertrain",                 I),
-    ("fuel-electrification", r"\b(bev|phev|mhev)\b",        I),
-    ("fuel-type",            r"\b(diesel|petrol)\b",        I),
-]
+
+# THE PATTERN TABLE IS NOT IN THIS FILE. It was: every brand, the operator's systems, an infra
+# bucket, a colleague's name -- the complete identity this gate exists to keep OUT of a public
+# repository, listed inside that public repository. The gate's own source was the densest
+# concentration in the tree of exactly what it scans for.
+#
+# It now loads from a GITIGNORED register. `registers/public_tokens.example.txt` ships with the
+# format and no values. $MAC_PUBLIC_TOKENS overrides the path so CI -- which has no gitignored
+# file -- can supply one without committing it.
+#
+# AN EMPTY REGISTER IS NOT A CLEAN TREE. With no patterns the gate examines NOTHING, and a
+# zero-denominator pass is this estate's dominant defect, so it refuses rather than reporting green.
+REGISTER = Path(os.environ.get("MAC_PUBLIC_TOKENS") or (SELF.parent.parent / "registers" / "public_tokens.txt"))
+
+
+def load_patterns(register: Path = None):
+    """[(label, regex, flags)] from the register, or [] when none is declared."""
+    reg = register if register is not None else REGISTER
+    if not reg.is_file():
+        return []
+    out = []
+    for ln in reg.read_text(encoding="utf-8").splitlines():
+        ln = ln.strip()
+        if not ln or ln.startswith("#"):
+            continue
+        # Split on the FIRST and LAST delimiter only: a regex legitimately contains `|`
+        # (alternation), and a naive 3-way split silently DROPPED every alternating pattern --
+        # three brands vanished from the table that way, which is a gate going quietly blind.
+        if ln.count("|") < 2:
+            continue
+        label, rest = ln.split("|", 1)
+        rx, fl = rest.rsplit("|", 1)
+        label, rx, fl = label.strip(), rx.strip(), fl.strip()
+        out.append((label, rx, I if fl.lower() == "i" else 0))
+    return out
+
+
+PATTERNS = load_patterns()
 COMPILED = [(label, re.compile(p, f)) for (label, p, f) in PATTERNS]
 
 
@@ -127,6 +141,14 @@ def _candidates(root: Path):
 
 
 def main() -> int:
+    if not PATTERNS:
+        print(
+            "could not run: check_mac_public — no token register at "
+            f"{REGISTER}; 0 patterns means 0 examined, which is not the same as clean. "
+            "Copy registers/public_tokens.example.txt, or set $MAC_PUBLIC_TOKENS.",
+            file=sys.stderr,
+        )
+        return 2
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("root", nargs="?", default=str(ROOT_DEFAULT))
     ap.add_argument("--self-test", action="store_true")

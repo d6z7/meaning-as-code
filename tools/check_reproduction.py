@@ -7,7 +7,7 @@ A bundle's process record is a set of CLAIMS: this stage is tool-authored, that 
 this command must never be run. Written as prose, none of them can be checked, and prose rots quietly
 while continuing to read as authoritative.
 
-Measured on fpl2, 2026-08-18 — REPRODUCTION.md carried TWO false claims at the same time:
+Measured on <dataset>, 2026-08-18 — REPRODUCTION.md carried TWO false claims at the same time:
 
   * "Never run `harvest --mode concepts`" — true, and incomplete. `--mode onboard --accept` reaches
     the same function; its concepts stage is skipped ONLY when ontology/concepts/ is already
@@ -27,7 +27,7 @@ WHAT IT WOULD FALSELY FIRE ON, and the legitimate case that must not fire
   reported when SOME of its globs match and others do not — a partially-run stage is a real finding,
   an unrun one is not. Severity is warning, never error.
 * `enforced_by` on provenance. A concept HARVESTED and then reworked by hand may legitimately keep
-  `provenance: harvested` as its origin stamp. LEGITIMATE CASE: none in fpl2 that can be
+  `provenance: harvested` as its origin stamp. LEGITIMATE CASE: none in <dataset> that can be
   distinguished from a violation — and that is precisely the finding. The diagnostic therefore states
   the CONTRADICTION (the record forbids X; N artifacts claim X) rather than accusing anyone of having
   run the command, because the artifacts cannot tell those two apart. Resolving it is an operator act.

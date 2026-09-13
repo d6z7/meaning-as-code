@@ -66,7 +66,7 @@ def _rel(p: Path, root: Path) -> str:
 
 
 def _leaf(rel: str) -> str:
-    """The bare relation name — 'fpl2.dim_model' -> 'dim_model'."""
+    """The bare relation name — '<dataset>.dim_model' -> 'dim_model'."""
     return str(rel).strip().split(".")[-1]
 
 
@@ -158,7 +158,7 @@ def main(argv) -> int:
             if irel and _leaf(irel) in raw_leaf:
                 consumed_sources.add(raw_leaf[_leaf(irel)])
 
-    # rglob: a concepts plane may be flat (fpl2) or foldered by domain (the gold: concepts/brand/brand.yaml)
+    # rglob: a concepts plane may be flat (<dataset>) or foldered by domain (the gold: concepts/brand/brand.yaml)
     concept_files = sorted(concepts_dir.rglob("*.yaml")) if concepts_dir.is_dir() else []
 
     errors: list[str] = []

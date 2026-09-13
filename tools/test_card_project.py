@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Project an acceptance property into a READABLE CARD — what it searches, with what parameters.
 
-THE DEFECT THIS REPAIRS, measured on gaps/fpl2: 31 properties carried 5.161 words of `statement`
+THE DEFECT THIS REPAIRS, measured on <domain>/<dataset>: 31 properties carried 5.161 words of `statement`
 prose — median 96 words, worst 489, only 4 of 31 under 60. Asked what a test checks, a reader got an
 essay. Operator, verbatim: "the prosa you provide in R-BRAND-02 is too long and unreadable ... this
 shoudl be focused to the point what are you searchingi and with what parameters ... maybe in a table.
@@ -46,9 +46,9 @@ DIALECT = "trino"
 # Columns whose literal bindings are the ones a reader actually recognises, in the order a person
 # says them. Anything not listed still shows — this only fixes the ORDER, never the content.
 PARAM_ORDER = [
-    "role", "brand_letter", "brand", "fpl_brand_country_code", "market", "region",
+    "role", "brand_letter", "brand", "<source>_brand_country_code", "market", "region",
     "kpi", "measure", "fpl_plan_level", "config_data_status", "config_reporting_month",
-    "fpl_date", "fpl_model_code",
+    "fpl_date", "<source>_model_code",
 ]
 
 # The de-DE display the operator requires everywhere numbers are shown.
@@ -225,7 +225,7 @@ def firing_rules(root: str, sql: str, params: list) -> list[dict]:
     A rule already declares the columns it governs (`binds`). A test already touches columns and
     PINS some of them. So the link needs no new field and cannot go stale: a rule is exercised when
     every column it binds is present in the test's SQL, and PINNED when the test also fixes one of
-    them to a literal. The distinction matters — 28 of 29 fpl2 rules bind `role` or a fact column,
+    them to a literal. The distinction matters — 28 of 29 <dataset> rules bind `role` or a fact column,
     so an unranked overlap would name half the ontology for every test and mean nothing.
 
     Deliberately NOT claimed: that an exercised rule is a rule the test would CATCH the violation of.

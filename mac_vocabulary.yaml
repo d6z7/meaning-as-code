@@ -32,7 +32,7 @@ aggregation_effect:
     capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a
     reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale
     (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was
-    one character from `non_aggregable`, in a different scale, meaning something else. Eight fpl2 rules
+    one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules
     fell into exactly that gap and guarded on a value no register could hold.
 
     `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: gross_stock says
@@ -190,7 +190,7 @@ test_kind:
       what to test, but never inherits its assertions; a measured literal is acceptable where it is
       dated and re-checkable. EXAMPLE — S-GRAIN-KPI reads the relation's measured key to learn which
       columns identify one figure, then asks the warehouse whether that still holds. It is the
-      property that caught v_fpl_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" against a
+      property that caught v_<source>_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" against a
       warehouse that had reached 11.689.530. A conformance test rendered from that same declaration
       would have confirmed the claim rather than contradicted it — which is the entire distinction
       between the two test kinds.
@@ -203,7 +203,7 @@ canon:
     composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
     # `params_from` names the DECLARATION each parameter is readable from. A binding that attaches
     # one of these is stating a fact that already has a home — MAC003 if it agrees, MAC004 if it does
-    # not. Measured 2026-08-19: two fpl2 bindings attached `code` and BOTH disagreed with
+    # not. Measured 2026-08-19: two <dataset> bindings attached `code` and BOTH disagreed with
     # identity.canonical_key (code='code' vs brand_letter; code='market' vs iso2), because a regex
     # over rule prose had guessed what the concept already declared.
     refuse_measure_no_row:
@@ -217,7 +217,7 @@ canon:
       serves: contaminated_code
       needs_sqlglot: false
       doc: "RENDER canon — resolve a NAME to a CODE through a declared register, never through the
-            display label. MEASURED on gaps/fpl2: four rules said this with different nouns, and each
+            display label. MEASURED on <domain>/<dataset>: four rules said this with different nouns, and each
             existed because the register carries a human-readable column that LOOKS like an identity
             (market_name_raw = INLAND for Germany; a model's display name where the search key is
             name_norm). params: thing, code, register, search, display_label, scope, fact_join,
@@ -335,9 +335,9 @@ diagnostic_code:
       description: >-
         an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every
         gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO
-        of four declared cell keys were false — v_fpl_kpi claimed 0 multi-row against 11.689.530,
-        and v_fpl_tm_kpi 0 against 176.279 (99,96 %). The two that HELD are the two that a view
-        enforces: fpl_ob_reach_kpi, which withholds ambiguous cells, and v_fpl_kpi_current, whose
+        of four declared cell keys were false — v_<source>_kpi claimed 0 multi-row against 11.689.530,
+        and v_<source>_tm_kpi 0 against 176.279 (99,96 %). The two that HELD are the two that a view
+        enforces: <source>_reach_kpi, which withholds ambiguous cells, and v_<source>_kpi_current, whose
         collapse makes the key true by construction (claimed 15.483.849, reproduces at 15.483.965,
         +116). That is the shape of the defect: the declaration is false exactly where nothing makes
         it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case — same subject,

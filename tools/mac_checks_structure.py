@@ -281,7 +281,7 @@ def _profile(root) -> dict:
 
 def _walk_keys(node, path=""):
     """Every (yaml path, key) in a document, ROOT LEVEL INCLUDED. The root level is the whole point:
-    measured on fpl2, three of the four `x-` sites are top-level keys on dataset descriptors
+    measured on <dataset>, three of the four `x-` sites are top-level keys on dataset descriptors
     (`x-grain`), which a walker that descends before it yields never sees."""
     if isinstance(node, dict):
         for k, v in node.items():

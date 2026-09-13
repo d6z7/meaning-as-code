@@ -839,7 +839,7 @@ def check(root, reference=None, fw: Framework | None = None, bundle=None) -> lis
     `bundle` and `fw` are INJECTION POINTS, added 2026-08-18 for `mac_compile`. A driver running three
     phases over one bundle parses it once and hands the same object to each; called without them this
     loads its own, exactly as before, so the standalone `main()` below is unchanged. Nothing about the
-    analysis depends on which way it arrived — measured identical on fpl2, 10 findings either way."""
+    analysis depends on which way it arrived — measured identical on <dataset>, 10 findings either way."""
     fw = fw or introspect_framework()
     reg = offers(fw)
     b = bundle if bundle is not None else load_bundle(Path(root))

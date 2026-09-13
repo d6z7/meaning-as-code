@@ -15,8 +15,8 @@ and 7 columns give the identical 12.345.252 groups — so a discrimination-only 
 measurably justified and semantically wrong. The dependence probe says why: it is determined TWICE
 over, by two different kinds of fact.
 
-MEASURED 2026-08-20 on v_fpl_kpi, and it corrected the guess this file was first written around.
-`brand_letter` is determined by `fpl_model_code_id` ALONE. It is NOT determined by `role` — Group
+MEASURED 2026-08-20 on v_<source>_kpi, and it corrected the guess this file was first written around.
+`brand_letter` is determined by `<source>_model_code_id` ALONE. It is NOT determined by `role` — Group
 spans nine letters — and, against the standing assumption, NOT by `market` either, so the "578 market
 codes each belong to exactly one brand" convention DOES NOT HOLD as a functional dependency in this
 relation. The distinction the probe exists to draw is still the right one:
@@ -29,7 +29,7 @@ but which columns fall on which side is measured here, not asserted. No discrimi
 them apart, which is the entire reason this file carries two probes.
 
 ── THE OTHER TRAP: UNIQUE IS NOT RIGHT ─────────────────────────────────────────────────────────
-Adding config_data_status makes v_fpl_kpi unique — and DOUBLES the figure count, 12,3 Mio to 24,0
+Adding config_data_status makes v_<source>_kpi unique — and DOUBLES the figure count, 12,3 Mio to 24,0
 Mio. That is the tell: it stopped identifying a FIGURE and started identifying a DELIVERY OF a
 figure. A minimal-unique-subset search lands there and declares victory.
 
@@ -41,7 +41,7 @@ same figure twice.
     IDENTITY      removing it makes the measure disagree a lot    -> auto-included
     COLLAPSIBLE   removing it splits, but the halves AGREE        -> a human decides, once
 
-MEASURED on v_fpl_kpi: `role` (identity) scores 0,000 % disagreement and `config_data_status`
+MEASURED on v_<source>_kpi: `role` (identity) scores 0,000 % disagreement and `config_data_status`
 (delivery) scores 0,016 %. Four significant figures apart. NO STATISTIC SEPARATES THEM, because the
 difference is what the business MEANS by the two columns. The tool reduces twenty columns to two
 closed questions and refuses to answer those itself.

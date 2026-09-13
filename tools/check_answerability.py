@@ -6,7 +6,7 @@ WHY THIS EXISTS
 mac.schema.json describes `contract.no_probe_guarantee` as "what an agent needs ONLY, to use this
 concept without probing the data; if more is needed, the concept is incomplete (fix it, don't probe)."
 
-That is a COMPLETENESS TEST. gaps/fpl2 answered it the way every bundle does: by hand, in prose, once
+That is a COMPLETENESS TEST. <domain>/<dataset> answered it the way every bundle does: by hand, in prose, once
 per concept — twenty-two blocks reciting the steps an agent should take. Every step of every one of
 them restates a declaration that already exists.
 
@@ -36,7 +36,7 @@ already draws elsewhere:
 
   A DEDICATED RELATION NEEDS NO DISCRIMINATOR. A concept that is the sole user of its relation is
   selected BY that relation; demanding a discriminator would report a gap that cannot exist. Without
-  this, fpl2's OBReach is reported incomplete — it is served from its own relation and its own file
+  this, <dataset>'s OBReach is reported incomplete — it is served from its own relation and its own file
   says so ("there is no `kpi` code here"). Measured: 1 false finding.
 
   A REFUSE-STUB IS AUTHORED TO BE UNANSWERABLE. `identity.kind = sme_pending` declares a concept that
@@ -203,7 +203,7 @@ def resolvers(doc: dict, registry: dict) -> list:
     """Which OTHER concepts this one resolves names through, and the register each resolves in.
 
     DERIVED, not listed: a concept's grounding columns are matched against every other concept's
-    canonical key. A measure grounding `fpl_model_code` is resolving models, whether or not anyone
+    canonical key. A measure grounding `<source>_model_code` is resolving models, whether or not anyone
     wrote that down — and the model concept already declares which register turns a name into that
     code. Enumerating it here is what keeps a generated guarantee from telling a one-shot agent to go
     and navigate three other files."""
