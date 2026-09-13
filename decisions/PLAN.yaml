@@ -152,19 +152,32 @@ items:
       rendering healthy and empty.
 
   - id: P1-runs
-    what: commit run records at all
+    what: make run-record persistence work; the runs themselves are a disclosed budget
     state: runnable
     track: testing
     measured: >
       acceptance/*_runs.json has ZERO instances across all of git history, while suite_history.py
       asserts "The run records are committed". The suites and the generators already exist; nothing
       keeps the answer.
-    note: nearly free, and it is what populates the board on day one
+    correction: >
+      I first wrote this item as "commit run records at all - nearly free". THAT WAS WRONG, and I
+      checked only after committing the plan. ALL SEVEN SUITES DECLARE AN `engine:` BLOCK AND
+      THEREFORE BILL: data_sanity, data_sanity_generated, ontology, ontology_generated, properties,
+      retrieval, rules_generated. There is no declared offline tier, because `mac.test_tier` is
+      prose and nothing machine-readable carries it. Claiming "free" without checking is the
+      authored-denominator defect applied to my own plan.
+    note: >
+      SPLIT IN TWO. (a) FREE: make persistence actually work and prove it against a fixture or a
+      dry run, so the next paid run is not also lost. (b) BILLED: the runs themselves, as a
+      disclosed budget the operator authorises, never an agent.
+      AND THE BOARD DOES NOT WAIT FOR EITHER — day-one data already exists in committed history:
+      21 dated corpus run files in the reference bundle and 61 suite_history entries across 7
+      suites. The board reads what is already there; P1-board's blocker is the dialect, not a run.
 
   - id: P1-board
     what: the new overview — one screen, categories, denominators, the one true number and its date
     state: blocked
-    blocked_on: [P1-dialect, P1-runs]
+    blocked_on: [P1-dialect]
     track: testing
     note: >
       C (answer chain) as the landing screen, D (dispatch board) one click away; adopt B's hatched
