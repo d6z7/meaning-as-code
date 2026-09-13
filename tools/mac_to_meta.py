@@ -190,7 +190,7 @@ _GROUNDING = {
  "meta_region_definitions": ("the region / structure DEFINITIONS per brand + member counts + cross-brand collisions (one brand's Europe vs another's)",
                    "SELECT namespace, member_count FROM {src}.meta_region_definitions WHERE code='VE' ORDER BY namespace"),
  "meta_region_members": ("which countries / markets are IN a named region or structure (e.g. one brand's VE, another's Region 3). region_definition_used = 'namespace:code'",
-                   "SELECT member FROM {src}.meta_region_members WHERE region_definition='brand_a_region:VE'"),
+                   "SELECT member FROM {src}.meta_region_members WHERE region_definition_used='brand_a_region:VE'"),
  "meta_rules": ("what business rules exist and what a rule SAYS (its when/then/never) — e.g. how planning accuracy is defined",
                    "SELECT then_text FROM {src}.meta_rules WHERE rule_id LIKE '%variance%'"),
  "meta_rule_refs": ("the concepts / columns a rule binds or derives over",

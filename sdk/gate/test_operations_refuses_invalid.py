@@ -25,6 +25,13 @@ def main():
     failures = []
     with tempfile.TemporaryDirectory() as td:
         base = Path(td) / "sources" / "acme" / "acme"
+        # `base` has to be a DECLARED bundle. operations._assert_in_sources accepts a write only
+        # when an ancestor carries mac.project.yaml; it used to accept any path containing the
+        # substring "sources", which is the rule this fixture was built for, so every persist
+        # below died with `Refused` on its own happy path. Declared at `base` and deliberately NOT
+        # at `td`, so step 5 still has somewhere genuinely out of bounds to attempt a write to.
+        base.mkdir(parents=True, exist_ok=True)
+        (base / "mac.project.yaml").write_text("project: acme\n", encoding="utf-8")
         concepts = base / "ontology" / "concepts"
         data = base / "data"
 
