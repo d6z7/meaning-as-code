@@ -129,7 +129,14 @@ class AthenaConnector(SqlConnector):
     #: NotImplementedError for both rather than silently falling back to the ambient chain, which
     #: would mis-target a different account. `credential_plan` below preserves that: exit 2 with the
     #: ref named, never a quiet degrade.
-    credential_modes: ClassVar[frozenset] = frozenset({"ambient", "profile", "secretsmanager", "ssm"})
+    # THE GRAMMAR'S CLOSED SET, not this connector's own spelling. These were `profile`,
+    #: `secretsmanager` and `ssm` — one cloud's vocabulary — while mac_vocabulary.yaml declares the
+    #: engine-neutral set. Two agents wrote the two halves in parallel and neither read the other, so
+    #: a bundle that validated against the grammar was rejected by the connector as an "unknown
+    #: credentials.mode". A closed vocabulary with two spellings is not closed.
+    credential_modes: ClassVar[frozenset] = frozenset(
+        {"ambient", "named_profile", "secret_manager", "interactive", "client_certificate", "none"}
+    )
 
     permissions: ClassVar[frozenset] = frozenset({"read", "net"})
 
@@ -207,7 +214,7 @@ class AthenaConnector(SqlConnector):
         if mode not in cls.credential_modes:
             problems.append(ConfigProblem(("credentials", "mode"),
                                           f"{mode!r} is not offered by {cls.id}"))
-        if mode == "profile" and not (isinstance(creds, Mapping) and creds.get("ref")):
+        if mode == "named_profile" and not (isinstance(creds, Mapping) and creds.get("ref")):
             problems.append(ConfigProblem(("credentials", "ref"),
                                           "mode=profile requires a ref (the profile name)"))
         return problems
@@ -228,12 +235,12 @@ class AthenaConnector(SqlConnector):
         if mode == "ambient":
             return CredentialPlan(mode="ambient", ref=None,
                                   detail="ambient chain: env / SSO profile / task role")
-        if mode == "profile":
+        if mode == "named_profile":
             if not ref:
                 raise ConnectorConfigError(f"{cls.id}: mode=profile requires a ref")
-            return CredentialPlan(mode="profile", ref=str(ref),
+            return CredentialPlan(mode="named_profile", ref=str(ref),
                                   detail="explicit named SSO/CLI profile")
-        if mode in ("secretsmanager", "ssm"):
+        if mode in ("secret_manager"):
             raise ConnectorUnavailable(
                 f"{cls.id}: credentials.mode={mode!r} (ref={ref!r}) resolver not wired -- set mode "
                 f"profile/ambient, or wire the {mode} fetch-at-call-time before answering. Falling "
@@ -291,7 +298,7 @@ class AthenaConnector(SqlConnector):
         if not region:
             raise ConnectorConfigError(f"{self.id}: config.region is required")
         try:
-            session = (boto3.Session(profile_name=plan.ref) if plan.mode == "profile"
+            session = (boto3.Session(profile_name=plan.ref) if plan.mode == "named_profile"
                        else boto3.Session())
             self._client = (session.client("athena", region_name=region),
                             session.client("glue", region_name=region))
