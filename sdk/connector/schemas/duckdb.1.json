@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mac.connector.duckdb/1",
+  "title": "DuckDB connector config",
+  "description": "The OPAQUE `config:` block for mac.connector.duckdb (record §5.3). MAC never reads a key inside it; this file is the authority that validates it, and §6.3's mount tier applies it with ZERO imports of the connector class. Note what is NOT here: no region, no workgroup, no catalog, no account, no output location. A block with zero key overlap with the Athena connector's is the demonstration that the envelope is not engine-shaped.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["database"],
+  "properties": {
+    "database": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to the DuckDB database file, RELATIVE TO THE BUNDLE ROOT. A shipped bundle declares a relative path; an absolute path is a deployment fact and belongs in the out-of-band overlay (connection.local.yaml / $DEPLOYMENT_CONFIG), which is gitignored for that reason."
+    },
+    "read_only": {
+      "type": "boolean",
+      "default": true,
+      "description": "Open the database read-only. Defaults to TRUE: §4.5 requires that a published, shipped bundle can never be used to write, and a default that has to be set correctly in order to be safe is a default that will be wrong in some bundle."
+    }
+  }
+}

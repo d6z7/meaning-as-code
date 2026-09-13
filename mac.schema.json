@@ -52,9 +52,105 @@
     },
     {
       "$ref": "#/$defs/SmeLedgerFile"
+    },
+    {
+      "$ref": "#/$defs/ConnectionFile"
     }
   ],
   "$defs": {
+    "connectorRef": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*\\.connector\\.[a-z][a-z0-9_]*(?:/[0-9]+)?$",
+      "description": "v0.1.15: WHICH CONNECTOR THIS BUNDLE GROUNDS ON — `<namespace>.connector.<name>[/<config-major>]`. Validated by PATTERN, never by an enum, and that is the whole governance decision: an enum would put a vendor product list in the canon and make every new engine a schema bump, which is the one thing this grammar must never carry. The namespace half does the work for free — mac_vocabulary.yaml's header already rules that 'a token whose namespace is not registered here is not a framework reference', so an id in any other namespace (`acme.connector.something`) ALREADY means 'not framework-supported' with no new rule invented, while a `mac.`-prefixed id is a claim on the shipped index (sdk/connector/index.json) and is refused there if it is not a key. The optional `/N` pins the CONFIG-CONTRACT major, never the implementation: a bundle records which grammar judged it and pins no code version, exactly as it does not pin mac.schema.json — pinning an implementation inside a data artifact is dependency management, and pip already owns it. MEASURED across the 27 mac.project.yaml manifests reachable on this machine: 4 carry a `runtime:` block and 2 of those already carry `runtime.connector`, both spelled `mac.connector.athena`; both match this pattern, so typing the key turns no currently-green manifest red. A value that looks like a PATH (`./tools/conn.py`) fails this pattern by construction — deliberately, because it is code injection wearing a spelling mistake, not a typo, and a grammar that accepted it would let a bundle name the code that loads into the host process."
+    },
+    "credentialRef": {
+      "type": "object",
+      "description": "v0.1.15: HOW A CREDENTIAL IS OBTAINED — never what it is. EXACTLY two keys, `additionalProperties: false`, and there is no third key, ever, for any connector. That single constraint is the entire security posture, and it is what turns a convention enforced by a pattern-matcher into a SCHEMA FACT: in a governed connection file there is nowhere to put a secret. A future engine wanting user + password + client certificate does NOT get three keys; it gets one `ref` resolving to a compound secret in whatever manager the deployment runs, because richer auth needs a richer SECRET, not a richer file. A per-connector credentials schema was rejected outright: the moment a connector may declare its own fields, one of them will be a password field and the structural guarantee is gone. The block being ABSENT is legal and means 'no credential required' — that is the DuckDB case, and it is why `credentials` is not in ConnectionFile.required. Note the measured limit this does NOT cover: the residual secret scan over the sibling `config:` block is AWS-shaped by construction and catches nothing else, so this guarantee is real for `credentials` and only for `credentials`.",
+      "required": ["mode"],
+      "properties": {
+        "mode": {
+          "$ref": "#/$defs/credentialMode"
+        },
+        "ref": {
+          "type": ["string", "null"],
+          "description": "A HANDLE, never a value — a profile name, a secret-manager path, a certificate location. MAC never resolves it and never reads what it points at; the connector does, at answer time, in the deployment's own manager."
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "The three modes that name something to fetch are useless without the handle, so the schema requires it rather than letting the connector discover the omission at answer time, against a live warehouse.",
+          "if": {
+            "required": ["mode"],
+            "properties": {
+              "mode": {
+                "enum": ["named_profile", "secret_manager", "client_certificate"]
+              }
+            }
+          },
+          "then": {
+            "required": ["ref"],
+            "properties": {
+              "ref": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "$comment": "The three modes where the MECHANISM is the auth have nothing to point at. `ref` may be absent or explicitly null — null is permitted because the measured connection files in this estate spell an empty slot that way — but a non-empty handle beside `ambient` is a contradiction the author should see, not a value silently ignored.",
+          "if": {
+            "required": ["mode"],
+            "properties": {
+              "mode": {
+                "enum": ["ambient", "interactive", "none"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "ref": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "credentialMode": {
+      "enum": ["ambient", "named_profile", "secret_manager", "interactive", "client_certificate", "none"],
+      "description": "v0.1.15: `mac.credential_mode` — the closed, BRAND-FREE set of ways a credential is obtained. THE DEFINITION LIVES IN mac_vocabulary.yaml#credential_mode, which carries each member's meaning and the measurement that forced the set; this enum restates the member NAMES only, which is the idiom $defs/confidence and $defs/status already use. The reasoning is deliberately NOT copied here: it has one home, and the vendor spellings this set exists to keep out of the framework do not need a second appearance inside the grammar file in order to be kept out of it. A new member is a FRAMEWORK RELEASE, not a bundle's choice; a connector that spells a mode its own way keeps that spelling as its OWN alias and reports MAC003 fact-restated."
+    },
+    "ConnectionFile": {
+      "type": "object",
+      "description": "v0.1.15: THE CONNECTION ENVELOPE (the file named by mac.project.yaml#runtime.connection). THE WHOLE POINT OF THIS DEFINITION IS THE LINE IT DRAWS: MAC reads the whole manifest and exactly three keys of THIS file — who the connector is (from the manifest), how the credential is obtained (`credentials`), and where the connector's own payload begins (`config`). Everything past that line is the connector's. The grammar therefore does NOT learn what a region, a workgroup or a catalog is, and could not be made to: those nouns have no home above `config`, whose contents this schema deliberately does not describe. `additionalProperties: false` is the load-bearing half — it is what leaves `aws_secret_access_key:` nowhere legal to sit, and what forces every vendor key DOWN into `config` where a named party owns its meaning. This file is DEPLOYMENT, not bundle: it is overridable (connection.local.yaml, $DEPLOYMENT_CONFIG) and therefore may never say which CODE runs — `runtime.connector` lives in the manifest precisely because an override chain must be able to change where you point, never what loads into the host process.",
+      "required": ["spec_version"],
+      "properties": {
+        "spec_version": {
+          "type": "string",
+          "pattern": "^mac\\.connector/[0-9]+$",
+          "description": "The connector-protocol generation, and the DISCRIMINATOR that makes this definition safe to apply. A connection file WITHOUT it is the legacy flat shape (measured live in this estate: `engine, region, workgroup, output, catalog, view_database, view_schema, glue_databases, credentials, account` at the top level) and belongs to the compatibility reader, for exactly one spec version; the gate reports the legacy count as a DENOMINATOR, not a failure. Required here so that a legacy file mis-routed to this definition fails with one legible error naming the missing version rather than nine confusing unknown-key errors — and so that an EMPTY file fails at all, which is a stated reject class (MAC002) it would otherwise pass by carrying no forbidden key."
+        },
+        "credentials": {
+          "$ref": "#/$defs/credentialRef",
+          "description": "Deliberately NOT in `required`: a connector needing no credential omits the block entirely, which is the DuckDB case and is the honest spelling of 'no credential required'. Requiring it would force every credential-free bundle to write `{mode: none}`, i.e. to restate a fact its own absence already states."
+        },
+        "config": {
+          "type": "object",
+          "description": "OPAQUE TO MAC. THIS IS THE DELEGATION LINE, and the one object in this grammar that is deliberately left open. Validated not by this schema but by the JSON Schema the CONNECTOR ships, resolved from sdk/connector/index.json — which is the distinction that separates this from the `x-` extension keys the framework ruled out: an `x-` key was checked by NOBODY, whereas `config` is checked by a named party's schema, and when that party is absent MAC prints what went UNCHECKED with its denominator and withholds the claim that depended on it, rather than reporting a clean run over nothing. Describing these keys here — region, workgroup, catalog and their kin — is precisely the failure this definition exists to prevent: it would put one vendor's nouns into the canon and make every new engine a schema bump. TWO HONEST LIMITS, recorded rather than hidden: (1) the residual secret scan over this block is AWS-shaped by construction, so for the non-AWS engines this seam exists to enable it catches nothing — the structural guarantee lives in `credentials` above, and only there; (2) JSON Schema expresses most cross-field rules and not all, so a rule it cannot express is not silently skipped but belongs to the connector's own validate_config(), which runs at publish and at answer, and the mount tier says which tier it reached."
+        },
+        "label": {
+          "type": "string",
+          "description": "A human name for this deployment target, for disclosure lines. Carries no meaning a gate reads."
+        },
+        "note": {
+          "type": "string",
+          "description": "Free prose about this deployment. Deliberately unstructured: it is the pressure valve that keeps operational commentary out of the keys a gate reads."
+        }
+      },
+      "additionalProperties": false
+    },
     "TransformFile": {
       "type": "object",
       "description": "DATA-PLANE pipeline descriptor (two-plane layout, data/transforms/). Declares how ONE produced dataset is built: what it `produces`, the `inputs` it consumes (each typed by `kind`), and the ordered cleansing `transforms`. The realizing SQL lives beside it (produces.sql_file). Read by lineage/rebuild tooling and the lineage projection; NOT by the query-generating agent (a concept grounds to the produced relation agnostically). Distinguished from a TableFile by its `produces`+`inputs` discriminators.",
@@ -399,7 +495,7 @@
         },
         "additivity": {
           "type": "object",
-          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.16: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: ideal_stock declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.",
+          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.15: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: ideal_stock declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.",
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
           },
@@ -1105,7 +1201,7 @@
             },
             "profiled_via": {
               "type": "string",
-              "description": "Free-text note on how the raw source was profiled (e.g. 'Glue + Athena profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp."
+              "description": "Free-text note on how the raw source was profiled (e.g. 'catalog metadata + a live column profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp. v0.1.15: this example was previously spelled with two vendor product names — a catalog service and a query engine — and it was, measured, the SINGLE instance-specific token in this entire grammar (one occurrence; no driver or cloud-prefix token appeared anywhere else in this file). It is respelled rather than deleted, because the slot still needs an example; the new spelling says the same thing in nouns that every engine has, which is the test a core-grammar example has to pass. The old nouns are not quoted here on purpose: a note that names what it forbids becomes a register of those names, and this file is published."
             }
           },
           "additionalProperties": false
@@ -1324,7 +1420,7 @@
             }
           },
           "then": {
-            "$comment": "v0.1.16: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: ideal_stock declared `Target` and wrote `geography: additive`, which the law forbids, and ANCHOR_05 summed Ideal Stock across models on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: ideal_stock declared `Target` and wrote `geography: additive`, which the law forbids, and ANCHOR_05 summed Ideal Stock across models on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [
@@ -1965,7 +2061,31 @@
           "type": "string"
         },
         "runtime": {
-          "type": "object"
+          "type": "object",
+          "description": "v0.1.15: WHAT THIS BUNDLE NEEDS IN ORDER TO BE ANSWERED FROM. Previously `{\"type\": \"object\"}` — no properties, no required, no additionalProperties — which is to say the manifest's runtime block was ungoverned, and an ungoverned object in the ONE file a bundle uses to declare its own conformance is exactly the hole this schema exists to close. The measured cost of leaving it open: `runtime: {conection: ..., credentials: {mode: plaintext, value: hunter2xyz}}` validates CLEAN against the old shape (note the typo, silently accepted) and returns zero findings from check_bundle_secrets, because mac.project.yaml sits in that gate's config allowlist and the key is spelled `value`, not `password`. Closing the object is what makes a sixth key ARGUABLE rather than silent, and it is what leaves a credential nowhere to sit in the manifest — credentials belong in the connection envelope ($defs/ConnectionFile), which is deployment and overridable, never in the bundle manifest, which is not. MEASURED BEFORE CLOSING, because `additionalProperties: false` is the one non-additive edit here: across the 27 mac.project.yaml manifests reachable on this machine, 4 carry a `runtime:` block and their key universe is EXACTLY these five — source 4, connection 4, interpreter 3, model_catalog 3, connector 2 — with zero sixth key and every value a string. No key is `required`, because one of those four manifests carries only {source, connection, connector}: a bundle that declines a mechanism it has no use for must not be nagged for it. A bundle with no `runtime:` block at all remains well-formed, readable, renderable — and not answerable.",
+          "properties": {
+            "source": {
+              "type": "string",
+              "description": "The bundle's own source key — the token its served relations are addressable by."
+            },
+            "connector": {
+              "$ref": "#/$defs/connectorRef",
+              "description": "WHICH CONNECTOR, and it lives HERE rather than in the connection file for one reason that decides the whole boundary: the connection file is overridable (connection.local.yaml is gitignored, $DEPLOYMENT_CONFIG is an arbitrary path from the environment), so putting the connector identity there would let an out-of-band file substitute the CODE that loads into the host process. An override chain must be able to change where you point, never what runs. Independently: which engine a bundle grounds on is a fact ABOUT THE BUNDLE, and the manifest alone should answer 'what does this bundle need?' without opening a file the bundle may not ship."
+            },
+            "connection": {
+              "type": "string",
+              "description": "The PATH to the connection envelope ($defs/ConnectionFile), relative to the bundle root. The path is the bundle's; everything the file then says about WHERE to point is the deployment's. A path that escapes the bundle root, or names a file that is not there, is a defect a gate owns — not something this type can express."
+            },
+            "interpreter": {
+              "type": "string",
+              "description": "Path to the bundle's interpreter document."
+            },
+            "model_catalog": {
+              "type": "string",
+              "description": "Path to the bundle's model catalog."
+            }
+          },
+          "additionalProperties": false
         },
         "publish": {
           "type": "object"
@@ -2706,7 +2826,7 @@
     },
     "SmeLedgerFile": {
       "type": "object",
-      "description": "v0.1.16: THE DOUBT CHANNEL. A harvest with nowhere to put an uncertainty writes it out as a confident fact — measured on a bundle that had no ledger: 17 of 22 concepts arrived stamped confidence C with an owner who had never seen them, and one unreviewed claim produced a wrong value anchor that stood for weeks. An OPEN QUESTION is a successful outcome of authoring, and this is where it goes.",
+      "description": "v0.1.15: THE DOUBT CHANNEL. A harvest with nowhere to put an uncertainty writes it out as a confident fact — measured on a bundle that had no ledger: 17 of 22 concepts arrived stamped confidence C with an owner who had never seen them, and one unreviewed claim produced a wrong value anchor that stood for weeks. An OPEN QUESTION is a successful outcome of authoring, and this is where it goes.",
       "required": [
         "questions"
       ],

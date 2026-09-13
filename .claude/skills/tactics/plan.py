@@ -20,7 +20,12 @@ if brief:
 print(f"GOAL: {plan['goal'].strip()}\n")
 flight = [i for i in items if i.get("state") == "in-flight"]
 blocked = [i for i in items if i.get("state") == "blocked"]
-ready = [i for i in items if i.get("state") not in {"done", "in-flight", "blocked"}]
+# States are a CLOSED set. Treating "anything else" as runnable made a ruled-out item read as work
+# waiting to be done — a planning tool that mislabels a settled decision is worse than no tool.
+KNOWN = {"done", "in-flight", "blocked", "runnable", "not-doing"}
+unknown = [i for i in items if i.get("state") not in KNOWN]
+ready = [i for i in items if i.get("state") == "runnable"]
+declined = [i for i in items if i.get("state") == "not-doing"]
 
 print(f"IN FLIGHT ({len(flight)}):")
 for i in flight:
@@ -32,6 +37,14 @@ for i in ready:
     print(f"  {i['id']:<18} {i['what'][:70]}")
 if not ready:
     print("  (none — everything not done is in flight or blocked)")
+
+if declined:
+    print(f"\nRULED OUT ({len(declined)}) — decided, not pending:")
+    for i in declined:
+        print(f"  {i['id']:<18} {i.get('ruled','')}  {i['what'][:52]}")
+if unknown:
+    print(f"\n  [!] {len(unknown)} item(s) carry an UNKNOWN state and are in no bucket: "
+          + ", ".join(i["id"] for i in unknown))
 
 print(f"\nBLOCKED ({len(blocked)}):")
 for i in blocked:

@@ -58,10 +58,13 @@ items:
     blocked_test_on: [R12]
 
   - id: A3
-    what: wire the tier so answerable is backed offline; the first red build is correct
-    state: blocked
-    blocked_on: [R11]
-    note: turns at least one currently-green bundle red, and that is the point
+    what: wire the tier so answerable is backed offline
+    state: done
+    landed: feat/connection-grammar (spec.py content-backed, fallback deleted, 9 regression tests)
+    note: >
+      R11 was NOT a ruling. The operator corrected the premise — nothing is in production, so
+      "it turns a bundle red" had no cost and there was no tradeoff to rule on. A check that reads
+      a filename and calls it content is a bug.
 
   - id: A4
     what: enforce in CI, delete the inference reader
@@ -71,14 +74,28 @@ items:
 
   - id: track-b
     what: entry-point discovery, hostile-connector suite, permissions, probe
-    state: blocked
-    blocked_on: [R12, R14]
+    state: not-doing
+    ruled: R14 = NO
+    note: >
+      The simplest thing that works. registry.py (a dict over a shipped index) is already built and
+      is the answer. Nothing is foreclosed: the bundle's only forward commitment is the namespaced
+      id, so the entry-point loader can be added later without touching a bundle.
+
+  - id: retire-the-fork
+    what: delete mac-platform/packages/mac-sdk; point mac-console at the MAC distribution
+    state: runnable
+    ruled: R12 = one SDK, the one in MAC
+    note: >
+      Not a ruling either. TWO copies exist because the consolidation COPIED rather than moved, and
+      they diverged 54 files in one day. One line holds it up: mac-console/pyproject.toml declares
+      "mac-sdk". The MAC distribution already ships sdk.* (added today).
     note: >
       on today's measurements the DEFAULT is the plain registry already being built; the full plugin
       system is the exception requiring R14 = yes
 
 rulings:
   - id: R11
+    verdict: 'RULED: not a ruling — a bug, fixed'
     gates: [A3]
     question: a production bundle claims answerable:true and it is unbacked today
     options:
@@ -87,6 +104,7 @@ rulings:
     consequence: either way the first gate run turns a green bundle red, and that is correct
 
   - id: R12
+    verdict: 'RULED: one SDK, the one in MAC. Retiring the copy is work, not a decision.'
     gates: [track-b, console-page]
     question: which SDK is live — meaning-as-code/sdk or mac-platform/packages/mac-sdk
     measured: two live, already diverged
@@ -94,6 +112,7 @@ rulings:
     prerequisite: read mac-runtime/adapters/ (527 lines) and okf_core/sources.py (201) in full
 
   - id: R14
+    verdict: 'RULED: NO — simplest thing that works; extend later'
     gates: [track-b]
     question: is a third-party connector a requirement now
     measured: the word "connector" appears zero times in BOARD.md, ROADMAP.md, TARGET.md

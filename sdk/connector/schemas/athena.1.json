@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mac.connector.athena/1",
+  "title": "Athena connector config",
+  "description": "The OPAQUE `config:` block for mac.connector.athena (record §5.3). MAC never reads a key inside it. NOTHING HERE HAS A DEFAULT VALUE: a region, a workgroup or a catalog default would be one deployment's setting compiled into the instrument that serves every deployment -- which is the defect data_plane.profile_table already records against itself ('it used to fall back to a literal workgroup name -- one ontology's Athena workgroup, compiled into the tooling that serves every ontology, and reached by any bundle whose own config was missing').",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["region", "workgroup"],
+  "properties": {
+    "region": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The region handle the Athena and Glue clients are built for. A handle the deployment supplies; this file ships no default."
+    },
+    "workgroup": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Athena workgroup handle. Required, and deliberately without a default: a workgroup belongs to the ontology being served, not to the SDK serving it."
+    },
+    "catalog": {
+      "type": "string",
+      "description": "The Athena data catalog handle to set as the query execution context."
+    },
+    "database": {
+      "type": "string",
+      "description": "The default database for the query execution context. Optional: a fully-qualified relation reference does not need one."
+    },
+    "output": {
+      "type": ["string", "null"],
+      "description": "The result output location. May be null ONLY when the workgroup enforces a managed output location -- a fact of the account, not of this file, which is why validate_config reports its absence rather than resolving it (§6.3's honest limit: a rule JSON Schema cannot express belongs to validate_config)."
+    },
+    "glue_databases": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "description": "Role -> database handle, e.g. the fact and dimension databases a harvest enumerates."
+    },
+    "allow_ddl": {
+      "type": "boolean",
+      "default": false,
+      "description": "Permit the ONE write verb, create_or_replace_view. Defaults to FALSE and belongs only in the out-of-band deployment overlay: §4.5 requires that a published, shipped bundle can never be used to write."
+    },
+    "account": {
+      "type": "null",
+      "description": "PRESENT ONLY TO FORBID A VALUE. The account id is derived at runtime via STS and is never shipped; typing it as null makes a leaked account id a SCHEMA failure at the mount tier rather than a finding some later gate might or might not run."
+    }
+  }
+}

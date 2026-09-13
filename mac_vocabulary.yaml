@@ -195,6 +195,78 @@ test_kind:
       would have confirmed the claim rather than contradicted it — which is the entire distinction
       between the two test kinds.
 
+# ===========================================================================
+# mac.connector — the NAMESPACE, and deliberately nothing else.
+# ===========================================================================
+connector:
+  kind: registry
+  closed: false
+  description: >
+    The `mac.connector.*` NAMESPACE. A `mac.`-prefixed connector id is a framework reference; any
+    other namespace is not, by this file's header rule, and needs nothing from MAC. This block
+    registers the NAMESPACE ONLY. It lists NO members: which first-party connectors exist is a fact
+    about the MAC DISTRIBUTION, not about meaning, and lives in the shipped index
+    (sdk/connector/index.json). A member list here would be a vendor product catalogue inside the
+    canon — the same list that `$defs/connectorRef` refuses to be an enum of, relocated into the one
+    file that defines meaning, and load-bearing, because a third first-party engine would then be a
+    canon bump forever. It would also not validate: mac.vocabulary.schema.json closes a member object
+    over exactly six keys (definition, additivity, serves, needs_sqlglot, doc, params_from), so the
+    packaging keys such a list needs — config_majors, entry_point, status — are all three illegal, and
+    an entry_point is a Python module path, a fact about MAC's own wheel layout, written into the file
+    that defines meaning.
+
+    AND tools/check_vocabulary_drift.py IS DELIBERATELY NOT PATCHED TO SEE THIS BLOCK. Measured: its
+    _vocabularies() at :53-56 collects `kind: vocabulary` (with terms) and `kind: value_domain` (with
+    members) and nothing else, so a `registry` is invisible to it — by omission, not by accident.
+    Patching it to collect registries would buy a green line and not a check: :68 iterates
+    (_ROOT / "tools").rglob("*.py") and :38 _LITERAL matches a dotted mac.NAMESPACE.TERM literal in
+    MAC'S OWN PYTHON SOURCE, while connector ids live in mac.project.yaml#runtime.connector, in
+    bundles, and in other repos — never in tools/*.py. The gate would then report clean over ZERO
+    occurrences, permanently, while the typo it exists to catch (`mac.connector.athna` in a bundle
+    manifest) stayed invisible.
+    Worse: with the namespace registered and no members, `voc in vocab and term not in vocab[voc]`
+    is true of EVERY `mac.connector.*` literal, so any MAC docstring narrating a hypothetical
+    `mac.connector.postgres` would become a MAC008 ERROR ON PROSE — the exact false FAIL that gate's
+    own docstring says it was designed to avoid. A registry the drift gate openly skips is honest;
+    one it counts and structurally cannot see is a green line over nothing. Enforcement of connector
+    ids lives entirely in `$defs/connectorRef`'s pattern (every bundle, every run) and in the
+    shipped index. This paragraph exists so nobody later "fixes" the omission.
+
+# ===========================================================================
+# mac.credential_mode — HOW a credential is obtained. Never what it is.
+# ===========================================================================
+credential_mode:
+  kind: vocabulary
+  closed: true
+  description: >
+    The way a connector OBTAINS its credential, as a closed and BRAND-FREE set. Referenced by
+    mac.schema.json#/$defs/credentialMode, which is the schema-side restatement of this set (the
+    same idiom $defs/confidence and $defs/status already use); this file is the single home.
+
+    WHY BRAND-FREE: the measured set in sdk/authoring/connection.py:48-68 is
+    `aws-chain | profile | secretsmanager | ssm` — four AWS product names doing the work of three
+    ideas, which is one cloud's credential chain promoted into the framework's grammar. A connector
+    may keep its own spellings as ALIASES and report them MAC003 (fact-restated); the framework does
+    not learn them.
+
+    WHY SIX AND NOT FOUR: one resolution mode plus one opaque handle fits password-shaped auth and
+    fails exactly where THE MECHANISM IS THE AUTH and there is no secret to fetch — interactive or
+    browser SSO, mTLS client certificates, Kerberos/GSSAPI. None of those is ambient, named_profile,
+    secret_manager or none, and a set that cannot spell them forces the connector to lie about which
+    mode it is in.
+
+    A NEW MEMBER HERE IS A FRAMEWORK RELEASE, not a bundle's choice. That is the price of `closed`,
+    and it is the point: the alternative is a per-connector credentials schema, and the moment a
+    connector may declare its own credential fields, one of them will be a password field and the
+    structural guarantee that there is nowhere to put a secret is gone.
+  terms:
+    ambient:            "The host environment already carries the identity — an instance/task role, an ambient session, an environment chain. Nothing to fetch and nothing to name, so `ref` must be null or absent."
+    named_profile:      "A named local profile selects the identity. `ref` is the profile name — a handle, never a secret."
+    secret_manager:     "The credential is fetched at call time from the deployment's secret manager. `ref` is the path/id in that manager; MAC never resolves it and never sees the value."
+    interactive:        "The human authenticates at connect time — browser SSO, a device code, an MFA prompt. There is no secret to fetch, so `ref` must be null or absent. Unattended answering cannot use this mode, and a host that needs one will fail loudly rather than hang on a prompt nobody can see."
+    client_certificate: "A client certificate (mTLS) is the credential. `ref` locates the certificate material in the deployment's own store; the certificate itself never enters the bundle."
+    none:               "No credential is required — the engine is local or open. Distinct from the block being ABSENT only in that it says so out loud; both are legal, and absent is the honest spelling when a connector has no credential concept at all."
+
 canon:
   kind: value_domain
   closed: false                    # extends as patterns surface new deterministic needs (A5)

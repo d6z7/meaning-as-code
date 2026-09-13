@@ -1,0 +1,38 @@
+{
+  "_comment": [
+    "index.json - the FIRST-PARTY SET. Record §6.3: 'a shipped index, not canon'.",
+    "",
+    "DATA. NO IMPORTS. DIFFABLE. RELEASED WITH THE WHEEL. It is the authority for exactly one",
+    "question: which mac.-prefixed connector ids are real, and where is the JSON Schema that",
+    "validates each one's `config:` block.",
+    "",
+    "WHY THIS IS NOT A MEMBER LIST IN mac_vocabulary.yaml. The first draft put `athena` and `duckdb`",
+    "into the canon as vocabulary members, which is the exact act §3's boundary table forbids - 'no",
+    "vendor product name in mac_vocabulary.yaml or mac.schema.json'. The canon registers the",
+    "NAMESPACE and nothing else. This file is software: versioned with the distribution and",
+    "diffable across releases by an ordinary snapshot test, which is the property the member list",
+    "was supposed to provide and did not.",
+    "",
+    "AND IT IS WHAT LETS A MOUNT VALIDATE A CONFIG WITH ZERO IMPORTS. The dry half of the contract",
+    "is @classmethod - pure functions of the config mapping - so for a first-party connector,",
+    "mount-time validation is jsonschema.validate(config, <a file in this repo>). No import, no",
+    "loader, no deadline, no ambiguity, no squatting corroboration.",
+    "",
+    "RULING 14 IS UNANSWERED, so there is no third-party half of this file and no discovery",
+    "mechanism beside it. §11.2: if the answer is 'no third party now', the registry collapses to",
+    "exactly a dict of first-party classes resolved from this index - which is what registry.py is.",
+    "The `target` field is read by that module; it is a module:attr pair, never a path."
+  ],
+  "mac.connector.duckdb/1": {
+    "target": "sdk.connector.duckdb:DuckDbConnector",
+    "config_schema": "schemas/duckdb.1.json",
+    "extra": "duckdb",
+    "probe_cost": "free"
+  },
+  "mac.connector.athena/1": {
+    "target": "sdk.connector.athena:AthenaConnector",
+    "config_schema": "schemas/athena.1.json",
+    "extra": "athena",
+    "probe_cost": "billed"
+  }
+}

@@ -40,7 +40,20 @@ from sdk import registers
 from sdk.gate import contract
 
 # directories that make up the generic instrument
-SCAN_DIRS = ("sdk/project", "sdk/authoring", "sdk/cli", "sdk/container")
+# `sdk/connector` is listed here although it is NOT an exception to this gate the way it is to
+# check_engine_coupling. The two gates forbid different things, and the distinction is the whole
+# architecture: a connector is the one place an ENGINE noun is the POINT (region, workgroup,
+# database), so engine coupling is exempt there -- but a SOURCE token is an instance name, an estate
+# fact, and it is forbidden inside a connector exactly as hard as anywhere else in this public repo.
+#
+# STATED PLAINLY, because a floor over nothing is this repo's own named defect: the walk below is
+# rglob("*.py"), and sdk/connector currently holds only JSON and Markdown, so this entry examines
+# ZERO files TODAY and changes no verdict. It is here so that the first connector .py is scanned by
+# the commit that introduces it, rather than by whoever remembers afterwards -- the scan hole would
+# otherwise be created by the same commit that creates the directory. The JSON/Markdown already in
+# that directory is not unguarded: tools/check_mac_public.py walks the tracked-file list and examines
+# it (its denominator moved 496 -> 500 when those four files were added).
+SCAN_DIRS = ("sdk/project", "sdk/authoring", "sdk/cli", "sdk/container", "sdk/connector")
 # The instance names this instrument must not contain. They live in a gitignored register, NOT
 # here: a detector that names what it forbids is a register of those names, and this repo is
 # published. With none declared the token class examines nothing — which the verdict line says.

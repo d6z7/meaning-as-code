@@ -558,7 +558,12 @@ transforms: <…>  # string
 
 descriptors: <…>  # string
 
-runtime:
+runtime:  # v0.1.15: WHAT THIS BUNDLE NEEDS IN ORDER TO BE ANSWERED FROM
+  source: <…>  # string · The bundle's own source key — the token its served relations are…
+  connector: <…>  # string · v0.1.15: WHICH CONNECTOR THIS BUNDLE GROUNDS ON —…
+  connection: <…>  # string · The PATH to the connection envelope ($defs/ConnectionFile), relative to…
+  interpreter: <…>  # string · Path to the bundle's interpreter document.
+  model_catalog: <…>  # string · Path to the bundle's model catalog.
 
 publish:
 
@@ -802,6 +807,24 @@ questions:  # REQUIRED
     answer: <…>  # string
     answered_by: <…>  # string
     answered_on: <…>
+```
+
+### ConnectionFile
+
+*discriminator key:* `?:` · *required:* `spec_version`
+
+```yaml
+spec_version: <…>  # REQUIRED · string · The connector-protocol generation, and the DISCRIMINATOR that makes…
+
+credentials:  # v0.1.15: HOW A CREDENTIAL IS OBTAINED — never what it is
+  mode: <…>  # REQUIRED · enum: ambient | named_profile | secret_manager | interactive | client_certificate | none · v0.1.15: `mac.credential_mode` — the closed, BRAND-FREE set of ways a…
+  ref: <…>  # string|null · A HANDLE, never a value — a profile name, a secret-manager path, a…
+
+config:  # OPAQUE TO MAC
+
+label: <…>  # string · A human name for this deployment target, for disclosure lines
+
+note: <…>  # string · Free prose about this deployment
 ```
 
 <!-- END GENERATED:schema-shapes -->
