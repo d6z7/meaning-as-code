@@ -117,7 +117,15 @@ items:
 
   - id: P0-money
     what: the five billed entry points with no consent guard; the browser path that bills directly
-    state: runnable
+    state: done
+    landed: mac-platform develop @ cc32430
+    evidence: >
+      6 of 43 entry points reached a billed sink and 1 demanded consent; all six now call one
+      _require_accept_cost, and the four client call sites send it. NEW GATE check_billed_consent:
+      PASS 13/13 billed entry point(s) demand consent — 6/6 server (of 43 enumerated, over 5 billed
+      sink(s)) + 7/7 browser act(s) declared (of 9 exported); self-test 14/14 reject classes. Mutant
+      proved on a copied tree: a new unguarded handler moved the denominator 43->44 and turned it
+      red.
     track: testing
     measured: >
       6 paths reach a billed sink and 1 demands accept_cost (h_test_connection). Unguarded:
@@ -128,7 +136,14 @@ items:
 
   - id: P0-tokens
     what: the two tracked lines carrying a real username, and the gate that cannot see them
-    state: runnable
+    state: done
+    landed: mac-platform develop @ cc32430
+    evidence: >
+      SIX leaks, not the measured two — incl. a real 12-digit AWS account number in two fixtures and
+      an operator's given name in a production resource name, both invisible to the old gate.
+      Rebuilt by copying check_mac_public: PASS 0 leak(s) over 508 tracked text file(s) (513
+      tracked), 8 built-in shape(s) + 4 register token(s), floor SET of 0; self-test 35/35. Was 256
+      of 701 candidates with no self-test, no exit-2 path and no PASS: prefix.
     track: testing
     measured: >
       mac-platform/tools/check_secrets.py has no home-path pattern, no register, no floor, no
@@ -211,7 +226,16 @@ items:
 
   - id: P3-runner
     what: fix the runner inversion
-    state: runnable
+    state: done
+    landed: meaning-as-code develop @ c580ee8
+    evidence: >
+      run_gates went from `PASS: 9/9 gate self-tests green` — a suite that never ran one gate
+      against the tree — to an honest exit 1 with both arms and a per-gate subject table. 9 gates ->
+      12; the new red is check_engine_coupling (7 violations over 135 tracked .py files), invisible
+      because no runner ran it. run_framework_gates' self-test arm gained the denominator it never
+      had: 23 of 37 declare one. check_host_coupling REFUSED and keeps the suite red — its subject
+      is a host, hosts are in mac-platform, and its token derivation reads a path this repo has none
+      of, so any plausible host dir would be judged against an EMPTY token set.
     track: testing
     measured: >
       the 3 sdk gates in NO runner (check_engine_coupling, check_entry_points, check_seam_agreement)
@@ -229,7 +253,15 @@ items:
 
   - id: P3-lint
     what: point the console lint at the files that exist — MEASURE, do not block
-    state: runnable
+    state: done
+    landed: mac-platform develop @ 05fc2fd
+    evidence: >
+      0 of 116 frontend files carried a rule; now 113 linted and 78 active error rules. --print-
+      config on App.jsx went from `undefined` (the file was simply ignored) to 81 rules. 158
+      findings baselined per rule in lint-floor.json. Mutant proved WITH a negative control: the
+      same useState-below-an-early-return survived the old config at exit 0 and is rejected at exit
+      1 by the new one. All 17 pre-existing suppressions were INERT and none states a reason.
+      MEASURE ONLY — make check untouched; blocking is R12-eslint.
     track: testing
     measured: >
       0 of 116 frontend files carry a single rule. eslint.config.js scopes to **/*.{ts,tsx} and the
