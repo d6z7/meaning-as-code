@@ -87,9 +87,74 @@ def scan(root: pathlib.Path) -> list[dict]:
     return out
 
 
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# SELF-TEST FIXTURES — the subject this gate's own rule needs, and a mutant per reject class
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# WHAT WAS WRONG WITH 5/5, MEASURED 2026-09-13.
+# `mac_project.selftest_discovery` seeds a concept and no descriptor. `columns_of()` then returns
+# None, `scan()` does `if not have: continue`, and this gate printed
+#
+#     ✓ OK — every column named by 1 concept(s) exists on the relation it grounds on
+#
+# having checked ZERO columns. Three clean layout fixtures scored three ticks for a rule with an
+# empty population, and nothing in the suite could tell that green apart from a real one.
+#
+# THE FIX IS TWO PIECES, and neither touches anything that judges a real bundle:
+#   `_subject`  gives the rule a population — the descriptor the seeded concept grounds on. With it,
+#               the clean fixtures check 1 concept against 2 real columns and the harness raises the
+#               bar on them from "did not refuse" to "exited 0".
+#   `_MUTANTS`  one per reject class this gate can attribute, named by the FIELD it prints. Each
+#               must exit 1 (a finding, not a refusal) AND print its own field name, which is what
+#               turns "something was rejected" into "this class was rejected" — the difference
+#               between these gates and the three fully attributed sdk ones.
+_REL = "widget_register"        # the relation mac_project's shared _CONCEPT_DOC grounds on
+_DESCRIPTOR = """relation: widget_register
+columns:
+  - name: widget_code
+  - name: widget_name
+"""
+
+
+def _subject(root) -> None:
+    """Seed the descriptor the fixture concept grounds on, so this gate's rule has a subject.
+
+    `columns_of` looks in data/datasets/ then data/sources/, by relation stem, in BOTH layouts —
+    it does not go through the plane resolver — so one path serves every fixture case."""
+    d = pathlib.Path(root) / "data" / "datasets"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / f"{_REL}.yaml").write_text(_DESCRIPTOR, encoding="utf-8")
+
+
+def _concept_text(root, replace: tuple[str, str]) -> None:
+    f = pathlib.Path(P.concept_files(root)[0])
+    old, new = replace
+    text = f.read_text(encoding="utf-8")
+    assert old in text, f"fixture drift: {old!r} is no longer in the shared concept doc"
+    f.write_text(text.replace(old, new), encoding="utf-8")
+
+
+# (name, mutate, marker that must appear in the output, what it proves)
+_MUTANTS = (
+    ("identity-key-missing",
+     lambda r: _concept_text(r, ("canonical_key: widget_code", "canonical_key: widget_id")),
+     "identity.canonical_key",
+     "the concept's canonical key names a column the relation does not have (Brand/Market, "
+     "the prefix disagreement this gate was built for)"),
+    ("grounding-key-missing",
+     lambda r: _concept_text(r, ("\n      key: widget_code", "\n      key: widget_id")),
+     "grounding.sources[0].key",
+     "the grounding key names a column the relation does not have (SalesArea.grounding.key)"),
+    ("grounding-column-missing",
+     lambda r: _concept_text(r, ("columns: [widget_code, widget_name]",
+                                 "columns: [widget_code, widget_name, widget_colour]")),
+     "grounding.sources[0].columns",
+     "a projected column is not on the relation — the class a COLUMN_NOT_FOUND from Athena is"),
+)
+
+
 def main() -> int:
     if "--self-test" in sys.argv[1:]:
-        return P.selftest_discovery(__file__)
+        return P.selftest_discovery(__file__, subject=_subject, mutants=_MUTANTS)
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")

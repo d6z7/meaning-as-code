@@ -29,6 +29,28 @@
 # A gate is judged failed if EITHER its own run against the bundle exits 1, OR its `--self-test`
 # (when it has one) exits 1 — a checker whose self-test cannot pass is not trustworthy evidence about
 # the bundle, whatever its own run against the bundle happened to say.
+#
+# THE SELF-TEST ARM HAD NO DENOMINATOR, MEASURED 2026-09-13.
+# ---------------------------------------------------------
+# This runner has always executed `--self-test` for every gate that declares one, and has always
+# folded a self-test failure into that gate's verdict. What it never printed is HOW MANY gates have
+# a self-test at all. Measured on this tree: 23 of 37. So 14 gates were judged on their real run
+# ALONE, with nothing asserting they can still REJECT — and the final line said `30/37 green`
+# without distinguishing the two kinds of evidence behind that 30.
+#
+# That is the same defect this file was built to remove, one level up: a number with no denominator.
+# The self-test arm now reports its own denominator (declared / green / failing / could-not-run) and
+# NAMES the gates that declare none. No verdict changes — a gate passes and fails exactly as before.
+# The only change is that the suite can no longer imply evidence it does not have.
+#
+# NOT FIXED HERE, ON PURPOSE — two gates are miscounted as could-not-run and it would make this
+# suite GREENER to fix, which needs an operator, not this runner:
+#   check_topology.py       run bare: PASS (5 capabilities over 620 tracked files)
+#   check_wiki_citations.py run bare: PASS (1021 citations over 34 pages)
+# Both refuse <bundle-root> because their subject is THIS REPOSITORY, so both belong in
+# REPO_SUBJECT_GATES below. Moving them turns 2 could-not-runs into 2 passes (30/37 -> 32/37)
+# without proving one new thing, and it moves a published baseline. Left visible, not silently
+# harvested: a suite must never get greener as a side effect of someone else's task.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -108,7 +130,16 @@ PASS=0
 FAIL=0
 CNR=0
 REPO_SUBJ=0
+# The SELF-TEST arm's own denominator. Counted separately from the bundle run because they are
+# different evidence about different things: "can this gate still reject?" and "what does it find
+# here?". One number covering both is the conflation this block exists to end.
+ST_DECL=0
+ST_NONE=0
+ST_PASS=0
+ST_FAIL=0
+ST_CNR=0
 declare -a NOTES
+declare -a NO_SELFTEST
 
 T0=$(date +%s)
 
@@ -119,8 +150,15 @@ for checker in "$HERE"/check_*.py; do
 
   st_rc=""
   if grep -q -- '--self-test' "$checker"; then
+    ST_DECL=$((ST_DECL + 1))
     run_capped "$checker" --self-test >"$out_st" 2>&1
     st_rc=$?
+    if [ "$st_rc" = "0" ]; then ST_PASS=$((ST_PASS + 1))
+    elif [ "$st_rc" = "2" ]; then ST_CNR=$((ST_CNR + 1))
+    else ST_FAIL=$((ST_FAIL + 1)); fi
+  else
+    ST_NONE=$((ST_NONE + 1))
+    NO_SELFTEST+=("$name")
   fi
 
   if repo_subject "$name"; then
@@ -168,14 +206,27 @@ if [ -n "${NOTES:-}" ] && [ "${#NOTES[@]}" -gt 0 ]; then
   done
 fi
 
+if [ -n "${NO_SELFTEST:-}" ] && [ "${#NO_SELFTEST[@]}" -gt 0 ]; then
+  echo
+  echo "DISCLOSURE — ${#NO_SELFTEST[@]} of ${TOTAL} gate(s) declare NO --self-test, so nothing here"
+  echo "asserts they can still REJECT; their verdict above rests on the bundle run alone:"
+  for n in "${NO_SELFTEST[@]}"; do
+    echo "  $n"
+  done
+fi
+
 echo
 if [ "$FAIL" -eq 0 ] && [ "$CNR" -eq 0 ]; then
   echo "PASS: run_framework_gates — ${PASS}/${TOTAL} green over ${BUNDLE_ROOT}," \
-       "$((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this repository" \
+       "$((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this repository;" \
+       "self-test arm ${ST_PASS}/${ST_DECL} green over ${ST_DECL} declaring one of ${TOTAL}" \
+       "(${ST_NONE} declare none — named above, judged on the bundle run alone)" \
        "($((T1 - T0))s)"
   exit 0
 fi
 echo "FAIL: run_framework_gates — ${PASS}/${TOTAL} green, ${FAIL} failing, ${CNR} could-not-run" \
      "over ${BUNDLE_ROOT}, $((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this" \
-     "repository ($((T1 - T0))s)"
+     "repository; self-test arm ${ST_PASS}/${ST_DECL} green, ${ST_FAIL} failing, ${ST_CNR}" \
+     "could-not-run, over ${ST_DECL} declaring one of ${TOTAL} (${ST_NONE} declare none — named" \
+     "above, judged on the bundle run alone) ($((T1 - T0))s)"
 exit 1

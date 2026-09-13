@@ -197,12 +197,48 @@ def _seed(tmp, case):
     return root
 
 
-def selftest_discovery(script) -> int:
+def selftest_discovery(script, *, subject=None, mutants=()) -> int:
     """Run `script` against each fixture and check it sees what the framework says is there.
 
-    A gate is free to FAIL a fixture on content (exit 1) — these bundles are deliberately minimal.
-    What it may not do is (a) miss a concept that is present, or (b) report a verdict when it found
-    none. Prints one PASS:/FAIL: line. Exit 0 = the gate reads both layouts and refuses on empty."""
+    TWO PROPERTIES, TWO DENOMINATORS, AND THE SECOND ONE WAS MISSING.
+    -----------------------------------------------------------------
+    (1) DISCOVERY — the 5 `_SELFTEST_CASES` below. A gate must see a concept wherever the framework
+        permits one to be, and must REFUSE — visibly, on a distinct exit code — when it sees none.
+        `empty_plane` and `no_plane` are mutants OF THIS property and always ran.
+
+    (2) THE GATE'S OWN RULE — `mutants`, and until 2026-09-13 there were none, for any of the nine
+        gates that delegate here. MEASURED on `check_concept_columns_exist`, whose rule is "every
+        column a concept names must be a column of the relation it grounds on": the shared fixture
+        seeds a concept and NO DESCRIPTOR, so `columns_of()` returns None, `scan()` does
+        `if not have: continue`, and the gate printed
+
+            ✓ OK — every column named by 1 concept(s) exists on the relation it grounds on
+
+        having checked ZERO columns. Three clean fixtures scored three ticks for a rule whose
+        population was empty. That is this module's own docstring concession — "A gate is free to
+        FAIL a fixture on content" — read the other way round: it is also free to PASS on content it
+        never had, and 5/5 green said nothing about whether the rule can still reject.
+
+    So a caller may now hand in:
+
+      subject(root) -> None
+          Seed whatever the gate's OWN rule needs as a subject, on top of the concept fixture — a
+          descriptor with columns, a profile, an acceptance property. Applied to the three CLEAN
+          layouts (so the rule is exercised over a NON-ZERO population there, and those three must
+          then exit 0, not merely avoid refusing) and to each mutant's base.
+
+      mutants = ((name, mutate, marker, why), ...)
+          `mutate(root)` breaks the gate's own rule on an otherwise-clean fixture. The gate must
+          then exit 1 — a FINDING, not a refusal (2) and not a pass (0) — and `marker` must appear
+          in its output, so the rejection is ATTRIBUTED to the class it was seeded for instead of
+          merely counted. `marker` is additionally asserted ABSENT from the clean run, because a
+          marker that is always present proves nothing. This is the property the three fully
+          attributed sdk gates have (check_engine_coupling 55/55, check_entry_points 37/37,
+          check_seam_agreement 45/45) and that "BY FINDING COUNT ONLY" gates do not.
+
+    Prints one PASS:/FAIL: line carrying BOTH denominators, and states `0 mutants of its own rule`
+    explicitly when a caller passes none — a gate with no rule mutant must not be able to borrow the
+    discovery fixtures' green as evidence that it can still reject."""
     import subprocess
     import sys
     import tempfile
@@ -210,31 +246,90 @@ def selftest_discovery(script) -> int:
 
     script = Path(script).resolve()
     name, bad = script.stem, 0
+
+    def _run(root):
+        p = subprocess.run([sys.executable, str(script), str(root)],
+                           capture_output=True, text=True, timeout=300)
+        return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+    clean_output = ""
     with tempfile.TemporaryDirectory() as tmp:
         for case, expect_refusal, why in _SELFTEST_CASES:
             root = _seed(tmp, case)
-            p = subprocess.run([sys.executable, str(script), str(root)],
-                               capture_output=True, text=True, timeout=300)
-            out = (p.stdout or "") + (p.stderr or "")
+            # The gate's own rule needs a subject, and only the gate knows what that is. Seeded on
+            # the CLEAN layouts only: an empty plane must stay empty, or the refusal mutants stop
+            # being mutants.
+            if subject is not None and not expect_refusal:
+                subject(root)
+            rc, out = _run(root)
             # The assertion is about THE CONCEPT DENOMINATOR specifically. A gate may legitimately
             # refuse one of its OTHER populations on these deliberately minimal fixtures (no
             # acceptance corpus, no datasets); that is not this property, and matching the generic
             # outage marker would have conflated the two.
             refused = empty_mark("concept") in out
-            ok = (refused == expect_refusal) and (not expect_refusal or p.returncode == EMPTY_EXIT)
+            ok = (refused == expect_refusal) and (not expect_refusal or rc == EMPTY_EXIT)
             # A traceback is not a verdict. Without this, a gate that crashed on every bundle would
             # score full marks on the three clean cases by never printing a refusal.
             if not expect_refusal and "Traceback (most recent call last)" in out:
                 ok = False
                 why += "  [crashed]"
+            # A SEEDED SUBJECT RAISES THE BAR on the clean layouts. Without a subject, "did not
+            # refuse" is all that can be asked. With one, the rule has a real population and a
+            # clean fixture that goes red means the fixture — not the tree — is wrong, and every
+            # mutant built on it would be proving nothing.
+            if subject is not None and not expect_refusal and rc != 0:
+                ok = False
+                why += f"  [clean fixture + seeded subject exited {rc}, expected 0]"
+            if not expect_refusal and not clean_output:
+                clean_output = out
             bad += 0 if ok else 1
             verdict = ("refused (exit 2)" if refused else
-                       ("ran (exit 2 — another population empty)" if p.returncode == EMPTY_EXIT
-                        else f"ran (exit {p.returncode})"))
+                       ("ran (exit 2 — another population empty)" if rc == EMPTY_EXIT
+                        else f"ran (exit {rc})"))
             print(f"  {'✓' if ok else '✗'} {case:<18} {verdict:<16} expected "
                   f"{'refusal' if expect_refusal else 'a real measurement'} — {why}")
+
+        # ── mutants of the gate's OWN rule ──────────────────────────────────────────────────────
+        for i, (mname, mutate, marker, mwhy) in enumerate(mutants):
+            # A FRESH BUNDLE PER MUTANT, in its own parent dir. Sharing one fixture would let
+            # mutant A's writes decide mutant B's verdict, and `flat_layout` is already on disk
+            # from the discovery loop above.
+            parent = Path(tmp) / f"mutant_{i}"
+            parent.mkdir()
+            base = _seed(str(parent), "flat_layout")
+            if subject is not None:
+                subject(base)
+            mutate(base)
+            rc, out = _run(base)
+            rejected = rc == 1
+            attributed = marker in out
+            # A marker present on the clean run attributes nothing — it would fire on anything.
+            discriminates = marker not in clean_output
+            ok = rejected and attributed and discriminates
+            bad += 0 if ok else 1
+            if ok:
+                detail = f"rejected as its own class (exit 1, {marker!r})"
+            else:
+                bits = [f"exit {rc}"]
+                if not rejected:
+                    bits.append("NOT a finding (only exit 1 rejects here)")
+                if not attributed:
+                    bits.append(f"marker {marker!r} absent — rejection unattributed")
+                if not discriminates:
+                    bits.append(f"marker {marker!r} also fires on the clean fixture")
+                detail = ", ".join(bits)
+            print(f"  {'✓' if ok else '✗'} {('MUTANT ' + mname):<18} {detail:<16} expected "
+                  f"rejection attributed to this class — {mwhy}")
+
+    layouts, muts = len(_SELFTEST_CASES), len(mutants)
+    # THE MUTANT DENOMINATOR IS PRINTED EVEN WHEN IT IS ZERO. A gate that passes none says so on its
+    # own verdict line, so no reader can mistake five layout ticks for proof that its rule rejects.
+    mut_phrase = (f"{muts} mutant(s) of its own rule, each rejected as its own class"
+                  if muts else
+                  "0 mutants of its own rule — NOTHING HERE PROVES THIS GATE CAN STILL REJECT")
     line = (f"PASS: {name} discovers concepts in every permitted layout and refuses an empty "
-            f"denominator ({len(_SELFTEST_CASES)} fixtures)" if not bad else
-            f"FAIL: {name} failed {bad} of {len(_SELFTEST_CASES)} layout fixtures")
+            f"denominator ({layouts} fixtures); {mut_phrase}" if not bad else
+            f"FAIL: {name} failed {bad} of {layouts + muts} assertion(s) "
+            f"({layouts} layout fixtures + {muts} rule mutant(s))")
     print(line)
     return 1 if bad else 0
