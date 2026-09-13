@@ -27,6 +27,3 @@ sdk/gate/shared_schemas.txt
 # The public-token register IS the identity it protects. Never tracked.
 registers/public_tokens.txt
 
-# TEMPORARY — the connector spec draft quotes real bundle config and is NOT sanitised yet.
-# Remove this line only after check_mac_public reports it clean.
-decisions/PROPOSED-2026-09-13_connector-plugin-architecture.md
