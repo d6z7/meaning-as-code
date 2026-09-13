@@ -1,0 +1,17 @@
+# check_protocol RATCHET FLOOR — orphaned commits this tree may carry.
+#
+# An ORPHANED commit changed code and no protocol entry says why. The operator's diagnosis of
+# working that way, which is why this gate exists:
+#
+#   "so far we we working on adhock basis. i ask you do. but the donwside is that no ruling remains
+#    what we did and why and what is requested and expected functionality."
+#
+# MEASURED 2026-09-13 over HEAD~12..HEAD: 21 code-bearing commits, 0 entries. The gate reports
+# could-not-run at 0 entries rather than a verdict, because 0 examined is not 0 orphans — so this
+# floor does not bind until the backfill lands, and then it binds at whatever is then measured.
+#
+# 21 is the honest starting point: every commit predating the protocol is orphaned by definition.
+#
+# LOWER this number as the backfill lands. NEVER raise it. The target is 0, and at 0 the rule is
+# simply: code changes with a record, or it does not change.
+21
