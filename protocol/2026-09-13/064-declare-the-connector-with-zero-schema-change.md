@@ -5,6 +5,7 @@ topics: [connectors, containers, grammar]
 kind: build
 track: ontology
 repo: customer-bundle (<domain>/<bundle>)
+commits: [customer-bundle:47d5415]
 ---
 
 ## WHAT FORCED IT

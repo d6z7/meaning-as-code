@@ -5,6 +5,7 @@ topics: [the-public-boundary, gates, method]
 kind: defect
 track: core
 repo: mac-integration-kit
+commits: [mac-integration-kit:f2adef0]
 ---
 
 ## WHAT FORCED IT

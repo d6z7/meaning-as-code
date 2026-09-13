@@ -5,6 +5,7 @@ topics: [gates, harness, denominators]
 kind: build
 track: core
 repo: mac-platform
+commits: [mac-platform:981a9a6, mac-platform:b69f4f7]
 ---
 
 ## WHAT FORCED IT

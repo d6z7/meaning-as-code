@@ -5,6 +5,7 @@ topics: [the-public-boundary, gates, denominators, ratchets]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [0a23934, mac-platform:393ad70]
 ---
 
 ## WHAT FORCED IT

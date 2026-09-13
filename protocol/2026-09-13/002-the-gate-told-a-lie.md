@@ -5,6 +5,7 @@ topics: [the-record, gates]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [b4092e5]
 ---
 
 ## WHAT FORCED IT

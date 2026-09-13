@@ -1,4 +1,4 @@
-<!-- mac-wiki-stamp {"entries": ["2026-09-12/001-one-voice-on-extension-keys", "2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/015-the-five-zero-reader-exemplars", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/023-a-bundle-restating-its-own-connection-in-prose", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/025-a-bundle-that-describes-itself", "2026-09-12/026-the-projectors-stamped-one-identity-into-every-bundle", "2026-09-12/027-open-an-ontology-the-way-a-file-is-opened", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries", "2026-09-13/005-a-compiled-page-was-a-chronology", "2026-09-13/050-the-compile-record-named-a-home-directory", "2026-09-13/051-the-consoles-mount-state-is-not-repository-state", "2026-09-13/052-a-bundle-that-had-never-been-projected", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/054-connection-belongs-to-the-ontology", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/061-the-console-connection-page-requirement", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/064-declare-the-connector-with-zero-schema-change", "2026-09-13/065-tactics-keep-capacity-on-the-goal"], "generator": "mac_wiki.py/1", "index": true, "pages": ["wiki/core/capabilities.md", "wiki/core/connectors.md", "wiki/core/consolidation.md", "wiki/core/containers.md", "wiki/core/denominators.md", "wiki/core/gates.md", "wiki/core/grammar.md", "wiki/core/harness.md", "wiki/core/method.md", "wiki/core/ratchets.md", "wiki/core/registers.md", "wiki/core/the-public-boundary.md", "wiki/core/the-record.md", "wiki/ontology-builder/projections.md", "wiki/platform-builder/console.md"], "source_hash": "cedf58fa7ce185881aa7c9edc5c3c45b26e754a38279f97bb5cf5d63abc40997", "spec": "mac.wiki/1", "topic": null} -->
+<!-- mac-wiki-stamp {"entries": ["2026-09-12/001-one-voice-on-extension-keys", "2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/015-the-five-zero-reader-exemplars", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/023-a-bundle-restating-its-own-connection-in-prose", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/025-a-bundle-that-describes-itself", "2026-09-12/026-the-projectors-stamped-one-identity-into-every-bundle", "2026-09-12/027-open-an-ontology-the-way-a-file-is-opened", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries", "2026-09-13/005-a-compiled-page-was-a-chronology", "2026-09-13/050-the-compile-record-named-a-home-directory", "2026-09-13/051-the-consoles-mount-state-is-not-repository-state", "2026-09-13/052-a-bundle-that-had-never-been-projected", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/054-connection-belongs-to-the-ontology", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/061-the-console-connection-page-requirement", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/064-declare-the-connector-with-zero-schema-change", "2026-09-13/065-tactics-keep-capacity-on-the-goal"], "generator": "mac_wiki.py/1", "index": true, "pages": ["wiki/core/capabilities.md", "wiki/core/connectors.md", "wiki/core/consolidation.md", "wiki/core/containers.md", "wiki/core/denominators.md", "wiki/core/gates.md", "wiki/core/grammar.md", "wiki/core/harness.md", "wiki/core/method.md", "wiki/core/ratchets.md", "wiki/core/registers.md", "wiki/core/the-public-boundary.md", "wiki/core/the-record.md", "wiki/ontology-builder/projections.md", "wiki/platform-builder/console.md"], "source_hash": "6b1dcffb0694b6ac3954e3cb26d3a81944649a0622e72e8c711e0d0229c57bd5", "spec": "mac.wiki/1", "stubs": ["wiki/platform-builder/capabilities.md", "wiki/ontology-builder/connectors.md", "wiki/platform-builder/connectors.md", "wiki/platform-builder/consolidation.md", "wiki/ontology-builder/containers.md", "wiki/platform-builder/containers.md", "wiki/ontology-builder/denominators.md", "wiki/platform-builder/denominators.md", "wiki/ontology-builder/gates.md", "wiki/platform-builder/gates.md", "wiki/ontology-builder/grammar.md", "wiki/platform-builder/grammar.md", "wiki/platform-builder/harness.md", "wiki/platform-builder/method.md", "wiki/ontology-builder/registers.md", "wiki/platform-builder/registers.md", "wiki/ontology-builder/the-public-boundary.md", "wiki/platform-builder/the-public-boundary.md"], "topic": null} -->
 <!-- GENERATED by mac_wiki.py/1 — do not edit; recompile. -->
 
 # The wiki
@@ -8,40 +8,43 @@
 | | |
 |---|---|
 | pages | 15 |
+| audience stubs | 18 — one door per audience that wrote on a page filed elsewhere |
+| files per audience directory | `core` 13, `ontology-builder` 8, `platform-builder` 12 |
+| entries per audience | `core` 29, `ontology` 8, `platform` 12 — the shape the row above is supposed to have |
 | entries compiled | 49 of 49 in `protocol/` |
 | entries on no page | 0 (carry no `topics:`) |
 | entries declaring no audience | 0 of 49 |
 | normative spans | 57 marked over 38 of 49 entry(ies) — `protocol/claims.yaml` |
-| source_hash | `cedf58fa7ce18588…` (over every page's own hash) |
+| source_hash | `6b1dcffb0694b6ac…` (over every page's own hash) |
 | generated by | `mac_wiki.py/1` |
 
 ## Every page
 
-| page | topic | audience | entries | normative spans | compile stamp |
-|---|---|---|---|---|---|
-| [capabilities](core/capabilities.md) | capabilities | core | 7 | 6 | `c1b65bd8d66a7e62…` |
-| [connectors](core/connectors.md) | connectors | core | 6 | 8 | `460f919ca6db39b0…` |
-| [consolidation](core/consolidation.md) | consolidation | core | 8 | 5 | `bc273c0cc685fe83…` |
-| [containers](core/containers.md) | containers | core | 9 | 4 | `d4d6d1eab639b2dc…` |
-| [denominators](core/denominators.md) | denominators | core | 20 | 6 | `53ef350a3cf0619c…` |
-| [gates](core/gates.md) | gates | core | 36 | 7 | `21269bd0a6d4b66a…` |
-| [grammar](core/grammar.md) | grammar | core | 9 | 3 | `d3bdb8b171a79f8f…` |
-| [harness](core/harness.md) | harness | core | 18 | 4 | `44b8929aaa1732b4…` |
-| [method](core/method.md) | method | core | 9 | 5 | `948d264684c2d2f8…` |
-| [ratchets](core/ratchets.md) | ratchets | core | 4 | 4 | `db1421712c9d46be…` |
-| [registers](core/registers.md) | registers | core | 10 | 6 | `8c748b4b2495f230…` |
-| [the-public-boundary](core/the-public-boundary.md) | the-public-boundary | core | 18 | 8 | `8b4d681e19d29df0…` |
-| [the-record](core/the-record.md) | the-record | core | 5 | 5 | `e23678f228cb5da7…` |
-| [projections](ontology-builder/projections.md) | projections | ontology-builder | 5 | 3 | `8606253b63682e61…` |
-| [console](platform-builder/console.md) | console | platform-builder | 3 | 4 | `d3099064b7199d9d…` |
+| page | topic | filed under | entries | normative spans | doors | compile stamp |
+|---|---|---|---|---|---|---|
+| [capabilities](core/capabilities.md) | capabilities | core | 7 | 6 | `platform-builder` | `b17b8ade328669b4…` |
+| [connectors](core/connectors.md) | connectors | core | 6 | 8 | `ontology-builder`, `platform-builder` | `c395486295ad6c1f…` |
+| [consolidation](core/consolidation.md) | consolidation | core | 8 | 5 | `platform-builder` | `7b5214fce0cb6d56…` |
+| [containers](core/containers.md) | containers | core | 9 | 4 | `ontology-builder`, `platform-builder` | `f2abada18e53741a…` |
+| [denominators](core/denominators.md) | denominators | core | 20 | 6 | `ontology-builder`, `platform-builder` | `b23c7e673d926d79…` |
+| [gates](core/gates.md) | gates | core | 36 | 7 | `ontology-builder`, `platform-builder` | `046c8f912074db1b…` |
+| [grammar](core/grammar.md) | grammar | core | 9 | 3 | `ontology-builder`, `platform-builder` | `18feeb33ed5aa4d0…` |
+| [harness](core/harness.md) | harness | core | 18 | 4 | `platform-builder` | `e6b2df7166ff1e6d…` |
+| [method](core/method.md) | method | core | 9 | 5 | `platform-builder` | `152b3b5d8879790c…` |
+| [ratchets](core/ratchets.md) | ratchets | core | 4 | 4 | — | `1992da590d06d416…` |
+| [registers](core/registers.md) | registers | core | 10 | 6 | `ontology-builder`, `platform-builder` | `f809d17ff5122ec6…` |
+| [the-public-boundary](core/the-public-boundary.md) | the-public-boundary | core | 18 | 8 | `ontology-builder`, `platform-builder` | `3106e4d210358555…` |
+| [the-record](core/the-record.md) | the-record | core | 5 | 5 | — | `6ca459dba2776f71…` |
+| [projections](ontology-builder/projections.md) | projections | ontology-builder | 5 | 3 | — | `352333c4ba65a000…` |
+| [console](platform-builder/console.md) | console | platform-builder | 3 | 4 | — | `e96a67fc57cce019…` |
 
 ## By audience
 
-A page lives in ONE directory. An entry declares ONE audience. A topic both audiences touched is filed as shared law, so the table below is the cross-cut: what each audience wrote about, wherever it was filed.
+A page lives in ONE directory: a topic both audiences touched is filed as shared law, because it is. Every OTHER audience that wrote on it carries a compiled STUB in its own directory — the page's address and that audience's entry count, quoting nothing — so a directory listing reaches every topic its audience wrote on and still says where the record lives. That is why the two rows at the top of this page can now have the same shape; before the stubs they read `core 13, ontology-builder 1, platform-builder 1` against `core 29, ontology 8, platform 12`.
 
-### `wiki/core/` — 13 page(s) filed here, 29 entry(ies) declared this audience
+### `wiki/core/` — 13 file(s): 13 page(s) filed here + 0 stub(s), over 29 entry(ies) declaring this audience
 
-| page | entries | normative spans |
+| page filed here | entries | normative spans |
 |---|---|---|
 | [capabilities](core/capabilities.md) | 7 | 6 |
 | [connectors](core/connectors.md) | 6 | 8 |
@@ -57,42 +60,42 @@ A page lives in ONE directory. An entry declares ONE audience. A topic both audi
 | [the-public-boundary](core/the-public-boundary.md) | 18 | 8 |
 | [the-record](core/the-record.md) | 5 | 5 |
 
-### `wiki/ontology-builder/` — 1 page(s) filed here, 8 entry(ies) declared this audience
+### `wiki/ontology-builder/` — 8 file(s): 1 page(s) filed here + 7 stub(s), over 8 entry(ies) declaring this audience
 
-| page | entries | normative spans |
+| page filed here | entries | normative spans |
 |---|---|---|
 | [projections](ontology-builder/projections.md) | 5 | 3 |
 
-**Filed elsewhere, carrying `ontology` entries:**
+**Reachable from this directory through a compiled stub** — the page is filed elsewhere and holds the whole record; the stub is the door:
 
-| page | filed under | `ontology` entries | of |
+| stub in this directory | the page | `ontology` entries | of |
 |---|---|---|---|
-| [containers](core/containers.md) | core | 6 | 9 |
-| [the-public-boundary](core/the-public-boundary.md) | core | 5 | 18 |
-| [connectors](core/connectors.md) | core | 3 | 6 |
-| [grammar](core/grammar.md) | core | 3 | 9 |
-| [registers](core/registers.md) | core | 2 | 10 |
-| [denominators](core/denominators.md) | core | 1 | 20 |
-| [gates](core/gates.md) | core | 1 | 36 |
+| [containers](ontology-builder/containers.md) | [core/containers.md](core/containers.md) | 6 | 9 |
+| [the-public-boundary](ontology-builder/the-public-boundary.md) | [core/the-public-boundary.md](core/the-public-boundary.md) | 5 | 18 |
+| [connectors](ontology-builder/connectors.md) | [core/connectors.md](core/connectors.md) | 3 | 6 |
+| [grammar](ontology-builder/grammar.md) | [core/grammar.md](core/grammar.md) | 3 | 9 |
+| [registers](ontology-builder/registers.md) | [core/registers.md](core/registers.md) | 2 | 10 |
+| [denominators](ontology-builder/denominators.md) | [core/denominators.md](core/denominators.md) | 1 | 20 |
+| [gates](ontology-builder/gates.md) | [core/gates.md](core/gates.md) | 1 | 36 |
 
-### `wiki/platform-builder/` — 1 page(s) filed here, 12 entry(ies) declared this audience
+### `wiki/platform-builder/` — 12 file(s): 1 page(s) filed here + 11 stub(s), over 12 entry(ies) declaring this audience
 
-| page | entries | normative spans |
+| page filed here | entries | normative spans |
 |---|---|---|
 | [console](platform-builder/console.md) | 3 | 4 |
 
-**Filed elsewhere, carrying `platform` entries:**
+**Reachable from this directory through a compiled stub** — the page is filed elsewhere and holds the whole record; the stub is the door:
 
-| page | filed under | `platform` entries | of |
+| stub in this directory | the page | `platform` entries | of |
 |---|---|---|---|
-| [gates](core/gates.md) | core | 8 | 36 |
-| [capabilities](core/capabilities.md) | core | 6 | 7 |
-| [harness](core/harness.md) | core | 6 | 18 |
-| [consolidation](core/consolidation.md) | core | 3 | 8 |
-| [containers](core/containers.md) | core | 3 | 9 |
-| [denominators](core/denominators.md) | core | 3 | 20 |
-| [the-public-boundary](core/the-public-boundary.md) | core | 3 | 18 |
-| [method](core/method.md) | core | 2 | 9 |
-| [registers](core/registers.md) | core | 2 | 10 |
-| [connectors](core/connectors.md) | core | 1 | 6 |
-| [grammar](core/grammar.md) | core | 1 | 9 |
+| [gates](platform-builder/gates.md) | [core/gates.md](core/gates.md) | 8 | 36 |
+| [capabilities](platform-builder/capabilities.md) | [core/capabilities.md](core/capabilities.md) | 6 | 7 |
+| [harness](platform-builder/harness.md) | [core/harness.md](core/harness.md) | 6 | 18 |
+| [consolidation](platform-builder/consolidation.md) | [core/consolidation.md](core/consolidation.md) | 3 | 8 |
+| [containers](platform-builder/containers.md) | [core/containers.md](core/containers.md) | 3 | 9 |
+| [denominators](platform-builder/denominators.md) | [core/denominators.md](core/denominators.md) | 3 | 20 |
+| [the-public-boundary](platform-builder/the-public-boundary.md) | [core/the-public-boundary.md](core/the-public-boundary.md) | 3 | 18 |
+| [method](platform-builder/method.md) | [core/method.md](core/method.md) | 2 | 9 |
+| [registers](platform-builder/registers.md) | [core/registers.md](core/registers.md) | 2 | 10 |
+| [connectors](platform-builder/connectors.md) | [core/connectors.md](core/connectors.md) | 1 | 6 |
+| [grammar](platform-builder/grammar.md) | [core/grammar.md](core/grammar.md) | 1 | 9 |

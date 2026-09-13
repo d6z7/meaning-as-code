@@ -5,6 +5,7 @@ topics: [connectors, gates, ratchets, denominators, harness]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [efac30b]
 ---
 
 ## WHAT FORCED IT

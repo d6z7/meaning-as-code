@@ -5,6 +5,7 @@ topics: [gates, harness, denominators]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [1a69768, mac-platform:a82dbc5]
 ---
 
 ## WHAT FORCED IT

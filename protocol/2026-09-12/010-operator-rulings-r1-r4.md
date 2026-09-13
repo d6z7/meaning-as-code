@@ -5,6 +5,7 @@ topics: [method, gates, grammar]
 kind: ruling
 track: core
 repo: mac-integration-kit
+commits: [mac-integration-kit:33189f9]
 ---
 
 ## WHAT FORCED IT

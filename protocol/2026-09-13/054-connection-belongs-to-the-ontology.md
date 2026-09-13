@@ -5,6 +5,7 @@ topics: [connectors, registers, the-public-boundary, containers]
 kind: defect
 track: ontology
 repo: meaning-as-code
+commits: [93ca8a6]
 ---
 
 ## WHAT FORCED IT

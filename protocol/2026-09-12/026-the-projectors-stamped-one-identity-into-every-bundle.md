@@ -5,6 +5,7 @@ topics: [the-public-boundary, projections, containers]
 kind: defect
 track: ontology
 repo: meaning-as-code
+commits: [2f0b0ec]
 ---
 
 ## WHAT FORCED IT

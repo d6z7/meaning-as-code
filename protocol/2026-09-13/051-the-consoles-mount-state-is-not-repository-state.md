@@ -5,6 +5,7 @@ topics: [the-public-boundary, console, containers]
 kind: defect
 track: platform
 repo: mac-platform
+commits: [mac-platform:e3c7be8]
 ---
 
 ## WHAT FORCED IT

@@ -5,6 +5,7 @@ topics: [gates, denominators, harness]
 kind: measurement
 track: core
 repo: meaning-as-code
+commits: [9c63129, 23758da]
 ---
 
 ## WHAT FORCED IT

@@ -5,6 +5,7 @@ topics: [consolidation, method, the-public-boundary]
 kind: build
 track: platform
 repo: mac-platform
+commits: [mac-platform:9b1cdfa]
 ---
 
 ## WHAT FORCED IT

@@ -1,4 +1,4 @@
-<!-- mac-wiki-stamp {"claims": ["rule:2026-09-12/014-the-gate-contract-shared#WHAT CHANGED", "rule:2026-09-12/020-one-line-that-means-something#WHAT CHANGED", "rule:2026-09-12/011-the-subject-may-not-set-the-verdict#WHAT CHANGED", "rule:2026-09-12/017-the-grain-gate-62-was-seven#WHAT CHANGED", "rule:2026-09-13/058-a-crash-is-not-a-verdict#WHAT FORCED IT", "boundary:2026-09-12/009-the-architect-falsified-its-own-brief#WHAT IT DOES NOT PROVE", "boundary:2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT IT DOES NOT PROVE"], "entries": ["2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/005-a-compiled-page-was-a-chronology", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries"], "generator": "mac_wiki.py/1", "source_hash": "21269bd0a6d4b66afb23ea7f2570484a8febdb065fdeb325fc459f11a9b4bf88", "spec": "mac.wiki/1", "topic": "gates", "track": "core", "track_basis": "entries declare 3 different tracks (core 27, ontology 1, platform 8) \u2014 a topic both audiences touch is shared law", "untracked_entries": 0} -->
+<!-- mac-wiki-stamp {"claims": ["rule:2026-09-12/014-the-gate-contract-shared#WHAT CHANGED", "rule:2026-09-12/020-one-line-that-means-something#WHAT CHANGED", "rule:2026-09-12/011-the-subject-may-not-set-the-verdict#WHAT CHANGED", "rule:2026-09-12/017-the-grain-gate-62-was-seven#WHAT CHANGED", "rule:2026-09-13/058-a-crash-is-not-a-verdict#WHAT FORCED IT", "boundary:2026-09-12/009-the-architect-falsified-its-own-brief#WHAT IT DOES NOT PROVE", "boundary:2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT IT DOES NOT PROVE"], "entries": ["2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/005-a-compiled-page-was-a-chronology", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries"], "generator": "mac_wiki.py/1", "source_hash": "046c8f912074db1b83b97eedd491979d23e2bc80c047dabcac84ca56e3876507", "spec": "mac.wiki/1", "topic": "gates", "track": "core", "track_basis": "entries declare 3 different tracks (core 27, ontology 1, platform 8) \u2014 a topic both audiences touch is shared law", "untracked_entries": 0} -->
 <!-- GENERATED by mac_wiki.py/1 — do not edit; recompile. -->
 
 # Gates
@@ -11,7 +11,7 @@
 | audience | `wiki/core/` — entries declare 3 different tracks (core 27, ontology 1, platform 8) — a topic both audiences touch is shared law |
 | entries compiled | 36 |
 | normative spans | 7 marked over 7 of 36 entry(ies) — 5 rule, 2 boundary |
-| source_hash | `21269bd0a6d4b66a…` (sha256 over each entry's id and bytes, and over the claims marked on them) |
+| source_hash | `046c8f912074db1b…` (sha256 over each entry's id and bytes, and over the claims marked on them) |
 | generated by | `mac_wiki.py/1` |
 
 > **THE CLAIMS LAYER — interpretation, not extraction.** Which spans are normative is a judgement, and it lives in `protocol/claims.yaml` so that it never touches the append-only record it points at. The 7 span(s) in the next two sections are quoted VERBATIM from the entries below and verified by the same two gates as the body; only their SELECTION and their ORDER are authored. **7 of 7 UNRATIFIED** — proposed by an agent, not signed off: `2026-09-12/008` records that ratification is the operator's act.
@@ -39,7 +39,7 @@
 > Fixtures derive their tokens from each gate's own deny list rather than typing one: these gates COUNT
 > such literals, so a self-test that spelled one out would plant the thing it scans for.
 
-[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:40-56]]
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:41-57]]
 
 **RULE** · `2026-09-12/020-one-line-that-means-something` · from *WHAT CHANGED* · UNRATIFIED
 
@@ -53,7 +53,7 @@
 > 1104-line report ending "EXIT 0"; three answered `✓ OK ... nothing to check` for a root that does not
 > exist.
 
-[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:43-50]]
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:44-51]]
 
 **RULE** · `2026-09-12/011-the-subject-may-not-set-the-verdict` · from *WHAT CHANGED* · UNRATIFIED
 
@@ -72,7 +72,7 @@
 > properties. Liveness proven end to end by injecting a fabricated join key, watching exit 1 name the
 > built column and the descriptor that declares it, and reverting to exit 0 over 5.
 
-[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:56-68]]
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:57-69]]
 
 **RULE** · `2026-09-12/017-the-grain-gate-62-was-seven` · from *WHAT CHANGED* · UNRATIFIED
 
@@ -82,7 +82,7 @@
 > classes, four assertions that each fixture really seeded its class, and the same verdict under five
 > seeds.
 
-[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:63-66]]
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:64-67]]
 
 **RULE** · `2026-09-13/058-a-crash-is-not-a-verdict` · from *WHAT FORCED IT* · UNRATIFIED
 
@@ -92,7 +92,7 @@
 > were wrong there and right on this machine, which is precisely the failure mode that let the vendored
 > fork govern.
 
-[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:12-15]]
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:13-16]]
 
 ## What is not settled
 
@@ -104,7 +104,7 @@
 > prove the exposure is bounded — "two files today" is a statement about one branch at one moment, and
 > the forward-looking half (a release merge publishes 52) is what actually forced the cleanse.
 
-[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:55-58]]
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:56-59]]
 
 **BOUNDARY** · `2026-09-12/021-the-merge-refused-by-its-own-gate` · from *WHAT IT DOES NOT PROVE* · UNRATIFIED
 
@@ -117,7 +117,7 @@
 > dependencies are absent so it cannot run, and unlike the retired package it IS shipped, so this rests
 > on "cannot import" alone. That is weaker, and the file says so.
 
-[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:65-71]]
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:66-72]]
 
 ## What this page was compiled from
 
@@ -178,7 +178,7 @@
 > of where that repo stopped. The live repos, and the only ones that change, are the language
 > (meaning-as-code), the product (mac-platform) and the method (mac-integration-kit).
 
-[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:12-19]]
+[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:13-20]]
 
 ### EVIDENCE
 
@@ -202,7 +202,7 @@
 > `self-test 13/13 · run_gates 8/8`. Armed and live-tested on four reference repositories; each
 > actually refused a commit.
 
-[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:23-40]]
+[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:24-41]]
 
 ### WHAT CHANGED
 
@@ -211,7 +211,7 @@
 > instead, chains any existing hook rather than clobbering it, adds itself to `.git/info/exclude`, and
 > offers a visible escape (`touch .repo-unfrozen`).
 
-[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:44-46]]
+[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:45-47]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -221,7 +221,7 @@
 > bypassed the first time it is inconvenient and then nobody remembers it exists — so this stops
 > accidents, not intent.
 
-[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:50-53]]
+[[cite: protocol/2026-09-12/002-reference-only-repos-and-the-freeze.md:51-54]]
 
 ## made the absorbed platform actually runnable under its own gate — nothing in it could run, so nothing in it was true
 
@@ -240,7 +240,7 @@
 > A gate that cannot run is not a green gate and not a red one. Nothing in the gate could run, so
 > nothing in it was true.
 
-[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:12-20]]
+[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:13-21]]
 
 ### EVIDENCE
 
@@ -262,7 +262,7 @@
 > `PACKAGES: 4 -> 8`. mypy's own verdict recorded as a burn-down meter with the number named:
 > `mac-pack/runtime/mcp/eval 0 -- mac-sdk 731, okf-core 266, okf-aws 243, mac-console 232`.
 
-[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:24-39]]
+[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:25-40]]
 
 ### WHAT CHANGED
 
@@ -272,7 +272,7 @@
 > exists in no repository in this estate), and `meaning-as-code` must be installed for the compile gate
 > to run at all.
 
-[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:43-46]]
+[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:44-47]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -282,7 +282,7 @@
 > "needs an operator decision, not a sweep" — and 213 was later measured to be the WRONG NUMBER
 > (see `2026-09-12/018`). So "5 of 6 green" is a statement about the build system, not about the tree.
 
-[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:50-53]]
+[[cite: protocol/2026-09-12/003-the-absorbed-platform-was-not-gateable.md:51-54]]
 
 ## traced all seven golden-replay failures to a cause instead of leaving the xfail markers that hid them
 
@@ -300,7 +300,7 @@
 > The markers were a holding action against the file's own convention, which is to leave a known
 > failure standing with the measurement in its docstring.
 
-[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:12-19]]
+[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:13-20]]
 
 ### EVIDENCE
 
@@ -319,7 +319,7 @@
 >
 > Result: `24 pass, 0 xfail`.
 
-[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:23-35]]
+[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:24-36]]
 
 ### WHAT CHANGED
 
@@ -331,7 +331,7 @@
 > `25 na, zero pass, zero fail`. Every row that reached it got "the ontology states no concept rule
 > with a never-clause", so it can currently neither prove nor refute anything.
 
-[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:39-44]]
+[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:40-45]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -340,7 +340,7 @@
 > still red and one flag is measurably inert — a flag that cannot fire is not evidence of a clean
 > corpus, and this entry is the record that says so.
 
-[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:48-50]]
+[[cite: protocol/2026-09-12/004-golden-replay-investigated-not-silenced.md:49-51]]
 
 ## put a genericity gate on the method repo itself and cleaned the 47 machine-local facts it had been copying onto every machine
 
@@ -354,7 +354,7 @@
 > upstream method enforced nothing — which is how `/Users/<someone>/dev/...` came to sit inside
 > `ontology/planes/serving.md` as a "Good example", fifteen times.
 
-[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:12-15]]
+[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:13-16]]
 
 ### EVIDENCE
 
@@ -368,7 +368,7 @@
 >
 > `run_gates.sh: 8 gates -> 10, PASS 10/10.`
 
-[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:19-26]]
+[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:20-27]]
 
 ### WHAT CHANGED
 
@@ -389,7 +389,7 @@
 > when; editing it to satisfy a later gate falsifies the record. It is allowlisted with that reason —
 > grandfathered, not licensed.
 
-[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:30-44]]
+[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:31-45]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -399,7 +399,7 @@
 > so on a fresh clone with no register that half is weaker — stated here because the gate cannot state
 > it for you.
 
-[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:48-51]]
+[[cite: protocol/2026-09-12/005-the-method-gate-was-in-the-wrong-repo.md:49-52]]
 
 ## built the environment half of onboarding — a requirements contract, a doctor gate, and an estate installer that holds neither dependency list nor repository URL
 
@@ -419,7 +419,7 @@
 > checkout, the platform repo absorbed its packages, the import root stopped being the checkout root,
 > and the compile gate silently refused EVERY bundle for "compiler could not be run".
 
-[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:12-21]]
+[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:13-22]]
 
 ### EVIDENCE
 
@@ -442,7 +442,7 @@
 >
 > `Self-tests: install_estate 11/11 (7 mutants), doctor 11/11 (7 mutants). run_gates 12/12.`
 
-[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:25-41]]
+[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:26-42]]
 
 ### WHAT CHANGED
 
@@ -462,7 +462,7 @@
 >
 > Execution now RE-PLANS per stage, because stages mutate the filesystem the next stage reads.
 
-[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:45-58]]
+[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:46-59]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -472,7 +472,7 @@
 > also cannot automate the five things it refuses to pretend about: Python, git, an interactive agent
 > login, repository access and cloud credentials.
 
-[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:62-65]]
+[[cite: protocol/2026-09-12/006-onboarding-the-environment-half.md:63-66]]
 
 ## replaced the sibling-directory guess for the framework with declaration-driven resolution, and gated the case where the vendored fork wins
 
@@ -499,7 +499,7 @@
 > So the authoring path could not validate the bundle it had itself produced, and nothing told anyone
 > which schema had judged it.
 
-[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:12-28]]
+[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:13-29]]
 
 ### EVIDENCE
 
@@ -517,7 +517,7 @@
 > refusal: `check_grammar_home` reds when the shipped copy of the standard is in force, or when the
 > resolved grammar falls under a `$defs` floor. `Self-test 3/3 · run_gates 9/9 with $MEANING_AS_CODE set`.
 
-[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:32-43]]
+[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:33-44]]
 
 ### WHAT CHANGED
 
@@ -530,7 +530,7 @@
 > The fork itself was NOT deleted here. Operator ruling R4 withheld deletion authority; its five
 > importers were repointed instead, and the gate makes "inert" checkable rather than hoped for.
 
-[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:47-53]]
+[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:48-54]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -539,7 +539,7 @@
 > measurement and by gate. Structural impossibility arrived only with the consolidation on
 > `2026-09-13/053`, which deleted the fork outright.
 
-[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:57-59]]
+[[cite: protocol/2026-09-12/007-the-framework-was-located-by-guessing.md:58-60]]
 
 ## committed the five-agent topology review and its five re-planned phases into the repo that owns the method they govern
 
@@ -551,7 +551,7 @@
 > The review's ruling existed only as an untracked file: seventeen hours of five-agent analysis, two
 > evaluations and five execution plans, one `rm` from gone.
 
-[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:12-13]]
+[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:13-14]]
 
 ### EVIDENCE
 
@@ -575,7 +575,7 @@
 > It also corrected an inversion in the review's own §6: `check_write_paths`' default root is the
 > correct subject (28 files, a real finding); the repo root is where it passes on zero.
 
-[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:17-34]]
+[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:18-35]]
 
 ### WHAT CHANGED
 
@@ -584,7 +584,7 @@
 > operator's act, and §4/§6/§7/§8 carry the items only they can settle. The board's "~8 working days"
 > was stale the moment §6 landed; all five phases re-planned come to ≈10.25.
 
-[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:38-40]]
+[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:39-41]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -594,7 +594,7 @@
 > direction: re-measuring a blind instrument makes numbers go UP. The review's authority here is that
 > it survives an `rm`, not that its numbers are final.
 
-[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:44-47]]
+[[cite: protocol/2026-09-12/008-the-topology-review-recorded.md:45-48]]
 
 ## recorded the P5 repository design and the live gate defect it found on the way, plus the first estate-wide measurement of gate-contract compliance
 
@@ -608,7 +608,7 @@
 > guards the invariant the whole programme is about. The defect outranks the design it came from, so it
 > is recorded first.
 
-[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:12-15]]
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:13-16]]
 
 ### EVIDENCE
 
@@ -641,7 +641,7 @@
 > carrying real customer literals, not sixty-two — with `develop` 109 commits ahead and carrying all
 > 52, the normative schema included.
 
-[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:19-45]]
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:20-46]]
 
 ### WHAT CHANGED
 
@@ -650,7 +650,7 @@
 > packet P0.3 the same afternoon (`2026-09-12/011`), and the 41-gate measurement became the argument
 > for the shared gate contract (`2026-09-12/014`).
 
-[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:49-51]]
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:50-52]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -660,7 +660,7 @@
 > prove the exposure is bounded — "two files today" is a statement about one branch at one moment, and
 > the forward-looking half (a release merge publishes 52) is what actually forced the cleanse.
 
-[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:55-58]]
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:56-59]]
 
 ## recorded operator rulings R1-R4 and re-scoped P0.3 after its "currently green" premise was falsified
 
@@ -673,7 +673,7 @@
 > fabricated-identifier gate is "currently green" — had just been falsified: it is green on ONE machine.
 > Wiring it as it stood would have locked a lie into CI.
 
-[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:12-14]]
+[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:13-15]]
 
 ### EVIDENCE
 
@@ -689,7 +689,7 @@
 > The §1 merger proposal was declined for now, with a sharper trigger to revisit — the first lockstep
 > change across both homes, rather than the arrival of a second consumer estate.
 
-[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:18-27]]
+[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:19-28]]
 
 ### WHAT CHANGED
 
@@ -701,7 +701,7 @@
 > P0.3 was re-scoped to absorb the seam fix, and its exit criterion became "a verdict that does not
 > move with the subject's dependencies" rather than "wired into CI".
 
-[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:31-36]]
+[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:32-37]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -712,7 +712,7 @@
 > execute live queries in response to a user's question, which R3 does NOT cover
 > (`2026-09-12/021`).
 
-[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:40-44]]
+[[cite: protocol/2026-09-12/010-operator-rulings-r1-r4.md:41-45]]
 
 ## stopped a bundle under test from setting its checker's verdict, and stopped the fabricated-identifier gate passing over nothing
 
@@ -746,7 +746,7 @@
 > --self-test                 absent
 > ```
 
-[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:12-35]]
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:13-36]]
 
 ### EVIDENCE
 
@@ -766,7 +766,7 @@
 > off `sys.path`, so which plugin won was decided by path order rather than by the root asked for —
 > check bundle A then bundle B in one process and B silently got A's plugin.
 
-[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:39-52]]
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:40-53]]
 
 ### WHAT CHANGED
 
@@ -785,7 +785,7 @@
 > properties. Liveness proven end to end by injecting a fabricated join key, watching exit 1 name the
 > built column and the descriptor that declares it, and reverting to exit 0 over 5.
 
-[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:56-68]]
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:57-69]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -798,7 +798,7 @@
 > NOT turn the hygiene gate green — it reported 613, overwhelmingly from gitignored build output
 > (fixed in `2026-09-12/018`).
 
-[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:72-78]]
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:73-79]]
 
 ## made the no-model-authored-SQL invariant mechanically enforced on the answering path, with six reject classes and two asserted true negatives
 
@@ -813,7 +813,7 @@
 > string. What was missing was anything that would notice if that stopped being true — and it had
 > already stopped once, in a stopgap that had a model write a statement and handed it to an executor.
 
-[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:12-16]]
+[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:13-17]]
 
 ### EVIDENCE
 
@@ -841,7 +841,7 @@
 > from interpolating an untyped part — a table name, a predicate — which is the shape a model's output
 > takes. A gate that cries wolf is a gate nobody reads, so the refinement is itself tested.
 
-[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:20-41]]
+[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:21-42]]
 
 ### WHAT CHANGED
 
@@ -854,7 +854,7 @@
 > The gate landed on a GREEN develop deliberately, so it could serve as the ADMISSION CRITERION for the
 > absorption merge rather than landing inside it.
 
-[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:45-51]]
+[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:46-52]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -864,7 +864,7 @@
 > files the moment the absorbed packages arrived (`2026-09-12/021`), which is what an admission
 > criterion is for.
 
-[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:55-58]]
+[[cite: protocol/2026-09-12/012-gate-the-model-authored-sql-invariant.md:56-59]]
 
 ## fixed both defects that stopped the compliant answering engine being usable — it grounded nothing, and with no rule it silently dropped the requested period
 
@@ -894,7 +894,7 @@
 > `params = {}`. A period the caller asked for was DROPPED SILENTLY and the answer came back as a
 > confident figure for all of history.
 
-[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:12-31]]
+[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:13-32]]
 
 ### EVIDENCE
 
@@ -911,7 +911,7 @@
 > sql-invariant 0 over 43 runtime files · self-test 13/13
 > ```
 
-[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:35-45]]
+[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:36-46]]
 
 ### WHAT CHANGED
 
@@ -929,7 +929,7 @@
 > Two tests, because one would not have distinguished the properties: the period case refuses, and a
 > ruleless measure with NO period still plans.
 
-[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:49-60]]
+[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:50-61]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -939,7 +939,7 @@
 > this date was that `POST /ask` returns 500 unconditionally and the agent modules cannot import at all
 > (`2026-09-12/021`), so this fixes a path nothing currently walks.
 
-[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:64-67]]
+[[cite: protocol/2026-09-12/013-the-engine-could-not-answer-in-two-ways.md:65-68]]
 
 ## wrote the gate contract once and brought all eight SDK gates to it, closing three live false greens
 
@@ -953,7 +953,7 @@
 > gate nobody has tested, and a gate with no could-not-run path must express "I could not judge" as
 > either PASS or FAIL — both of which are lies.
 
-[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:12-15]]
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:13-16]]
 
 ### EVIDENCE
 
@@ -977,7 +977,7 @@
 > Result: `PASS: run_gates — 8/8 gate self-tests green`, `25 mutants across 8 gates, each rejected AS
 > ITS OWN CLASS`, `78 passed`.
 
-[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:19-36]]
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:20-37]]
 
 ### WHAT CHANGED
 
@@ -1000,7 +1000,7 @@
 > Fixtures derive their tokens from each gate's own deny list rather than typing one: these gates COUNT
 > such literals, so a self-test that spelled one out would plant the thing it scans for.
 
-[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:40-56]]
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:41-57]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1012,7 +1012,7 @@
 > commit, but the sequence is the lesson: a gate can meet every clause of this contract and still be
 > measuring nothing.
 
-[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:60-65]]
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:61-66]]
 
 ## made the grain gate deterministic, then discovered its 62 findings were 7 once parse failures stopped being counted as grain errors
 
@@ -1043,7 +1043,7 @@
 >
 > A numerator five times its denominator.
 
-[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:12-32]]
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:13-33]]
 
 ### EVIDENCE
 
@@ -1073,7 +1073,7 @@
 > subject once already". That, a missing acceptance plane, a non-directory root, and zero collapses
 > landing on a declared key are all exit 2 now.
 
-[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:36-59]]
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:37-60]]
 
 ### WHAT CHANGED
 
@@ -1083,7 +1083,7 @@
 > classes, four assertions that each fixture really seeded its class, and the same verdict under five
 > seeds.
 
-[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:63-66]]
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:64-67]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1101,7 +1101,7 @@
 > it belongs in a deliberate step with a re-baselined ratchet. The gap surfaced only because the first
 > fixtures used the undetected form and every case came back "could not run".
 
-[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:70-81]]
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:71-82]]
 
 ## replaced a containment guard that matched a substring of a directory name with one that reads the bundle's own declaration, and routed the last illegal write through it
 
@@ -1118,7 +1118,7 @@
 > Fixing the second defect first would have been unsafe: routing a write through that guard naively
 > would have turned a green gate into a runtime refusal for two of three live bundles.
 
-[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:12-18]]
+[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:13-19]]
 
 ### EVIDENCE
 
@@ -1141,7 +1141,7 @@
 >
 > `78 passed · run_gates 9/9`.
 
-[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:22-38]]
+[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:23-39]]
 
 ### WHAT CHANGED
 
@@ -1162,7 +1162,7 @@
 > now declares itself like one. One test must NOT pre-declare, because the scaffold under test is the
 > thing that writes the declaration — stated in the test rather than left as a puzzle.
 
-[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:42-56]]
+[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:43-57]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1171,7 +1171,7 @@
 > the repository root, which is why the exit-2 path was added — and a record of this review had those
 > two roots labelled the wrong way round, so the number alone has been misread before.
 
-[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:60-62]]
+[[cite: protocol/2026-09-12/016-a-guard-that-judged-by-directory-name.md:61-63]]
 
 ## fixed the denominators of both public-hygiene detectors — one counted its own build output, the other could not see the identifiers it exists to find — and ratcheted each at its measured floor
 
@@ -1203,7 +1203,7 @@
 > name did not turn the gate red — so the gate's green was a property of its blindness, not of the
 > tree.
 
-[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:12-33]]
+[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:13-34]]
 
 ### EVIDENCE
 
@@ -1227,7 +1227,7 @@
 > file must NOT be reported. Its fixture token is derived from the gate's own pattern table rather than
 > typed, because this gate COUNTS such tokens and a spelled-out one would plant what it scans for.
 
-[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:37-54]]
+[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:38-55]]
 
 ### WHAT CHANGED
 
@@ -1245,7 +1245,7 @@
 > denylist and its tests must name the terms they forbid; the criterion is ZERO NEW findings above a
 > declared, measured floor, with the instruction to lower it and never raise it.
 
-[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:58-69]]
+[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:59-70]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1255,7 +1255,7 @@
 > clean tree. The hygiene floor was later found to be a ratchet in name only — 146 was declared while
 > the count fell to 4, leaving 141 findings of silent headroom (`2026-09-13/059`).
 
-[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:73-76]]
+[[cite: protocol/2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up.md:74-77]]
 
 ## neutralised the detector probe strings that had been quoted verbatim into a public method document, after pushing past the gate that caught them
 
@@ -1269,7 +1269,7 @@
 > documentation that is PROJECTED onto every machine that installs the method — and the doc gate caught
 > three of them.
 
-[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:12-15]]
+[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:13-16]]
 
 ### EVIDENCE
 
@@ -1289,7 +1289,7 @@
 >
 > `PASS: run_gates — 12/12 gates green`.
 
-[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:19-32]]
+[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:20-33]]
 
 ### WHAT CHANGED
 
@@ -1298,7 +1298,7 @@
 > this establishes is the same division-of-labour constraint the detectors themselves have: a document
 > that forbids naming a source may not name one to make its point.
 
-[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:36-38]]
+[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:37-39]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1308,7 +1308,7 @@
 > you are reading inherits the constraint and the exposure — these entries quote the same measurements
 > and redact by hand.
 
-[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:42-45]]
+[[cite: protocol/2026-09-12/019-the-detector-probes-leaked-into-the-method-doc.md:43-46]]
 
 ## built aggregate gate runners in the product and framework repos, now that a green line means something, and took an honest inventory of all 34 framework checkers
 
@@ -1322,7 +1322,7 @@
 > work would have been worse than nothing: a gate that prints PASS having examined zero files
 > contributes a green line and no evidence, and three of them did exactly that.
 
-[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:12-15]]
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:13-16]]
 
 ### EVIDENCE
 
@@ -1349,7 +1349,7 @@
 > literal flag string is wired, exit code against a nonexistent root, and whether a `PASS:`/`FAIL:`
 > line with an explicit denominator appears. Before the packet, 4 of 34 were already at contract.
 
-[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:19-39]]
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:20-40]]
 
 ### WHAT CHANGED
 
@@ -1363,7 +1363,7 @@
 > 1104-line report ending "EXIT 0"; three answered `✓ OK ... nothing to check` for a root that does not
 > exist.
 
-[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:43-50]]
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:44-51]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1374,7 +1374,7 @@
 > all — "the next packet's honest starting point". As of `2026-09-13`, 14 of 34 framework checkers
 > still have no self-test.
 
-[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:54-58]]
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:55-59]]
 
 ## let the invariant gate refuse the 229-commit absorption merge, declared the retired answering paths with their measurements, and fixed the gate's two precision bugs rather than narrowing it
 
@@ -1391,7 +1391,7 @@
 > That is the sequencing working as designed: the gate landed on a green develop FIRST so it could
 > refuse the thing it was written for.
 
-[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:12-18]]
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:13-19]]
 
 ### EVIDENCE
 
@@ -1424,7 +1424,7 @@
 > make check: all green · 1003 passed · run_gates 9/9 · run_all_gates 14/14
 > ```
 
-[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:22-48]]
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:23-49]]
 
 ### WHAT CHANGED
 
@@ -1440,7 +1440,7 @@
 > READS a tool call in order to disclose it, and flagging that told the reader the gate cannot tell
 > writing from reading.
 
-[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:52-61]]
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:53-62]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1453,7 +1453,7 @@
 > dependencies are absent so it cannot run, and unlike the retired package it IS shipped, so this rests
 > on "cannot import" alone. That is weaker, and the file says so.
 
-[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:65-71]]
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:66-72]]
 
 ## split the container loader's trust model so a bundle can be opened to be LOOKED at without meeting the strictness required to ANSWER from it
 
@@ -1471,7 +1471,7 @@
 > `answerable` is NOT. So the bundle is perfectly inspectable and unfit to answer from, and the loader
 > collapsed that into one `ok=False`.
 
-[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:12-19]]
+[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:13-20]]
 
 ### EVIDENCE
 
@@ -1496,7 +1496,7 @@
 > reads; a leaked handle warns a reader and refuses an answering host; an account id refuses both; an
 > unbacked capability claim does not block a read.
 
-[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:23-41]]
+[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:24-42]]
 
 ### WHAT CHANGED
 
@@ -1504,7 +1504,7 @@
 > Naming a trust floor makes you an ANSWERING host and gets the strict reading. Naming none makes you a
 > READER, and a leaked handle or an unbacked capability claim becomes a warning the caller can see.
 
-[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:45-46]]
+[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:46-47]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1514,7 +1514,7 @@
 > answer-mount half governs a capability that does not exist today. Its only value is that the refusal
 > is already in place if answering is ever wired. The deliverable is the READ path, and that one works.
 
-[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:50-53]]
+[[cite: protocol/2026-09-12/022-reading-a-container-is-not-answering-from-it.md:51-54]]
 
 ## described the undescribed legacy grounding key, and fixed the readers and the gate that saw nothing in a bundle filing concepts by domain
 
@@ -1539,7 +1539,7 @@
 > nothing to look at — and a check over zero subjects passes. That is the zero-denominator pass, inside
 > a gate whose whole job is to catch concepts restating one refusal law.
 
-[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:12-26]]
+[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:13-27]]
 
 ### EVIDENCE
 
@@ -1554,7 +1554,7 @@
 >
 > `make check: all green (neutrality 251/257 floor)`.
 
-[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:30-38]]
+[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:31-39]]
 
 ### WHAT CHANGED
 
@@ -1565,7 +1565,7 @@
 > recurse. `open_container` accepts a resource-description path and resolves it to the directory holding
 > it, so the file a user can SEE in a file dialog is the file they can open.
 
-[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:42-46]]
+[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:43-47]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1575,7 +1575,7 @@
 > convention in each reader, not by a gate. The next reader written against this schema can still pick
 > one shape and be silently wrong for a bundle that uses the other.
 
-[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:50-53]]
+[[cite: protocol/2026-09-12/024-one-grammar-key-six-readers-three-answers.md:51-54]]
 
 ## derived a register of the current requirements on each aspect from the estate itself, instead of leaving them in conversations and scattered decision records
 
@@ -1588,7 +1588,7 @@
 > what the latest set of requirements on any aspect of the platform was, nobody could answer without
 > reading the whole history.
 
-[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:12-14]]
+[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:13-15]]
 
 ### EVIDENCE
 
@@ -1605,7 +1605,7 @@
 > > A self-test the runner does not call is a self-test nobody runs, and this repo already ships the
 > > gate that makes that point.
 
-[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:18-28]]
+[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:19-29]]
 
 ### WHAT CHANGED
 
@@ -1615,7 +1615,7 @@
 > on disk rather than maintained alongside it, because a register kept by hand is a second home for the
 > same fact and drifts from the first.
 
-[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:32-35]]
+[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:33-36]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1625,7 +1625,7 @@
 > make it smaller. `47 initiatives carrying no declared aspect` means the per-aspect view is
 > incomplete by construction until those are classified.
 
-[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:39-42]]
+[[cite: protocol/2026-09-12/028-a-register-of-what-was-last-required.md:40-43]]
 
 ## moved the SDK into the framework repository and deleted the vendored grammar fork, so there is no resolution step left to fall through
 
@@ -1649,7 +1649,7 @@
 > schema had judged it. Declaration-driven resolution (`2026-09-12/007`) made the fork inert; it did
 > not make it absent.
 
-[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:12-25]]
+[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:13-26]]
 
 ### EVIDENCE
 
@@ -1664,7 +1664,7 @@
 >     harvest --mode project       projects tpch offline, 37-$def grammar governing
 > ```
 
-[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:29-37]]
+[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:30-38]]
 
 ### WHAT CHANGED
 
@@ -1687,7 +1687,7 @@
 > of them carrying a person's name. **A detector that names what it forbids IS a register of those
 > secrets, and this repository is published.**
 
-[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:41-57]]
+[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:42-58]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1697,7 +1697,7 @@
 > cleanse was a PRECONDITION for pushing this branch, not a follow-up to it, and it took four more
 > commits and eight hours (`2026-09-13/055` through `/059`).
 
-[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:61-64]]
+[[cite: protocol/2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted.md:62-65]]
 
 ## applied "no instance specifics live in MAC" as one rule rather than four judgement calls, and moved three detector registers out of the public repository
 
@@ -1712,7 +1712,7 @@
 >
 > Three detectors held, inside a public repository, the exact strings they exist to keep out of it.
 
-[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:12-16]]
+[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:13-17]]
 
 ### EVIDENCE
 
@@ -1736,7 +1736,7 @@
 > run_framework_gates shop    30 / 34   (baseline — unchanged)
 > ```
 
-[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:20-37]]
+[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:21-38]]
 
 ### WHAT CHANGED
 
@@ -1760,7 +1760,7 @@
 > warehouse database into a manifest fixture — an assertion that had become VACUOUS once the register
 > moved out, since the real name is no longer declared anywhere a test can see.
 
-[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:41-58]]
+[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:42-59]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1771,7 +1771,7 @@
 > blindness, and the only thing holding the trade honest is that each gate now prints how many patterns
 > it actually had.
 
-[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:62-66]]
+[[cite: protocol/2026-09-13/055-no-instance-specifics-live-in-mac.md:63-67]]
 
 ## moved the public-hygiene gate's own pattern table out of the public repository, de-instanced the four normative files, and ratcheted the floor 300 -> 146
 
@@ -1785,7 +1785,7 @@
 > systems, an infra bucket, a colleague's name — **seventeen patterns, in the public repository.** The
 > instrument was the densest concentration in the tree of exactly what it scans for.
 
-[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:12-15]]
+[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:13-16]]
 
 ### EVIDENCE
 
@@ -1817,7 +1817,7 @@
 > all four registers gitignored, each with a tracked .example
 > ```
 
-[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:19-44]]
+[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:20-45]]
 
 ### WHAT CHANGED
 
@@ -1835,7 +1835,7 @@
 > neutral stand-in where the example's shape carried the lesson, and incidents keeping their lesson
 > without the name.
 
-[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:48-59]]
+[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:49-60]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1845,7 +1845,7 @@
 > headroom inside the instrument that keeps this estate's identity out of a public repository
 > (`2026-09-13/059`).
 
-[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:63-66]]
+[[cite: protocol/2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids.md:64-67]]
 
 ## gave the test suite two assertions that refuse to pass over nothing, and found two assertions that were already vacuous
 
@@ -1861,7 +1861,7 @@
 > **That is the estate's dominant defect, the zero-denominator pass, reproduced inside the suite meant
 > to catch it.**
 
-[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:12-17]]
+[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:13-18]]
 
 ### EVIDENCE
 
@@ -1885,7 +1885,7 @@
 > run_framework_gates  shop    30 / 34   (baseline — unchanged)
 > ```
 
-[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:21-38]]
+[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:22-39]]
 
 ### WHAT CHANGED
 
@@ -1900,7 +1900,7 @@
 > The helpers are themselves tested in `sdk/test_testing.py`: a tool for catching vacuous passes is
 > worthless if it can pass vacuously, so each refusal is exercised rather than assumed.
 
-[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:42-50]]
+[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:43-51]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1910,7 +1910,7 @@
 > on a newly written test. A convention with no gate is a convention that decays, and this one has no
 > gate.
 
-[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:54-57]]
+[[cite: protocol/2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined.md:55-58]]
 
 ## ran the suite in a fresh-clone shape and found two gates that were right on this machine and wrong everywhere else
 
@@ -1924,7 +1924,7 @@
 > were wrong there and right on this machine, which is precisely the failure mode that let the vendored
 > fork govern.
 
-[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:12-15]]
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:13-16]]
 
 ### EVIDENCE
 
@@ -1952,7 +1952,7 @@
 > The suite itself IS hermetic: 88 passed with every register pointed at `/nonexistent` and every
 > framework environment variable unset.
 
-[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:19-40]]
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:20-41]]
 
 ### WHAT CHANGED
 
@@ -1960,7 +1960,7 @@
 > Two files, +17 lines. Both gates gained a could-not-run path for the condition that used to read as
 > green.
 
-[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:44-45]]
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:45-46]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -1971,7 +1971,7 @@
 > class nobody can find from the machine the work was done on, which is the argument for testing it
 > this way and the reason a simulation is not the same as the real thing.
 
-[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:49-53]]
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:50-54]]
 
 ## took the public-hygiene count to zero and made zero the contract, after a verifier found four regressions the cleanse agents had introduced and reported clean
 
@@ -1992,7 +1992,7 @@
 > > branch: it used to print the count alone, so the debt the floor exists to expose was the one thing
 > > it hid.
 
-[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:12-22]]
+[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:13-23]]
 
 ### EVIDENCE
 
@@ -2029,7 +2029,7 @@
 > a live identifier was renamed by a word-boundary rule, and the sweep rewrote the gate's own detection
 > regexes — caught by its self-test within the minute.
 
-[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:26-56]]
+[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:27-57]]
 
 ### WHAT CHANGED
 
@@ -2041,7 +2041,7 @@
 > > left to spend. If a genuine, reviewed use needs a token, the per-line escape hatch exists and is
 > > visible in the diff — raising this number is not the answer.
 
-[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:60-65]]
+[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:61-66]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2054,7 +2054,7 @@
 > Zero is also zero AGAINST A GITIGNORED REGISTER of seventeen patterns. A token nobody has thought to
 > declare is not a finding, and the gate cannot tell you that.
 
-[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:69-75]]
+[[cite: protocol/2026-09-13/059-the-floor-was-a-ratchet-in-name-only.md:70-76]]
 
 ## proposed the connector plugin architecture, after three measured facts overturned the brief it was written against
 
@@ -2073,7 +2073,7 @@
 > and no estate's configuration.** A bundle NAMES a connector; the connector owns how to reach the
 > source; the ontology stays generic.
 
-[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:12-20]]
+[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:13-21]]
 
 ### EVIDENCE
 
@@ -2108,7 +2108,7 @@
 > Sanitised before tracking: the draft quoted a real workgroup and an SSO profile carrying a person's
 > name. `check_mac_public — 0 leak(s) over 488 tracked file(s), floor 0`.
 
-[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:24-52]]
+[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:25-53]]
 
 ### WHAT CHANGED
 
@@ -2120,7 +2120,7 @@
 > because measuring means calling — and the answer may collapse the whole billing tension that shaped
 > the three-tier design.
 
-[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:56-61]]
+[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:57-62]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2130,7 +2130,7 @@
 > seam is in the right place — cannot be proved by the first connector. And the document's own most
 > expensive question is the one it could not answer without spending money.
 
-[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:65-68]]
+[[cite: protocol/2026-09-13/060-the-connector-plugin-architecture-proposed.md:66-69]]
 
 ## repaired the gate harness so it can tell a gate that implements its declared reject classes from one that does not, and proved it with a two-arm discriminator
 
@@ -2147,7 +2147,7 @@
 > **Every mutant table in the connector record was an unverified claim until this was fixed**, which is
 > why it lands first and alone.
 
-[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:12-18]]
+[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:13-19]]
 
 ### EVIDENCE
 
@@ -2170,7 +2170,7 @@
 > arms differ in `run()` alone. A harness that failed everything would also fail the wrong gate and be
 > useless; this one separates them.
 
-[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:22-38]]
+[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:23-39]]
 
 ### WHAT CHANGED
 
@@ -2179,7 +2179,7 @@
 > and `extra` returning `(checked, total)`. The nine existing gate self-tests are unchanged and still
 > pass.
 
-[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:42-44]]
+[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:43-45]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2190,7 +2190,7 @@
 > gates, and the estate-wide census measured the day before (`2026-09-12/009`) still stands: 29 of 41
 > gates have no self-test at all, and a harness cannot grade a test nobody wrote.
 
-[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:48-52]]
+[[cite: protocol/2026-09-13/062-the-harness-could-not-attribute-a-finding.md:49-53]]
 
 ## fixed a live unbound name in the authoring path that could never fire, and landed a two-unit engine-coupling ratchet that measures what a module-level import scan cannot see
 
@@ -2208,7 +2208,7 @@
 > **THE MEASUREMENT NOBODY HAD.** Four import-shaped reject classes would one day have printed `4 -> 0`,
 > and that zero would have been quoted as "MAC no longer knows the warehouse".
 
-[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:12-19]]
+[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:13-20]]
 
 ### EVIDENCE
 
@@ -2242,7 +2242,7 @@
 > `Self-test 55/55 with every mutant attributed to its own class — assertable only because A0 landed
 > first.`
 
-[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:23-50]]
+[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:24-51]]
 
 ### WHAT CHANGED
 
@@ -2265,7 +2265,7 @@
 > relocation and labelled it `lazy-import-evasion`. It failed — **with the wrong name on it, which for
 > a ratchet is most of the damage.**
 
-[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:54-70]]
+[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:55-71]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2278,7 +2278,7 @@
 > matching means false positives are possible; the floor's inline column is where one gets recorded
 > with its reason rather than argued away.
 
-[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:74-80]]
+[[cite: protocol/2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling.md:75-81]]
 
 ## built the wiki compiler, so a topic page is derived from the protocol and stamped with what it was compiled from
 
@@ -2301,7 +2301,7 @@
 > sentence has no denominator, and this estate has already shipped a gate that reported PASS over zero
 > files.
 
-[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:12-24]]
+[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:13-25]]
 
 ### EVIDENCE
 
@@ -2347,7 +2347,7 @@
 > tree (10 finding(s) held, unjudged)
 > ```
 
-[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:28-67]]
+[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:29-68]]
 
 ### WHAT CHANGED
 
@@ -2373,7 +2373,7 @@
 > * The verdict line carries three numbers a reader would otherwise never see: pages examined, spans
 >   verified verbatim, and entries that carried NO topic and are therefore on no page.
 
-[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:71-90]]
+[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:72-91]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2388,7 +2388,7 @@
 > * Anything about `wiki/ontology-builder/`. It holds 0 pages over 20 entries, because no entry so far
 >   declared `track: ontology` — the compiler reports that number rather than filling the directory.
 
-[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:94-102]]
+[[cite: protocol/2026-09-13/001-the-wiki-compiler.md:95-103]]
 
 ## added a ninth reject class after the gate printed a finding whose text was false about a real page
 
@@ -2416,7 +2416,7 @@
 > A finding that states something untrue is worse than no finding. It sends a reader to restore an
 > entry that was never lost.
 
-[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:12-29]]
+[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:13-30]]
 
 ### EVIDENCE
 
@@ -2442,7 +2442,7 @@
 > for the verdict line and the exit code; extras: established 12 of 12 claimed
 > ```
 
-[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:33-52]]
+[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:34-53]]
 
 ### WHAT CHANGED
 
@@ -2454,7 +2454,7 @@
 >   both and reporting one situation twice is how a reader learns to skim findings.
 > * A mutant per class, so the count in `2026-09-13/001-the-wiki-compiler` is now nine, not eight.
 
-[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:56-61]]
+[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:57-62]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2465,7 +2465,7 @@
 > * That a misfiled page is rare. It was produced here by ordinary use — one entry declaring a track
 >   that the rest of a topic did not — within an hour of the tool existing.
 
-[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:65-69]]
+[[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:66-70]]
 
 ## added the claims layer and the compiled index, after the first real compile produced 15 pages that were verbatim, checkable and unreadable
 
@@ -2507,7 +2507,7 @@
 >   entries out of 7 and is filed as shared law. A platform builder opening their own directory found
 >   one page out of forty-eight entries.
 
-[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:9-40]]
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:10-41]]
 
 ### EVIDENCE
 
@@ -2543,7 +2543,7 @@
 >   `wiki/` was deleted entirely and recompiled: all 16 files byte-identical. A page is still a pure
 >   function of its inputs, and the claims are now one of those inputs.
 
-[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:42-71]]
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:43-72]]
 
 ### WHAT CHANGED
 
@@ -2578,7 +2578,7 @@
 >   * **55 claims authored**, all `ratified: false`. `2026-09-12/008` records that ratification is the
 >     operator's act, so every one renders as UNRATIFIED and the count is printed.
 
-[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:73-101]]
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:74-102]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2594,7 +2594,7 @@
 >   exit 1, because 47 of 48 backfilled entries carry no `commits:`. The wiki compiles beautifully
 >   from a record that is not yet accounting for the work it describes.
 
-[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:103-112]]
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:104-113]]
 
 ## measured a disagreement between the wiki compiler and the citation gate over the same 556 spans, and found the compiler was right and its own line addresses were unverified
 
@@ -2619,7 +2619,7 @@
 > rather than the bare entry id — because an id asserts only that the entry exists, while an address
 > makes the other gate re-verify the span against the entry's literal bytes.
 
-[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:12-26]]
+[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:13-27]]
 
 ### EVIDENCE
 
@@ -2651,7 +2651,7 @@
 >
 > The compiler's spans are verbatim. The matcher is asymmetric.
 
-[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:30-55]]
+[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:31-56]]
 
 ### WHAT CHANGED
 
@@ -2678,7 +2678,7 @@
 > topic and are on no page; 0 entry(ies) declared no track
 > ```
 
-[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:59-79]]
+[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:60-80]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2693,7 +2693,7 @@
 >   The compiler reports that number rather than filling the directory, and one of the operator's
 >   three groups is therefore empty.
 
-[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:83-91]]
+[[cite: protocol/2026-09-13/003-two-verifiers-disagreed.md:84-92]]
 
 ## removed the compiled page's citation index, because it was the one element that was not a pure function of the entries the page names
 
@@ -2717,7 +2717,7 @@
 > quoted testimony into a live claim, which is the exact move the whole instrument exists to prevent,
 > committed by the one part of the page that was not a quotation.
 
-[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:12-25]]
+[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:13-26]]
 
 ### EVIDENCE
 
@@ -2747,7 +2747,7 @@
 > The citation gate's normalisation defect recorded in `2026-09-13/003-two-verifiers-disagreed` was
 > fixed by its own author while this was being written; the 180 false `span-changed` findings are gone.
 
-[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:29-52]]
+[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:30-53]]
 
 ### WHAT CHANGED
 
@@ -2756,7 +2756,7 @@
 >   so the next person to want one finds the cost first.
 > * Every reference an entry makes is still on the page, inside the span that quotes it.
 
-[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:56-58]]
+[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:57-59]]
 
 ### WHAT IT DOES NOT PROVE
 
@@ -2766,4 +2766,4 @@
 > * That the two verifiers are independent. They agree partly because one was taught to check line
 >   addresses after the other could not, which is a weaker property than independence.
 
-[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:62-65]]
+[[cite: protocol/2026-09-13/004-a-page-is-a-pure-function-of-its-entries.md:63-66]]

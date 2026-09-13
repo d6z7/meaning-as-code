@@ -5,6 +5,7 @@ topics: [method, consolidation, gates]
 kind: decision
 track: core
 repo: mac-integration-kit
+commits: [mac-integration-kit:31f5c98]
 ---
 
 ## WHAT FORCED IT

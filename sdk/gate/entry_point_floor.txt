@@ -1,0 +1,57 @@
+# check_entry_points RATCHET FLOOR — the measured crash count this tree is allowed to carry,
+# AND the exact witnesses it is allowed to be made of.
+#
+# 4 is measured, 2026-09-13, on the first run this instrument ever had:
+#
+#   FAIL: check_entry_points — 4 violation(s) over 28 entry point(s) examined, 68 invocation(s)
+#   [class(es): crashes-with-traceback] — 28 of 32 entry points exercised (68 invocation(s)),
+#   4 skipped as billed, 2 crashed; positional fixture: example_tpch_ontology
+#
+# THE COUNT IS 4 CRASHING INVOCATIONS ACROSS 2 MODULES, and that is the number this file ratchets.
+# The POPULATION is not ratcheted and must not be: it is discovered per run, so it grows whenever
+# someone adds an entry point. It grew the same afternoon — a concurrent track added
+# sdk/gate/check_seam_agreement.py and the denominator went 32 -> 33 entry points / 68 -> 70
+# invocations while the crash count stayed at 4. A floor on the DENOMINATOR would have fired there;
+# a floor on the crash WITNESSES correctly did not.
+#
+# There is no earlier number to ratchet down from, because before today NOTHING had ever invoked
+# these entry points: 31 modules under sdk/ carry a main() or __main__, and 14 of them are named in
+# no test at all. `pytest sdk -q` is 183 green and covers none of it — pytest IMPORTS a module,
+# and the __main__ block is by construction the one block an import never reaches.
+#
+# WHY THIS FLOOR NAMES ITS WITNESSES, WHICH tools/mac_public_floor.txt DOES NOT.
+# That file declares a COUNT. A count-only floor has a hole: at a floor of 4, fixing one crash and
+# introducing a different one keeps the count at 4 and the gate still prints PASS. At 300 findings
+# that hole is a rounding error; at 4 it is 100% of the signal. So each expected crash is named
+# below as `<module> <mode>`, and a crash at any witness NOT on this list fails the gate even when
+# the total has not moved. Lower the number and delete the line together, never the number alone.
+#
+# THE FOUR, AND WHY EACH ONE IS A REAL DEFECT RATHER THAN A GATE ARTEFACT:
+#
+#   sdk/authoring/validate_one.py:23 — `yaml.safe_load(p.read_text())` inside a `try` that catches
+#       only `yaml.YAMLError`. Every OSError from `read_text()` escapes. `--help` becomes
+#       Path("--help") -> FileNotFoundError; a directory argument -> IsADirectoryError. The module
+#       already returns 2 correctly for NO argument (validate_one.py:18) — it is the BAD argument
+#       that crashes. This is the exact defect class check_bundle_secrets.py:264 was repaired for:
+#       "a traceback is not a verdict, and a runner reading exit codes cannot tell a crash from a
+#       refusal."
+#
+#   sdk/gate/test_operations_refuses_invalid.py:37 — its own fixture builds
+#       <tmp>/sources/acme/acme/... with no mac.project.yaml in any ancestor, so
+#       operations.persist_concept raises `Refused` and the module dies on its own happy path. It
+#       has been broken while looking covered: pytest COLLECTS the file (it is named test_*.py) but
+#       collects ZERO tests from it, because the body lives in `main()` and not in a `test_`
+#       function. Measured: `pytest sdk/gate/test_operations_refuses_invalid.py --collect-only -q`
+#       -> "no tests collected". Both modes crash identically; --help never reaches argparse
+#       because the module has none.
+#
+# NOT ON THIS LIST, AND DELIBERATELY NOT A FINDING: sdk/project/references.py WRITES into the
+# current working directory (bare -> ./references/, --help -> a directory literally named
+# `--help`). That is disclosed separately by the gate, because the property this gate judges is
+# "it exits rather than crashes" and folding a second cause into one verdict makes the verdict
+# unreadable. It is also why the gate runs every invocation in a throwaway cwd.
+4
+sdk.authoring.validate_one --help
+sdk.authoring.validate_one path
+sdk.gate.test_operations_refuses_invalid --help
+sdk.gate.test_operations_refuses_invalid bare

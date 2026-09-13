@@ -57,10 +57,48 @@ THE INDEX, and the measurement that forced it. `wiki/README.md` promises three h
 rule sends any topic two audiences touched to `wiki/core/`. Measured on the real protocol that put
 13 of 15 pages in core, leaving `wiki/platform-builder/` with ONE page while twelve topics carried
 platform entries. Moving files would be a lie in the other direction — a topic a platform builder
-needs is not thereby not shared law — so `wiki/index.md` compiles the CROSS-CUT instead: per
-audience, every page carrying at least one entry of that track, with that audience's count beside
-the page's own. The front door is derived like everything else, and `stale-index` is the class that
-stops it becoming the one hand-maintained file in a compiled tree.
+needs is not thereby not shared law — so `wiki/index.md` compiles the CROSS-CUT: per audience,
+every page carrying at least one entry of that track, with that audience's count beside the page's
+own. The front door is derived like everything else, and `stale-index` is the class that stops it
+becoming the one hand-maintained file in a compiled tree.
+
+THE AUDIENCE STUB, and why that cross-cut was not enough. The index table was true, and it was in
+the wrong place. A reader arrives at an audience DIRECTORY — `ls wiki/platform-builder/`, or the
+repo tree in a browser — and a directory listing is the only navigation a filesystem offers. That
+listing said ONE page while `wiki/README.md`'s table said this audience's method "lives HERE", so
+the promise and the tree contradicted each other and the repair sat in a third file the reader had
+no reason to open first. A cross-cut filed somewhere else does not repair a contradiction; it
+documents one. So the routing rule STAYS — it derives a true taxonomy — and every audience that
+wrote on a topic filed elsewhere now gets a compiled STUB in its own directory, carrying the
+page's address, that audience's entry count as a fraction of the page's, and the list of that
+audience's entries on it. Measured on the real protocol, files per audience directory:
+
+    before   core 13, ontology-builder  1, platform-builder  1
+    after    core 13, ontology-builder  8, platform-builder 12
+    entries  core 29, ontology          8, platform         12
+
+so each directory now reaches every topic its audience wrote on, and the page count per directory
+finally has the shape of the entry count per track.
+
+THE THREE ALTERNATIVES, and what each costs. MAJORITY-RULES routing — file a page where most of
+its entries came from — measured core 10 / ontology 3 / platform 2. It moves 5 pages, makes a
+page's ADDRESS a function of a margin that is ONE entry wide on `connectors` (ontology 3, core 2),
+evicts each moved page from the other audiences entirely, and buys the platform builder a single
+extra page: 2 of 15, against the 12 topics that audience actually wrote on. It relabels the defect
+and calls it routing. DUPLICATING THE PAGE into every audience directory serves the reader in zero
+hops and costs +1,153,538 bytes across 18 copies (+150%) and 1,032 re-rendered spans, each then
+living at two addresses and re-verified by both gates; worse, it makes the directories neither a
+partition nor informative — `platform-builder/gates.md` would be the same 36 entries as
+`core/gates.md`, so "filed here" would degrade to "touched by", which every core page already
+satisfies. A FILTERED per-audience page (that track's entries only) is the worst of the three:
+`core/` is the law BOTH audiences obey, so a platform view of `gates` with the 27 core entries
+removed omits precisely what governs the reader.
+
+The stub costs one hop and duplicates no span: 1/20th of a copy's bytes, ONE canonical address per
+topic, and the directory keeps its meaning — filed here, or a door to where it is filed. A stub is
+a pure function of ONE page and never of the wider tree, for the reason `render()` records, so the
+aggregate counts above live in `wiki/index.md` (a function of every page) and never in a stub,
+which no unrelated topic may be able to restamp.
 
 WHAT IT DELIBERATELY DOES NOT DO. It does not compile an ontology's OWN documentation. That is
 instance knowledge, it lives in that bundle, and `wiki/README.md` says why. It does not index the
@@ -82,6 +120,7 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -107,6 +146,15 @@ TRACK_DIR: dict[str, str] = {
     "core": "core",
     "ontology": "ontology-builder",
     "platform": "platform-builder",
+}
+
+#: WHO READS EACH DIRECTORY, for the one heading a stub writes. Closed for the same reason
+#: `TRACK_DIR` is: an unrecognised track must reach no default, and a stub that named its audience
+#: by falling back to the raw token would be the compiler inventing a reader.
+TRACK_READER: dict[str, str] = {
+    "core": "both audiences",
+    "ontology": "the ontology builder",
+    "platform": "the platform builder",
 }
 
 #: A topic becomes a FILENAME. An unvalidated string becoming a path is the oldest escape there is,
@@ -477,6 +525,76 @@ class Page:
     def ids(self) -> list[str]:
         return [e.eid for e in self.entries]
 
+    @property
+    def stubs(self) -> list[Stub]:
+        """One door per OTHER audience that wrote on this topic, in `TRACK_DIR` order.
+
+        A PROPERTY, not a field, and that is the whole guarantee: the doors are recomputed from
+        this page's own entries every time, so they cannot drift from the page the way a stored
+        list would. The page's home is excluded because the page is already there.
+        """
+        return [
+            Stub(self, t, [e for e in self.entries if e.track == t])
+            for t in TRACK_DIR
+            if t != self.track and any(e.track == t for e in self.entries)
+        ]
+
+
+@dataclass
+class Stub:
+    """A DOOR, not a copy: one page's presence in another audience's directory.
+
+    WHAT FORCED IT is measured in this module's docstring — `wiki/platform-builder/` listed ONE
+    page while twelve topics carried platform entries, because the routing rule correctly files a
+    topic both audiences touched as shared law. The directory was true and useless.
+
+    WHAT IT REFUSES TO BE. It is not the page: it quotes NO span, so there is no second copy of a
+    measurement to drift, no protocol span reachable at two addresses, and nothing here for
+    `paraphrased-quote` to catch because nothing here is a quote. It is not a SUBSET of the page
+    either — the entries it lists are the ones this audience wrote, but the page's other entries
+    are not filtered out of the reader's obligation, and the file says so on its face.
+
+    ITS INPUTS ARE ONE PAGE. `source_hash` covers this track's entries, the page's own hash and
+    the page's address — nothing measured against the wider tree. `render()` records what the
+    wider-tree version of that mistake cost: a file whose text changes when something unrelated
+    moves reports as hand-edited for a change nobody made by hand.
+    """
+
+    page: Page
+    track: str
+    #: This track's entries on the page, in the page's own order.
+    entries: list[Entry]
+
+    @property
+    def topic(self) -> str:
+        return self.page.topic
+
+    @property
+    def rel(self) -> str:
+        return f"wiki/{TRACK_DIR[self.track]}/{self.page.topic}.md"
+
+    @property
+    def href(self) -> str:
+        """This stub's link to its page. The three audience directories are siblings, so the hop
+        is always up-and-across, and a relative link is what survives the repo being browsed from
+        a checkout, a forge web view or a docs renderer."""
+        return f"../{TRACK_DIR[self.page.track]}/{self.page.topic}.md"
+
+    @property
+    def source_hash(self) -> str:
+        return _sha(
+            (
+                "stub/"
+                + self.track
+                + "\n"
+                + self.page.rel
+                + "\n"
+                + self.page.source_hash
+                + "\n"
+                + "\n".join(f"{e.eid}:{e.sha}" for e in self.entries)
+            ).encode()
+        )
+
 
 @dataclass
 class Plan:
@@ -495,6 +613,10 @@ class Plan:
         be placed. Reporting a stale page downstream of an unreadable entry is reporting a symptom;
         the harness also forbids it, since one mutation must trip one class."""
         return {t for e in self.quarantined for t in e.topics} | set(self.claim_skips)
+
+    @property
+    def stubs(self) -> list[Stub]:
+        return [s for _t, p in sorted(self.pages.items()) for s in p.stubs]
 
     @property
     def claimed_entries(self) -> set[str]:
@@ -799,6 +921,85 @@ def render(page: Page) -> str:
     return "\n".join(out).rstrip() + "\n"
 
 
+def render_stub(st: Stub) -> str:
+    """The door. Derived from ONE page, quoting nothing.
+
+    WHY IT QUOTES NOTHING, stated where the temptation is. The obvious stub carries the page's
+    marked spans "so the reader gets something". That is the second copy this whole instrument
+    exists to refuse: the same measurement would then live at two addresses, both gates would
+    verify it twice, and the day one copy is edited the reader has two pages that disagree and no
+    rule for which wins. The stub carries ADDRESSES and COUNTS — things a filesystem listing
+    cannot show — and sends the reader to the one page that holds the record.
+
+    WHY IT CARRIES `what:` AND NOT PROSE. Every cell in its table is a front-matter field or a
+    count, exactly like `wiki/index.md`. No sentence here describes what an entry said.
+    """
+    stamp = {
+        "spec": SPEC,
+        "generator": GENERATOR,
+        "topic": st.topic,
+        "track": st.track,
+        "stub": True,
+        "page": st.page.rel,
+        "page_source_hash": st.page.source_hash,
+        "entries": [e.eid for e in st.entries],
+        "source_hash": st.source_hash,
+    }
+    o: list[str] = []
+    o.append("<!-- mac-wiki-stamp " + json.dumps(stamp, sort_keys=True) + " -->")
+    o.append(f"<!-- GENERATED by {GENERATOR} — do not edit; recompile. -->")
+    o.append("")
+    o.append(f"# {_title(st.topic)} — for {TRACK_READER[st.track]}")
+    o.append("")
+    o.append(
+        f"> **COMPILED STUB — a door, not a copy.** This topic is filed as shared law because more "
+        f"than one audience wrote on it. The page is at [`{st.page.rel}`]({st.href}) and it holds "
+        f"the whole record; this file exists so that `wiki/{TRACK_DIR[st.track]}/` LISTS every "
+        f"topic {TRACK_READER[st.track]} wrote on, instead of only the ones no other audience "
+        f"touched. Nothing is quoted here: a span that appeared at two addresses could drift "
+        f"between them, and there would be no rule for which copy wins."
+    )
+    o.append("")
+    o.append("| | |")
+    o.append("|---|---|")
+    o.append(f"| topic | `{st.topic}` |")
+    o.append(f"| the page | [`{st.page.rel}`]({st.href}) |")
+    o.append(f"| filed there because | {st.page.basis} |")
+    o.append(
+        f"| your entries | {len(st.entries)} of {len(st.page.entries)} on that page declare "
+        f"`track: {st.track}` |"
+    )
+    o.append(f"| normative spans on that page | {len(st.page.claims)} |")
+    o.append(f"| the page's source_hash | `{st.page.source_hash[:16]}…` |")
+    o.append(f"| this stub's source_hash | `{st.source_hash[:16]}…` (this track's entries, and the page's hash) |")
+    o.append(f"| generated by | `{GENERATOR}` |")
+    o.append("")
+    o.append(f"## The {len(st.entries)} `{st.track}` entry(ies) on that page")
+    o.append("")
+    o.append("| entry | when | kind | what |")
+    o.append("|---|---|---|---|")
+    for e in st.entries:
+        o.append(f"| `{e.eid}` | {e.when or '—'} | {e.kind or '—'} | {e.what or '—'} |")
+    o.append("")
+    o.append("## What this file is not")
+    o.append("")
+    o.append(
+        f"It is not the page, and it is not a subset of it. The other "
+        f"{len(st.page.entries) - len(st.entries)} entry(ies) on `{st.topic}` are not filtered out "
+        f"of your reading: `wiki/README.md` says `wiki/core/` is what BOTH audiences obey, so the "
+        f"shared law on that page governs {TRACK_READER[st.track]} exactly as much as these "
+        f"{len(st.entries)} do. Read [`{st.page.rel}`]({st.href})."
+    )
+    o.append("")
+    o.append(
+        "It also carries no repository-wide count. A stub is a pure function of ONE page, so that "
+        "an unrelated topic appearing elsewhere in `protocol/` can never restamp it; how many "
+        "topics each audience reaches is in [`wiki/index.md`](../index.md), which is derived from "
+        "every page."
+    )
+    return "\n".join(o).rstrip() + "\n"
+
+
 # -------------------------------------------------------------------------------------------------
 # the compile arm
 # -------------------------------------------------------------------------------------------------
@@ -829,16 +1030,40 @@ def _wiki_pages_on_disk(root: Path) -> list[Path]:
 INDEX_REL = "wiki/index.md"
 
 
+def _by_dir(pl: Plan) -> dict[str, int]:
+    """Files per audience directory — pages filed there PLUS stubs opened there.
+
+    THE NUMBER THE AUDIENCE SPLIT IS JUDGED BY, and it is printed on every run for the reason this
+    estate prints every denominator: `core 13, ontology-builder 1, platform-builder 1` was a state
+    nothing measured out loud, so it survived a compile, a gate and a page of prose about three
+    homes. A count that is not printed is a count nobody can be wrong about in public.
+    """
+    out = {t: sum(1 for p in pl.pages.values() if p.track == t) for t in TRACK_DIR}
+    for st in pl.stubs:
+        out[st.track] += 1
+    return out
+
+
+def _by_entry_track(pl: Plan) -> dict[str, int]:
+    """Entries per declared track — the shape `_by_dir` is supposed to have. Printed beside it, so
+    a directory that is empty while its audience wrote 12 entries is visible in the verdict line
+    itself rather than only to someone who opens the index."""
+    return {t: sum(1 for e in pl.entries if e.track == t) for t in TRACK_DIR}
+
+
 def render_index(pl: Plan) -> str:
     """The front door, and it is compiled for the same reason every other page is.
 
-    IT IS ALSO THE AUDIENCE FIX. `wiki/README.md` promises three homes, and the routing rule sends
-    any topic two audiences touched to `wiki/core/`. Measured on the real protocol that put 13 of
-    15 pages in core, so `wiki/platform-builder/` listed ONE page while 12 topics carried platform
-    entries. The directory was true and useless: a door onto a corridor whose rooms are elsewhere.
-    Moving the files would be worse — a topic a platform builder needs is not thereby not shared
-    law. So the index compiles the CROSS-CUT instead: per audience, every page carrying at least
-    one entry of that track, with that audience's entry count as the denominator of the page's.
+    IT IS THE AGGREGATE VIEW OF THE AUDIENCE SPLIT, and it is the only file allowed to hold one.
+    `wiki/README.md` promises three homes, and the routing rule sends any topic two audiences
+    touched to `wiki/core/` — measured on the real protocol that put 13 of 15 pages in core, so
+    `wiki/platform-builder/` listed ONE page while 12 topics carried platform entries. Moving the
+    files would be worse: a topic a platform builder needs is not thereby not shared law. So each
+    of those 12 topics now carries a compiled STUB in `wiki/platform-builder/` (see `render_stub`),
+    and this index counts the result: files per directory beside entries per track, so the split
+    can be read as a ratio rather than taken on trust. The index holds the repository-wide counts
+    BECAUSE it is the one output derived from every page; a stub, derived from one page, must not
+    carry a number the rest of the tree can move.
     """
     pages = sorted(pl.pages.values(), key=lambda p: (list(TRACK_DIR).index(p.track), p.topic))
     all_ids = sorted({e.eid for p in pages for e in p.entries})
@@ -848,9 +1073,12 @@ def render_index(pl: Plan) -> str:
         "topic": None,
         "index": True,
         "pages": [p.rel for p in pages],
+        "stubs": [st.rel for st in pl.stubs],
         "entries": all_ids,
         "source_hash": _sha(
             "\n".join(f"{p.rel}:{p.source_hash}" for p in pages).encode()
+            + b"\n--stubs--\n"
+            + "\n".join(f"{st.rel}:{st.source_hash}" for st in pl.stubs).encode()
         ),
     }
     claimed = pl.claimed_entries
@@ -871,6 +1099,22 @@ def render_index(pl: Plan) -> str:
     o.append("|---|---|")
     o.append(f"| pages | {len(pages)} |")
     o.append(
+        f"| audience stubs | {len(pl.stubs)} — one door per audience that wrote on a page filed "
+        f"elsewhere |"
+    )
+    bd = _by_dir(pl)
+    bet = _by_entry_track(pl)
+    o.append(
+        "| files per audience directory | "
+        + ", ".join(f"`{TRACK_DIR[t]}` {n}" for t, n in bd.items())
+        + " |"
+    )
+    o.append(
+        "| entries per audience | "
+        + ", ".join(f"`{t}` {n}" for t, n in bet.items())
+        + " — the shape the row above is supposed to have |"
+    )
+    o.append(
         f"| entries compiled | {len(all_ids)} of {len(pl.entries)} in `protocol/` |"
     )
     o.append(
@@ -888,35 +1132,39 @@ def render_index(pl: Plan) -> str:
     o.append("")
     o.append("## Every page")
     o.append("")
-    o.append("| page | topic | audience | entries | normative spans | compile stamp |")
-    o.append("|---|---|---|---|---|---|")
+    o.append("| page | topic | filed under | entries | normative spans | doors | compile stamp |")
+    o.append("|---|---|---|---|---|---|---|")
     for p in pages:
         link = p.rel[len("wiki/") :]
+        doors = ", ".join(f"`{TRACK_DIR[st.track]}`" for st in p.stubs) or "—"
         o.append(
             f"| [{p.topic}]({link}) | {p.topic} | {TRACK_DIR[p.track]} | {len(p.entries)} | "
-            f"{len(p.claims)} | `{p.source_hash[:16]}…` |"
+            f"{len(p.claims)} | {doors} | `{p.source_hash[:16]}…` |"
         )
     o.append("")
     o.append("## By audience")
     o.append("")
     o.append(
-        "A page lives in ONE directory. An entry declares ONE audience. A topic both audiences "
-        "touched is filed as shared law, so the table below is the cross-cut: what each audience "
-        "wrote about, wherever it was filed."
+        "A page lives in ONE directory: a topic both audiences touched is filed as shared law, "
+        "because it is. Every OTHER audience that wrote on it carries a compiled STUB in its own "
+        "directory — the page's address and that audience's entry count, quoting nothing — so a "
+        "directory listing reaches every topic its audience wrote on and still says where the "
+        "record lives. That is why the two rows at the top of this page can now have the same "
+        "shape; before the stubs they read `core 13, ontology-builder 1, platform-builder 1` "
+        "against `core 29, ontology 8, platform 12`."
     )
     o.append("")
     for track, dirname in TRACK_DIR.items():
         own = [p for p in pages if p.track == track]
-        elsewhere = [
-            (p, sum(1 for e in p.entries if e.track == track))
-            for p in pages
-            if p.track != track and any(e.track == track for e in p.entries)
-        ]
+        doors = [st for st in pl.stubs if st.track == track]
         total = sum(1 for e in pl.entries if e.track == track)
-        o.append(f"### `wiki/{dirname}/` — {len(own)} page(s) filed here, {total} entry(ies) declared this audience")
+        o.append(
+            f"### `wiki/{dirname}/` — {len(own) + len(doors)} file(s): {len(own)} page(s) filed "
+            f"here + {len(doors)} stub(s), over {total} entry(ies) declaring this audience"
+        )
         o.append("")
         if own:
-            o.append("| page | entries | normative spans |")
+            o.append("| page filed here | entries | normative spans |")
             o.append("|---|---|---|")
             for p in own:
                 o.append(
@@ -925,29 +1173,34 @@ def render_index(pl: Plan) -> str:
         else:
             o.append(
                 f"*No page is filed here.* Every topic this audience touched is also touched by "
-                f"another, so it compiled to shared law — see below."
+                f"another, so it compiled to shared law — and is reachable through the stubs below."
             )
         o.append("")
-        if elsewhere:
-            o.append(f"**Filed elsewhere, carrying `{track}` entries:**")
+        if doors:
+            o.append(
+                f"**Reachable from this directory through a compiled stub** — the page is filed "
+                f"elsewhere and holds the whole record; the stub is the door:"
+            )
             o.append("")
-            o.append(f"| page | filed under | `{track}` entries | of |")
+            o.append(f"| stub in this directory | the page | `{track}` entries | of |")
             o.append("|---|---|---|---|")
-            for p, n in sorted(elsewhere, key=lambda x: -x[1]):
+            for st in sorted(doors, key=lambda s: (-len(s.entries), s.topic)):
                 o.append(
-                    f"| [{p.topic}]({p.rel[len('wiki/'):]}) | {TRACK_DIR[p.track]} | {n} | "
-                    f"{len(p.entries)} |"
+                    f"| [{st.topic}]({st.rel[len('wiki/'):]}) | "
+                    f"[{st.page.rel[len('wiki/'):]}]({st.page.rel[len('wiki/'):]}) | "
+                    f"{len(st.entries)} | {len(st.page.entries)} |"
                 )
             o.append("")
     return "\n".join(o).rstrip() + "\n"
 
 
 def compile_wiki(root: Path) -> dict:
-    """Write every topic page. Returns a report; writes nothing when there is nothing to compile."""
+    """Write every topic page and every audience stub. Returns a report; writes nothing when there
+    is nothing to compile."""
     entries = load_entries(root)
     claims, claim_load = load_claims(root)
     pl = plan(entries, claims)
-    written, moved, orphans = [], [], []
+    written, rehomed, removed, orphans = [], [], [], []
 
     on_disk = {}
     for p in _wiki_pages_on_disk(root):
@@ -955,22 +1208,48 @@ def compile_wiki(root: Path) -> dict:
         if s:
             on_disk[str(p.relative_to(root))] = s
 
-    for topic, page in sorted(pl.pages.items()):
-        target = root / page.rel
+    # EVERY EXPECTED OUTPUT IS DERIVED FIRST, then written, then the leftovers are judged — and
+    # that order is load-bearing rather than tidy. A topic that goes cross-track leaves its old
+    # audience directory and is replaced THERE by that audience's stub, so the path a page moved
+    # OUT of is a path the compiler is about to write INTO. The previous shape deleted "the file
+    # whose topic moved" while looping over topics, which would have unlinked a stub it had just
+    # written. Deriving the whole map first makes that class of bug unexpressible.
+    expected: dict[str, str] = {}
+    for _topic, page in sorted(pl.pages.items()):
+        expected[page.rel] = render(page)
+        for st in page.stubs:
+            expected[st.rel] = render_stub(st)
+
+    for rel, text in sorted(expected.items()):
+        target = root / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        text = render(page)
         if not target.is_file() or target.read_text(encoding="utf-8") != text:
             target.write_text(text, encoding="utf-8")
-            written.append(page.rel)
-        # A page whose TRACK changed has a new home. Moving it is derivable, so the compiler does
-        # it; only a file carrying this compiler's own stamp is ever removed.
-        for rel, s in on_disk.items():
-            if s.get("topic") == topic and rel != page.rel:
-                (root / rel).unlink()
-                moved.append(f"{rel} -> {page.rel}")
+            written.append(rel)
 
-    for rel, s in on_disk.items():
-        if s.get("topic") not in pl.pages and not any(rel in m for m in moved):
+    for rel, s in sorted(on_disk.items()):
+        topic = s.get("topic")
+        if topic in pl.pages and not s.get("stub") and rel != pl.pages[topic].rel:
+            # Reported even when the old path is now a stub and was therefore overwritten rather
+            # than unlinked: "this topic changed home" is the fact a reader needs, and it would be
+            # invisible in a run that only printed writes.
+            rehomed.append(f"{rel} -> {pl.pages[topic].rel}")
+        if rel in expected:
+            continue
+        if topic in pl.pages:
+            # DERIVABLE, so the compiler does it. The topic still compiles and this path is not one
+            # of its outputs, which means either its home moved or the audience that justified this
+            # door stopped carrying an entry on it. Only a file carrying this compiler's own stamp
+            # is ever removed, and a topic that has VANISHED is still left alone below — a
+            # disappearance is not derivable the way a move or a closed door is.
+            (root / rel).unlink()
+            why = (
+                "its audience no longer carries an entry on this topic"
+                if s.get("stub")
+                else "its topic is filed elsewhere now"
+            )
+            removed.append(f"{rel} ({why})")
+        else:
             orphans.append(rel)
 
     if pl.pages:
@@ -984,8 +1263,10 @@ def compile_wiki(root: Path) -> dict:
     return {
         "entries": len(entries),
         "pages": len(pl.pages),
+        "stubs": len(pl.stubs),
         "written": written,
-        "moved": moved,
+        "rehomed": rehomed,
+        "removed": removed,
         "orphans": orphans,
         "no_topic": [e.eid for e in pl.no_topic],
         "untracked": [e.eid for e in pl.untracked],
@@ -993,9 +1274,8 @@ def compile_wiki(root: Path) -> dict:
         "claims": len(pl.claims),
         "claimed_entries": len(pl.claimed_entries),
         "claim_findings": claim_load + pl.claim_findings,
-        "by_track": {
-            t: sum(1 for p in pl.pages.values() if p.track == t) for t in sorted(TRACK_DIR)
-        },
+        "by_dir": _by_dir(pl),
+        "by_entry_track": _by_entry_track(pl),
     }
 
 
@@ -1099,6 +1379,52 @@ def _verify_quotes(text: str, by_id: dict[str, Entry]) -> tuple[list[tuple[str, 
     return problems, verified
 
 
+def _judge_output(
+    root: Path,
+    rel: str,
+    derived: str,
+    source_hash: str,
+    by_id: dict[str, Entry],
+    *,
+    missing: tuple[str, str],
+    stale: Callable[[dict], str],
+) -> tuple[tuple[str, str] | None, int]:
+    """Judge ONE compiled file against what it should be. (finding or None, spans verified).
+
+    FIVE PREDICATES, FIRST MATCH, and it is one function because a page and a stub are the same
+    KIND of thing: derived output carrying a stamp and a hash. Writing the ladder twice is how the
+    two drift until a stub is checked more weakly than a page — the exact asymmetry that lets
+    someone hand-author a door. Only the SENTENCES differ, and they are parameters: `missing` and
+    `stale` name the repair in the caller's own terms, because "this topic has no page" and "this
+    audience has no door" are different things to explain even when both are fixed by recompiling.
+    """
+    target = root / rel
+    if not target.is_file():
+        return missing, 0
+    text = target.read_text(encoding="utf-8")
+    stamp = _stamp_of(text)
+    if stamp is None:
+        return (
+            "unstamped-page",
+            f"`{rel}` carries no stamp — a page in an audience directory is compiled "
+            f"output; an authored one has nothing to check it against",
+        ), 0
+    if stamp.get("source_hash") != source_hash:
+        return ("stale-stamp", f"`{rel}`: {stale(stamp)}"), 0
+    problems, n = _verify_quotes(text, by_id)
+    if problems:
+        cls, msg = problems[0]
+        return (cls, f"`{rel}`: {msg}"), 0
+    if text != derived:
+        return (
+            "hand-edited-page",
+            f"`{rel}` differs from the derived file though every quote is still "
+            f"verbatim and the stamp is current — something was authored into generated "
+            f"output",
+        ), 0
+    return None, n
+
+
 def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
     """(findings, pages examined, spans verified, plan, report). Never exits; see `_check_main`."""
     entries = load_entries(root)
@@ -1122,11 +1448,15 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
     # A stamped page whose TOPIC is still derived but whose PATH is not the derived one has not
     # been orphaned — its track changed and nobody recompiled. Saying "no entry carries this topic"
     # about it would be false, and a finding that states something untrue is worse than no finding.
+    # A STUB IS EXCLUDED HERE: it lives, by design, in a directory that is not its topic's home, so
+    # judging it against the page's path would report every door in the tree as a misfiling.
     misfiled: dict[str, str] = {}
     for p in _wiki_pages_on_disk(root):
         rel = str(p.relative_to(root))
         s = _stamp_of(p.read_text(encoding="utf-8"))
-        if s and s.get("topic") in pl.pages and rel != pl.pages[s["topic"]].rel:
+        if not s or s.get("stub"):
+            continue
+        if s.get("topic") in pl.pages and rel != pl.pages[s["topic"]].rel:
             misfiled.setdefault(s["topic"], rel)
 
     seen_paths: set[str] = set()
@@ -1137,58 +1467,65 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
             continue
         examined += 1
         seen_paths.add(page.rel)
-        target = root / page.rel
-        if not target.is_file():
-            if topic in misfiled:
-                # The finding is on the misfiled file, below. Reporting both is reporting one
-                # situation twice, and one recompile answers both.
-                continue
-            found.append(
-                (
+        # A missing page whose file is sitting in the wrong directory is reported below, once, as
+        # `misfiled-page`. Reporting both is reporting one situation twice, and one recompile
+        # answers both.
+        if (root / page.rel).is_file() or topic not in misfiled:
+            f, n = _judge_output(
+                root,
+                page.rel,
+                render(page),
+                page.source_hash,
+                by_id,
+                missing=(
                     "missing-page",
                     f"topic `{topic}` has {len(page.entries)} entry(ies) but no page on disk at "
                     f"`{page.rel}` — the protocol moved ahead of the wiki; recompile",
-                )
+                ),
+                stale=lambda stamp, page=page: (
+                    f"source_hash `{str(stamp.get('source_hash'))[:16]}…` was compiled from "
+                    f"{len(stamp.get('entries') or [])} entry(ies); the protocol now gives "
+                    f"{len(page.entries)} with hash `{page.source_hash[:16]}…` — the protocol "
+                    f"moved under this page"
+                ),
             )
-            continue
-        text = target.read_text(encoding="utf-8")
-        stamp = _stamp_of(text)
-        if stamp is None:
-            found.append(
-                (
-                    "unstamped-page",
-                    f"`{page.rel}` carries no stamp — a page in an audience directory is compiled "
-                    f"output; an authored one has nothing to check it against",
-                )
+            if f:
+                found.append(f)
+            else:
+                verified += n
+
+        # THE DOORS, judged by the same five predicates as the page they point at. A stub that is
+        # checked more weakly than a page is a stub someone can hand-author, and an audience
+        # directory full of hand-authored doors is exactly the drift this compiler exists to stop.
+        for st in page.stubs:
+            seen_paths.add(st.rel)
+            if misfiled.get(topic) == st.rel:
+                # The topic's own page is sitting in this door's place. One file, one finding.
+                continue
+            examined += 1
+            f, n = _judge_output(
+                root,
+                st.rel,
+                render_stub(st),
+                st.source_hash,
+                by_id,
+                missing=(
+                    "missing-page",
+                    f"topic `{topic}` is filed at `{page.rel}` and carries {len(st.entries)} "
+                    f"`{st.track}` entry(ies), but there is no stub on disk at `{st.rel}` — "
+                    f"`wiki/{TRACK_DIR[st.track]}/` cannot reach a topic its audience wrote on, "
+                    f"which is the defect the stub exists to remove; recompile",
+                ),
+                stale=lambda stamp, st=st: (
+                    f"stub source_hash `{str(stamp.get('source_hash'))[:16]}…` no longer derives "
+                    f"from `{st.page.rel}` and the {len(st.entries)} `{st.track}` entry(ies) on "
+                    f"it (now `{st.source_hash[:16]}…`) — the page moved under its own door"
+                ),
             )
-            continue
-        if stamp.get("source_hash") != page.source_hash:
-            found.append(
-                (
-                    "stale-stamp",
-                    f"`{page.rel}`: source_hash `{str(stamp.get('source_hash'))[:16]}…` was "
-                    f"compiled from {len(stamp.get('entries') or [])} entry(ies); the protocol now "
-                    f"gives {len(page.entries)} with hash `{page.source_hash[:16]}…` — the protocol "
-                    f"moved under this page",
-                )
-            )
-            continue
-        problems, n = _verify_quotes(text, by_id)
-        if problems:
-            cls, msg = problems[0]
-            found.append((cls, f"`{page.rel}`: {msg}"))
-            continue
-        if text != render(page):
-            found.append(
-                (
-                    "hand-edited-page",
-                    f"`{page.rel}` differs from the derived page though every quote is still "
-                    f"verbatim and the stamp is current — something was authored into generated "
-                    f"output",
-                )
-            )
-            continue
-        verified += n
+            if f:
+                found.append(f)
+            else:
+                verified += n
 
     for p in _wiki_pages_on_disk(root):
         rel = str(p.relative_to(root))
@@ -1210,6 +1547,24 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
         if topic in skipped:
             continue
         examined += 1
+        if topic in pl.pages and stamp.get("stub"):
+            # A CLOSED DOOR. Its own class rather than `orphan-page`, because the sentence differs
+            # in the part that matters: the topic is still compiled, so this file is not derived
+            # from nothing at all — it is derived from an audience that has stopped writing on it.
+            # The repairs differ too, which is the test this estate applies to a class name: the
+            # compiler DELETES this one (derivable from a live topic) and refuses to delete an
+            # orphan (a vanished topic may be a deletion nobody meant).
+            found.append(
+                (
+                    "stale-stub",
+                    f"`{rel}` is a stub opened for audience `{stamp.get('track')}` on topic "
+                    f"`{topic}`, and no entry on that topic declares that track any more — a door "
+                    f"into a room this audience has nothing in. Recompile and the compiler removes "
+                    f"it; unlike a page's disappearance, a closed door IS derivable, because the "
+                    f"topic still compiles and the entries that justified the door are gone",
+                )
+            )
+            continue
         if topic in pl.pages:
             found.append(
                 (
@@ -1264,17 +1619,23 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
         "skipped": sorted(skipped),
         "claims": len(pl.claims),
         "claimed_entries": len(pl.claimed_entries),
-        "by_track": {
-            t: sum(1 for p in pl.pages.values() if p.track == t) for t in sorted(TRACK_DIR)
-        },
+        "stubs": len(pl.stubs),
+        "by_dir": _by_dir(pl),
+        "by_entry_track": _by_entry_track(pl),
     }
     return found, examined, verified, pl, report
 
 
 def _detail(report: dict) -> str:
-    bt = ", ".join(f"{TRACK_DIR[t]} {n}" for t, n in report["by_track"].items())
+    # THE AUDIENCE SPLIT, IN THE VERDICT LINE. Files per directory beside entries per track: those
+    # two rows are what made the defect visible (`core 13, ontology-builder 1, platform-builder 1`
+    # against `core 29, ontology 8, platform 12`) and they are printed on every run so the next
+    # regression is legible from the one line a reader quotes.
+    bd = ", ".join(f"{TRACK_DIR[t]} {n}" for t, n in report["by_dir"].items())
+    bet = ", ".join(f"{t} {n}" for t, n in report["by_entry_track"].items())
     parts = [
-        f"{report['entries']} entry(ies) -> {report['pages']} page(s) ({bt})",
+        f"{report['entries']} entry(ies) -> {report['pages']} page(s) + {report['stubs']} "
+        f"audience stub(s), {bd} file(s) per directory against {bet} entry(ies) per track",
         f"{len(report['no_topic'])} entry(ies) carried NO topic and are on no page",
         f"{len(report['untracked'])} entry(ies) declared no track",
         # The claims-layer denominator. A wiki whose pages are all verbatim and all uninterpreted
@@ -1292,7 +1653,10 @@ def _outcome(root: Path):
     return gate.Outcome(
         len(found),
         examined,
-        "page(s)",
+        # The population is every COMPILED file: topic pages, audience stubs and the index. A stub
+        # is judged by the same five predicates as a page, so counting it here is what keeps the
+        # denominator equal to what was actually examined.
+        "compiled page(s)",
         classes={c for c, _ in found},
         secondary=(verified, "span(s) verified verbatim"),
     ), report
@@ -1556,6 +1920,31 @@ def _m_orphan_page(root: Path) -> Path:
     )
 
 
+def _m_stale_stub(root: Path) -> Path:
+    """A DOOR INTO A ROOM THIS AUDIENCE HAS NOTHING IN. The fixture's `gates` topic is core-only,
+    so no `ontology` stub derives for it; this seeds one anyway, which is the state left behind
+    when the last entry of a track is superseded off a topic and nobody recompiles.
+
+    It adds a file rather than corrupting one, for the reason `_add_claim` records: every existing
+    page and stub stays byte-identical, so exactly one predicate can see this.
+    """
+    stamp = {
+        "spec": SPEC,
+        "generator": GENERATOR,
+        "topic": "gates",
+        "track": "ontology",
+        "stub": True,
+        "page": "wiki/core/gates.md",
+        "entries": ["2026-01-02/001-denominator"],
+        "source_hash": "0" * 64,
+    }
+    return gate.write(
+        root / "wiki" / "ontology-builder" / "gates.md",
+        "<!-- mac-wiki-stamp " + json.dumps(stamp, sort_keys=True) + " -->\n\n"
+        "# Gates — for the ontology builder\n",
+    )
+
+
 def _rewrite(p: Path, old: str, new: str) -> Path:
     """Substitute, and REFUSE to be a no-op.
 
@@ -1692,6 +2081,7 @@ _MUTANTS = {
     "stale-stamp": _m_stale_stamp,
     "unstamped-page": _m_unstamped_page,
     "orphan-page": _m_orphan_page,
+    "stale-stub": _m_stale_stub,
     "paraphrased-quote": _m_paraphrased_quote,
     "hand-edited-page": _m_hand_edited_page,
     "unknown-track": _m_unknown_track,
@@ -1710,8 +2100,9 @@ _EXPECT_LINE = {
     "stale-stamp": "moved under this page",
     "unstamped-page": "carries no stamp",
     "orphan-page": "derived from nothing",
+    "stale-stub": "no entry on that topic declares that track any more",
     "paraphrased-quote": "NOT verbatim in that entry",
-    "hand-edited-page": "differs from the derived page",
+    "hand-edited-page": "differs from the derived file",
     "unknown-track": "is not one of",
     "malformed-topic": "is not a legal topic token",
     "misfiled-page": "was never moved; recompile",
@@ -1871,6 +2262,114 @@ def _x_index_is_derived_from_every_page(base: Path) -> tuple[int, int]:
     return got, 4
 
 
+def _x_a_stub_is_a_door_not_a_copy(base: Path) -> tuple[int, int]:
+    """The cross-track fixture's `grain` is filed in core and reachable from BOTH audience
+    directories. Asserted here rather than trusted: that a stub exists, that it duplicates no
+    span, that it prints its audience's count over the page's, and that it links to the page."""
+    root = base / "_x_stub"
+    root.mkdir(parents=True, exist_ok=True)
+    _mp_cross_track(root)
+    onto = root / "wiki" / "ontology-builder" / "grain.md"
+    plat = root / "wiki" / "platform-builder" / "grain.md"
+    got = 0
+    if onto.is_file() and plat.is_file() and (root / "wiki" / "core" / "grain.md").is_file():
+        got += 1
+    texts = [p.read_text(encoding="utf-8") for p in (onto, plat) if p.is_file()]
+    if len(texts) == 2 and all(_Q_OPEN not in t for t in texts):
+        # NO quoted span in either door. This is the assertion that separates a stub from the
+        # duplication option: a measurement that exists at two addresses can drift between them.
+        got += 1
+    if texts and "1 of 2 on that page declare `track: platform`" in texts[-1]:
+        got += 1
+    if len(texts) == 2 and all("](../core/grain.md)" in t for t in texts):
+        got += 1
+    return got, 4
+
+
+def _x_a_missing_stub_is_a_finding(base: Path) -> tuple[int, int]:
+    """Delete one door and the gate must say which audience lost which topic. Without this the
+    stubs would be write-only: compiled once, then free to be deleted by anyone tidying up."""
+    root = base / "_x_stub_gone"
+    root.mkdir(parents=True, exist_ok=True)
+    _mp_cross_track(root)
+    (root / "wiki" / "platform-builder" / "grain.md").unlink()
+    code, text = gate._capture(_check_main, root)
+    got = 0
+    if code == 1:
+        got += 1
+    if "no stub on disk at `wiki/platform-builder/grain.md`" in text:
+        got += 1
+    if "cannot reach a topic its audience wrote on" in text:
+        got += 1
+    return got, 3
+
+
+def _x_every_directory_reaches_what_its_audience_wrote(base: Path) -> tuple[int, int]:
+    """THE FIX, asserted as the aggregate it was reported as.
+
+    The defect was never one page: every page was defensibly filed, and the SET was useless —
+    `core 13, ontology-builder 1, platform-builder 1` over `core 29, ontology 8, platform 12`
+    entries. So the property has to be stated over the set: for each audience, the files in its
+    directory are exactly the topics that audience wrote on, plus whatever is filed there.
+    """
+    root = base / "_x_reach"
+    root.mkdir(parents=True, exist_ok=True)
+    _mp_cross_track(root)
+    pl = plan(load_entries(root), load_claims(root)[0])
+    got = 0
+    for track, dirname in TRACK_DIR.items():
+        reach = {
+            t
+            for t, p in pl.pages.items()
+            if p.track == track or any(e.track == track for e in p.entries)
+        }
+        d = root / "wiki" / dirname
+        on_file = {q.stem for q in d.glob("*.md")} if d.is_dir() else set()
+        if reach == on_file:
+            got += 1
+    # and the door is load-bearing: `grain` is reachable from platform-builder/ without being
+    # filed there. Before the stubs this was the exact state that read as an empty directory.
+    filed_platform = {p.topic for p in pl.pages.values() if p.track == "platform"}
+    if (root / "wiki" / "platform-builder" / "grain.md").is_file() and "grain" not in filed_platform:
+        got += 1
+    return got, len(TRACK_DIR) + 1
+
+
+def _x_a_stub_can_never_read_as_uncited_prose(base: Path) -> tuple[int, int]:
+    """THE SEAM WITH `check_wiki_citations`, asserted here because neither gate owns it alone.
+
+    That gate reports a page carrying NO citation as `page-uncited` — "prose pretending to be
+    compiled knowledge" — and it reads a compiled page's citations out of this stamp's `entries`
+    list. A stub whose list were empty would therefore be reported as prose by the OTHER gate,
+    over a file this one had just declared correct, and 18 such findings would arrive as a
+    mystery. The construction makes it impossible (a door opens only for an audience that wrote at
+    least one entry on the page) and this is where that is written down.
+
+    It also asserts the two output families claim DISJOINT paths. `compile_wiki` collects them
+    into one dict, so a collision would silently overwrite a page with a door.
+    """
+    root = base / "_x_cited"
+    root.mkdir(parents=True, exist_ok=True)
+    _mp_cross_track(root)
+    pl = plan(load_entries(root), load_claims(root)[0])
+    stubs = pl.stubs
+    got = 0
+    if stubs:
+        got += 1
+    if stubs and all(st.entries for st in stubs):
+        got += 1
+    stamped = []
+    for st in stubs:
+        m = _STAMP_RE.search((root / st.rel).read_text(encoding="utf-8"))
+        stamped.append(bool(m) and bool(json.loads(m.group(1)).get("entries")))
+    if stamped and all(stamped):
+        got += 1
+    rels = [p.rel for p in pl.pages.values()] + [st.rel for st in stubs]
+    if len(rels) == len(set(rels)):
+        got += 1
+    return got, 4
+
+
 def _contract():
     return gate.GateContract(
         name=NAME,
@@ -1882,9 +2381,8 @@ def _contract():
             "a protocol with NO claims layer compiles and passes — interpretation is optional": (
                 _mp_no_claims
             ),
-            "a topic both tracks touch compiles to core, and the old page is MOVED not orphaned": (
-                _mp_cross_track
-            ),
+            "a topic both tracks touch compiles to core, the old page becomes that audience's "
+            "stub, and nothing is orphaned": _mp_cross_track,
         },
         expect_line=dict(_EXPECT_LINE),
         main=_check_main,
@@ -1909,6 +2407,17 @@ def _contract():
                 _x_claims_are_verbatim_and_first
             ),
             "the index is derived from every page it lists": _x_index_is_derived_from_every_page,
+            "a stub is a door, not a copy: no span is duplicated into a second directory": (
+                _x_a_stub_is_a_door_not_a_copy
+            ),
+            "a deleted stub is a finding naming the audience that lost the topic": (
+                _x_a_missing_stub_is_a_finding
+            ),
+            "every audience directory reaches every topic its audience wrote on": (
+                _x_every_directory_reaches_what_its_audience_wrote
+            ),
+            "a stub names at least one entry, so the citation gate cannot read it as prose, and "
+            "no page and stub claim the same path": _x_a_stub_can_never_read_as_uncited_prose,
         },
     )
 
@@ -1959,8 +2468,10 @@ def main(argv=None) -> int:
         )
     for rel in rep["written"]:
         print(f"  wrote   {rel}")
-    for mv in rep["moved"]:
-        print(f"  moved   {mv}  (its topic's track changed)")
+    for mv in rep["rehomed"]:
+        print(f"  rehomed {mv}  (its topic's track changed)")
+    for rm in rep["removed"]:
+        print(f"  removed {rm}")
     for eid in rep["no_topic"]:
         print(f"  [no-topic] `{eid}` carries no `topics:` — it is in the protocol and on no page")
     for eid, why in rep["quarantined"]:
@@ -1969,10 +2480,13 @@ def main(argv=None) -> int:
         print(f"  [orphan] {rel} — no entry carries its topic; --check will fail on it")
     for cls, msg in rep["claim_findings"]:
         print(f"  [{cls}] {msg}")
-    bt = ", ".join(f"{TRACK_DIR[t]} {n}" for t, n in rep["by_track"].items())
+    bd = ", ".join(f"{TRACK_DIR[t]} {n}" for t, n in rep["by_dir"].items())
+    bet = ", ".join(f"{t} {n}" for t, n in rep["by_entry_track"].items())
     print(
-        f"compiled {rep['entries']} entry(ies) -> {rep['pages']} page(s) ({bt}); "
-        f"{len(rep['written'])} written, {len(rep['moved'])} moved, "
+        f"compiled {rep['entries']} entry(ies) -> {rep['pages']} page(s) + {rep['stubs']} "
+        f"audience stub(s), {bd} file(s) per directory against {bet} entry(ies) per track; "
+        f"{len(rep['written'])} written, {len(rep['rehomed'])} rehomed, "
+        f"{len(rep['removed'])} removed, "
         f"{len(rep['no_topic'])} entry(ies) carried NO topic and are on no page, "
         f"{len(rep['untracked'])} declared no track, {len(rep['quarantined'])} could not be placed; "
         f"{rep['claims']} normative span(s) marked over {rep['claimed_entries']} of "

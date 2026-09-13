@@ -5,6 +5,7 @@ topics: [grammar, consolidation, gates]
 kind: defect
 track: core
 repo: mac-platform
+commits: [mac-platform:5921a3b, mac-platform:8cc3112]
 ---
 
 ## WHAT FORCED IT

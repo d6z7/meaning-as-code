@@ -5,6 +5,7 @@ topics: [the-public-boundary, registers, gates, ratchets]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [aacc1e1]
 ---
 
 ## WHAT FORCED IT

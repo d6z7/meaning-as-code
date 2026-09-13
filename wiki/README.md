@@ -9,6 +9,9 @@ Three audiences, and the third is not like the other two.
 | **`wiki/core/`** | what do both obey? | HERE — shared law |
 | **an ontology's own documentation** | what does THIS ontology mean? | **IN THAT BUNDLE**, never here |
 
+Every directory listing is complete for its audience, and the next section is how — because
+"lives HERE" was, for one compile, not true.
+
 ## Why the third group is not in this repo
 
 It is INSTANCE knowledge. A page describing what one ontology's concepts mean, which relations it
@@ -65,11 +68,42 @@ A page with no marked span SAYS SO on its face, and `--check` prints the coverag
 uninterpreted page is an honest anthology; one that reads as compiled knowledge without being it is
 the confident wrong answer this estate exists to remove.
 
+## One home per page, one door per audience
+
+A page lives in ONE directory, and the rule that puts it there is a derivation, not a preference:
+
+* every entry on the topic that declares a track declares the SAME one -> that audience's directory;
+* two or more different tracks -> `core/`, because a topic both audiences touch IS shared law;
+* nobody declared one -> `core/`, and the page discloses that nobody said.
+
+Measured on the real protocol, that rule filed 13 of 15 pages in `core/` and left
+`platform-builder/` listing ONE page while twelve topics carried platform entries — against
+`core 29, ontology 8, platform 12` entries per track. Every page was defensibly filed and the SET
+was useless: this document said the platform builder's method "lives HERE" and the directory
+listing said one page. A directory listing is the only navigation a filesystem gives a reader, so
+that contradiction could not be repaired from another file.
+
+**It is not repaired by moving pages.** A topic the platform builder needs is not thereby not
+shared law, and majority-rules routing was measured too: `core 10 / ontology 3 / platform 2`, five
+pages moved, `connectors` decided by a margin of ONE entry, each moved page evicted from the other
+audiences — and the platform builder still reaching 2 of the 12 topics they wrote on.
+
+So every audience that wrote on a topic filed elsewhere gets a **compiled stub** in its own
+directory: the page's address, that audience's entry count as a fraction of the page's, and the
+list of that audience's entries on it. A stub quotes NOTHING — no span exists at two addresses, so
+no copy can drift from another — and it says on its face that it is a door and not a subset,
+because `core/` is the law both audiences obey and a filtered view would hide exactly that. Files
+per audience directory are now `core 13, ontology-builder 8, platform-builder 12`: the shape of the
+entry counts.
+
+A stub is derived from ONE page and carries no repository-wide number, so an unrelated topic can
+never restamp it. `mac_wiki --check` judges a stub with the same five predicates as a page, and
+`stale-stub` is the class for a door whose audience has stopped writing on the topic.
+
 ## The front door
 
-`wiki/index.md` is compiled too, and it carries the cross-cut the directory layout cannot. A topic
-two audiences touched is filed as shared law, which measured on the real protocol put 13 of 15
-pages in `core/` and left `platform-builder/` listing ONE page while twelve topics carried platform
-entries. The index lists, per audience, every page carrying at least one entry of that track, with
-that audience's count beside the page's own — so the door leads somewhere without any file being
-filed where it does not belong.
+`wiki/index.md` is compiled too, and it is the only output derived from every page — so it is the
+only one allowed to carry the repository-wide counts: pages, stubs, files per audience directory
+beside entries per track, and, per audience, what is filed there and what is reachable through a
+stub. `stale-index` is the class that stops it becoming the one hand-maintained file in a compiled
+tree.

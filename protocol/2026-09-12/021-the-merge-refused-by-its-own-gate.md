@@ -5,6 +5,7 @@ topics: [gates, capabilities, consolidation, harness]
 kind: defect
 track: platform
 repo: mac-platform
+commits: [mac-platform:8232c60, mac-platform:e63022a, mac-platform:d93bfab]
 ---
 
 ## WHAT FORCED IT

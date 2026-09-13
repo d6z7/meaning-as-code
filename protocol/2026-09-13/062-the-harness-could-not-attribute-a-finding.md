@@ -5,6 +5,7 @@ topics: [harness, gates, denominators]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [b780b48]
 ---
 
 ## WHAT FORCED IT

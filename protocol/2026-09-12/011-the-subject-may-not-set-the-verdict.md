@@ -5,6 +5,7 @@ topics: [gates, harness, denominators, the-public-boundary]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [fddd679, b49f499]
 ---
 
 ## WHAT FORCED IT

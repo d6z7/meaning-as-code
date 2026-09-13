@@ -5,6 +5,7 @@ topics: [connectors, capabilities, gates, grammar, the-public-boundary]
 kind: decision
 track: core
 repo: meaning-as-code
+commits: [6d07081]
 ---
 
 ## WHAT FORCED IT

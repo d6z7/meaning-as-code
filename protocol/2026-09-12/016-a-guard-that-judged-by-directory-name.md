@@ -5,6 +5,7 @@ topics: [gates, registers, harness]
 kind: defect
 track: platform
 repo: mac-platform
+commits: [mac-platform:e742c37, mac-platform:ca7e4b6]
 ---
 
 ## WHAT FORCED IT

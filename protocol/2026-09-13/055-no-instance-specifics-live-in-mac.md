@@ -5,6 +5,7 @@ topics: [the-public-boundary, registers, gates, harness]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [8def5f6]
 ---
 
 ## WHAT FORCED IT

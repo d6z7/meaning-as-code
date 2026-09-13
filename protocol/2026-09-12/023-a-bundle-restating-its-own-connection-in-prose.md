@@ -5,6 +5,7 @@ topics: [containers, the-public-boundary, connectors, registers]
 kind: defect
 track: ontology
 repo: customer-bundle (<domain>/<bundle>)
+commits: [customer-bundle:70c9e3f]
 ---
 
 ## WHAT FORCED IT

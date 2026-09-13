@@ -5,6 +5,7 @@ topics: [consolidation, grammar, registers, gates]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [4cbf225]
 ---
 
 ## WHAT FORCED IT

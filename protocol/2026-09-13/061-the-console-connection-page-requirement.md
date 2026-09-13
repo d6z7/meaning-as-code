@@ -5,6 +5,7 @@ topics: [connectors, console, capabilities]
 kind: decision
 track: platform
 repo: meaning-as-code
+commits: [b20c49a]
 ---
 
 ## WHAT FORCED IT

@@ -5,6 +5,7 @@ topics: [the-public-boundary, registers, ratchets, gates, denominators]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [b20c49a]
 ---
 
 ## WHAT FORCED IT

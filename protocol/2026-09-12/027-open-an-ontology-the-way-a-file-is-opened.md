@@ -5,6 +5,7 @@ topics: [containers, console, capabilities]
 kind: build
 track: platform
 repo: mac-platform
+commits: [mac-platform:233492e, mac-platform:5059297]
 ---
 
 ## WHAT FORCED IT

@@ -4,6 +4,7 @@ what: added the claims layer and the compiled index, after the first real compil
 topics: [the-record, gates, denominators]
 track: core
 kind: build
+commits: [c647183]
 ---
 
 * **WHAT FORCED IT** — the first compile over the backfilled protocol, read as a stranger would read

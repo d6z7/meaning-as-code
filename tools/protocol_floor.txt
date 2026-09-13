@@ -6,12 +6,70 @@
 #   "so far we we working on adhock basis. i ask you do. but the donwside is that no ruling remains
 #    what we did and why and what is requested and expected functionality."
 #
-# MEASURED 2026-09-13 over HEAD~12..HEAD: 21 code-bearing commits, 0 entries. The gate reports
-# could-not-run at 0 entries rather than a verdict, because 0 examined is not 0 orphans — so this
-# floor does not bind until the backfill lands, and then it binds at whatever is then measured.
+# ---------------------------------------------------------------------------------------------
+# MEASURED 2026-09-13, AFTER THE BACKFILL, over HEAD~25..HEAD:
 #
-# 21 is the honest starting point: every commit predating the protocol is orphaned by definition.
+#     37 code-bearing commit(s) examined, 28 covered, 9 orphaned, over 49 entr(y/ies)
+#
+# FLOOR 21 -> 9. Over this same range the coverage went 0 -> 28 of 37: before the backfill NO entry
+# carried `commits:`, so covered was 0 by construction and all 37 were orphaned.
+#
+# Nothing was paid by writing new narrative. All 49 entries already NAMED their commits inside their
+# own EVIDENCE sections ("git show -s 439f41e") — the contract had simply gained `commits:` AFTER
+# they were written, so the accounting existed in prose the gate cannot read. The backfill moved
+# that citation into front matter, one line per entry, touching no body. 76 shas in all: 35 bare,
+# each verified to resolve in this repo and to abbreviate to exactly the cited form, and 41 that
+# resolve only in sibling repos (mac-platform 21, mac-integration-kit 13, mac-ontology-contoso 4,
+# a customer bundle 3) and are written `<repo>:<sha>` so they can never be mistaken for coverage
+# here. Two shas are named by more than one entry, which is correct: b4092e5 carried four separate
+# acts of wiki-compiler work in one commit, and b20c49a carried both the hygiene ratchet and the
+# console requirement.
+# ---------------------------------------------------------------------------------------------
+#
+# THE 9 THAT REMAIN, named, because a bare number is identity-blind — remove one orphan and add
+# another in the same session and the count never moves (the argument written out at length in
+# sdk/gate/engine_coupling_floor.txt and recorded in protocol/2026-09-13/063):
+#
+#   FIVE that post-date the protocol and simply have no entry yet. This is live debt, not history:
+#     9f3818b  fix(connector): the TLS diagnosis names the store the machine already trusts
+#     ac5eb36  fix(connector): a TLS trust failure is a local fact, not an unreachable warehouse
+#     13381a6  fix(connector): one credential vocabulary, not two — and the profile was load-bearing
+#     99b4f57  fix(connector): an unprovable config is not an invalid one
+#     66a4eff  fix(container): a capability is a claim — a filename is not evidence for it
+#
+#   ONE that is this gate itself, which is the joke and also the point:
+#     ef6608c  feat(method): enforce the protocol — a record, or the code does not change
+#
+#   THREE that predate the protocol by days and whose entries were never written:
+#     dad3038  fix(gates): stop three gates passing without measuring anything
+#     d01079e  feat(packaging): make the framework pip-installable (option C)
+#     aca8a4d  fix(canon): resolve params_from 'profile#' — snapshot_collapse could never bind ...
+#
+# They are NOT being cleared by inventing entries for them. protocol/README.md: "A protocol
+# reconstructed from memory is a summary, and a summary is exactly what the verbatim rule exists to
+# prevent." Each of these has a detailed commit message; an entry written from it today would carry
+# no EVIDENCE that was not already in the commit, and would claim the four fields it cannot honestly
+# fill. Whoever next touches that code writes the entry then.
+#
+# THE RANGE IS PART OF THE FLOOR, and this file is the only place that says so. check_protocol takes
+# its revision range from the caller and this file holds one integer, so the same tree measures:
+#
+#     HEAD~12..HEAD           18 examined,  6 orphaned
+#     HEAD~20..HEAD           29 examined,  6 orphaned
+#     HEAD~25..HEAD           37 examined,  9 orphaned   <- WHAT THIS 9 IS MEASURED OVER
+#     HEAD~40..HEAD           52 examined, 24 orphaned   <- the gate's own default: RED at 9
+#     example_tpch_ontology    7 examined,  2 orphaned   (run_framework_gates.sh passes a bundle
+#                                                         root here, which git reads as a PATHSPEC,
+#                                                         not a range — a separate defect, in the
+#                                                         runner, not in this floor)
+#
+# 9 IS DECLARED AGAINST HEAD~25..HEAD DELIBERATELY, AND THE DEFAULT RANGE IS EXPECTED TO GO RED.
+# Setting 24 to make `check_protocol` green with no argument would buy 15 findings of silent
+# headroom at every narrower range — which is exactly the failure protocol/2026-09-13/059 records,
+# where the public-hygiene floor read 146 while the count had fallen to 4. The 15 extra orphans at
+# HEAD~40..HEAD are real commits from 2026-08-20..2026-09-10 that no entry describes; a red verdict
+# over them is a true finding, and a floor that hid it would be a ratchet in name only.
 #
 # LOWER this number as the backfill lands. NEVER raise it. The target is 0, and at 0 the rule is
 # simply: code changes with a record, or it does not change.
-21
+9

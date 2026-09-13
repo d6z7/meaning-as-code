@@ -5,6 +5,7 @@ topics: [denominators, harness, gates]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [b7a5cfb]
 ---
 
 ## WHAT FORCED IT

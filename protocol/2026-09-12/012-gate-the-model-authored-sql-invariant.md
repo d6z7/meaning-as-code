@@ -5,6 +5,7 @@ topics: [gates, capabilities, harness, denominators]
 kind: build
 track: platform
 repo: mac-platform
+commits: [mac-platform:e07d3ea]
 ---
 
 ## WHAT FORCED IT

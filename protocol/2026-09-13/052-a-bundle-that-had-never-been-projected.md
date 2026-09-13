@@ -5,6 +5,7 @@ topics: [containers, projections, the-public-boundary]
 kind: defect
 track: ontology
 repo: mac-ontology-contoso
+commits: [mac-ontology-contoso:28c9a77, mac-ontology-contoso:dc47f4f, mac-ontology-contoso:86e1ecb, mac-ontology-contoso:750052f]
 ---
 
 ## WHAT FORCED IT

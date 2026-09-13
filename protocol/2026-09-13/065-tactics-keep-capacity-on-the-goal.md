@@ -5,6 +5,7 @@ topics: [method, harness, denominators]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [70df2c1]
 ---
 
 ## WHAT FORCED IT

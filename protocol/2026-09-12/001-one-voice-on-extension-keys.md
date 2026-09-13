@@ -5,6 +5,7 @@ topics: [grammar, the-public-boundary, consolidation]
 kind: build
 track: core
 repo: meaning-as-code
+commits: [439f41e, 90e4236, aee2fee, 30a91d2, ec7c1cd, 14fe379]
 ---
 
 ## WHAT FORCED IT

@@ -5,6 +5,7 @@ topics: [consolidation, method, gates, harness]
 kind: ruling
 track: core
 repo: mac-integration-kit
+commits: [mac-integration-kit:d9c7b87, mac-integration-kit:2b13266]
 ---
 
 ## WHAT FORCED IT

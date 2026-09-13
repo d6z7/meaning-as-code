@@ -5,6 +5,7 @@ topics: [method, gates, registers, harness]
 kind: build
 track: platform
 repo: mac-integration-kit
+commits: [mac-integration-kit:f40ae22, mac-integration-kit:0f47be5, mac-integration-kit:54eae07, mac-integration-kit:598f2aa]
 ---
 
 ## WHAT FORCED IT

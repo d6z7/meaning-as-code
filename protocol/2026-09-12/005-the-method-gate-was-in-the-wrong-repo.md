@@ -5,6 +5,7 @@ topics: [the-public-boundary, gates, registers, method]
 kind: build
 track: core
 repo: mac-integration-kit
+commits: [mac-integration-kit:3ea9172]
 ---
 
 ## WHAT FORCED IT

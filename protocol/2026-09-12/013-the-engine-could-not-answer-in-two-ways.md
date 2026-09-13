@@ -5,6 +5,7 @@ topics: [grammar, capabilities, gates]
 kind: defect
 track: platform
 repo: mac-platform
+commits: [mac-platform:c694f05, mac-platform:dcde1a0]
 ---
 
 ## WHAT FORCED IT

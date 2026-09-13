@@ -5,6 +5,7 @@ topics: [gates, denominators, harness]
 kind: defect
 track: core
 repo: meaning-as-code
+commits: [cadb2bd]
 ---
 
 ## WHAT FORCED IT

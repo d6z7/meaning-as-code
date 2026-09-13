@@ -5,6 +5,7 @@ topics: [grammar, projections, denominators, gates]
 kind: defect
 track: ontology
 repo: meaning-as-code
+commits: [4421dc3, a4f823f]
 ---
 
 ## WHAT FORCED IT

@@ -5,6 +5,7 @@ topics: [gates, harness, consolidation, denominators]
 kind: defect
 track: platform
 repo: mac-platform
+commits: [mac-platform:e4e9091]
 ---
 
 ## WHAT FORCED IT
