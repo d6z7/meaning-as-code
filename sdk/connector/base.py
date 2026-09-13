@@ -148,72 +148,92 @@ class ConnectorContractViolation(ConnectorError):
     """
 
 
-class SourceErrorReason(str, Enum):
+class AdapterErrorReason(str, Enum):
     """Why the SOURCE refused. Closed vocabulary; the exit code is per-member (`_REASON_EXIT`).
 
     (str, Enum) and not StrEnum: pyproject pins requires-python >=3.10 and StrEnum arrives in 3.11.
-    mac-platform's AdapterErrorReason uses StrEnum because that package sets its own floor.
+    mac_runtime's copy of this enum uses StrEnum because that package sets its own floor. That is a
+    LANGUAGE-LEVEL difference and not a vocabulary one: the member names and the wire values below
+    are mac_runtime's, verbatim, and `.value` is the same string on both.
 
-    RULING 12 IS OPEN, so this is a FORWARD DECLARATION, not a fork. §4.6 says SourceErrorReason is
-    `mac_runtime.adapters.base.AdapterErrorReason` "extended in place (not duplicated into MAC)".
-    It cannot be extended in place from here without moving code between two repositories that have
-    already diverged, which Ruling 12 forbids until it is answered. So the members below are written
-    to RECONCILE, and `ADAPTER_REASON_ALIASES` records the exact renames measured in
-    mac-platform/packages/mac-runtime/src/mac_runtime/adapters/base.py so the collapse is a rename
-    table rather than an archaeology exercise. Nothing here imports that repository.
+    THIS IS NO LONGER A FORWARD DECLARATION. §4.6 always said this enum IS
+    `mac_runtime.adapters.base.AdapterErrorReason` "extended in place (not duplicated into MAC)",
+    and the earlier `SourceErrorReason` spelling existed only because Ruling 12 (movement of code
+    between repositories) was unanswered and this file could not depend on that one. The
+    consolidation ruling has since landed: ONE repository, several distributions, and mac_runtime's
+    existing vocabulary is the SURVIVOR. So the class, its member names and its values are
+    mac_runtime's, and `ADAPTER_REASON_ALIASES` below no longer records renames -- it records the
+    only thing still true of the two member SETS, which is the extension and the two retirements.
+    Nothing here imports that package; the names simply agree now.
+
+    THE MEMBER SET IS DELIBERATELY NOT IDENTICAL, and that is a design decision the vocabulary
+    ruling did not touch (see `ADAPTER_REASON_ALIASES`):
+      * EXTENDED by `unauthorized` and `unreachable` -- §4.6's "extended in place".
+      * NARROWED by mac_runtime's `config_error` and `unbound_literal`, which are exit-1 cases and
+        became EXCEPTION CLASSES here rather than reasons. A caller porting from mac_runtime must
+        catch `ConnectorConfigError` / `ConnectorContractViolation` instead of matching a reason.
     """
 
-    REQUEST_FAILED = "request_failed"        # bad request, relation not found, type error
-    CANCELLED = "cancelled"
+    QUERY_FAILED = "query_failed"        # bad request, relation not found, type error
+    QUERY_CANCELLED = "query_cancelled"
     TIMEOUT = "timeout"
     EXECUTION_LIMIT = "execution_limit"
-    UNAUTHORIZED = "unauthorized"            # NEW: credentials resolved, not permitted
-    UNREACHABLE = "unreachable"              # NEW: endpoint / DNS / network
+    UNAUTHORIZED = "unauthorized"            # EXTENSION: credentials resolved, not permitted
+    UNREACHABLE = "unreachable"              # EXTENSION: endpoint / DNS / network
 
 
-#: mac-platform member -> the member here. Measured 2026-09-13 by reading that file.
-#: `query_failed` / `query_cancelled` lose the word "query" because not every source has queries --
-#: the same reason `engine_query_id` becomes `engine_request_id` below.
-#: The two RETIRED members are not renames: they become EXCEPTION CLASSES, because both are
-#: detectable offline and both are exit 1, and a reason field that carries an exit-1 case inside an
-#: exit-2 class is how a could-not-run becomes a FAIL.
+#: EVERY mac_runtime member -> its disposition here. Measured 2026-09-13 by reading
+#: mac-platform/packages/mac-runtime/src/mac_runtime/adapters/base.py, and kept TOTAL over that
+#: file's six members on purpose: a reconciliation table that lists only the interesting rows cannot
+#: be read as evidence that the rest were considered.
+#:
+#: The four adopted rows are IDENTITY now, and they are listed rather than deleted because
+#: "unchanged" and "never looked at" are different claims and only one of them is checkable.
+#:
+#: The two RETIRED members are not renames and never were: both are detectable offline and both are
+#: exit 1, and a reason field that carries an exit-1 case inside an exit-2 class is how a
+#: could-not-run becomes a FAIL.
 ADAPTER_REASON_ALIASES: Mapping[str, str] = {
-    "query_failed": "request_failed",
-    "query_cancelled": "cancelled",
+    "query_failed": "query_failed",
+    "query_cancelled": "query_cancelled",
     "timeout": "timeout",
     "execution_limit": "execution_limit",
     "config_error": "<retired> ConnectorConfigError (exit 1)",
     "unbound_literal": "<retired> ConnectorContractViolation (exit 1)",
 }
 
-#: §4.6's table, as data. `request_failed` is the ONLY reason that is a finding: something was
+#: §4.6's table, as data. `query_failed` is the ONLY reason that is a finding: something was
 #: judged and the answer is "no". Every other member means nothing was judged.
-_REASON_EXIT: Mapping[SourceErrorReason, int] = {
-    SourceErrorReason.REQUEST_FAILED: EXIT_FINDING,
-    SourceErrorReason.CANCELLED: EXIT_COULD_NOT_RUN,
-    SourceErrorReason.TIMEOUT: EXIT_COULD_NOT_RUN,
-    SourceErrorReason.EXECUTION_LIMIT: EXIT_COULD_NOT_RUN,
-    SourceErrorReason.UNAUTHORIZED: EXIT_COULD_NOT_RUN,
-    SourceErrorReason.UNREACHABLE: EXIT_COULD_NOT_RUN,
+_REASON_EXIT: Mapping[AdapterErrorReason, int] = {
+    AdapterErrorReason.QUERY_FAILED: EXIT_FINDING,
+    AdapterErrorReason.QUERY_CANCELLED: EXIT_COULD_NOT_RUN,
+    AdapterErrorReason.TIMEOUT: EXIT_COULD_NOT_RUN,
+    AdapterErrorReason.EXECUTION_LIMIT: EXIT_COULD_NOT_RUN,
+    AdapterErrorReason.UNAUTHORIZED: EXIT_COULD_NOT_RUN,
+    AdapterErrorReason.UNREACHABLE: EXIT_COULD_NOT_RUN,
 }
 
 
-class SourceError(ConnectorError):
+class AdapterError(ConnectorError):
     """A genuine error FROM THE SOURCE. The exit code comes from `reason`, never from the catcher."""
 
     def __init__(
         self,
-        reason: SourceErrorReason,
+        reason: AdapterErrorReason,
         message: str,
         *,
-        engine_request_id: str | None = None,
+        engine_query_id: str | None = None,
     ) -> None:
         self.reason = reason
-        # Renamed from mac-platform's `engine_query_id`: not every source has queries, and that name
-        # was one of the three places §4.2 found a SQL assumption hiding inside the error taxonomy.
+        # mac_runtime's name, kept. This field spent one day spelled `engine_request_id`, on the
+        # argument that "not every source has queries"; the consolidation ruling settled it the other
+        # way and mac_runtime's spelling survives. The argument was real and is now recorded where it
+        # can do no damage: a source with no queries carries whatever id it does have in this field,
+        # and the docstring says so rather than a second name saying it.
         # Its job is unchanged -- 04 §7's "provenance still recorded" needs the engine's own id to be
-        # recoverable from the error, not just the reason.
-        self.engine_request_id = engine_request_id
+        # recoverable from the error, not just the reason, and `AdapterProvenance.engine_query_id`
+        # (mac_runtime.models) is the field it is read back into.
+        self.engine_query_id = engine_query_id
         super().__init__(f"[{reason.value}] {message}")
 
 
@@ -224,7 +244,7 @@ def exit_code_for(exc: BaseException) -> int:
     run; reporting it as a finding about the bundle is the exact damage _plugin.py exists to prevent
     (a could-not-run published as a FAIL).
     """
-    if isinstance(exc, SourceError):
+    if isinstance(exc, AdapterError):
         return _REASON_EXIT[exc.reason]
     if isinstance(exc, (ConnectorConfigError, ConnectorContractViolation)):
         return EXIT_FINDING
@@ -357,6 +377,15 @@ class ReadRequest:
     it. What a request MEANS is the connector's; how it is spelled is the connector's.
 
     `params` is MAC's half of the precondition (§4.2a): every user-derived value travels here.
+
+    NOT RENAMED TO mac_runtime's `ExecutablePlan` under the consolidation ruling, because they are
+    not one concept. Measured field by field: `ExecutablePlan` is {sql, params, concepts_used,
+    rules_used, edges_used} -- three of its five fields are ONTOLOGY PROVENANCE, which is the one
+    thing this seam must not know about, and its first is a REQUIRED `str`. This is {body, params,
+    limit, timeout_s, purpose} -- `body` is `Any` and is a `CsvScan` dataclass for the non-SQL
+    fixture, and `limit`/`timeout_s` are execution controls `ExecutablePlan` has nowhere to put.
+    One field, `params`, is shared. Taking the name without the fields would publish one name
+    standing for two different shapes in one repository, which is worse than two honest names.
     """
 
     body: Any = None
@@ -373,6 +402,16 @@ class ReadResult:
     `truncated` is not cosmetic: it is the difference between "there were 5 rows" and "we stopped at
     5", and a caller that cannot tell them apart will report a max() over a truncated window as a
     fact about the source.
+
+    NOT RENAMED TO mac_runtime's `ExecutionResult`, for the same reason as `ReadRequest` above and
+    with the same measurement. `ExecutionResult` is {rows, row_count, bytes_scanned, started_at,
+    finished_at, engine_query_id}: it is a result PLUS the answer object's physical provenance
+    (04 §5 `provenance.adapter`), which it can require because every one of its sources is a billed
+    engine that reports scanned bytes. This is {columns, rows, row_count, truncated}: it has
+    `columns` (the engine's column ORDER, which `ExecutionResult` loses by keying rows into dicts)
+    and `truncated`, and it has no `bytes_scanned` to give -- the CSV fixture meters nothing. Two
+    rows are shared out of six and four. The provenance fields belong on whatever the runtime
+    records at the answer boundary, not on the one required verb of every source.
     """
 
     columns: tuple[str, ...] = ()
@@ -589,6 +628,14 @@ class Connector(abc.ABC):
     # WHY CLASSVARS AND NOT INSTANCE STATE. §6.3's mount tier validates a bundle's config with ZERO
     # imports of the connector, and the tier above it needs the declaration WITHOUT a connection. A
     # declaration that requires construction is a declaration that costs a credential to read.
+    #
+    # `id` IS NOT mac_runtime's `GroundingAdapter.kind`, and the two were NOT merged under the
+    # consolidation ruling. The measurement that decides it: `kind` is a bare provenance LABEL with
+    # no grammar -- its shipped values are "athena" and "fake" -- and `id` is a RESOLUTION KEY with
+    # one, `_ID_RE` below, which requires a dotted namespace and would REJECT both of those values.
+    # A name whose own grammar rejects the other name's data is not the same name spelled twice. The
+    # relationship is derivation, not identity: `AdapterProvenance.kind` is fed FROM `id`, and a
+    # consolidated runtime should record `id` there rather than invent a second short token.
     id: ClassVar[str] = ""
     credential_modes: ClassVar[frozenset] = frozenset()
     permissions: ClassVar[frozenset] = frozenset({"read"})
@@ -711,6 +758,21 @@ class Connector(abc.ABC):
         ConnectorContractViolation (exit 1) when the caller broke them. MAC's half was asserted at
         the plan boundary by `bind()` and is not re-asserted here, because re-asserting it would
         require reading the body, which is the connector's.
+
+        NOT RENAMED TO mac_runtime's `GroundingAdapter.execute`, though both occupy the seam
+        position "the one verb that returns rows". Two reasons, and the first is decisive:
+          * SCOPE. `read` is ops 7 AND 11 collapsed -- an authoring read (list, describe, profile)
+            and an answering plan are one read-only request here. `execute` is op 11 alone; every
+            catalog read above goes through `read`, and there is no `ExecutablePlan` behind them to
+            execute. Renaming would claim `list_relations` executes a plan.
+          * THE READ-ONLY GUARANTEE IS IN THE NAME, and it is enforced: `read_verbs` gates the head
+            verb here, and the single write verb is a DIFFERENT method with a different guard
+            (`create_or_replace_view`). `execute` is verb-neutral, and a verb-neutral I/O method is
+            precisely the `executor(sql)`-dispatching-on-`is_read_only(sql)` shape (materialize.py
+            :298) that this split exists to retire.
+        A consolidated runtime wanting `GroundingAdapter` should get it from a shim that maps
+        execute(ExecutablePlan) -> read(ReadRequest); that is four lines and it converts the shapes
+        too, which a rename would not.
         """
 
     # ---- TIER 1 · OPTIONAL: the base raises; the absence degrades a NAMED capability ----
@@ -832,7 +894,7 @@ __all__ = [
     "EXIT_OK", "EXIT_FINDING", "EXIT_COULD_NOT_RUN",
     "ConnectorError", "ConnectorConfigError", "ConnectorUnavailable",
     "ConnectorCapabilityMissing", "ConnectorAmbiguous", "ConnectorContractViolation",
-    "SourceError", "SourceErrorReason", "ADAPTER_REASON_ALIASES",
+    "AdapterError", "AdapterErrorReason", "ADAPTER_REASON_ALIASES",
     "exit_code_for", "worst_exit",
     "RelationRef", "ColumnSpec", "RelationSchema", "ColumnStat", "RelationProfile",
     "ReadRequest", "ReadResult", "ConfigProblem", "CredentialPlan", "ProbeResult",

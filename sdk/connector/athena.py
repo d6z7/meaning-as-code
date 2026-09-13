@@ -66,8 +66,8 @@ from sdk.connector.base import (
     ReadResult,
     RelationRef,
     RelationSchema,
-    SourceError,
-    SourceErrorReason,
+    AdapterError,
+    AdapterErrorReason,
 )
 from sdk.connector.sql import SqlConnector
 
@@ -84,28 +84,28 @@ _ORDERABLE_PREFIXES = (
     "smallint", "tinyint", "real", "numeric",
 )
 
-#: Athena terminal states -> the closed reason vocabulary. `FAILED` is REQUEST_FAILED (exit 1: the
+#: Athena terminal states -> the closed reason vocabulary. `FAILED` is QUERY_FAILED (exit 1: the
 #: engine judged the request and refused it); `CANCELLED` is exit 2 (nothing was judged). The split
 #: is §4.6's, and it is the reason a single error class with a `reason` field was rejected.
-_STATE_REASON: Mapping[str, SourceErrorReason] = {
-    "FAILED": SourceErrorReason.REQUEST_FAILED,
-    "CANCELLED": SourceErrorReason.CANCELLED,
+_STATE_REASON: Mapping[str, AdapterErrorReason] = {
+    "FAILED": AdapterErrorReason.QUERY_FAILED,
+    "CANCELLED": AdapterErrorReason.QUERY_CANCELLED,
 }
 
 #: botocore error code -> reason. Keyed by STRING so this module's taxonomy is readable with boto3
 #: absent. (On this host boto3 IS installed, which is precisely why a top-level import here would
 #: have gone unnoticed -- record H9 pairs that with duckdb's absence for the same reason.)
-_ERROR_CODE_REASON: Mapping[str, SourceErrorReason] = {
-    "AccessDeniedException": SourceErrorReason.UNAUTHORIZED,
-    "UnauthorizedException": SourceErrorReason.UNAUTHORIZED,
-    "ExpiredTokenException": SourceErrorReason.UNAUTHORIZED,
-    "ThrottlingException": SourceErrorReason.EXECUTION_LIMIT,
-    "TooManyRequestsException": SourceErrorReason.EXECUTION_LIMIT,
-    "EndpointConnectionError": SourceErrorReason.UNREACHABLE,
-    "ConnectTimeoutError": SourceErrorReason.UNREACHABLE,
-    "InvalidRequestException": SourceErrorReason.REQUEST_FAILED,
-    "ResourceNotFoundException": SourceErrorReason.REQUEST_FAILED,
-    "EntityNotFoundException": SourceErrorReason.REQUEST_FAILED,
+_ERROR_CODE_REASON: Mapping[str, AdapterErrorReason] = {
+    "AccessDeniedException": AdapterErrorReason.UNAUTHORIZED,
+    "UnauthorizedException": AdapterErrorReason.UNAUTHORIZED,
+    "ExpiredTokenException": AdapterErrorReason.UNAUTHORIZED,
+    "ThrottlingException": AdapterErrorReason.EXECUTION_LIMIT,
+    "TooManyRequestsException": AdapterErrorReason.EXECUTION_LIMIT,
+    "EndpointConnectionError": AdapterErrorReason.UNREACHABLE,
+    "ConnectTimeoutError": AdapterErrorReason.UNREACHABLE,
+    "InvalidRequestException": AdapterErrorReason.QUERY_FAILED,
+    "ResourceNotFoundException": AdapterErrorReason.QUERY_FAILED,
+    "EntityNotFoundException": AdapterErrorReason.QUERY_FAILED,
 }
 
 
@@ -303,11 +303,11 @@ class AthenaConnector(SqlConnector):
             self._client = (session.client("athena", region_name=region),
                             session.client("glue", region_name=region))
         except Exception as exc:
-            raise self._source_error(exc, "building a session") from exc
+            raise self._adapter_error(exc, "building a session") from exc
         return self._client
 
     @staticmethod
-    def _source_error(exc: BaseException, what: str, *, request_id: str | None = None) -> SourceError:
+    def _adapter_error(exc: BaseException, what: str, *, query_id: str | None = None) -> AdapterError:
         """botocore exception -> the closed reason vocabulary. By error-code STRING; see the table."""
         code = ""
         resp = getattr(exc, "response", None)
@@ -334,23 +334,23 @@ class AthenaConnector(SqlConnector):
                 os_store = _ssl.get_default_verify_paths().openssl_cafile or "the OS trust store"
             except Exception:                                           # pragma: no cover
                 os_store = "the OS trust store"
-            return SourceError(
-                SourceErrorReason.UNREACHABLE,
+            return AdapterError(
+                AdapterErrorReason.UNREACHABLE,
                 f"athena TLS trust failure while {what}: the endpoint ANSWERED; this process could "
                 f"not verify its certificate chain. botocore verifies against certifi (public CAs "
                 f"only); behind a TLS-intercepting proxy that can never succeed, while this machine's "
                 f"own store usually already trusts the proxy root. Try: "
                 f"AWS_CA_BUNDLE={os_store}. Underlying: {exc}",
-                engine_request_id=request_id,
+                engine_query_id=query_id,
             )
 
         if reason is None:
             # Unknown => could-not-run, never a finding. An unrecognised failure means we do not
             # know that the source judged anything, and publishing that as exit 1 is the exact
             # damage tools/_plugin.py exists to prevent.
-            reason = SourceErrorReason.UNREACHABLE
-        return SourceError(reason, f"athena {code or type(exc).__name__} while {what}: {exc}",
-                           engine_request_id=request_id)
+            reason = AdapterErrorReason.UNREACHABLE
+        return AdapterError(reason, f"athena {code or type(exc).__name__} while {what}: {exc}",
+                           engine_query_id=query_id)
 
     # ---- TIER 1 · WET · UNTESTED FROM HERE DOWN ----
 
@@ -394,7 +394,7 @@ class AthenaConnector(SqlConnector):
         try:
             qid = athena.start_query_execution(**kwargs)["QueryExecutionId"]
         except Exception as exc:
-            raise self._source_error(exc, "starting a query") from exc
+            raise self._adapter_error(exc, "starting a query") from exc
 
         deadline = time.time() + (timeout_s if timeout_s else 300.0)
         delay = 0.2
@@ -402,7 +402,7 @@ class AthenaConnector(SqlConnector):
             try:
                 st = athena.get_query_execution(QueryExecutionId=qid)["QueryExecution"]["Status"]
             except Exception as exc:
-                raise self._source_error(exc, "polling", request_id=qid) from exc
+                raise self._adapter_error(exc, "polling", query_id=qid) from exc
             state = st.get("State")
             if state in ("SUCCEEDED", "FAILED", "CANCELLED"):
                 break
@@ -413,18 +413,18 @@ class AthenaConnector(SqlConnector):
                     athena.stop_query_execution(QueryExecutionId=qid)
                 except Exception:  # noqa: BLE001 — a failed cancel must not mask the timeout
                     pass
-                raise SourceError(SourceErrorReason.TIMEOUT,
+                raise AdapterError(AdapterErrorReason.TIMEOUT,
                                   f"athena query exceeded {deadline}s and was cancelled",
-                                  engine_request_id=qid)
+                                  engine_query_id=qid)
             time.sleep(delay)
             # Backoff, capped: get_query_execution is itself a metered API call, and a tight poll
             # loop turns one query into hundreds of billed control-plane calls.
             delay = min(delay * 1.5, 2.0)
 
         if state != "SUCCEEDED":
-            raise SourceError(_STATE_REASON.get(state, SourceErrorReason.REQUEST_FAILED),
+            raise AdapterError(_STATE_REASON.get(state, AdapterErrorReason.QUERY_FAILED),
                               f"athena {state}: {st.get('StateChangeReason', '')}",
-                              engine_request_id=qid)
+                              engine_query_id=qid)
 
         columns: tuple = ()
         rows: list = []
@@ -459,10 +459,10 @@ class AthenaConnector(SqlConnector):
                 token = page.get("NextToken")
                 if not token:
                     break
-        except SourceError:
+        except AdapterError:
             raise
         except Exception as exc:
-            raise self._source_error(exc, "fetching results", request_id=qid) from exc
+            raise self._adapter_error(exc, "fetching results", query_id=qid) from exc
 
         return ReadResult(columns=columns, rows=tuple(rows), row_count=len(rows),
                           truncated=truncated)
@@ -514,7 +514,7 @@ class AthenaConnector(SqlConnector):
                 try:
                     resp = glue.get_tables(**kw)
                 except Exception as exc:
-                    raise self._source_error(exc, f"listing tables in {database!r}") from exc
+                    raise self._adapter_error(exc, f"listing tables in {database!r}") from exc
                 for t in resp.get("TableList", []):
                     out.append(RelationRef(namespace=segs, name=str(t.get("Name"))))
                 token = resp.get("NextToken")
@@ -530,7 +530,7 @@ class AthenaConnector(SqlConnector):
         try:
             tbl = glue.get_table(DatabaseName=ref.namespace[-1], Name=ref.name)["Table"]
         except Exception as exc:
-            raise self._source_error(exc, f"describing {ref.name!r}") from exc
+            raise self._adapter_error(exc, f"describing {ref.name!r}") from exc
         sd = tbl.get("StorageDescriptor") or {}
         cols = list(sd.get("Columns") or [])
         # Partition keys are columns of the relation and are NOT in StorageDescriptor.Columns.
@@ -586,7 +586,7 @@ class AthenaConnector(SqlConnector):
                 QueryString=statement, WorkGroup=self._cfg.get("workgroup")
             )["QueryExecutionId"]
         except Exception as exc:
-            raise self._source_error(exc, "starting DDL") from exc
+            raise self._adapter_error(exc, "starting DDL") from exc
         while True:
             st = athena.get_query_execution(QueryExecutionId=qid)["QueryExecution"]["Status"]
             state = st.get("State")
@@ -594,9 +594,9 @@ class AthenaConnector(SqlConnector):
                 break
             time.sleep(0.5)
         if state != "SUCCEEDED":
-            raise SourceError(_STATE_REASON.get(state, SourceErrorReason.REQUEST_FAILED),
+            raise AdapterError(_STATE_REASON.get(state, AdapterErrorReason.QUERY_FAILED),
                               f"athena {state}: {st.get('StateChangeReason', '')}",
-                              engine_request_id=qid)
+                              engine_query_id=qid)
 
     def probe(self) -> ProbeResult:
         """BILLED. CONTROL-PLANE ONLY: GetWorkGroup + GetDatabase. Never `SELECT 1`. UNTESTED.
@@ -612,14 +612,14 @@ class AthenaConnector(SqlConnector):
             athena.get_work_group(WorkGroup=wg)
         except Exception as exc:
             return ProbeResult(ok=False, cost=self.probe_cost, target=self.redacted_target(),
-                               detail=str(self._source_error(exc, f"reading workgroup {wg!r}")))
+                               detail=str(self._adapter_error(exc, f"reading workgroup {wg!r}")))
         dbs = list((self._cfg.get("glue_databases") or {}).values())
         for db in dbs:
             try:
                 glue.get_database(Name=db)
             except Exception as exc:
                 return ProbeResult(ok=False, cost=self.probe_cost, target=self.redacted_target(),
-                                   detail=str(self._source_error(exc, f"reading database {db!r}")))
+                                   detail=str(self._adapter_error(exc, f"reading database {db!r}")))
         return ProbeResult(ok=True, cost=self.probe_cost, target=self.redacted_target(),
                            detail=f"workgroup reachable; {len(dbs)} database(s) readable")
 

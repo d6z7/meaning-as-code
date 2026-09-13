@@ -26,6 +26,20 @@ render followed by `read()`.
 WHAT THIS MODULE STILL DOES NOT DO: own a placeholder syntax on MAC's behalf. `param_style` is the
 CONNECTOR's declaration. `assert_bound_params_only` stays in `mac_runtime.adapters` as the Athena
 adapter's own precondition -- not promoted, not duplicated (§4.2a).
+
+VOCABULARY, AFTER THE CONSOLIDATION RULING (mac_runtime's names are the survivor). The error
+taxonomy this module raises is mac_runtime's verbatim now -- `AdapterError`, `AdapterErrorReason`,
+`engine_query_id`; the `SourceError` spelling is gone. What did NOT collapse, and why each is two
+concepts rather than one misnamed one:
+  * `assert_params_placed` (here) is NOT `assert_bound_params_only` (mac_runtime.adapters.safety).
+    Measured check for check: that function runs THREE -- (1) no single-quoted literal anywhere in
+    the statement, (2) no placeholder without a param, (3) no param without a placeholder. This
+    method runs (3) ALONE. (2) is unenforceable here without a parse, and (1) is the check whose
+    quoted-literal scan makes `date '2024-01-01'` and `read_csv('a.csv')` illegal -- see
+    `assert_params_placed`'s own docstring for the DuckDB 1.5.5 measurement. One check is not the
+    same obligation as three, and the honest name for a one-check assertion is not the name of the
+    three-check one.
+  * `explain` (here) is NOT `validate` -- argued at that method.
 """
 
 from __future__ import annotations
@@ -71,9 +85,22 @@ class SqlConnector(Connector):
     read_verbs: ClassVar[tuple] = _DEFAULT_READ_VERBS
 
     #: The CONNECTOR's placeholder convention -- ":name", "?", "$1", "$name". MAC owns none of these.
-    #: mac_runtime/adapters/safety.py adopted ":name" for Athena and says so in its own docstring
-    #: ("04 §3/§4 mandate bound params but do not pin a placeholder syntax"). That choice is local to
-    #: that adapter, and this field is where a connector states its own instead of inheriting one.
+    #:
+    #: CONFIRMED AGAINST mac_runtime, 2026-09-13, and the DEFAULT BELOW ALREADY AGREED -- there was
+    #: nothing to rename here. mac_runtime pins `:name` in three independent places, which is why it
+    #: is the survivor and the default: `planner/templates.py::bind_positional_placeholders` emits
+    #: `f":{name}"`, `adapters/safety.py::_PLACEHOLDER_RE` is `:([a-zA-Z_][a-zA-Z0-9_]*)`, and
+    #: `adapters/athena.py::_PARAM_TOKEN_RE` is the same pattern again. Its own docstring still calls
+    #: that choice unpinned by the spec ("04 §3/§4 mandate bound params but do not pin a placeholder
+    #: syntax"); the ruling pins it de facto, as the emitted form of every plan the planner produces.
+    #:
+    #: THE FIELD STAYS, because agreeing with a default is not the same as inheriting it. This is the
+    #: one place a connector states its own convention, and one already differs: DuckDB declares
+    #: `$name` (measured against duckdb 1.5.5). THAT IS A LIVE INCONSISTENCY AND NOT A RENAME -- a
+    #: plan the mac_runtime planner emitted in `:name` form cannot be bound by a connector whose
+    #: engine spells placeholders `$name`, so a consolidated runtime must re-spell at the seam (the
+    #: connector's `placeholder()`, below, is the only function that knows how) rather than assume
+    #: the planner's form reaches every engine intact.
     param_style: ClassVar[str] = ":name"
 
     #: §4.5: `create_or_replace_view` is the ONLY write verb, and it lives HERE, not on `Connector`.
@@ -288,7 +315,7 @@ class SqlConnector(Connector):
         timeout_s: float | None = None,
     ) -> ReadResult:
         """Run one read-only statement with BOUND params. The only engine-specific I/O a SQL
-        connector must write. Raises SourceError with a typed reason; never returns a partial result
+        connector must write. Raises AdapterError with a typed reason; never returns a partial result
         without setting `truncated`."""
 
     # ---- shared optional verbs: a pure render plus one read ----
@@ -326,6 +353,22 @@ class SqlConnector(Connector):
         """Op 10. Dry-run / EXPLAIN. MUST NOT mutate the data plane and MUST NOT return rows.
 
         Absent, `validate()` is a no-op and the trace records `validated: false` -- exit 0, printed.
+
+        NOT RENAMED TO mac_runtime's `GroundingAdapter.validate`, and this is the CLOSEST call of the
+        reconciliation -- the two docstrings are near-verbatim ("Dry-run / EXPLAIN ... MUST NOT
+        mutate the data plane or return rows"), and base.py's own op table pairs them. It was left
+        alone for two reasons:
+          * THE TWO NAMES SIT AT TWO LAYERS, and this package already says so: the DEGRADATION entry
+            for `explain` reads "validate() is a no-op". `validate()` is the CALLER's verb, whose
+            absence-behaviour is defined in terms of this connector capability backing it.
+            Collapsing them deletes the distinction that entry is written in.
+          * `validate` WOULD SIT BESIDE `validate_config`, MEANING SOMETHING ELSE. `validate_config`
+            is offline, free, returns findings and never raises; this is wet, billed on Athena, and
+            raises. Two methods one underscore apart with opposite cost and opposite failure
+            conventions is a footgun neither name had before.
+        If a later ruling merges them the surviving name is `validate` and the rename is mechanical:
+        this method, `OPTIONAL_VERBS`, `DEGRADATION`, both connectors' `supports`, and
+        `conformance.SQL_TIER_NAMES`. Recorded as debt, not resolved by guess.
         """
         from sdk.connector.base import ConnectorCapabilityMissing
 

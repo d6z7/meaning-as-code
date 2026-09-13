@@ -49,8 +49,8 @@ from sdk.connector.base import (
     ReadResult,
     RelationRef,
     RelationSchema,
-    SourceError,
-    SourceErrorReason,
+    AdapterError,
+    AdapterErrorReason,
 )
 from sdk.connector.sql import SqlConnector
 
@@ -75,17 +75,17 @@ _ORDERABLE_PREFIXES = (
 
 #: duckdb exception CLASS NAME -> the reason. Keyed by name, not by class, so the taxonomy can be
 #: read with the driver absent -- which is the state of this host.
-_REASON_BY_EXC_NAME: Mapping[str, SourceErrorReason] = {
-    "CatalogException": SourceErrorReason.REQUEST_FAILED,     # relation/column not found
-    "BinderException": SourceErrorReason.REQUEST_FAILED,
-    "ParserException": SourceErrorReason.REQUEST_FAILED,
-    "ConversionException": SourceErrorReason.REQUEST_FAILED,
-    "InvalidInputException": SourceErrorReason.REQUEST_FAILED,
-    "ConstraintException": SourceErrorReason.REQUEST_FAILED,
-    "OutOfMemoryException": SourceErrorReason.EXECUTION_LIMIT,
-    "InterruptException": SourceErrorReason.CANCELLED,
-    "IOException": SourceErrorReason.UNREACHABLE,             # the file moved / permissions
-    "PermissionException": SourceErrorReason.UNAUTHORIZED,
+_REASON_BY_EXC_NAME: Mapping[str, AdapterErrorReason] = {
+    "CatalogException": AdapterErrorReason.QUERY_FAILED,     # relation/column not found
+    "BinderException": AdapterErrorReason.QUERY_FAILED,
+    "ParserException": AdapterErrorReason.QUERY_FAILED,
+    "ConversionException": AdapterErrorReason.QUERY_FAILED,
+    "InvalidInputException": AdapterErrorReason.QUERY_FAILED,
+    "ConstraintException": AdapterErrorReason.QUERY_FAILED,
+    "OutOfMemoryException": AdapterErrorReason.EXECUTION_LIMIT,
+    "InterruptException": AdapterErrorReason.QUERY_CANCELLED,
+    "IOException": AdapterErrorReason.UNREACHABLE,             # the file moved / permissions
+    "PermissionException": AdapterErrorReason.UNAUTHORIZED,
 }
 
 
@@ -279,21 +279,21 @@ class DuckDbConnector(SqlConnector):
         try:
             self._client = duckdb.connect(str(path), read_only=self.read_only)
         except Exception as exc:
-            raise self._source_error(exc, f"opening {path.name!r}") from exc
+            raise self._adapter_error(exc, f"opening {path.name!r}") from exc
         return self._client
 
     @staticmethod
-    def _source_error(exc: BaseException, what: str) -> SourceError:
+    def _adapter_error(exc: BaseException, what: str) -> AdapterError:
         """Map a driver exception to the closed reason vocabulary, by CLASS NAME.
 
         By name because the taxonomy must be readable with the driver absent (this host), and
         because duckdb's exception classes are not a stable public import surface across versions.
-        An unrecognised exception becomes REQUEST_FAILED only when the driver itself raised it;
+        An unrecognised exception becomes QUERY_FAILED only when the driver itself raised it;
         anything else keeps exit 2 through the caller's own handling.
         """
         name = type(exc).__name__
-        reason = _REASON_BY_EXC_NAME.get(name, SourceErrorReason.REQUEST_FAILED)
-        return SourceError(reason, f"duckdb {name} while {what}: {exc}")
+        reason = _REASON_BY_EXC_NAME.get(name, AdapterErrorReason.QUERY_FAILED)
+        return AdapterError(reason, f"duckdb {name} while {what}: {exc}")
 
     # ---- TIER 1 · WET ----
 
@@ -328,7 +328,7 @@ class DuckDbConnector(SqlConnector):
                 raw = cur.fetchall()
                 truncated = False
         except Exception as exc:
-            raise self._source_error(exc, "executing a read") from exc
+            raise self._adapter_error(exc, "executing a read") from exc
         rows = tuple(dict(zip(columns, r)) for r in raw)
         return ReadResult(columns=columns, rows=rows, row_count=len(rows), truncated=truncated)
 
@@ -382,8 +382,8 @@ class DuckDbConnector(SqlConnector):
             # An empty column list is not an empty relation: it means the relation was not found.
             # Returning RelationSchema(columns=()) would let a caller profile nothing and report it
             # as a clean result -- the zero-denominator defect, one layer down.
-            raise SourceError(
-                SourceErrorReason.REQUEST_FAILED,
+            raise AdapterError(
+                AdapterErrorReason.QUERY_FAILED,
                 f"{self.id}: no such relation {'.'.join(ref.segments)}",
             )
         return RelationSchema(
@@ -397,7 +397,7 @@ class DuckDbConnector(SqlConnector):
 
         materialize._show_tables' `except Exception: return set()` returns "no collisions" when it
         could not look, inside the very step whose guardrail exists because of a real overwrite.
-        Here a failure propagates as SourceError and the host prints that it did not check.
+        Here a failure propagates as AdapterError and the host prints that it did not check.
         """
         pred, params = self._namespace_predicate(namespace)
         body = f"SELECT table_name FROM information_schema.tables WHERE {pred}"
@@ -405,7 +405,7 @@ class DuckDbConnector(SqlConnector):
         return {str(r["table_name"]) for r in res.rows}
 
     def explain(self, body: str, params: Mapping[str, Any] | None = None) -> None:
-        """Op 10. Raises SourceError when the plan is invalid; returns nothing and mutates nothing."""
+        """Op 10. Raises AdapterError on an invalid plan; returns nothing and mutates nothing."""
         self.read(ReadRequest(body=f"EXPLAIN {body}", params=dict(params or {}),
                               purpose="explain"))
 
@@ -426,7 +426,7 @@ class DuckDbConnector(SqlConnector):
         try:
             con.execute(self.render_view_ddl(ref, select_body))
         except Exception as exc:
-            raise self._source_error(exc, f"creating view {ref.name!r}") from exc
+            raise self._adapter_error(exc, f"creating view {ref.name!r}") from exc
 
     def probe(self) -> ProbeResult:
         """FREE: open the local file and read one catalog row. No metering, no audit log, no socket.
@@ -440,7 +440,7 @@ class DuckDbConnector(SqlConnector):
                 body="SELECT count(*) AS n FROM information_schema.tables",
                 purpose="probe",
             ))
-        except (SourceError, ConnectorConfigError, ConnectorUnavailable) as exc:
+        except (AdapterError, ConnectorConfigError, ConnectorUnavailable) as exc:
             return ProbeResult(ok=False, cost=self.probe_cost, target=self.redacted_target(),
                                detail=str(exc))
         n = res.rows[0]["n"] if res.rows else 0

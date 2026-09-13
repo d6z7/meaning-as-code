@@ -54,8 +54,8 @@ from sdk.connector.base import (
     ReadResult,
     RelationRef,
     RelationSchema,
-    SourceError,
-    SourceErrorReason,
+    AdapterError,
+    AdapterErrorReason,
 )
 
 
@@ -204,7 +204,7 @@ class CsvDirectoryConnector(Connector):
             )
         path = self._path(scan.ref)
         if not path.is_file():
-            raise SourceError(SourceErrorReason.REQUEST_FAILED,
+            raise AdapterError(AdapterErrorReason.QUERY_FAILED,
                               f"{self.id}: no such relation {'.'.join(scan.ref.segments)}")
 
         wanted: list = []
@@ -228,7 +228,7 @@ class CsvDirectoryConnector(Connector):
                 columns = tuple(scan.columns) if scan.columns else header
                 missing = [c for c in columns if c not in header]
                 if missing:
-                    raise SourceError(SourceErrorReason.REQUEST_FAILED,
+                    raise AdapterError(AdapterErrorReason.QUERY_FAILED,
                                       f"{self.id}: no such column(s) {missing} in "
                                       f"{'.'.join(scan.ref.segments)}")
                 for rec in reader:
@@ -241,7 +241,7 @@ class CsvDirectoryConnector(Connector):
                         break
                     rows.append({c: rec.get(c) for c in columns})
         except OSError as exc:
-            raise SourceError(SourceErrorReason.UNREACHABLE,
+            raise AdapterError(AdapterErrorReason.UNREACHABLE,
                               f"{self.id}: reading {path.name!r}: {exc}") from exc
         return ReadResult(columns=columns, rows=tuple(rows), row_count=len(rows),
                           truncated=truncated)
@@ -271,7 +271,7 @@ class CsvDirectoryConnector(Connector):
         """
         path = self._path(ref)
         if not path.is_file():
-            raise SourceError(SourceErrorReason.REQUEST_FAILED,
+            raise AdapterError(AdapterErrorReason.QUERY_FAILED,
                               f"{self.id}: no such relation {'.'.join(ref.segments)}")
         with path.open(newline="", encoding=self._encoding) as fh:
             header = next(csv.reader(fh, delimiter=self._delimiter), [])
@@ -282,7 +282,7 @@ class CsvDirectoryConnector(Connector):
         segs = tuple(str(s) for s in (namespace or ()))
         directory = self.root / Path(*segs) if segs else self.root
         if not directory.is_dir():
-            raise SourceError(SourceErrorReason.REQUEST_FAILED,
+            raise AdapterError(AdapterErrorReason.QUERY_FAILED,
                               f"{self.id}: no such namespace {'/'.join(segs) or '<root>'}")
         return {f.stem for f in directory.glob("*.csv")}
 

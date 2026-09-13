@@ -55,8 +55,8 @@ from sdk.connector.base import (
     PERMISSIONS,
     PROBE_COSTS,
     RelationRef,
-    SourceError,
-    SourceErrorReason,
+    AdapterError,
+    AdapterErrorReason,
     exit_code_for,
     worst_exit,
 )
@@ -269,8 +269,8 @@ def check_connector(cls: type, conn: Mapping, *, build: Any = None) -> tuple:
 
     # A8 · the error taxonomy maps totally, and a genuine finding outranks a could-not-run.
     n += 1
-    for reason in SourceErrorReason:
-        code = exit_code_for(SourceError(reason, "probe"))
+    for reason in AdapterErrorReason:
+        code = exit_code_for(AdapterError(reason, "probe"))
         if code not in (EXIT_FINDING, EXIT_COULD_NOT_RUN):
             out.append(Finding(name, "taxonomy-incomplete",
                                f"reason {reason.value!r} maps to exit {code}"))
