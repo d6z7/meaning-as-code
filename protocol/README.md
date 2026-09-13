@@ -58,6 +58,15 @@ Then the body, in this order, because it is the order that makes a claim checkab
 * **WHAT CHANGED** — files, commits, gates, numbers before and after.
 * **WHAT IT DOES NOT PROVE** — the honest boundary. This field is why the record is worth keeping.
 
+## `claims.yaml` — the interpretation layer, beside the record and never inside it
+
+An entry is never edited, so the judgement "this span is the rule" cannot be added to it later.
+`protocol/claims.yaml` holds that judgement as an ADDRESS and a ROLE (`rule` or `boundary`), points
+into the entry, and carries no prose of its own. `tools/mac_wiki.py` compiles the marked spans to
+the top of the topic page, verbatim, and prints how many entries carry a mark. Nothing is ratified
+by writing a claim: an agent may only propose, so every claim renders as UNRATIFIED until the
+operator sets `ratified: true`.
+
 ## The rule that makes it worth having
 
 Write the entry WHEN THE WORK HAPPENS, not at the end of the day. A protocol reconstructed from

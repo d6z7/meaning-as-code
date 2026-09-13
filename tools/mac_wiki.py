@@ -40,13 +40,35 @@ writes a description and re-derives it under `--check`. Naming it `check_*` woul
 into a suite of read-only gates. The gate arm is still contract-conformant and is meant to be run
 in CI as `python3 tools/mac_wiki.py --check`.
 
+THE CLAIMS LAYER, and the measurement that forced it. Compiled first, this tool produced 15 pages
+of perfectly verbatim, perfectly checkable CHRONOLOGY — and read as a list of things that went
+wrong, in the order they went wrong. On `wiki/core/connectors.md` the sentence that says what a
+connector IS sat in entry 3 of 6, under a heading about a brief being overturned; a reader who was
+not in the conversation met five defects before one definition. Time order is not a semantic, and
+the operator asked for pages that "actually disect and compile these aspects based on semantic of
+the subject". The fix is the one `sdk/project/knowledge.py` already names — "Judgement about WHICH
+statements are normative belongs in a separate claims layer" — so `protocol/claims.yaml` marks
+spans `rule` or `boundary` and this tool lifts THOSE SAME BYTES to the top of the page under a
+heading from a two-word closed vocabulary. It is still rearrangement: nothing is reworded, every
+marked span keeps its `q` anchor and its verifiable address, and both gates check it exactly as
+they check the body. A page with no marked span says so, in the shape a denominator is said in.
+
+THE INDEX, and the measurement that forced it. `wiki/README.md` promises three homes; the routing
+rule sends any topic two audiences touched to `wiki/core/`. Measured on the real protocol that put
+13 of 15 pages in core, leaving `wiki/platform-builder/` with ONE page while twelve topics carried
+platform entries. Moving files would be a lie in the other direction — a topic a platform builder
+needs is not thereby not shared law — so `wiki/index.md` compiles the CROSS-CUT instead: per
+audience, every page carrying at least one entry of that track, with that audience's count beside
+the page's own. The front door is derived like everything else, and `stale-index` is the class that
+stops it becoming the one hand-maintained file in a compiled tree.
+
 WHAT IT DELIBERATELY DOES NOT DO. It does not compile an ontology's OWN documentation. That is
 instance knowledge, it lives in that bundle, and `wiki/README.md` says why. It does not index the
 `file:line` references an entry makes, and `render()` records what that index cost when it existed:
 a page is a pure function of the entries it names, and anything measured against the wider tree
 breaks that. Every reference is still on the page, inside the span that quotes it.
 
-    python3 tools/mac_wiki.py                 # compile: write/refresh every topic page
+    python3 tools/mac_wiki.py                 # compile: write/refresh every topic page + index
     python3 tools/mac_wiki.py --check         # gate:    are the pages still true?
     python3 tools/mac_wiki.py --self-test     # mutant per reject class
 """
@@ -105,8 +127,174 @@ _Q_OPEN = "<!-- q "
 _Q_RE = re.compile(r"^<!-- q (\S+)#(.*?) -->$")
 _STAMP_RE = re.compile(r"^<!-- mac-wiki-stamp (\{.*\}) -->$", re.M)
 
+#: THE CLAIMS LAYER, and it is a SEPARATE FILE for two reasons that both come from this estate.
+#:
+#: `sdk/project/knowledge.py` names the seam: *"Judgement about WHICH statements are normative
+#: belongs in a separate claims layer, so that extraction and interpretation never blur."* Without
+#: one, a compiled page can only be a time-ordered anthology — every span it carries is equally
+#: weighted, so a reader who was not in the conversation meets six defects before the sentence that
+#: says what the thing IS. The claims layer is where a human says "this span is the rule" WITHOUT
+#: rewording it, which is the only way to gain structure and keep VERBATIM OR NOTHING.
+#:
+#: And it cannot live in the entries, because `protocol/README.md` says *"Entries are never edited,
+#: only superseded by later ones that say so."* Marking a span normative six weeks later is an edit
+#: to the raw record. So the mark lives beside the record and points INTO it.
+CLAIMS_FILE = "protocol/claims.yaml"
+
+#: CLOSED VOCABULARY, deliberately two words wide. `rule` is a span that still governs; `boundary`
+#: is a limit that is still open. A third role for "measurement" was considered and refused: every
+#: EVIDENCE section is a measurement, so the role would mark nearly everything and mark nothing.
+CLAIM_ROLES: dict[str, str] = {
+    "rule": "What holds",
+    "boundary": "What is not settled",
+}
+_CLAIM_SPAN_RE = re.compile(r"^(?P<eid>\d{4}-\d{2}-\d{2}/[^#]+?)(?:\.md)?#(?P<section>.+)$")
+
+
 def _sha(b: bytes) -> str:
     return hashlib.sha256(b).hexdigest()
+
+
+@dataclass
+class Claim:
+    """One human judgement: THIS span, of THIS entry, is normative in THIS role.
+
+    It carries no prose of its own. A claim that could restate the span would be a summary with a
+    citation stapled to it, which is the failure mode the whole instrument exists to remove.
+    """
+
+    eid: str
+    section: str
+    role: str
+    #: Topics this claim is compiled onto. Empty means "every topic the entry carries" — a claim
+    #: narrowed to a topic the entry does not carry is a finding, never a silent no-op.
+    topics: list[str]
+    by: str
+    ratified: bool
+    where: str
+    #: Position in `claims.yaml`. READING ORDER IS PART OF THE JUDGEMENT: on the connectors page the
+    #: span that says what a connector IS was written third in time, and sorting the marked spans by
+    #: entry date put the definition below two corrections of it. The claims layer is where a human
+    #: says what to read first, so the file's own order is preserved and never re-sorted.
+    order: int = 0
+
+    @property
+    def key(self) -> str:
+        return f"{self.role}:{self.eid}#{self.section}"
+
+
+def load_claims(root: Path) -> tuple[list[Claim], list[tuple[str, str]]]:
+    """(claims, findings). A malformed claims file is REPORTED, never partially believed."""
+    p = root / CLAIMS_FILE
+    if not p.is_file():
+        return [], []
+    try:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # a broken YAML file is a finding with a denominator of one
+        return [], [("malformed-claims", f"`{CLAIMS_FILE}` did not parse: {exc}")]
+    if not isinstance(doc, dict) or not isinstance(doc.get("claims") or [], list):
+        return [], [("malformed-claims", f"`{CLAIMS_FILE}` carries no `claims:` list")]
+    out: list[Claim] = []
+    found: list[tuple[str, str]] = []
+    for i, raw in enumerate(doc.get("claims") or []):
+        where = f"{CLAIMS_FILE}#claims[{i}]"
+        if not isinstance(raw, dict):
+            found.append(("malformed-claims", f"`{where}` is not a mapping"))
+            continue
+        span = str(raw.get("span") or "").strip()
+        m = _CLAIM_SPAN_RE.match(span)
+        if not m:
+            found.append(
+                (
+                    "malformed-claims",
+                    f"`{where}`: span {span!r} is not `YYYY-MM-DD/entry-slug#SECTION NAME`",
+                )
+            )
+            continue
+        role = str(raw.get("holds") or "").strip()
+        if role not in CLAIM_ROLES:
+            found.append(
+                (
+                    "unknown-claim-role",
+                    f"`{where}`: holds: {role!r} is not one of {sorted(CLAIM_ROLES)} — the "
+                    f"compiler will not invent a role, because an unrecognised one rendered under "
+                    f"a default heading is interpretation nobody wrote",
+                )
+            )
+            continue
+        topics_raw = raw.get("topics") or []
+        if isinstance(topics_raw, str):
+            topics_raw = [topics_raw]
+        out.append(
+            Claim(
+                eid=m.group("eid"),
+                section=m.group("section").strip(),
+                role=role,
+                topics=[str(t).strip() for t in topics_raw if str(t).strip()],
+                by=str(raw.get("by") or "").strip(),
+                ratified=bool(raw.get("ratified") or False),
+                where=where,
+                order=i,
+            )
+        )
+    return out, found
+
+
+def resolve_claims(
+    claims: list[Claim], by_id: dict[str, Entry], quarantined: set[str] | None = None
+) -> tuple[dict[str, list[Claim]], list[tuple[str, str]], set[str]]:
+    """(claims by topic, findings, topics a broken claim makes unjudgeable).
+
+    A claim that does not resolve QUARANTINES the topics it touches, exactly as an unplaceable
+    entry does. Rendering the page without it and then reporting the page as hand-edited would name
+    the wrong defect, and for a ratchet a wrong name is most of the damage.
+    """
+    by_topic: dict[str, list[Claim]] = {}
+    found: list[tuple[str, str]] = []
+    skipped: set[str] = set()
+    quarantined = quarantined or set()
+    for c in claims:
+        e = by_id.get(c.eid)
+        if e is not None and c.eid in quarantined:
+            # The ENTRY could not be placed, and that is already a finding with its own class. A
+            # second one saying its claim landed nowhere is the same situation reported twice; the
+            # entry's quarantine has already made this topic unjudgeable.
+            continue
+        if e is None:
+            found.append(
+                (
+                    "dangling-claim",
+                    f"`{c.where}`: names entry `{c.eid}`, which no protocol file provides",
+                )
+            )
+            skipped.update(c.topics)
+            continue
+        if c.section not in e.section_lines():
+            found.append(
+                (
+                    "dangling-claim",
+                    f"`{c.where}`: names section `{c.section}` of `{c.eid}`, which that entry does "
+                    f"not have — it has {sorted(e.section_lines())}",
+                )
+            )
+            skipped.update(c.topics or e.topics)
+            continue
+        stray = [t for t in c.topics if t not in e.topics]
+        if stray:
+            found.append(
+                (
+                    "claim-topic-mismatch",
+                    f"`{c.where}`: narrowed to topic `{stray[0]}`, which `{c.eid}` does not carry "
+                    f"(it carries {e.topics}) — the claim would compile onto no page and read as "
+                    f"filed rather than lost",
+                )
+            )
+            skipped.update(c.topics)
+            skipped.update(e.topics)
+            continue
+        for t in c.topics or e.topics:
+            by_topic.setdefault(t, []).append(c)
+    return by_topic, found, skipped
 
 
 # -------------------------------------------------------------------------------------------------
@@ -267,6 +455,10 @@ class Page:
     basis: str
     entries: list[Entry]
     untracked: int
+    #: Resolved claims for this topic, in page order. They are an INPUT to the page, so they are
+    #: inside `source_hash`: marking a span normative changes what the page says, and a change to
+    #: the claims layer must read as `stale-stamp` (recompile) rather than `hand-edited-page`.
+    claims: list[Claim] = field(default_factory=list)
 
     @property
     def rel(self) -> str:
@@ -274,7 +466,12 @@ class Page:
 
     @property
     def source_hash(self) -> str:
-        return _sha("\n".join(f"{e.eid}:{e.sha}" for e in self.entries).encode())
+        body = "\n".join(f"{e.eid}:{e.sha}" for e in self.entries)
+        marks = "\n".join(c.key for c in self.claims)
+        return _sha((body + "\n--claims--\n" + marks).encode())
+
+    def claims_for(self, role: str) -> list[Claim]:
+        return sorted((c for c in self.claims if c.role == role), key=lambda c: c.order)
 
     @property
     def ids(self) -> list[str]:
@@ -288,16 +485,23 @@ class Plan:
     no_topic: list[Entry]
     untracked: list[Entry]
     quarantined: list[Entry]
+    claims: list[Claim] = field(default_factory=list)
+    claim_findings: list[tuple[str, str]] = field(default_factory=list)
+    claim_skips: set[str] = field(default_factory=set)
 
     @property
     def skipped_topics(self) -> set[str]:
         """Topics the gate will NOT judge this run, because an entry that belongs to them could not
         be placed. Reporting a stale page downstream of an unreadable entry is reporting a symptom;
         the harness also forbids it, since one mutation must trip one class."""
-        return {t for e in self.quarantined for t in e.topics}
+        return {t for e in self.quarantined for t in e.topics} | set(self.claim_skips)
+
+    @property
+    def claimed_entries(self) -> set[str]:
+        return {c.eid for p in self.pages.values() for c in p.claims}
 
 
-def plan(entries: list[Entry]) -> Plan:
+def plan(entries: list[Entry], claims: list[Claim] | None = None) -> Plan:
     """Group by `topics:`, route by `track:`.
 
     THE ROUTING RULE, and it is a derivation rather than a default:
@@ -343,7 +547,27 @@ def plan(entries: list[Entry]) -> Plan:
                 "declare one to route it"
             )
         pages[topic] = Page(topic, track, basis, es, silent)
-    return Plan(pages, entries, no_topic, untracked, quarantined)
+
+    claims = list(claims or [])
+    by_topic, cfound, cskip = resolve_claims(
+        claims,
+        {e.eid: e for e in entries},
+        {e.eid for e in entries if e.quarantine},
+    )
+    for topic, cs in by_topic.items():
+        if topic in pages:
+            pages[topic].claims = cs
+        else:
+            # A claim on a topic no entry carries is not silently dropped: it names a page that
+            # does not exist, which is the same defect as a dangling entry id and reads the same.
+            cfound.append(
+                (
+                    "dangling-claim",
+                    f"`{cs[0].where}`: compiled onto topic `{topic}`, which no entry carries — "
+                    f"there is no page for this claim to land on",
+                )
+            )
+    return Plan(pages, entries, no_topic, untracked, quarantined, claims, cfound, cskip)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -382,6 +606,68 @@ def _title(topic: str) -> str:
     return words[:1].upper() + words[1:]
 
 
+def _render_claims(page: Page, out: list[str]) -> None:
+    """The compiled cross-cut: the spans a human marked normative, lifted to the top of the page.
+
+    WHAT FORCED THIS SECTION. Without it a page is a time-ordered anthology — correct, verbatim,
+    checkable, and still unreadable to someone who was not in the conversation, because the
+    sentence that says what the subject IS sits in the third of six entries, under a heading about
+    what went wrong. The operator asked for pages that "actually disect and compile these aspects
+    based on semantic of the subject"; chronology is not a semantic.
+
+    WHAT IT REFUSES TO DO. It does not write a sentence. Every line below is the same verbatim span
+    the entry carries, with the same `q` anchor and the same verifiable address, so both gates check
+    these blocks exactly as they check the body. The ONLY thing added is the ORDER and the HEADING,
+    and the heading comes from a closed vocabulary of two words.
+    """
+    if not page.claims:
+        # The honest zero. A page with no claims says so, in the shape a denominator is said in,
+        # because "this page has not been interpreted yet" is information and silence is not.
+        out.append("## What holds — NOT YET COMPILED")
+        out.append("")
+        out.append(
+            f"> **No span on this page has been marked normative.** `{CLAIMS_FILE}` carries no "
+            f"claim for topic `{page.topic}`, so what follows is the raw record in time order and "
+            f"nothing on it has been judged to still hold. Mark spans in the claims layer to "
+            f"compile this section; it is deliberately empty rather than guessed."
+        )
+        out.append("")
+        return
+    unratified = sum(1 for c in page.claims if not c.ratified)
+    out.append(
+        f"> **THE CLAIMS LAYER — interpretation, not extraction.** Which spans are normative is a "
+        f"judgement, and it lives in `{CLAIMS_FILE}` so that it never touches the append-only "
+        f"record it points at. The {len(page.claims)} span(s) in the next two sections are quoted "
+        f"VERBATIM from the entries below and verified by the same two gates as the body; only "
+        f"their SELECTION and their ORDER are authored."
+        + (
+            f" **{unratified} of {len(page.claims)} UNRATIFIED** — proposed by an agent, not signed "
+            f"off: `2026-09-12/008` records that ratification is the operator's act."
+            if unratified
+            else ""
+        )
+    )
+    out.append("")
+    for role, heading in CLAIM_ROLES.items():
+        cs = page.claims_for(role)
+        if not cs:
+            continue
+        out.append(f"## {heading}")
+        out.append("")
+        for c in cs:
+            e = next(x for x in page.entries if x.eid == c.eid)
+            src = {n: (lines, a, b) for n, lines, a, b in e.sections()}[c.section]
+            lines, first, last = src
+            mark = "" if c.ratified else " · UNRATIFIED"
+            out.append(f"**{role.upper()}** · `{c.eid}` · from *{c.section}*{mark}")
+            out.append("")
+            out.append(f"{_Q_OPEN}{c.eid}#{c.section} -->")
+            out.extend(_quote(lines))
+            out.append("")
+            out.append(f"[[cite: protocol/{c.eid}.md:{first}-{last}]]")
+            out.append("")
+
+
 def render(page: Page) -> str:
     stamp = {
         "spec": SPEC,
@@ -391,6 +677,7 @@ def render(page: Page) -> str:
         "track_basis": page.basis,
         "entries": page.ids,
         "untracked_entries": page.untracked,
+        "claims": [c.key for c in page.claims],
         "source_hash": page.source_hash,
     }
     superseded_by: dict[str, str] = {}
@@ -420,10 +707,31 @@ def render(page: Page) -> str:
         out.append(
             f"| entries declaring no track | {page.untracked} of {len(page.entries)} |"
         )
-    out.append(f"| source_hash | `{page.source_hash[:16]}…` (sha256 over each entry's id and bytes) |")
+    n_rule = len(page.claims_for("rule"))
+    n_bound = len(page.claims_for("boundary"))
+    out.append(
+        f"| normative spans | {len(page.claims)} marked over {len({c.eid for c in page.claims})} "
+        f"of {len(page.entries)} entry(ies) — {n_rule} rule, {n_bound} boundary |"
+        if page.claims
+        else f"| normative spans | **0** — nothing on this page has been marked as still holding |"
+    )
+    out.append(
+        f"| source_hash | `{page.source_hash[:16]}…` (sha256 over each entry's id and bytes, and "
+        f"over the claims marked on them) |"
+    )
     out.append(f"| generated by | `{GENERATOR}` |")
     out.append("")
+    _render_claims(page, out)
     out.append("## What this page was compiled from")
+    out.append("")
+    kinds = {}
+    for e in page.entries:
+        kinds[e.kind or "—"] = kinds.get(e.kind or "—", 0) + 1
+    out.append(
+        f"{len(page.entries)} entry(ies), in time order: "
+        + ", ".join(f"{n} {k}" for k, n in sorted(kinds.items(), key=lambda kv: (-kv[1], kv[0])))
+        + "."
+    )
     out.append("")
     out.append("| entry | when | kind | what |")
     out.append("|---|---|---|---|")
@@ -518,10 +826,127 @@ def _wiki_pages_on_disk(root: Path) -> list[Path]:
     return out
 
 
+INDEX_REL = "wiki/index.md"
+
+
+def render_index(pl: Plan) -> str:
+    """The front door, and it is compiled for the same reason every other page is.
+
+    IT IS ALSO THE AUDIENCE FIX. `wiki/README.md` promises three homes, and the routing rule sends
+    any topic two audiences touched to `wiki/core/`. Measured on the real protocol that put 13 of
+    15 pages in core, so `wiki/platform-builder/` listed ONE page while 12 topics carried platform
+    entries. The directory was true and useless: a door onto a corridor whose rooms are elsewhere.
+    Moving the files would be worse — a topic a platform builder needs is not thereby not shared
+    law. So the index compiles the CROSS-CUT instead: per audience, every page carrying at least
+    one entry of that track, with that audience's entry count as the denominator of the page's.
+    """
+    pages = sorted(pl.pages.values(), key=lambda p: (list(TRACK_DIR).index(p.track), p.topic))
+    all_ids = sorted({e.eid for p in pages for e in p.entries})
+    stamp = {
+        "spec": SPEC,
+        "generator": GENERATOR,
+        "topic": None,
+        "index": True,
+        "pages": [p.rel for p in pages],
+        "entries": all_ids,
+        "source_hash": _sha(
+            "\n".join(f"{p.rel}:{p.source_hash}" for p in pages).encode()
+        ),
+    }
+    claimed = pl.claimed_entries
+    o: list[str] = []
+    o.append("<!-- mac-wiki-stamp " + json.dumps(stamp, sort_keys=True) + " -->")
+    o.append(f"<!-- GENERATED by {GENERATOR} — do not edit; recompile. -->")
+    o.append("")
+    o.append("# The wiki")
+    o.append("")
+    o.append(
+        "> **COMPILED FRONT DOOR — derived, never authored.** Every row below is counted from "
+        "`protocol/`, not maintained by hand. `python3 tools/mac_wiki.py --check` fails if this "
+        "file stops matching the pages it lists. Read `wiki/README.md` for what the three "
+        "directories mean and `protocol/README.md` for how an entry is written."
+    )
+    o.append("")
+    o.append("| | |")
+    o.append("|---|---|")
+    o.append(f"| pages | {len(pages)} |")
+    o.append(
+        f"| entries compiled | {len(all_ids)} of {len(pl.entries)} in `protocol/` |"
+    )
+    o.append(
+        f"| entries on no page | {len(pl.no_topic)} (carry no `topics:`) |"
+    )
+    o.append(
+        f"| entries declaring no audience | {len(pl.untracked)} of {len(pl.entries)} |"
+    )
+    o.append(
+        f"| normative spans | {len(pl.claims)} marked over {len(claimed)} of {len(pl.entries)} "
+        f"entry(ies) — `{CLAIMS_FILE}` |"
+    )
+    o.append(f"| source_hash | `{stamp['source_hash'][:16]}…` (over every page's own hash) |")
+    o.append(f"| generated by | `{GENERATOR}` |")
+    o.append("")
+    o.append("## Every page")
+    o.append("")
+    o.append("| page | topic | audience | entries | normative spans | compile stamp |")
+    o.append("|---|---|---|---|---|---|")
+    for p in pages:
+        link = p.rel[len("wiki/") :]
+        o.append(
+            f"| [{p.topic}]({link}) | {p.topic} | {TRACK_DIR[p.track]} | {len(p.entries)} | "
+            f"{len(p.claims)} | `{p.source_hash[:16]}…` |"
+        )
+    o.append("")
+    o.append("## By audience")
+    o.append("")
+    o.append(
+        "A page lives in ONE directory. An entry declares ONE audience. A topic both audiences "
+        "touched is filed as shared law, so the table below is the cross-cut: what each audience "
+        "wrote about, wherever it was filed."
+    )
+    o.append("")
+    for track, dirname in TRACK_DIR.items():
+        own = [p for p in pages if p.track == track]
+        elsewhere = [
+            (p, sum(1 for e in p.entries if e.track == track))
+            for p in pages
+            if p.track != track and any(e.track == track for e in p.entries)
+        ]
+        total = sum(1 for e in pl.entries if e.track == track)
+        o.append(f"### `wiki/{dirname}/` — {len(own)} page(s) filed here, {total} entry(ies) declared this audience")
+        o.append("")
+        if own:
+            o.append("| page | entries | normative spans |")
+            o.append("|---|---|---|")
+            for p in own:
+                o.append(
+                    f"| [{p.topic}]({p.rel[len('wiki/'):]}) | {len(p.entries)} | {len(p.claims)} |"
+                )
+        else:
+            o.append(
+                f"*No page is filed here.* Every topic this audience touched is also touched by "
+                f"another, so it compiled to shared law — see below."
+            )
+        o.append("")
+        if elsewhere:
+            o.append(f"**Filed elsewhere, carrying `{track}` entries:**")
+            o.append("")
+            o.append(f"| page | filed under | `{track}` entries | of |")
+            o.append("|---|---|---|---|")
+            for p, n in sorted(elsewhere, key=lambda x: -x[1]):
+                o.append(
+                    f"| [{p.topic}]({p.rel[len('wiki/'):]}) | {TRACK_DIR[p.track]} | {n} | "
+                    f"{len(p.entries)} |"
+                )
+            o.append("")
+    return "\n".join(o).rstrip() + "\n"
+
+
 def compile_wiki(root: Path) -> dict:
     """Write every topic page. Returns a report; writes nothing when there is nothing to compile."""
     entries = load_entries(root)
-    pl = plan(entries)
+    claims, claim_load = load_claims(root)
+    pl = plan(entries, claims)
     written, moved, orphans = [], [], []
 
     on_disk = {}
@@ -548,6 +973,14 @@ def compile_wiki(root: Path) -> dict:
         if s.get("topic") not in pl.pages and not any(rel in m for m in moved):
             orphans.append(rel)
 
+    if pl.pages:
+        idx = root / INDEX_REL
+        idx.parent.mkdir(parents=True, exist_ok=True)
+        text = render_index(pl)
+        if not idx.is_file() or idx.read_text(encoding="utf-8") != text:
+            idx.write_text(text, encoding="utf-8")
+            written.append(INDEX_REL)
+
     return {
         "entries": len(entries),
         "pages": len(pl.pages),
@@ -557,6 +990,9 @@ def compile_wiki(root: Path) -> dict:
         "no_topic": [e.eid for e in pl.no_topic],
         "untracked": [e.eid for e in pl.untracked],
         "quarantined": [(e.eid, e.quarantine) for e in pl.quarantined],
+        "claims": len(pl.claims),
+        "claimed_entries": len(pl.claimed_entries),
+        "claim_findings": claim_load + pl.claim_findings,
         "by_track": {
             t: sum(1 for p in pl.pages.values() if p.track == t) for t in sorted(TRACK_DIR)
         },
@@ -666,7 +1102,8 @@ def _verify_quotes(text: str, by_id: dict[str, Entry]) -> tuple[list[tuple[str, 
 def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
     """(findings, pages examined, spans verified, plan, report). Never exits; see `_check_main`."""
     entries = load_entries(root)
-    pl = plan(entries)
+    claims, claim_load = load_claims(root)
+    pl = plan(entries, claims)
     by_id = {e.eid: e for e in entries}
     found: list[tuple[str, str]] = []
     verified = 0
@@ -675,6 +1112,12 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
     for e in pl.quarantined:
         cls = "malformed-topic" if e.bad_topics else "unknown-track"
         found.append((cls, f"`{e.eid}`: {e.quarantine}"))
+
+    # The claims layer is judged BEFORE any page, and a broken claim quarantines the topics it
+    # touches (see `resolve_claims`). The claims file is one file, so its findings are reported
+    # whole rather than first-match: three malformed claims are three defects, not one page.
+    found.extend(claim_load)
+    found.extend(pl.claim_findings)
 
     # A stamped page whose TOPIC is still derived but whose PATH is not the derived one has not
     # been orphaned — its track changed and nobody recompiled. Saying "no entry carries this topic"
@@ -787,12 +1230,40 @@ def check(root: Path) -> tuple[list[tuple[str, str]], int, int, Plan, dict]:
             )
         )
 
+    # THE FRONT DOOR IS A PAGE TOO, and it is checked like one. It carries no quoted span — it is
+    # pure derived structure — so the only predicate that applies is "is it still what the pages
+    # say it is". Without this, the one page a reader opens first is the one page nothing guards.
+    # ORDER, and it is the same argument the rest of this gate makes: the index is derived from
+    # the pages, so ANY finding above already changes what the index should say. Judging it anyway
+    # would report one situation twice under two class names, and one recompile answers both.
+    idx = root / INDEX_REL
+    if pl.pages and not skipped and not found:
+        examined += 1
+        if not idx.is_file():
+            found.append(
+                (
+                    "stale-index",
+                    f"`{INDEX_REL}` does not exist though {len(pl.pages)} page(s) compile — the "
+                    f"wiki has no front door; recompile",
+                )
+            )
+        elif idx.read_text(encoding="utf-8") != render_index(pl):
+            found.append(
+                (
+                    "stale-index",
+                    f"`{INDEX_REL}` is not what the {len(pl.pages)} compiled page(s) derive — it "
+                    f"was edited by hand or the protocol moved under it; recompile",
+                )
+            )
+
     report = {
         "entries": len(entries),
         "pages": len(pl.pages),
         "no_topic": [e.eid for e in pl.no_topic],
         "untracked": [e.eid for e in pl.untracked],
         "skipped": sorted(skipped),
+        "claims": len(pl.claims),
+        "claimed_entries": len(pl.claimed_entries),
         "by_track": {
             t: sum(1 for p in pl.pages.values() if p.track == t) for t in sorted(TRACK_DIR)
         },
@@ -806,6 +1277,10 @@ def _detail(report: dict) -> str:
         f"{report['entries']} entry(ies) -> {report['pages']} page(s) ({bt})",
         f"{len(report['no_topic'])} entry(ies) carried NO topic and are on no page",
         f"{len(report['untracked'])} entry(ies) declared no track",
+        # The claims-layer denominator. A wiki whose pages are all verbatim and all uninterpreted
+        # is a correct anthology, and this is the number that says so out loud.
+        f"{report['claims']} normative span(s) marked over {report['claimed_entries']} of "
+        f"{report['entries']} entry(ies)",
     ]
     if report["skipped"]:
         parts.append(f"{len(report['skipped'])} topic(s) NOT judged: {', '.join(report['skipped'])}")
@@ -982,6 +1457,24 @@ kind: build
 )
 
 
+#: The fixture CLAIMS LAYER. Two roles, one narrowed topic, one unratified — enough shape for the
+#: four claim-facing reject classes to be mutated independently of each other.
+_CLAIMS = """# fixture claims layer
+claims:
+  - span: 2026-01-02/001-denominator#WHAT CHANGED
+    holds: rule
+    by: fixture
+    ratified: true
+  - span: 2026-01-02/001-denominator#WHAT IT DOES NOT PROVE
+    holds: boundary
+    by: fixture
+  - span: 2026-01-02/002-grain#WHAT CHANGED
+    holds: rule
+    topics: [grain]
+    by: fixture
+"""
+
+
 def _seed(root: Path, *pairs) -> None:
     for rel, text in pairs:
         p = root / "protocol" / rel
@@ -992,12 +1485,25 @@ def _seed(root: Path, *pairs) -> None:
 def _clean(root: Path) -> None:
     _seed(root, _E1, _E2, _E3, _E4)
     (root / "protocol" / "README.md").write_text("# fixture protocol\n", encoding="utf-8")
+    (root / CLAIMS_FILE).write_text(_CLAIMS, encoding="utf-8")
     compile_wiki(root)
 
 
 def _mp_untopiced(root: Path) -> None:
     _clean(root)
     _seed(root, _UNTOPICED)
+    compile_wiki(root)
+
+
+def _mp_no_claims(root: Path) -> None:
+    """THE CLAIMS LAYER IS OPTIONAL, and this fixture is what stops it becoming compulsory by
+    accident. A repository that has written the raw record and not yet interpreted it is in a
+    correct state. `sdk/gate/contract.py` names the cost of getting this wrong: "A gate that
+    rejects the absence of an optional thing is the most expensive kind of wrong." Here it would
+    buy invented normativity on every page, which is the one thing this instrument must never
+    produce."""
+    _seed(root, _E1, _E2, _E3, _E4)
+    (root / "protocol" / "README.md").write_text("# fixture protocol\n", encoding="utf-8")
     compile_wiki(root)
 
 
@@ -1117,8 +1623,72 @@ def _m_bad_address(root: Path) -> Path:
     raise AssertionError("no citation address on the fixture page — the mutant would not mutate")
 
 
+def _add_claim(root: Path, block: str) -> Path:
+    """Append one claim to the fixture claims layer, and REFUSE to be a no-op.
+
+    WHY EVERY CLAIM MUTANT ADDS RATHER THAN CORRUPTS. Rewriting an existing claim removes a span
+    from a page that carried it, so the page on disk stops matching the derived one and a SECOND
+    class fires — the mutant would be rejected for two reasons and attributed to neither. Adding a
+    broken claim leaves every page byte-identical, so exactly one predicate can see it. It is also
+    the realistic defect: claims are written after the fact, one at a time.
+    """
+    p = root / CLAIMS_FILE
+    before = p.read_text(encoding="utf-8")
+    p.write_text(before + block, encoding="utf-8")
+    if p.read_text(encoding="utf-8") == before:
+        raise AssertionError("claim seeder wrote nothing — the mutant would not mutate")
+    return p
+
+
+def _m_malformed_claims(root: Path) -> Path:
+    """A span that is not `entry#SECTION`. It names nothing, so it can quarantine nothing, which is
+    exactly why it has to be reported rather than dropped."""
+    return _add_claim(root, "  - span: the bit about denominators\n    holds: rule\n")
+
+
+def _m_unknown_claim_role(root: Path) -> Path:
+    """A role outside the closed vocabulary. Rendering it under a default heading would be
+    interpretation nobody wrote, so the compiler refuses to place it."""
+    return _add_claim(
+        root, "  - span: 2026-01-03/001-page-shape#WHAT CHANGED\n    holds: important\n"
+    )
+
+
+def _m_dangling_claim(root: Path) -> Path:
+    """The entry exists; the SECTION does not. This is the drift that actually happens — a claim
+    written against a section name that the entry never had, or no longer has."""
+    return _add_claim(
+        root, "  - span: 2026-01-03/001-page-shape#WHAT WE FELT\n    holds: rule\n"
+    )
+
+
+def _m_claim_topic_mismatch(root: Path) -> Path:
+    """Narrowed to a topic its entry does not carry: the claim compiles onto no page at all, and a
+    claims file that reads as filed while landing nowhere is worse than an empty one."""
+    return _add_claim(
+        root,
+        "  - span: 2026-01-02/001-denominator#EVIDENCE\n    holds: rule\n    topics: [grain]\n",
+    )
+
+
+def _m_stale_index(root: Path) -> Path:
+    """The front door, edited by hand. Nothing else on the tree moves — which is the point: before
+    this class the one page a reader opens first was the one page nothing checked."""
+    p = root / INDEX_REL
+    p.write_text(
+        p.read_text(encoding="utf-8") + "\nSomebody added a page to the list by hand.\n",
+        encoding="utf-8",
+    )
+    return p
+
+
 _MUTANTS = {
     "missing-page": _m_missing_page,
+    "malformed-claims": _m_malformed_claims,
+    "unknown-claim-role": _m_unknown_claim_role,
+    "dangling-claim": _m_dangling_claim,
+    "claim-topic-mismatch": _m_claim_topic_mismatch,
+    "stale-index": _m_stale_index,
     "stale-stamp": _m_stale_stamp,
     "unstamped-page": _m_unstamped_page,
     "orphan-page": _m_orphan_page,
@@ -1132,6 +1702,11 @@ _MUTANTS = {
 
 _EXPECT_LINE = {
     "missing-page": "no page on disk",
+    "malformed-claims": "is not `YYYY-MM-DD/entry-slug#SECTION NAME`",
+    "unknown-claim-role": "is not one of ['boundary', 'rule']",
+    "dangling-claim": "which that entry does not have",
+    "claim-topic-mismatch": "would compile onto no page",
+    "stale-index": "edited by hand or the protocol moved under it",
     "stale-stamp": "moved under this page",
     "unstamped-page": "carries no stamp",
     "orphan-page": "derived from nothing",
@@ -1214,7 +1789,7 @@ def _x_nothing_is_dropped(base: Path) -> tuple[int, int]:
     root = base / "_x_lossless"
     root.mkdir(parents=True, exist_ok=True)
     _clean(root)
-    pl = plan(load_entries(root))
+    pl = plan(load_entries(root), load_claims(root)[0])
     pages = {t: (root / p.rel).read_text(encoding="utf-8") for t, p in pl.pages.items()}
     missing = 0
     total = 0
@@ -1231,6 +1806,71 @@ def _x_nothing_is_dropped(base: Path) -> tuple[int, int]:
     return (1 if (missing == 0 and total > 0) else 0), 1
 
 
+def _x_unclaimed_page_declares_it(base: Path) -> tuple[int, int]:
+    """A page nobody has interpreted says so IN THE PAGE, and the verdict carries the denominator.
+    Silence here would let an anthology be read as compiled knowledge, which is the precise failure
+    the claims layer was added to remove."""
+    root = base / "_x_unclaimed"
+    root.mkdir(parents=True, exist_ok=True)
+    _mp_no_claims(root)
+    text = (root / "wiki" / "core" / "gates.md").read_text(encoding="utf-8")
+    code, out = gate._capture(_check_main, root)
+    got = 0
+    if "## What holds — NOT YET COMPILED" in text:
+        got += 1
+    if "No span on this page has been marked normative" in text:
+        got += 1
+    if code == 0:
+        got += 1
+    if "0 normative span(s) marked over 0 of 4 entry(ies)" in out:
+        got += 1
+    return got, 4
+
+
+def _x_claims_are_verbatim_and_first(base: Path) -> tuple[int, int]:
+    """A marked span is rendered ABOVE the chronology and is still the entry's own bytes. Both
+    halves matter: first is what makes the page readable, verbatim is what makes it checkable."""
+    root = base / "_x_claims"
+    root.mkdir(parents=True, exist_ok=True)
+    _clean(root)
+    text = (root / "wiki" / "core" / "gates.md").read_text(encoding="utf-8")
+    e = {x.eid: x for x in load_entries(root)}["2026-01-02/001-denominator"]
+    quoted = [ln[2:].rstrip() for ln in text.splitlines() if ln.startswith("> ")]
+    want = [ln.rstrip() for ln in e.section_lines()["WHAT CHANGED"] if ln.strip()]
+    got = 0
+    if "## What holds" in text and "## What is not settled" in text:
+        got += 1
+    if "## What holds" in text and text.index("## What holds") < text.index(
+        "## What this page was compiled from"
+    ):
+        got += 1
+    if want and all(w in quoted for w in want):
+        got += 1
+    if "UNRATIFIED" in text:
+        got += 1
+    return got, 4
+
+
+def _x_index_is_derived_from_every_page(base: Path) -> tuple[int, int]:
+    """The front door names every page, its topic, its audience, its entry count and its stamp —
+    and it is re-derived, so it cannot be the one hand-maintained file in a compiled tree."""
+    root = base / "_x_front_door"
+    root.mkdir(parents=True, exist_ok=True)
+    _clean(root)
+    idx = (root / INDEX_REL).read_text(encoding="utf-8")
+    pl = plan(load_entries(root), load_claims(root)[0])
+    got = 0
+    if pl.pages and all(p.source_hash[:16] in idx for p in pl.pages.values()):
+        got += 1
+    if all(f"]({p.rel[len('wiki/'):]})" in idx for p in pl.pages.values()):
+        got += 1
+    if all(f"`wiki/{d}/`" in idx for d in TRACK_DIR.values()):
+        got += 1
+    if idx == render_index(pl):
+        got += 1
+    return got, 4
+
+
 def _contract():
     return gate.GateContract(
         name=NAME,
@@ -1239,6 +1879,9 @@ def _contract():
         run=lambda r: _outcome(r)[0],
         must_pass={
             "an entry with no topic is disclosed, never rejected": _mp_untopiced,
+            "a protocol with NO claims layer compiles and passes — interpretation is optional": (
+                _mp_no_claims
+            ),
             "a topic both tracks touch compiles to core, and the old page is MOVED not orphaned": (
                 _mp_cross_track
             ),
@@ -1259,6 +1902,13 @@ def _contract():
             ),
             "the PASS line carries both denominators": _x_pass_line_carries_both_denominators,
             "every line of every compiled entry survives onto a page": _x_nothing_is_dropped,
+            "a page with no marked span declares it, and the verdict prints the denominator": (
+                _x_unclaimed_page_declares_it
+            ),
+            "a marked span is rendered first and is still the entry's own bytes": (
+                _x_claims_are_verbatim_and_first
+            ),
+            "the index is derived from every page it lists": _x_index_is_derived_from_every_page,
         },
     )
 
@@ -1317,12 +1967,16 @@ def main(argv=None) -> int:
         print(f"  [not placed] `{eid}`: {why}")
     for rel in rep["orphans"]:
         print(f"  [orphan] {rel} — no entry carries its topic; --check will fail on it")
+    for cls, msg in rep["claim_findings"]:
+        print(f"  [{cls}] {msg}")
     bt = ", ".join(f"{TRACK_DIR[t]} {n}" for t, n in rep["by_track"].items())
     print(
         f"compiled {rep['entries']} entry(ies) -> {rep['pages']} page(s) ({bt}); "
         f"{len(rep['written'])} written, {len(rep['moved'])} moved, "
         f"{len(rep['no_topic'])} entry(ies) carried NO topic and are on no page, "
-        f"{len(rep['untracked'])} declared no track, {len(rep['quarantined'])} could not be placed"
+        f"{len(rep['untracked'])} declared no track, {len(rep['quarantined'])} could not be placed; "
+        f"{rep['claims']} normative span(s) marked over {rep['claimed_entries']} of "
+        f"{rep['entries']} entry(ies), {len(rep['claim_findings'])} claim(s) rejected"
     )
     return 0
 

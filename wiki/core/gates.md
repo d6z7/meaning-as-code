@@ -1,4 +1,4 @@
-<!-- mac-wiki-stamp {"entries": ["2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries"], "generator": "mac_wiki.py/1", "source_hash": "5df7076de70ede66fcfe1204d46665d3c6d3ea0d2c3451f6429f8b962743f7de", "spec": "mac.wiki/1", "topic": "gates", "track": "core", "track_basis": "entries declare 3 different tracks (core 26, ontology 1, platform 8) \u2014 a topic both audiences touch is shared law", "untracked_entries": 0} -->
+<!-- mac-wiki-stamp {"claims": ["rule:2026-09-12/014-the-gate-contract-shared#WHAT CHANGED", "rule:2026-09-12/020-one-line-that-means-something#WHAT CHANGED", "rule:2026-09-12/011-the-subject-may-not-set-the-verdict#WHAT CHANGED", "rule:2026-09-12/017-the-grain-gate-62-was-seven#WHAT CHANGED", "rule:2026-09-13/058-a-crash-is-not-a-verdict#WHAT FORCED IT", "boundary:2026-09-12/009-the-architect-falsified-its-own-brief#WHAT IT DOES NOT PROVE", "boundary:2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT IT DOES NOT PROVE"], "entries": ["2026-09-12/002-reference-only-repos-and-the-freeze", "2026-09-12/003-the-absorbed-platform-was-not-gateable", "2026-09-12/004-golden-replay-investigated-not-silenced", "2026-09-12/005-the-method-gate-was-in-the-wrong-repo", "2026-09-12/006-onboarding-the-environment-half", "2026-09-12/007-the-framework-was-located-by-guessing", "2026-09-12/008-the-topology-review-recorded", "2026-09-12/009-the-architect-falsified-its-own-brief", "2026-09-12/010-operator-rulings-r1-r4", "2026-09-12/011-the-subject-may-not-set-the-verdict", "2026-09-12/012-gate-the-model-authored-sql-invariant", "2026-09-12/013-the-engine-could-not-answer-in-two-ways", "2026-09-12/014-the-gate-contract-shared", "2026-09-12/017-the-grain-gate-62-was-seven", "2026-09-12/016-a-guard-that-judged-by-directory-name", "2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up", "2026-09-12/019-the-detector-probes-leaked-into-the-method-doc", "2026-09-12/020-one-line-that-means-something", "2026-09-12/021-the-merge-refused-by-its-own-gate", "2026-09-12/022-reading-a-container-is-not-answering-from-it", "2026-09-12/024-one-grammar-key-six-readers-three-answers", "2026-09-12/028-a-register-of-what-was-last-required", "2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted", "2026-09-13/055-no-instance-specifics-live-in-mac", "2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids", "2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined", "2026-09-13/058-a-crash-is-not-a-verdict", "2026-09-13/059-the-floor-was-a-ratchet-in-name-only", "2026-09-13/060-the-connector-plugin-architecture-proposed", "2026-09-13/062-the-harness-could-not-attribute-a-finding", "2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling", "2026-09-13/001-the-wiki-compiler", "2026-09-13/002-the-gate-told-a-lie", "2026-09-13/005-a-compiled-page-was-a-chronology", "2026-09-13/003-two-verifiers-disagreed", "2026-09-13/004-a-page-is-a-pure-function-of-its-entries"], "generator": "mac_wiki.py/1", "source_hash": "21269bd0a6d4b66afb23ea7f2570484a8febdb065fdeb325fc459f11a9b4bf88", "spec": "mac.wiki/1", "topic": "gates", "track": "core", "track_basis": "entries declare 3 different tracks (core 27, ontology 1, platform 8) \u2014 a topic both audiences touch is shared law", "untracked_entries": 0} -->
 <!-- GENERATED by mac_wiki.py/1 — do not edit; recompile. -->
 
 # Gates
@@ -8,12 +8,120 @@
 | | |
 |---|---|
 | topic | `gates` |
-| audience | `wiki/core/` — entries declare 3 different tracks (core 26, ontology 1, platform 8) — a topic both audiences touch is shared law |
-| entries compiled | 35 |
-| source_hash | `5df7076de70ede66…` (sha256 over each entry's id and bytes) |
+| audience | `wiki/core/` — entries declare 3 different tracks (core 27, ontology 1, platform 8) — a topic both audiences touch is shared law |
+| entries compiled | 36 |
+| normative spans | 7 marked over 7 of 36 entry(ies) — 5 rule, 2 boundary |
+| source_hash | `21269bd0a6d4b66a…` (sha256 over each entry's id and bytes, and over the claims marked on them) |
 | generated by | `mac_wiki.py/1` |
 
+> **THE CLAIMS LAYER — interpretation, not extraction.** Which spans are normative is a judgement, and it lives in `protocol/claims.yaml` so that it never touches the append-only record it points at. The 7 span(s) in the next two sections are quoted VERBATIM from the entries below and verified by the same two gates as the body; only their SELECTION and their ORDER are authored. **7 of 7 UNRATIFIED** — proposed by an agent, not signed off: `2026-09-12/008` records that ratification is the operator's act.
+
+## What holds
+
+**RULE** · `2026-09-12/014-the-gate-contract-shared` · from *WHAT CHANGED* · UNRATIFIED
+
+<!-- q 2026-09-12/014-the-gate-contract-shared#WHAT CHANGED -->
+> `sdk/gate/contract.py` holds the contract once: an `Outcome` carrying its denominator, a `verdict()`
+> that refuses to call an examined count of zero a pass, a `could_not_run()` for `main()`, and a
+> self-test harness that seeds a clean fixture plus one mutant per reject class and PROVES EACH MUTANT
+> ACTUALLY MUTATED.
+>
+> **The shape is forced by the publisher.** `publish.py` calls four of these gates as IN-PROCESS
+> functions, so a `check()` returning 2 for "could not run" would be read there as a FINDING — "no lock
+> armed yet" would arrive as "the lock has drifted". Exit 2 belongs to `main()` alone and every
+> `check()` keeps its return shape.
+>
+> Four self-tests that would have passed FOR THE WRONG REASON were caught while writing them: a mutant
+> that did not mutate (`_PATHISH` needs path punctuation, so a bare `from annotations import` never
+> matched); a fixture that locked "1 files, 0 RULES" so the rule dimension was never exercised; a
+> WARNING-class mutant missed by a findings-only count; and a class with no subject on disk.
+>
+> Fixtures derive their tokens from each gate's own deny list rather than typing one: these gates COUNT
+> such literals, so a self-test that spelled one out would plant the thing it scans for.
+
+[[cite: protocol/2026-09-12/014-the-gate-contract-shared.md:40-56]]
+
+**RULE** · `2026-09-12/020-one-line-that-means-something` · from *WHAT CHANGED* · UNRATIFIED
+
+<!-- q 2026-09-12/020-one-line-that-means-something#WHAT CHANGED -->
+> A checker's own exit 2 is counted SEPARATELY from pass and fail and can never read as a pass —
+> folding it into "green" is the exact false confidence the programme exists to remove.
+>
+> Five checkers were brought to contract, chosen by the worst offence: no exit-2 path AND no
+> denominator AND reachable on a real bundle. Each treated a NONEXISTENT bundle root identically to a
+> legitimate empty state, printing the same tick and exit 0 either way. One produced a full zero-valued
+> 1104-line report ending "EXIT 0"; three answered `✓ OK ... nothing to check` for a root that does not
+> exist.
+
+[[cite: protocol/2026-09-12/020-one-line-that-means-something.md:43-50]]
+
+**RULE** · `2026-09-12/011-the-subject-may-not-set-the-verdict` · from *WHAT CHANGED* · UNRATIFIED
+
+<!-- q 2026-09-12/011-the-subject-may-not-set-the-verdict#WHAT CHANGED -->
+> The rule now lives once, in `tools/_plugin.py`: a bundle that DECLARES a plugin and cannot supply it
+> makes the check unrunnable (exit 2); only a bundle that declares NO plugin gets the documented
+> fallback. Loading is by explicit file path under a per-root module name, and the bundle's `tools/` is
+> appended rather than prepended so a bundle-local `version.py` cannot shadow the stdlib.
+>
+> Four conditions on the gate are now COULD NOT RUN, never a pass: root not a directory; the bundle
+> declares no looked-up identifier at all; no acceptance plane; an acceptance plane with no property
+> carrying SQL. `--self-test: 8/8`, with an assertion that each mutant actually mutated — the lesson
+> from a self-test in this estate that once passed because its mutant was a no-op.
+>
+> The gate was given a real subject in its own repo: `example_shop_ontology/acceptance` with five
+> properties. Liveness proven end to end by injecting a fabricated join key, watching exit 1 name the
+> built column and the descriptor that declares it, and reverting to exit 0 over 5.
+
+[[cite: protocol/2026-09-12/011-the-subject-may-not-set-the-verdict.md:56-68]]
+
+**RULE** · `2026-09-12/017-the-grain-gate-62-was-seven` · from *WHAT CHANGED* · UNRATIFIED
+
+<!-- q 2026-09-12/017-the-grain-gate-62-was-seven#WHAT CHANGED -->
+> Sorted iteration; a `PASS:`/`FAIL:` line where there had been a glyph (`grep -cE '^(PASS|FAIL):'`
+> over a full run returned 0 before); a printed denominator; and `--self-test` at 9/9 with four reject
+> classes, four assertions that each fixture really seeded its class, and the same verdict under five
+> seeds.
+
+[[cite: protocol/2026-09-12/017-the-grain-gate-62-was-seven.md:63-66]]
+
+**RULE** · `2026-09-13/058-a-crash-is-not-a-verdict` · from *WHAT FORCED IT* · UNRATIFIED
+
+<!-- q 2026-09-13/058-a-crash-is-not-a-verdict#WHAT FORCED IT -->
+> Found by running the suite in a FRESH-CLONE shape — no registers, no framework installed, no
+> environment — **which is the shape every defect in this consolidation actually lived in.** Two gates
+> were wrong there and right on this machine, which is precisely the failure mode that let the vendored
+> fork govern.
+
+[[cite: protocol/2026-09-13/058-a-crash-is-not-a-verdict.md:12-15]]
+
+## What is not settled
+
+**BOUNDARY** · `2026-09-12/009-the-architect-falsified-its-own-brief` · from *WHAT IT DOES NOT PROVE* · UNRATIFIED
+
+<!-- q 2026-09-12/009-the-architect-falsified-its-own-brief#WHAT IT DOES NOT PROVE -->
+> `147 findings over 41 gates` is a contract-shape census, not a correctness census: a gate can carry a
+> verdict line, a denominator and a self-test and still be measuring the wrong thing. It also does not
+> prove the exposure is bounded — "two files today" is a statement about one branch at one moment, and
+> the forward-looking half (a release merge publishes 52) is what actually forced the cleanse.
+
+[[cite: protocol/2026-09-12/009-the-architect-falsified-its-own-brief.md:55-58]]
+
+**BOUNDARY** · `2026-09-12/021-the-merge-refused-by-its-own-gate` · from *WHAT IT DOES NOT PROVE* · UNRATIFIED
+
+<!-- q 2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT IT DOES NOT PROVE -->
+> The allowlist carries TWO DEFERRALS, and they are deferrals rather than exemptions. The advisor path
+> is a REAL breach: it constructs a SQL engine and hands tool-calling to a model, reachable at a live
+> endpoint. Ruling R3 scoped the ban to answer time on the grounds that authoring may draft SQL a gate
+> and a human seal — the advisor does not fit that, it executes live queries in response to a user's
+> question, so **R3 does NOT cover it and the gate is right to fire**. It is carried because its
+> dependencies are absent so it cannot run, and unlike the retired package it IS shipped, so this rests
+> on "cannot import" alone. That is weaker, and the file says so.
+
+[[cite: protocol/2026-09-12/021-the-merge-refused-by-its-own-gate.md:65-71]]
+
 ## What this page was compiled from
+
+36 entry(ies), in time order: 15 defect, 12 build, 4 measurement, 3 decision, 2 ruling.
 
 | entry | when | kind | what |
 |---|---|---|---|
@@ -50,6 +158,7 @@
 | `2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling` | 2026-09-13 10:58:29 | defect | fixed a live unbound name in the authoring path that could never fire, and landed a two-unit engine-coupling ratchet that measures what a module-level import scan cannot see |
 | `2026-09-13/001-the-wiki-compiler` | 2026-09-13 11:52:00 | build | built the wiki compiler, so a topic page is derived from the protocol and stamped with what it was compiled from |
 | `2026-09-13/002-the-gate-told-a-lie` | 2026-09-13 12:06:00 | defect | added a ninth reject class after the gate printed a finding whose text was false about a real page |
+| `2026-09-13/005-a-compiled-page-was-a-chronology` | 2026-09-13 12:40:00 | build | added the claims layer and the compiled index, after the first real compile produced 15 pages that were verbatim, checkable and unreadable |
 | `2026-09-13/003-two-verifiers-disagreed` | 2026-09-13 12:41:00 | measurement | measured a disagreement between the wiki compiler and the citation gate over the same 556 spans, and found the compiler was right and its own line addresses were unverified |
 | `2026-09-13/004-a-page-is-a-pure-function-of-its-entries` | 2026-09-13 13:04:00 | decision | removed the compiled page's citation index, because it was the one element that was not a pure function of the entries the page names |
 
@@ -2357,6 +2466,135 @@
 >   that the rest of a topic did not — within an hour of the tool existing.
 
 [[cite: protocol/2026-09-13/002-the-gate-told-a-lie.md:65-69]]
+
+## added the claims layer and the compiled index, after the first real compile produced 15 pages that were verbatim, checkable and unreadable
+
+`2026-09-13/005-a-compiled-page-was-a-chronology` · build · 2026-09-13 12:40:00
+
+### WHAT FORCED IT
+
+<!-- q 2026-09-13/005-a-compiled-page-was-a-chronology#WHAT FORCED IT -->
+> the first compile over the backfilled protocol, read as a stranger would read
+>   it.
+>
+>   ```
+>   compiled 48 entry(ies) -> 15 page(s) (core 13, ontology-builder 1, platform-builder 1);
+>   15 written, 0 moved, 0 entry(ies) carried NO topic and are on no page, 0 declared no track
+>   PASS: mac-wiki — 0 violation(s) over 15 page(s) examined, 656 span(s) verified verbatim
+>   PASS: check_wiki_citations — 0 violation(s) over 15 page(s) examined, 820 citation(s) checked
+>   ```
+>
+>   Every number was green and the product was still wrong. `wiki/core/connectors.md` — 434 lines, 6
+>   entries, 24 spans — opened with a defect about an account id in a bundle's prose and reached the
+>   span that says what a connector IS in position 3 of 6, under the heading *"proposed the connector
+>   plugin architecture, after three measured facts overturned the brief it was written against"*. A
+>   reader who was not in the conversation met five things that went wrong before one statement of
+>   what the thing is. **It was not a list of commit messages — the entries are far richer than
+>   that — but it was a CHRONOLOGY, and the operator asked for pages that "actually disect and
+>   compile these aspects based on semantic of the subject". Time is not a semantic.**
+>
+>   The second measurement, on the audience split the operator asked for in two groups:
+>
+>   ```
+>   wiki/core/             13 page(s)
+>   wiki/ontology-builder/  1 page(s)   projections
+>   wiki/platform-builder/  1 page(s)   console
+>   ```
+>
+>   yet 12 topics carry at least one `platform` entry and 8 carry at least one `ontology` entry. The
+>   routing rule ("two or more different tracks -> core, because a topic both audiences touch is
+>   shared law") is defensible per page and useless in aggregate: `capabilities` is 6 platform
+>   entries out of 7 and is filed as shared law. A platform builder opening their own directory found
+>   one page out of forty-eight entries.
+
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:9-40]]
+
+### EVIDENCE
+
+<!-- q 2026-09-13/005-a-compiled-page-was-a-chronology#EVIDENCE -->
+> the fix is the one `sdk/project/knowledge.py` had already named, and it was in the
+>   docstring the whole design was borrowed from:
+>
+>   > Judgement about WHICH statements are normative belongs in a separate claims layer, so that
+>   > extraction and interpretation never blur.
+>
+>   There was no claims layer. `protocol/claims.yaml` is it: a claim is an ADDRESS and a ROLE
+>   (`rule` | `boundary`) and carries no prose of its own, so it cannot reword what it marks. The
+>   compiler lifts THOSE SAME BYTES to the top of the page with the same `q` anchor and the same
+>   verifiable line range, and both gates check them exactly as they check the body.
+>
+>   It is a separate FILE and not new front matter because `protocol/README.md` says entries *"are
+>   never edited, only superseded by later ones that say so"* — marking a span normative a week later
+>   is an edit to the raw record.
+>
+>   Re-measured after, on the same 48 entries:
+>
+>   ```
+>   compiled 48 entry(ies) -> 15 page(s) (core 13, ontology-builder 1, platform-builder 1);
+>   16 written ... 55 normative span(s) marked over 37 of 48 entry(ies), 0 claim(s) rejected
+>   PASS: mac-wiki — 0 violation(s) over 16 page(s) examined, 731 span(s) verified verbatim
+>         — 55 normative span(s) marked over 37 of 48 entry(ies)
+>   PASS: check_wiki_citations — 0 violation(s) over 16 page(s) examined, 943 citation(s) checked
+>         — 943 of 943 resolved; 731 carried a quoted span checked VERBATIM
+>   PASS: mac-wiki self-test — 131/131 asserted ... 15 mutant(s) ... extras: 24 of 24
+>   PASS: check_mac_public — 0 leak(s) over 583 tracked file(s) examined
+>   ```
+>
+>   `wiki/` was deleted entirely and recompiled: all 16 files byte-identical. A page is still a pure
+>   function of its inputs, and the claims are now one of those inputs.
+
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:42-71]]
+
+### WHAT CHANGED
+
+<!-- q 2026-09-13/005-a-compiled-page-was-a-chronology#WHAT CHANGED -->
+> `tools/mac_wiki.py`, additive, self-test 85/85 -> 131/131 and 10 reject classes
+>   -> 15.
+>
+>   * **`## What holds` / `## What is not settled`** render above the chronology, in the order the
+>     CLAIMS FILE declares rather than entry date — reading order is part of the judgement, and
+>     sorting by date is what put the definition under two corrections of it.
+>   * **A page with no marked span says so**, as `## What holds — NOT YET COMPILED`, and the verdict
+>     line carries `N normative span(s) marked over K of M entry(ies)`. An uninterpreted page is an
+>     honest anthology; one that reads as compiled knowledge without being it is the confident wrong
+>     answer this estate exists to remove.
+>   * **Claims are inside `source_hash`**, so editing the claims layer reads as `stale-stamp`
+>     (recompile) and never as `hand-edited-page`. A ratchet with the wrong name on it is most of the
+>     damage.
+>   * **Four new reject classes** — `malformed-claims`, `unknown-claim-role`, `dangling-claim`,
+>     `claim-topic-mismatch` — and a broken claim QUARANTINES the topics it touches rather than being
+>     dropped, exactly as an unplaceable entry does. Every claim mutant ADDS a bad claim instead of
+>     corrupting a good one: rewriting one removes a span from a page and a second class fires, so
+>     the mutant would be rejected for two reasons and attributed to neither.
+>   * **`wiki/index.md`, compiled**, with `stale-index` as its class, listing every page with its
+>     topic, audience, entry count, marked-span count and compile stamp — plus the AUDIENCE CROSS-CUT:
+>     per audience, every page carrying at least one entry of that track, with that audience's count
+>     beside the page's own. `platform-builder/` now leads to the 11 core pages carrying platform
+>     entries instead of to one page.
+>   * **`must_pass`: a protocol with NO claims layer compiles and passes.** Interpretation is
+>     optional. `sdk/gate/contract.py` states the cost of getting that wrong — *"A gate that rejects
+>     the absence of an optional thing is the most expensive kind of wrong"* — and here it would buy
+>     invented normativity on every page.
+>   * **55 claims authored**, all `ratified: false`. `2026-09-12/008` records that ratification is the
+>     operator's act, so every one renders as UNRATIFIED and the count is printed.
+
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:73-101]]
+
+### WHAT IT DOES NOT PROVE
+
+<!-- q 2026-09-13/005-a-compiled-page-was-a-chronology#WHAT IT DOES NOT PROVE -->
+> that the RIGHT spans were marked. The claims layer moves judgement
+>   out of the compiler and into a reviewable file; it does not make the judgement correct, and all 55
+>   of these were proposed by an agent in one pass over entries it did not write. 11 of 48 entries
+>   carry no mark at all, and no gate can say whether that is correct.
+>
+>   It also does not prove the wiki is USED. Two gates now pass over 16 pages, and the number of
+>   people who have read one is zero. And the ENFORCEMENT half of the record is still red:
+>   `check_protocol — 52 code-bearing commit(s) examined, 0 covered, 52 orphaned, over 48 entr(y/ies)`,
+>   exit 1, because 47 of 48 backfilled entries carry no `commits:`. The wiki compiles beautifully
+>   from a record that is not yet accounting for the work it describes.
+
+[[cite: protocol/2026-09-13/005-a-compiled-page-was-a-chronology.md:103-112]]
 
 ## measured a disagreement between the wiki compiler and the citation gate over the same 556 spans, and found the compiler was right and its own line addresses were unverified
 

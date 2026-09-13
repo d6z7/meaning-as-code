@@ -1,0 +1,356 @@
+# The claims layer — WHICH spans are normative, and nothing else.
+#
+# WHAT FORCED THIS FILE. The first compile of `protocol/` produced 15 pages that were verbatim,
+# checkable, and unreadable to anyone who was not in the conversation. Measured on the connectors
+# page: 6 entries, 24 spans, and the sentence that says what a connector IS sat in entry 3 of 6
+# under a heading about a brief being overturned. Every span was weighted equally because the only
+# structure the compiler had was TIME, and time is not a semantic.
+#
+# `sdk/project/knowledge.py` had already named the missing piece:
+#
+#     Judgement about WHICH statements are normative belongs in a separate claims layer, so that
+#     extraction and interpretation never blur.
+#
+# THIS IS THAT LAYER, and it carries no prose of its own by construction. A claim is an ADDRESS and
+# a ROLE. It cannot reword the span it points at, so `VERBATIM OR NOTHING` survives the addition of
+# structure: `mac_wiki.py` lifts THE SAME BYTES to the top of the page, with the same `q` anchor and
+# the same verifiable line range, and both gates check them exactly as they check the body.
+#
+# WHY IT IS NOT IN THE ENTRIES. `protocol/README.md`: "Entries are never edited, only superseded by
+# later ones that say so." Marking a span normative a week later is an edit to the raw record. So
+# the mark lives beside the record and points into it, and the record stays append-only.
+#
+# ROLES — a closed vocabulary of two:
+#   rule      this span still governs; it is the thing to read first
+#   boundary  this span states a limit that is still open; it is the thing to read second
+# A third role for "measurement" was considered and refused: every EVIDENCE section is a
+# measurement, so the role would mark nearly everything and therefore mark nothing.
+#
+# RATIFICATION. `2026-09-12/008` records the estate's law — "Status PROPOSED, not accepted —
+# ratification is the operator's act". Every claim below was proposed by an agent and none has been
+# ratified, so every one renders on its page as UNRATIFIED and the count is printed in the verdict.
+# Set `ratified: true` per claim when the operator signs one off.
+#
+# COVERAGE IS A DENOMINATOR, not a target. `python3 tools/mac_wiki.py --check` prints
+# "N normative span(s) marked over K of M entry(ies)". A page with no claim says so on its face
+# rather than passing itself off as compiled knowledge.
+
+claims:
+
+  # --- connectors ---------------------------------------------------------------------------------
+  # The definition first, then the two rules that constrain it, then what is still open. This is the
+  # page that forced the whole layer.
+  - span: 2026-09-13/060-the-connector-plugin-architecture-proposed#WHAT FORCED IT
+    holds: rule
+    topics: [connectors]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/054-connection-belongs-to-the-ontology#WHAT FORCED IT
+    holds: rule
+    topics: [connectors]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/023-a-bundle-restating-its-own-connection-in-prose#WHAT CHANGED
+    holds: rule
+    topics: [connectors, registers]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/061-the-console-connection-page-requirement#WHAT CHANGED
+    holds: rule
+    topics: [connectors, console]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/060-the-connector-plugin-architecture-proposed#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [connectors]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/064-declare-the-connector-with-zero-schema-change#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [connectors]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/061-the-console-connection-page-requirement#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [connectors, console]
+    by: agent
+    ratified: false
+
+  # --- gates --------------------------------------------------------------------------------------
+  - span: 2026-09-12/014-the-gate-contract-shared#WHAT CHANGED
+    holds: rule
+    topics: [gates, harness]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/020-one-line-that-means-something#WHAT CHANGED
+    holds: rule
+    topics: [gates, denominators]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/011-the-subject-may-not-set-the-verdict#WHAT CHANGED
+    holds: rule
+    topics: [gates]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/017-the-grain-gate-62-was-seven#WHAT CHANGED
+    holds: rule
+    topics: [gates]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/058-a-crash-is-not-a-verdict#WHAT FORCED IT
+    holds: rule
+    topics: [gates]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/009-the-architect-falsified-its-own-brief#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [gates]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [gates, capabilities]
+    by: agent
+    ratified: false
+
+  # --- denominators -------------------------------------------------------------------------------
+  - span: 2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined#WHAT FORCED IT
+    holds: rule
+    topics: [denominators]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/057-an-emptiness-assertion-must-state-what-it-examined#WHAT CHANGED
+    holds: rule
+    topics: [denominators]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up#WHAT CHANGED
+    holds: rule
+    topics: [denominators, the-public-boundary]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/018-both-detectors-were-blind-and-the-numbers-went-up#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [denominators]
+    by: agent
+    ratified: false
+
+  # --- the-public-boundary ------------------------------------------------------------------------
+  # The law of this repository, and the three mechanisms that enforce it.
+  - span: 2026-09-13/055-no-instance-specifics-live-in-mac#WHAT FORCED IT
+    holds: rule
+    topics: [the-public-boundary, registers]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids#WHAT CHANGED
+    holds: rule
+    topics: [the-public-boundary, registers]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/059-the-floor-was-a-ratchet-in-name-only#WHAT CHANGED
+    holds: rule
+    topics: [the-public-boundary, ratchets]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/019-the-detector-probes-leaked-into-the-method-doc#WHAT CHANGED
+    holds: rule
+    topics: [the-public-boundary, method]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/056-the-gate-was-a-catalogue-of-what-it-forbids#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [the-public-boundary]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/059-the-floor-was-a-ratchet-in-name-only#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [the-public-boundary, ratchets]
+    by: agent
+    ratified: false
+
+  # --- ratchets -----------------------------------------------------------------------------------
+  - span: 2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling#WHAT CHANGED
+    holds: rule
+    topics: [ratchets]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/063-a-nameerror-sat-unfired-and-nothing-could-see-the-coupling#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [ratchets, connectors]
+    by: agent
+    ratified: false
+
+  # --- registers ----------------------------------------------------------------------------------
+  - span: 2026-09-13/055-no-instance-specifics-live-in-mac#WHAT CHANGED
+    holds: rule
+    topics: [registers]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/028-a-register-of-what-was-last-required#WHAT CHANGED
+    holds: rule
+    topics: [registers]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/055-no-instance-specifics-live-in-mac#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [registers, the-public-boundary]
+    by: agent
+    ratified: false
+
+  # --- harness ------------------------------------------------------------------------------------
+  - span: 2026-09-13/062-the-harness-could-not-attribute-a-finding#WHAT CHANGED
+    holds: rule
+    topics: [harness]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/002-reference-only-repos-and-the-freeze#WHAT CHANGED
+    holds: rule
+    topics: [harness, consolidation]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/062-the-harness-could-not-attribute-a-finding#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [harness]
+    by: agent
+    ratified: false
+
+  # --- containers ---------------------------------------------------------------------------------
+  - span: 2026-09-12/022-reading-a-container-is-not-answering-from-it#WHAT CHANGED
+    holds: rule
+    topics: [containers, capabilities]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/025-a-bundle-that-describes-itself#WHAT CHANGED
+    holds: rule
+    topics: [containers, projections]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/052-a-bundle-that-had-never-been-projected#WHAT CHANGED
+    holds: rule
+    topics: [containers]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/022-reading-a-container-is-not-answering-from-it#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [containers, capabilities]
+    by: agent
+    ratified: false
+
+  # --- capabilities -------------------------------------------------------------------------------
+  - span: 2026-09-12/012-gate-the-model-authored-sql-invariant#WHAT CHANGED
+    holds: rule
+    topics: [capabilities]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/021-the-merge-refused-by-its-own-gate#WHAT CHANGED
+    holds: rule
+    topics: [capabilities]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/012-gate-the-model-authored-sql-invariant#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [capabilities]
+    by: agent
+    ratified: false
+
+  # --- grammar ------------------------------------------------------------------------------------
+  - span: 2026-09-12/024-one-grammar-key-six-readers-three-answers#WHAT CHANGED
+    holds: rule
+    topics: [grammar]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/007-the-framework-was-located-by-guessing#WHAT CHANGED
+    holds: rule
+    topics: [grammar, consolidation]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/024-one-grammar-key-six-readers-three-answers#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [grammar]
+    by: agent
+    ratified: false
+
+  # --- method -------------------------------------------------------------------------------------
+  - span: 2026-09-12/008-the-topology-review-recorded#WHAT CHANGED
+    holds: rule
+    topics: [method]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/002-reference-only-repos-and-the-freeze#WHAT FORCED IT
+    holds: rule
+    topics: [method, consolidation]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/065-tactics-keep-capacity-on-the-goal#WHAT CHANGED
+    holds: rule
+    topics: [method]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/008-the-topology-review-recorded#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [method]
+    by: agent
+    ratified: false
+
+  # --- consolidation ------------------------------------------------------------------------------
+  - span: 2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted#WHAT CHANGED
+    holds: rule
+    topics: [consolidation]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/053-the-sdk-moves-in-and-the-fork-is-deleted#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [consolidation]
+    by: agent
+    ratified: false
+
+  # --- projections --------------------------------------------------------------------------------
+  - span: 2026-09-12/026-the-projectors-stamped-one-identity-into-every-bundle#WHAT FORCED IT
+    holds: rule
+    topics: [projections]
+    by: agent
+    ratified: false
+  - span: 2026-09-12/026-the-projectors-stamped-one-identity-into-every-bundle#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [projections]
+    by: agent
+    ratified: false
+
+  # --- console ------------------------------------------------------------------------------------
+  - span: 2026-09-12/027-open-an-ontology-the-way-a-file-is-opened#WHAT CHANGED
+    holds: rule
+    topics: [console]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/051-the-consoles-mount-state-is-not-repository-state#WHAT FORCED IT
+    holds: rule
+    topics: [console]
+    by: agent
+    ratified: false
+
+  # --- the-record ---------------------------------------------------------------------------------
+  - span: 2026-09-13/001-the-wiki-compiler#WHAT CHANGED
+    holds: rule
+    topics: [the-record]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/004-a-page-is-a-pure-function-of-its-entries#WHAT FORCED IT
+    holds: rule
+    topics: [the-record]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/005-a-compiled-page-was-a-chronology#WHAT FORCED IT
+    holds: rule
+    topics: [the-record]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/003-two-verifiers-disagreed#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [the-record]
+    by: agent
+    ratified: false
+  - span: 2026-09-13/005-a-compiled-page-was-a-chronology#WHAT IT DOES NOT PROVE
+    holds: boundary
+    topics: [the-record, denominators]
+    by: agent
+    ratified: false
