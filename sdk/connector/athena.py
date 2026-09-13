@@ -191,6 +191,10 @@ class AthenaConnector(SqlConnector):
                 "absent: this is legal ONLY if the workgroup enforces a managed output location. "
                 "Whether it does is a fact of the account, not of this file, and establishing it "
                 "costs a billed API call -- so it is reported here rather than assumed either way",
+                # ADVISORY: unprovable offline is not the same as wrong. Blocking on it stopped the
+                # probe of a connection that was very likely fine, which is the opposite of what
+                # "reported rather than assumed" means.
+                severity="advisory",
             ))
 
         gdb = cfg.get("glue_databases")

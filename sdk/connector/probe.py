@@ -76,13 +76,32 @@ def main(argv=None) -> int:
     if cost == "billed" and not a.i_accept_billing:
         return _fail(f"{cid} bills for a probe; re-run with --i-accept-billing", cost=cost)
 
-    errs = cls.validate_config(conn) if hasattr(cls, "validate_config") else []
-    if errs:
+    # BLOCKING STOPS; ADVISORY TRAVELS. A finding that could not be established OFFLINE — "legal only
+    # if the workgroup enforces a managed output location, and asking costs a billed call" — is not a
+    # reason to refuse to try. Treating every finding as blocking meant the probe refused a connection
+    # that was very likely fine, and reported it as `could_not_run` rather than reporting the doubt.
+    findings = list(cls.validate_config(conn)) if hasattr(cls, "validate_config") else []
+    blocking = [e for e in findings if getattr(e, "blocking", True)]
+    advisories = [str(e) for e in findings if not getattr(e, "blocking", True)]
+    if blocking:
         return _fail("the config does not validate: "
-                     + "; ".join(getattr(e, "message", str(e)) for e in list(errs)[:3]), cost=cost)
+                     + "; ".join(getattr(e, "message", str(e)) for e in blocking[:3]), cost=cost)
 
     try:
-        c = cls(conn, base_dir=root)
+        # `base_dir` is OPTIONAL in the contract: a connector whose config carries a bundle-relative
+        # path needs it, and one whose config is entirely absolute does not. Passing it to a
+        # connector that does not take it is a TypeError at construction — which is exactly how this
+        # surfaced, as "raised during probe" on a connector that had not been asked anything yet.
+        # Ask the signature rather than assuming, so a third-party connector that omits it works.
+        import inspect
+
+        kwargs = {}
+        try:
+            if "base_dir" in inspect.signature(cls.__init__).parameters:
+                kwargs["base_dir"] = root
+        except (TypeError, ValueError):                                 # pragma: no cover
+            pass
+        c = cls(conn, **kwargs)
         r = c.probe()
     except Exception as exc:                                            # noqa: BLE001
         # A connector's failure is REPORTED, never raised into the host. That is the same rule
@@ -98,6 +117,8 @@ def main(argv=None) -> int:
         "latency_ms": getattr(r, "latency_ms", None),
         "connector": cid,
         "probe_cost": cost,
+        # Carried, never swallowed: the probe answering does not make an unprovable claim proven.
+        "advisories": advisories,
     }))
     return 0
 

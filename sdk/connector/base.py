@@ -391,14 +391,35 @@ class ReadResult:
 
 @dataclass(frozen=True)
 class ConfigProblem:
-    """One finding about the BUNDLE's config block. Offline, free -> exit 1 when any is returned."""
+    """One finding about the BUNDLE's config block. Offline, free.
+
+    SEVERITY IS NOT COSMETIC, and its absence was a real defect. The Athena connector's own
+    `validate_config` docstring says one of its findings is "stated as a WARNING-shaped finding
+    rather than a hard one, because whether the workgroup manages its output is a fact only the
+    account knows and asking costs an API call" — and there was no field in which to state it. So
+    every finding read as blocking, and a bundle whose config was merely UNPROVABLE could not be
+    probed at all: the page reported `could_not_run` over a connection that was very likely fine.
+
+    `blocking` means this config CANNOT work. `advisory` means something could not be established
+    offline and is reported rather than assumed either way — which is the same discipline as a gate
+    printing its denominator instead of a bare pass.
+
+    The default is `blocking`, deliberately: a connector author who does not think about severity
+    gets the SAFE answer, not the permissive one.
+    """
 
     path: tuple[str, ...] = ()
     message: str = ""
+    severity: str = "blocking"
+
+    @property
+    def blocking(self) -> bool:
+        return self.severity != "advisory"
 
     def __str__(self) -> str:
         where = ".".join(self.path) if self.path else "config"
-        return f"{where}: {self.message}"
+        tag = "" if self.blocking else " (advisory)"
+        return f"{where}: {self.message}{tag}"
 
 
 #: Anything that looks like a live credential. Seeded by conformance A6 (record H11 / G3 R5) against
