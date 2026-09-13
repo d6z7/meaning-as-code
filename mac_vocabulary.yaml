@@ -196,6 +196,110 @@ test_kind:
       between the two test kinds.
 
 # ===========================================================================
+# mac.outcome_class — WHAT THE ENGINE DID ABOUT THE QUESTION.
+#
+# The grading axis the whole estate already reasons in — oracles, dashboards, the console's route
+# column — and until now the ONE axis with no home here. It was declared in prose in the integration
+# kit's testing plane ("expected: {outcome: COMMIT|ASK|REFUSE|BLOCK}") and nowhere a machine could
+# reach, so the population could not be enumerated, and a population that cannot be enumerated cannot
+# have a denominator.
+#
+# MEASURED, THE DAY THIS BLOCK WAS WRITTEN, over every structurally parsed declaration on an
+# outcome-carrying key in the applied estate: 16.292 declarations, and they are NOT four spellings.
+# COMMIT 13.957 · ASK 4.206 · REFUSE 1.347 · BLOCK 1.223 · DECLINE 1.049 · COMMIT_PENDING 247 ·
+# ENUMERATE 119 · MODEL_PROPERTY 74 · DEFER 59 · ENGINE_ERR 3. `DECLINE` is a SYNONYM of `REFUSE`
+# carrying more declarations than `REFUSE` has in the bundle that spells it, so searching for one
+# finds a fraction of what is declared — the defect this block closes.
+#
+# THE MEMBERSHIP IS DECIDED FROM THAT MEASUREMENT, NOT FROM THE FOUR-CLASS IDEAL. A closed set that
+# omitted a spelling in live use would turn working bundles red, so every measured spelling is
+# declared here and carries a `status` saying what it IS — which keeps the four-class grading axis
+# identifiable (`status: canonical`) while making the non-canonical tail countable instead of
+# invisible. `status` is the field a consumer reads; it is not a second axis of meaning.
+# ===========================================================================
+outcome_class:
+  kind: vocabulary
+  closed: true
+  description: >
+    What the engine DID about a question — the disposition, never the channel it used. The four
+    `canonical` terms are the grading axis; every other term is a spelling measured in live use and
+    declared so the set can be closed without reddening a working bundle. A term's `status` says
+    which: `canonical` (one of the four), `deprecated` (a synonym whose canonical form is named in
+    `use`), `provisional` (a genuinely distinct intermediate state, not one of the four), and
+    `non_grading` (a real declared disposition that is NOT a judgement about the answer — a metadata
+    route, a composer decision, an outage). WHERE these are declared is the gate's business, not this
+    block's: tools/check_outcome_class_closure.py carries the outcome-carrying key list, because the
+    same key name carries a DIFFERENT axis in different bundles (`oracle_class` holds this vocabulary
+    in one bundle's run records and a question-FAMILY code in another's dashboard), so membership
+    cannot be judged by key name alone.
+  terms:
+    COMMIT:
+      status: canonical
+      description: >
+        THE ENGINE ANSWERED. A value was produced, and every declaration it rests on resolved — the
+        scope was pinned, the measure was legal at that grain, the names resolved to codes.
+    ASK:
+      status: canonical
+      description: >
+        A REQUIRED dimension was underspecified, so the engine asked instead of guessing. The
+        question is answerable; it is not yet fully stated. Never a silent default.
+    REFUSE:
+      status: canonical
+      description: >
+        THE EVIDENCE IS ABSENT. The question is legal and the engine can state precisely what was
+        missing — the scope with no row, the name that did not resolve — and says so rather than
+        returning a zero a reader takes for a measurement.
+    BLOCK:
+      status: canonical
+      description: >
+        OUTSIDE WHAT THE ONTOLOGY GOVERNS. Not a gap in the data but a question this model does not
+        undertake to answer, so answering it would be fabrication rather than retrieval.
+    DECLINE:
+      status: deprecated
+      use: REFUSE
+      why: >
+        A pure synonym of REFUSE with no distinct meaning anyone has been able to state. It is the
+        measured cost of leaving this axis ungoverned, and it is the larger of the two spellings:
+        1.049 declarations across 68 files at the moment of closure, against REFUSE's 1.347, so a
+        reader searching either word sees well under half the population. NOT MIGRATED HERE — the
+        bundle that carries it has no remote, and rewriting a thousand declarations in an
+        unrecoverable tree is a separate, human-authorised act. Declared so the debt is countable.
+      measured_at_close: 1049
+      files_at_close: 68
+    COMMIT_PENDING:
+      status: provisional
+      description: >
+        A COMMIT whose validation precondition has not yet passed — the answer is composed but not
+        yet cleared to be reported as one. Genuinely distinct from all four canonical terms, which is
+        why it is `provisional` rather than `deprecated`: collapsing it into COMMIT would report an
+        unvalidated answer as a validated one.
+      measured_at_close: 247
+    ENUMERATE:
+      status: non_grading
+      description: >
+        A dimension-member LIST — a metadata answer with no measure in it. A route stage, not a
+        judgement about an answer's correctness, so it does not belong on the grading axis even
+        though it is declared on the same keys.
+      measured_at_close: 119
+    MODEL_PROPERTY:
+      status: non_grading
+      description: >
+        Routed to a property OF THE MODEL rather than to the warehouse — answered from declarations
+        alone. Like ENUMERATE, a route target rather than a grade.
+      measured_at_close: 74
+    DEFER:
+      status: non_grading
+      description: >
+        The composer declined to compose — it could not build a statement it was willing to stand
+        behind, and said so instead of emitting SQL that would fabricate a shape.
+      measured_at_close: 59
+    ENGINE_ERR:
+      status: non_grading
+      description: >
+        The engine raised. An OUTAGE, not a semantic outcome: nothing was judged, so it must never be
+        counted as a refusal the model chose to make.
+      measured_at_close: 3
+# ===========================================================================
 # mac.connector — the NAMESPACE, and deliberately nothing else.
 # ===========================================================================
 connector:

@@ -9,10 +9,30 @@ Both halves were missing for the same reason: each run OVERWRITES acceptance/*_r
 bundle has always known its current state and never its direction. "4 failing" cannot be read as
 good or bad news without knowing whether it was 2 yesterday or 9.
 
-HISTORY IS RECONSTRUCTED, NOT STARTED. The run records are committed, so `--from-git` replays every
-version of them that git holds and recovers the real dates and the real per-property outcomes. That
-matters more than convenience: a trend seeded today would be one point, and a chart with one point
-invites the reader to imagine the slope.
+HISTORY IS RECONSTRUCTED, NOT STARTED. `--from-git` replays every version of the run records that
+git holds and recovers the real dates and the real per-property outcomes. That matters more than
+convenience: a trend seeded today would be one point, and a chart with one point invites the reader
+to imagine the slope.
+
+── THE CLAIM THAT WAS HERE, AND WHAT IT ACTUALLY MEASURED ─────────────────────────────────────
+
+This file used to assert, flatly: *"The run records are committed."* Measured on 2026-09-13, that
+sentence is true in exactly one place and false everywhere it matters:
+
+    <SOURCES>              7 records · 44 committed versions · 61 history rows replayed from them
+                           — AND NO GIT REMOTE. Nothing here can ever be published or pulled.
+    <LIVE>                 0 records in all of history   (the bundle the operator actually opens)
+    meaning-as-code        0 records in all of history   (this framework)
+    mac-platform           0 records in all of history   (the console that reads them)
+
+So `--from-git` worked, once, in the one repository that cannot publish — and the estate-wide sweep
+that reported ZERO was also right. The claim was not a lie; it was a claim with an undeclared
+denominator, which is this bundle's own recurring defect turned on itself.
+
+BOTH HALVES WERE FIXED, and the behaviour matters more than the wording. `--from-records` replays
+the dated, append-only records that `tools/suite_record.py` now writes beside the overwritten one,
+and `--record` reads the commit the RECORD carries instead of stamping the string "working-tree" —
+so history no longer depends on a repository having been committed, or existing at all.
 
 Records are APPEND-ONLY and keyed on (suite, run_at, commit) so replaying git twice cannot
 double-count, and a re-run recorded by hand cannot silently displace one recovered from history.
@@ -25,12 +45,19 @@ import os
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import suite_record as _rec  # noqa: E402
+
 HIST = "acceptance/suite_history.jsonl"
 # Discovered, not hardcoded. The list was tier1/tier2 and stayed that way while two new suites
 # landed carrying 11.378 cases — the trend would have gone on charting the old pair and silently
 # omitted the ones that matter, which is the same defect as a silently capped sweep.
-SUITE_NAMES = {"property_runs.json": "tier1", "retrieval_runs.json": "tier2",
-               "data_sanity_runs.json": "sanity", "ontology_runs.json": "ontology"}
+#
+# THE ALIAS MAP NOW LIVES IN ONE PLACE (`suite_record.HISTORY_ALIASES`) because a second writer
+# arrived. `run_suite.py` keyed its rows off the suite FILENAME, which produced "properties"
+# alongside the existing "tier1" — the same suite as two half-length series. Re-exported here so
+# anything importing SUITE_NAMES from this module keeps working.
+SUITE_NAMES = _rec.HISTORY_ALIASES
 
 
 def _suites(root: str) -> dict:
@@ -38,7 +65,7 @@ def _suites(root: str) -> dict:
     out = {}
     for f in sorted(_g.glob(os.path.join(root, "acceptance", "*_runs.json"))):
         b = os.path.basename(f)
-        out[os.path.join("acceptance", b)] = SUITE_NAMES.get(b, b[:-10])
+        out[os.path.join("acceptance", b)] = _rec.suite_key(b)
     return out or {"acceptance/property_runs.json": "tier1"}
 
 
@@ -53,7 +80,12 @@ def _tally(doc: dict) -> dict:
             out[st] += 1
         props[r.get("id")] = r.get("status")
     cases = sum(len(r.get("rows") or []) for r in res)
-    return {**out, "total": len(res), "cases": cases, "properties": props}
+    # THE DENOMINATOR COMES FROM THE RECORD WHEN THE RECORD HAS ONE. `len(res)` is the number of
+    # results the run happened to write, which for a filtered run is the size of the filter — so
+    # "1/1 pass" was a true sentence about `--id`. `declared` is the population the SUITE declares.
+    total = doc.get("declared") if isinstance((doc or {}).get("declared"), int) else len(res)
+    extra = {k: doc[k] for k in ("examined", "skipped") if isinstance((doc or {}).get(k), int)}
+    return {**out, "total": total, "cases": cases, **extra, "properties": props}
 
 
 def _git(root: str, *args: str) -> str:
@@ -84,6 +116,26 @@ def from_git(root: str) -> list[dict]:
     return sorted(rows, key=lambda r: r["run_at"])
 
 
+def _stamp(doc: dict) -> tuple[str, str]:
+    """``(commit, subject)`` taken from the RECORD, with the old behaviour as the fallback.
+
+    It used to be the constant ``("working-tree", "uncommitted run")``, because the record carried
+    no commit — 0 of 7 did. Two runs against two different ontologies therefore produced two rows
+    with the SAME dedup key, so the second silently displaced the first, and the trend could not
+    tell a re-run from a re-measurement. A record that names its own commit fixes both.
+    """
+    commit = doc.get("commit")
+    if not commit:
+        return "working-tree", "uncommitted run (record carries no commit)"
+    if doc.get("commit_dirty"):
+        commit += "-dirty"
+    eng = (doc.get("engine") or {}).get("kind")
+    subject = f"{doc.get('bundle', '?')} · {doc.get('suite', '?')}" + (f" ({eng})" if eng else "")
+    if (doc.get("engine") or {}).get("synthetic"):
+        subject += " [SYNTHETIC]"
+    return commit, subject[:90]
+
+
 def current(root: str) -> list[dict]:
     """The runs sitting on disk right now — a re-run the operator just triggered."""
     rows = []
@@ -94,9 +146,37 @@ def current(root: str) -> list[dict]:
         doc = json.load(open(p, encoding="utf-8"))
         ts = doc.get("run_at") or __import__("datetime").datetime.fromtimestamp(
             os.path.getmtime(p)).astimezone().isoformat(timespec="seconds")
-        rows.append({"suite": suite, "run_at": ts, "commit": "working-tree",
-                     "subject": "uncommitted run", **_tally(doc)})
+        commit, subject = _stamp(doc)
+        rows.append({"suite": suite, "run_at": ts, "commit": commit,
+                     "subject": subject, **_tally(doc)})
     return rows
+
+
+def from_records(root: str) -> list[dict]:
+    """Every DATED run record on disk — history that does not need a repository.
+
+    `acceptance/runs/<UTC>-<suite>.json` is append-only: one file per run, never overwritten. This
+    is the half that makes the trend independent of git, which matters because the only bundle
+    holding run records has no remote, and because `<LIVE>`'s 21 dated records are the only run
+    evidence in the estate that survived its own suite's overwrite.
+
+    Dedup is the SAME key as everywhere else — (suite, run_at, commit) — so a dated record and its
+    committed twin are one row, and replaying both sources twice cannot double-count.
+    """
+    import glob as _g
+    rows = []
+    for f in sorted(_g.glob(os.path.join(root, "acceptance", "runs", "*.json"))):
+        try:
+            doc = json.load(open(f, encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(doc, dict) or "results" not in doc:
+            continue        # dialect A keeps corpus runs in the same directory; skip what is not ours
+        suite = _rec.suite_key(f)
+        commit, subject = _stamp(doc)
+        rows.append({"suite": suite, "run_at": doc.get("run_at") or "", "commit": commit,
+                     "subject": subject, **_tally(doc)})
+    return [r for r in rows if r["run_at"]]
 
 
 def load(root: str) -> list[dict]:
@@ -164,6 +244,8 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--from-git", action="store_true", help="replay committed run records into history")
+    ap.add_argument("--from-records", action="store_true",
+                    help="replay the dated acceptance/runs/*.json records (no repository needed)")
     ap.add_argument("--record", action="store_true", help="append the runs currently on disk")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
@@ -171,6 +253,8 @@ def main() -> int:
     added = 0
     if a.from_git:
         added += save(a.root, from_git(a.root))
+    if a.__dict__["from_records"]:
+        added += save(a.root, from_records(a.root))
     if a.record:
         added += save(a.root, current(a.root))
 

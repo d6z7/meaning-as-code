@@ -129,9 +129,16 @@ four times in a single day in this estate:
 What the standard still **lacks**, and these are additions rather than renames:
 
 - **the outcome classes are ungoverned.** `mac.schema.json` contains no `COMMIT/ASK/REFUSE/BLOCK`
-  enum. Measured cost: `DECLINE` (14) and `REFUSE` (4) coexist in one bundle for one concept, so
-  searching for `REFUSE` finds 4 where **18** are declared. A population that cannot be enumerated
-  cannot have a denominator.
+  enum. **CORRECTED 2026-09-13, and the correction is the lesson.** This first read "DECLINE (14)
+  and REFUSE (4) coexist in one bundle for one concept". Those were counts from ONE FILE, quoted as
+  if estate-wide. Structurally parsed across four roots, the real figures are **1 049 `DECLINE`
+  against 1 347 `REFUSE` over 16 292 declarations** — off by ~75x — and the axis carries **ten
+  spellings, not four**: the four canonical, plus `DECLINE` (deprecated), `COMMIT_PENDING`
+  (provisional), and `ENUMERATE`/`MODEL_PROPERTY`/`DEFER`/`ENGINE_ERR` (non-grading). There are also
+  **214 live lowercase case-variants**, invisible to any exact search. A closed enum drawn from the
+  wrong count would have turned working bundles red, which is why membership must be decided from a
+  measurement and not from a memory. A population that cannot be enumerated cannot have a
+  denominator — and a population counted in one file is not the population.
 - **`test_kind` is optional** where its whole point is that the two kinds have *opposite* rules about
   where their numbers come from. An undeclared property can be trusted for neither.
 - **oracle authority is undeclared** on 297 of 398 oracles — not "derived", *undeclared*, which is
