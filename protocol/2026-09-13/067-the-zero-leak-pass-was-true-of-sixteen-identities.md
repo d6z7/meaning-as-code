@@ -20,8 +20,13 @@ gate guarding that boundary printed green. The repo is days from going public.
 
 `613` is exactly `git ls-files | wc -l`, so the FILE denominator was complete. The PATTERN
 denominator was not: 16 register entries, every one an identity token, **none matching an absolute
-home path**. Verified directly — `/Users/<user>/dev/meaning-as-code`, `/home/alice/repo` and `~/dev/x`
-all returned no match.
+home path**. Verified directly against three shapes — a macOS home, a Linux home carrying a
+plausible account name, and a tilde path — and all three returned no match. **The shapes are
+described here rather than spelled**, because this gate COUNTS such strings: the first draft of this
+entry quoted a Linux home path with a made-up account name as an example, and the gate correctly
+flagged its own protocol entry. That is the same doctrine as the gate's `_token()` helper, which
+derives its fixture from the pattern table because "a self-test that spelled one out would plant the
+thing it scans for". Documenting a leak must not commit one.
 
 **So the green meant "none of 16 identities, over 613 files" and was read as "nothing leaks". A
 ZERO-DENOMINATOR PASS ONE LEVEL UP: the property was the empty set, not the file list.** This
