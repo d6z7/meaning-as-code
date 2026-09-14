@@ -431,6 +431,32 @@ bundle must reach the start before anything is allowed to run.
   extension profile. That is obsolete twice over: v0.1.14 both closed the `^x-` hatch and added a
   `ProjectFile#profile.extensions` slot, and §2 has since withdrawn the profile construct outright. The
   slot is now a place to declare a prohibited key, which MAC012 reads as a finding like any other.)*
+- **Vocabulary-only, no schema bump: `mac.dq_status` — the disposition of a registered data defect.**
+  A new **`closed: true`** vocabulary in `mac_vocabulary.yaml` (`open | accepted | resolved |
+  wont_fix`), written **bare** on `data/quality/data_quality_register.yaml#issues[].status`, beside
+  the equally bare `severity` and `confidence`. `accepted` and `wont_fix` carry a `requires:
+  [ruled_by, reason]` on the term itself — they are the two terms that CLAIM a human acted, so they
+  must name the evidence that one did. **Measured 2026-09-14** (protocol/2026-09-14/003): a register
+  issue had **no status at all** — `metadata.status` sat at the REGISTER level and said nothing about
+  any one issue — so "still open" was inferred by joining to `impurity_resolution_map.yaml` and
+  **treating absence as open**, which made a deliberately-tolerated defect and one nobody has read
+  byte-identical. On the measured register that is **44 entries · 43 distinct ids · 22 joined · 22
+  not**, and **44 of 44 carry no status**. This needs **NO `mac.schema.json` change**: `$defs/`
+  `DataQualityRegisterFile.properties.issues.items` declares no `additionalProperties: false`, so the
+  key is already legal — witnessed by real bundles carrying undeclared `table` (44 issues) and
+  `related` keys through validation today. Per **RELEASING.md "When to bump"**, a change that does not
+  touch `mac.schema.json` does not move the `schema_version`; it rides on the current `0.1.14`
+  generation. **Where the value set lives was measured, not assumed:** of the **10** closed
+  vocabularies in `mac_vocabulary.yaml`, only **3** (`aggregation_effect`, `identity_kind`,
+  `credential_mode`) are also restated as a `mac.schema.json` enum — **7 of 10 are vocabulary-only and
+  gate-enforced**, which is the majority idiom, not an exception to it. The enforcing gate is
+  **`tools/check_dq_resolution_sync.py`**, extended in the same change to FAIL on a duplicate register
+  id, a missing or non-member `status`, and a ruling without its `requires`, and to resolve
+  `accepted.dq_id` in **both** directions — an `accepted:` naming no registered issue FAILS, a
+  `resolved` issue still named by one is REPORTED. It **READS** the terms and their `requires` from
+  the vocabulary and never re-lists them (`check_vocabulary_drift`). *(Were this to arrive bundled
+  with a schema change — closing `issues.items` and declaring `status`, `ruled_by`, `reason`,
+  `table` — it would go out under the next additive number.)*
 - The validator (`tools/validate_schema.py`) enforces files at the **current** `schema_version` (`0.1.14`)
   and skips the rest, so a stale file fails loudly rather than validating against the wrong contract.
 - **Note on the label.** `0.1.6` *re-bases* the earlier `0.5`/`0.6` working labels onto the framework's

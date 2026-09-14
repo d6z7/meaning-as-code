@@ -296,6 +296,71 @@ items:
       second store; DQ-*.md prose attaches to the FITNESS entry it describes. The per-test views
       (PropertySuiteView, QuestionLighthousePane) are NOT retired — the operator has accepted them.
 
+  # ---------------------------------------------------------------------------------------------
+  # THE DQ LOOP — operator-proposed, measured as FOUR-FIFTHS BUILT, protocol 2026-09-14/003.
+  # profile -> register -> transform -> resolution map -> check_dq_resolution_sync. What is missing
+  # is the PROGRESS MARK, and its absence is why a half-run loop reads as a stalled one.
+  # ---------------------------------------------------------------------------------------------
+
+  - id: DQ-status
+    what: a closed `status:` on every register issue, so ABSENCE stops being a state
+    state: runnable
+    track: testing
+    measured: >
+      the register's keys are confidence, current_handling, finding, id, residual_risk, severity,
+      sme_owner, table, title — NO status, no opened, no closed. `metadata.status: open` exists at
+      the REGISTER level and says nothing about an issue. So "still open" is inferred by joining to
+      the resolution map and treating absence as open, which makes "deliberately accepted" and
+      "nobody has looked" indistinguishable — the two most different things in the register.
+    note: >
+      closed vocabulary open|accepted|resolved|wont_fix; accepted and wont_fix REQUIRE ruled_by and
+      a reason. 44 entries / 43 distinct ids means the gate must also enforce uniqueness — every
+      join in this loop runs on that id.
+
+  - id: DQ-progress-line
+    what: print the progress the loop already has
+    state: runnable
+    track: testing
+    measured: 44 issues · 22 linked to a resolving transform · 21 not linked · severity high 12 / medium 20 / low 12
+    note: >
+      HALF THE REGISTER IS RESOLVED AND NOTHING SAYS SO. Two commands today. The loop is not
+      stalled, it is un-reported — a different defect with a much cheaper fix.
+    blocked_test_on: [DQ-status]
+
+  - id: DQ-accepted-not-green
+    what: a FITNESS test overlapping an OPEN issue renders ACCEPTED, never GREEN
+    state: runnable
+    track: testing
+    measured: >
+      a generated value-set property records the CURRENT members as its expectation, and one such
+      expectation contains BOTH spellings of a near-duplicate the register files as an open defect.
+      The property is GREEN — green BECAUSE the defect is present — and it would turn RED the day
+      someone fixed it.
+    note: >
+      A GREEN OVER A VALUE SET CONTAINING A REGISTERED DEFECT DOES NOT MEAN CORRECT, IT MEANS
+      ACCEPTED, and nothing distinguishes the two today. This is the item that matters: a REPAIR
+      CURRENTLY READS AS A REGRESSION. Requires dq_id to resolve in BOTH directions — an `accepted:`
+      naming no registered issue FAILS, and a resolved issue still named by an `accepted:` block is
+      reported. The acceptance plane's own notes record that this id is not checked to resolve.
+
+  - id: DQ-in-the-overview
+    what: the DQ register on the ONE quality surface, in the established visual grammar
+    state: runnable
+    track: testing
+    note: >
+      Operator: "integrate properly with suite ... keep visual style." Not a fifth tab — the DQ
+      register IS the disposition channel for FITNESS, so it belongs beside the warnings panel on
+      the Overview, in the same card shape, with its denominator in the same position. Computation
+      server-side: the board computes nothing, so the API projects the counts and the view renders
+      them verbatim.
+
+  - id: DQ-prose-vs-register
+    what: verify the 44 DQ-<id>.md prose files agree with the 44 register entries
+    state: runnable
+    track: testing
+    note: >
+      two homes for one fact, UNVERIFIED. Named here so it is not discovered a third time.
+
 rulings:
   - id: R16
     verdict: 'PROPOSED — recommended BINDING'

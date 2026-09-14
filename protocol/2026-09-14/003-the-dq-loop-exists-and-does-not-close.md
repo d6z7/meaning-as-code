@@ -25,7 +25,7 @@ half-run.
     1 PROFILE         data/profiles/*.yaml                        25 census files
     2 REGISTER        data/quality/data_quality_register.yaml      44 issues, 525 lines
                       data/quality/DQ-<id>.md                      44 prose files
-    3 SOLVE           data/transforms/*.yaml                       46 transform declarations
+    3 SOLVE           data/transforms/*.yaml                       14 transforms (46 files)
     4 PROGRESS        data/quality/impurity_resolution_map.yaml    137 lines, 22 linked findings
     5 GATE            tools/check_dq_resolution_sync.py            enforces no drift across 1-4
 
@@ -99,6 +99,21 @@ regression.
   GREEN** — and the day the issue closes, the property is regenerated rather than turning red.
 - **Print the progress line**: `N issues · M resolved · K accepted · J open`, which is a two-command
   measurement today and a denominator the estate does not currently publish.
+
+## CORRECTIONS TO THIS ENTRY, made the same day
+
+**"46 transform declarations" was a FILE count.** `data/transforms/` holds 46 files — 14 `.yaml`,
+14 `.sql`, 17 `.md`, 1 `.py` — which is **14 transforms**, each with a declaration, its SQL and its
+prose. Conflating files with declarations is the same defect as every other denominator error here,
+committed inside the entry that catalogues them.
+
+**Defect 4 is unenforced but NOT currently violated.** All four planes were searched for dangling
+`dq_id`s and there are none. The gate is still owed; the leak it guards against has not happened yet.
+
+**And the acceptance plane cannot supply a DQ status in general.** An `accepted:` block dispositions
+a PROPERTY'S RED and cites a `dq_id` as its justification — it is not a ruling on the defect itself.
+It touches 2 of 44 issues. So closing the loop cannot be done from the acceptance plane; the status
+has to live on the issue.
 
 ## WHAT THIS DOES NOT SETTLE
 

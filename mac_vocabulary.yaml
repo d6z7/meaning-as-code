@@ -300,6 +300,86 @@ outcome_class:
         counted as a refusal the model chose to make.
       measured_at_close: 3
 # ===========================================================================
+# mac.dq_status — WHAT A HUMAN DECIDED ABOUT A REGISTERED DATA DEFECT.
+#
+# The twin of outcome_class one plane over: outcome_class records what the ENGINE did about a
+# question, dq_status records what a PERSON did about a defect. Both are dispositions, and neither
+# is a channel.
+#
+# MEASURED 2026-09-14, on the register the DQ loop actually runs on (44 entries, 525 lines):
+# a register issue's keys are `confidence, current_handling, finding, id, residual_risk, severity,
+# sme_owner, table, title`. THERE IS NO STATUS. `metadata.status: open` exists at the REGISTER
+# level and says nothing about any one issue. So "which issues are still open" is not a readable
+# fact — it is INFERRED by joining the register to impurity_resolution_map.yaml and TREATING
+# ABSENCE AS OPEN. Of 44 entries, 22 join and 21 do not (one is unaddressable; see below).
+#
+# ABSENCE IS NOT A STATE, and this is the exact cost: the 21 unlinked entries are a mixture of
+# "deliberately accepted after a ruling", "won't fix", "resolved by something that forgot to say
+# so", and "nobody has looked yet" — and the register cannot express which. An issue a named human
+# examined and tolerated, and an issue no human has ever read, are THE TWO MOST DIFFERENT THINGS IN
+# THE REGISTER, and today they are byte-identical. That is why `accepted` and `wont_fix` REQUIRE a
+# `ruled_by` and a `reason`: those two terms are the ones that assert a human acted, so they are the
+# two that must carry the evidence that one did. `open` and `resolved` assert no ruling and require
+# none — `resolved` is already evidenced by the resolution map's cross-link.
+#
+# WHY THE VALUES ARE WRITTEN BARE. `status: open`, never `status: mac.dq_status.open`. It sits
+# beside `severity: high` and `confidence: C` on the same issue, both of which are bare, and a
+# third sibling spelled a fourth way would be the synonym problem this registry exists to prevent.
+# The qualified `mac.dq_status.*` form is the REFERENCE form used in prose and across planes.
+#
+# WHY THIS IS VOCABULARY-ONLY AND BUMPS NO SCHEMA (CONFORMANCE §6 precedent). `mac.schema.json`
+# ALREADY PERMITS the key: `$defs/DataQualityRegisterFile.properties.issues.items` declares no
+# `additionalProperties: false` — measured, and witnessed by the fact that real bundles already
+# carry undeclared `table` (44 issues) and `related` keys through validation today. So the key
+# needs no schema change to be legal, and per RELEASING.md "When to bump" a change that does not
+# touch mac.schema.json does not move `schema_version`. The measurement that settles WHERE the
+# value set lives: of the 10 closed vocabularies in this file, only 3 (aggregation_effect,
+# identity_kind, credential_mode) are ALSO restated as a `mac.schema.json` enum — 7 of 10 are
+# vocabulary-only and enforced by a gate. This is the majority idiom, not an exception to it.
+# The enforcing gate is tools/check_dq_resolution_sync.py, which READS these terms and never
+# re-lists them (check_vocabulary_drift).
+# ===========================================================================
+dq_status:
+  kind: vocabulary
+  closed: true
+  description: >
+    The disposition of ONE registered data-quality issue — what a human decided about it, not what
+    a pipeline did to it. Written BARE on `issues[].status` (like its siblings `severity` and
+    `confidence`), referenced as `mac.dq_status.<term>`. `accepted` and `wont_fix` REQUIRE
+    `ruled_by` (the named person or role who ruled — never "the team", never a tool) and `reason`
+    (why the defect is real, and why it is being lived with rather than fixed), because those are
+    the two terms that CLAIM a human acted. The set is closed so that absence of a status is a
+    FINDING rather than a fourth, unnamed meaning.
+  terms:
+    open:
+      description: >
+        NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without
+        evidence — it asserts nothing except that the defect is recorded and undispositioned. This
+        is the state that absence was silently standing in for, and naming it is the entire point:
+        an issue is `open` because someone wrote `open`, not because a join missed.
+      requires: []
+    accepted:
+      description: >
+        A NAMED HUMAN EXAMINED IT AND CHOSE TO LIVE WITH IT. The defect is real, it is not being
+        fixed, and that is a decision on the record rather than an omission. This is the term that
+        makes a FITNESS green legible: a property whose recorded expectation overlaps an accepted
+        issue is GREEN BECAUSE THE DEFECT IS TOLERATED, which is not the same claim as correct.
+      requires: [ruled_by, reason]
+    resolved:
+      description: >
+        THE DEFECT IS GONE, dissolved by a transform that says so. Evidenced by the cross-link in
+        impurity_resolution_map.yaml rather than by a ruling, which is why it requires no
+        `ruled_by`: the evidence is structural and already gate-checked. A `resolved` issue still
+        named by an acceptance-plane `accepted:` block is a REPORTED drift — the test is being
+        excused for a defect that no longer exists.
+      requires: []
+    wont_fix:
+      description: >
+        A NAMED HUMAN RULED THAT IT WILL NEVER BE FIXED. Distinct from `accepted`, which tolerates a
+        defect that could still be repaired: `wont_fix` closes the question. Carries the same
+        evidence burden for the same reason — it asserts a ruling, so it must name who ruled.
+      requires: [ruled_by, reason]
+# ===========================================================================
 # mac.connector — the NAMESPACE, and deliberately nothing else.
 # ===========================================================================
 connector:
