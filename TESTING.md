@@ -44,6 +44,39 @@ descriptor claiming `VERIFIED … 0 multi-row` against a warehouse that had reac
 plane records that *"a conformance test rendered from that same declaration would have confirmed the
 stale claim."*
 
+### THE THREE-QUESTION TEST — apply this BEFORE proposing any test, suite or category
+
+Operator, and it is the governing rule of this document:
+
+> *"the major problem with the question for a unit test: (1) you have to understand functionality
+> that is implemented (2) you have to know how to write proper question — or what do you want to
+> assert (3) you need to know what is the correct outcome/answer. So all what you are proposing must
+> be subject to these categories."*
+
+Those three are **SUBJECT · CLAIM · ORACLE**, and they decide generatability mechanically:
+
+> **A TEST IS GENERATABLE EXACTLY WHEN ALL THREE ARE ALREADY DECLARED MACHINE-READABLY.**
+> Where one is only in prose or only in a person's head, THAT part must be authored — and **which of
+> the three is missing tells you exactly what the bundle must declare** to make it generatable.
+
+Worked, against this estate's own measurements:
+
+| suite | (1) subject | (2) claim | (3) oracle | consequence |
+|---|---|---|---|---|
+| data-sanity GENERATED | the profile | same-as-measured | **the prior measurement** | fully generated. The oracle is the SAME SUBJECT SEPARATED IN TIME — the only oracle in the estate permitted to disagree with the model |
+| ontology GENERATED | the concept | warehouse matches declaration | the declaration | generated, and legitimate ONLY because the two sides have different authors and different reasons. Otherwise it is a mirror |
+| rules GENERATED | the rule | SQL respects it | the directive | **BLOCKED AT (1)** — 23 of 31 rules state their directive in prose `then:` clauses, so nothing can read what the rule means. This is why coverage ceilings at 8 of 31: a tooling fix cannot reach it |
+| grounding · registers · joins | a declaration | structural | the other declaration | fully generated |
+| freshness | `produces`/`reads` | derived newer than subject | timestamps | fully generated — arithmetic over facts |
+| vocabulary | the closed set | no term outside it | the set | fully generated |
+| boundaries | declared scope | must refuse | **a human rules it out of scope** | enumeration generates, **(3) authored** |
+| corpus (TRUTH) | **human** | **human** | **human, from outside the system** | nothing generates but the FRAME |
+
+**AND THE VACUITY RULE FALLS OUT OF IT.** A test with (1) and (2) but a hollow (3) passes and proves
+nothing — that is the estate's 59 vacuous assertions over 29 properties. So a `conformance` test,
+whose oracle IS the declaration, is honest only where the two declarations are genuinely maintained
+by different people for different reasons. Where they are not, it is a mirror wearing a verdict.
+
 ### The rule an agent can apply
 
 > **DERIVE THE ENUMERATION. AUTHOR THE ORACLE.**

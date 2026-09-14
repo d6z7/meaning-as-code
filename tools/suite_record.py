@@ -3,13 +3,11 @@
 
 ── THE MEASURED DEFECT THIS FILE EXISTS TO FIX ────────────────────────────────────────────────
 
-    acceptance/*_runs.json    0 blobs in cap-ontology-fpl, meaning-as-code, mac-platform
-                              — every repo in the estate that HAS a git remote
-                              7 files / 44 committed versions in cap-ontology-sources
-                              — the one repo that has NO remote
+    acceptance/*_runs.json    0 blobs in every repo in the estate that HAS a git remote
+                              7 files / 44 committed versions in the ONE repo that has none
 
 The suites do not fail to persist. They persist into a repository that can never publish, written
-by a runner (`gaps/fpl2/tools/run_properties.py`) that exists in no repo with a remote and in no
+by a BUNDLE-LOCAL runner that exists in no repo with a remote and in no
 release of this framework. That is why the framework's own `suite_history.py` could assert *"The run
 records are committed"* and a sweep of the publishable estate could measure ZERO, with both correct.
 
