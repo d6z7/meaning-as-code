@@ -447,9 +447,10 @@ bundle must reach the start before anything is allowed to run.
   `related` keys through validation today. Per **RELEASING.md "When to bump"**, a change that does not
   touch `mac.schema.json` does not move the `schema_version`; it rides on the current `0.1.14`
   generation. **Where the value set lives was measured, not assumed:** of the **10** closed
-  vocabularies in `mac_vocabulary.yaml`, only **3** (`aggregation_effect`, `identity_kind`,
-  `credential_mode`) are also restated as a `mac.schema.json` enum — **7 of 10 are vocabulary-only and
-  gate-enforced**, which is the majority idiom, not an exception to it. The enforcing gate is
+  vocabularies that stood in `mac_vocabulary.yaml` before this one, only **3** (`aggregation_effect`,
+  `identity_kind`, `credential_mode`) were also restated as a `mac.schema.json` enum — **7 of 10 were
+  vocabulary-only and gate-enforced**, which is the majority idiom, not an exception to it. (With
+  `dq_status` the file now declares **11**, of which **8** are vocabulary-only.) The enforcing gate is
   **`tools/check_dq_resolution_sync.py`**, extended in the same change to FAIL on a duplicate register
   id, a missing or non-member `status`, and a ruling without its `requires`, and to resolve
   `accepted.dq_id` in **both** directions — an `accepted:` naming no registered issue FAILS, a

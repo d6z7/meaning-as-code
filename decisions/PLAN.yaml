@@ -361,6 +361,82 @@ items:
     note: >
       two homes for one fact, UNVERIFIED. Named here so it is not discovered a third time.
 
+  # ---------------------------------------------------------------------------------------------
+  # THE SME CLAIM QUEUE — operator-ruled 2026-09-14. The bridge from self-description to ORACLE.
+  #
+  # THE CORRECTED RULE, and it is the operator's: a self-description NOBODY RATIFIED is not an
+  # oracle — that is the mirror. A self-description A NAMED HUMAN RATIFIED *IS* an oracle, and the
+  # cheapest obtainable, because the machine did everything except the judgement. The system STATES;
+  # the human GRADES THE STATEMENT. That is not self-grading, and a ratified claim is an independent
+  # fact for everything downstream. Self-awareness is therefore not adjacent to the oracle — it is
+  # THE INTERFACE THROUGH WHICH THE ORACLE IS CREATED, in an estate that has 0 of 398 today.
+  # ---------------------------------------------------------------------------------------------
+
+  - id: SME-fill-current
+    what: state the ontology's OWN BELIEF in the `current` slot that already exists and is empty
+    state: runnable
+    track: testing
+    measured: >
+      ontology_quality.json carries sme_questions: 59, each with keys
+      concept/concept_title/current/id/kind/question. THE `current` SLOT — "what the ontology
+      believes" — EXISTS ON ALL 59 AND IS EMPTY WHERE IT MATTERS: the 9 `aggregation` entries carry
+      current "—", the 1 `identity` entry carries "sme_pending" (a status, not a belief). So the
+      ontology asks "How does measure X aggregate?" when data/lookups/kpi.lookup.csv already carries
+      measure_type + additivity_time + additivity_categorical, and 7 OF THE 9 JOIN CLEANLY AND AGREE
+      WITH IT. The system is asking questions it already has the answers to.
+    note: >
+      Turn a QUESTION into a CLAIM: the statement in business language · what the system believes ·
+      WHY (the evidence) · confirm / correct / defer. Confirming a stated claim is a ten-second act;
+      answering an open question is a ten-minute one, which is why 59 has sat at 59 while 68 human
+      answers exist in a spreadsheet — that asked in a form a person could answer.
+      FIRST TASK IS TO FIND THE GENERATOR: ontology_quality.json is PROJECTED (SME-QUESTIONS.md says
+      "projected from ontology_quality.json, so it stays in sync"), so `current` is filled by changing
+      the projector, never the file.
+
+  - id: SME-queue-status
+    what: a `status` on every queued claim — identical defect to the DQ register, identical fix
+    state: runnable
+    track: testing
+    measured: status is None on all 59 of 59. There is no status field.
+    note: >
+      Without it, ASKED-AND-UNANSWERED is indistinguishable from NEVER-ASKED, and there is no
+      progress to report — which is why the number has not moved. Closed vocabulary, and reuse
+      whatever DQ-status lands on rather than coining a second one.
+    blocked_on: [DQ-status]
+
+  - id: SME-pilot-the-ten
+    what: THE PILOT, operator-ruled — clear the 10 STRUCTURED claims in one sitting
+    state: runnable
+    track: testing
+    measured: 9 aggregation + 1 identity = 10 structured; 7 of the 9 have a derivable belief today
+    note: >
+      Ruled by the operator as the pilot. If the 10 clear in one sitting the mechanism is PROVEN and
+      the 49 get reshaped. If they do not, we learn why BEFORE building anything. This is the whole
+      experiment and it is cheap.
+    blocked_test_on: [SME-fill-current]
+
+  - id: SME-ratification-writes-oracle
+    what: a confirmed claim emits authority/ruled_by/ruled_on AND THE FINGERPRINT it ratified
+    state: blocked
+    blocked_on: [SME-pilot-the-ten]
+    track: testing
+    note: >
+      The bridge. A ratification is about a VERSION: if the evidence changes, the claim RETURNS TO
+      THE QUEUE CARRYING ITS PREVIOUS ANSWER, so the SME confirms a DELTA rather than re-deciding
+      from scratch. Without the fingerprint a ratification rots silently, which is the CURRENCY
+      defect one plane over — 0 of 7 run records carry one today.
+
+  - id: SME-reshape-the-49
+    what: the 49 `ratification` entries are PROSE BLOBS, not claims
+    state: blocked
+    blocked_on: [SME-pilot-the-ten]
+    track: testing
+    measured: 49 of 59; one observed entry describes THREE separate matters in a single question
+    note: >
+      These cannot be confirmed in ten seconds, which is exactly why they are the ones sitting. The
+      hard half, and deliberately after the pilot — reshaping 49 blobs before the mechanism is proven
+      is the same mistake as building a ratchet with no data source.
+
 rulings:
   - id: R16
     verdict: 'PROPOSED — recommended BINDING'
