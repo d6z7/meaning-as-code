@@ -31,6 +31,8 @@ because it decides generatability MECHANICALLY rather than by argument:
 > only in prose or only in a person's head, THAT part must be authored — and WHICH of the three is
 > missing tells you exactly what the bundle must declare.**
 
+## EVIDENCE — the rule accounts for two numbers nothing else did
+
 It immediately explains two numbers nobody could previously account for:
 
 - **Rule coverage ceilings at 8 of 31 because (1) FAILS** — 23 of 31 rules state their directive in
@@ -59,6 +61,14 @@ A consequence worth keeping: **several current gates are suites in the wrong clo
 `check_concept_columns_exist` asks a per-concept question about a declaration plane and reports one
 pass/fail over a population nobody sees. Moved into a suite, coverage becomes visible per instance
 and the gate count drops. That is what "straighten the gates" means concretely.
+
+## WHAT CHANGED
+
+`TESTING.md` §1 gained the governing rule above, replacing a §1 that described the ten categories
+without saying what qualifies as a test at all. The DECLINE/REFUSE figure in it was corrected in
+place — it read "14 and 4", measured over ONE FILE; the real figures are **1,049 vs 1,347 over 16,292
+declarations, in ten spellings, plus 214 lowercase variants.** Two instance tokens were scrubbed from
+a public repository, and the gate order was inverted to add-then-check (see below).
 
 ## THE FOUR PROCESS DEFECTS THAT CAUSED THE CIRCLING
 
@@ -101,7 +111,7 @@ Scrubbed. The general form: **a gate whose population is the index cannot see th
 the moment you care about is the one between them.** Either it examines staged files too, or the
 order is add-then-check and never the reverse.
 
-## WHAT THIS DOES NOT SETTLE
+## WHAT IT DOES NOT PROVE
 
 The candidate suite list (grounding · registers · joins · freshness · vocabulary · boundaries) is
 proposed and unratified. Which current gates are suites in the wrong clothes is proposed and

@@ -20,7 +20,7 @@ Not wrong. **Four of the five steps exist, plus a gate nobody mentioned.** What 
 step four — the progress mark — and its absence is why the loop reads as stalled rather than
 half-run.
 
-## WHAT IS ALREADY BUILT
+## EVIDENCE — what is already built
 
     1 PROFILE         data/profiles/*.yaml                        25 census files
     2 REGISTER        data/quality/data_quality_register.yaml      44 issues, 525 lines
@@ -87,6 +87,14 @@ present, and it would turn RED the day someone fixed it.
 That is the whole argument for closing the loop: not neatness, but that a repair currently reads as a
 regression.
 
+## WHAT CHANGED
+
+Nothing at the time of writing — the entry was a measurement. Since then, and cited here so the two
+are not read as independent: `mac_vocabulary.yaml` gained `dq_status` (`open | accepted | resolved |
+wont_fix`, with `accepted` and `wont_fix` requiring `ruled_by` and `reason`), and
+`check_dq_resolution_sync.py` was rebuilt to enforce it — 17/17 self-test over 5 fixtures and 12
+mutants of its own rule. Both landed in `57b9106`, whose message names neither; see entry 004.
+
 ## WHAT TO NAIL DOWN — smallest change that closes it
 
 - **`status:` on every register issue**, from a closed vocabulary — `open | accepted | resolved |
@@ -115,7 +123,7 @@ a PROPERTY'S RED and cites a `dq_id` as its justification — it is not a ruling
 It touches 2 of 44 issues. So closing the loop cannot be done from the acceptance plane; the status
 has to live on the issue.
 
-## WHAT THIS DOES NOT SETTLE
+## WHAT IT DOES NOT PROVE
 
 Whether the 44 prose `DQ-<id>.md` files and the 44 register entries agree — two homes for one fact,
 unverified here. And the loop describes DATA defects only: the same shape is not declared for

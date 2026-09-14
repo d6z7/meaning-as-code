@@ -83,7 +83,7 @@ per mapping, and — the part that makes it work — **it is countable**: *"N so
 awaiting a ruling"* is a number, not a feeling. The machine goes as far as the evidence carries it
 and then **stops at a named question** instead of guessing or falling silent.
 
-## WHAT THIS CORRECTS
+## WHAT CHANGED — and what it corrects
 
 **Question (1) does not fail for mappings.** It fails for prose rules only. The grounding plane is 22
 concepts / 30 sources in the bundle measured, every answer passes through it, and its justification
