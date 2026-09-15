@@ -281,3 +281,99 @@ An agent may write `PROPOSED`; these are the operator's.
   question is settled in the ontology grammar and not open
 - who the **named SME** is. An agent can propose the shape of the authority channel; it cannot create
   the authority.
+
+---
+
+## 9 · HOW TO WRITE TEST CASES FOR DATA QUALITY
+
+§1 says when a test is generatable. This says where the tests actually come from, and the answer is
+not "think of good checks". It is: **a MAC bundle already states dozens of claims about its own
+data and verifies almost none of them.** Every unverified claim is a test waiting to be written.
+
+So the work is not invention. It is **inventory, then falsification**.
+
+### 9.1 · WHAT A BUNDLE ALREADY HOLDS, AND WHAT EACH PIECE CAN GROUND
+
+This is the whole method in one table. Left column: information every MAC bundle carries. Right
+column: the test it grounds, with no domain knowledge added.
+
+| where the claim lives | what it asserts | the test it grounds | oracle |
+|---|---|---|---|
+| `transforms/*.yaml` → `produces.grain` | "one row per X" (prose) | **IDENTITY** — uniqueness on X; a fan-out is a defect | internal coherence |
+| `transforms/*.yaml` → rule `resolves: [DQ-id]` | "this transform dissolves that defect" | **DERIVATION** — differential, see 9.2 | internal coherence |
+| `transforms/*.yaml` → `inputs[]` + `produces.relation` | the two ends of the transform | *which two relations to measure* | — |
+| `quality/data_quality_register.yaml` + `DQ-*.md` | what the defect IS, concretely | *the predicate that detects it* | — |
+| `datasets/*.yaml` → `columns[].role` | primary_key · composite_key_part · foreign_key | **IDENTITY** (the key list) and **REFERENCE** (orphans) | declaration |
+| `profiles/*.yaml` → `columns[].distinct/nulls/min/max` | "when measured, it looked like this" | **STRUCTURE · VOCABULARY · COMPLETENESS** — drift only | prior measurement |
+| `profiles/*.yaml` → `identity_evidence` | a measured key with a verdict | **IDENTITY**, and a cross-check on the grain prose | prior measurement |
+| `concepts/*.yaml` → `values.closure` + `items[]` | "these are all the codes" | **VOCABULARY** — an undeclared code is a defect | declaration |
+| `concepts/*.yaml` → `semantics.measure_type` | additive · ratio · snapshot | **ARITHMETIC** — sum the parts, compare to the whole | declaration |
+| `concepts/*.yaml` → `values.items[].served` | "these rows must never be read" | **SCOPE** — served material only | declaration |
+| `transforms` + `datasets` + the fact | a produced relation and its inputs | **CONSISTENCY** — the same fact stated twice must agree | internal coherence |
+
+**Read the table as a coverage grid.** A row with no test in the bundle is a claim nobody is
+checking. An empty ORACLE of "internal coherence" across the whole grid means every green is drift
+detection — the source could be wrong from the first day and nothing would ever say so.
+
+### 9.2 · THE DIFFERENTIAL TEST — the one that earns its keep
+
+The strongest test available without a human, and it applies to every `resolves:` claim:
+
+    UPSTREAM     the defect IS present in the transform's declared INPUT
+    DOWNSTREAM   the defect is ABSENT from its declared OUTPUT
+    same statement, same read, so neither half can see a different vintage
+
+**Both halves or it proves nothing.** A check asserting only a clean output passes identically when
+the transform does nothing and the defect never existed. The upstream half is the falsifier — and it
+fires: the first such suite written here found a transform whose claimed defect was **not present in
+its input at all**, meaning either the register is stale or the transform has been taking credit for
+work it never did. No amount of downstream checking could have surfaced that.
+
+The defect predicate comes from the register entry, never invented. Shapes vary — an EAV pivot, a
+name inconsistency, a corrupt identity, an unresolved bucket — so **do not force one template over
+all of them.** One query per claim, written from that claim's own prose.
+
+### 9.3 · TRANSLATING A PROSE CLAIM INTO COLUMNS
+
+Most of the valuable claims are prose. `produces.grain` says *"one row per (object × scope)"* and
+names no columns. Do not skip these — they are the highest-value claims in the bundle — and do not
+guess the columns either. **Derive the key, then corroborate it twice:**
+
+    the prose                      says WHAT identifies a row
+    datasets[].columns[].role      primary_key / composite_key_part — the declared key
+    profiles[].identity_evidence   a MEASURED key, where one exists
+
+Where the three disagree, **that disagreement is itself the finding** — report it, do not silently
+pick one. A grain the data plane and the profile describe differently is a defect nobody had seen.
+
+### 9.4 · FOUR TRAPS, EACH PAID FOR
+
+**THE NEWEST CYCLE IS NOT THE NEWEST COMPLETE CYCLE.** Pinning `MAX(period)` lands on whatever
+arrived last, including partial loads — and partial loads happen *mid-period*, not only at the
+boundary. Measured here: of twelve periods, three were partial, two of them mid-month, each carrying
+a single perspective and no roll-up. Eight blocker properties returned no rows for four days and
+were read as eight data defects. **Pin to the newest period that satisfies a declared completeness
+predicate**, and make that predicate a check of its own so a partial load is reported rather than
+silently skipped past.
+
+**`SUM` OVER AN EMPTY SET IS NULL; `COUNT` IS 0.** A query over zero rows still returns a row, with
+nulls in every aggregate. The assertion then reads "column missing/null" and looks like a defect. It
+is not — nothing was computed. Treat *no rows* and *all asserted columns null* as the same state:
+**no verdict**, distinct from both pass and fail.
+
+**A GREEN FROM A PRIOR MEASUREMENT IS NEARLY FREE.** Checks projected from a profile cannot
+disagree with the profile. They are worth having — they catch drift — but they must be counted
+separately, or a suite of two hundred of them will report a broken source as healthy.
+
+**THE MIRROR PAIR.** Two relations with identical profiles produce two identical checks. Detect them
+by profile fingerprint at generation time and emit one, or the suite inflates with duplicates that
+all pass together and all miss together.
+
+### 9.5 · WHEN THE BUNDLE DOES NOT SAY ENOUGH
+
+Some claims cannot be tested from what is declared: an ordering nobody wrote down, a meaning only a
+domain expert holds, a proposal not yet applied. **Emit the question, not a test.**
+
+A recorded *"not expressible, because X"* beside the claim it belongs to is worth more than a test
+that passes for the wrong reason. It is also the exact input the ratification channel needs — the
+question a named human can answer, after which the test generates itself.

@@ -77,9 +77,65 @@ def measures(root: pathlib.Path, law_: dict) -> list[dict]:
     return out
 
 
+def axis_is_governed(axis: str, sql: str) -> bool:
+    """Is `axis` pinned to one value, or grouped by, ANYWHERE in this statement?
+
+    THE `\\b` AFTER `=` WAS THE BUG, and it made this gate flag the exact pattern the comment at
+    its call site declares correct. `\\b` asserts a word boundary, `=` is not a word character, and
+    what follows a pin is a space or a quote — also not word characters. So no boundary exists
+    there and `role = 'Group'` never matched, while `role IN (...)` did. Measured on this estate:
+    5 findings, all five of them pins written with `=`, over O-RES-MODEL and P-ADD-01..04 — every
+    one a property that pins `role = 'Group'` in a CTE and sums downstream of it.
+
+    The gate's own words for that outcome: "A gate that punishes the correct pattern is worse than
+    no gate." It had been doing exactly that, and nothing could see it because the self-test
+    exercised discovery only and never this rule.
+
+    Moving the boundary INSIDE the alternation keeps the assertion where it is needed — `IN` must
+    be the whole word, so `INTERVAL` is not read as a pin — and drops it where it can never hold.
+    """
+    if re.search(rf"\b{re.escape(axis)}\b\s*(=|IN\b)", sql, re.I):
+        return True
+    return bool(re.search(rf"GROUP\s+BY[^;]*\b{re.escape(axis)}\b", sql, re.I))
+
+
+# One case per spelling a pin can take, and one per way a statement can fail to pin. Seeded here
+# rather than through the shared fixture because the subject is a REGEX over SQL text, and a case
+# that needs no bundle on disk should not grow one.
+_PIN_CASES = [
+    ("equality pin, spaced",      "role", "SELECT SUM(value) FROM t WHERE role = 'Group'", True),
+    ("equality pin, tight",       "role", "SELECT SUM(value) FROM t WHERE role='Group'", True),
+    ("IN pin",                    "role", "SELECT SUM(value) FROM t WHERE role IN ('Group','Brand')", True),
+    ("pinned in a CTE, summed outside",
+     "role", "WITH src AS (SELECT * FROM t WHERE role = 'Group') SELECT SUM(value) FROM src", True),
+    ("grouped by",                "role", "SELECT role, SUM(value) FROM t GROUP BY role", True),
+    ("not mentioned at all",      "role", "SELECT SUM(value) FROM t", False),
+    ("named but not constrained", "role", "SELECT role_label, SUM(value) FROM t", False),
+    ("INTERVAL is not an IN pin", "role", "SELECT SUM(value) FROM t WHERE d > role + INTERVAL '1' DAY", False),
+]
+
+
+def _pin_self_test() -> int:
+    bad = 0
+    for name, axis, sql, want in _PIN_CASES:
+        got = axis_is_governed(axis, sql)
+        if got != want:
+            bad += 1
+            print(f"  [SELF-TEST FAIL] {name}: axis_is_governed -> {got}, expected {want}")
+    total = len(_PIN_CASES)
+    print(f"{'PASS' if not bad else 'FAIL'}: check_additivity_in_sql pin rule — "
+          f"{total - bad}/{total} case(s) over 2 pin spelling(s), a CTE pin, a GROUP BY, "
+          f"and 3 negative control(s)")
+    return 1 if bad else 0
+
+
 def main() -> int:
     if "--self-test" in sys.argv[1:]:
-        return P.selftest_discovery(__file__)
+        # BOTH ARMS. Discovery proves the gate can SEE a concept; the pin rule proves it can still
+        # tell a governed SUM from an ungoverned one. The second arm did not exist, which is how a
+        # regex that never matched an `=` pin survived in a gate whose self-test reported green.
+        rc = _pin_self_test()
+        return P.selftest_discovery(__file__) or rc
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", default=".")
@@ -143,9 +199,7 @@ def main() -> int:
                 # DELIBERATELY PERMISSIVE: a query pinning in one CTE and blending in another slips
                 # through. That is the tolerable error — the other direction cries wolf until the
                 # gate is ignored.
-                eff = {ax: e for ax, e in eff.items()
-                       if not re.search(rf"\b{re.escape(ax)}\b\s*(=|IN)\b", sql, re.I)
-                       and not re.search(rf"GROUP\s+BY[^;]*\b{re.escape(ax)}\b", sql, re.I)}
+                eff = {ax: e for ax, e in eff.items() if not axis_is_governed(ax, sql)}
                 if not eff:
                     continue
                 try:

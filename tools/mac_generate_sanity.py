@@ -36,6 +36,7 @@ its claim is not data sanity (R5), and this generator has no access to it by con
 from __future__ import annotations
 
 import argparse
+import collections
 import datetime as dt
 import glob
 import os
@@ -46,7 +47,7 @@ import yaml
 
 from mac_profile import _as_text, _is_complex   # ONE definition, not a second CAST
 
-GEN = "mac_generate_sanity.py/4"
+GEN = "mac_generate_sanity.py/5"
 DATEY = ("date", "timestamp", "time")
 
 
@@ -123,11 +124,56 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     })
 
     # ── 2. BOUNDED VALUE SETS. Membership, not size.
+    #
+    # THE EMPTY IS A MEMBER OF THE DOMAIN, AND FOR 28 CHECKS IT WAS INVISIBLE. `today` was
+    # `SELECT DISTINCT CAST(col AS varchar)`, which emits a NULL ROW whenever the column holds an
+    # empty, while `recorded` is the profile's value list — and the profile excludes nulls BY
+    # CONSTRUCTION (`array_agg(DISTINCT …)` drops them, so does `count(DISTINCT …)`). SQL's
+    # three-valued logic did the rest: `x NOT IN (set)` is UNKNOWN, never TRUE, when x IS NULL.
+    #
+    #   * `vanished` was PINNED AT 0. One null row in `today` makes every
+    #     `recorded.v NOT IN (SELECT v FROM today)` evaluate UNKNOWN, so a value that really had
+    #     disappeared was counted zero times. Half of the check was dead, silently, and it would
+    #     have died the same way on a clean column the day an empty first arrived in it.
+    #   * an arriving empty could never count as `appeared` either, because NULL matches nothing.
+    #
+    # Measured on this estate before the repair: 28 of 115 enumeration checks were in that state,
+    # all 28 recording PASS, and the biconditional `profile nulls > 0  <=>  values_today =
+    # distinct + 1` held on 115 of 115 — the surplus was the null row being counted as a value.
+    #
+    # THE CHOICE, and the two claims are NOT the same claim. Nulls are excluded from BOTH sides, so
+    # `appeared`/`vanished` say something about VALUES and an empty is not a value. The empty is
+    # then compared EXPLICITLY, as its own asserted column, NAMED FOR THE DIRECTION THE PROFILE
+    # ACTUALLY MEASURED:
+    #
+    #     recorded nulls == 0  →  `empty_appeared`   "this column was total, and still is"
+    #     recorded nulls  > 0  →  `empty_vanished`   "empties are still allowed here"
+    #
+    # ONE column, never both, because the other direction would be a literal in the SELECT list and
+    # an assertion over a literal is exactly the vacuity this suite is being cleaned of. Naming the
+    # direction keeps the claim legible where it matters: the run record says which claim broke,
+    # not merely that something about nulls changed.
+    #
+    # `empty_appeared` deliberately overlaps G-<stem>-NULLS. That check asks the relation-wide
+    # question — did ANY always-filled column start arriving empty — and answers with a count;
+    # this one names the COLUMN, and it rides the scan the value-set check is already paying for.
+    # `empty_vanished` overlaps nothing: G-<stem>-NULLS covers only columns measured at zero, so
+    # for a column that already held empties nothing else was watching its domain at all.
     for c in cols:
         vals = (c["profile"] or {}).get("values")
         if not vals:
             continue
         n = str(c["name"])
+        had_empties = bool((c["profile"] or {}).get("nulls"))
+        empties_now = "(SELECT count(*) FROM today WHERE v IS NULL)"
+        empty_col = "empty_vanished" if had_empties else "empty_appeared"
+        empty_sql = f"CASE WHEN {empties_now} = 0 THEN 1 ELSE 0 END" if had_empties else empties_now
+        empty_claim = (
+            "empties were recorded in this column, so the check asserts they are STILL ALLOWED — "
+            "an empty leaving the domain is a change of domain like any other, and nothing else "
+            "watches it, because the always-filled check covers only columns measured at zero"
+            if had_empties else
+            "no empties were recorded in this column, so the check asserts NONE HAS ARRIVED")
         out.append({
             "id": f"G-{stem}-{n.upper()}-VALUES", "family": "enumeration",
             "test_kind": "mac.test_kind.ground_truth", "severity": "major",
@@ -135,22 +181,31 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
             "statement": (
                 f"Prove {n} still holds exactly the {len(vals)} values we found\n"
                 f"QUESTION. Has anything appeared, vanished or been renamed in this list?\n"
-                f"ANSWER. {len(vals)} values were recorded.\n"
+                f"ANSWER. {len(vals)} values were recorded, and "
+                f"{'empties were recorded alongside them' if had_empties else 'no empties were recorded'}.\n"
                 f"RISK. A new value is silently excluded by every filter written before it existed; "
                 f"a renamed one takes its data with it. Neither changes the COUNT, so counting "
                 f"would miss both.\n---\n"
                 f"HOW. Compares today's distinct values against the recorded set in both "
-                f"directions — appeared, and vanished. GENERATED by {GEN}.\n"
+                f"directions — appeared, and vanished — over NON-EMPTY values on both sides, "
+                f"because the recorded list excludes empties by construction. The empty is a "
+                f"member of this domain too and is compared on its own, as {empty_col}: "
+                f"{empty_claim}. It cannot be compared inside the value set: 'x NOT IN (set)' is "
+                f"UNKNOWN and never TRUE when x is empty, which pinned vanished at 0 for every "
+                f"column that held one. GENERATED by {GEN}.\n"
                 f"WHERE. {rel}.{n}. Recorded because the column is small enough to enumerate; a "
                 f"column that grows by design is volume, not structure, and carries no such check."),
-            "assertion": {"type": "must_be_zero", "columns": ["appeared", "vanished"]},
+            "assertion": {"type": "must_be_zero",
+                          "columns": ["appeared", "vanished", empty_col]},
             "tolerance": 0,
             "sql": (f"WITH recorded (v) AS (VALUES {', '.join('(' + _q(v) + ')' for v in vals)}),\n"
-                    f"today AS (SELECT DISTINCT {_as_text(n, _is_complex(c))} AS v FROM {rel})\n"
-                    f"SELECT (SELECT count(*) FROM today  WHERE v NOT IN (SELECT v FROM recorded)) AS appeared,\n"
-                    f"       (SELECT count(*) FROM recorded WHERE v NOT IN (SELECT v FROM today))   AS vanished,\n"
+                    f"today AS (SELECT DISTINCT {_as_text(n, _is_complex(c))} AS v FROM {rel}),\n"
+                    f"present AS (SELECT v FROM today WHERE v IS NOT NULL)\n"
+                    f"SELECT (SELECT count(*) FROM present  WHERE v NOT IN (SELECT v FROM recorded)) AS appeared,\n"
+                    f"       (SELECT count(*) FROM recorded WHERE v NOT IN (SELECT v FROM present))  AS vanished,\n"
+                    f"       {empty_sql} AS {empty_col},\n"
                     f"       (SELECT count(*) FROM recorded) AS values_recorded,\n"
-                    f"       (SELECT count(*) FROM today)    AS values_today"),
+                    f"       (SELECT count(*) FROM present)  AS values_today"),
         })
 
     # ── 3. NEVER-NULL STAYS NEVER-NULL. Only for columns measured at zero: promoting a column that
@@ -209,7 +264,121 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
                     f"       CAST(max(\"{n}\") AS varchar) AS latest_today_not_asserted\n"
                     f"FROM {rel}"),
         })
+    # Internal only, stripped before the file is written: who this check is about, and which of the
+    # four checks it is. The mirror pass needs both and must not re-derive them by parsing ids back.
+    for p in out:
+        p["_stem"], p["_rel"] = stem, rel
+        p["_suffix"] = p["id"][len(f"G-{stem}-"):]
     return out
+
+
+def _blank(sql: str, rel: str) -> str:
+    """This check's SQL with its OWN relation blanked out — schema, table and the dotted pair.
+
+    So two checks that make the same claim about the same rows compare EQUAL when one of them reads
+    the rows through a second name, and two checks over genuinely different relations never do,
+    however alike their payloads look. The shape check spells the schema and the table separately,
+    inside quotes, which is why all three forms are substituted and the longest goes first.
+    """
+    schema, _, name = rel.rpartition(".")
+    out = sql.replace(rel, "<relation>")
+    if name:
+        out = out.replace(_q(name), "<table>")
+    if schema:
+        out = out.replace(_q(schema), "<schema>")
+    return out
+
+
+def _fingerprint(root: pathlib.Path, stem: str):
+    """What a relation MEASURED. Two names over one set of rows produce the same fingerprint.
+
+    The row count plus the column-NAME set, both read from the census — and the width of that rule
+    is the whole judgement, so both edges are recorded here:
+
+      NOT STRICTER than this. One mirror pair on this estate agrees on 14 of its 15 columns and
+      differs on the 15th only because the two sides TYPE it differently — one reports 6 distinct
+      values with min '49.0', the other 5 with min '49'. A rule strict enough to reject that pair
+      is a rule that lets the pair through, and 12 duplicate checks with it.
+
+      NOT LOOSER than this. One pair on this estate carries the SAME COLUMN NAMES and is not a
+      mirror at all: the two sides disagree on the row count, 523.235 against 651.544, because one
+      filters. Five of their checks render identical payloads over those different rows, so a rule
+      that compared payloads alone would delete real coverage — the failure this rule exists to
+      avoid, and the reason the row count is half the fingerprint.
+    """
+    p = yaml.safe_load((root / "data" / "profiles" / f"{stem}.yaml").read_text(encoding="utf-8")) or {}
+    return ((p.get("profile") or {}).get("rows"),
+            tuple(sorted(str(c["name"]) for c in (p.get("columns") or []))))
+
+
+def _drop_mirrors(props: list[dict], planes: dict[str, str], root: pathlib.Path) -> list[dict]:
+    """Delete the checks that are one relation's checks wearing a second relation's name.
+
+    WHY THEY EXIST. Nine of this estate's relations are profiled twice: once as the served dataset
+    and once as the raw source it is a view over. The generator cannot tell from one descriptor
+    that another descriptor names the same rows, so it emitted both — 55 checks that scan the same
+    bytes, assert the same numbers and can only ever agree. A suite that runs them reports a
+    denominator it has not earned, and it pays Athena twice for one answer.
+
+    WHICH SIDE SURVIVES. The served one — the name in the project's own database, the name a
+    concept grounds on and therefore the name a human looks under. The twin is reached through a
+    federated catalogue and carries no concept attribution at all; keeping it and dropping the
+    served name would leave every `validates` on this relation pointing at a deleted check.
+
+    WHAT IS NEVER DROPPED. A check is deleted only when the SAME SUFFIX exists on the surviving
+    side AND its SQL is identical once the relation is blanked AND the assertion and tolerance
+    match. A column only the raw side exposes keeps its check; so does a check whose claim differs
+    even by one recorded value. Two relations that merely share a payload are not mirrors and never
+    reach this function — see `_fingerprint`.
+    """
+    groups: dict[tuple, list[str]] = collections.defaultdict(list)
+    for stem in planes:
+        groups[_fingerprint(root, stem)].append(stem)
+
+    by_stem: dict[str, dict[str, dict]] = collections.defaultdict(dict)
+    for p in props:
+        by_stem[p["_stem"]][p["_suffix"]] = p
+
+    drop: set[str] = set()
+    also: dict[str, tuple[dict, set[str], set[str]]] = {}
+    for fp, members in sorted(groups.items(), key=lambda kv: sorted(kv[1])):
+        if len(members) < 2 or fp[0] is None:
+            continue
+        served = sorted(s for s in members if planes[s] == "datasets")
+        if len(served) != 1:
+            print(f"  ! {len(members)} relations share a fingerprint and {len(served)} of them are "
+                  f"served — no side wins, all kept: {sorted(members)}")
+            continue
+        keep = served[0]
+        for stem in sorted(members):
+            if stem == keep:
+                continue
+            for sx, p in sorted(by_stem[stem].items()):
+                twin = by_stem[keep].get(sx)
+                if twin is None:
+                    continue                 # only the raw side has it — keep it, it is coverage
+                if (_blank(p["sql"], p["_rel"]) != _blank(twin["sql"], twin["_rel"])
+                        or p["assertion"] != twin["assertion"]
+                        or p["tolerance"] != twin["tolerance"]):
+                    continue                 # aligned by name, NOT the same claim — keep both
+                drop.add(p["id"])
+                rec = also.setdefault(twin["id"], (twin, set(), set()))
+                rec[1].add(p["_rel"])
+                rec[2].add(p["id"])
+
+    # EVERY DELETED ID KEEPS A SURVIVING TWIN THAT NAMES IT. A deletion nobody can trace back is
+    # indistinguishable from a check that was never written.
+    for twin, rels, ids in also.values():
+        twin["notes"] = (
+            f"Also covers {', '.join(sorted(rels))} — profiled as the same rows (same row count, "
+            f"same columns) and generating an identical check, dropped as "
+            f"{', '.join(sorted(ids))} by {GEN}.")
+
+    if drop:
+        print(f"  {len(drop)} mirror duplicate(s) dropped, each with a surviving twin:")
+        for twin, rels, ids in sorted(also.values(), key=lambda r: r[0]["id"]):
+            print(f"     {', '.join(sorted(ids)):<62} -> {twin['id']}")
+    return [p for p in props if p["id"] not in drop]
 
 
 def main() -> int:
@@ -220,19 +389,28 @@ def main() -> int:
     a = ap.parse_args()
     root = pathlib.Path(a.root).resolve()
 
-    props, seen = [], 0
+    props, seen, planes = [], 0, {}
     for d in ("datasets", "sources"):
         for f in sorted(glob.glob(str(root / "data" / d / "*.yaml"))):
             got = for_relation(pathlib.Path(f), root)
             if got:
                 seen += 1
+                planes[pathlib.Path(f).stem] = d     # which plane a relation was declared on
             props.extend(got)
+
+    props = _drop_mirrors(props, planes, root)
+    props = [{k: v for k, v in p.items() if not k.startswith("_")} for p in props]
 
     eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
            or {}).get("engine") or {}
     out = root / a.out
     out.write_text(yaml.safe_dump({
-        "suite": "<dataset>-data-sanity-generated",
+        # DERIVED FROM THE BUNDLE, not typed. Every suite in an acceptance/ directory is named
+        # `<bundle>-<suite>`, and this literal held the bundle token — so the public copy of this
+        # file has it scrubbed to a placeholder and a regeneration RENAMES the suite out from under
+        # its own run record and its history. A name a tool writes about a bundle is the bundle's
+        # to supply.
+        "suite": f"{root.name}-data-sanity-generated",
         "version": "1.0",
         "generated": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "generated_by": GEN,

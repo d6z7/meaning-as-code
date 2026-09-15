@@ -92,7 +92,11 @@ RUNS_BY_SUITE_STEM = {
     "rules_generated": "rules_generated_runs.json",
 }
 
-STATUSES = ("PASS", "FAIL", "ACCEPTED", "FROZEN", "ERROR", "NOT_RUN")
+# VACUOUS — the instrument ran cleanly and had nothing to judge. Declared in
+# mac_vocabulary.yaml#test_status as gradeable: false. Without it a SUCCESSFUL run with an
+# empty result was indistinguishable from a violated claim, and a board could not tell
+# "the test is broken" from "the data is dirty".
+STATUSES = ("PASS", "FAIL", "ACCEPTED", "FROZEN", "ERROR", "NOT_RUN", "VACUOUS")
 
 # THE SUITE KEY IN THE TREND, and it is NOT free to choose. 61 history rows already exist under
 # these names (tier1 19 · tier2 16 · ontology 11 · sanity 8 · the three generated suites by their

@@ -196,6 +196,178 @@ test_kind:
       between the two test kinds.
 
 # ===========================================================================
+# mac.test_status — WHAT THE INSTRUMENT DID ABOUT THE PROPERTY.
+#
+# The third disposition axis, and the twin of the two above it: `outcome_class` records what the
+# ENGINE did about a question, `dq_status` what a PERSON did about a defect, and this what the
+# INSTRUMENT did about a property. All three are dispositions; none is a channel.
+#
+# WHERE IT LIVED UNTIL NOW, MEASURED 2026-09-14: `tools/suite_record.py:95`, as a bare Python tuple
+# `STATUSES = ("PASS", "FAIL", "ACCEPTED", "FROZEN", "ERROR", "NOT_RUN")`, restated in prose in
+# `tools/check_run_records.py`'s BAD_STATUS reject class. Zero occurrences of `test_status` or
+# `NOT_RUN` in this file; zero in `mac.schema.json`. So the ONE axis the console actually paints
+# — every card on every grading surface resolves to one of these six — had no home in the registry,
+# which is the same finding `outcome_class` recorded about itself one block above.
+#
+# THE GAP THAT ADDS THE SEVENTH MEMBER. A property whose instrument did not deliver a verdict has
+# nowhere to go but FAIL, so the board's red means "the test is broken" more often than "the data
+# is dirty", and nothing distinguishes them. MEASURED on one applied bundle's tier1 property suite
+# (18 results, `acceptance/property_runs.json`): 8 PASS · 1 ACCEPTED · 9 FAIL, and ALL NINE FAILs
+# are instrument failures rather than data findings. Eight of the nine examined a population of
+# ZERO — five returned no rows at all, each noting "query returned NO ROWS — a property cannot be
+# satisfied vacuously", and three returned exactly one row whose own population column read 0 (one
+# of those three had excluded 2.221.534 rows as not-served, so the sweep was emptied by its own
+# filter). The ninth is an instrument failure of a DIFFERENT kind — a non-empty base of 103.059.108
+# rows with nulls in the derived columns — and it
+# is NOT covered by the new term. Said plainly so the term is not credited with more than it holds.
+#
+# WHY NEITHER `ERROR` NOR `NOT_RUN` IS THE RIGHT HOME — the absence was proved before the term was
+# coined, and both candidates are genuinely occupied:
+#   * `ERROR` is THE ENGINE RAISED. `run_suite.py` assigns it only from an `except` clause, with
+#     `rows=None` and the exception text in `notes`. Exactly one live example exists across the
+#     measured estate — a generated identity property whose note carries the engine's own
+#     split-open failure. A vacuous run raised NOTHING. Folding it into ERROR would also corrupt a measured number: `recount` reports
+#     `errors` from `tally["ERROR"]`, and `_has_evidence` treats `rows=None` as no-evidence while
+#     `rows=[]` IS evidence ("the query ran and returned nothing" — suite_record.py's own comment).
+#     A vacuous run has evidence and an ERROR does not, so one status cannot carry both.
+#   * `NOT_RUN` is DECLARED, NEVER ATTEMPTED — written by `carry_forward` for an id with no result,
+#     and excluded from `examined` as `skipped`. A vacuous property RAN: it compiled, it reached the
+#     warehouse, it scanned bytes. Calling that "not run" is false, and it would move eight live
+#     red rows into the bucket a reader is correct to ignore, which is the opposite failure.
+# So the seventh member is a THIRD non-verdict beside two that were already right, not a repair of
+# either.
+#
+# THE NAME IS THE ESTATE'S OWN, NOT A COINAGE. `run_suite.py:183` already emits "a property cannot
+# be satisfied vacuously"; `tools/check_vacuous_assertions.py` is a whole gate named for the
+# concept; and the applied suites ALREADY WRITE THE WORD AS IF IT WERE A STATUS — "fails as VACUOUS",
+# "the property fails as VACUOUS rather than passing clean", "fails as VACUOUS unless" (five
+# occurrences across data_sanity.yaml and retrieval.yaml). The authors have been describing a status
+# that did not exist, so it collapsed into FAIL. This block gives the word they were already using
+# somewhere to land.
+#
+# AND THE RULE THE RUNNER HALF-STATES. "A property cannot be satisfied vacuously" is TRUE and the
+# runner draws the wrong conclusion from it. The complete rule is: a property over zero subjects
+# cannot be satisfied vacuously AND CANNOT BE VIOLATED VACUOUSLY EITHER. `sdk/acceptance/flags.py`
+# already states the general form for the flag plane — "a check that could not be decided is
+# `unchecked` — never `pass`, never `fail`. An incomplete fact sheet cannot exonerate and cannot
+# convict" — and `tools/_plugin.py` states it for the gate plane: "Could not run is the one honest
+# answer available, and it is never a finding." This axis is the last plane where that doctrine was
+# not expressed.
+#
+# `gradeable` IS THE FIELD A CONSUMER READS, and the word is `flags.py`'s own: its VERDICTS comment
+# says "The first four are gradeable outcomes; the last four mean 'not gradeable'". A surface that
+# needs "is this red because the data is dirty?" reads `gradeable`, not a list of status names it
+# would have to keep in step by hand. Three of the seven are not gradeable, which is the whole point
+# of the block: on the measured tier1 suite that is 9 of 18 results — half the board.
+#
+# WHY THIS IS VOCABULARY-ONLY AND BUMPS NO SCHEMA — `dq_status`'s precedent above, re-measured for
+# this key. `mac.schema.json` carries no `test_status` and no run-record `$def` at all (0 hits for
+# both `test_status` and `NOT_RUN`), so there is no enum to restate and nothing to widen; per
+# RELEASING.md "When to bump", a change that does not touch `mac.schema.json` does not move
+# `schema_version`. Of the closed vocabularies in this file only 3 are ALSO a `mac.schema.json`
+# enum — vocabulary-only enforced by a gate is the majority idiom, not an exception to it.
+#
+# THE SEAM THAT IS NOT YET CLOSED, DISCLOSED RATHER THAN IMPLIED. The enforcing gate ALREADY EXISTS
+# — `tools/check_run_records.py`'s BAD_STATUS class refuses a status outside the closed set — but it
+# reads `suite_record.STATUSES`, the Python tuple, NOT this block. Until that tuple is replaced by a
+# read of this registry, ONE FACT HAS TWO HOMES, which is precisely the drift `check_vocabulary_drift`
+# exists to catch and precisely what it cannot see here: that gate matches only qualified
+# `mac.<vocab>.<term>` literals, and `STATUSES` is a bare tuple, invisible to it by construction.
+# Two consequences, both stated so neither is mistaken for done:
+#   1. `VACUOUS` is DECLARED HERE AND EMITTED BY NOTHING. No runner produces it yet; `run_suite.py`
+#      still returns FAIL for a zero-row result. This block describes a state the runner must learn
+#      to emit — it does not, on its own, turn a single board row from red to grey.
+#   2. Adding `VACUOUS` to `suite_record.STATUSES` is a SEPARATE, human-authorised edit. Doing it
+#      here as a side effect would make the suite greener without proving one new thing.
+# The phasing rule applies, as it did to every member of §5.3 of the 2026-09-13 testing-strategy
+# note: no key becomes REQUIRED in the generation it is invented.
+# ===========================================================================
+test_status:
+  kind: vocabulary
+  closed: true
+  description: >
+    The disposition of ONE property run — what the INSTRUMENT did about the claim, never what the
+    data turned out to be. Written BARE on a run record's `results[].status` (like its siblings
+    `severity` and `family`), referenced as `mac.test_status.<term>`. Every term carries
+    `gradeable`: true where the run produced a verdict about the data, false where it did not, so a
+    surface can separate "the data is dirty" from "the test is broken" without hard-coding a list of
+    names. THREE OF SEVEN ARE NOT GRADEABLE, and a board that paints them like FAIL reports a broken
+    instrument as a data finding — measured at 9 of 18 on the suite this block was written against.
+    `ACCEPTED` and `VACUOUS` carry a `requires`, for the same reason `dq_status.accepted` does: they
+    are the terms that would otherwise be the cheapest way off a red board, so each must carry the
+    evidence that it was earned.
+  terms:
+    PASS:
+      gradeable: true
+      description: >
+        THE INSTRUMENT RAN OVER A NON-EMPTY POPULATION AND THE CLAIM HELD. The population part is
+        not decoration: a PASS over zero subjects is the vacuous green this vocabulary's seventh
+        term exists to make unsayable.
+      requires: []
+    FAIL:
+      gradeable: true
+      description: >
+        THE INSTRUMENT RAN AND THE CLAIM DID NOT HOLD — a statement ABOUT THE DATA, which is what
+        makes it the one red a reader may act on directly. Today it is also the dumping ground for
+        every run that produced no verdict at all, and that is the defect `VACUOUS` removes.
+      requires: []
+    ACCEPTED:
+      gradeable: true
+      description: >
+        THE CLAIM DID NOT HOLD AND A NAMED RULING TOLERATES IT. Green because the defect is
+        tolerated, which is not the same claim as correct — the same distinction `dq_status.accepted`
+        draws one plane over. `run_suite.py` stamps the suite's `accepted:` block onto the result,
+        so the ruling travels WITH the verdict rather than being looked up beside it.
+      requires: [accepted]
+    FROZEN:
+      gradeable: true
+      description: >
+        THE CLAIM DID NOT HOLD AND THE FAILURE IS DELIBERATELY PARKED — neither repaired nor ruled
+        acceptable. Distinct from ACCEPTED, which asserts someone judged the finding; FROZEN asserts
+        only that someone decided not to today. NOTE, MEASURED: the `frozen:` block lives on the
+        SUITE and is not copied onto the result, so a FROZEN row carries no on-record evidence of who
+        froze it or when — the asymmetry with ACCEPTED is real, and is recorded here rather than
+        papered over with a `requires` no writer satisfies.
+      requires: []
+    ERROR:
+      gradeable: false
+      description: >
+        THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection
+        refused, a timeout. Nothing was judged, so it must never be counted as a finding about the
+        data — `tools/_plugin.py`'s founding rule ("could not run is the one honest answer available,
+        and it is never a finding") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis.
+        Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned
+        nothing, which is evidence, and `null` means nothing was examined.
+      requires: [notes]
+    NOT_RUN:
+      gradeable: false
+      description: >
+        DECLARED, NEVER ATTEMPTED. The honest default for an id the suite declares and the run did
+        not reach, written by `carry_forward` so that a declared property with no result is NOT_RUN
+        rather than ABSENT — absence reads as nothing-to-report, which is the state this term was
+        invented to end. Excluded from `examined` and counted as `skipped`.
+      requires: []
+    VACUOUS:
+      gradeable: false
+      description: >
+        THE INSTRUMENT RAN CLEANLY AND HAD NOTHING TO JUDGE. The query compiled, reached the source
+        and returned — and the population it examined was ZERO, so the claim was neither satisfied
+        nor violated. A property over zero subjects cannot be satisfied vacuously AND CANNOT BE
+        VIOLATED VACUOUSLY EITHER; the runner already says the first half in its own note and then
+        returns FAIL, which asserts the second. DISTINCT FROM `ERROR` (which raised, and has no
+        evidence) and from `NOT_RUN` (which was never attempted): a VACUOUS run has a query, a byte
+        count and a measured zero, and every one of those is actionable — it means the scope, the
+        filter or the fixture is wrong, and the property is currently testing nothing.
+        NOT AN ESCAPE HATCH: `requires` makes the zero NAMEABLE and CHECKABLE rather than asserted,
+        because a status that could be written without evidence would be the cheapest way off a red
+        board — the `corpus: none` failure mode, one plane over. `examined` names the population
+        column the instrument itself reported — the live spellings are all of the form
+        `<subject>_examined` or a bare count of the subject — and its value, which MUST be 0. A
+        non-zero `examined` with a null verdict column is a DIFFERENT instrument defect and is NOT
+        this term (measured live: one property, 103.059.108 rows examined, derived columns null).
+      requires: [examined, notes]
+
+# ===========================================================================
 # mac.outcome_class — WHAT THE ENGINE DID ABOUT THE QUESTION.
 #
 # The grading axis the whole estate already reasons in — oracles, dashboards, the console's route
