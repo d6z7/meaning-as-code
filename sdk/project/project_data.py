@@ -839,10 +839,34 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
 
 
 if __name__ == "__main__":
-    import argparse
+    # THIS CLI IS THE TRAP THE REST OF THIS ESTATE ALREADY WARNS ABOUT, and it warns in prose while
+    # the entry point stayed open. `sdk/cli/harvest.py` says it three times — "build_data() (it
+    # drops the Lineage view tab)", "MUST be threaded into the projection", "so ad-hoc build_data()
+    # calls are never needed" — and none of that reaches someone typing the module name.
+    #
+    # WHAT IT COSTS. `build_data(data_dir, out_dir=None, lineage=None)` takes the flows as an
+    # argument and this parser had no way to supply them, so every invocation projected with
+    # lineage=None and `_views` silently dropped the `lineage` tab from EVERY source and dataset —
+    # measured: 12 sources and 14 datasets, reported by the operator as "lineage tab is not there".
+    # It also bypassed the compile gate that `project_source` runs first, so a bundle that the
+    # estate refuses to project was projected anyway.
+    #
+    # A degraded artifact written silently is worse than a refusal, so this refuses and names the
+    # supported path instead of doing three-quarters of the job.
+    import sys
 
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--data", required=True)
-    ap.add_argument("--out", required=True)
-    a = ap.parse_args()
-    print(build_data(a.data, a.out))
+    print(
+        "REFUSED: project_data is not a supported entry point.\n"
+        "\n"
+        "  It takes column-level lineage as an ARGUMENT and this CLI cannot supply it, so a direct\n"
+        "  invocation drops the Lineage view tab from every source and dataset, and skips the\n"
+        "  compile gate that refuses a non-conformant bundle.\n"
+        "\n"
+        "  Use the one supported path, which computes the flows and threads them:\n"
+        "\n"
+        "    python -m sdk.cli.harvest --content-root <bundle> --mode project\n"
+        "\n"
+        "  Import build_data(data_dir, lineage=flows) directly only if you are supplying flows.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
