@@ -126,6 +126,74 @@ def grounded_relations(concept: dict) -> list[dict]:
     return srcs
 
 
+
+def _edge_index(ont_edges: list, root) -> dict:
+    """The full edge set with its realisation and its proof, for a surface that shows edges AS
+    edges. Reads the measurement record if one exists; says so plainly when it does not."""
+    from pathlib import Path as _P
+
+    meas: dict = {}
+    rec = _P(root) / "evidence" / "edge_measurements.json"
+    if rec.exists():
+        try:
+            for m in json.loads(rec.read_text(encoding="utf-8")).get("results") or []:
+                meas[str(m.get("edge"))] = m
+        except Exception:  # noqa: BLE001
+            meas = {}
+
+    out = []
+    for e in ont_edges or []:
+        eid = str(e.get("edge_id"))
+        ep = e.get("endpoints") or {}
+        # WHICH OF THE THREE, named rather than inferred from an absence. A schema branch now
+        # requires one of them (v0.1.18); before it, "no join needed" and "nobody worked it out"
+        # were the same empty field.
+        realisation = (
+            "join_rule" if e.get("join_rule")
+            else "resolved_by" if e.get("resolved_by")
+            else "realized_by" if e.get("realized_by")
+            else None
+        )
+        m = meas.get(eid)
+        proof = {"state": "unproved", "detail": None}
+        if e.get("verified_by") and m:
+            lhs, matched, fan = int(m.get("lhs") or 0), int(m.get("matched") or 0), int(m.get("fanout") or 0)
+            holds = lhs > 0 and matched == lhs and fan <= 1
+            proof = {
+                "state": "proved" if holds else "contradicted",
+                "detail": f"{matched}/{lhs} resolve, max fanout {fan}",
+            }
+        elif e.get("verified_by"):
+            # A CITATION IS NOT A PROOF. The pointer exists and its target was not read here.
+            proof = {"state": "cited", "detail": str(e.get("verified_by"))}
+        out.append(
+            {
+                "edge_id": eid,
+                "level": e.get("level"),
+                "type": e.get("type"),
+                "from": (ep.get("from") or {}).get("concept"),
+                "to": (ep.get("to") or {}).get("concept"),
+                "cardinality_from": (ep.get("from") or {}).get("cardinality"),
+                "cardinality_to": (ep.get("to") or {}).get("cardinality"),
+                "realisation": realisation,
+                "join_rule": e.get("join_rule"),
+                "resolved_by": e.get("resolved_by"),
+                "realized_by": e.get("realized_by"),
+                "verified_by": e.get("verified_by"),
+                "confidence": e.get("confidence"),
+                "notes": e.get("notes"),
+                "proof": proof,
+            }
+        )
+    out.sort(key=lambda x: (str(x["from"]), str(x["to"]), x["edge_id"]))
+    return {
+        "edges": out,
+        "total": len(out),
+        "measured": sum(1 for x in out if x["proof"]["state"] == "proved"),
+        "unproved": sum(1 for x in out if x["proof"]["state"] == "unproved"),
+    }
+
+
 def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, out_dir=None) -> dict:
     data_dir = Path(data_dir)
     sources = {p.stem: _load(p) or {} for p in sorted((data_dir / "sources").glob("*.yaml"))}
@@ -908,6 +976,21 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         if concepts:
             (odir / "vocabulary.json").write_text(
                 json.dumps(vocabulary.build(concepts, ont_edges), indent=2, sort_keys=True)
+            )
+            # THE EDGE SET, AS A SET. Until now no surface in the console could show the edges as a
+            # whole: the ER diagram draws the PHYSICAL relations (13 entities, 11 links) and says it
+            # "realises" 24 of them; the graph view draws every edge as the same unlabelled arrow
+            # with `kind` hardcoded to "fk", business edges included; the concept page shows an
+            # edge's proof but only one concept at a time. So the one thing an edge now carries —
+            # a cardinality claim, a declared realisation, and a measurement that either holds or
+            # does not — had nowhere to be read together.
+            #
+            # PROOF IS RESOLVED HERE, ONCE. The measurement record is the evidence; the two numbers
+            # that judge it (every key resolves, none resolves to two rows) are the same two the
+            # gate judges. Resolving them in each consumer is how two surfaces come to disagree
+            # about the same edge, which is exactly what happened the day measurements landed.
+            (odir / "edges.json").write_text(
+                json.dumps(_edge_index(ont_edges, Path(data_dir).parent), indent=2, sort_keys=True)
             )
     return result
 
