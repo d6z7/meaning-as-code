@@ -32,6 +32,28 @@ import re as _re
 from pathlib import Path
 
 
+def _pct(num, den, what: str):
+    """A percentage, or NOTHING — never a percentage over an empty denominator.
+
+    `round(100 * num / max(1, den))` appeared six times in this file and is the defect it looks
+    like a defence against. It guards the ZeroDivisionError and, in doing so, converts "there was
+    nothing to measure" into a confident 0 %. A reader cannot tell those apart, and a scorecard
+    that says 0 % when it means "I did not measure" is worse than one that says nothing: the first
+    is acted on.
+
+    This estate refuses an empty denominator everywhere it MEASURES — mac_diag.refuse_empty, the
+    console render gate's population guard, every check_*.py — and did not refuse it anywhere it
+    PROJECTS. That asymmetry is how `execution_validation` published `covered: 0, pct: 0` over 267
+    properties whose join had simply not resolved.
+
+    Returns (pct, note). `pct` is None when nothing could be measured, and `note` says why, so the
+    caller publishes an absence rather than a number.
+    """
+    if den <= 0:
+        return None, f"not measured — no {what} to measure ({den} in the denominator)"
+    return round(100 * num / den), None
+
+
 def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
     title_of, name_of = {}, {}
     for stem, c in concepts.items():
@@ -473,8 +495,8 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
             "maturity": {
                 "concepts": conf_c,
                 "rules": rule_c,
-                "concept_confirmed_pct": round(100 * conf_c["C"] / max(1, nconc)),
-                "rule_confirmed_pct": round(100 * rule_c["C"] / max(1, total_r)),
+                "concept_confirmed_pct": _pct(conf_c["C"], nconc, "concept")[0],
+                "rule_confirmed_pct": _pct(rule_c["C"], total_r, "rule")[0],
             },
             # `total` excludes refuse-stubs: a concept authored to be unlinked cannot be a shortfall.
             "connectivity": {
@@ -483,14 +505,14 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                 "by_rule": by_rule,
                 "total": nconc - len(refuse_stubs),
                 "refuse_stubs": sorted(refuse_stubs),
-                "pct": round(100 * (by_edge + by_rule) / max(1, nconc - len(refuse_stubs))),
+                "pct": _pct(by_edge + by_rule, nconc - len(refuse_stubs), "linkable concept")[0],
                 "edges": edge_levels,
                 "rule_links": len(rule_links),
             },
             "documentation": {
                 "cols_described": cols_desc,
                 "cols_total": cols_total,
-                "pct": round(100 * cols_desc / max(1, cols_total)),
+                "pct": _pct(cols_desc, cols_total, "column")[0],
             },
             "rule_kinds": {
                 "present": sorted(kinds_present),
@@ -500,13 +522,13 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
             # UNMEASURED is not CLEAN: with no compile.json the dashboard says it does not know,
             # rather than reporting 100 % and inventing an assurance nobody computed.
             "execution_validation": (
-                dict(execval, pct=round(100 * execval["covered"] / max(1, execval["total"])))
+                dict(execval, pct=_pct(execval["covered"], execval["total"], "concept")[0])
                 if execval["measured"]
                 else {"measured": False}
             ),
             "answerability": (
                 dict(
-                    answerable, pct=round(100 * answerable["derives"] / max(1, answerable["total"]))
+                    answerable, pct=_pct(answerable["derives"], answerable["total"], "concept")[0]
                 )
                 if answerable["measured"]
                 else {"measured": False}
