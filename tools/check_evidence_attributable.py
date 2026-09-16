@@ -21,6 +21,14 @@ three times: a scorecard publishing `covered: 0 of 22` from a join empty by cons
 match against served ids while the register recorded raw ones, and this. A join on names fails
 SILENTLY; a dereference of a declared identity fails LOUDLY. This is the dereference.
 
+ADDRESSED IS NOT THE SAME AS MEASURED, and this gate reports both because the first conceals the
+second. A card lists every concept it bears on, so a broad card naming sixteen concepts credits all
+sixteen. Counted together those swamp the specific ones: one concept showed 56 cards naming it and
+82% passing, while the five cards actually about it were 3 passing and 2 failing — including its
+identity. Another showed 28 and had NONE of its own. A concept with no focused evidence is not
+failed here — it is a real state, and the point is that it becomes visible instead of hiding behind
+a large number.
+
 WHAT IT REFUSES TO DO. It does not require every concept to be measured — a concept nothing names
 is a legitimate and reportable state, not an error, and failing it would push people to author
 attributions they have not earned. What it refuses is a `validates` entry that resolves to NO
@@ -67,6 +75,9 @@ def declared_identities(root: pathlib.Path) -> tuple[dict[str, str], list[str]]:
         else:
             nameless.append(f.stem)
     return by_name, nameless
+
+
+FOCUS_MAX = 3  # a card naming at most this many concepts is ABOUT them, not merely touching them
 
 
 def judge(validates: dict[str, int], identities: set[str], nameless: list[str]) -> list[tuple[str, str]]:
@@ -127,9 +138,16 @@ def main() -> int:
         )
 
     validates: dict[str, int] = {}
+    focused: dict[str, int] = {}
     for c in cards:
-        for v in c.get("validates") or []:
-            validates[str(v)] = validates.get(str(v), 0) + 1
+        vs = [str(v) for v in (c.get("validates") or [])]
+        for v in vs:
+            validates[v] = validates.get(v, 0) + 1
+            if len(vs) <= FOCUS_MAX:
+                focused[v] = focused.get(v, 0) + 1
+    # CARDS THAT NAME NOTHING. Their evidence is attributed to no part of the model at all, which
+    # is a different state from a concept nothing names and is invisible from either side.
+    unattributed = sum(1 for c in cards if not (c.get("validates") or []))
 
     findings = judge(validates, set(by_name), nameless)
 
@@ -139,6 +157,10 @@ def main() -> int:
     addressed = {by_name[v] for v in validates if v in by_name}
     unaddressed = sorted(set(by_name.values()) - addressed)
     attributions = sum(validates.values())
+    # ADDRESSED BY SOMETHING BROAD, BUT BY NOTHING OF ITS OWN.
+    no_focus = sorted(
+        by_name[v] for v in validates if v in by_name and not focused.get(v)
+    )
 
     if a.json:
         print(
@@ -147,6 +169,8 @@ def main() -> int:
                     "concepts": len(by_name) + len(nameless),
                     "addressed": len(addressed),
                     "unaddressed": unaddressed,
+                    "no_focused_evidence": no_focus,
+                    "unattributed_cards": unattributed,
                     "attributions": attributions,
                     "findings": [{"class": k, "msg": m} for k, m in findings],
                 },
@@ -162,9 +186,21 @@ def main() -> int:
             f"  [unaddressed] {len(unaddressed)} concept(s) no card names: "
             f"{', '.join(unaddressed[:6])}{' …' if len(unaddressed) > 6 else ''}"
         )
+    if no_focus:
+        print(
+            f"  [no-focused-evidence] {len(no_focus)} concept(s) are named ONLY by cards that name "
+            f"more than {FOCUS_MAX} concepts — nothing measures them on their own: "
+            f"{', '.join(no_focus[:6])}{' …' if len(no_focus) > 6 else ''}"
+        )
+    if unattributed:
+        print(
+            f"  [unattributed] {unattributed} card(s) name no concept at all — their evidence is "
+            f"attributed to no part of the model"
+        )
     tail = (
         f"{attributions} attribution(s) over {len(validates)} distinct name(s) resolved against "
-        f"{len(by_name)} declared concept identit(ies); {len(addressed)} concept(s) addressed"
+        f"{len(by_name)} declared concept identit(ies); {len(addressed)} concept(s) addressed, "
+        f"{len(addressed) - len(no_focus)} with evidence of their own"
     )
     if findings:
         print(f"FAIL: check_evidence_attributable — {len(findings)} unattributable name(s) — {tail}")
