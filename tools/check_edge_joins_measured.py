@@ -132,12 +132,20 @@ def main() -> int:
             print(f"FAIL: check_edge_joins_measured — {rec.name} unreadable: {str(e)[:90]}")
             return 1
 
-    declaring, no_predicate = [], []
+    declaring, realised_otherwise, unrealised = [], [], []
     for e in edges:
         eid = str(e.get("edge_id"))
         pred = e.get("join_rule")
         if not isinstance(pred, str) or not pred.strip():
-            no_predicate.append(eid)
+            # NOT ALL PREDICATE-LESS EDGES ARE THE SAME, and reporting them as one number was this
+            # gate's own version of the defect it exists to catch. An edge may declare its
+            # realisation as `resolved_by` (a rule or transform resolves it) or `realized_by` (a
+            # column carries it) — those are DECLARED, just not as a join. An edge declaring none
+            # of the three is the only real hole.
+            if e.get("resolved_by") or e.get("realized_by"):
+                realised_otherwise.append(eid)
+            else:
+                unrealised.append(eid)
             continue
         ep = e.get("endpoints") or {}
         m = measured.get(eid) or {}
@@ -170,7 +178,8 @@ def main() -> int:
                     "edges": len(edges),
                     "declaring": len(declaring),
                     "measured": sum(1 for r in declaring if r["measured"]),
-                    "no_predicate": no_predicate,
+                    "realised_otherwise": realised_otherwise,
+                    "unrealised": unrealised,
                     "findings": [{"class": k, "msg": m} for k, m in findings],
                 },
                 indent=1,
@@ -183,16 +192,23 @@ def main() -> int:
     # REPORTED, NEVER FAILED. An edge with no predicate is a REALISATION question — is none needed,
     # or has nobody worked it out? Those are different states and this gate cannot tell them apart,
     # so it counts them and says so rather than guessing.
-    if no_predicate:
+    if realised_otherwise:
         print(
-            f"  [no-predicate] {len(no_predicate)} edge(s) declare no join_rule — this gate cannot "
-            f"tell 'no join needed' from 'nobody worked it out': "
-            f"{', '.join(no_predicate[:6])}{' …' if len(no_predicate) > 6 else ''}"
+            f"  [realised-not-joined] {len(realised_otherwise)} edge(s) declare no join_rule "
+            f"because a join is not how they are realised — they carry resolved_by or "
+            f"realized_by, and this gate has nothing to measure on them"
+        )
+    if unrealised:
+        print(
+            f"  [unrealised] {len(unrealised)} edge(s) declare NO realisation at all — not a join, "
+            f"not a rule, not a column. Nobody has said how this relationship is reached: "
+            f"{', '.join(unrealised[:6])}{' …' if len(unrealised) > 6 else ''}"
         )
     n_meas = sum(1 for r in declaring if r["measured"])
     tail = (
         f"{n_meas} of {len(declaring)} declared predicate(s) measured over {len(edges)} edge(s); "
-        f"{len(held)} holding, {len(no_predicate)} declare no predicate"
+        f"{len(held)} holding, {len(realised_otherwise)} realised without a join, "
+        f"{len(unrealised)} with no realisation at all"
     )
     if findings:
         print(f"FAIL: check_edge_joins_measured — {len(findings)} contradicted claim(s) — {tail}")

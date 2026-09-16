@@ -73,6 +73,29 @@ def verdict_of(root: pathlib.Path, ref: str) -> tuple[str | None, str]:
     if "#" not in ref:
         return None, f"reference carries no #id: {ref!r}"
     suite_rel, cid = ref.split("#", 1)
+
+    # MEASURED EVIDENCE IS EVIDENCE. Until now `verified_by` could only cite an EXPECTATION someone
+    # authored, which is why one edge of thirty-two carried any: proving a relationship required a
+    # human to write a test for it. An edge's cardinality is pure counting, so mac_measure_edges can
+    # record it without an author — and this resolves that record the same way it resolves a suite,
+    # by reading the numbers and judging them, never by trusting the pointer's existence.
+    if suite_rel.endswith("edge_measurements.json"):
+        rec = root / suite_rel
+        if not rec.exists():
+            return None, f"cites a measurement at {suite_rel} which does not exist"
+        try:
+            results = json.loads(rec.read_text(encoding="utf-8")).get("results") or []
+        except Exception as e:  # noqa: BLE001
+            return None, f"{rec.name} is unreadable: {str(e)[:80]}"
+        hit = [r for r in results if str(r.get("edge")) == cid]
+        if not hit:
+            return None, f"{rec.name} carries no measurement for {cid}"
+        m = hit[0]
+        lhs, matched, fan = int(m.get("lhs") or 0), int(m.get("matched") or 0), int(m.get("fanout") or 0)
+        # The same two numbers check_edge_joins_measured judges. Stated here rather than imported so
+        # a change to one gate cannot silently change the other's verdict.
+        return ("PASS" if (lhs and matched == lhs and fan <= 1) else "FAIL"), ""
+
     suite = root / suite_rel
     if not suite.exists():
         return None, f"suite not found: {suite_rel}"
