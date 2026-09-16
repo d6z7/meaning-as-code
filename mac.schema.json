@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.14-develop",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.18-develop",
   "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
@@ -66,13 +66,18 @@
     "credentialRef": {
       "type": "object",
       "description": "v0.1.15: HOW A CREDENTIAL IS OBTAINED — never what it is. EXACTLY two keys, `additionalProperties: false`, and there is no third key, ever, for any connector. That single constraint is the entire security posture, and it is what turns a convention enforced by a pattern-matcher into a SCHEMA FACT: in a governed connection file there is nowhere to put a secret. A future engine wanting user + password + client certificate does NOT get three keys; it gets one `ref` resolving to a compound secret in whatever manager the deployment runs, because richer auth needs a richer SECRET, not a richer file. A per-connector credentials schema was rejected outright: the moment a connector may declare its own fields, one of them will be a password field and the structural guarantee is gone. The block being ABSENT is legal and means 'no credential required' — that is the DuckDB case, and it is why `credentials` is not in ConnectionFile.required. Note the measured limit this does NOT cover: the residual secret scan over the sibling `config:` block is AWS-shaped by construction and catches nothing else, so this guarantee is real for `credentials` and only for `credentials`.",
-      "required": ["mode"],
+      "required": [
+        "mode"
+      ],
       "properties": {
         "mode": {
           "$ref": "#/$defs/credentialMode"
         },
         "ref": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "A HANDLE, never a value — a profile name, a secret-manager path, a certificate location. MAC never resolves it and never reads what it points at; the connector does, at answer time, in the deployment's own manager."
         }
       },
@@ -81,15 +86,23 @@
         {
           "$comment": "The three modes that name something to fetch are useless without the handle, so the schema requires it rather than letting the connector discover the omission at answer time, against a live warehouse.",
           "if": {
-            "required": ["mode"],
+            "required": [
+              "mode"
+            ],
             "properties": {
               "mode": {
-                "enum": ["named_profile", "secret_manager", "client_certificate"]
+                "enum": [
+                  "named_profile",
+                  "secret_manager",
+                  "client_certificate"
+                ]
               }
             }
           },
           "then": {
-            "required": ["ref"],
+            "required": [
+              "ref"
+            ],
             "properties": {
               "ref": {
                 "type": "string",
@@ -101,10 +114,16 @@
         {
           "$comment": "The three modes where the MECHANISM is the auth have nothing to point at. `ref` may be absent or explicitly null — null is permitted because the measured connection files in this estate spell an empty slot that way — but a non-empty handle beside `ambient` is a contradiction the author should see, not a value silently ignored.",
           "if": {
-            "required": ["mode"],
+            "required": [
+              "mode"
+            ],
             "properties": {
               "mode": {
-                "enum": ["ambient", "interactive", "none"]
+                "enum": [
+                  "ambient",
+                  "interactive",
+                  "none"
+                ]
               }
             }
           },
@@ -119,13 +138,22 @@
       ]
     },
     "credentialMode": {
-      "enum": ["ambient", "named_profile", "secret_manager", "interactive", "client_certificate", "none"],
+      "enum": [
+        "ambient",
+        "named_profile",
+        "secret_manager",
+        "interactive",
+        "client_certificate",
+        "none"
+      ],
       "description": "v0.1.15: `mac.credential_mode` — the closed, BRAND-FREE set of ways a credential is obtained. THE DEFINITION LIVES IN mac_vocabulary.yaml#credential_mode, which carries each member's meaning and the measurement that forced the set; this enum restates the member NAMES only, which is the idiom $defs/confidence and $defs/status already use. The reasoning is deliberately NOT copied here: it has one home, and the vendor spellings this set exists to keep out of the framework do not need a second appearance inside the grammar file in order to be kept out of it. A new member is a FRAMEWORK RELEASE, not a bundle's choice; a connector that spells a mode its own way keeps that spelling as its OWN alias and reports MAC003 fact-restated."
     },
     "ConnectionFile": {
       "type": "object",
       "description": "v0.1.15: THE CONNECTION ENVELOPE (the file named by mac.project.yaml#runtime.connection). THE WHOLE POINT OF THIS DEFINITION IS THE LINE IT DRAWS: MAC reads the whole manifest and exactly three keys of THIS file — who the connector is (from the manifest), how the credential is obtained (`credentials`), and where the connector's own payload begins (`config`). Everything past that line is the connector's. The grammar therefore does NOT learn what a region, a workgroup or a catalog is, and could not be made to: those nouns have no home above `config`, whose contents this schema deliberately does not describe. `additionalProperties: false` is the load-bearing half — it is what leaves `aws_secret_access_key:` nowhere legal to sit, and what forces every vendor key DOWN into `config` where a named party owns its meaning. This file is DEPLOYMENT, not bundle: it is overridable (connection.local.yaml, $DEPLOYMENT_CONFIG) and therefore may never say which CODE runs — `runtime.connector` lives in the manifest precisely because an override chain must be able to change where you point, never what loads into the host process.",
-      "required": ["spec_version"],
+      "required": [
+        "spec_version"
+      ],
       "properties": {
         "spec_version": {
           "type": "string",
@@ -707,7 +735,7 @@
           }
         },
         "table": {
-          "description": "LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding \u2014 use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale.",
+          "description": "LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding — use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale.",
           "type": "string"
         },
         "tables": {
@@ -1804,6 +1832,38 @@
                   "required": [
                     "conditions",
                     "confidence"
+                  ]
+                }
+              },
+              {
+                "$comment": "v0.1.18: a PHYSICAL edge is REALISED or it is nothing. The two BUSINESS branches above already require a realisation — identity must carry `realized_by`, shared_attribute must carry `resolved_by` — and the physical branch constrained only the TYPE, so a physical edge could name two concepts and a cardinality while saying nothing about how the relationship is reached, and validate. Eight did, for a day, after a ruling correctly DELETED their join predicates (the join fanned out 215x) and left nothing behind. The reasoning went into a YAML comment, which no gate can read, so 'no join is needed here' and 'nobody has worked this out' became one absence — and a renderer cannot tell those apart either. A physical edge must now say which: a join predicate, a column that carries it, or a rule/transform that resolves it.",
+                "if": {
+                  "required": [
+                    "level"
+                  ],
+                  "properties": {
+                    "level": {
+                      "const": "physical"
+                    }
+                  }
+                },
+                "then": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "join_rule"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "realized_by"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "resolved_by"
+                      ]
+                    }
                   ]
                 }
               }
