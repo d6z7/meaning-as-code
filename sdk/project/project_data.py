@@ -155,16 +155,34 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         for t in r.get("resolving_transforms") or []:
             tr_findings.setdefault(t, []).append((fid, r))
 
-    # associate each issue to a source table (explicit `table:` else column-name overlap)
-    def _assoc(iss) -> str | None:
+    # ASSOCIATE EACH ISSUE TO A SOURCE TABLE, AND SAY HOW IT WAS ASSOCIATED.
+    #
+    # Two of the three branches below are a DEREFERENCE of something a human declared — the issue's
+    # own `table:`, or the resolution map's `locus`. The third is a GUESS: it counts how many of a
+    # source's column names appear as substrings inside the issue's English prose and takes the
+    # argmax, with ties broken by whatever order `sources` happens to iterate in.
+    #
+    # The guess is not removed here, because removing it would lose the only attribution most
+    # issues have. What is fixed is that it USED TO BE INDISTINGUISHABLE from a declaration:
+    # `_table` was emitted the same either way, so every consumer downstream — the per-source
+    # Quality tab, the lineage node badge, the concept DESCRIBE pane — rendered an inference with
+    # exactly the confidence of a fact. Measured on one bundle: 12 of 45 issues declare a table and
+    # 33 are guessed, and one concept's "conditions addressed where this is built" card was 3
+    # declared beside 1 guess with nothing to tell them apart.
+    #
+    # Unproven is a TYPE, not a silence — the same rule the acceptance suites already follow. So
+    # the provenance travels with the value and consumers can choose; what they may no longer do is
+    # be misled by accident.
+    def _assoc(iss) -> tuple[str | None, bool]:
+        """(table, inferred). `inferred` is True when nothing declared this and prose was matched."""
         if iss.get("table") in sources:
-            return iss["table"]
+            return iss["table"], False
         r = resmap.get(iss.get("id")) or {}
         loc = (
             str(r.get("locus", "")).split(".")[0].strip()
         )  # resolution map "table.column" -> table
         if loc in sources:
-            return loc
+            return loc, False
         text = (str(iss.get("title", "")) + " " + str(iss.get("finding", ""))).lower()
         best, score = None, 0
         for stem, src in sources.items():
@@ -172,7 +190,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             s = sum(1 for c in cols if c and c in text)
             if s > score:
                 best, score = stem, s
-        return best
+        # A zero-score argmax is not a weak match, it is NO match — `best` stays None and the issue
+        # is attributed to nothing rather than to whichever table sorted first.
+        return best, best is not None
 
     by_table: dict = {}
     _seen: dict = {}  # de-dupe colliding DQ ids (the register numbers per-table)
@@ -180,7 +200,7 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         base = _slug(iss.get("id") or f"issue-{i}")
         _seen[base] = _seen.get(base, 0) + 1
         iss["_id"] = base if _seen[base] == 1 else f"{base}-{_seen[base]}"
-        iss["_table"] = _assoc(iss)
+        iss["_table"], iss["_table_inferred"] = _assoc(iss)
         by_table.setdefault(iss["_table"], []).append(iss)
 
     # ---- DQ Issue pages ----
@@ -810,6 +830,10 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
                 "severity": iss.get("severity"),
                 "confidence": iss.get("confidence"),
                 "table": iss.get("_table"),
+                # HOW `table` WAS ARRIVED AT. True means no human declared it and the projector
+                # matched the issue's prose against column names to pick one. A consumer that
+                # renders both identically states an inference as a fact — see _assoc above.
+                "table_inferred": bool(iss.get("_table_inferred")),
                 "impurity_class": r.get("impurity_class") or iss.get("impurity_class"),
                 "coverage": r.get("coverage") or "unreconciled",
                 "resolving_transforms": r.get("resolving_transforms") or [],
