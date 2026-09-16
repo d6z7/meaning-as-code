@@ -45,7 +45,7 @@ import sys
 
 import yaml
 
-SLOT = re.compile(r"@@[A-Za-z_][A-Za-z0-9_]*|@(?:cols|col|rel):[A-Za-z_][A-Za-z0-9_]*")
+SLOT = re.compile(r"@@[A-Za-z_][A-Za-z0-9_]*|@(?:cols|col|rel|frag):[A-Za-z_][A-Za-z0-9_]*")
 
 
 class RefusedToRender(Exception):
@@ -111,8 +111,16 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
         if d is None:
             raise RefusedToRender(f"{slot}={given!r} — no dataset descriptor declares that relation")
         binds_for = rule.get("binds_for") or []
+        # BINDS_FOR CONSTRAINS THE RELATION BEING COLLAPSED, NOT EVERY RELATION IN THE FRAGMENT.
+        # It means "this relation's cell key is verified, so a partition over it is defensible".
+        # Applied to all slots it also rejects a DIMENSION being joined, which has no cell key to
+        # verify and is not being collapsed — so the first rule that joined one was refused for a
+        # property it was never claiming. A fragment with one relation is unaffected; one that
+        # names its collapse subject has the guard applied there and only there.
+        subject = rule.get("collapse_subject")
         stem = os.path.basename(d["__file__"])[:-5]
-        if binds_for and not ({given, stem, (d.get("table") or {}).get("name")} & set(binds_for)):
+        guarded = (slot == subject) if subject else True
+        if guarded and binds_for and not ({given, stem, (d.get("table") or {}).get("name")} & set(binds_for)):
             raise RefusedToRender(
                 f"{slot}={given!r} is not in {frag_id}.binds_for {binds_for} — a relation with no "
                 f"verified cell key cannot bind this collapse, and improvising a partition over data "
@@ -136,7 +144,26 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
             continue
         spec = str(spec)
 
-        if slot.startswith("@@"):
+        if slot.startswith("@frag:"):
+            # COMPOSITION. A rule that reduces a fact must first pin it, and pinning is already a
+            # fragment. Without this the only way to write the second rule is to RE-TYPE the first
+            # one at the call site — which is the precise defect this whole file exists to stop, so
+            # a grammar with no composition guarantees the thing it was built to prevent.
+            #
+            # The sub-fragment is rendered with the SAME bindings and inlined as a named CTE. It is
+            # rendered, never copied: change snapshot.as_of_cycle and every rule built on it follows.
+            if not spec.startswith("fragment:"):
+                raise RefusedToRender(f"{slot}: expected 'fragment:<id>', got {spec!r}")
+            sub_id = spec.split(":", 1)[1]
+            if sub_id == frag_id:
+                raise RefusedToRender(f"{slot}: {frag_id} composes itself")
+            sub_sql, sub_prov = render(root, sub_id, bindings)
+            body = "\n".join("    " + ln for ln in sub_sql.strip().splitlines())
+            resolved[slot] = f"{slot[len('@frag:'):]} AS (\n{body}\n  )"
+            prov["sources"].append({"slot": slot, "from": f"fragment:{sub_id}",
+                                    "composed": sub_prov.get("sources", [])})
+
+        elif slot.startswith("@@"):
             resolved[slot] = spec.split(":", 1)[1] if spec.startswith("cte:") else slot[2:]
 
         elif slot.startswith("@cols:"):
