@@ -278,11 +278,24 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             continue
         fcol, tcol = _join_cols(e.get("join_rule"))
         jr = e.get("join_rule")
+        # THE CLAIM AND ITS EVIDENCE, carried through. `cardinality` is what the edge ASSERTS about
+        # the warehouse and `verified_by` is the only thing that can settle it; dropping them made
+        # every edge project identically whether it was proved, unproved, or measured false — the
+        # exact state check_edge_claims_proved was written to end. Neither is new metadata: both are
+        # authored in edges.yaml for that gate's benefit, and this only stops discarding them.
+        claim = {
+            "cardinality": {
+                "from": (ep.get("from") or {}).get("cardinality"),
+                "to": (ep.get("to") or {}).get("cardinality"),
+            },
+            "verified_by": e.get("verified_by"),
+            "edge_id": e.get("edge_id"),
+        }
         joins.setdefault(fo["stem"], {"out": [], "in": []})["out"].append(
-            {"concept": to["stem"], "title": to["title"], "on": fcol, "join_rule": jr}
+            {"concept": to["stem"], "title": to["title"], "on": fcol, "join_rule": jr, **claim}
         )
         joins.setdefault(to["stem"], {"out": [], "in": []})["in"].append(
-            {"concept": fo["stem"], "title": fo["title"], "on": tcol, "join_rule": jr}
+            {"concept": fo["stem"], "title": fo["title"], "on": tcol, "join_rule": jr, **claim}
         )
     for st in joins:  # stable order for the drift-guard
         joins[st]["out"].sort(key=lambda x: (x["title"], x.get("on") or ""))
@@ -700,6 +713,16 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             "kind": "concept",
             "plane": "ontology",
             "title": con.get("label") or con.get("name") or cstem,
+            # THE CONCEPT'S OWN NAME, which is its IDENTITY and not its display string. Acceptance
+            # cards name the concepts they validate by THIS value (a compact "NetRevenue"), while
+            # the title is written for a reader ("Net Revenue"). A consumer that matches on `title`
+            # therefore matches only where label and name happen to coincide, and reports a
+            # confident zero everywhere else — measured on one bundle as four of twenty-two
+            # concepts attributed and eighteen silently emptied. That is not a display bug: it
+            # unattributes real measurements while looking like a finding about the ontology.
+            # Carrying the name makes that join a dereference of a declared identity rather than a
+            # guess about spelling.
+            "name": con.get("name"),
             "relation": None,
             "class": con.get("class"),  # measure/reference/… — drives the class icon + type badge
             # extra view tabs — this concept's rules overview, then its provenance chain
@@ -707,6 +730,11 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
                 _views("concept", paths, False, [])
                 + (["rules"] if rules else [])
                 + (["chain"] if grounds else [])
+                # DESCRIBE — the assembled, layer-stamped, proof-carrying view of one concept.
+                # Offered only where there is something to describe: a concept with no grounding
+                # has no layers to stamp and no measurements to attribute, so the tab would render
+                # an elegant emptiness, which is the failure mode this view exists to avoid.
+                + (["describe"] if grounds else [])
             ),
             "paths": paths,
             "lineage": False,
