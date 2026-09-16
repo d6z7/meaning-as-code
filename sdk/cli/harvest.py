@@ -270,12 +270,23 @@ def _lineage_flows(cr: Path) -> list:
     lineage_project.py. MUST be threaded into the projection: build_data() without it
     silently flips every data object's `lineage` flag to False and drops the Lineage
     view tab (regression seen 2026-08-13). Returns [] only if the tool is truly absent."""
+    # ABSENT AND FAILING ARE THE SAME OUTCOME, so they now get the same answer. This arm used to
+    # print a line and return [] — projecting a lineage-less read view with exit 0 — while the
+    # except arm below refuses for an identical result. The docstring above already dates the
+    # regression this causes (2026-08-13) and it happened again on 2026-09-15, both times noticed
+    # by a person rather than by a gate. A warning that leaves a degraded artifact behind is not a
+    # guard; it is a note nobody reads.
     tool = _MAC_TOOLS / "lineage_project.py"
-    if not tool.exists() or not (cr / "mac.project.yaml").exists():
-        print(
-            "  lineage: tool or mac.project.yaml missing — projecting WITHOUT lineage (tabs will be hidden)"
+    missing = [
+        str(w) for w in (tool, cr / "mac.project.yaml") if not Path(w).exists()
+    ]
+    if missing:
+        raise RuntimeError(
+            "lineage: refusing to project a lineage-less read view — not found: "
+            + ", ".join(missing)
+            + ". Without flows every source and dataset loses its Lineage view tab. "
+            "Check the framework root resolved from boundaries.yaml."
         )
-        return []
     outp = Path(tempfile.gettempdir()) / f".lineage.{cr.name}.json"
     try:
         subprocess.run(

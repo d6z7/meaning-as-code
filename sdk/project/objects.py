@@ -885,22 +885,32 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
 
 
 if __name__ == "__main__":
-    import argparse
+    # THE SECOND DOOR TO objects.json, AND THE WORSE ONE. Closing project_data's CLI shut one
+    # entry point to build_objects; this was the other, and it is strictly more dangerous:
+    #
+    #   --lineage is OPTIONAL and defaults to [], so omitting it flips the lineage flag False on
+    #             every source and dataset — the exact 12-sources/14-datasets regression, again;
+    #   --register is OPTIONAL and defaults to [], so omitting it ALSO drops the quality tab;
+    #   and no compile gate runs, so a bundle the estate refuses to project is projected anyway.
+    #
+    # Both defaults produce a full, valid-looking objects.json. Nothing in the file says it is
+    # missing two view classes, and objects.json is gitignored, so the regression leaves no trace
+    # in history either — which is why the last one was found by an operator noticing a tab.
+    import sys
 
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--data", required=True)
-    ap.add_argument("--ontology", default=None)
-    ap.add_argument("--lineage", default=None, help="lineage.json (flows)")
-    ap.add_argument("--register", default=None, help="data_quality_register.yaml")
-    ap.add_argument("--out", default=None)
-    a = ap.parse_args()
-    lin = []
-    if a.lineage:
-        with open(a.lineage) as fh:
-            lin = json.load(fh).get("flows", [])
-    iss = []
-    if a.register:
-        with open(a.register) as fh:
-            iss = (yaml.safe_load(fh) or {}).get("issues", [])
-    r = build_objects(a.data, a.ontology, lineage=lin, issues=iss, out_dir=a.out)
-    print(json.dumps(r["counts"]))
+    print(
+        "REFUSED: sdk.project.objects is not a supported entry point.\n"
+        "\n"
+        "  --lineage and --register are optional here and default to EMPTY, so a direct call\n"
+        "  writes a complete-looking objects.json with the Lineage tab missing from every source\n"
+        "  and dataset, and the Quality tab missing too. It also skips the compile gate.\n"
+        "\n"
+        "  Use the one supported path, which computes the flows, reads the register and gates:\n"
+        "\n"
+        "    python -m sdk.cli.harvest --content-root <bundle> --mode project\n"
+        "\n"
+        "  Import build_objects(..., lineage=flows, issues=issues) directly only if you are\n"
+        "  supplying both.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
