@@ -384,8 +384,39 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
         if nprop:
             execval["measured"] = True
             execval["properties"] = nprop
-            execval["covered"] = len(claimed & set(concepts))
-            execval["uncovered"] = sorted(set(concepts) - claimed)
+            # JOIN ON THE DECLARED NAME, NOT ON THE FILE STEM. `validates` carries a concept's
+            # TITLE, as authored in concept.name — "OrderLine" — while `concepts` is keyed by FILE
+            # STEM — "order_line". `claimed & set(concepts)` intersected two different vocabularies
+            # and was therefore EMPTY BY CONSTRUCTION, for every bundle, always. Not stale, not
+            # drifted: it could never have matched.
+            #
+            # MEASURED on a live bundle the day this was found: 267 properties claiming 22 concepts
+            # produced `covered: 0, pct: 0` and 22 findings reading "<concept> has never been
+            # checked against the warehouse" — while a blocker-severity property naming one of those
+            # very concepts had PASSED against the warehouse hours earlier. The artifact stated the
+            # opposite of the evidence beside it, legibly, next to a 100/100/100 scorecard, and no
+            # gate, register or ledger knew.
+            by_name = {}
+            for stem, doc in concepts.items():
+                nm = ((doc or {}).get("concept") or {}).get("name")
+                by_name[str(nm) if nm else stem] = stem
+            covered = {by_name[c] for c in claimed if c in by_name}
+            # A JOIN THAT MATCHES NOTHING IS A BROKEN JOIN, NOT A SCORE OF ZERO. Every measurement
+            # gate in this framework refuses an empty denominator; this projector had no such guard
+            # and so reported a confident 0%. If properties make claims and NONE of them resolve to
+            # a concept, the vocabularies do not line up — say so instead of grading it.
+            if nprop and claimed and not covered:
+                execval["measured"] = False
+                execval["refused"] = (
+                    f"{len(claimed)} concept name(s) claimed by {nprop} propert(ies) matched NONE "
+                    f"of {len(concepts)} concepts. The join did not resolve; this is not 0% "
+                    f"coverage. Claimed: {sorted(claimed)[:5]}; known: {sorted(concepts)[:5]}"
+                )
+                execval["covered"] = None
+                execval["uncovered"] = []
+            else:
+                execval["covered"] = len(covered)
+                execval["uncovered"] = sorted(set(concepts) - covered)
             for c in execval["uncovered"]:
                 findings.append(
                     {
