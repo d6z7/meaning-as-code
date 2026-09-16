@@ -127,6 +127,23 @@ def grounded_relations(concept: dict) -> list[dict]:
 
 
 
+
+def _measure_detail(m: dict) -> str:
+    """The measurement in one line, in the vocabulary of the kind that was counted — "578/578
+    resolve" means nothing about a conformed list, and a reader shown it would be misled rather
+    than merely unserved."""
+    k = str(m.get("kind") or "join_predicate")
+    if k == "join_predicate":
+        return f"{m.get('matched')}/{m.get('lhs')} resolve, max fanout {m.get('fanout')}"
+    if k == "column_presence":
+        return f"{m.get('population')} row(s), {m.get('violations')} without a value"
+    if k == "value_uniqueness":
+        return f"{m.get('population')} key(s), {m.get('violations')} breaching the cardinality"
+    if k == "list_conformance":
+        return f"{m.get('conforming')}/{m.get('population')} values conform"
+    return f"{m.get('violations')} violation(s) over {m.get('population')}"
+
+
 def _edge_index(ont_edges: list, root) -> dict:
     """The full edge set with its realisation and its proof, for a surface that shows edges AS
     edges. Reads the measurement record if one exists; says so plainly when it does not."""
@@ -157,11 +174,14 @@ def _edge_index(ont_edges: list, root) -> dict:
         m = meas.get(eid)
         proof = {"state": "unproved", "detail": None}
         if e.get("verified_by") and m:
-            lhs, matched, fan = int(m.get("lhs") or 0), int(m.get("matched") or 0), int(m.get("fanout") or 0)
-            holds = lhs > 0 and matched == lhs and fan <= 1
+            # THE VERDICT IS READ, NOT RECOMPUTED. This block held its own copy of the join
+            # arithmetic; when the measurer learned to count a column and a conformed list, it read
+            # lhs=0 and published fourteen holding claims as CONTRADICTED. The measurer stamps
+            # `holds` at the one exit all kinds pass through.
+            ok = m.get("holds")
             proof = {
-                "state": "proved" if holds else "contradicted",
-                "detail": f"{matched}/{lhs} resolve, max fanout {fan}",
+                "state": "proved" if ok else ("unproved" if ok is None else "contradicted"),
+                "detail": _measure_detail(m),
             }
         elif e.get("verified_by"):
             # A CITATION IS NOT A PROOF. The pointer exists and its target was not read here.

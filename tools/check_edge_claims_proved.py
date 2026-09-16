@@ -91,10 +91,16 @@ def verdict_of(root: pathlib.Path, ref: str) -> tuple[str | None, str]:
         if not hit:
             return None, f"{rec.name} carries no measurement for {cid}"
         m = hit[0]
-        lhs, matched, fan = int(m.get("lhs") or 0), int(m.get("matched") or 0), int(m.get("fanout") or 0)
-        # The same two numbers check_edge_joins_measured judges. Stated here rather than imported so
-        # a change to one gate cannot silently change the other's verdict.
-        return ("PASS" if (lhs and matched == lhs and fan <= 1) else "FAIL"), ""
+        # READ THE VERDICT, DO NOT RE-DERIVE IT. This gate used to recompute it from lhs/matched/
+        # fanout — the JOIN arithmetic — and the day the measurer learned to count a column and a
+        # conformed list, those fields were absent, `lhs` read 0, and fourteen edges whose claims
+        # HOLD were reported CONTRADICTED. Three consumers each held a copy of that arithmetic. The
+        # measurer now decides once and records `holds`; an entry without it predates that and is
+        # unjudgeable rather than assumed either way.
+        if "holds" not in m:
+            return None, (f"{rec.name} carries a measurement for {cid} with no verdict — it predates "
+                          f"`holds`; re-run mac_measure_edges.py")
+        return ("PASS" if m.get("holds") else "FAIL"), ""
 
     suite = root / suite_rel
     if not suite.exists():
