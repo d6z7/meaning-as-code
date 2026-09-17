@@ -51,7 +51,53 @@ from pathlib import Path
 import mac_diag as D
 import mac_project as P
 
+_REPO = Path(__file__).resolve().parent.parent
+if str(_REPO) not in sys.path:
+    sys.path.insert(0, str(_REPO))
+
+from sdk import registers as _registers                                 # noqa: E402
+
 _STOP = {"the", "and", "for", "with", "per", "not", "its"}
+
+# ─── the estate's KPI word stems ──────────────────────────────────────────────────────────────────
+#
+# WHY THESE ARE NOT TWO TUPLES IN THIS FILE ANY MORE. `_surface_terms` carried five stems and
+# `_stems` carried six; `tools/check_mac_public.py` reported BOTH lines as leaks in this PUBLIC
+# repository (2026-09-17, rule `kpi-stem-local`) — one estate's KPI vocabulary, published inside the
+# framework applied to it. A rename would not do: these stems decide whether two concepts share a
+# SURFACE TERM, which is one of the three bases this check accepts for a rule naming another
+# concept, so they drive the check's verdict on a private corpus.
+#
+# THE TWO LISTS ARE NOW ONE. They differed by a single stem, nothing explained the difference, and
+# nothing kept them in step — which is the two-homes-that-may-disagree defect THIS FILE exists to
+# find between a rule's `binds:` and its prose. MEASURED on the bundle this instance guards before
+# the move: MAC003 9 / MAC008 4 findings under either list, and under no list at all, so unifying
+# them moves no finding there.
+#
+# ABSENT REGISTER: REDUCED SCOPE, DISCLOSED — NOT could-not-run. Justified:
+#   · The stems only ever ADD a basis. With none, `_surface_terms` still returns every DECLARED
+#     alias, name, label and german surface — the auditable evidence — and loses only the fallback
+#     prose scrape and the stem expansion. So the absent-register direction is FAIL-SAFE: it can
+#     only produce MORE unbased findings, never hide one. A check that over-reports loudly is a
+#     different animal from a check that under-reports in silence, and only the second is the
+#     empty-population defect.
+#   · Exiting 2 would take MAC002, MAC003 and MAC008 binds-conformance — ERROR-severity classes that
+#     never read this register — offline over an optional fallback vocabulary. A gate that refuses
+#     to run for a reason unrelated to what it is checking is a gate that gets skipped.
+#   · So it runs, and it SAYS SO: the stem denominator is on the verdict line of every run, and the
+#     MAC008 diagnostic's own note warns that it may over-report when the vocabulary is empty.
+_ESTATE_REGISTER = "estate_terms"
+_ESTATE_GROUP = "kpi_surface_stem"
+
+
+def _kpi_stems() -> tuple:
+    """This estate's KPI word stems, lowercased, or () when none are declared.
+
+    Read at CALL time, never snapshot at import: `$MAC_ESTATE_TERMS` is how CI and the self-test
+    declare a register, and a module-level snapshot ignores an override set after this import.
+    """
+    return tuple(sorted({s.strip().lower() for s in
+                         _registers.group(_ESTATE_REGISTER, _ESTATE_GROUP) if s.strip()}))
 
 
 def _unit(concept: dict) -> str:
@@ -77,7 +123,7 @@ def _declared_aliases(doc: dict) -> set:
     return out
 
 
-def _surface_terms(concept: dict, doc: dict) -> set:
+def _surface_terms(concept: dict, doc: dict, stems: tuple = ()) -> set:
     """Words this concept answers to: its DECLARED aliases first, then its name, label, german, and —
     only as a fallback — the capitalised German nouns its own prose uses.
 
@@ -91,18 +137,24 @@ def _surface_terms(concept: dict, doc: dict) -> set:
     # stem does not end in it, and an endswith filter dropped it, which lost the one overlap that makes
     # the production pair a genuine confusion. The first cut of this check reported that real pair as
     # baseless for exactly that reason.
+    # The capitalised-noun SHAPE stays in code: `[A-ZÄÖÜ][a-zäöüß]{5,}` describes how German writes
+    # a noun, which is a property of the language, not of any estate. What the shape has to be
+    # filtered THROUGH — which nouns are KPI words here — is the estate's, and comes from the
+    # register. With no stems declared this loop adds nothing and the function returns declared
+    # surfaces only; the caller discloses that.
     blob = str(doc)
-    for w in re.findall(r"\b([A-ZÄÖÜ][a-zäöüß]{5,})\b", blob):
-        if any(s in w.lower() for s in ("bestand", "eingang", "lieferung", "produktion", "anteil")):
-            out.add(w)
+    if stems:
+        for w in re.findall(r"\b([A-ZÄÖÜ][a-zäöüß]{5,})\b", blob):
+            if any(s in w.lower() for s in stems):
+                out.add(w)
     return {o.lower() for o in out if o and o.lower() not in _STOP}
 
 
-def _stems(terms: set) -> set:
+def _stems(terms: set, stems: tuple = ()) -> set:
     out = set()
     for t in terms:
         out.add(t)
-        for s in ("bestand", "eingang", "lieferung", "produktion", "auftrag", "anteil"):
+        for s in stems:
             if s in t:
                 out.add(s)
     return out
@@ -302,6 +354,9 @@ def check_rule_reference_basis(root) -> list:
     if not files:
         # ZERO IS NOT A SCORE — no concept read means no reference was resolved.
         return [D.empty_denominator("MAC008", "check_rule_reference_basis", P.concepts_dir(root))]
+    # ONE read for the whole run, so every concept is judged against the same vocabulary. A
+    # per-concept read would let an edit mid-run split the population into two populations.
+    kpi_stems = _kpi_stems()
     for f in files:
         try:
             doc = yaml.safe_load(Path(f).read_text(encoding="utf-8")) or {}
@@ -311,7 +366,7 @@ def check_rule_reference_basis(root) -> list:
         if c.get("name"):
             concepts[c["name"]] = {"doc": doc, "label": c.get("label"), "rel": P.rel(root, f),
                                    "unit": _unit(c),
-                                   "surface": _stems(_surface_terms(c, doc))}
+                                   "surface": _stems(_surface_terms(c, doc, kpi_stems), kpi_stems)}
     edges = set()
     ef = R / "ontology" / "edges.yaml"
     if ef.exists():
@@ -386,6 +441,17 @@ def check_rule_reference_basis(root) -> list:
             witnesses=collisions))
     if not unbased:
         return out
+    # THE SHARED-SURFACE BASIS CARRIES ITS OWN DENOMINATOR INTO THE FINDING. Without the estate's
+    # stem vocabulary this class over-reports — a compound noun that genuinely shares a stem with
+    # another concept's is no longer seen to — and a reader who is not told that will read a
+    # legitimate pair as a defect in the edge layer. The direction is safe (absence can only add
+    # findings, never hide one) but it is not free, so it is stated rather than left to be inferred.
+    reduced = "" if kpi_stems else (
+        " NOTE — REDUCED SCOPE: 0 estate KPI word stem(s) are declared "
+        f"({_registers.disclosed_path(_ESTATE_REGISTER)}), so the SHARED SURFACE TERM basis was "
+        "judged on DECLARED aliases, names and labels only, with no compound-noun stem matching. "
+        "This class may therefore OVER-report: a pair whose only overlap is a shared stem is listed "
+        "here as baseless. Copy registers/estate_terms.example.txt, or set $MAC_ESTATE_TERMS.")
     return out + [D.Diagnostic(
         code="MAC008", severity=D.WARNING, source="check_rule_reference_basis",
         summary=f"{len(unbased)} rule reference(s) assert a relationship the ontology does not model",
@@ -393,17 +459,251 @@ def check_rule_reference_basis(root) -> list:
              "dispositions, and the ontology cannot tell them apart: the relationship is REAL and the "
              "edge layer is missing it (add the edge), or the reference is a machine-written foil "
              "(delete it). Co-grounding is deliberately NOT accepted as a basis — 14 <dataset> concepts "
-             "share v_<source>_kpi, which would make every pair look related.",
+             "share v_<source>_kpi, which would make every pair look related." + reduced,
         witnesses=unbased)]
+
+
+def vocabulary_line() -> str:
+    """The stem denominator, printed on EVERY run — healthy or not.
+
+    A disclosure that only appears when something is wrong is one a reader learns to skim; a
+    denominator that is always on the line is one a reader learns to read. This is the same reason
+    `check_mac_public` prints its file count beside a PASS.
+    """
+    stems = _kpi_stems()
+    if stems:
+        return (f"  vocabulary: {len(stems)} estate KPI word stem(s) declared — the SHARED SURFACE "
+                f"TERM basis is at full scope")
+    return ("  vocabulary: 0 estate KPI word stem(s) declared "
+            f"({_registers.disclosed_path(_ESTATE_REGISTER)} absent or empty) — REDUCED SCOPE: the "
+            "SHARED SURFACE TERM basis ran on declared aliases, names and labels only, so MAC008 "
+            "may OVER-report a pair whose only overlap is a shared compound-noun stem")
 
 
 def main() -> int:                                                      # pragma: no cover
     if "--self-test" in sys.argv[1:]:
-        return P.selftest_discovery(__file__)
+        return _self_test()
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_rule_reference_basis(root)
     print(D.render(d, root, show=D.INFO) or "check_rule_reference_basis: no findings")
+    print(vocabulary_line())
     return D.EMPTY_EXIT if any(D.UNKNOWN_MARK in x.summary for x in d) else 0
+
+
+# -------------------------------------------------------------------------------------------------
+# self-test: one seeded mutant per reject class, plus the register-absent path.
+#
+# IN-PROCESS, AND DELIBERATELY NOT `selftest_discovery`'s mutant mechanism, which asserts exit 1.
+# This check reports; it never exits 1 (its diagnostics are WARNINGs and its only non-zero code is
+# the empty-denominator refusal), so a mutant routed through that mechanism would fail for the wrong
+# reason and teach nobody anything. The layout/denominator property still goes through the shared
+# harness below, so both denominators are printed, from the one place that owns each.
+#
+# Every token is SYNTHETIC (`zz...`): the estate register is gitignored, so a fresh checkout declares
+# none, and a self-test reading the real one would exercise the stem class against an empty list and
+# pass having checked nothing — the exact defect this change addresses.
+# -------------------------------------------------------------------------------------------------
+
+_SYN_STEM = "zzstemzz"
+
+
+def _fixture(root: Path, docs: dict) -> Path:
+    """A minimal flat-layout bundle: `concepts/<name>.yaml` per entry."""
+    (root / "concepts").mkdir(parents=True, exist_ok=True)
+    for stem, text in docs.items():
+        (root / "concepts" / f"{stem}.yaml").write_text(text, encoding="utf-8")
+    return root
+
+
+def _concept(name: str, *, unit: str = "", cols=("zz_code", "zz_name"), relation="zzsch.zztab",
+             rules: str = "", extra: str = "", noun: str = "") -> str:
+    cols_s = ", ".join(cols)
+    return (f"concept:\n  name: {name}\n  label: {name}\n  class: measure\n"
+            + (f"  semantics:\n    unit: {unit}\n" if unit else "")
+            + (f"  german: {noun}\n" if noun else "")
+            + f"grounding:\n  sources:\n    - relation: {relation}\n      key: zz_code\n"
+              f"      columns: [{cols_s}]\n"
+            + (f"contract:\n  rules:\n{rules}" if rules else "")
+            + extra)
+
+
+def _self_test() -> int:
+    import tempfile
+    import os
+
+    failures, checks = [], 0
+
+    def expect(cond, msg):
+        nonlocal checks
+        checks += 1
+        if not cond:
+            failures.append(msg)
+
+    def codes(root):
+        """{(code, severity-ish label): witness count} for a fixture."""
+        out = {}
+        for d in check_rule_reference_basis(root):
+            out[d.code] = out.get(d.code, 0) + len(d.witnesses)
+        return out
+
+    def details(root):
+        return " | ".join(w.detail for d in check_rule_reference_basis(root) for w in d.witnesses)
+
+    def notes(root):
+        return " ".join(d.note for d in check_rule_reference_basis(root))
+
+    env = _registers.REGISTERS[_ESTATE_REGISTER][1]
+    saved = os.environ.get(env)
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+        try:
+            def register(text):
+                if text is None:
+                    os.environ[env] = str(base / "absent" / "estate_terms.txt")
+                else:
+                    p = base / f"reg{len(list(base.glob('reg*.txt')))}.txt"
+                    p.write_text(text, encoding="utf-8")
+                    os.environ[env] = str(p)
+
+            # ── THE REGISTER-ABSENT PATH, which is the new reject class ─────────────────────────
+            # Two measures, different units, no edge, and no rule reference basis EXCEPT a compound
+            # noun in each one's prose that shares a stem. That stem overlap is a legitimate basis,
+            # and it exists only while the estate vocabulary is declared.
+            pair = _fixture(base / "stems", {
+                "zzalpha": _concept(
+                    "Zzalpha", unit="widgets", noun=f"Z{_SYN_STEM[1:]}menge",
+                    rules="    - id: zzalpha.exclude.not_zzbeta\n"
+                          "      never: never confusing Zzalpha with Zzbeta\n"),
+                "zzbeta": _concept("Zzbeta", unit="crates", noun=f"Z{_SYN_STEM[1:]}zahl"),
+            })
+            register(f"{_ESTATE_GROUP} | {_SYN_STEM}\n")
+            with_stems = codes(pair)
+            register(None)
+            without = codes(pair)
+            expect("MAC008" not in with_stems,
+                   f"a shared compound-noun stem was NOT accepted as a basis with the register "
+                   f"present: {with_stems}")
+            expect(without.get("MAC008") == 1,
+                   f"mutant not caught: with NO register the shared-stem basis should be invisible "
+                   f"and the reference reported, got {without}")
+            expect("REDUCED SCOPE" in notes(pair),
+                   "the no-register MAC008 finding does not disclose that it may over-report")
+            expect("REDUCED SCOPE" in vocabulary_line() and "0 estate KPI word stem" in
+                   vocabulary_line(),
+                   f"the no-register verdict line is not plain: {vocabulary_line()!r}")
+            register(f"{_ESTATE_GROUP} | {_SYN_STEM}\n")
+            expect("full scope" in vocabulary_line() and "1 estate KPI word stem" in
+                   vocabulary_line(),
+                   f"the healthy verdict line omits its denominator: {vocabulary_line()!r}")
+
+            # AN EMPTY REGISTER, and a term filed under ANOTHER consumer's group, are both "absent".
+            register("# nothing declared\n")
+            expect(codes(pair).get("MAC008") == 1, "an EMPTY register was treated as a vocabulary")
+            register(f"kpi_surface_name | {_SYN_STEM}\n")
+            expect(codes(pair).get("MAC008") == 1,
+                   "a stem declared under another group leaked into this check")
+
+            # From here the register is irrelevant; keep it declared so the stem class is not the
+            # thing under test.
+            register(f"{_ESTATE_GROUP} | {_SYN_STEM}\n")
+
+            # ── MAC008 unbased: a reference with no edge, no shared unit, no shared surface ─────
+            unbased = _fixture(base / "unbased", {
+                "zzalpha": _concept("Zzalpha", unit="widgets",
+                                    rules="    - id: zzalpha.exclude.not_zzbeta\n"
+                                          "      never: never confusing Zzalpha with Zzbeta\n"),
+                "zzbeta": _concept("Zzbeta", unit="crates"),
+            })
+            expect(codes(unbased).get("MAC008") == 1 and "no edge" in details(unbased),
+                   f"mutant not caught: an unbased rule reference: {codes(unbased)}")
+            # AND THE BASES WORK: the same pair with the SAME unit is not reported. A rule that
+            # fires on everything attributes nothing.
+            based = _fixture(base / "based", {
+                "zzalpha": _concept("Zzalpha", unit="widgets",
+                                    rules="    - id: zzalpha.exclude.not_zzbeta\n"
+                                          "      never: never confusing Zzalpha with Zzbeta\n"),
+                "zzbeta": _concept("Zzbeta", unit="widgets"),
+            })
+            expect("MAC008" not in codes(based),
+                   f"false positive: a SHARED UNIT is a declared basis and was not accepted: "
+                   f"{codes(based)}")
+
+            # ── MAC003 undeclared: prose governs a grounded column `binds:` omits ───────────────
+            undeclared = _fixture(base / "undeclared", {
+                "zzalpha": _concept("Zzalpha", rules="    - id: zzalpha.resolve.by_code\n"
+                                                     "      binds: []\n"
+                                                     "      then: resolve on `{zz_code}`\n"),
+            })
+            expect("binds: does not list it" in details(undeclared),
+                   f"mutant not caught: a column in prose that binds: omits: {details(undeclared)}")
+
+            # ── MAC002 unmarked: a model identifier written as bare prose ──────────────────────
+            unmarked = _fixture(base / "unmarked", {
+                "zzalpha": _concept("Zzalpha", rules="    - id: zzalpha.resolve.by_code\n"
+                                                     "      binds: [zz_code]\n"
+                                                     "      then: resolve on zz_code directly\n"),
+            })
+            expect("written as bare prose" in details(unmarked),
+                   f"mutant not caught: an unmarked model identifier: {details(unmarked)}")
+
+            # ── MAC008 unresolved: prose names a relation nothing grounds ───────────────────────
+            unresolved = _fixture(base / "unresolved", {
+                "zzalpha": _concept("Zzalpha", rules="    - id: zzalpha.resolve.by_code\n"
+                                                     "      binds: []\n"
+                                                     "      then: read zzsch.zzmissing instead\n"),
+            })
+            expect("no concept in this bundle grounds it" in details(unresolved),
+                   f"mutant not caught: an invented relation in prose: {details(unresolved)}")
+
+            # ── MAC008 dangling: prose cites a rule id that does not exist ─────────────────────
+            dangling = _fixture(base / "dangling", {
+                "zzalpha": _concept("Zzalpha", rules="    - id: zzalpha.resolve.by_code\n"
+                                                     "      binds: []\n"
+                                                     "      then: see zzalpha.resolve.gone\n"),
+            })
+            expect("which no concept in this bundle declares" in details(dangling),
+                   f"mutant not caught: a dangling rule citation: {details(dangling)}")
+
+            # ── MAC003 collision: one alias surface claimed by two codes ───────────────────────
+            collision = _fixture(base / "collision", {
+                "zzalpha": _concept("Zzalpha", extra=(
+                    "values:\n  aliases:\n    map:\n"
+                    "      ZZ1:\n        multilingual:\n          de: [zzshared]\n"
+                    "      ZZ2:\n        multilingual:\n          de: [zzshared]\n")),
+            })
+            expect("is claimed by 2 codes" in details(collision),
+                   f"mutant not caught: an alias surface claimed by two codes: {details(collision)}")
+
+            # ── and a CLEAN bundle is clean, or none of the above attributes anything ──────────
+            clean = _fixture(base / "clean", {"zzalpha": _concept("Zzalpha", unit="widgets")})
+            expect(not codes(clean), f"false positive: a clean fixture produced findings: "
+                                     f"{codes(clean)}")
+        finally:
+            if saved is None:
+                os.environ.pop(env, None)
+            else:
+                os.environ[env] = saved
+
+    if failures:
+        print(f"FAIL: check_rule_reference_basis self-test — {len(failures)} failure(s) over "
+              f"{checks} rule check(s)")
+        for f in failures:
+            print(f"  {f}")
+        return 1
+    # The layout/empty-denominator property is the shared harness's to own, and it prints its own
+    # denominators. Both verdicts are required to pass, and the RULE verdict is printed LAST so the
+    # harness's "0 mutants of its own rule" line — true of its slot, not of this file — is not the
+    # last thing a reader sees.
+    harness = P.selftest_discovery(__file__)
+    print("  NOTE: the harness's mutant slot is empty BY DESIGN. It asserts exit 1, and this check "
+          "REPORTS rather than blocks — its diagnostics are WARNINGs and its only non-zero code is "
+          "the empty-denominator refusal — so a mutant routed through it would fail for the wrong "
+          "reason. The rule mutants are the in-process ones counted on the next line.")
+    print(f"PASS: check_rule_reference_basis self-test — {checks}/{checks} check(s) over 6 reject "
+          f"class(es) (MAC002, MAC003 undeclared, MAC003 collision, MAC008 unresolved, MAC008 "
+          f"dangling, MAC008 unbased) plus the register-absent, register-empty and wrong-group "
+          f"paths, each attributed to its own class")
+    return harness
 
 
 if __name__ == "__main__":                                              # pragma: no cover

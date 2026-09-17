@@ -98,7 +98,18 @@ _RULES = [
     (
         "resolution",
         "Medium",
-        r"\b(gesamtmarkt|auftragsbestand|auslieferung|which model|disambiguat|synonym)\b",
+        # A TUPLE, NOT A FINISHED REGEX — this row's vocabulary is completed at call time from the
+        # estate register's `kpi_surface_name` group, and these three are the part that is GENERIC:
+        # they are question-FORM words ("which model", "disambiguat", "synonym"), the shape of an
+        # ask, not any estate's KPI. They stay in code precisely because the register is gitignored,
+        # so a fresh clone and CI have these and nothing else.
+        #
+        # WHY THE ESTATE WORDS MERGE INTO **THIS** ROW rather than becoming a tenth row of their
+        # own. `classify` takes `max()` over the matched rows, and `max` keeps the EARLIEST maximum.
+        # A tenth row appended after `comparison` (also Medium) would hand every question matching
+        # both to `comparison` — a silent reclassification of exactly the questions this signal
+        # exists to find. Same row, same position, same precedence.
+        ("which model", "disambiguat", "synonym"),
     ),
     (
         "comparison",
@@ -121,13 +132,106 @@ _RULES = [
         r"\b(what if|would (the|it)|if .* (dropped|rose|increased|decreased|changed)|project(ed)?|forecast|counterfactual|simulate)\b",
     ),
 ]
-_COMPILED = [(cat, tier, re.compile(rx, re.I)) for cat, tier, rx in _RULES]
+
+# ─── the estate's own KPI surface words ───────────────────────────────────────────────────────────
+#
+# WHY THESE ARE NOT IN THIS FILE ANY MORE. The resolution row above used to read
+# `\b(<three private KPI words>|which model|disambiguat|synonym)\b`. `meaning-as-code` is a PUBLIC
+# repository and `tools/check_mac_public.py` reported that line as one of the last four real leaks in
+# the tree (2026-09-17, rule `kpi-name-local`): an estate's KPI vocabulary, published inside the
+# framework it was applied to.
+#
+# A RENAME WOULD NOT HAVE DONE, which is why this is a register and not a word swap. These words
+# DRIVE BEHAVIOUR on a private corpus — measured on the bundle this instance guards, exactly one of
+# 96 questions classifies as `resolution`/Medium, and it does so ONLY through these words. Remove
+# them and that question reads a tier lower with nothing on the board to say why.
+#
+# ABSENT REGISTER: REDUCED SCOPE, DISCLOSED — NOT could-not-run. Justified, because the choice is
+# not free either way:
+#   · This module is a PROJECTOR, not a gate. Exit 2 means no `questions_dashboard.json` is written
+#     at all, so the wiki's Question Lighthouse pane has nothing to render. Withdrawing the whole
+#     board over one classifier signal costs an operator every other number on it — the run counts,
+#     the verdicts, the flags, the warnings — none of which touch this register.
+#   · The generic question-FORM signals stay in code, so the resolution tier is narrowed, not
+#     switched off.
+#   · But a narrowed heuristic that says nothing is the empty-population defect this estate keeps
+#     finding, so the shortfall is stated in three places a reader cannot miss: the operator's
+#     verdict line after every projection, the dashboard header (`estate_vocabulary`), and this
+#     comment. A tier that reads Low because a register is missing must never be indistinguishable
+#     from a tier that reads Low because the question is simple.
+_ESTATE_REGISTER = "estate_terms"
+_ESTATE_GROUP = "kpi_surface_name"
+
+#: One entry, keyed on the register's identity+mtime+size, so an env override or an edit mid-session
+#: is honoured while 96 questions in one projection do not re-read and re-compile the file 96 times.
+#: NOT resolved at import: a module-level snapshot ignores an override set by a later import, which
+#: is the bug `sdk.registers.load` documents and `Live` exists for.
+_ESTATE_CACHE: dict = {}
+
+
+def _compile_rules(estate: list) -> list:
+    """The tier table, with `estate` merged into the row whose signal is declared as a tuple."""
+    out = []
+    for cat, tier, sig in _RULES:
+        if isinstance(sig, tuple):
+            alts = list(sig) + [t.lower() for t in estate]
+            sig = r"\b(" + "|".join(re.escape(a) for a in alts) + r")\b"
+        out.append((cat, tier, re.compile(sig, re.I)))
+    return out
+
+
+def _signals() -> tuple:
+    """`(estate terms, compiled tier table)`, re-read whenever the register file changes."""
+    from sdk import registers as _registers
+
+    p = _registers.register_path(_ESTATE_REGISTER)
+    try:
+        st = p.stat()
+        sig = (str(p), st.st_mtime_ns, st.st_size)
+    except OSError:
+        sig = (str(p), None, None)
+    if sig not in _ESTATE_CACHE:
+        _ESTATE_CACHE.clear()
+        terms = _registers.group(_ESTATE_REGISTER, _ESTATE_GROUP)
+        _ESTATE_CACHE[sig] = (terms, _compile_rules(terms))
+    return _ESTATE_CACHE[sig]
+
+
+def estate_vocabulary() -> dict:
+    """What the classifier's estate-specific vocabulary actually amounts to, for the verdict line.
+
+    `terms` is the DENOMINATOR: 0 means the resolution tier ran on the generic question-form words
+    alone, and every consumer of this projection is entitled to be told so rather than left to
+    assume the classifier saw everything it was designed to see.
+    """
+    from sdk import registers as _registers
+
+    terms = _signals()[0]
+    return {
+        "group": _ESTATE_GROUP,
+        # The path is rendered repo-relative, never absolute: this block is committed to bundle
+        # repositories and rendered in a browser. See registers.disclosed_path.
+        "register": _registers.disclosed_path(_ESTATE_REGISTER),
+        "present": bool(terms),
+        "terms": len(terms),
+        # The words themselves are NEVER projected. This block travels into a JSON file that is
+        # committed to bundle repositories and rendered in a browser; naming them here would put the
+        # register's contents back into the artefacts the register exists to keep them out of.
+        "reduced_scope": None
+        if terms
+        else (
+            "the estate KPI surface vocabulary is EMPTY: name-resolution questions that turn on a "
+            "local KPI word are classified by the generic question-form signals only, so such a "
+            "question reads one complexity tier lower than it is. This is a REDUCED SCOPE, not a "
+            "clean classification."
+        ),
+    }
 
 
 def classify(question: str, tags: list[str] | None = None) -> dict:
     """Heuristic complexity: {category, tier, signals}. Highest-tier match wins."""
     hay = (question or "").lower() + " " + " ".join(tags or []).lower()
-    hits = [(cat, tier) for cat, tier, rx in _COMPILED if rx.search(hay)]
+    hits = [(cat, tier) for cat, tier, rx in _signals()[1] if rx.search(hay)]
     if not hits:
         return {"category": "direct-retrieval", "tier": "Low", "signals": []}
     # direct-retrieval is the GENERIC fallback (nearly every "what was X" matches it) — a more specific
@@ -430,6 +534,21 @@ def build(bundle: Path) -> dict:
             "concepts": ont_rules["concepts"],
             "errors": list(ont_rules["errors"]),
         },
+        # THE CLASSIFIER'S OWN DENOMINATOR, shipped with the data it classified. `category` and
+        # `tier` on every row above are heuristic, and one of the heuristic's vocabularies lives in
+        # a gitignored per-estate register — so on a fresh clone or in CI it is EMPTY, and the tiers
+        # narrow without a single row looking any different. This block is how a reader tells the two
+        # apart. It carries the count and never the terms: this file is committed to bundle
+        # repositories and rendered in a browser.
+        #
+        # THE SCHEMA ID DELIBERATELY DOES NOT MOVE. The rule at the top of this module is that it
+        # moves whenever a VOCABULARY or the ROW SHAPE moves, because a client then renders the wrong
+        # thing — the `flag_ids`/3 case, where an old client drew three squares and dropped the only
+        # red one. This key is a HEADER addition: no row shape changes, no frozen vocabulary grows,
+        # and a /4 client that ignores it still paints every row correctly. Bumping to /5 would make
+        # every existing board refuse to render in exchange for a disclosure that also reaches the
+        # operator on the verdict line below.
+        "estate_vocabulary": estate_vocabulary(),
         "stats": _stats(rows),
         "questions": rows,
     }
@@ -581,7 +700,194 @@ def _summary_lines(dash: dict) -> list:
         "  warnings:" + " " + counts(s["by_warning"]),
         f"  anchors: {a['graded']} graded  {a['advisory']} advisory  {a['unlinked']} unlinked  "
         f"of {a['total']}" + (f"   errors: {len(a['errors'])}" if a["errors"] else ""),
+        # UNCONDITIONAL, and it states the count even when it is healthy. A disclosure that appears
+        # only when something is missing teaches a reader to skim past it; a denominator that is
+        # always on the line is one a reader learns to read. `.get` because a dashboard projected by
+        # an older build of this module has no such block, and a replay of one must not crash.
+        _vocabulary_line(dash.get("estate_vocabulary") or {}),
     ]
+
+
+def _vocabulary_line(v: dict) -> str:
+    if not v:
+        return "  vocabulary: (not recorded — dashboard projected before this was disclosed)"
+    if v.get("present"):
+        return f"  vocabulary: {v['terms']} estate KPI surface term(s) in the {v['group']} register"
+    return (
+        f"  vocabulary: 0 estate KPI surface term(s) — NO register at {v.get('register')}. "
+        "The resolution tier ran on the generic question-form signals ALONE, so a question that "
+        "turns on a local KPI word is classified one tier low. This is a REDUCED SCOPE, not a "
+        "clean classification: copy registers/estate_terms.example.txt, or set $MAC_ESTATE_TERMS."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# self-test: one seeded mutant per reject class of the classifier's estate vocabulary
+#
+# Every term below is SYNTHETIC (`zz...`). The real register is gitignored, so a fresh checkout
+# declares none: a self-test that read the real one would exercise this vocabulary against an empty
+# list and pass, having checked nothing — the same defect this whole change is about. The register is
+# handed to the code under test through its own `$MAC_ESTATE_TERMS` override, which is the mechanism
+# an estate and a CI runner use, so the test exercises the seam rather than bypassing it.
+# --------------------------------------------------------------------------- #
+
+_SYN_TERM = "zzsynthkpizz"
+
+
+def _self_test() -> int:
+    import os
+    import tempfile
+
+    failures: list = []
+    checks = 0
+
+    def expect(cond, msg):
+        nonlocal checks
+        checks += 1
+        if not cond:
+            failures.append(msg)
+
+    def with_register(text):
+        """Point $MAC_ESTATE_TERMS at a register holding `text` (None = no file at all)."""
+        if text is None:
+            os.environ[_ENV] = str(Path(tmp) / "absent" / "estate_terms.txt")
+        else:
+            p = Path(tmp) / f"reg{len(os.listdir(tmp))}.txt"
+            p.write_text(text, encoding="utf-8")
+            os.environ[_ENV] = str(p)
+
+    from sdk import registers as _registers
+
+    _ENV = _registers.REGISTERS[_ESTATE_REGISTER][1]
+    _saved = os.environ.get(_ENV)
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            # 1 - REGISTER PRESENT: a question carrying a declared surface word is a name-resolution
+            #     question at Medium. This is the behaviour the three private words used to give.
+            with_register(f"{_ESTATE_GROUP} | {_SYN_TERM}\n")
+            c = classify(f"what was the {_SYN_TERM} last month")
+            expect(
+                c["category"] == "resolution" and c["tier"] == "Medium",
+                f"mutant not caught: a declared surface term did not classify as resolution: {c}",
+            )
+            v = estate_vocabulary()
+            expect(v["present"] and v["terms"] == 1, f"vocabulary block wrong when present: {v}")
+            expect(
+                _SYN_TERM not in json.dumps(v),
+                "the vocabulary block ECHOES the register's terms — this block is committed to "
+                "bundle repos and rendered in a browser, so it must carry the count only",
+            )
+            expect(
+                "1 estate KPI surface term" in _vocabulary_line(v),
+                f"the healthy verdict line omits its denominator: {_vocabulary_line(v)!r}",
+            )
+            # 1b - THE DISCLOSURE MUST NOT BE AN ABSOLUTE PATH, and this assertion exists because
+            #      that defect was actually SHIPPED into this file once, mid-change, and caught by
+            #      eye rather than by a test. The first cut built this block from
+            #      `str(registers.register_path(...))` and the projected `questions_dashboard.json`
+            #      — committed to bundle repositories and rendered in a browser — came out carrying
+            #      `/Users/<the operator>/…`, which is the shape `check_mac_public` flags as a leak.
+            #      `registers.disclosed_path()` was written to fix it, and NOTHING asserted the fix:
+            #      reverting that one call left every self-test in this repository green, because
+            #      each of them points $MAC_ESTATE_TERMS at a temp path whose absolute form is a
+            #      perfectly plausible-looking string. One guard here covers all three consumers,
+            #      since `check_rule_reference_basis` and `check_grain_declaration` render their own
+            #      disclosures through the same function.
+            expect(
+                not os.path.isabs(v["register"]),
+                f"the vocabulary block discloses an ABSOLUTE path ({v['register']!r}) — this block "
+                "is committed to bundle repos and rendered in a browser, so the register must be "
+                "named repo-relative (registers.disclosed_path), never as a filesystem path that "
+                "carries the operator's home directory into a published artefact",
+            )
+
+            # 2 - PRECEDENCE. The same question ALSO matching `comparison` (also Medium) must still
+            #     read resolution. A tenth rule row appended after `comparison` passes check 1 and
+            #     fails this one, because `max()` keeps the EARLIEST maximum.
+            c = classify(f"compare the {_SYN_TERM} across markets")
+            expect(
+                c["category"] == "resolution",
+                f"mutant not caught: the estate signal lost its row precedence to comparison: {c}",
+            )
+
+            # 3 - REGISTER ABSENT: the tier DROPS (that is the honest consequence, not a bug) and the
+            #     shortfall is disclosed — in the block and on the operator's line.
+            with_register(None)
+            c = classify(f"what was the {_SYN_TERM} last month")
+            expect(
+                c["category"] != "resolution",
+                "the no-register path still matched an estate term — the register is not being read",
+            )
+            v = estate_vocabulary()
+            expect(
+                not v["present"] and v["terms"] == 0 and v["reduced_scope"],
+                f"mutant not caught: no register, yet nothing disclosed: {v}",
+            )
+            line = _vocabulary_line(v)
+            expect(
+                "REDUCED SCOPE" in line and "0 estate KPI surface term" in line,
+                f"the no-register verdict line does not state the shortfall plainly: {line!r}",
+            )
+            # The ABSENT path is the one that names a path most loudly ("NO register at …"), so it
+            # is the one most likely to print an absolute one. Guarded on both paths, not just the
+            # healthy one — see 1b.
+            expect(
+                not os.path.isabs(v["register"]),
+                f"the no-register disclosure names an ABSOLUTE path ({v['register']!r}) — the "
+                "verdict line and the dashboard header both carry it, and both are published",
+            )
+
+            # 4 - THE GENERIC SIGNALS STILL RUN WITH NO REGISTER. They are question-FORM words and
+            #     live in code for exactly this checkout: a clone with no register must still
+            #     classify a resolution question it can recognise generically.
+            c = classify("which model does this disambiguate to")
+            expect(
+                c["category"] == "resolution",
+                f"the generic question-form resolution signals stopped working without a register: {c}",
+            )
+
+            # 5 - AN EMPTY REGISTER IS NOT A DECLARED VOCABULARY. A file that exists and declares
+            #     nothing used to be indistinguishable from a file full of terms.
+            with_register("# nothing declared\n")
+            expect(
+                not estate_vocabulary()["present"],
+                "mutant not caught: an EMPTY register reported itself as present",
+            )
+
+            # 6 - A LINE WITH NO GROUP IS IGNORED, not filed under a default group where it would
+            #     acquire behaviour nobody declared.
+            with_register(f"{_SYN_TERM}\n")
+            expect(
+                not estate_vocabulary()["present"],
+                "a register line with no group name was silently given a group",
+            )
+
+            # 7 - THE GROUPS ARE SEPARATE. A term declared under another consumer's group must not
+            #     leak into this classifier.
+            with_register(f"kpi_surface_stem | {_SYN_TERM}\n")
+            expect(
+                not estate_vocabulary()["present"]
+                and classify(f"the {_SYN_TERM} figure")["category"] != "resolution",
+                "a term from another group leaked into the question classifier",
+            )
+        finally:
+            if _saved is None:
+                os.environ.pop(_ENV, None)
+            else:
+                os.environ[_ENV] = _saved
+            _ESTATE_CACHE.clear()
+
+    if failures:
+        print(f"FAIL: questions self-test — {len(failures)} failure(s) over {checks} check(s)")
+        for f in failures:
+            print(f"  {f}")
+        return 1
+    print(
+        f"PASS: questions self-test — {checks}/{checks} check(s) over the classifier's "
+        f"{len(_RULES)} tier rule(s); the estate vocabulary is proven PRESENT, ABSENT, EMPTY and "
+        f"MISGROUPED, each with its own disclosure"
+    )
+    return 0
 
 
 def main(argv=None) -> int:
@@ -590,6 +896,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Project a bundle's acceptance plane → questions_dashboard.json"
     )
+    ap.add_argument("--self-test", action="store_true", help="seeded mutants of the classifier")
     # Both spellings are accepted on purpose: the wiki shells `--bundle` over the subprocess seam
     # (boundaries.yaml — wiki/ never imports sdk), while a replay by hand reads better positionally.
     ap.add_argument(
@@ -598,6 +905,9 @@ def main(argv=None) -> int:
     ap.add_argument("--bundle", help="same, named (what console_api passes)")
     ap.add_argument("--print", action="store_true", help="also dump the whole dashboard as JSON")
     a = ap.parse_args(argv)
+
+    if a.self_test:
+        return _self_test()
 
     bundle = a.bundle or a.bundle_pos
     if not bundle:

@@ -27,3 +27,14 @@ sdk/gate/shared_schemas.txt
 # The public-token register IS the identity it protects. Never tracked.
 registers/public_tokens.txt
 
+# The estate's own vocabulary — the words it uses for its KPIs, and the source columns that stamp
+# when a figure was published. Framework heuristics need them; a public repository must not carry
+# them. These four sites were the last real leaks check_mac_public found (2026-09-17). Only the
+# .example ships, with the format and no values.
+registers/estate_terms.txt
+
+
+# Agent worktrees. A workflow may register a git worktree of this repo under .claude/worktrees/,
+# checked out at another commit. It must never be staged: git would record it as a gitlink to an
+# embedded repository, and the checkout can predate a scrub of this tree.
+.claude/

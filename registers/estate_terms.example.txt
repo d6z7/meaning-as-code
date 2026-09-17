@@ -1,0 +1,90 @@
+# estate_terms.txt — the VOCABULARY of the estate this framework instance is applied to.
+#
+# Copy this file to `estate_terms.txt` beside it and fill in your own. That file is GITIGNORED and
+# must stay that way. These are not secrets in the credential sense; they are the words a private
+# organisation uses for its own KPIs and the columns of its own source systems, and `meaning-as-code`
+# is a PUBLIC repository. `check_mac_public` found exactly these four sites (2026-09-17) as the last
+# real leaks in the tree — estate-specific terms embedded in checker code:
+#
+#     sdk/project/questions.py            a question classifier's resolution-tier signal
+#     tools/check_rule_reference_basis.py the surface-term overlap heuristic (two sites, one fact)
+#     tools/check_grain_declaration.py    the publication-cycle column hints
+#
+# A WORD SWAP WOULD NOT HAVE DONE. These terms DRIVE BEHAVIOUR on a private corpus: remove them and
+# one question drops a complexity tier, a rule reference loses a legitimate basis, and a cell key
+# containing a republication column stops being flagged. So they move out of the code rather than
+# being renamed, and each consumer is honest about what it can no longer see without them.
+#
+# FORMAT: group | value          one term per line; blank lines and #-comments ignored
+#
+# A line with no `|` is IGNORED — a term whose group was forgotten gets no default behaviour. The
+# split is on the FIRST `|` only, so a value may contain one.
+#
+# ------------------------------------------------------------------------------------------------
+# THE GROUPS, and what each consumer does when the register is absent
+# ------------------------------------------------------------------------------------------------
+#
+# kpi_surface_name  — the full words your analysts SAY when they mean one of your KPIs, in whatever
+#                     language they say them in. Read by `sdk/project/questions.py`: a question
+#                     carrying one of these is a NAME-RESOLUTION question (Medium tier), because
+#                     answering it means resolving a local surface term to a code.
+#                     Matched case-insensitively, whole word, against the question text and tags.
+#                     ABSENT: REDUCED SCOPE, disclosed. The projector keeps classifying — the
+#                     generic resolution signals ("which model", "disambiguat", "synonym") stay in
+#                     code — but says on its verdict line and in the dashboard header that the
+#                     estate vocabulary was empty, so questions that resolve a local term will read
+#                     one tier lower than they are. Exit 2 would be wrong: this is a projector the
+#                     wiki board renders, and refusing to project leaves the operator with no board
+#                     at all over a classifier signal.
+#
+# kpi_surface_stem  — the STEMS inside those words: the fragments that recur through your compound
+#                     nouns. Read by `tools/check_rule_reference_basis.py` in two places that are
+#                     one fact — the fallback scrape that decides which capitalised nouns in a
+#                     concept's prose are surface terms, and the stem expansion that lets two
+#                     compounds sharing a stem count as a SHARED SURFACE TERM, which is one of the
+#                     three legitimate bases for a rule naming another concept.
+#                     Matched as lowercase SUBSTRINGS, so a stem is found anywhere in a compound.
+#                     ABSENT: REDUCED SCOPE, disclosed. The shared-surface basis then runs on
+#                     DECLARED aliases, names and labels only. That direction is FAIL-SAFE — a
+#                     missing basis can only ADD findings, never hide one — so exit 2 would take a
+#                     working ERROR-severity check (MAC002/MAC003/MAC008 binds conformance) offline
+#                     over an optional fallback. The MAC008 diagnostic says the vocabulary was
+#                     empty and that it may therefore over-report.
+#
+# vintage_column    — your source columns that identify WHEN a figure was published rather than
+#                     WHICH figure it is. Read by `tools/check_grain_declaration.py`: a measured
+#                     cell key containing one makes every republication its own group, so the
+#                     collapse collapses nothing.
+#                     Matched as lowercase SUBSTRINGS of a key column name.
+#                     ABSENT: REDUCED SCOPE, disclosed. SEVEN GENERIC hints stay in code
+#                     (reporting_month, reporting_cycle, vintage, snapshot, created_at, loaded_at,
+#                     ingested_at — cross-estate column shapes, not anyone's identity), so the class
+#                     keeps a real floor, and four of the gate's five rules never read this register
+#                     at all. But the OK line then drops the word "complete" and names the empty
+#                     denominator, because this is the one group whose absence can HIDE a finding
+#                     rather than add one.
+#
+# ------------------------------------------------------------------------------------------------
+# WHAT DOES **NOT** BELONG HERE
+# ------------------------------------------------------------------------------------------------
+# Generic terms. A word that any estate in any industry would use is framework vocabulary and stays
+# in the code, where a fresh clone and CI still have it: the question-form words ("which model",
+# "disambiguat", "synonym") and the warehouse column shapes above were all judged generic and left
+# where they were. The test is not "is it English" but "does it name THIS estate's KPI, system,
+# brand, market or column". When in doubt, run `tools/check_mac_public.py` — it is the instrument
+# that decides, and it has the register of identities to decide with.
+#
+# ------------------------------------------------------------------------------------------------
+# $MAC_ESTATE_TERMS overrides the path, so CI — which has no gitignored file — can supply a register
+# without committing one, and so a self-test can declare a SYNTHETIC vocabulary rather than needing
+# the real one to be present.
+# ------------------------------------------------------------------------------------------------
+
+# kpi_surface_name | <the-word-an-analyst-says-for-your-stock-kpi>
+# kpi_surface_name | <the-word-for-your-delivery-kpi>
+# kpi_surface_name | <the-word-for-your-total-market-kpi>
+
+# kpi_surface_stem | <recurring-stem-1>
+# kpi_surface_stem | <recurring-stem-2>
+
+# vintage_column   | <your-republication-config-column>
