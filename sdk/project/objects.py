@@ -966,7 +966,12 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         )
         for stem in datasets
     }
-    result["er_model"] = er_model.build(datasets, concepts, ont_edges, _dsrel)
+    # `root` lets er_model resolve each edge's cited evidence into a PROOF STATE, the way
+    # ontology_quality is already handed one. Without it every edge reads "unresolved" —
+    # correct, and visibly so, rather than silently proved.
+    result["er_model"] = er_model.build(
+        datasets, concepts, ont_edges, _dsrel, root=Path(data_dir).parent
+    )
     if out_dir:
         (Path(out_dir) / "objects.json").write_text(json.dumps(result, indent=2, sort_keys=True))
         (Path(out_dir) / "lineage_graph.json").write_text(
