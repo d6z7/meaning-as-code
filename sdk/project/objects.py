@@ -59,52 +59,127 @@ def _rel_bare(rel: str) -> str:
     return str(rel or "").split(".")[-1]
 
 
-def _emit_ontology_sme_md(sme, odir, label):
-    """Project the ontology SME questions into the SAME prioritised-table markdown the DATA
-    SME-QUESTIONS.md uses (rendered by the same DocPane), so both SME lists read identically.
-    Grouped high/medium/low; each question links to its concept. In sync (re-projected each run)."""
-    _pipe = "\\|"
+def _emit_ontology_sme_md(register, needs, odir, label):
+    """Render the SME CATALOGUE — what the model and its tests ask an SME — as ontology/SME-QUESTIONS.md.
 
-    def esc(x, n):
-        return str(x or "").replace("|", _pipe)[:n]
+    It renders the catalogue, not the conversation. Every choice below removes a defect the old
+    prioritised table shipped:
 
-    def prio(q):
-        return q.get("severity") or {
-            "identity": "high",
-            "ratification": "high",
-            "aggregation": "medium",
-            "enumeration": "medium",
-            "confirm-rule": "low",
-        }.get(q.get("kind"), "medium")
+      - TWO SECTIONS, "Questions" and "Sign-offs", each with its own count. One label ("concept
+        sign-offs") for both made a request to ratify an applied change read as an open question.
+      - NO STATUS AND NO PRIORITY COLUMN. The status column showed the change record's status
+        (applied, proposed), which says nothing about whether anyone was asked; the priority was
+        invented from the kind, so every change-record row read "high". Conversation status lives
+        in the bundle's SME question ledger and is joined at read time.
+      - ONE BLOCK PER CANDIDATE, full text as a quote. A table cut every question at 150 characters
+        and broke on the first newline inside a cell.
 
+    `needs` is the oracle collector's output (sdk.acceptance.sme_needs), or a dict with an `error`
+    saying why it could not be collected — rendered, never dropped."""
+    rows = list((register or {}).get("sme_questions") or [])
+    need_rows = list((needs or {}).get("needs") or [])
+    catalogue = sorted(rows + need_rows, key=lambda r: (r.get("key") or ""))
+    findings = [
+        f
+        for f in ((register or {}).get("findings") or []) + ((needs or {}).get("findings") or [])
+        if f.get("category") == "sme-questions"
+    ]
+    operator = list((register or {}).get("sme_operator_items") or [])
+    routed = list((register or {}).get("sme_routed_to_data") or [])
+    questions = [r for r in catalogue if r.get("kind") == "question"]
+    signoffs = [r for r in catalogue if r.get("kind") == "sign_off"]
+    by_origin = {}
+    for r in catalogue:
+        by_origin[r.get("origin")] = by_origin.get(r.get("origin"), 0) + 1
+    oracle_members = sum(len(r.get("members") or [r]) for r in need_rows)
+
+    def quote(text):
+        # A blockquote per line keeps a multi-line question inside its own block. A blank line
+        # stays inside the quote (">") so the block does not end early.
+        return [f"> {ln}" if ln.strip() else ">" for ln in str(text or "").splitlines() or [""]]
+
+    def block(r):
+        out = [f"### `{r.get('key')}`", ""]
+        facts = [f"origin: {r.get('origin')}", f"owner role: {r.get('owner_role') or 'not declared'}"]
+        concepts = ((r.get("subject") or {}).get("concepts")) or []
+        if concepts:
+            facts.append(
+                "concept: " + ", ".join(f"[{c}](concepts/{c}.md)" for c in concepts)
+            )
+        out.append("- " + " · ".join(facts))
+        declared = [
+            f"{k} {r.get('declared_' + k)}" for k in ("priority", "status") if r.get("declared_" + k)
+        ]
+        if declared:
+            out.append("- declared by the artifact: " + " · ".join(declared))
+        if r.get("members"):
+            extra = f" · {r['variants']} other wording(s)" if r.get("variants") else ""
+            out.append(f"- {len(r['members'])} tests ask this{extra}: " + ", ".join(f"`{m}`" for m in r["members"]))
+        src = r.get("source") or {}
+        if src.get("path"):
+            out.append(f"- source: `{src.get('path')}`" + (f" → `{src['pointer']}`" if src.get("pointer") else ""))
+        if r.get("fileable") is False and not r.get("members"):
+            out.append("- this key breaks the origin-key grammar and cannot be filed (see findings)")
+        return out + [""] + quote(r.get("text")) + [""]
+
+    n_unstructured = sum(1 for f in findings if f.get("code") == "sme-ask-unstructured")
     body = [
-        f"The open **SME sign-offs** the ontology surfaces — {len(sme)} questions, one per concept "
-        f"needing ratification (confirm a concept or rule, an aggregation rule, an enum domain, an "
-        f"identity key). Prioritised by severity; each links to its concept. Projected from "
-        f"ontology_quality.json, so it stays in sync.",
+        f"What the model and its tests ask a subject-matter expert: **{len(questions)} question(s)** and "
+        f"**{len(signoffs)} sign-off request(s)**, {len(catalogue)} row(s) in all. Consolidated from the "
+        f"register (model conditions and change-record `sme` blocks), concept open-question fields and "
+        f"test oracles flagged needs-SME; projected from ontology_quality.json and "
+        f"acceptance/sme_needs.json, so it stays in sync.",
+        "",
+        "Conversation status is not part of this projection; it lives in the bundle's SME question ledger.",
+        "",
+        "Rows by origin: "
+        + (" · ".join(f"{k} {v}" for k, v in sorted(by_origin.items())) or "none")
+        + (f" (the oracle rows stand for {oracle_members} test(s))" if need_rows else ""),
         "",
     ]
-    for sev in ("high", "medium", "low"):
-        rows = [q for q in sme if prio(q) == sev]
-        if not rows:
-            continue
+    if (needs or {}).get("error"):
+        body += [f"**Oracle needs were not collected:** {needs['error']}", ""]
+    if n_unstructured:
+        entries = "entry names" if n_unstructured == 1 else "entries name"
         body += [
-            f"## {sev.title()} priority — {len(rows)} question(s)",
+            f"**{n_unstructured} change-record {entries} an SME owner but carry no structured ask;** "
+            f"they are listed under findings, not questions.",
             "",
-            "| ask | concept | kind | status |",
-            "|---|---|---|---|",
         ]
-        for q in rows:
-            cid = q.get("concept") or ""
-            link = f"[{esc(q.get('concept_title') or cid, 40)}](concepts/{cid}.md)" if cid else "—"
-            body.append(
-                f"| {esc(q.get('question'), 150)} | {link} | {esc(q.get('kind'), 20)} "
-                f"| {esc(q.get('current'), 12)} |"
-            )
-        body += [""]
+    for title, part in (("Questions", questions), ("Sign-offs", signoffs)):
+        body += [f"## {title} — {len(part)}", ""]
+        if not part:
+            body += ["None.", ""]
+        for r in part:
+            body += block(r)
+    body += [f"## Findings — {len(findings)} (not questions)", ""]
+    if not findings:
+        body += ["None.", ""]
+    for f in sorted(findings, key=lambda f: (f.get("code") or "", str(f.get("concept_title")))):
+        body.append(
+            f"- **{f.get('code')}** ({f.get('severity')}) · `{f.get('concept_title')}` — {f.get('title')}"
+        )
+        if f.get("detail"):
+            body += ["", *[f"  > {ln}" if ln.strip() else "  >" for ln in str(f["detail"]).splitlines()]]
+        body.append("")
+    body += [f"## Operator items — {len(operator)} (not SME questions)", ""]
+    if not operator:
+        body += ["None.", ""]
+    for o in operator:
+        body += [f"### `{o.get('key')}`", "", *quote(o.get("text")), ""]
+    if routed:
+        body += [
+            f"## Routed to the data plane — {len(routed)}",
+            "",
+            "Asks about data-plane objects; the data register carries them.",
+            "",
+        ]
+        body += [f"- `{r.get('key')}` ({r.get('kind')}) · DQ ids: {', '.join(r.get('dq_ids') or []) or 'none'}" for r in routed]
+        body.append("")
     fm = (
         "---\ntype: Doc\ntitle: SME questions — ontology\n"
-        f"description: {len(sme)} concept sign-offs awaiting SME\ntags:\n- {label}\n- sme-questions\n---\n"
+        f"description: {len(questions)} questions and {len(signoffs)} sign-off requests the model and its tests put to an SME\n"
+        f"tags:\n- {label}\n- sme-questions\n---\n"
     )
     (odir / "SME-QUESTIONS.md").write_text(fm + "\n" + "\n".join(body))
 
@@ -474,7 +549,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             }
         )
         # EVERY input, not just the raw sources: a transform may also read another DATASET
-        # (dim_country_register <- dim_brand_country_code) or an ATTRIBUTED LOOKUP (authored_seed,
+        # (a market register built from a scoped-code dimension) or an ATTRIBUTED LOOKUP (authored_seed,
         # e.g. iso_3166.lookup) — the seeds that carry "how the values came to being". Keeping only
         # the /sources/ ones made those dependencies invisible in the whole-bundle graph.
         inputs = []
@@ -980,10 +1055,30 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         if concepts:
             odir = Path(out_dir) / "ontology"
             odir.mkdir(parents=True, exist_ok=True)
-            _oq = ontology_quality.build(concepts, datasets, ont_edges, root=Path(data_dir).parent)
+            _oq = ontology_quality.build(
+                concepts,
+                datasets,
+                ont_edges,
+                root=Path(data_dir).parent,
+                concept_paths=concept_schema_path,
+            )
             (odir / "ontology_quality.json").write_text(json.dumps(_oq, indent=2, sort_keys=True))
-            # ALSO project the ontology SME questions as prioritised-table markdown — same style as the
-            # data SME-QUESTIONS.md, rendered by the same DocPane (the smeq object points here).
+            # THE ORACLE HALF of the SME catalogue, collected on the acceptance side and written
+            # beside the corpus. Collected HERE so the rendered list below is never a list of the
+            # model's questions alone while the tests' questions sit unread in their oracles. A
+            # failure is rendered into the page by name, never swallowed.
+            try:
+                from sdk.acceptance import sme_needs as _sme_needs
+
+                _needs = _sme_needs.build(Path(data_dir).parent)
+                # Written whenever the acceptance plane exists, so a removed oracle cannot leave a
+                # stale file behind; a bundle without one gains no acceptance/ directory from this.
+                if (Path(data_dir).parent / "acceptance").is_dir():
+                    _sme_needs.write(Path(data_dir).parent, _needs)
+            except Exception as e:  # noqa: BLE001
+                _needs = {"needs": [], "findings": [], "error": f"{type(e).__name__}: {e}"}
+            # ALSO project the SME catalogue as markdown, rendered by the same DocPane as the data
+            # SME-QUESTIONS.md (the smeq object points here).
             try:
                 from sdk.project import source_ident as _si
 
@@ -991,7 +1086,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             except Exception:
                 # never assume a source: fall back to the bundle's own directory name
                 _lbl = Path(data_dir).parent.name.upper()
-            _emit_ontology_sme_md(_oq.get("sme_questions") or [], odir, _lbl)
+            _emit_ontology_sme_md(_oq, _needs, odir, _lbl)
         # ---- the TESTING corpus read-view. questions.py was NOT in the pipeline, so the dashboard
         # only refreshed when a run happened to call it — a freshly opened bundle reported
         # `with_oracle: 0` while 96 oracles sat on disk, i.e. the wiki said the corpus was ungradeable

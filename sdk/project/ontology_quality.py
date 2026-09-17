@@ -20,7 +20,61 @@ It measures three things the data-quality dashboard cannot:
                     sworn to in a hand-written no_probe_guarantee. Read from the compiler's own
                     check_answerability (compile.json), never recomputed here: the logic has ONE home
                     in meaning-as-code/tools, and a dashboard that re-derived it would be a second.
-And it emits an SME-QUESTION backlog: exactly what a human still needs to confirm or answer.
+And it emits the SME CATALOGUE: what the model asks a subject-matter expert (`sme_questions`).
+
+THE SME CATALOGUE (format mac.sme-catalogue/1)
+-----------------------------------------------
+A catalogue row is a CANDIDATE: a question or a sign-off request that an artifact of the bundle
+poses. It is not a conversation. The rows carry NO status, NO invented priority and NO people:
+whether a question was asked, answered or applied lives in the bundle's SME question ledger
+(`governance/sme-questions.yaml`), which this projector never reads. WHY: the projection is
+compiled into the served artifact and hashed with it, while the ledger changes whenever anyone
+posts a message; and "overdue" depends on the moment it is read. The join of catalogue and ledger
+is a read-time view (`sdk.project.sme_questions`), never a projected file.
+
+    {"key": "concept:store#open_questions[oq1]",   the ORIGIN KEY (below) — what a ledger files
+     "origin": "concept-field",                     register | concept-field | oracle
+     "kind": "question",                            question | sign_off — counted apart everywhere
+     "plane": "ontology",
+     "subject": {"concepts": ["store"]},
+     "text": "<verbatim, never cut>",
+     "owner_role": <as the artifact declares it, or null>,
+     "declared_priority": <as declared, or null>,   copied, never derived from the kind
+     "declared_status": <as declared, or null>,     e.g. an open question's own OPEN / PARTIAL
+     "members": null,                               a grouped oracle row lists its member keys
+     "source": {"path": "...", "pointer": "..."},
+     "fileable": true,                              false when the key breaks the grammar
+     "id", "question", "concept", "concept_title"}  TRANSITION ALIASES (see sme_row)
+
+ORIGIN KEYS — ids only, never file paths, so moving a file orphans nothing:
+
+    concept:<concept>#open_questions[<id>]          a concept's open_questions[] entry
+    concept:<concept>#values[<code>].open_question  a value-level open question
+    concept:<concept>#enumerations[<name>].values[<code>].open_question
+    concept:<concept>#constraints[<i>].open_question
+    concept:<concept>#identity                      identity awaiting an SME (no key)
+    concept:<concept>#confidence                    concept confidence below confirmed   sign_off
+    concept:<concept>#enumeration                   the value set is not resolved
+    concept:<concept>#measure_type                  a measure declares no resolvable type
+    rule:<rule>#confidence                          a rule at confidence P               sign_off
+    intervention:<entry>#sme                        a change-record entry's `sme` block
+    oracle:<question>#needs_sme                     a test oracle flagged needs-SME (sdk.acceptance.sme_needs)
+
+Whitespace and `%` inside a fragment id are percent-encoded, so a code with a space still yields
+one token.
+
+THE CHANGE-RECORD `sme` BLOCK. An entry of interventions/ledger.yaml poses an SME ask ONLY through
+a structured block; its free-text `sme_owner` is history and is never parsed for a question:
+
+    sme:
+      ask_kind: sign_off        # question | sign_off | operator | none
+      owner_role: domain owner  # required for question and sign_off
+      ask: Is each store's opening date read from the store master rather than the first sale?
+      plane: ontology           # ontology | data; absent = derived from the entry's objects
+
+An entry that names an `sme_owner` and carries no block is a FINDING (`sme-ask-unstructured`), not
+a question. `ask_kind: operator` lands in `sme_operator_items` (not an SME question); a data-plane
+ask lands in `sme_routed_to_data` (the data register carries it).
 """
 
 from __future__ import annotations
@@ -29,7 +83,30 @@ RULE_KINDS = ["resolution", "aggregation", "default", "ambiguity", "exclusion", 
 _SEV = {"high": 0, "medium": 1, "low": 2}
 
 import re as _re
+from collections import Counter as _Counter
 from pathlib import Path
+
+# ── SME catalogue vocabulary. Each set is closed and lives here once; the collector and the
+#    read-time join import it rather than restating it. ────────────────────────────────────────
+SME_CATALOGUE_FORMAT = "mac.sme-catalogue/1"
+SME_FINDING_CATEGORY = "sme-questions"
+SME_KINDS = ("question", "sign_off")
+# The ledger's origin-key grammar. A candidate whose key does not match can be SHOWN but not FILED,
+# so the row says so (`fileable: false`) and a finding names it, instead of a filing failing later.
+ORIGIN_KEY_RE = _re.compile(
+    r"^(concept|rule|intervention|oracle|annotation|historic|manual):[A-Za-z0-9_.:/-]+(#\S+)?$"
+)
+ASK_KINDS = ("question", "sign_off", "operator", "none")
+SME_BLOCK_KEYS = {"ask_kind", "owner_role", "ask", "plane"}
+# A change-record entry in any of these states asks nothing any more. Seen in real change records:
+# none of these statuses is ever used, and supersession is recorded only on the NEWER entry, as
+# `supersedes` — so the older entry is recognised by being named there, not by its own fields.
+CLOSED_CHANGE_STATUSES = {"withdrawn", "superseded", "ratified", "closed"}
+CLOSING_MARKERS = ("withdrawn_by", "superseded_by", "ratified_by")
+DATA_PLANE_OBJECT_KINDS = {"dataset", "transform", "lookup", "source"}
+RESOLVED_OPEN_QUESTION = {"resolved", "closed", "withdrawn"}
+DOUBTFUL_CONFIDENCE = {"I", "Q"}
+CHANGE_RECORD = "interventions/ledger.yaml"
 
 
 def _pct(num, den, what: str):
@@ -54,13 +131,622 @@ def _pct(num, den, what: str):
     return round(100 * num / den), None
 
 
-def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
+# ════════════════════════════════════════════════════════════════════════════════════════════════
+# SME CATALOGUE — the rows, the keys, and the findings that stand where a fake question used to
+# ════════════════════════════════════════════════════════════════════════════════════════════════
+
+
+def key_fragment(ident) -> str:
+    """An id placed inside a key fragment, with `%` and whitespace percent-encoded.
+
+    WHY: the grammar's fragment is `\\S+`. A value code such as "Plug in" would otherwise produce a
+    key the ledger refuses, and the question could be seen but never filed."""
+    out = []
+    for ch in str(ident):
+        out.append(f"%{ord(ch):02X}" if ch == "%" or ch.isspace() else ch)
+    return "".join(out)
+
+
+def sme_row(
+    *,
+    key: str,
+    origin: str,
+    kind: str,
+    text: str,
+    concepts=(),
+    title_of: dict | None = None,
+    owner_role=None,
+    declared_priority=None,
+    declared_status=None,
+    members=None,
+    source: dict | None = None,
+    **extra,
+) -> dict:
+    """One catalogue row, in the one shape every origin shares.
+
+    TRANSITION ALIASES. Two console views read these rows today and cannot change until their
+    integration packet lands: the model-conditions tab reads `kind` and the count, and the objects
+    view's SME pane reads `id`, `question`, `concept` and `concept_title` — without them it renders
+    rows with no text and no link. So each row also carries `id` (= key), `question` (= text),
+    `concept` and `concept_title` (the first subject concept). `current` is gone: it was the
+    artifact's confidence letter shown as if it were a conversation status, and the pane already
+    tolerates its absence. test_sme_register pins the aliases; the integration packet removes them.
+    """
+    concepts = [str(c) for c in concepts if c]
+    first = concepts[0] if concepts else None
+    row = {
+        "key": key,
+        "origin": origin,
+        "kind": kind,
+        "plane": "ontology",
+        "subject": {"concepts": concepts},
+        "text": text,
+        "owner_role": owner_role if isinstance(owner_role, str) and owner_role.strip() else None,
+        "declared_priority": declared_priority if isinstance(declared_priority, str) else None,
+        "declared_status": declared_status if isinstance(declared_status, str) else None,
+        "members": members,
+        "source": source,
+        "fileable": bool(ORIGIN_KEY_RE.match(key)),
+        "id": key,
+        "question": text,
+        "concept": first,
+        "concept_title": ((title_of or {}).get(first) or first) if first else None,
+    }
+    row.update(extra)
+    return row
+
+
+def sme_finding(code: str, severity: str, subject, title: str, detail: str, *, concept=None, source=None):
+    """A finding about the SME catalogue, in the register's finding shape (the model-conditions tab
+    already renders that shape, so a finding is visible where the fake question used to be)."""
+    return {
+        "id": f"{code}.{subject}",
+        "category": SME_FINDING_CATEGORY,
+        "code": code,
+        "severity": severity,
+        "concept": concept,
+        "concept_title": str(subject),
+        "title": title,
+        "detail": detail,
+        "source": source,
+    }
+
+
+def _unreadable(path: str, error) -> dict:
+    # WHY HIGH: the old lift sat in `except Exception: pass`, so a change record that failed to parse
+    # removed every one of its rows and the register looked cleaner for it.
+    return sme_finding(
+        "sme-source-unreadable",
+        "high",
+        path,
+        "cannot be read, so the SME questions it poses are unknown",
+        f"{type(error).__name__ if isinstance(error, Exception) else 'Error'}: {error}",
+        source={"path": path, "pointer": None},
+    )
+
+
+def complete_sentence(text) -> bool:
+    """Is `text` a whole sentence a person could be asked? Not a proof of meaning — a guard against
+    the two shapes that posed as questions: a tail cut out of a longer sentence (starts lower-case,
+    closes a parenthesis it never opened) and an empty or one-word stub."""
+    if not isinstance(text, str):
+        return False
+    t = text.strip()
+    if len(t.split()) < 2:
+        return False
+    # A sentence may open with a lower-case IDENTIFIER (`price_tier 3 is the list price.`,
+    # `store.opening_date is read from the store master.`): its first token joins parts with `_` or
+    # `.`, which a cut-off tail of prose ("only the notation ...") never does. Without this, a whole
+    # structured ask was published as a finding, and the ledger entry filed on it read "origin gone".
+    ident = _re.fullmatch(r"[a-z][A-Za-z0-9]*(?:[_.][A-Za-z0-9]+)+[,:;]?", t.split()[0]) is not None
+    if not (t[0].isupper() or t[0].isdigit() or t[0] in "\"'“‘([`" or ident):
+        return False
+    if t.rstrip("\"'”’)]`")[-1:] not in ("?", ".", "!"):
+        return False
+    return t.count("(") == t.count(")") and t.count("[") == t.count("]")
+
+
+def measure_type_members(repo_root: Path | None = None):
+    """The members of mac.MeasureType, read from the framework's vocabulary (their one home), or
+    None when the vocabulary cannot be read."""
+    try:
+        import yaml as _yaml
+
+        vocab = (repo_root or Path(__file__).resolve().parents[2]) / "mac_vocabulary.yaml"
+        doc = _yaml.safe_load(vocab.read_text(encoding="utf-8")) or {}
+        members = (doc.get("MeasureType") or {}).get("members") or {}
+        return set(members) if members else None
+    except Exception:  # noqa: BLE001 — reported by the caller as sme-source-unreadable
+        return None
+
+
+def measure_type_declared(concept_doc: dict, members) -> bool:
+    """Does a measure declare how it adds up, the way the answerability check reads it
+    (`concept.semantics.measure_type`), resolvable in mac.MeasureType?
+
+    WHY THIS AND NOT "has an aggregation rule": per-concept aggregation rules were retired in
+    favour of the declared type, after which the old detector asked "how does it aggregate?" of
+    every measure in a bundle that had answered it for every measure."""
+    mt = ((concept_doc.get("concept") or {}).get("semantics") or {}).get("measure_type")
+    if not isinstance(mt, str) or not mt.startswith("mac.MeasureType."):
+        return False
+    if members is None:
+        # The vocabulary is unreadable: say so once (the caller does) instead of manufacturing a
+        # question for every measure that did declare a type.
+        return True
+    return mt.split(".")[-1] in members
+
+
+def value_set_unresolved(doc: dict) -> bool:
+    """An enumeration whose value set nobody has settled: closure `unknown`, or no members and
+    nothing that realizes them.
+
+    WHY `realized_by` COUNTS: a closed value set read from a register deliberately has no inline
+    `items`; asking "is it closed, and what are its values?" of it asks what the file answers."""
+    v = doc.get("values") if isinstance(doc.get("values"), dict) else {}
+    if str(v.get("closure") or "").strip().lower() == "unknown":
+        return True
+    if v.get("items") or v.get("realized_by"):
+        return False
+    for en in doc.get("enumerations") or []:
+        if isinstance(en, dict) and (en.get("values") or en.get("items") or en.get("realized_by")):
+            return False
+    return True
+
+
+def _value_items(doc: dict):
+    """(key fragment, pointer, item) for every value item, in both value-set shapes."""
+    v = doc.get("values")
+    if isinstance(v, dict):
+        for i, it in enumerate(v.get("items") or []):
+            if isinstance(it, dict):
+                code = it.get("code", it.get("value"))
+                ident = key_fragment(code if code is not None else f"@{i}")
+                yield f"values[{ident}]", f"values.items[{i}]", it
+    for j, en in enumerate(doc.get("enumerations") or []):
+        if not isinstance(en, dict):
+            continue
+        name = key_fragment(en.get("name") or en.get("id") or f"@{j}")
+        for i, it in enumerate(en.get("values") or en.get("items") or []):
+            if isinstance(it, dict):
+                code = it.get("code", it.get("value"))
+                ident = key_fragment(code if code is not None else f"@{i}")
+                yield (
+                    f"enumerations[{name}].values[{ident}]",
+                    f"enumerations[{j}].values[{i}]",
+                    it,
+                )
+
+
+def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) -> tuple[list, list]:
+    """The rows and findings one concept file contributes to the SME catalogue."""
+    rows, findings = [], []
+    con = doc.get("concept") or {}
+    meta = doc.get("metadata") or {}
+    klass = con.get("class")
+    title = title_of.get(stem) or stem
+    ident = con.get("identity") or {}
+    refuse_stub = ident.get("kind") == "sme_pending" and not ident.get("canonical_key")
+
+    def src(pointer):
+        return {"path": rel_path, "pointer": pointer}
+
+    def add(key, kind, text, pointer, origin="register", **kw):
+        rows.append(
+            sme_row(
+                key=key,
+                origin=origin,
+                kind=kind,
+                text=text,
+                concepts=[stem],
+                title_of=title_of,
+                source=src(pointer),
+                **kw,
+            )
+        )
+
+    mc = meta.get("confidence")
+    # A refuse-stub is authored unconfirmed on purpose; its real question is its identity (below).
+    if mc in DOUBTFUL_CONFIDENCE and not refuse_stub:
+        add(
+            f"concept:{key_fragment(stem)}#confidence",
+            "sign_off",
+            f"Is the concept “{title}” ({klass}) defined correctly? It is recorded at confidence "
+            f"{mc} ({'needs an SME' if mc == 'Q' else 'inferred'}), not confirmed.",
+            "metadata.confidence",
+        )
+
+    for r in (doc.get("contract") or {}).get("rules") or []:
+        if not isinstance(r, dict) or r.get("confidence") != "P":
+            continue
+        if not r.get("id"):
+            findings.append(
+                sme_finding(
+                    "sme-block-invalid",
+                    "low",
+                    stem,
+                    "a proposed rule has no id, so its sign-off cannot be keyed",
+                    "contract.rules[] entry at confidence P without an `id`.",
+                    concept=stem,
+                    source=src("contract.rules"),
+                )
+            )
+            continue
+        subj = r.get("subject") or r.get("id")
+        add(
+            f"rule:{key_fragment(r['id'])}#confidence",
+            "sign_off",
+            f"Is the rule “{subj}” on “{title}” correct? It is recorded as proposed, not confirmed.",
+            f"contract.rules[id={r['id']}]",
+        )
+
+    if ident.get("kind") == "sme_pending":
+        add(
+            f"concept:{key_fragment(stem)}#identity",
+            "question",
+            f"What is the canonical identity (the key) of “{title}”?",
+            "concept.identity",
+        )
+
+    if klass == "enumeration" and value_set_unresolved(doc):
+        add(
+            f"concept:{key_fragment(stem)}#enumeration",
+            "question",
+            f"Is “{title}” a closed set of values? If it is, what are all of its valid values?",
+            "values",
+        )
+
+    if klass == "measure" and not measure_type_declared(doc, members):
+        add(
+            f"concept:{key_fragment(stem)}#measure_type",
+            "question",
+            f"How does the measure “{title}” add up across its axes? It declares no measure type "
+            f"that mac.MeasureType resolves.",
+            "concept.semantics.measure_type",
+        )
+
+    oqs = doc.get("open_questions")
+    if oqs is not None and not isinstance(oqs, list):
+        findings.append(
+            sme_finding(
+                "sme-block-invalid",
+                "medium",
+                stem,
+                "open_questions is not a list, so its questions cannot be read",
+                f"open_questions is a {type(oqs).__name__}.",
+                concept=stem,
+                source=src("open_questions"),
+            )
+        )
+        oqs = []
+    for i, oq in enumerate(oqs or []):
+        oid = str((oq or {}).get("id") or "").strip() if isinstance(oq, dict) else ""
+        text = (oq or {}).get("question") if isinstance(oq, dict) else None
+        if not oid or not isinstance(text, str) or not text.strip():
+            findings.append(
+                sme_finding(
+                    "sme-block-invalid",
+                    "medium",
+                    f"{stem}.open_questions[{i}]",
+                    "an open question without an id or without text",
+                    "Nothing is invented in its place; give the entry an `id` and its `question`.",
+                    concept=stem,
+                    source=src(f"open_questions[{i}]"),
+                )
+            )
+            continue
+        status = str(oq.get("status") or "").strip()
+        if status.lower() in RESOLVED_OPEN_QUESTION:
+            continue
+        add(
+            f"concept:{key_fragment(stem)}#open_questions[{key_fragment(oid)}]",
+            "question",
+            text.strip(),
+            f"open_questions[id={oid}]",
+            origin="concept-field",
+            owner_role=oq.get("owner_for_resolution"),
+            declared_priority=oq.get("priority"),
+            declared_status=status or None,
+        )
+
+    unasked = []
+    for frag, pointer, it in _value_items(doc):
+        oq = it.get("open_question")
+        if isinstance(oq, str) and oq.strip():
+            add(
+                f"concept:{key_fragment(stem)}#{frag}.open_question",
+                "question",
+                oq.strip(),
+                f"{pointer}.open_question",
+                origin="concept-field",
+            )
+        elif it.get("confidence") in DOUBTFUL_CONFIDENCE:
+            unasked.append(str(it.get("code", it.get("value"))))
+    if unasked:
+        # WHY A FINDING AND NOT A QUESTION: nobody wrote the question. Inventing its text is the
+        # defect this catalogue exists to remove.
+        findings.append(
+            sme_finding(
+                "sme-value-unasked",
+                "low",
+                stem,
+                f"{len(unasked)} value(s) not confirmed and no question recorded",
+                "Values at confidence I or Q with no `open_question`: " + ", ".join(unasked) + ".",
+                concept=stem,
+                source=src("values"),
+            )
+        )
+
+    for i, c in enumerate(doc.get("constraints") or []):
+        oq = c.get("open_question") if isinstance(c, dict) else None
+        if isinstance(oq, str) and oq.strip():
+            # Keyed by position: a constraint has no id. Reordering constraints re-keys the question.
+            add(
+                f"concept:{key_fragment(stem)}#constraints[{i}].open_question",
+                "question",
+                oq.strip(),
+                f"constraints[{i}].open_question",
+                origin="concept-field",
+            )
+    return rows, findings
+
+
+def _objects_plane(objects) -> str:
+    """`data` when every object an entry touched is a data-plane object, else `ontology`."""
+    kinds = {str(o).split(":", 1)[0] for o in objects or [] if ":" in str(o)}
+    return "data" if kinds and kinds <= DATA_PLANE_OBJECT_KINDS else "ontology"
+
+
+def change_record_sme(root, title_of: dict) -> dict:
+    """The change record's contribution: rows from structured `sme` blocks, operator items, asks
+    routed to the data plane, and a finding for every entry that names an owner without a block.
+
+    NEVER PARSES FREE TEXT. The previous lift split `sme_owner` at its first em dash, so an owner
+    string with a dash inside a parenthesis published its tail as a question, and one without a dash
+    published a placeholder sentence as a question. Neither was ever asked by anyone."""
+    out = {"rows": [], "operator_items": [], "routed_to_data": [], "findings": []}
+    if root is None:
+        return out
+    path = Path(root) / CHANGE_RECORD
+    if not path.exists():
+        return out
+    try:
+        import yaml as _yaml
+
+        doc = _yaml.safe_load(path.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — reported, never swallowed
+        out["findings"].append(_unreadable(CHANGE_RECORD, e))
+        return out
+    entries = doc.get("interventions") if isinstance(doc, dict) else None
+    if not isinstance(entries, list):
+        out["findings"].append(_unreadable(CHANGE_RECORD, "no `interventions` list at the top level"))
+        return out
+
+    superseded = set()
+    for e in entries:
+        if isinstance(e, dict):
+            s = e.get("supersedes")
+            for x in s if isinstance(s, list) else [s]:
+                if x:
+                    superseded.add(str(x).strip())
+
+    for i, e in enumerate(entries):
+        if not isinstance(e, dict):
+            out["findings"].append(_unreadable(f"{CHANGE_RECORD}#interventions[{i}]", "not a mapping"))
+            continue
+        eid = str(e.get("id") or "").strip()
+        has_sme = e.get("sme") is not None or str(e.get("sme_owner") or "").strip()
+        if not eid:
+            if has_sme:
+                out["findings"].append(
+                    _unreadable(f"{CHANGE_RECORD}#interventions[{i}]", "an SME ask on an entry with no id")
+                )
+            continue
+        status = str(e.get("status") or "").strip().lower()
+        if (
+            status in CLOSED_CHANGE_STATUSES
+            or any(e.get(m) for m in CLOSING_MARKERS)
+            or eid in superseded
+        ):
+            continue
+        src = {"path": CHANGE_RECORD, "pointer": f"interventions[id={eid}].sme"}
+        sme = e.get("sme")
+        if sme is None:
+            if str(e.get("sme_owner") or "").strip():
+                out["findings"].append(
+                    sme_finding(
+                        "sme-ask-unstructured",
+                        "low",
+                        eid,
+                        "names an SME owner but carries no structured ask",
+                        f"Change-record entry {eid} (status {status or 'unset'}) has a free-text "
+                        "`sme_owner` and no `sme` block. Free text is not read as a question. Add "
+                        "`sme: {ask_kind: question | sign_off | operator | none, owner_role, ask}`.",
+                        source={"path": CHANGE_RECORD, "pointer": f"interventions[id={eid}].sme_owner"},
+                    )
+                )
+            continue
+
+        def invalid(why, severity="medium"):
+            out["findings"].append(
+                sme_finding(
+                    "sme-block-invalid",
+                    severity,
+                    eid,
+                    "the `sme` block cannot be read as an ask",
+                    why,
+                    source=src,
+                )
+            )
+
+        if not isinstance(sme, dict):
+            invalid(f"`sme` is a {type(sme).__name__}, not a mapping.")
+            continue
+        extra = sorted(set(sme) - SME_BLOCK_KEYS)
+        if extra:
+            invalid(f"unknown key(s) {', '.join(extra)}; the block holds {sorted(SME_BLOCK_KEYS)}.", "low")
+        ask_kind = str(sme.get("ask_kind") or "").strip()
+        if ask_kind not in ASK_KINDS:
+            invalid(f"ask_kind {ask_kind!r} is not one of {', '.join(ASK_KINDS)}.")
+            continue
+        if ask_kind == "none":
+            continue
+        key = f"intervention:{key_fragment(eid)}#sme"
+        ask = sme.get("ask")
+        if not complete_sentence(ask):
+            out["findings"].append(
+                sme_finding(
+                    "sme-ask-incomplete",
+                    "medium",
+                    eid,
+                    "the structured ask is not a complete sentence",
+                    "An ask must be a whole sentence a person can answer; a fragment is not published "
+                    "as a question. Rewrite `sme.ask`.",
+                    source=src,
+                )
+            )
+            continue
+        ask = ask.strip()
+        objects = e.get("objects") or []
+        concepts = [str(o).split(":", 1)[1] for o in objects if str(o).startswith("concept:")]
+        if ask_kind == "operator":
+            out["operator_items"].append(
+                {
+                    "key": key,
+                    "entry": eid,
+                    "text": ask,
+                    "owner_role": sme.get("owner_role"),
+                    "subject": {"concepts": concepts},
+                    "source": src,
+                }
+            )
+            continue
+        plane = str(sme.get("plane") or "").strip() or _objects_plane(objects)
+        if plane not in ("ontology", "data"):
+            invalid(f"plane {plane!r} is not ontology or data.")
+            continue
+        if plane == "data":
+            out["routed_to_data"].append(
+                {
+                    "key": key,
+                    "entry": eid,
+                    "kind": ask_kind,
+                    "dq_ids": [str(x) for x in e.get("dq_ids") or []],
+                    "reason": "sme.plane is data"
+                    if sme.get("plane")
+                    else "every object the entry touched is a data-plane object",
+                }
+            )
+            continue
+        if not (isinstance(sme.get("owner_role"), str) and sme["owner_role"].strip()):
+            invalid("names no owner_role; the ask is listed, but nobody is named to answer it.", "low")
+        out["rows"].append(
+            sme_row(
+                key=key,
+                origin="register",
+                kind=ask_kind,
+                text=ask,
+                concepts=concepts,
+                title_of=title_of,
+                owner_role=sme.get("owner_role"),
+                source=src,
+                entry=eid,
+            )
+        )
+    return out
+
+
+_UNREAD = object()
+
+
+def sme_catalogue(concepts: dict, root=None, concept_paths: dict | None = None, members=_UNREAD) -> dict:
+    """The whole register-side SME catalogue: rows sorted by key, plus findings, operator items and
+    data-plane routes. Pure over its inputs apart from reading the change record and, unless the
+    caller already holds them, the MeasureType members."""
+    title_of = {}
+    for stem, c in concepts.items():
+        con = (c or {}).get("concept") or {}
+        title_of[stem] = con.get("label") or con.get("name") or stem
+    rows, findings = [], []
+
+    if members is _UNREAD:
+        members = measure_type_members()
+    if members is None and any(((c or {}).get("concept") or {}).get("class") == "measure" for c in concepts.values()):
+        findings.append(_unreadable("mac_vocabulary.yaml#MeasureType", "the MeasureType members could not be read"))
+
+    paths = dict(concept_paths or {})
+    if root is not None and not paths:
+        cdir = Path(root) / "ontology" / "concepts"
+        if cdir.is_dir():
+            paths = {p.stem: p.relative_to(Path(root)).as_posix() for p in sorted(cdir.rglob("*.yaml"))}
+    # NO SILENT DROP. A concept file that fails to parse arrives here as an empty document, and an
+    # empty document asks nothing — so the parse failure itself is reported.
+    if root is not None:
+        import yaml as _yaml
+
+        for stem, rel in sorted(paths.items()):
+            try:
+                _yaml.safe_load((Path(root) / rel).read_text(encoding="utf-8"))
+            except Exception as e:  # noqa: BLE001
+                findings.append(_unreadable(rel, e))
+
+    for stem in sorted(concepts):
+        r, f = concept_sme(
+            stem,
+            concepts[stem] or {},
+            title_of,
+            members,
+            paths.get(stem) or f"ontology/concepts/{stem}.yaml",
+        )
+        rows += r
+        findings += f
+
+    cr = change_record_sme(root, title_of)
+    rows += cr["rows"]
+    findings += cr["findings"]
+
+    seen = _Counter(r["key"] for r in rows)
+    for k, n in sorted(seen.items()):
+        if n > 1:
+            findings.append(
+                sme_finding(
+                    "sme-key-duplicate",
+                    "medium",
+                    k,
+                    f"{n} catalogue rows share one origin key",
+                    "A key must name one question; a ledger could file only one of them.",
+                )
+            )
+    for r in rows:
+        if not r["fileable"]:
+            findings.append(
+                sme_finding(
+                    "sme-key-unfileable",
+                    "medium",
+                    r["key"],
+                    "the origin key breaks the key grammar, so this question cannot be filed",
+                    "Ids inside a key may use letters, digits and _ . : / - only.",
+                    concept=r.get("concept"),
+                    source=r.get("source"),
+                )
+            )
+    rows.sort(key=lambda r: r["key"])
+    return {
+        "rows": rows,
+        "findings": findings,
+        "operator_items": sorted(cr["operator_items"], key=lambda x: x["key"]),
+        "routed_to_data": sorted(cr["routed_to_data"], key=lambda x: x["key"]),
+    }
+
+
+def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_paths=None) -> dict:
     title_of, name_of = {}, {}
     for stem, c in concepts.items():
         con = c.get("concept") or {}
         title_of[stem] = con.get("label") or con.get("name") or stem
         name_of[stem] = con.get("name") or stem
 
+    _mt_members = measure_type_members()
     touched, edge_levels = set(), {}
     for e in ont_edges or []:
         ep = e.get("endpoints") or {}
@@ -95,7 +781,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                     {"from": me, "to": sorted(others), "via": r.get("id"), "binds": col}
                 )
 
-    findings, sme, refuse_stubs = [], [], []
+    findings, refuse_stubs = [], []
     conf_c = {"C": 0, "I": 0, "Q": 0}
     rule_c = {"C": 0, "P": 0, "R": 0}
     kinds_present = set()
@@ -128,17 +814,6 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                     "concept_title": title,
                     "title": f"{title} is {'needs-SME' if mc == 'Q' else 'inferred'}, not confirmed",
                     "detail": f"metadata.confidence = {mc} — machine-authored, awaiting SME confirmation.",
-                }
-            )
-            sme.append(
-                {
-                    "id": f"confirm.{stem}",
-                    "concept": stem,
-                    "concept_title": title,
-                    "kind": "confirm-concept",
-                    "current": mc,
-                    "question": f"Is the concept “{title}” ({klass}) defined correctly? "
-                    f"(currently {mc} = {'needs SME' if mc == 'Q' else 'inferred'})",
                 }
             )
 
@@ -179,20 +854,11 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                         "detail": f"Rule {r.get('id')} is confidence P (proposed) — not SME-confirmed.",
                     }
                 )
-                sme.append(
-                    {
-                        "id": f"rule.{r.get('id')}",
-                        "concept": stem,
-                        "concept_title": title,
-                        "kind": "confirm-rule",
-                        "current": "P",
-                        "question": f"Is this rule on “{title}” correct? — {subj}",
-                    }
-                )
 
-        if klass == "measure" and not any(
-            str(r.get("kind", "")).split(".")[-1] == "aggregation" for r in rules
-        ):
+        # ONE PREDICATE PER CONDITION, shared with the SME catalogue. The finding and the question
+        # used to be computed by two copies of the same test; both copies were false alarms on a
+        # measure that declares its type and on a value set read from a register.
+        if klass == "measure" and not measure_type_declared(c, _mt_members):
             findings.append(
                 {
                     "id": f"noagg.{stem}",
@@ -200,103 +866,33 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
                     "severity": "medium",
                     "concept": stem,
                     "concept_title": title,
-                    "title": f"Measure {title} has no aggregation rule",
-                    "detail": "How it rolls up across its axes is unspecified.",
-                }
-            )
-            sme.append(
-                {
-                    "id": f"agg.{stem}",
-                    "concept": stem,
-                    "concept_title": title,
-                    "kind": "aggregation",
-                    "current": "—",
-                    "question": f"How does the measure “{title}” aggregate across its axes "
-                    "(sum / average / non-additive)?",
+                    "title": f"Measure {title} declares no measure type",
+                    "detail": "No `concept.semantics.measure_type` that mac.MeasureType resolves, so "
+                    "how it rolls up across its axes is unspecified.",
                 }
             )
 
-        if klass == "enumeration":
+        if klass == "enumeration" and value_set_unresolved(c):
             v = c.get("values") or {}
-            if v.get("closure") == "unknown" or not v.get("items"):
-                findings.append(
-                    {
-                        "id": f"enum.{stem}",
-                        "category": "completeness",
-                        "severity": "medium",
-                        "concept": stem,
-                        "concept_title": title,
-                        "title": f"{title} value set is not fully enumerated",
-                        "detail": f"closure = {v.get('closure')} — the full valid-value set is not captured.",
-                    }
-                )
-                sme.append(
-                    {
-                        "id": f"enum.{stem}",
-                        "concept": stem,
-                        "concept_title": title,
-                        "kind": "enumeration",
-                        "current": v.get("closure"),
-                        "question": f"Is “{title}” a CLOSED set? If so, what are all its valid values?",
-                    }
-                )
-
-        if (con.get("identity") or {}).get("kind") == "sme_pending":
-            sme.append(
+            findings.append(
                 {
-                    "id": f"identity.{stem}",
+                    "id": f"enum.{stem}",
+                    "category": "completeness",
+                    "severity": "medium",
                     "concept": stem,
                     "concept_title": title,
-                    "kind": "identity",
-                    "current": "sme_pending",
-                    "question": f"What is the canonical identity / key of “{title}”?",
+                    "title": f"{title} value set is not fully enumerated",
+                    "detail": f"closure = {v.get('closure')} — the full valid-value set is not captured.",
                 }
             )
 
-    # ---- RATIFICATIONS AWAITING A HUMAN, lifted from the intervention ledger. -------------------
-    # MEASURED on acme2 2026-08-18: 25 of 25 ledger entries carry an `sme_owner` naming a person and
-    # what they must ratify, and NOT ONE surfaced anywhere. SME questions were generated from exactly
-    # two conditions (unknown enum closure, identity.kind = sme_pending), so every judgement call made
-    # while tuning the bundle sat in a file nobody reads as a question.
-    #
-    # THE PROTOCOL THIS SERVES (operator, 2026-08-18): a contested reading is never left broken and
+    # ---- THE SME CATALOGUE. What the model asks an SME, from the concept files and the change
+    # record's structured `sme` blocks. See the module docstring for the row and the key grammar.
+    # THE PROTOCOL IT SERVES (operator, 2026-08-18): a contested reading is never left broken and
     # never silently guessed. A consistent view is ADOPTED, the reason is RECORDED, and the question
-    # is RAISED — so if an answer later proves wrong, the evidence for what was configured and why is
-    # already there, next to the open question.
-    try:
-        import yaml as _yaml
-
-        _led = (Path(root) / "interventions" / "ledger.yaml") if root else None
-        if _led and _led.exists():
-            for e in (_yaml.safe_load(_led.read_text(encoding="utf-8")) or {}).get(
-                "interventions"
-            ) or []:
-                owner = str(e.get("sme_owner") or "").strip()
-                if not owner or str(e.get("status", "")).lower() in ("ratified", "closed"):
-                    continue
-                who, _, ask = owner.partition("—")
-                sme.append(
-                    {
-                        "id": f"ledger.{e.get('id')}",
-                        "concept": None,
-                        "concept_title": e.get("id"),
-                        "kind": "ratification",
-                        "current": str(e.get("status") or "applied"),
-                        "owner": who.strip() or "domain-owner",
-                        # MEASURED: 4 of 25 acme2 entries name an owner with no "— <what to ratify>".
-                        # An owner without an ask is a half-recorded question; rendering the owner
-                        # AS the question would make it look answered when nobody knows what was asked.
-                        "question": (
-                            ask.strip()
-                            or f"UNSPECIFIED — the ledger names {who.strip() or 'an owner'} but "
-                            f"does not say what they must ratify; the entry's `why` is the "
-                            f"only record of what was decided"
-                        ),
-                        "why": str(e.get("why") or "").strip()[:400],
-                    }
-                )
-    except Exception:
-        pass  # a ledger we cannot read must not break the projection
+    # is RAISED. Raising it now means a structured ask; an owner's name in free text is a finding.
+    catalogue = sme_catalogue(concepts, root, concept_paths, members=_mt_members)
+    findings += catalogue["findings"]
 
     cols_total = sum(len(d.get("columns") or []) for d in datasets.values())
     cols_desc = sum(
@@ -538,9 +1134,19 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None) -> dict:
             "concepts": nconc,
             "rules": total_r,
             "findings": len(findings),
-            "sme_questions": len(sme),
+            "sme_questions": len(catalogue["rows"]),
+            "sme_questions_by_kind": {
+                k: sum(1 for r in catalogue["rows"] if r["kind"] == k) for k in SME_KINDS
+            },
+            "sme_questions_by_origin": dict(sorted(_Counter(r["origin"] for r in catalogue["rows"]).items())),
+            "sme_operator_items": len(catalogue["operator_items"]),
+            "sme_routed_to_data": len(catalogue["routed_to_data"]),
+            "sme_findings": sum(1 for f in findings if f.get("category") == SME_FINDING_CATEGORY),
         },
         "findings": findings,
-        "sme_questions": sme,
+        "sme_catalogue_format": SME_CATALOGUE_FORMAT,
+        "sme_questions": catalogue["rows"],
+        "sme_operator_items": catalogue["operator_items"],
+        "sme_routed_to_data": catalogue["routed_to_data"],
         "rule_links": rule_links,
     }
