@@ -748,8 +748,8 @@ def build_model(root):
 
 
 def attach_rule_functions(model, root):
-    """Additive: attach the PCA-1 self-contained function record (explanation + typed params +
-    emit code) to each rule by id, from source-local pca/rule_functions.json. Self-hides when the
+    """Additive: attach the self-contained function record (explanation + typed params +
+    emit code) to each rule by id, from the source-local rule_functions.json. Self-hides when the
     file is absent, so a source without rule-functions renders exactly as before. The explanation is
     marked llm_visible=False — operator-facing only; it reaches the model solely on Path B."""
     p = root / "pca" / "rule_functions.json"

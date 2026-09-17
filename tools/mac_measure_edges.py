@@ -126,8 +126,8 @@ def _split_ref(ref: str) -> tuple[str, str]:
 def _deref(doc: dict, anchor: str):
     """Walk a dotted anchor into a parsed document, LIST-AWARE.
 
-    `contract.rules.grouping.resolve.brand_invariant_column` is not five nested keys: `rules` is a LIST
-    and `grouping.resolve.brand_invariant_column` is one element's `id`, dots and all. A plain dotted
+    `contract.rules.grouping.resolve.group_invariant_column` is not five nested keys: `rules` is a LIST
+    and `grouping.resolve.group_invariant_column` is one element's `id`, dots and all. A plain dotted
     walk returns None here and a tool that treated None as "nothing declared" would report a fully
     declared edge as unrealised — the exact misreport this file exists to stop. So at every list we
     try the REMAINING path, rejoined, against the elements' ids.
@@ -170,7 +170,7 @@ def _source_with(doc: dict, column: str, hint: str = "") -> dict | None:
     """The grounding source that DECLARES `column`. `hint` only breaks ties.
 
     WHY THE HINT IS NOT AUTHORITATIVE. `reach__of_seller` declares
-    `realized_by: v_fact_kpi.seller_code`, but the Reach concept grounds on fact_reach_kpi — the
+    `realized_by: v_fact_kpi.seller_code`, but the Reach concept grounds on fact_cover_kpi — the
     prose names the wrong fact. Measuring the relation the prose names would count 817M rows of a
     table this edge's concept does not bind and file the result as this edge's evidence: a proof
     about two TABLES, attributed to a claim it was never about. That is the finding
@@ -715,7 +715,7 @@ def self_test() -> int:
     register = {"grounding": {"sources": [
         {"relation": "warehouse.dim_territory_register", "key": ["territory_code"],
          "columns": ["territory_code", "place_code", "place_class", "grouping"]}]},
-        "contract": {"rules": [{"id": "grouping.resolve.brand_invariant_column", "binds": ["grouping"]}]}}
+        "contract": {"rules": [{"id": "grouping.resolve.group_invariant_column", "binds": ["grouping"]}]}}
     model = {"grounding": {"sources": [
         {"relation": "warehouse.dim_item", "key": ["item_key"],
          "columns": ["item_key", "power_types"]}]}}
@@ -754,7 +754,7 @@ def self_test() -> int:
     shared = card(edge(endpoints={"from": {"ref": "market.yaml#concept"},
                                   "to": {"ref": "grouping.yaml#concept", "cardinality": "0..1"}},
                        resolved_by="grouping.yaml#contract.rules.grouping.resolve."
-                                   "brand_invariant_column"), "0..1")
+                                   "group_invariant_column"), "0..1")
     conform = card(edge(endpoints={"from": {"ref": "model.yaml#concept"},
                                    "to": {"ref": "fuel.yaml#concept", "cardinality": "0..N"}},
                         resolved_by="data/transforms/dim_item.yaml#transforms."
@@ -837,9 +837,9 @@ def self_test() -> int:
          whynot([card(carried, "0..1")]) == 1 and kinds([card(carried, "0..1")]) == []),
         ("MUTANT the unmeasured second clause of a realisation is recorded alongside the first",
          whynot([card({**kv, "realized_by": kv["realized_by"]
-                       + "; country_bucket_membership.member_place for multi_place"}, "0..1")]) == 1
+                       + "; region_membership.member_place for multi_place"}, "0..1")]) == 1
          and kinds([card({**kv, "realized_by": kv["realized_by"]
-                          + "; country_bucket_membership.member_place for multi_place"}, "0..1")])
+                          + "; region_membership.member_place for multi_place"}, "0..1")])
          == ["value_uniqueness"]),
         # ── NEGATIVE CONTROLS: correctly-declared shapes that must NOT be reported unmeasurable ───
         ("a holding join is not reported unmeasurable", whynot([join]) == 0),

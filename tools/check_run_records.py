@@ -20,7 +20,7 @@ move a red without one.* A field is adopted when something refuses to proceed wi
                       `suite_history.current()` had to stamp the string "working-tree" and why
                       `<LIVE>`'s 60-day-old verdict reads exactly like today's.
     NO_DENOMINATOR    no `declared`/`total`. The denominator was `len(results)`, i.e. whatever the
-                      run selected — so `--id P-NPROD-01` wrote a record of 1 and "1/1 pass" was a
+                      run selected — so `--id <one property>` wrote a record of 1 and "1/1 pass" was a
                       true sentence about a filter.
     HEADER_DISAGREES  the stored `total`/`examined`/`skipped` differ from what the record's own
                       evidence recomputes to. COMPUTE IT, NEVER ACCEPT IT — a runner writing

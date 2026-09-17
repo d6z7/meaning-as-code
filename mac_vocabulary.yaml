@@ -35,7 +35,7 @@ aggregation_effect:
     one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules
     fell into exactly that gap and guarded on a value no register could hold.
 
-    `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: gross_stock says
+    `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: an inventory measure says
     "READ the level at the END of the period" and a reach measure says "READ as stored ... resolve to the
     matching pre-computed abstraction level instead of folding". Both READ a stored row and refuse to
     fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
@@ -102,7 +102,7 @@ MeasureType:
         time:        mac.aggregation_effect.average
         categorical: mac.aggregation_effect.average
     Precomputed:
-      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the vendor's own words for one such reach measure are 'non additive (sum/average of <measure> measures doesn't equal to <measure> of sum/average inputs) and iteration based'. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
+      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
       additivity:
         time:        mac.aggregation_effect.none
         categorical: mac.aggregation_effect.none
@@ -188,10 +188,10 @@ test_kind:
       NOT be generated from the declaration's own claims — its entire purpose is to DISAGREE with
       the descriptor when the descriptor has gone stale. It still READS the declaration, to know
       what to test, but never inherits its assertions; a measured literal is acceptable where it is
-      dated and re-checkable. EXAMPLE — S-GRAIN-KPI reads the relation's measured key to learn which
+      dated and re-checkable. EXAMPLE — a grain property reads the relation's measured key to learn which
       columns identify one figure, then asks the warehouse whether that still holds. It is the
       property that caught v_<source>_kpi.yaml claiming "VERIFIED 2026-08-16 ... 0 multi-row" against a
-      warehouse that had reached 11.689.530. A conformance test rendered from that same declaration
+      warehouse that had reached millions of multi-row cells. A conformance test rendered from that same declaration
       would have confirmed the claim rather than contradicted it — which is the entire distinction
       between the two test kinds.
 
@@ -216,8 +216,8 @@ test_kind:
 # are instrument failures rather than data findings. Eight of the nine examined a population of
 # ZERO — five returned no rows at all, each noting "query returned NO ROWS — a property cannot be
 # satisfied vacuously", and three returned exactly one row whose own population column read 0 (one
-# of those three had excluded 2.221.534 rows as not-served, so the sweep was emptied by its own
-# filter). The ninth is an instrument failure of a DIFFERENT kind — a non-empty base of 103.059.108
+# of those three had excluded millions of rows as not-served, so the sweep was emptied by its own
+# filter). The ninth is an instrument failure of a DIFFERENT kind — a non-empty base of over a hundred million
 # rows with nulls in the derived columns — and it
 # is NOT covered by the new term. Said plainly so the term is not credited with more than it holds.
 #
@@ -364,7 +364,7 @@ test_status:
         column the instrument itself reported — the live spellings are all of the form
         `<subject>_examined` or a bare count of the subject — and its value, which MUST be 0. A
         non-zero `examined` with a null verdict column is a DIFFERENT instrument defect and is NOT
-        this term (measured live: one property, 103.059.108 rows examined, derived columns null).
+        this term (measured live: one property, a non-empty base examined, derived columns null).
       requires: [examined, notes]
 
 # ===========================================================================
@@ -647,8 +647,8 @@ canon:
       doc: "RENDER canon — resolve a NAME to a CODE through a declared register, never through the
             display label. MEASURED on <domain>/<dataset>: four rules said this with different nouns, and each
             existed because the register carries a human-readable column that LOOKS like an identity
-            (market_name_raw = INLAND for Germany; a model's display name where the search key is
-            name_norm). params: thing, code, register, search, display_label, scope, fact_join,
+            (market_label_raw = HOME for the home country; a product's display name where the search key is
+            name_key). params: thing, code, register, search, display_label, scope, fact_join,
             served_view."
     refuse_unresolvable_name:
       serves: exclusion_no_evidence
@@ -763,11 +763,11 @@ diagnostic_code:
       description: >-
         an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every
         gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO
-        of four declared cell keys were false — v_<source>_kpi claimed 0 multi-row against 11.689.530,
-        and v_<source>_tm_kpi 0 against 176.279 (99,96 %). The two that HELD are the two that a view
-        enforces: <source>_reach_kpi, which withholds ambiguous cells, and v_<source>_kpi_current, whose
-        collapse makes the key true by construction (claimed 15.483.849, reproduces at 15.483.965,
-        +116). That is the shape of the defect: the declaration is false exactly where nothing makes
+        of four declared cell keys were false — the main fact view claimed 0 multi-row against millions,
+        and a second fact view claimed 0 against nearly all of its cells. The two that HELD are the two
+        that a view enforces: a view that withholds ambiguous cells, and a current-snapshot view whose
+        collapse makes the key true by construction (its declared cell count reproduced to within a
+        hundred-odd cells). That is the shape of the defect: the declaration is false exactly where nothing makes
         it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case — same subject,
         same value shape, same closed domain with non-empty overlap. Where there is NO core
         equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC,

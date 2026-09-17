@@ -7,8 +7,8 @@ the run record beside the suite (`<suite>_runs.json`), written by the runner at 
 card is derived; the record is evidence. When a derived artifact and its source disagree, the
 derived one is wrong by definition — and every consumer reads the derived one.
 
-THE MEASURED FAILURE. `D-TYPE-ENCODING`, severity blocker, sat at FAIL on its card carrying its
-pre-fix measurement (542,221 rows contradicting a specification) while the run record recorded PASS
+THE MEASURED FAILURE. A type-encoding check, severity blocker, sat at FAIL on its card carrying its
+pre-fix measurement (hundreds of thousands of rows contradicting a specification) while the run record recorded PASS
 ten minutes after the corrected view was deployed. The card projection had simply not been re-run.
 Every surface that reads cards — including a per-concept page whose entire purpose is to say what
 has and has not been proved — reported a contradiction that no longer existed. An operator acting

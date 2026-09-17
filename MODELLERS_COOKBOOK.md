@@ -278,7 +278,7 @@ grounding + §5. **Worked diff:** the `grounding:` block in `concepts/order/orde
 *shape* mirrors B5 with `level: federation`. (Your application's `federation/` directory is the live
 example.)
 
-## B8. Handle a dirty enumeration / data impurity (rebadges, "Rest" buckets, missing attributes)
+## B8. Handle a dirty enumeration / data impurity (relabelled codes, "Rest" buckets, missing attributes)
 
 **When:** the real values don't match the published taxonomy — catch-all buckets, variants that fold
 oddly, an attribute that's simply absent in one slice.

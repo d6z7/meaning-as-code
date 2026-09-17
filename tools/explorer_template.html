@@ -166,7 +166,7 @@ table.tbl tr:last-child td{border-bottom:none}
 .wtn .lab{font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;padding-top:3px;color:var(--faint)}
 .wtn .lab.when{color:var(--accent)} .wtn .lab.then{color:var(--commit)} .wtn .lab.never{color:var(--refuse)}
 .wtn .val{font-family:var(--mono);font-size:12.2px;line-height:1.55;color:var(--ink);white-space:pre-wrap}
-/* PCA-1 self-contained function view */
+/* self-contained rule-function view */
 .fn-box{margin-top:6px;border:1px solid var(--border);border-radius:9px;padding:0;background:var(--panel,transparent)}
 .fn-box>summary.fn-h{list-style:none;cursor:pointer;display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 12px}
 .fn-box>summary.fn-h::-webkit-details-marker{display:none}
@@ -676,7 +676,7 @@ function xpAllRules(){                                    // flat id-index acros
   return XP_RULES;
 }
 // referenced rules = other rules whose id is NAMED in this rule's own text (a Never clause routing to
-// region.resolve.named_definition, a hand-off, a forbidden sibling). Deterministic substring match on the id.
+// a sibling resolution rule, a hand-off, a forbidden sibling). Deterministic substring match on the id.
 function xpRefs(selfId, text){
   text=String(text||"");
   return xpAllRules().filter(function(x){ return x.id && x.id!==selfId && text.indexOf(x.id)>=0; })
@@ -787,7 +787,7 @@ function ruleCard(r){
     +'<div class="rule-body">'+wtn+binds+prose+ruleFunction(r)+'</div></div>';
 }
 
-/* PCA-1 self-contained function view (Path A). Self-hides when the rule carries no function.
+/* self-contained rule-function view (Path A). Self-hides when the rule carries no function.
    The explanation + parameters + code travel together; the explanation is operator-facing and,
    per r.fn.llm_visible=false, is NOT sent to the model on Path A (only Path B shows it prose). */
 function ruleFunction(r){

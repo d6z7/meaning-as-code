@@ -32,8 +32,8 @@ ASPECT_ORDER = (
     "measure_evaluation_logic",
     "table_evaluation_context",
     "table_mapping",
-    "redshift_calculation",
-    "dax_codes",
+    "warehouse_calculation",
+    "bi_formula",
 )
 
 

@@ -23,8 +23,8 @@ TWO LINKAGES, AND ONLY ONE OF THEM IS SOUND
     no edit-distance, prefix, substring or title-similarity path anywhere in it.
 
     Linking an ANSWER to a VALUE is NOT sound, and the module refuses it in most rows. The answer
-    column is free prose written by six people in two decimal conventions — ``5.072`` (dot as a
-    thousands separator, so five thousand) sits a few rows from ``1,255,377`` (comma as a thousands
+    column is free prose written by six people in two decimal conventions — ``7.315`` (dot as a
+    thousands separator, so seven thousand) sits a few rows from ``2,345,678`` (comma as a thousands
     separator) and from ``21.2%`` (dot as a decimal point). A reader that picked one convention
     would silently mis-scale answers by 1000x on the estate's only independent channel. So
     ``expected_value`` is set ONLY when a single numeric token is present AND its convention is
@@ -226,7 +226,7 @@ def read_workbook(path: Path) -> dict:
 # ---------------------------------------------------------------------------
 
 # A run of digits that may carry grouping separators and/or a fractional tail. Anchored on a digit
-# boundary so tokens embedded in identifiers (``ID.3``, ``EU27+4``, ``MQB 37``) are still SEEN --
+# boundary so tokens embedded in identifiers (``V.3``, ``EU15+2``, ``XL 37``) are still SEEN --
 # being seen is what pushes a prose row to `numeric_multiple` and therefore to a REFUSAL. Missing
 # them would be the dangerous direction: it could leave one incidental number looking like the
 # answer.
@@ -243,7 +243,7 @@ def classify_value(text: str) -> dict:
 
     ``resolved``              exactly one numeric token and its convention is forced by its shape.
     ``ambiguous_convention``  one token whose single ``.``/``,`` separator precedes exactly three
-                              digits -- ``5.072`` is 5072 under a German convention and 5.072 under
+                              digits -- ``7.315`` is 7315 under a German convention and 7.315 under
                               an English one, and the cell alone cannot say which. REFUSED.
     ``multiple_candidates``   more than one numeric token; which one is "the" answer is a reading,
                               not a parse. REFUSED.
@@ -283,10 +283,10 @@ def _read_number(token: str) -> float | int | None:
     """Return the ONE forced reading of ``token``, or ``None`` when its convention is ambiguous.
 
     Forced: no separator at all (``3750``); two or more separators of one kind, which can only be
-    grouping (``1.567.250``); a single separator followed by anything other than exactly three
+    grouping (``3.141.592``); a single separator followed by anything other than exactly three
     digits, which can only be a decimal point (``21.2``, ``4.6``).
 
-    Not forced: a single separator followed by exactly three digits (``5.072``, ``1,355``). Both a
+    Not forced: a single separator followed by exactly three digits (``7.315``, ``2,468``). Both a
     grouped integer and a three-decimal fraction produce that shape.
     """
     seps = [ch for ch in token if ch in ".,"]
@@ -646,9 +646,9 @@ def self_test(stream=sys.stdout) -> int:
     rows = [
         ("Ann", "X_C1.1", "3750"),  # accept: forced integer
         ("Ann", "X_C1.2", "21.2%"),  # accept: forced decimal
-        ("Bob", "X_C1.3", "5.072"),  # accept but value REFUSED: ambiguous convention
+        ("Bob", "X_C1.3", "7.315"),  # accept but value REFUSED: ambiguous convention
         ("Bob", "X_C2.1", "unable to answer"),  # accept, refusal form
-        ("Cyd", "X_C2.2", "1.567.250"),  # accept: two separators -> grouped
+        ("Cyd", "X_C2.2", "3.141.592"),  # accept: two separators -> grouped
         ("Cyd", "X_NOPE.9", "1234"),  # reject: id_not_in_corpus
         ("Cyd", "Total questions: 6", ""),  # reject: not_id_shaped
         ("Dee", "", "orphan answer"),  # reject: empty_id_cell
@@ -689,10 +689,10 @@ def self_test(stream=sys.stdout) -> int:
     want("forced decimal resolves", res["linked"]["X_C1.2"]["expected_value"], 21.2)
     want("dot+3-digits REFUSES", res["linked"]["X_C1.3"]["value_status"], "ambiguous_convention")
     want("...and carries no value", res["linked"]["X_C1.3"]["expected_value"], None)
-    want("...and shows both readings", res["linked"]["X_C1.3"]["readings"]["as_grouped_integer"], 5072)
-    want("two separators are grouping", res["linked"]["X_C2.2"]["expected_value"], 1567250)
+    want("...and shows both readings", res["linked"]["X_C1.3"]["readings"]["as_grouped_integer"], 7315)
+    want("two separators are grouping", res["linked"]["X_C2.2"]["expected_value"], 3141592)
     want("refusal form classified", res["linked"]["X_C2.1"]["value_status"], "refusal")
-    want("multi-number prose REFUSES", classify_value("a 5.072 in 2024")["value_status"], "multiple_candidates")
+    want("multi-number prose REFUSES", classify_value("a 7.315 in 2024")["value_status"], "multiple_candidates")
     want("no-number prose yields none", classify_value("each country must be assigned")["value_status"], "none")
     want("empty corpus is refused", _raises(lambda: resolve(Path("x"), [])), True)
 

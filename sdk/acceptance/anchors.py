@@ -16,7 +16,7 @@ WHY LINKING NEEDS RULES AT ALL
 
     A naive "does any corpus id appear in the text" search links 16 of 21 — and grades two of them
     against questions they explicitly say they DIFFER from. ``ANCHOR_09`` is "(variant of
-    ACME_C5.1, pinned to a single model x country cell **instead of** the model-family x VD-region
+    ACME_C5.1, pinned to a single model x country cell **instead of** the model-family x region
     reading the question literally names…)" and ``ANCHOR_12`` is "(ACME_C3.3, family variant)".
     Grading those numbers against those questions asserts agreement the author explicitly denied.
 
@@ -33,8 +33,8 @@ THE EXCLUSION LIST IS A DOCUMENTED BUNDLE-CONVENTION HEURISTIC
     The narrow scope is load-bearing, not tidiness. ``ANCHOR_04``'s ``assumptions`` prose contains
     the sentence "This is a genuinely **different** reading from ANCHOR_03" — a remark about
     another anchor, not about its own question. Scanning the whole document would demote the most
-    valuable red in the corpus (``ACME_C1.9``: the engine reads 209.391 where the anchor derives
-    173.704) into a footnote nobody grades. ``ANCHOR_04`` must come out GRADED, and a test pins it.
+    valuable red in the corpus (``ACME_C1.9``: the engine reads 9.100 where the anchor derives
+    8.700) into a footnote nobody grades. ``ANCHOR_04`` must come out GRADED, and a test pins it.
 
 I/O-BEARING BY DESIGN
     This module reads YAML; ``flags.py`` stays pure and is handed the already-resolved anchor. That

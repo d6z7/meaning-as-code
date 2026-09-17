@@ -82,7 +82,7 @@ def build(objects: list) -> dict:
         )
         # EVERY input kind, not just raw sources: a transform also reads other DATASETS and the
         # ATTRIBUTED LOOKUPS (authored seeds) that carry how the values came to being. Drawing only
-        # source->dataset made dim_country_register look sourceless when it in fact reads a dataset
+        # source->dataset made a market register look sourceless when it in fact reads a dataset
         # plus six reasoned lookups.
         for inp in o.get("inputs") or [
             {"kind": "source", "ref": s} for s in (o.get("sources") or [])

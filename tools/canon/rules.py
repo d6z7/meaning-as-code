@@ -8,7 +8,7 @@ Measured on a live bundle: 46 of 83 concept rules are six shapes, hand-copied pe
 distinct `never` clauses and eleven distinct `when` clauses. Every copy is individually well-formed, so
 no syntax gate sees anything wrong, and nothing can tell whether they still mean the same thing.
 
-They already do not. `Deliveries` forbids "substituting another measure's figure"; `GrossStock` does
+They already do not. `Shipments` forbids "substituting another measure's figure"; `OnHandInventory` does
 not. `Market` carries no refusal message at all, so it cannot produce the answer the other twelve
 promise. Copies drift in whichever clause each author happened to touch.
 
@@ -48,19 +48,19 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
 
     params
       source        the bundle's own name, as it appears to a reader ("<DATASET>")
-      label         the measure as a human says it ("Deliveries to Customer")
+      label         the measure as a human says it ("Units Shipped")
       slot          what was resolved and found empty — "scope", "country", ...
       confusable    measures a tired reader might substitute instead. Named explicitly because the
-                    substitution is the actual failure: an empty Gross Stock answered with Ideal Stock
+                    substitution is the actual failure: an empty On-hand Inventory answered with Target Inventory
                     is worse than no answer, and only the concept's author knows which measure is the
                     tempting one.
       null_is_real  set when a RESOLVED row can carry a null value that MEANS something. Then null is
                     an answer, not an absence, and coercing it to 0 invents a fact.
       ban_in_then   MEASURED 2026-08-18 across the 13 authored copies: five state the substitution ban
-                    in BOTH `then` and `never`, and `ideal_stock` states it ONLY in `never`. Rendering
+                    in BOTH `then` and `never`, and `target_inventory` states it ONLY in `never`. Rendering
                     it in both regardless ADDS a clause its author did not write — a canon that
                     silently adds content is the mirror of one that silently drops it.
-      substitute_kind  what a tired reader would substitute FROM. `total_market` bans substituting
+      substitute_kind  what a tired reader would substitute FROM. `market_size` bans substituting
                     "another SOURCE's figure" (it is the only cross-source measure here), every other
                     copy bans "another MEASURE's". One word, and the wrong one names the wrong risk.
     """
@@ -113,8 +113,8 @@ def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "
               `market` both say "via the register" and the canon had no way to carry it, so binding
               them would have dropped the clause that says WHERE the lookup happens.
 
-    A near-miss substitution is the failure this prevents: answering about the Golf when the question
-    said Golf Plus is worse than refusing, because the answer looks right.
+    A near-miss substitution is the failure this prevents: answering about the Alpha when the question
+    said Alpha Plus is worse than refusing, because the answer looks right.
     """
     return {
         "subject": f"Refuse an unresolvable {thing} — don't guess or fuzzy-substitute",
@@ -140,19 +140,19 @@ def resolve_by_register(*, thing: str, code: str, register: str, search: str,
       search         the column(s) a name is matched against ("name_en / name_de / iso2")
       display_label  the column that must NEVER be used as a key. Optional only because a concept may
                      not expose one; when it does, this is the clause that carries the actual trap.
-      scope          a filter the resolution is only valid under ("geo_class = single_country")
+      scope          a filter the resolution is only valid under ("market_class = single_country")
       fact_join      the column the FACT joins on, when it differs from `code`
       served_view    the in-warehouse alternative, for when a round trip is acceptable
 
     WHY THIS EXISTS. MEASURED on <domain>/<dataset>, 2026-08-19: four rules said this with different nouns —
     country and market resolve `name_en/name_de/iso2 -> market_code` through the SAME register and
-    forbid the SAME column (`market_name_raw`), differing only in which concept they sit on;
-    vehicle_model does it through `name_norm -> <source>_model_code`. One law, four spellings, and the
+    forbid the SAME column (`market_label_raw`), differing only in which concept they sit on;
+    product does it through `name_key -> <source>_product_code`. One law, four spellings, and the
     kind of repetition MODELLERS_COOKBOOK C6 calls "a law nobody has stated".
 
     THE DISPLAY LABEL IS THE POINT. Each of those rules exists because the register carries a
-    human-readable column that LOOKS like an identity and is not — `market_name_raw` holds INLAND for
-    Germany, and a model's display name holds 'Golf Kurzheck' where the search key is GOLF. Matching
+    human-readable column that LOOKS like an identity and is not — `market_label_raw` holds HOME for
+    the home country, and a product's display name holds 'Aurora Large' where the search key is AURORA. Matching
     on it silently answers about the wrong thing.
     """
     where = f"in {register}" + (f" (where {scope})" if scope else "")
@@ -186,8 +186,8 @@ def render(udf: str, params: dict, concept: dict | None = None, root=None) -> di
     live on the concept (`params_from`); those are filled from `concept` here, and an ATTACHED value
     never overrides a declared one — that is what makes attaching them pointless rather than merely
     redundant. Measured 2026-08-19: `label` was attached on 5 <dataset> bindings and disagreed with
-    concept.label on THREE of them ("DelCust" vs "Deliveries to Customer", "IstProd" vs "Actual
-    Production", "Prodant" vs "Production Request"), so the refusal message named the measure
+    concept.label on THREE of them ("NetShip" vs "Units Shipped", "ActProd" vs "Units
+    Produced", "ProdReq" vs "Units Requested"), so the refusal message named the measure
     something its own concept does not call it.
 
     Unknown canon, or a parameter left unfilled, raises — a rule that cannot render is a build error,

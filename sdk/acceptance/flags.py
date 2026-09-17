@@ -20,9 +20,9 @@ WHY ``rules`` IS A FOURTH FLAG AND NOT A WIDENING OF ``pins``
     The first three all check the ORACLE's assertions — an authored expectation about ONE question.
     Nothing checked whether the engine broke a rule the ONTOLOGY already states about the MODEL,
     for every question that touches it. That gap was measured, not supposed:
-    ``vehicle_model.resolve.by_code_not_name`` carries the never-clause "matching on the raw
-    display name as the identity — name_norm is the search key, acme_model_code is the stable
-    identity", the engine filtered ``name_resolved = 'Golf Kurzheck'`` in three statements of
+    ``product.resolve.by_code_not_name`` carries the never-clause "matching on the raw
+    display name as the identity — name_key is the search key, acme_product_code is the stable
+    identity", the engine filtered ``display_name = 'Aurora Large'`` in three statements of
     ``ACME_C1.1``, and the board called that question ``proven``. ``pins`` could not see it: the
     oracle's ``must_pin`` names axes to CONSTRAIN, and this is a prohibition on a column the oracle
     never mentions. Different authority, different claim, its own square.
@@ -163,7 +163,7 @@ def evaluate(
 
     ``reason`` is rendered VERBATIM in the row tooltip and as the flag-card headline, so it must
     never assert something the check did not verify. Numbers inside it are de-DE formatted
-    (``4.318``, ``33,08 %``) because it is human-facing copy, not evidence.
+    (``1.234``, ``12,34 %``) because it is human-facing copy, not evidence.
 
     ARGUMENTS
 
@@ -525,7 +525,7 @@ _DE_GROUPED = re.compile(r"(?<![A-Za-z0-9])\d{1,3}(?:\.\d{3})+(?:,\d+)?(?![A-Za-
 # contributing the candidate `5`, and a trailing-digit identifier from contributing its digits.
 _TOKEN = re.compile(r"(?<![A-Za-z0-9])[+-]?\d+(?:[.,]\d+)*(?![A-Za-z0-9])")
 
-# An approximate authored value: `~1624350`. The tilde is the author saying "this aggregate is
+# An approximate authored value: `~1500000`. The tilde is the author saying "this aggregate is
 # live-volatile"; it is honoured as a `disputed` state, never silently rounded into a pass.
 _APPROX = re.compile(r"^\s*~\s*[-+0-9]")
 
@@ -565,7 +565,7 @@ def _flag_value(expected: dict, anchor: dict | None, advisory: list, answer_text
     evidence["source"] = source
     tolerance = _num_or_none(tol_raw)
     # ABSENT TOLERANCE DEFAULTS TO 0 AND 0 MEANS EXACT. The deleted grader widened every band with
-    # `max(tol, target * 0.005)`, which on a 5.072 anchor accepts a +25 error — a false green,
+    # `max(tol, target * 0.005)`, which on a 5.000 anchor accepts a +25 error — a false green,
     # strictly worse than the false red it was covering for. There is no relative floor here and
     # none is to be reintroduced.
     evidence["tolerance_default"] = tolerance is None
@@ -687,7 +687,7 @@ def _flag_value(expected: dict, anchor: dict | None, advisory: list, answer_text
 #
 #     A THIRD FORM WAS TRIED AND REJECTED: deriving the prohibition from `then` (the columns a rule
 #     PRESCRIBES) and treating everything else in `binds` as forbidden. It is unsound — the rule
-#     `vehicle_model.read.flat_property` binds five property columns and its `then` names one, so
+#     `product.read.flat_property` binds five property columns and its `then` names one, so
 #     the other four would be reported as forbidden by a rule that exists to permit reading them.
 #     Do not reintroduce it: this flag can only turn a green into a red, so every widening here has
 #     to be argued in the open, and that one is wrong.
@@ -733,8 +733,8 @@ def _clause_parts(never: str) -> tuple:
 def _mentions(column: str, text: str) -> bool:
     """True when ``text`` names ``column`` as a whole identifier.
 
-    The underscore guards are load-bearing: ``acme_lm_body_type`` must match inside "the
-    acme_lm_body_type label string" and must NOT match inside ``acme_lm_body_type_id``, which is the
+    The underscore guards are load-bearing: ``acme_raw_package_type`` must match inside "the
+    acme_raw_package_type label string" and must NOT match inside ``acme_raw_package_type_id``, which is the
     column the same rule prescribes. A substring test would forbid the prescribed key.
     """
     if not column:
@@ -796,8 +796,8 @@ def _classify_never(rule: dict) -> dict:
             }
 
         # THE ONE INFERENCE THIS MODULE MAKES, AND IT IS LABELLED AS ONE. When the prohibition
-        # names no column but the rationale enumerates the SANCTIONED ones ("name_norm is the
-        # search key, acme_model_code is the stable identity"), the governed set closes: `binds` is
+        # names no column but the rationale enumerates the SANCTIONED ones ("name_key is the
+        # search key, acme_product_code is the stable identity"), the governed set closes: `binds` is
         # by MAC's own definition the set of fields the rule governs, so a governed column the
         # clause does not sanction is not a sanctioned key under this rule. Evidence carries
         # `basis: "governed-set closure"` and the sanctioned list, so a reader can see the
@@ -1296,7 +1296,7 @@ def _de(value) -> str:
     """de-DE rendering of a number for HUMAN-FACING copy (grouping ``.``, decimal ``,``).
 
     A flag ``reason`` is read by an operator, and this codebase shows numbers de-DE everywhere a
-    human reads them: ``5.072``, ``33,08 %``. Written out rather than taken from ``locale`` because
+    human reads them: ``1.234``, ``12,34 %``. Written out rather than taken from ``locale`` because
     ``locale.setlocale`` is process-global state and this module is pure — a formatter that mutates
     the interpreter is not a formatter. CAPTURED ANSWER PROSE IS NEVER REFORMATTED: it is evidence,
     it is rendered verbatim, and it will show en-US groupings. That is deliberate.

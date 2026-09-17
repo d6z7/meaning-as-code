@@ -12,7 +12,7 @@ Emits, cross-linked, into <out>/:
 
 Lineage follows the gold's real shape — a transform's `inputs[].descriptor` names its
 source(s); a dataset's `derived_from.pipeline` names its transform — so names may differ
-(dim_acme_lm_country → dim_country). The impurity→resolution cross-link is read from
+(dim_acme_raw_country → dim_country). The impurity→resolution cross-link is read from
 `data/quality/impurity_resolution_map.yaml` (harvest finding → gold transform). Lifecycle /
 confidence / severity / resolution ride as frontmatter `tags` so the read server renders
 them as chips. Deterministic — no LLM, no AWS; safe to re-run any time.
@@ -405,8 +405,8 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         (out / "lookups").mkdir(exist_ok=True)
     for lk in lookups:
         # Skip a "#" preamble. A register may carry one stating what it is, what generated it and
-        # what is known-defective about it; counting those lines as data published "1.163 rows" for a
-        # 1.108-row register. The same skip lives in meaning-as-code's mac_model._load_registers —
+        # what is known-defective about it; counting those lines as data published a row count 55 too
+        # high for a register of about a thousand rows. The same skip lives in meaning-as-code's mac_model._load_registers —
         # two readers, one rule, and they must not disagree about how many rows a register has.
         rows = list(
             _csv.reader([l for l in lk.read_text().splitlines() if not l.lstrip().startswith("#")])

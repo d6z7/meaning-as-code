@@ -5,14 +5,14 @@ Nothing checked this, and five concepts had been wrong for as long as anyone can
 found the hard way: a generated test compiled into SQL and Athena answered COLUMN_NOT_FOUND.
 
     Brand      identity.canonical_key  brand_code                   relation has <source>_brand_code
-    Market     identity.canonical_key  <source>_brand_country_code  relation has nothing resembling it
-    SalesArea  grounding.key           <source>_group_country_code  relation has group_code
+    Market     identity.canonical_key  <source>_scoped_market_code  relation has nothing resembling it
+    Territory  grounding.key           <source>_group_market_code   relation has group_code
     Reach      identity.canonical_key  (none declared)
-    SalesArea  identity.canonical_key  (none declared)
+    Territory  identity.canonical_key  (none declared)
 
 THE CAUSE IS NOT CARELESSNESS. The source is inconsistent about its `<source>_` prefix: v_<source>_kpi
-spells it `brand_code` while dim_brand_country_code spells the same thing `<source>_brand_code`, and
-v_<source>_kpi is inconsistent WITH ITSELF (`brand_code` unprefixed, `<source>_brand_country_code`
+spells it `brand_code` while the market dimension spells the same thing `<source>_brand_code`, and
+v_<source>_kpi is inconsistent WITH ITSELF (`brand_code` unprefixed, `<source>_scoped_market_code`
 prefixed). A concept written against the fact's spelling and grounded on the dimension is wrong in a
 way no reader would notice, because both names look right.
 
@@ -143,7 +143,7 @@ _MUTANTS = (
     ("grounding-key-missing",
      lambda r: _concept_text(r, ("\n      key: widget_code", "\n      key: widget_id")),
      "grounding.sources[0].key",
-     "the grounding key names a column the relation does not have (SalesArea.grounding.key)"),
+     "the grounding key names a column the relation does not have (Territory.grounding.key)"),
     ("grounding-column-missing",
      lambda r: _concept_text(r, ("columns: [widget_code, widget_name]",
                                  "columns: [widget_code, widget_name, widget_colour]")),

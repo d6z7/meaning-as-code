@@ -71,8 +71,8 @@ def measured_key(root: pathlib.Path, rel: str) -> list[str]:
 def value_column(root: pathlib.Path, rel: str, declared: list[str], ident: str) -> tuple[str | None, str]:
     """WHICH column actually holds this concept's value set — matched, not assumed.
 
-    The first run assumed `identity.canonical_key`. On body_type that produced a test comparing
-    `<source>_lm_body_type_id` (int) against 'Cabrio/Roadster' — because the concept identifies itself by
+    The first run assumed `identity.canonical_key`. On package_type that produced a test comparing
+    `<source>_raw_package_type_id` (int) against 'Gift Box' — because the concept identifies itself by
     the ID and enumerates the LABEL column. Both facts are true; nothing had ever compared them.
 
     So the column is found by matching the declared set against each grounded column's measured
@@ -145,8 +145,8 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
         # first cut generated 16 such tests. The measured grain settles it: compare the concept's
         # declared key against identity_evidence.key rather than guessing from the relation name.
         # THE SAME GUARD THE IDENTITY FAMILY GOT, and it needed to be in both places. /5 checked
-        # only canonical_key, so O-SALES_AREA-KEY still shipped and died as COLUMN_NOT_FOUND on
-        # `<source>_group_country_code` — dim_country_register spells it `group_code`. A guard
+        # only canonical_key, so a territory-key test still shipped and died as COLUMN_NOT_FOUND on
+        # `<source>_group_market_code` — dim_market_register spells it `group_code`. A guard
         # applied to one of two families is a guard that looks present and is not.
         have = relation_columns(rel)
         absent = [k for k in keys if have and k not in have]
@@ -187,8 +187,8 @@ def for_concept(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     ident = (c.get("identity") or {}).get("canonical_key")
     # DO NOT TEST A COLUMN THE RELATION DOES NOT HAVE. Three generated tests died as Athena
     # COLUMN_NOT_FOUND: Brand identifies itself by `brand_code` where the relation carries
-    # `<source>_brand_code`; Market by `<source>_brand_country_code`, which dim_country_register has
-    # no column resembling; SalesArea declares no canonical_key at all and got a test regardless.
+    # `<source>_brand_code`; Market by `<source>_scoped_market_code`, which dim_market_register has
+    # no column resembling; Territory declares no canonical_key at all and got a test regardless.
     # Those are three real modelling gaps — reported, not thrown at the warehouse to discover.
     if ident and srcs:
         stem0 = _rel(srcs[0]).split(".")[-1]

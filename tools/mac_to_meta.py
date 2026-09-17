@@ -95,7 +95,7 @@ def t_region_definitions(d):
 def t_region_members(d):
     for m in d.get("region_members", []):
         yield {k: m.get(k) for k in ("region_definition_used", "namespace", "code", "member",
-                                     "member_kind", "iso2", "<source>_brand_country_code")}
+                                     "member_kind", "iso2", "<source>_market_key")}
 
 
 def t_rules(d):
@@ -184,13 +184,13 @@ _GROUNDING = {
  "meta_kpi_variants": ("the tracking variants (actual / plan / budget) of a measure — the budget-vs-plan distinction",
                    "SELECT DISTINCT variant, suffix, is_default FROM {src}.meta_kpi_variants ORDER BY variant"),
  "meta_dimensions": ("what dimensions exist and their cardinality (e.g. how many model families, how many markets)",
-                   "SELECT dimension, json_extract_scalar(cardinality,'$.families') AS families FROM {src}.meta_dimensions WHERE dimension='VehicleModel'"),
+                   "SELECT dimension, json_extract_scalar(cardinality,'$.families') AS families FROM {src}.meta_dimensions WHERE dimension='Product'"),
  "meta_brand_members": ("the brand clusters, their brands, and which are served — the brand-count distinctions (cluster vs brand vs served)",
                    "SELECT count(DISTINCT cluster_code) AS clusters, count(DISTINCT CASE WHEN lower(in_fact_data) IN ('true','1') THEN cluster_code END) AS served FROM {src}.meta_brand_members"),
  "meta_region_definitions": ("the region / structure DEFINITIONS per brand + member counts + cross-brand collisions (one brand's Europe vs another's)",
-                   "SELECT namespace, member_count FROM {src}.meta_region_definitions WHERE code='VE' ORDER BY namespace"),
- "meta_region_members": ("which countries / markets are IN a named region or structure (e.g. one brand's VE, another's Region 3). region_definition_used = 'namespace:code'",
-                   "SELECT member FROM {src}.meta_region_members WHERE region_definition_used='brand_a_region:VE'"),
+                   "SELECT namespace, member_count FROM {src}.meta_region_definitions WHERE code='R1' ORDER BY namespace"),
+ "meta_region_members": ("which countries / markets are IN a named region or structure (e.g. one brand's R1, another's Zone 3). region_definition_used = 'namespace:code'",
+                   "SELECT member FROM {src}.meta_region_members WHERE region_definition_used='brand_a_region:R1'"),
  "meta_rules": ("what business rules exist and what a rule SAYS (its when/then/never) — e.g. how planning accuracy is defined",
                    "SELECT then_text FROM {src}.meta_rules WHERE rule_id LIKE '%variance%'"),
  "meta_rule_refs": ("the concepts / columns a rule binds or derives over",
@@ -338,17 +338,17 @@ _META_CONCEPTS = {
      "realized_from": "attribute", "cardinality": "measure",
      "multi_brand": "attribute", "in_fact_data": "attribute", "confidence": "attribute"},
    "definition": (
-     "A named DIMENSION the <SOURCE> model defines — an axis the model can slice by (Brand, VehicleModel, "
-     "Region, Country, BrandCluster), together with the concept it realizes, its grain, identity kind, "
-     "canonical key, the register it is realized_from, and its CARDINALITY: how many families / model "
-     "codes / clusters / markets it spans (a JSON payload, e.g. VehicleModel -> "
-     '{"families": 218, "model_codes": 1084}). It also carries brand-cluster MEMBERSHIP — which brands '
-     "roll up into each BrandCluster and whether a cluster is served in the fact data. The subject is "
+     "A named DIMENSION the <SOURCE> model defines — an axis the model can slice by (Brand, Product, "
+     "Region, Country, BrandGroup), together with the concept it realizes, its grain, identity kind, "
+     "canonical key, the register it is realized_from, and its CARDINALITY: how many families / product "
+     "codes / groups / markets it spans (a JSON payload, e.g. Product -> "
+     '{"families": 40, "product_codes": 900}). It also carries brand-group MEMBERSHIP — which brands '
+     "roll up into each BrandGroup and whether a cluster is served in the fact data. The subject is "
      "the MODEL itself: this is the model's own dimension register, reflected as a queryable relation, "
      "never the warehouse dim_* tables."),
    "grain": (
      "one row per dimension ({src}.meta_dimensions); one row per (cluster_code × brand) for brand-cluster "
-     "membership ({src}.meta_brand_members, dimension = 'BrandCluster'). Cardinality is a JSON string — "
+     "membership ({src}.meta_brand_members, dimension = 'BrandGroup'). Cardinality is a JSON string — "
      "read a count with json_extract_scalar(cardinality, '$.<key>')."),
    "answers": (
      "what dimensions the model defines and their CARDINALITY (how many model families, markets, "
@@ -356,7 +356,7 @@ _META_CONCEPTS = {
      "cluster-vs-brand-vs-served distinction)."),
    "example": (
      "SELECT dimension, json_extract_scalar(cardinality, '$.families') AS families\n"
-     "FROM {src}.meta_dimensions WHERE dimension = 'VehicleModel';\n"
+     "FROM {src}.meta_dimensions WHERE dimension = 'Product';\n"
      "SELECT count(DISTINCT cluster_code) AS clusters,\n"
      "       count(DISTINCT CASE WHEN lower(in_fact_data) IN ('true','1') THEN cluster_code END) AS served\n"
      "FROM {src}.meta_brand_members;"),
@@ -374,20 +374,20 @@ _META_CONCEPTS = {
      "concept": "dimension", "value": "dimension", "label": "attribute"},
    "definition": (
      "A member of a closed VALUE DOMAIN the <SOURCE> model defines — the actual enumerable values of a "
-     "categorical dimension (the body types, fuel classes, vehicle segments, platforms, brands, plan "
-     "stages, …), each with its human LABEL. The subject is the MODEL's own value register, reflected as "
+     "categorical dimension (the package types, materials, product segments, product lines, brands, "
+     "scenarios, …), each with its human LABEL. The subject is the MODEL's own value register, reflected as "
      "a queryable relation ({src}.meta_enum): one row per (concept, value). The set of valid values for a "
      "dimension is READ from meta_enum — never enumerated as SQL string literals in an answer, and never "
      "scraped with SELECT DISTINCT off a warehouse fact/dim."),
    "grain": (
-     "one row per (concept, value) in {src}.meta_enum; `concept` is the dimension name (e.g. 'BodyType', "
-     "'FuelType', 'VehicleSegment', 'VehicleModelPlatform'), `value` its code, `label` the description. "
+     "one row per (concept, value) in {src}.meta_enum; `concept` is the dimension name (e.g. 'PackageType', "
+     "'Material', 'ProductSegment', 'ProductLine'), `value` its code, `label` the description. "
      "All columns VARCHAR."),
    "answers": (
-     "what values a categorical dimension can take — which body types / fuel classes / segments / "
-     "platforms / brands / plan stages EXIST, how many there are, and what each code MEANS (its label)."),
+     "what values a categorical dimension can take — which package types / materials / segments / "
+     "product lines / brands / scenarios EXIST, how many there are, and what each code MEANS (its label)."),
    "example": (
-     "SELECT value, label FROM {src}.meta_enum WHERE concept = 'BodyType' ORDER BY value;\n"
+     "SELECT value, label FROM {src}.meta_enum WHERE concept = 'PackageType' ORDER BY value;\n"
      "SELECT concept, count(*) AS n FROM {src}.meta_enum GROUP BY concept ORDER BY concept;"),
    "never": (
      "Enumerating a dimension's valid values as SQL string literals, or scraping them with SELECT DISTINCT "
@@ -405,10 +405,10 @@ _META_CONCEPTS = {
      "brand_relative": "attribute", "collides_with": "attribute"},
    "definition": (
      "A named region or structure scheme OF THE <SOURCE> MODEL — one brand's own way of grouping countries "
-     "into a region, identified as namespace:code (e.g. brand_a_region:VE = 'Europe excl. Germany', 34 "
+     "into a region, identified as namespace:code (e.g. brand_a_region:R1 = 'Region One', 30 "
      "member countries), plus the absolute cross-brand sets (standard:/political:). Each brand-relative "
      "definition is disclosed WITH its member_count and its cross-brand collisions: the SAME code means "
-     "DIFFERENT country sets across brands (brand_a_region:VE=34 vs brand_b_region:VE=32 — same 'VE' "
+     "DIFFERENT country sets across brands (brand_a_region:R1=30 vs brand_b_region:R1=28 — same 'R1' "
      "label, different membership), which is exactly why the model identifies a definition by "
      "(namespace, code). This is the model's own scheme register, reflected as a queryable relation "
      "({src}.meta_region_definitions) — never the warehouse, and never authored as a literal."),
@@ -423,12 +423,12 @@ _META_CONCEPTS = {
    "example": (
      "SELECT namespace, code, brand, member_count, collides_with\n"
      "FROM {src}.meta_region_definitions\n"
-     "WHERE code = 'VE'\n"
+     "WHERE code = 'R1'\n"
      "ORDER BY namespace"),
    "never": (
      "authoring a region definition, its member_count, or a collision as a SQL string literal (the answer "
      "is READ from {src}.meta_region_definitions, never hand-written); querying a warehouse fact/dim view "
-     "(dim_<source>_lm_country, v_<source>_region_rollup, v_<source>_region_membership) for the model's region SCHEMES — "
+     "(dim_<source>_raw_country, v_<source>_region_rollup, v_<source>_region_membership) for the model's region SCHEMES — "
      "those views carry country facts and memberships, not the model's self-description of its "
      "definitions. Two-planes: this concept lives on meta_* only."),
  },
@@ -439,32 +439,32 @@ _META_CONCEPTS = {
    "roles": {
      "region_definition_used": "dimension", "namespace": "dimension", "code": "dimension",
      "member": "dimension",
-     "member_kind": "attribute", "iso2": "attribute", "<source>_brand_country_code": "attribute"},
+     "member_kind": "attribute", "iso2": "attribute", "<source>_market_key": "attribute"},
    "definition": (
      "A country or market that belongs to a NAMED region or structure definition (namespace:code) of the "
-     "<SOURCE> MODEL — e.g. a country in one brand's VE (Europe excl. Germany, brand_a_region:VE) or a "
-     "market in another brand's Region 3 (brand_b_structure:Region 3). This is the model's OWN membership "
+     "<SOURCE> MODEL — e.g. a country in one brand's R1 (Region One, brand_a_region:R1) or a "
+     "market in another brand's Zone 3 (brand_b_structure:Zone 3). This is the model's OWN membership "
      "register, reflected as a queryable relation, never the warehouse. Membership is scoped by "
-     "region_definition_used = 'namespace:code' (the collision-proof identity: brand_a_region:VE and "
-     "brand_b_region:VE are DIFFERENT country sets); member_kind tells how the member is expressed — "
-     "'raw_token' brand-scheme markets (carrying <source>_brand_country_code) vs 'iso2' "
+     "region_definition_used = 'namespace:code' (the collision-proof identity: brand_a_region:R1 and "
+     "brand_b_region:R1 are DIFFERENT country sets); member_kind tells how the member is expressed — "
+     "'raw_token' brand-scheme markets (carrying <source>_market_key) vs 'iso2' "
      "standard/political sets (carrying iso2). The answer is READ from this relation, never hand-listed "
      "as a literal."),
    "grain": (
      "one row per (region_definition × member) — the exploded membership register in "
      "{src}.meta_region_members. 'raw_token' rows are brand-scheme markets keyed by "
-     "<source>_brand_country_code (iso2 null); 'iso2' rows are cross-brand standard/political sets keyed by "
-     "iso2 (<source>_brand_country_code null). Parent definitions live in RegionDefinition; join on "
+     "<source>_market_key (iso2 null); 'iso2' rows are cross-brand standard/political sets keyed by "
+     "iso2 (<source>_market_key null). Parent definitions live in RegionDefinition; join on "
      "region_definition."),
    "answers": (
-     "which countries/markets are in a named region or structure (brand_a_region:VE, brand_b_region:VE, "
-     "brand_c_structure:Region 3), and — via region_definition_used = 'namespace:code' — under WHICH brand's "
+     "which countries/markets are in a named region or structure (brand_a_region:R1, brand_b_region:R1, "
+     "brand_c_structure:Zone 3), and — via region_definition_used = 'namespace:code' — under WHICH brand's "
      "definition."),
-   "example": "SELECT member FROM {src}.meta_region_members WHERE region_definition_used = 'brand_a_region:VE'",
+   "example": "SELECT member FROM {src}.meta_region_members WHERE region_definition_used = 'brand_a_region:R1'",
    "never": (
      "authoring a region's membership as a SQL string literal (the members are READ from this reflection "
      "— never hand-enumerated in the answer, which would fabricate/omit countries and mask the "
-     "brand_a_region:VE vs brand_b_region:VE collision); querying a warehouse fact/dim view for "
+     "brand_a_region:R1 vs brand_b_region:R1 collision); querying a warehouse fact/dim view for "
      "membership (the fact tables do not carry the model's region definitions — a two-planes breach; "
      "RegionMember grounds only on {src}.meta_region_members)."),
  },
@@ -500,7 +500,7 @@ _META_CONCEPTS = {
      "What rules the <SOURCE> model enforces and what a rule SAYS (its when/then/never/subject); what KIND a "
      "rule is and the closed kind vocabulary; the concepts and columns a rule BINDS or derives OVER; and "
      "the ASK / COMMIT / REFUSE decision policy — e.g. 'how is planning accuracy / plan-vs-actual "
-     "variance defined?', 'which rules govern Order Book?', 'which axes MUST be asked for (no default)?'."),
+     "variance defined?', 'which rules govern open orders?', 'which axes MUST be asked for (no default)?'."),
    "example": (
      "SELECT rule_id, subject, when_text, then_text, never_text\n"
      "FROM {src}.meta_rules\n"
@@ -532,7 +532,7 @@ _META_CONCEPTS = {
    "definition": (
      "An Edge is a DECLARED relationship between two concepts of the <SOURCE> model — the join that lets one "
      "concept be read alongside another (e.g. Measurement —N:1→ Country, joined on "
-     "<source>_brand_country_code). Each edge names its from_concept / to_concept, its type (foreign_key, "
+     "<source>_market_key). Each edge names its from_concept / to_concept, its type (foreign_key, "
      "shared_attribute), cardinality (N:1, N:N), and level (physical, business), and carries the join "
      "predicate; a multi-hop join decomposes into ORDERED join clauses. This is the model's OWN "
      "relationship graph — the same edges authored in edges.yaml — reflected as a queryable relation, "
@@ -550,7 +550,7 @@ _META_CONCEPTS = {
      "       jc.ordinal, jc.left_relation, jc.left_column, jc.right_relation, jc.right_column\n"
      "FROM {src}.meta_edges e\n"
      "LEFT JOIN {src}.meta_edge_join_clauses jc ON jc.edge_id = e.edge_id\n"
-     "WHERE e.to_concept = 'VehicleModel'\n"
+     "WHERE e.to_concept = 'Product'\n"
      "ORDER BY e.edge_id, CAST(jc.ordinal AS integer)"),
    "never": (
      "authoring an edge/join as a SQL literal — hand-writing how two concepts relate instead of reading "

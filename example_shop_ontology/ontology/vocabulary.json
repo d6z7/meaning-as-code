@@ -167,7 +167,7 @@
         },
         {
           "count": 0,
-          "meaning": "A code namespaced by another dimension (e.g. brand-scoped country code).",
+          "meaning": "A code namespaced by another dimension (e.g. a region-scoped store code).",
           "term": "namespace_code"
         },
         {

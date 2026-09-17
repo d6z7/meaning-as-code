@@ -101,7 +101,7 @@ def test_persist_extracts_sql_to_sibling_and_leaves_only_pointer(tmp_path):
     stem = "dim_country"
     body = (
         "CREATE OR REPLACE VIEW acme2.dim_country AS\n"
-        "SELECT acme_brand_country_code, market, iso2\n"
+        "SELECT acme_scoped_code, market, iso2\n"
         "FROM raw.dim_country_eav\nGROUP BY 1, 2, 3\n"
     )
     files = {
@@ -189,7 +189,7 @@ def _make_source(root: Path, view_schema="acme2") -> Path:
             {
                 "table": {"name": "dim_country", "schema": view_schema, "type": "view"},
                 "columns": [
-                    {"name": "acme_brand_country_code", "role": "primary_key"},
+                    {"name": "acme_scoped_code", "role": "primary_key"},
                     {"name": "market", "role": "value"},
                     {"name": "iso2", "role": "value"},
                 ],

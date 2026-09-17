@@ -14,7 +14,7 @@
 # evidence-boundary answer it could not produce; and THREE of the thirteen carried no information at
 # all beyond the concept's own name.
 #
-# "A measure with no row for the resolved scope must REFUSE" is not a fact about Gross Stock. It is a
+# "A measure with no row for the resolved scope must REFUSE" is not a fact about on-hand inventory. It is a
 # fact about MEASURES. Restating it per concept is the N-homes defect this framework argues against,
 # applied to behaviour instead of to data.
 #
@@ -33,7 +33,7 @@
 # It does not write the rule. A concept matching `scope` gets the behaviour. What a concept MAY still
 # write is a `realized_by` for the SAME canon carrying parameters MAC cannot know — chiefly
 # `confusable`, because only the author knows which measure a tired reader would substitute, and an
-# empty Gross Stock answered with Ideal Stock is worse than no answer. Those parameters are the
+# empty On-hand Inventory answered with Target Inventory is worse than no answer. Those parameters are the
 # bundle's contribution; the law is MAC's.
 #
 # A concept needing to say something DIFFERENT still writes its own full rule. That is an OVERRIDE and
@@ -61,13 +61,13 @@ rules:
             pairwise list grows as the square of the measures and drifts at every edge"
     why: >
       MEASURED on <dataset>, which had no unit algebra and hand-wrote the pairs instead. Seven rules
-      carried "never confuse X with Y"; FOUR of them named deliveries as the foil, and the units say
-      why that is nonsense — the delivery measure is `vehicles`, Order Intake is `orders`. The three pairs a domain
-      owner confirmed as real confusions are exactly the three with equal units (GrossStock/IdealStock
-      and IstProd/Prodant both `vehicles`, OrderBook/OrderIntake both `orders`).
+      carried "never confuse X with Y"; FOUR of them named shipments as the foil, and the units say
+      why that is nonsense — the shipment measure is `units`, New Orders is `orders`. The three pairs a domain
+      owner confirmed as real confusions are exactly the three with equal units (OnHand/TargetStock
+      and Shipped/Planned both `units`, OpenOrders/NewOrders both `orders`).
 
-      It also validates the derived measures gold already ships: market_share is vehicles/vehicles ->
-      dimensionless, bev_share_of_oi is orders/orders -> dimensionless. Both legal, and neither needed
+      It also validates the derived measures the legacy bundle already ships: market_share is units/units ->
+      dimensionless, online_share_of_orders is orders/orders -> dimensionless. Both legal, and neither needed
       a declaration to say so.
 
       A pairwise list needs O(n^2) statements and a human to maintain them. A unit needs one per
@@ -113,10 +113,10 @@ rules:
             column is available — a label is not a stable identifier: it is renamed, translated, cased
             and padded without the key ever changing"
     why: >
-      MEASURED on <domain>/<dataset>, 2026-08-19: five dimension concepts — body_type, brand_indicator,
-      fuel_type, registration_type, vehicle_segment — each carried a `resolve.by_id` rule saying "join
-      through <source>_lm_<x>_id (the surrogate key); use <source>_lm_<x> as the display label", while
-      `grounding.sources[].key` on that SAME concept already read `[<source>_lm_<x>_id]`. Each rule restated
+      MEASURED on <domain>/<dataset>, 2026-08-19: five dimension concepts — package_type, price_tier,
+      material, sales_channel, product_segment — each carried a `resolve.by_id` rule saying "join
+      through <source>_raw_<x>_id (the surrogate key); use <source>_raw_<x> as the display label", while
+      `grounding.sources[].key` on that SAME concept already read `[<source>_raw_<x>_id]`. Each rule restated
       its own file's key declaration and added one fact that is true of every relation in every
       ontology ever written. Five copies of a universal, sitting beside the declaration it repeats.
 
@@ -129,8 +129,8 @@ rules:
       and a label column on a relation that carries both. It says nothing about WHICH lookup resolves a
       name to a code, through which view, or under which filter — that is genuine per-concept routing
       and stays in the concept. <dataset>'s `resolve.by_code_not_label` rules survive this rule untouched,
-      because they carry a lookup PATH (`geo_class=single_country`, `market_code ==
-      <source>_brand_country_code`, `name_norm` as the standardised search key) that no declaration holds.
+      because they carry a lookup PATH (`market_class=single_country`, `market_code ==
+      <source>_scoped_market_code`, `name_key` as the standardised search key) that no declaration holds.
 
   # ── the mirror of never_guess: a value you HAVE is not an absence ────────────────────────────────
   - id: mac.guarantee.catalogued_member_is_real
@@ -138,7 +138,7 @@ rules:
     kind: mac.rule_kind.guarantee
     scope: { concept.class: reference }
     confidence: C
-    when:  "a value set carries a member whose label reads like an absence — Unspezifiziert, Unknown,
+    when:  "a value set carries a member whose label reads like an absence — Unassigned, Unknown,
             N/A, Other, Not specified — and a question counts, sums, lists or breaks down that set"
     then:  "include it like any other member; it is a catalogued value with rows behind it, and the
             answer is the population it actually has. Exclude it ONLY when the question explicitly asks
@@ -151,15 +151,15 @@ rules:
       produce a number nobody can reproduce, and the second is the quieter of the two — a total that is
       simply smaller than the truth, with nothing in the output to say members were removed.
 
-      MEASURED on <domain>/<dataset>, 2026-08-19: four reference concepts — body_type, fuel_type,
-      registration_type, vehicle_segment — carried BYTE-IDENTICAL `guarantee.unspecified_is_real` rules.
+      MEASURED on <domain>/<dataset>, 2026-08-19: four reference concepts — package_type, material,
+      sales_channel, product_segment — carried BYTE-IDENTICAL `guarantee.unspecified_is_real` rules.
       Identical `then`, identical `never`, differing only in which concept they sat on. In all four,
-      `Unspezifiziert` is a catalogued entry in that concept's own `values.items`, so the rule was
+      `Unassigned` is a catalogued entry in that concept's own `values.items`, so the rule was
       restating what the value set already says: a member of the list is a member of the list.
 
       IT IS NOT DERIVABLE FROM THE DECLARATION ALONE, which is why it is a law here rather than a
       deletion there. `values.items` says the member EXISTS. It does not say what to do when a reader
-      meets a member called "Unspezifiziert" and decides it means "no data". That decision is behaviour,
+      meets a member called "Unassigned" and decides it means "no data". That decision is behaviour,
       it is the same decision in every ontology, and this is where behaviour that holds everywhere lives.
 
   # ── how a rule NAMES the model it governs ────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ rules:
     scope: { concept.class: "*" }
     confidence: C
     when:  "a rule's when/then/never/subject names a column, a relation, or a concept of the model"
-    then:  "write it backtick-quoted and brace-enclosed — `{market_code}`, `{<dataset>.dim_country_register}`
+    then:  "write it backtick-quoted and brace-enclosed — `{market_code}`, `{<dataset>.dim_market_register}`
             — so a reader can tell a reference from an English word, and every such token must resolve:
             a column of the concept's own grounding, or a relation some concept in the bundle grounds"
     never: "naming a model identifier as bare prose, or marking up a token that resolves to nothing"
@@ -290,5 +290,5 @@ rules:
       # correct value sitting in canonical_key while a regex over the rule prose guessed instead.
       # A parameter that can be read from a declaration must never be attached beside it.
     why: >
-      A near-miss substitution is the failure this prevents: answering about the Golf when the question
-      said Golf Plus is worse than refusing, because the answer looks right.
+      A near-miss substitution is the failure this prevents: answering about the Alpha when the question
+      said Alpha Plus is worse than refusing, because the answer looks right.

@@ -6,13 +6,13 @@ tuple at which exactly one row of a fact relation exists. Eight `snapshot_rule` 
 it (`params_from: profile#identity_evidence.key`) and cannot drift. Every OTHER consumer retypes it —
 and a retyped key is a key that is wrong eventually:
 
-  INT-0029    a canon binding partitioned on FOUR columns against the verified seven; the rendered
-              SQL collapsed Group and the five brand roles into one arbitrary row. Reverted INT-0030.
-  P-GRAIN-01  the grain property itself grouped by FIVE, named six in its prose, and called the
-  P-VINT-01   result "a fully pinned cell". Both were rewritten 2026-08-19.
+  an intervention  a canon binding partitioned on FOUR columns against the verified seven; the
+                   rendered SQL collapsed Group and the five brand roles into one arbitrary row. Reverted.
+  the grain and    grouped by FIVE, named six in their prose, and called the result "a fully pinned
+  vintage props    cell". Both were rewritten 2026-08-19.
 
-The comment left behind in gross_stock.yaml after the first one — "Retyping it is how INT-0029 passed
-a four-column partition against a seven-column key" — did not prevent the second. A comment is not a
+The comment left behind in a stock measure's concept after the first one — "Retyping it is how the
+intervention passed a four-column partition against a seven-column key" — did not prevent the second. A comment is not a
 check. This is the check.
 
 WHY THIS IS NOT SOLVED BY MOVING THE KEY. The obvious repair is to declare the columns somewhere more
@@ -22,9 +22,9 @@ drift, restated. The gap is that a test's SQL is a static string and cannot dere
 the key stays single-homed and the CONSUMERS get compared to it.
 
 AND A SINGLE SOURCE IS ONLY AS GOOD AS THE FACT IN IT: measured 2026-08-19, `brand_code` and
-`<source>_plan_level` add ZERO discrimination to v_<source>_kpi's declared seven — grouping by five
-yields the identical 12.345.147 groups. Propagating a key perfectly would have propagated two dead
-columns with more confidence, which is why the key itself now carries a property (P-GRAIN-01).
+`<source>_scenario` add ZERO discrimination to v_<source>_kpi's declared seven — grouping by five
+yields the identical group count. Propagating a key perfectly would have propagated two dead
+columns with more confidence, which is why the key itself now carries a property (the grain property).
 
 SEVERITY IS ASYMMETRIC, on purpose:
   ERROR   a consumer's key is a strict SUBSET of the declared one — it collapses rows that are

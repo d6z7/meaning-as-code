@@ -42,12 +42,12 @@ repairs that. Only Ruling 12 can.
 
 ### 0.2 The second thing that changed it: the served denominator is one
 
-Measured across every working directory including the OneDrive mirrors: **four `connection*.yaml`
+Measured across every working directory including the synced mirrors: **four `connection*.yaml`
 trees exist in the entire estate, all in the private bundle repository** — `<domain>/<bundle-legacy>` and `<domain>/<bundle>`
 (live), plus two published copies under `<domain>/<bundle-legacy>/artifacts/v*/`. Both live files are Athena, same
 region, same workgroup family, same catalog, same two Glue databases, same `credentials.mode`.
 Zero connection files exist in `meaning-as-code`, `mac-ontology-contoso`, `mac-platform`,
-`mac-integration-kit`, `cap-ontology-workbench`, or the OneDrive DEV tree (21 further manifests, 0
+`mac-integration-kit`, the private workbench repository, or the synced DEV tree (21 further manifests, 0
 connection files). The "second engine" does not use the SDK: contoso reaches DuckDB through
 bundle-local scripts (`ask_server.py:30 duckdb.connect(...)`, `ask.py:53 subprocess.run(["duckdb", …])`)
 and §9.4 gives it **zero required edits**. The word "connector" appears **zero** times in
@@ -971,7 +971,7 @@ the key **and** the installed distribution version.
 
 **Unpinned** (`mac.connector.athena`, no `/N`) resolves to the **highest** available major and is
 **disclosed** on a read mount (`mac.connector.athena/2 (unpinned; highest available)`) — the
-disclose-rather-than-ask posture already ruled twice on this repo (period default; Spain split). An
+disclose-rather-than-ask posture already ruled twice on this repo (period default; a split-market default). An
 answering host (`require_trust` set) **refuses** it. Assuming the lowest major would silently answer
 under a config contract the author never wrote against.
 
@@ -2043,7 +2043,7 @@ gate is wired into `_gate_failures()`, not after the first red build.
 
 **12 · WHICH SDK IS LIVE — now the largest open question in this record, and it GATES TRACK B.**
 > **REVISED — the first draft said "three live SDK copies". Measured, it is three on disk and two
-> live.** `cap-ontology-mac-wiki/sdk/` still exists as a directory, but that repository's
+> live.** The retired wiki repository's `sdk/` still exists as a directory, but that repository's
 > `ARCHIVED.md` (2026-09-11) states *"This repository is retired. Do not commit to it"* and records
 > **391 of 391 tracked files migrated** into `mac-platform`. So the live pair is `meaning-as-code/sdk`
 > and `mac-platform/packages/mac-sdk`, **and they have already diverged** — `profile_table`'s
@@ -2115,7 +2115,7 @@ next zero-denominator pass, inside the record that exists to name them.
    `materialize._athena_executor` are unimportable **here**, but
    `mac-platform/packages/mac-chat/src/chat/sql.py` exists. **Deleting them without checking every
    host's `sys.path` assembly could break a live runtime path this session did not measure.** (The
-   `cap-ontology-mac-wiki` half of this risk is retired by that repo's `ARCHIVED.md`; the
+   retired-wiki half of this risk is retired by that repo's `ARCHIVED.md`; the
    `mac-platform` half is not.)
 7. **The shallow overlay merge is already a live hazard.** `load_connection` does `{**base, **ov}`,
    so a `connection.local.yaml` carrying `credentials: {mode: named_profile}` with no `ref` silently

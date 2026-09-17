@@ -23,7 +23,7 @@ THE MEASURED TRAP THIS MODULE EXISTS TO AVOID  (do not "simplify" the role table
     A checker that reads only ``WHERE`` false-reds roughly half the corpus, because the prescribed
     way to pin the snapshot vintage is NOT an equality predicate. Measured against the 24 committed
     captures, the engine pins it in two forms, both correct and both prescribed by
-    ``ontology/protosql/snapshot.pin_latest_per_cell.yaml`` (which explicitly FORBIDS a scalar MAX
+    ``ontology/protosql/snapshot.<fragment>.yaml`` (which explicitly FORBIDS a scalar MAX
     over the whole fact and requires the per-cell latest vintage):
 
       1. ``ROW_NUMBER() OVER (PARTITION BY <cell key> ORDER BY <vintage> DESC) ... WHERE rn = 1``
@@ -116,8 +116,8 @@ def _container_types() -> tuple:
 def _bare(column) -> str | None:
     """A column reference reduced to its bare lowercase identifier.
 
-    ``k.config_reporting_month`` and ``"F"."config_reporting_month"`` both reduce to
-    ``config_reporting_month``, because an oracle names a reading AXIS and has no opinion about
+    ``k.reporting_month`` and ``"F"."reporting_month"`` both reduce to
+    ``reporting_month``, because an oracle names a reading AXIS and has no opinion about
     which alias the engine happened to choose. ``t.*`` carries no identifier and is dropped.
     """
     name = getattr(column, "name", None)

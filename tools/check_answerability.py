@@ -271,8 +271,8 @@ def edge_paths(name: str, edges: list) -> list:
     """The declared joins this concept takes part in — MAC's own home for a join is the EDGE layer.
 
     The first cut of this renderer derived the attach path from column overlap alone, which found the
-    fact joins and missed every dimension reached through another dimension: BodyType is joined via
-    dim_model, and its key never appears on the fact at all. Eleven concepts lost a relation that way.
+    fact joins and missed every dimension reached through another dimension: PackageType is joined via
+    dim_product, and its key never appears on the fact at all. Eleven concepts lost a relation that way.
     The edges were there the whole time, carrying `join_rule`."""
     out = []
     for e in edges or []:

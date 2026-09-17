@@ -280,7 +280,7 @@ def _register_enum(doc: dict):
 
 def _value_domain_register(doc: dict):
     """Register that realizes a dimension's VALUE DOMAIN (realized_by.udf == enum_from_register),
-    wherever the concept declares it — on the `values:` block (BodyType/FuelType/Segment), the
+    wherever the concept declares it — on the `values:` block (PackageType/Material/Segment), the
     concept top level, the `concept:` block, or an enumeration. Returns (register_name, key_col)
     or None. Names no source."""
     vblock = doc.get("values")
@@ -518,7 +518,7 @@ def _values_grouping(doc: dict):
 
 
 def _grouping_section(root: Path, params: dict):
-    """Cardinality + folded member rows for a value-set grouping (e.g. BrandCluster)."""
+    """Cardinality + folded member rows for a value-set grouping (e.g. BrandGroup)."""
     reg = _register_csv(root, params.get("register") or "")
     rows = _read_csv(reg) if reg else []
     gk    = params.get("group_key")
@@ -603,7 +603,7 @@ def _reference_section(root: Path, doc: dict, identity: dict, register_name: str
     served_rule = _served_gate_rule(doc)
 
     card, grain = {}, ck
-    if fam and rows and fam in rows[0]:                     # e.g. name_norm_is_family -> families
+    if fam and rows and fam in rows[0]:                     # e.g. name_key_is_family -> families
         grain = fam
         card["families"] = _distinct(rows, fam)
     if ck and rows and ck in rows[0]:
@@ -612,7 +612,7 @@ def _reference_section(root: Path, doc: dict, identity: dict, register_name: str
             card[f"{ck}_surface"] = distinct_ck            # iso2_surface
             card["served_markets"] = None
         else:
-            card[_plural(_strip_source(ck, source))] = distinct_ck   # <source>_model_code -> model_codes
+            card[_plural(_strip_source(ck, source))] = distinct_ck   # <source>_product_code -> product_codes
 
     complete = served_rule is None
     note = None
@@ -639,7 +639,7 @@ def dimensions_of(root: Path, model: dict) -> list[dict]:
             "identity":     identity,
         }
 
-        # (a) value-set grouping -> fold members  (BrandCluster)
+        # (a) value-set grouping -> fold members  (BrandGroup)
         gparams, gudf = _values_grouping(doc)
         if gparams:
             card, members, realized = _grouping_section(root, gparams)
@@ -660,7 +660,7 @@ def dimensions_of(root: Path, model: dict) -> list[dict]:
                        members_surfaced_as="region_definitions / region_members (top-level)")
             out.append(rec); continue
 
-        # (c) reference dim backed by a snapshot register  (VehicleModel / Country)
+        # (c) reference dim backed by a snapshot register  (Product / Country)
         register_name, reg, rows = _register_from_grounding(root, doc, identity.get("canonical_key"))
         if register_name:
             grain, card, complete, note, realized = _reference_section(
@@ -670,7 +670,7 @@ def dimensions_of(root: Path, model: dict) -> list[dict]:
             if note:
                 rec["count_note"] = note
             # a reference dim may ALSO declare a small closed value domain (Platform: dim_model facet
-            # grounded, but its 8 platforms are registered) -> surface it for the meaning plane / meta_enum.
+            # grounded, but its product lines are registered) -> surface it for the meaning plane / meta_enum.
             vd = _value_domain_register(doc)
             if vd:
                 reg_name, key = vd
@@ -679,8 +679,8 @@ def dimensions_of(root: Path, model: dict) -> list[dict]:
             out.append(rec); continue
 
         # (d) plain enumeration / open dim -> cardinality + the value LIST from the closed value set
-        # (so the meaning plane can answer "what body types / fuel classes / segments exist" -> meta_enum).
-        # Inline values first; if the domain is register-backed (BodyType/FuelType/Segment), resolve it.
+        # (so the meaning plane can answer "what package types / materials / segments exist" -> meta_enum).
+        # Inline values first; if the domain is register-backed (PackageType/Material/Segment), resolve it.
         vals = [{"code": v.get("code"), "label": v.get("label")}
                 for v in (d.get("values") or []) if v.get("code")]
         realized = None
@@ -760,7 +760,7 @@ def region_grouping(root: Path) -> dict:
         carry      = params.get("carry") or []
         int_cols   = set(params.get("int") or [])
         empty_null = bool(params.get("null_if_empty"))
-        join_key   = _member_join_key(doc)          # e.g. <source>_brand_country_code — from the grounding
+        join_key   = _member_join_key(doc)          # e.g. <source>_scoped_market_code — from the grounding
 
         rows = _read_register(root, register)
         if not rows:

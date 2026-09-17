@@ -12,7 +12,7 @@ goes straight to the place rather than searching for it.
 SEVERITY, and why "restated but agreeing" is not an error:
   error  — the statements DISAGREE. Something downstream is already reading the wrong one.
   warn   — the fact is written down more than once and the copies happen to agree. Nothing is wrong
-           today and nothing keeps them in step; this is the state IdealStock was in before it drifted.
+           today and nothing keeps them in step; this is the state a target-inventory measure was in before it drifted.
 """
 from __future__ import annotations
 

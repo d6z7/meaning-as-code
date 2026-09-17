@@ -10,7 +10,7 @@ drifting from the canon it claims to be governed by?
 The obvious check — compare the strings — was MEASURED and rejected. Across <dataset>'s 13 copies of
 `exclusion.no_evidence` the mean similarity to the rendered canon is 0,88, and chasing it higher made
 things WORSE: reordering one clause to match `country` dropped `brand` from 0,93 to 0,77. The copies
-disagree on clause ORDER and on label wording ("IstProd" vs "Actual Production") — differences that
+disagree on clause ORDER and on label wording ("ActProd" vs "Units Produced") — differences that
 carry no meaning. A gate on string similarity fires on rewording as loudly as on redefinition, which
 is the exact defect canon binding exists to remove.
 
@@ -147,7 +147,7 @@ def check_canon_binding(root) -> list:
                 continue
             # SYMMETRIC, and it took a failed probe to notice. The first cut only asked "does the
             # render lose something the author wrote", which misses the direction that matters more:
-            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Total Market` and the substitution
+            # PROSE DRIFTING AWAY FROM ITS CANON. Stripping `Market Size` and the substitution
             # ban out of a delivery measure's `never` passed cleanly, because the element was then
             # absent from BOTH sides. A one-directional check on a two-directional relationship
             # reports the half it was built to see.
@@ -168,7 +168,7 @@ def check_canon_binding(root) -> list:
         #
         # MEASURED, and it is why this exists: an <dataset> binding of mac.canon.snapshot_collapse passed a
         # FOUR-column partition where the relation's verified cell key is SEVEN, and rendered
-        # `PARTITION BY ['<source>_brand_country_code', ...]` — a Python list repr, not SQL. It shipped, and
+        # `PARTITION BY ['<source>_scoped_market_code', ...]` — a Python list repr, not SQL. It shipped, and
         # the compile reported clean, because no phase rendered it. Omitting `role` from that partition
         # folds six reporting perspectives into one arbitrary row, silently.
         for slot in ("grounding", "semantics"):

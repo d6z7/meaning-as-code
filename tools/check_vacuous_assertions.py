@@ -4,12 +4,12 @@
 Operator, after finding one: *"you should inspect all tests and verify we do not have more such
 test."*
 
-THE ONE THAT PROMPTED IT. R-ALIAS-01 embeds the ontology's alias map as a 38-row VALUES block, then
+THE ONE THAT PROMPTED IT. An alias property embeds the ontology's alias map as a 38-row VALUES block, then
 asserts `n_alias_surfaces_total: 38` — computed as SUM(n_alias_surfaces) OVER () across the rows it
 had just written. It counts a list it authored and checks the count matches. It cannot fail.
 
-And the tautology was hiding a real defect. The ontology declares `Produktionsanträge`; the copied
-block types `Produktionsantraege`. Both sides count 38, so the assertion passed for as long as it
+And the tautology was hiding a real defect. The ontology declares `Façade Kits`; the copied
+block types `Facade Kits`. Both sides count 38, so the assertion passed for as long as it
 existed — while the test checked a DIFFERENT alias from the one the model declares. A count is
 structurally blind to a rename, which is the same lesson the profiler learned about value sets.
 
@@ -19,7 +19,7 @@ structurally blind to a rename, which is the same lesson the profiler learned ab
     NEVER-ZERO     must_be_zero over `count(*) ... HAVING count(*) > 1`, i.e. "how many groups
                    repeat". It returns 0 only if the grouping column is UNIQUE across the whole
                    relation, so on a discriminator it can only ever return the number of distinct
-                   values. O-PERSPECTIVE-KEY asked whether `role` — six values over 800.821.485 rows
+                   values. A perspective-key property asked whether `role` — six values over hundreds of millions of rows
                    — was unique, and answered 6, every time. A test with a fixed verdict is no more
                    evidence than one that cannot fail; this is the same defect in the mirror.
     CONSTANT       the column IS a literal — `SELECT 0 AS violations` with must_be_zero on it.
@@ -95,7 +95,7 @@ def traces_to_warehouse(col: str, sql: str, tree, lit: set[str]) -> bool | None:
     """Does this output column depend on a real relation, or only on rows the SQL typed?
 
     COLUMN-LEVEL, and it took three attempts to get right — each failure worth keeping:
-      1. CTE-level: asked whether a CTE was purely literal. MISSED R-ALIAS-01, whose
+      1. CTE-level: asked whether a CTE was purely literal. MISSED the alias property, whose
          `n_alias_surfaces` comes from the typed alias map inside a CTE that also joins the fact.
       2. Leaf-table lineage: required the chain to reach an exp.Table. Flagged 362 of 300 properties,
          because `count(*)` carries no column reference, so lineage stops at the CTE whether or not
@@ -152,7 +152,7 @@ def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> li
 
     findings = []
     # ── A ROW-PER-CASE TABLE MUST CARRY ROW FACTS ─────────────────────────────────────────────
-    # Operator: "you cannot have cumulative value in every column". M-BRAND-KPI-01 returns 42 rows,
+    # Operator: "you cannot have cumulative value in every column". A brand-by-measure property returns 42 rows,
     # one per brand x measure, and puts `cases_with_no_figure: 2` on ALL of them — so the table says
     # "2" beside one brand, which is true of the run and meaningless of the row. A reader cannot
     # see WHICH case failed, which is the only thing the table exists to show. It also fails the
@@ -191,8 +191,8 @@ def audit(prop: dict, resolve, n_rows: int | None = None, root: str = ".") -> li
         # a uniqueness assertion over a column that cannot be unique
         if a.get("type") == "must_be_zero" and re.search(
                 r"HAVING\s+count\(\s*\*\s*\)\s*>\s*1", sql, re.I):
-            # A single-column uniqueness test is PERFECTLY VALID on a primary key — dim_body_type
-            # keyed on <source>_lm_body_type_id SHOULD return 0. It is only fixed-verdict when the column
+            # A single-column uniqueness test is PERFECTLY VALID on a primary key — dim_package_type
+            # keyed on <source>_raw_package_type_id SHOULD return 0. It is only fixed-verdict when the column
             # cannot be unique, and the profile already measured that: distinct against rows. The
             # first cut skipped the check and flagged 19, most of them real key tests.
             grp = re.search(r"GROUP\s+BY\s+([^)\n]+)", sql, re.I)
@@ -282,7 +282,7 @@ def main() -> int:
     if out:
         print(f"\n✗ {len(out)} assertion(s) over {n} properties cannot fail for the reason stated.")
         print("  A test that cannot fail is not evidence — and it hides whatever it was meant to catch:")
-        print("  R-ALIAS-01 counted its own typed alias list to 38 while checking a German alias the")
+        print("  An alias property counted its own typed alias list to 38 while checking an alias the")
         print("  ontology does not declare.")
         return 1
     print(f"✓ OK — every assertion over {n} properties depends on the warehouse")

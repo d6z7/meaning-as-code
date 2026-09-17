@@ -3,7 +3,7 @@
 
 THE DEFECT THIS REPAIRS, measured on <domain>/<dataset>: 31 properties carried 5.161 words of `statement`
 prose — median 96 words, worst 489, only 4 of 31 under 60. Asked what a test checks, a reader got an
-essay. Operator, verbatim: "the prosa you provide in R-BRAND-02 is too long and unreadable ... this
+essay. Operator, verbatim: "the prosa you provide in <test id> is too long and unreadable ... this
 shoudl be focused to the point what are you searchingi and with what parameters ... maybe in a table.
 sql not interested on the surface ... but important for oracle or analysis."
 

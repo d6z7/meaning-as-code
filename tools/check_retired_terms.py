@@ -38,7 +38,7 @@ import yaml
 RETIRED = {
     "vintage": {
         "use": "reporting cycle",
-        "why": "bitemporal-modelling jargon; the column is config_reporting_month and it IS a month, "
+        "why": "bitemporal-modelling jargon; the column is the reporting month and it IS a month, "
                "so the plainer word is also the more accurate one",
         "ruled": "2026-08-19",
     },

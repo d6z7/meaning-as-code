@@ -5,7 +5,7 @@ WHAT THIS IS FOR
     been disposed of, which axes it names, what number an anchor derives. Nothing checked whether
     the engine broke a rule the ONTOLOGY itself already states — and the ontology states 83 of them
     in the reference bundle, each with an explicit ``never`` clause. ``ACME_C1.1`` filtered on the
-    raw display name while ``vehicle_model.resolve.by_code_not_name`` says never to, and the board
+    raw display name while ``product.resolve.by_code_not_name`` says never to, and the board
     called that question ``proven``.
 
     This module is the READER for those rules. It renders no judgement: ``flags.py`` decides which

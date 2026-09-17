@@ -14,11 +14,11 @@ the relation's grain — it is derived from it:
 Every term is measured, not assumed: the grain by mac_admit_identity, the substitutions by the same
 tool's dependence probe, the pin by the concept's own `identity.canonical_key`.
 
-WHY IT MATTERS RIGHT NOW. One delivery measure declares [<source>_brand_country_code,
-<source>_model_code, <source>_date, kpi] against a measured grain of six. The first two are the same
-axes in a different ENCODING — `<source>_model_code` is determined by `<source>_model_code_id`,
-measured — so they are not errors. But `role` and `config_data_status` are absent outright, and a SUM
-over a key missing them counts the Group restatement and the second expectation round as separate
+WHY IT MATTERS RIGHT NOW. One delivery measure declares [<source>_scoped_market_code,
+<source>_product_code, <source>_date, kpi] against a measured grain of six. The first two are the same
+axes in a different ENCODING — `<source>_product_code` is determined by `<source>_product_code_id`,
+measured — so they are not errors. But `role` and the data-status column are absent outright, and a
+SUM over a key missing them counts the Group restatement and a second forecast round as separate
 figures. Nine measure concepts carry that.
 
 WHAT THIS TOOL WILL NOT DECIDE. Whether a PINNED column should leave the key. That measure
@@ -59,7 +59,7 @@ def derive(concept: dict, grain: list[str], det: dict[str, list[str]], declared:
     """Return (derived_key, missing, pinned). ADDITIVE ONLY — a declared column is never dropped.
 
     The first cut rebuilt the key FROM the grain and let anything unmatched fall out. It would have
-    deleted `<source>_brand_country_code` from six measure concepts on the grounds that the grain names
+    deleted `<source>_scoped_market_code` from six measure concepts on the grounds that the grain names
     `market` instead — but those are not the same axis (310 values against 206) and nothing measured
     says they are interchangeable. It would also have stripped `abstraction_level`, `segment` and a
     one-letter brand-code column from a reach measure.

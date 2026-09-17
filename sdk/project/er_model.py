@@ -13,7 +13,7 @@ All of that is already authored and was simply never projected:
 
   * dataset columns carry ``role`` — primary_key / foreign_key / composite_key_part / discriminator
   * ``ontology/edges.yaml`` physical edges carry ``cardinality`` on BOTH endpoints ("1", "0..N") and a
-    ``join_rule`` naming the columns: ``v_acme_kpi.acme_brand_country_code_id = dim_brand_country_code.…``
+    ``join_rule`` naming the columns: ``v_acme_kpi.acme_scoped_market_code_id = dim_scoped_market_code.…``
 
 So the crow's feet are not decoration and not inferred — they are the authored cardinality, rendered.
 If a diagram shows "many KPI rows to one Market", that claim is `kpi__of_market` in edges.yaml, and
@@ -534,7 +534,7 @@ def build(
             }
         )
     # ---- COLLAPSE TO TABLE GRAIN --------------------------------------------------------------
-    # 25 concept-level edges (dtc__of_market, order_intake__of_market, …) are realized by only FIVE
+    # 25 concept-level edges (net_sales__of_market, new_orders__of_market, …) are realized by only FIVE
     # distinct physical joins: they are the same columns on the same two tables. An ER diagram speaks
     # in TABLES, so drawing one line per concept edge draws the same relationship 11 times over. They
     # collapse into one relationship that REMEMBERS which concept edges realize it (`realized_by`), so
@@ -573,8 +573,8 @@ def build(
     for k, r in merged.items():
         r["realized_by"].sort(key=lambda x: x["edge_id"] or "")
         # The synthetic id MUST be derived from the merge key, not from the entity pair alone: two
-        # different joins can connect the same two tables (v_acme_kpi -> dim_brand_country_code on
-        # acme_brand_country_code_id AND on brand_code_id). Keying on the pair gave them the SAME id,
+        # different joins can connect the same two tables (v_acme_kpi -> dim_scoped_market_code on
+        # acme_scoped_market_code_id AND on brand_code_id). Keying on the pair gave them the SAME id,
         # and a renderer that identifies edges by id then cannot tell them apart — one of them silently
         # stopped responding to selection.
         lvl, fe, fc, te, tc = k

@@ -20,12 +20,12 @@ Usage:
   python3 tools/lineage_project.py [roots...] [--check <golden.json>] [--out <path>]
 
   (no args)         emit the aggregated model for the default sibling roots to stdout
-  --out <path>      write the aggregated full model (all <SOURCE>+HIFA flows) as JSON
+  --out <path>      write the aggregated full model (all flows across every root) as JSON
   --check <golden>  emit ONLY the 3 golden flows and compare to <golden> on the 5-key edge subset
                     {src_table,src_col,to_col,rule_id,kind} + kinds + predicates + derived. HARD-HALT
                     (exit 1) if the 3 golden flows do not conform.
 
-Default roots (relative to CWD): ../a reference bundle ../cap-ontology-hifa
+Default roots: read from the estate's own register (see default_roots); none are built in.
 """
 import argparse
 import json
@@ -47,7 +47,7 @@ DERIVED_KINDS = {"seed", "const"}
 #
 # WHY `dataset` belongs here: the enforced chain — raw source -> transformation -> dataset -> ontology
 # concept — has MULTIPLE LEVELS. A served dataset is itself a legitimate parent of the next dataset (a
-# "view-of-view": <dataset>.country_bucket_membership is built on the served <dataset>.dim_country_register, not on
+# "view-of-view": <dataset>.region_membership is built on the served <dataset>.dim_market_register, not on
 # any raw table). Treating only `raw_source` as an edge source silently collapsed those flows to
 # edges=0 with every output column falling back to derived/const — lineage that says NOTHING.
 # A dataset input resolves its columns from the upstream DATASET descriptor (data/datasets/<stem>.yaml)
@@ -99,7 +99,7 @@ def bare(rel):
 
 
 def seed_name(rel):
-    """Seed display name: a path -> its basename (dim_checkpoint.lookup.csv); a relation -> as-is (hifa.dim_kpi)."""
+    """Seed display name: a path -> its basename (dim_stage.lookup.csv); a relation -> as-is (src.dim_kpi)."""
     rel = str(rel or "")
     return Path(rel).name if "/" in rel else rel
 
@@ -147,7 +147,7 @@ def resolve_to_cols(src_col, sql):
     The expression scan exists because the EAV-pivot shape is pervasive here and defeats a plain
     `<col> AS <name>` regex — the alias is separated from the column by the CASE terminator:
 
-        max(CASE WHEN attribute='IsoCode01' THEN value END) AS iso2
+        max(CASE WHEN attribute='attr_code_01' THEN value END) AS iso2
 
     Scanning per top-level expression also makes the many-to-many honest: ONE source column legitimately
     feeds SEVERAL outputs when a rule pivots it repeatedly (`value` -> iso2 AND iso3), so this returns a
@@ -163,7 +163,7 @@ def resolve_to_cols(src_col, sql):
     # UNIONS any further aliases the same column feeds, instead of the old first-match-wins truncation.
     direct = re.search(r"\b" + re.escape(src_col) + r"\s+AS\s+(\w+)", sql, re.I)
     # templated ch_<N> slot -> collapse only the LEADING checkpoint index, never a digit inside a suffix
-    # (ch_1 -> ch_<N>; ch_1_eta_first -> ch_<N>_eta_first; ch_1_eta_zp8 -> ch_<N>_eta_zp8, NOT ch_<N>_eta_zp<N>)
+    # (ch_1 -> ch_<N>; ch_1_due_first -> ch_<N>_due_first; ch_1_due_p8 -> ch_<N>_due_p8, NOT ch_<N>_due_p<N>)
     tmpl = re.sub(r"^(ch_)\d+", r"\1<N>", src_col)
     if tmpl != src_col:
         m = re.search(re.escape(tmpl) + r"\s+AS\s+(\w+)", sql, re.I)
@@ -532,7 +532,7 @@ def run_check(roots, golden_path):
 # ── main ────────────────────────────────────────────────────────────────────────────────────────────────
 def main():
     ap = argparse.ArgumentParser(description="Project the MAC data plane onto a column-level lineage model (offline).")
-    ap.add_argument("roots", nargs="*", help="source repo roots (default: ../a reference bundle ../cap-ontology-hifa)")
+    ap.add_argument("roots", nargs="*", help="source repo roots (default: the roots in the estate's own register)")
     ap.add_argument("--check", metavar="GOLDEN", help="compare the 3 golden flows to GOLDEN and HARD-HALT on mismatch")
     ap.add_argument("--out", metavar="PATH", help="write the aggregated full model JSON")
     a = ap.parse_args()

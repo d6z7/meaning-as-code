@@ -58,7 +58,7 @@ pattern: impurity_disposition
 also_known_as: [data-quality disposition, cleanse-vs-caveat-vs-block, curation decision, raw→curated normalisation]
 tradition: cross-cutting   # the framework's frontier — a deliberately deferred abstraction
 constellation: >
-  The served data carries a KNOWN impurity (test / rollup / unmapped rows, rebadged codes, miscaptured
+  The served data carries a KNOWN impurity (test / rollup / unmapped rows, relabelled codes, miscaptured
   values), and the modelling decision is not "what IS this" but "what do we DO about it" — and the right
   action depends on how reliably the impurity can be separated from valid data.
 prior_art:

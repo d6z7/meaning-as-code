@@ -91,7 +91,7 @@ def _is_num(x) -> bool:
     """Exactly ``_num(x) is not None`` — one definition of "this is a number", not two.
 
     It used to be a bare ``float(x)`` probe, which disagreed with ``_num`` in both directions:
-    ``_is_num('~1624350')`` was False while ``_num`` of it is 1624350.0, and ``_is_num(True)`` was
+    ``_is_num('~1500000')`` was False while ``_num`` of it is 1500000.0, and ``_is_num(True)`` was
     True while ``_num(True)`` is None. A caller that asked one and then used the other got a
     silently different answer, which is how a bool became a gradeable target.
     """

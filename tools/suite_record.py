@@ -18,7 +18,7 @@ Four further defects were measured in that writer, and all four are repaired her
      staleness is undetectable from the record: `suite_history.current()` had to stamp the literal
      string ``"working-tree"``, and a commit could only ever be recovered by replaying git.
   2. NO DENOMINATOR. No `declared` / `total`. The implicit denominator is `len(results)`, which is
-     the number of properties the run HAPPENED to select — so `--id P-NPROD-01` wrote a record of
+     the number of properties the run HAPPENED to select — so `--id <one property>` wrote a record of
      one, and "1 of 1 pass" is a true sentence about a filter. That is the authored-denominator
      defect at the top of every run record.
   3. PERSISTENCE WAS OPTIONAL. `--json` is a flag. `python3 tools/run_properties.py` — the first

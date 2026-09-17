@@ -158,8 +158,8 @@ def main() -> int:
         #   DERIVED   the property was GENERATED FROM the rule. Change the rule and the test changes
         #             on the next regeneration — real coverage, one step weaker, and the step is a
         #             place where someone can forget.
-        # Anything else that merely mentions the id is NAMED, which is not coverage at all: R-VAR-01
-        # names a rule in its prose and would not move if that rule were deleted.
+        # Anything else that merely mentions the id is NAMED, which is not coverage at all: a variance
+        # property names a rule in its prose and would not move if that rule were deleted.
         derived = [p["id"] for p in props if p["source"] == f"ontology rule {r['id']}"]
         named = [p["id"] for p in props
                  if r["id"] in p["source"] or r["id"] in p["statement"] or r["id"] in p["sql"]]

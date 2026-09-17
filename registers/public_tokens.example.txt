@@ -6,15 +6,29 @@
 # an infra bucket, a colleague's name.
 #
 # FORMAT: label | regex | flags      (flags: `i` = ignore case, `-` = case-sensitive)
+#         +label | text                a POSITIVE witness: the rule MUST match this text
+#         -label | text                a NEGATIVE witness: the rule must NOT match this text
 #
-# The label groups findings; the regex is matched per line. Split is on the FIRST and LAST `|` only,
-# so a regex may contain alternation.
+# The label groups findings. Split is on the FIRST and LAST `|` only, so a regex may contain
+# alternation. Matching runs over the file with each line junction (newline, indent and a leading
+# comment marker) read as ONE space, so a multi-word rule also catches a phrase wrapped across lines.
+#
+# EVERY RULE NEEDS AT LEAST ONE POSITIVE WITNESS. `--self-test` fails on a rule with none, on a rule
+# that misses one of its positives, and on a rule that matches one of its negatives. Write the
+# negatives from the ordinary prose the token collides with.
+#
+# LABELS ARE PRINTED beside every finding, so keep them NEUTRAL categories (`org-name`, `brand-name`,
+# `source-column`), never the identity itself.
 #
 # Use CASE-SENSITIVE where a token collides with an English word, or ordinary prose false-positives.
+# Bound snake_case identifiers with `(?<![A-Za-z])` / `(?![A-Za-z])` rather than `\b`: `_` is a word
+# character, so `\bX\b` silently misses `X_suffix` and `prefix_X`.
 #
 # WITH NO REGISTER the gate reports COULD NOT RUN (exit 2) and refuses to call the tree clean.
 
-# <your-source-token>      | <source-name>                | i
-# <your-org>               | <org-name>                   | i
-# <a-brand>                | \b(<brand-a>|<brand-b>)\b    | i
-# <a-system-abbrev>        | \b<ABBREV>\b                 | -
+# <source-token>           | <source-name>                | i
+# +<source-token>          | <a line that must be caught>
+# -<source-token>          | <ordinary prose that must not be caught>
+# <org-name>               | <org-name>                   | i
+# <brand-name>             | \b(<brand-a>|<brand-b>)\b    | i
+# <system-abbrev>          | \b<ABBREV>\b                 | -

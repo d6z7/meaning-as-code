@@ -2,10 +2,10 @@
 """Does any property SUM a measure across an axis the ontology says it cannot be summed over?
 
 FOUR RULES SAY THIS, in four concepts, in four sentences:
-    perspective.exclusion.no_blend                "Never SUM across Group and brand-specific rows"
-    plan_stage.default.official                   never blend official (7) and inofficial (4)
-    plan_stage.resolve.official_vs_brand_internal "alternatives rather than partitions"
-    region.resolve.additive_rollup                the additive side of the same law
+    a perspective exclusion     never sum across the group-wide rows and the per-brand rows
+    a scenario default          never blend the official and the internal scenarios
+    a scenario resolution       the two scenarios are alternatives, not parts of one total
+    a region resolution         the additive side of the same law
 
 None of the four was testable, and the reason turned out not to be that they are prose. The canon
 that implements the law — `mac.canon.additivity_guard` — has existed in tools/canon/__init__.py the
@@ -22,9 +22,9 @@ declares its `measure_type` and its `axis_kinds`. Both are read here; nothing ab
 written in this file, so changing the law in the vocabulary changes what this gate rejects.
 
 `role` is added as a non-additive axis for EVERY measure regardless of type, because Group RESTATES
-brand rows rather than partitioning them: 11.195.386 cells carry both, and summing across role
-double-counts 3.336.719.092. That is not an additivity property of the measure, it is a property of
-the relation, and perspective.exclusion.no_blend is the rule that says so.
+brand rows rather than partitioning them: millions of cells carry both, and summing across role
+double-counts billions. That is not an additivity property of the measure, it is a property of
+the relation, and the perspective exclusion is the rule that says so.
 """
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def axis_is_governed(axis: str, sql: str) -> bool:
     its call site declares correct. `\\b` asserts a word boundary, `=` is not a word character, and
     what follows a pin is a space or a quote — also not word characters. So no boundary exists
     there and `role = 'Group'` never matched, while `role IN (...)` did. Measured on this estate:
-    5 findings, all five of them pins written with `=`, over O-RES-MODEL and P-ADD-01..04 — every
+    5 findings, all five of them pins written with `=`, over a model-resolution property and four additivity properties — every
     one a property that pins `role = 'Group'` in a CTE and sums downstream of it.
 
     The gate's own words for that outcome: "A gate that punishes the correct pattern is worse than
@@ -191,7 +191,7 @@ def main() -> int:
                 # THE CANON JUDGES PER SELECT, and that is right for a canon — it cannot know
                 # whether a pin in another scope governs this one. But a property that pins
                 # `role = 'Group'` in a CTE and sums in the outer SELECT is CORRECT, and the first
-                # run flagged 21 of those: R-VAR-01 pins role, R-ROLE-01 groups by it. A gate that
+                # run flagged 21 of those: a variance property pins role, a role property groups by it. A gate that
                 # punishes the correct pattern is worse than no gate, which this bundle established
                 # earlier today when a checker turned 3 findings into 56.
                 #

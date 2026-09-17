@@ -62,7 +62,7 @@ def relation_concepts(root: pathlib.Path) -> dict[str, set[str]]:
 
 def relations_in(sql: str, known: set[str]) -> list[str]:
     """Which known relations this SQL touches. Substring-free: matched on word boundaries only, so
-    `dim_model` does not also claim `dim_model_code`."""
+    `dim_product` does not also claim `dim_product_code`."""
     return sorted(r for r in known if re.search(rf"\b{re.escape(r)}\b", sql))
 
 

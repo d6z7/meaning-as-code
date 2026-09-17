@@ -44,9 +44,9 @@ values:
     - { code: DELIVERED, label: Delivered, meaning: "Received by customer (happy-path terminal)", phase: FULFILMENT, confidence: C }
     - { code: RETURNED,  label: Returned,  meaning: "Returned after delivery",                   phase: CLOSED,     confidence: C }
     - { code: CANCELLED, label: Cancelled, meaning: "Cancelled before shipping",                 phase: CLOSED,     confidence: C }
-  # v0.1.9 — aliasBlock witness (the GENERIC scope_relative tier, scoped by a NON-brand dimension 'channel'):
-  # 'cancelled' resolves to CANCELLED, but under a wholesale channel 'rejected' also means CANCELLED — the same
-  # two-tier shape rides a domain that names no brand at all. Multilingual tier is scope-free.
+  # v0.1.9 — aliasBlock witness (the GENERIC scope_relative tier, scoped by the dimension 'channel'):
+  # 'cancelled' resolves to CANCELLED, but under a wholesale channel 'rejected' also means CANCELLED.
+  # Multilingual tier is scope-free.
   aliases:
     scope_key: channel
     realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }

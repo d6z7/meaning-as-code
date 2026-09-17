@@ -96,29 +96,29 @@ check("snapshot_collapse (as-of)",
        ["2026-01-15", "2026-01-15"]))
 
 # ── snapshot_collapse: the three defects that put a workaround in an applied bundle ───────────────
-# One applied bundle (<domain>/<dataset>) carries ontology/protosql/snapshot.pin_latest_per_cell.yaml
+# One applied bundle (<domain>/<dataset>) carries an ontology/protosql/snapshot.*.yaml fragment
 # because this canon could not do the job. mac.schema.json on ProtoSqlFile: "usually a workaround for
 # a canon that is missing or broken, and the better fix is upstream." These three are that fix, each
 # with its witness.
 
 # 1. A COMPOSITE key. Shipped broken on 2026-08-19 and reverted the same day: the canon interpolated
 #    the parameter raw, so a perfectly ordinary YAML list rendered as a Python list repr —
-#    PARTITION BY ['brand_code', 'brand_country_code', ...] — which is not SQL at all.
+#    PARTITION BY ['brand_code', 'market_code', ...] — which is not SQL at all.
 check("snapshot_collapse (composite key renders as a column list)",
       canon.snapshot_collapse("warehouse.v_sales_kpi",
-                              natural_key=["role", "brand_code", "brand_country_code"],
-                              order_by="config_reporting_month"),
+                              natural_key=["role", "brand_code", "market_code"],
+                              order_by="reporting_month"),
       ("(SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY role, brand_code, "
-       "brand_country_code ORDER BY config_reporting_month DESC) AS _rn "
+       "market_code ORDER BY reporting_month DESC) AS _rn "
        "FROM warehouse.v_sales_kpi) WHERE _rn = 1)", []))
 
 # 2. A TIE-BREAK. One bundle's protosql states "created_at DESC is not optional" beside the vintage;
 #    the old signature took a single order_by and could not say it.
 check("snapshot_collapse (ordered tie-break)",
       canon.snapshot_collapse("warehouse.v_sales_kpi", natural_key=["role", "kpi"],
-                              order_by=["config_reporting_month", "created_at"]),
+                              order_by=["reporting_month", "created_at"]),
       ("(SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY role, kpi "
-       "ORDER BY config_reporting_month DESC, created_at DESC) AS _rn "
+       "ORDER BY reporting_month DESC, created_at DESC) AS _rn "
        "FROM warehouse.v_sales_kpi) WHERE _rn = 1)", []))
 
 # 3. AN UNRESOLVED REFERENCE must fail loudly. A binding may name its key by dereference rather than by
@@ -137,7 +137,7 @@ def _raises(fn):
 expect("snapshot_collapse (unresolved descriptor anchor → refuses)",
        _raises(lambda: canon.snapshot_collapse(
            "warehouse.v_sales_kpi", natural_key="data/datasets/v_sales_kpi.yaml#x-grain.cell_key",
-           order_by="config_reporting_month")))
+           order_by="reporting_month")))
 expect("snapshot_collapse (empty partition → refuses)",
        _raises(lambda: canon.snapshot_collapse("t", natural_key=[], order_by="v")))
 

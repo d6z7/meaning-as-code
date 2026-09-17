@@ -67,7 +67,7 @@ ALLOW: dict[str, tuple[int, str]] = {
     "sdk/project/ontology_quality.py": (
         4,
         "the ENGLISH WORD — `answerable['gaps']` is the list of answer-path steps a concept cannot "
-        "supply. It collides with one estate's domain name, which is exactly why this gate matches "
+        "supply. It collides with a source token this gate hunts for, which is exactly why this gate matches "
         "substrings: a `\\b`-bounded pattern could not see `v_<source>_kpi` or `<source>2`. A "
         "detector that cannot be fooled by an identifier will sometimes be fooled by a dictionary.",
     ),

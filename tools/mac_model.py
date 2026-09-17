@@ -12,7 +12,7 @@ That shape is not merely wasteful — it is *structurally blind* to a whole clas
 defects that got through on 2026-08-16/17 are all of the form **"two files say the same thing and
 disagree"**:
 
-  * `ontology/concepts/ideal_stock.yaml` says a Target measure is `additive` on its geography and
+  * `ontology/concepts/<target_measure>.yaml` says a Target measure is `additive` on its geography and
     model axes; `mac_vocabulary.yaml#MeasureType.Target` says `non_aggregable` on the categorical
     axis, and the bundle's own measure register agrees with the law. Measured across 9 measures:
     8 agree, 1 contradicts. No gate could see it — the two statements live in different files.
@@ -872,8 +872,8 @@ def _load_registers(root: Path) -> dict:
         try:
             # A register may carry a "#" preamble stating what it is, what generated it and what is
             # known-defective about it — provenance a bare CSV cannot hold. Feeding those lines to
-            # DictReader takes the first comment as the header and every later one as a row: a 1.108-row
-            # register was read as 1.163 and its projected page published that number. Skip them here,
+            # DictReader takes the first comment as the header and every later one as a row: a register of about
+            # a thousand rows was read as 55 rows longer and its projected page published that number. Skip them here,
             # once, so every consumer sees the same row set.
             _lines = [l for l in path.read_text(encoding="utf-8").splitlines()
                       if not l.lstrip().startswith("#")]
@@ -990,8 +990,8 @@ def _derived_additivity(axis: str, axis_kinds: dict, measure_type, selectors: fr
 
     v0.1.16. Before this, `additivity` was schema-REQUIRED, so every measure wrote out what its own
     `measure_type` already implies — the concept authored the premise AND the conclusion, and the two
-    could drift. `ideal_stock` declared `Target` and wrote `geography: additive`, which the law
-    forbids; ANCHOR_05 summed Ideal Stock across models on the strength of it and stood for weeks.
+    could drift. A target-inventory measure declared `Target` and wrote `geography: additive`, which the
+    law forbids; a value anchor summed it across products on the strength of it and stood for weeks.
     You cannot contradict a value you do not write.
 
     NOTHING IS REIMPLEMENTED HERE. `Law.additivity()` already resolves (MeasureType x axis_kind) and

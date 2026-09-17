@@ -71,7 +71,7 @@ That question **is** the line you asked to be drawn. Everything else here follow
 | rule `logic:` | **behaviour-bearing** | UDF = `template` (`sql_expression`/`sql_view`/`derived_set`); **`spec_only` = the prose fallback** |
 | typed rule `when / then / never` | **behaviour-bearing** | UDF = `binds` + predicate + `enforced_by` |
 | `null_semantics` (drives anomaly-of-absence) | **behaviour-bearing** | UDF = typed enum + an absence predicate |
-| resolution (e.g. `name_norm LIKE 'X%'`) | **behaviour-bearing** | UDF = a resolver expression |
+| resolution (e.g. `name_key LIKE 'X%'`) | **behaviour-bearing** | UDF = a resolver expression |
 | ambiguity trigger (when to abstain → ⊥) | **behaviour-bearing** | UDF = a multi/no-match predicate |
 | `definition`, `purpose`, `closure_why`, every `*_why`, `open_questions` | **pure prose** | — leave it; the human path |
 

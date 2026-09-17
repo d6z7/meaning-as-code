@@ -39,8 +39,8 @@ disagree with it.** This framework's own vocabulary states the mechanism:
 > *"a test rendered entirely from the ontology AGREES WITH THE ONTOLOGY, so a wrong declaration
 > produces a green suite."* — `mac_vocabulary.yaml`, `test_kind` preamble
 
-And the worked proof runs the other way too: `S-GRAIN-KPI`, an **authored** property, caught a
-descriptor claiming `VERIFIED … 0 multi-row` against a warehouse that had reached 11.689.530. The
+And the worked proof runs the other way too: a grain property, an **authored** one, caught a
+descriptor claiming `VERIFIED … 0 multi-row` against a warehouse that had reached millions of multi-row cells. The
 plane records that *"a conformance test rendered from that same declaration would have confirmed the
 stale claim."*
 

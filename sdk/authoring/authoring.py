@@ -60,7 +60,7 @@ Shape of a concept file:
 - governance: {owner, last_reviewed}
 
 CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and schema-enforced:
-- a CODE / LOOKUP table (a small set of coded values — e.g. body type, fuel type, brand indicator, registration type) → class: enumeration, and you MUST add a TOP-LEVEL `values:` block:
+- a CODE / LOOKUP table (a small set of coded values — e.g. package type, material, price tier, sales channel) → class: enumeration, and you MUST add a TOP-LEVEL `values:` block:
       values:
         closure: closed | open | unknown
         items:
@@ -87,10 +87,10 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
         phases: [<phase name>, ...]        # optional siblings: phase_sequence, states, boundary, note — and NOTHING else
 - a ROLLUP / GROUPING table (rows that GROUP or ROLL UP other rows — e.g. a region→countries map, a market footprint, a membership list) → class: grouping, and you MUST add a TOP-LEVEL `members:` OBJECT (NOT a list) shaped exactly as:
       members:
-        over: <the LEAF concept this rolls up — e.g. Country, Car Model>   # REQUIRED — the grouped concept
+        over: <the LEAF concept this rolls up — e.g. Country, Product>   # REQUIRED — the grouped concept
         member_source:
           kind: rule        # 'rule' = membership computed via a FK / transitive walk; 'enumerated' = explicit named sets
-          rule: <one line: how membership is computed, e.g. "region groups countries via acme_brand_country_code">
+          rule: <one line: how membership is computed, e.g. "region groups countries via acme_scoped_market_code">
   `members:` is a TOP-LEVEL OBJECT with a REQUIRED `over:` key (sibling of `concept:` / `grounding:` / `contract:`), NEVER a bare list and NEVER nested under `concept:`. (Placement reference: `semantics` is nested UNDER `concept:`; but `values`, `members`, and `lifecycle` are TOP-LEVEL siblings of `concept:`.)
 - a plain dimension / identifier table (keys + attributes, not a closed code list) → class: reference or entity (no extra required block).
 
@@ -116,7 +116,7 @@ Authoring rules:
                       params: {source: <SOURCE>, thing: <model|market|brand|country>,
                                code: <the identity it should resolve to>,
                                via: <the register the lookup goes through, if any>}}
-  `confusable` matters most: an empty Gross Stock answered with Ideal Stock is worse than no answer,
+  `confusable` matters most: an empty On-hand Inventory answered with Target Inventory is worse than no answer,
   and only you know which measure is the tempting one here.
 - Propose contract rules ONLY where the schema or context justify them; a rule's confidence ∈ C|P|R (default P). Never fabricate a rule or a guarantee the data doesn't support.
 - Match the SHAPE and style of the EXAMPLE concept, but NOT its content.
@@ -145,7 +145,7 @@ A concept is a business notion, NOT a table. The mapping is M:N:
 - one relation may serve SEVERAL notions;
 - a pure mapping/bridge table backs NO notion — it dissolves into a rule or an edge;
 - A NOTION OFTEN HAS NO TABLE OF ITS OWN. This is the most commonly MISSED case, so work it deliberately: for every FACT relation, walk its columns and ask of each dimension/discriminator column whether it names a thing the business talks about. If it does, that is a NOTION, and it grounds on the fact relation that carries the column.
-  Worked example of the shape: a fact relation with columns `role`, `plan_level`, `brand_code`, `country_code` carries FOUR notions — a Perspective (which view of the world the row is stated from), a PlanStage (how firm the number is), a Brand and a Country — none of which has a table. A register in the VALUE REGISTERS section naming that column's members is strong evidence the notion exists.
+  Worked example of the shape: a fact relation with columns `role`, `scenario`, `brand_code`, `country_code` carries FOUR notions — a Perspective (which view of the world the row is stated from), a Scenario (how firm the number is), a Brand and a Country — none of which has a table. A register in the VALUE REGISTERS section naming that column's members is strong evidence the notion exists.
   Do this pass EXPLICITLY before you finish: list the fact relations' dimension columns and confirm each is either already a notion or deliberately not one.
 
 Emit ONE YAML document, exactly these two top-level keys:
@@ -432,7 +432,7 @@ def _autofix(obj: dict) -> list[str]:
 # The instructions are THERE. The JSON Schema cannot see them: `field_roles` is optional and `C` is a
 # legal enum member, so every one of those concepts validates. A prompt whose compliance is never
 # checked degrades silently, and downstream nothing can tell a measured claim from a guess — which is
-# how `ideal_stock` shipped `additive` as CONFIRMED and produced a wrong anchor.
+# how a target-inventory measure shipped `additive` as CONFIRMED and produced a wrong anchor.
 #
 # WHY THE CONFIDENCE RULE IS NOT A JUDGEMENT CALL. `C` means an SME ratified the meaning
 # (CONFORMANCE.md L3). A model cannot ratify its own output, so `C` on a freshly authored concept is

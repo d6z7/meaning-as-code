@@ -6,18 +6,18 @@ existed and was not read; each time a plausible pattern was inferred instead:
 
   the cell key       five columns typed from what "a cell" felt like, against a declared seven
   the status list    three LIKE patterns from memory, against a declared enumeration of nineteen
-  the brand codes    inferred from 2025 volumes, against data/lookups/brand.lookup.csv
-  the market codes   BUILT as  brand_code || '_' || 'INLAND',  against dim_country_register
+  the brand codes    inferred from one year's volumes, against the brand register
+  the market codes   BUILT as  brand_code || '_' || 'HOME',  against the market register
 
 The last is the one this gate is for, and it is the worst of the four because it produced a FALSE
-ABSENCE THAT PASSED. M-BRAND-MARKET-01 concatenated 'C' with 'INLAND' and asked the fact whether
-C_INLAND existed. It does not — one brand's Germany is C_DEUTSCHLAN — so the property recorded
-`code_exists = 0` and read that as "that brand has no Germany" rather than "I invented this code". It
-stayed green while never testing that brand's German figure at all. A wrong answer errors; a fabricated
+ABSENCE THAT PASSED. A brand-market property concatenated 'B' with 'HOME' and asked the fact whether
+B_HOME existed. It does not — that brand's home market is B_HOMELAND — so the property recorded
+`code_exists = 0` and read that as "that brand has no home market" rather than "I invented this code".
+It stayed green while never testing that brand's home-market figure at all. A wrong answer errors; a fabricated
 identifier just quietly finds nothing, and nothing finding nothing looks exactly like a clean result.
 
 The register carries the mapping, per brand, and no two are alike:
-    A_INLAND · N_INLAND · V_INLAND      C_DEUTSCHLAN      E_GERMANY · S_GERMANY
+    A_HOME · D_HOME · F_HOME      B_HOMELAND      G_NATIONAL · H_NATIONAL
 No pattern generalises from the three you happen to have looked at, which is precisely why the
 inference felt safe.
 

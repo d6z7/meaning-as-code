@@ -37,7 +37,7 @@ C6 — EXPLODING RULE-COUNT
   missing canon. It is a missing declaration, and the register of unfilled slots is where to look.
 
   MEASURED on the two trees either side of that fix: before, the shape reported
-  `binds undeclared [config_reporting_month, role]` — the exact two columns whose declaration was
+  `binds undeclared [reporting_month, role]` — the exact two columns whose declaration was
   missing. After, the shape is gone and so is the diagnosis. The signal is specific, not decorative.
 
 C2 — A RULE FOR A STORED VALUE

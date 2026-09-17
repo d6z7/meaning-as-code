@@ -539,7 +539,7 @@ def _accepted_line(conv: dict) -> str:
     return (f"`<role>_<marker>_<business noun>` with role one of {roles} (closed) and marker `{mk}` "
             f"— e.g. raw `shipments` -> served `{conv['roles']['view'][0]}_{mk}_shipments`; or the "
             f"business noun ALONE when the raw name carries a source-system infix — e.g. raw "
-            f"`{mk}_lm_shipments` -> served `shipments`")
+            f"`{mk}_ext_shipments` -> served `shipments`")
 
 
 def _role_table_lines(conv: dict) -> list:
@@ -726,7 +726,7 @@ def self_test() -> int:
 
         # ── CLEAN FIXTURES — must PASS, or the gate rejects work that is correct ─────────────────
         cases.append(("clean/infix-stripped", _fixture(
-            base, "clean_infix", ["acme_lm_shipments", "acme_lm_orders"], ["shipments", "orders"]), 0, []))
+            base, "clean_infix", ["acme_ext_shipments", "acme_ext_orders"], ["shipments", "orders"]), 0, []))
         # the already-clean case, SATISFIED direction: raw names are clean nouns, served names carry
         # the bundle's serving marker. This is the resolution the failure message prescribes — if it
         # did not pass, the gate would be publishing advice it then refuses.
@@ -749,7 +749,7 @@ def self_test() -> int:
         # ── MUTANTS — one per reject class ───────────────────────────────────────────────────────
         # 1. collision where the raw name carries a source-system infix
         cases.append(("mutant/collision-with-infix", _fixture(
-            base, "m_infix", ["acme_lm_shipments", "acme_lm_orders"], ["acme_lm_shipments"]), 1,
+            base, "m_infix", ["acme_ext_shipments", "acme_ext_orders"], ["acme_ext_shipments"]), 1,
             ["EQUALS a raw source name", "rename to: 'shipments'"]))
         # 2. collision where the raw name is ALREADY the clean business noun — the fixed defect.
         cases.append(("mutant/collision-already-clean-noun", _fixture(

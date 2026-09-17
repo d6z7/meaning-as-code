@@ -523,7 +523,7 @@
         },
         "additivity": {
           "type": "object",
-          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.15: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: ideal_stock declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.",
+          "description": "Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.15: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: a target-inventory measure declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.",
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
           },
@@ -677,7 +677,7 @@
             },
             "allOf": [
               {
-                "$comment": "v0.1.17: a rule is either WRITTEN or BOUND — never neither. `when`/`then` were optional strings with no minLength, so a rule could carry an EMPTY clause and validate: market.exclusion.no_evidence shipped a bare `then` promising an evidence-boundary answer it could not produce, and the canon library's own docstring recorded it months before anything blocked. Where `realized_by` is present the clauses are RENDERED from the canon and may be omitted; where it is absent they must be there and non-empty.",
+                "$comment": "v0.1.17: a rule is either WRITTEN or BOUND — never neither. `when`/`then` were optional strings with no minLength, so a rule could carry an EMPTY clause and validate: a market exclusion rule shipped a bare `then` promising an evidence-boundary answer it could not produce, and the canon library's own docstring recorded it months before anything blocked. Where `realized_by` is present the clauses are RENDERED from the canon and may be omitted; where it is absent they must be there and non-empty.",
                 "if": {
                   "not": {
                     "required": [
@@ -982,7 +982,7 @@
               },
               "brand_relative": {
                 "$ref": "#/$defs/aliasScopeMap",
-                "description": "an authoring alias of scope_relative for brand-scoped enums (loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes."
+                "description": "an authoring alias of scope_relative (the key name is historical; loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes."
               }
             },
             "additionalProperties": false
@@ -1448,7 +1448,7 @@
             }
           },
           "then": {
-            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: ideal_stock declared `Target` and wrote `geography: additive`, which the law forbids, and ANCHOR_05 summed Ideal Stock across models on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [
@@ -1986,7 +1986,7 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know that one brand's Germany is 'C_DEUTSCHLAN' invents 'C_INLAND' by concatenation — that happened, the property PASSED, and the false absence read as 'that brand has no Germany'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
+                "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know that one brand's home market is 'B_HOMELAND' invents 'B_HOME' by concatenation — that happened, the property PASSED, and the false absence read as 'that brand has no home market'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
               }
             },
             "additionalProperties": false
@@ -2360,7 +2360,7 @@
     },
     "PropertiesFile": {
       "type": "object",
-      "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. P-ADD-01 on <dataset> asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",
+      "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. An additivity property on <dataset> asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",
       "required": [
         "properties"
       ],
@@ -2613,7 +2613,7 @@
     },
     "VanillaDeltaFile": {
       "type": "object",
-      "description": "v0.1.14: the CURRENT-STATE register of every difference between the generated bundle and what is on disk. SIBLING OF, NOT A COPY OF, the intervention ledger: the ledger is append-only HISTORY (which objects were touched), this is current STATE (what differs NOW) and a delta disappears when the delta does. Object-level protocol is not locus-level protocol — the ledger recorded that a transform was tuned and still could not show that a family-collapse list had been extended past gold's, which is what broke Golf Plus.",
+      "description": "v0.1.14: the CURRENT-STATE register of every difference between the generated bundle and what is on disk. SIBLING OF, NOT A COPY OF, the intervention ledger: the ledger is append-only HISTORY (which objects were touched), this is current STATE (what differs NOW) and a delta disappears when the delta does. Object-level protocol is not locus-level protocol — the ledger recorded that a transform was tuned and still could not show that a family-collapse list had been extended past gold's, which is what folded a distinct product variant into its parent.",
       "required": [
         "deltas"
       ],
@@ -2963,7 +2963,7 @@
           "description": "schema-qualified relation measured"
         },
         "profile": {
-          "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures: the word VERIFIED in prose is a sentence, not a test.",
+          "description": "WHEN this relation was profiled and WHAT IT LOOKED LIKE THEN. Split deliberately from the design facts a reader authors: design facts are discovered once and do not rot, while EVIDENCE rots continuously — so a diff that touches only this block means the SOURCE moved, and a diff that touches the column roles means the DATA OBJECT changed shape and needs a fresh ruling. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to millions of doubled figures: the word VERIFIED in prose is a sentence, not a test.",
           "type": "object",
           "additionalProperties": false,
           "required": [
@@ -3052,14 +3052,14 @@
                   "type": "string"
                 },
                 "uniqueItems": true,
-                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: a brand-code column is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because 578 market codes each belong to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
+                "description": "columns that FUNCTIONALLY DETERMINE this one. The distinction that matters and the one a discrimination test cannot see: a brand-code column is determined by `role` for the five brand perspectives — structural, a LAW — and separately by the market code, because every market code belongs to exactly one brand — a naming CONVENTION. A column redundant by convention must stay in a key; one redundant by law need not. Measured, not assumed."
               }
             }
           }
         },
         "identity_evidence": {
           "type": "object",
-          "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to 11.689.530 doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
+          "description": "v0.1.14 (C3): the PROOF behind the column roles — machine-written, never hand-edited (a human editing it is a MAC002 error). The grain is a DESIGN FACT and lives on the columns as role/determined_by; this block is only the measurement that established it, and measurements rot. v_<source>_kpi.yaml claimed 'VERIFIED 2026-08-16 … 0 multi-row' for four days while the warehouse went to millions of doubled figures — the word VERIFIED is a sentence, not a test. A diff HERE means the SOURCE moved against a grain that still stands (a defect); a diff in the column roles means the OBJECT changed shape (a redesign, needing a fresh ruling).",
           "additionalProperties": false,
           "required": [
             "measured_at",
@@ -3100,7 +3100,7 @@
                 "type": "string"
               },
               "uniqueItems": true,
-              "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (config_key = 'Brand|11.12.2025|1. Expectation') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
+              "description": "columns held OUT of the key search. Sometimes necessary: a concatenated surrogate (cycle_key = 'Brand|2025-12-11|Scenario 1') wins every greedy step by construction, and every atomic axis it encodes then reads DEAD."
             },
             "key": {
               "type": "array",

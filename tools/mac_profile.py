@@ -11,9 +11,9 @@ WHAT IT WRITES, both machine-only:
     columns[].profile   {distinct, nulls, min, max}   the census
     profile             {measured_at, rows, newest_write, method, engine, scanned_bytes}
 
-EXACT COUNTS, NOT SKETCHES. `approx_distinct` is HLL and was measured returning 803.502.276 distinct
-values for an 800.821.485-row relation — an impossible answer — and claiming 1.091 model codes
-against 1.090 ids where the exact check found no violation. A sketch can RANK candidate keys; it can
+EXACT COUNTS, NOT SKETCHES. `approx_distinct` is HLL and was measured returning MORE distinct
+values than the relation has rows — an impossible answer — and claiming one more code
+than there are ids where the exact check found no violation. A sketch can RANK candidate keys; it can
 never decide uniqueness, and uniqueness is the question. Sampling is out for the same reason:
 TABLESAMPLE destroys duplicates, so uniqueness is not sample-testable.
 
@@ -42,7 +42,7 @@ TOOL = "mac_profile.py/5"
 # A column with at most this many distinct values is treated as BOUNDED and its full value set is
 # captured. Above it, membership is volume — a model-code list grows by design — and only the count
 # is kept. The threshold is deliberately generous: 18 delivery statuses and 21 measures must fit,
-# and enumerating 578 market codes is cheap insurance against a brand-scoped scheme changing.
+# and enumerating several hundred market codes is cheap insurance against a scoped code scheme changing.
 BOUNDED_MAX = 600
 
 # A column whose value is itself a collection. One real dimension table carries seven — its
@@ -54,7 +54,7 @@ COMPLEX = ("array", "map", "row", "struct")
 
 # BOUNDED IS NOT THE SAME AS ENUMERABLE, and the first sweep conflated them. Under 600 distinct
 # values it captured the full domain of `<source>_date` (348 dates), `<source>_created_at` (310 load
-# stamps) and `config_key` (392 concatenated surrogates) — 56,6 % of all captured domain bytes,
+# stamps) and a concatenated cycle key (392 surrogates) — 56,6 % of all captured domain bytes,
 # inlined into every request, telling an engine nothing it could act on. Those columns are bounded only
 # ACCIDENTALLY, because this data happens to hold few values; none of them is a category a question
 # ever names. The domain is worth keeping when someone would FILTER by naming one of its members.
@@ -131,7 +131,7 @@ def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> tuple[dict, 
     """Fold the measurement into (descriptor, profile).
 
     TWO FILES, because they have two lifecycles. The descriptor keeps the value DOMAIN — the one
-    measured fact a reader needs, and whose absence let an engine invent 'C_INLAND' by concatenation.
+    measured fact a reader needs, and whose absence let an engine invent 'B_HOME' by concatenation.
     Everything counted goes to data/profiles/, where `measured_at` can move on every run without
     invalidating a prompt cache keyed on descriptor mtime."""
     n = int(row["n_rows"])

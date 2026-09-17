@@ -59,11 +59,11 @@ A reference is a **path to a file, optionally followed by a `#anchor`**:
   project `<source>/concepts/...`). It must resolve to a real file.
 - **Anchor** — addresses an object *within* the file. The addressable anchors are:
   - `#concept` — the file's top-level `concept:` block.
-  - `#<top-level-key>` — any top-level mapping key (e.g. `#foreign_keys`, `#gold_layer_architecture`).
+  - `#<top-level-key>` — any top-level mapping key (e.g. `#foreign_keys`, `#pricing_policy`).
   - `#<list>.<id-or-name>` — an entry of any list whose items carry an `id:` or `name:`, nested by its
     container. So `instances:` → `#instances.<id>`; a `foreign_keys:` list → `#foreign_keys.<name>`; a
-    nested `country_instances.instances:` → `#country_instances.instances.<id>`.
-  - **Names with spaces are backtick-quoted** in the anchor (e.g. ``#individual_kpis.`Total Market` ``);
+    nested `store_instances.instances:` → `#store_instances.instances.<id>`.
+  - **Names with spaces are backtick-quoted** in the anchor (e.g. ``#categories.`Home Goods` ``);
     backticks are ignored on resolution, so the quoted and unquoted forms are equivalent.
 
 Where references appear (each must resolve): edge `endpoints.{from,to}.ref`, edge `realized_by` (→ a

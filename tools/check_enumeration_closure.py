@@ -17,7 +17,7 @@ letter; do not assume without confirming". Nothing flagged it. A probe of the fa
 domain had SIX members — one Group role and five NAMED brands. Worse, because the file believed
 non-Group was a single undifferentiated bucket, its default rule had been written to permit "or apply
 no filter, if the grounded relation defaults to Group" — and the relation does not: Group is 52% of
-789,131,541 rows, so an unfiltered read blends six overlapping perspectives and roughly doubles the
+the rows, so an unfiltered read blends six overlapping perspectives and roughly doubles the
 answer. The self-contradiction in `values` was the visible tell of a live double-count downstream.
 
 THE FIX IS CHEAP: either confirm the member (probe it, then mark it C), or say ``closure: open`` and

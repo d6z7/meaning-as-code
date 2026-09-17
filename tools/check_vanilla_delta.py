@@ -5,9 +5,9 @@ WHY THIS EXISTS AND WHY IT IS NOT check_intervention_ledger
 -----------------------------------------------------------
 The ledger already proves that every authored/tuned OBJECT has a protocol entry, and that gate is
 green. It was green while a real defect sat unrecorded inside a covered object: `transform:dim_model`
-carried INT-0001 ("full harmonization of the raw EAV model dimension"), which is a true statement and
+carried an intervention entry describing a full harmonization of the raw EAV model dimension, which is a true statement and
 tells you nothing about the two hand-written regex token lists inside that file — one of which had
-been extended past gold's and was folding a distinct nameplate (Golf Plus) into another model.
+been extended past gold's and was folding a distinct product variant into another product.
 
 Object-level protocol is not locus-level protocol. An entry that names the object answers "was this
 touched"; this register answers "what, precisely, is different from what the generator emits, and has

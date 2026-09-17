@@ -3,7 +3,7 @@
 
 Operator: *"you cannot have cumulative value in every column."*
 
-M-BRAND-KPI-01 returns 42 rows — one per brand x measure, and its own statement says "Each row IS a
+A brand-by-measure property returns 42 rows — one per brand x measure, and its own statement says "Each row IS a
 test". It then puts `cases_with_no_figure: 2` on ALL of them, so the table shows "2" beside one
 brand, which is true of the run and meaningless of the row. The reader cannot see WHICH case failed,
 which is the only thing the table exists to show. It also fails the assertion 42 times instead of

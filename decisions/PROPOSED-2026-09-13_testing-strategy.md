@@ -190,9 +190,9 @@ framework's own vocabulary states the mechanism in as many words:
 
 **A test rendered from the artifact it tests cannot disagree with that artifact.** 241 of 293 derived
 at 2,5 % not-green is what a population that *cannot disagree* looks like. And the plane's own
-worked example proves it from the other end: `S-GRAIN-KPI` — **an AUTHORED property**, i.e. in the
+worked example proves it from the other end: a grain property — **an AUTHORED property**, i.e. in the
 46,2 % half — caught a descriptor claiming `VERIFIED … 0 multi-row` against a warehouse that had
-reached 11.689.530, and `testing.md:128` says flatly that *"a conformance test rendered from that
+reached millions of multi-row cells, and `testing.md:128` says flatly that *"a conformance test rendered from that
 same declaration would have confirmed the stale claim."*
 
 **The boundary, stated as a rule an agent can apply:**

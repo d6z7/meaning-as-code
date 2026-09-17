@@ -11,14 +11,14 @@ moves. It answers *does this column split anything*.
 DEPENDENCE (functional): is this column determined by some other column? It answers *why not*.
 
 Running only the first is what produced today's near-miss. A one-letter brand code (`brand_code`)
-splits NOTHING — 5 columns and 7 columns give the identical 12.345.252 groups — so a
+splits NOTHING — 5 columns and 7 columns give the identical group count — so a
 discrimination-only profiler drops it, measurably justified and semantically wrong. The dependence
 probe says why: it is determined TWICE over, by two different kinds of fact.
 
 MEASURED 2026-08-20 on v_<source>_kpi, and it corrected the guess this file was first written around.
 `brand_code` is determined by `<source>_model_code_id` ALONE. It is NOT determined by `role` — Group
-spans nine codes — and, against the standing assumption, NOT by `market` either, so the "578 market
-codes each belong to exactly one brand" convention DOES NOT HOLD as a functional dependency in this
+spans nine codes — and, against the standing assumption, NOT by `market` either, so the "every market
+code belongs to exactly one brand" convention DOES NOT HOLD as a functional dependency in this
 relation. The distinction the probe exists to draw is still the right one:
 
     redundant by LAW          a structural determinant; a key may drop the dependent column
@@ -29,8 +29,8 @@ but which columns fall on which side is measured here, not asserted. No discrimi
 them apart, which is the entire reason this file carries two probes.
 
 ── THE OTHER TRAP: UNIQUE IS NOT RIGHT ─────────────────────────────────────────────────────────
-Adding config_data_status makes v_<source>_kpi unique — and DOUBLES the figure count, 12,3 Mio to 24,0
-Mio. That is the tell: it stopped identifying a FIGURE and started identifying a DELIVERY OF a
+Adding the data-status column makes v_<source>_kpi unique — and DOUBLES the figure count, roughly 12
+million to 24 million. That is the tell: it stopped identifying a FIGURE and started identifying a DELIVERY OF a
 figure. A minimal-unique-subset search lands there and declares victory.
 
 So a column is only admitted as identity if removing it makes the MEASURE DISAGREE. Splitting groups
@@ -41,7 +41,7 @@ same figure twice.
     IDENTITY      removing it makes the measure disagree a lot    -> auto-included
     COLLAPSIBLE   removing it splits, but the halves AGREE        -> a human decides, once
 
-MEASURED on v_<source>_kpi: `role` (identity) scores 0,000 % disagreement and `config_data_status`
+MEASURED on v_<source>_kpi: `role` (identity) scores 0,000 % disagreement and the data-status column
 (delivery) scores 0,016 %. Four significant figures apart. NO STATISTIC SEPARATES THEM, because the
 difference is what the business MEANS by the two columns. The tool reduces twenty columns to two
 closed questions and refuses to answer those itself.
@@ -188,7 +188,7 @@ def main() -> int:
                          "step by construction and makes every atomic axis it encodes read DEAD.")
     ap.add_argument("--stratum", default=None,
                     help="SQL predicate confining the test to one republication round, e.g. "
-                         "\"config_reporting_month = DATE '2026-08-31'\"")
+                         "\"reporting_month = DATE '2026-08-31'\"")
     ap.add_argument("--write", action="store_true", help="record roles and determined_by")
     a = ap.parse_args()
 
@@ -223,7 +223,7 @@ def main() -> int:
 
     # ── GROW A MINIMAL KEY FIRST ───────────────────────────────────────────────────────────────
     # Leave-one-out over ALL candidate columns is useless and the first run proved it: with
-    # config_key and <source>_created_at in the basis every row is already unique, so omitting any
+    # a concatenated cycle key and <source>_created_at in the basis every row is already unique, so omitting any
     # single column changes nothing and all 19 report DEAD. The basis must be a MINIMAL key, grown,
     # not the full column list.
     drop = {x.strip() for x in a.exclude.split(",") if x.strip()}
@@ -323,7 +323,7 @@ def main() -> int:
         if dependents and basis:
             print(f"  dependence: {len(basis)} determinants x {len(dependents)} dependents…")
             # A column with ONE value in this slice is determined by everything, trivially and
-            # falsely — config_reporting_month is pinned BY the stratum, not by the key. Measure
+            # falsely — the reporting month is pinned BY the stratum, not by the key. Measure
             # which are constant here rather than inferring it, and say so.
             cw = f"\n  WHERE {a.stratum}" if a.stratum else ""
             cr, _ = ath.query("SELECT " + ", ".join(

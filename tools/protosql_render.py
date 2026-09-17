@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render a protosql fragment — the collapse you cannot type wrong, because you do not type it.
 
-THE FRAGMENT WAS ALREADY WRITTEN. <domain>/<dataset> authored ontology/protosql/snapshot.pin_latest_per_cell
+THE FRAGMENT WAS ALREADY WRITTEN. <domain>/<dataset> authored an ontology/protosql/snapshot fragment
 on 2026-08-16, with `PARTITION BY @cols:cell_key` and a slot that dereferences the relation's own
 declared key. Its header explains itself:
 
@@ -9,7 +9,7 @@ declared key. Its header explains itself:
      was a correct instruction, correctly read, and then re-implemented from memory at the call site."
 
 Three days later the assistant re-implemented it from memory at the call site — twice, in the two
-properties whose job is to guard the grain (P-GRAIN-01, P-VINT-01: five columns against a declared
+properties whose job is to guard the grain (the grain and vintage properties: five columns against a declared
 seven). It could not have done otherwise: `grep -rln "@cols:"` over the framework returned NOTHING.
 The fragment had no renderer. It was a fix that was designed, documented, cited as authority in three
 separate files, and never made executable — so ~50 files in the bundle hand-write the collapse.
@@ -380,7 +380,7 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
             # row; the partition identifies the thing being reduced to one row. Subtracting is not
             # optional: partition on the axis you are collapsing and every value becomes its own
             # group, so the collapse does nothing — the fragment's own never_2 clause says exactly
-            # that about config_key.
+            # that about the concatenated cycle key.
             over = [str(x) for x in (rule.get("collapses_over") or [])]
             if over and isinstance(cols, list):
                 cols = [c for c in cols if c not in over]
@@ -418,8 +418,8 @@ def render(root: str, frag_id: str, bindings: dict[str, str]) -> tuple[str, dict
     # THE never_2 GUARD, self-detecting: the fragment binds both the key and the vintage column, so
     # the renderer never needs telling which column is the vintage. If the key CONTAINS it, every
     # vintage becomes its own partition and the collapse collapses nothing — the fragment says so in
-    # its own words, and until now nothing enforced it. Caught <source>_reach_kpi on the first run:
-    # its descriptor declares `excludes_vintage: true` AND lists config_reporting_month in cell_key.
+    # its own words, and until now nothing enforced it. Caught a reach view on the first run:
+    # its descriptor declares `excludes_vintage: true` AND lists its reporting-month column in cell_key.
     vintage = resolved.get("@col:vintage")
     for slot, spec in slots.items():
         if not slot.startswith("@cols:") or slot not in resolved or not vintage:
@@ -481,7 +481,7 @@ def self_test() -> int:
         # refused by nothing, and returned zero rows.
         ("a rule-realised edge asked for a join", "child__of_group",
          {"edge_id": "child__of_group",
-          "resolved_by": "ontology/concepts/grouping.yaml#...brand_invariant_column",
+          "resolved_by": "ontology/concepts/grouping.yaml#...group_invariant_column",
           "notes": "there is no grouping key"}, BOUND, JOIN_NOT_A_JOIN),
         ("a column-realised edge asked for a join", "measure__of_seller",
          {"edge_id": "measure__of_seller", "realized_by": "v_fact_kpi.seller_code"}, BOUND,
@@ -497,7 +497,7 @@ def self_test() -> int:
          edge(join_rule="v_fact_kpi.market = dim_territory_register.territory_code"), BOUND,
          JOIN_UNBOUND),
         ("a predicate whose near side the fragment never bound", "measure__of_territory",
-         edge(join_rule="v_fact_tm_kpi.a = dim_seller_territory.b"), BOUND, JOIN_UNBOUND),
+         edge(join_rule="v_fact_size_kpi.a = dim_seller_territory.b"), BOUND, JOIN_UNBOUND),
         ("a compound predicate with one unbound clause still refuses", "measure__of_territory",
          edge(join_rule="v_fact_kpi.a = dim_seller_territory.b AND "
                         "dim_territory_register.c = dim_seller_territory.d"), BOUND, JOIN_UNBOUND),

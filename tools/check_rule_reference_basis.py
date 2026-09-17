@@ -7,8 +7,8 @@ Structure and cardinality are already checked: `binds` resolves to real columns
 (rule-binds-grounded), pinned literals occur in the register they cite (MAC007), a shape written on
 many concepts is reported (COOKBOOK C6). None of that can see whether a rule makes SENSE.
 
-Measured case, <domain>/<dataset>. `order_intake.resolve.kpi_code` carried
-"never confusing Order Intake with ... the delivery measure (deliveries, not placements)".
+Measured case, <domain>/<dataset>. `new_orders.resolve.kpi_code` carried
+"never confusing new orders with ... the delivery measure (deliveries, not placements)".
 Structurally perfect. Semantically vacuous: an order PLACED and a unit DELIVERED are opposite ends of
 one lifecycle, and nobody confuses them. It was machine-written (`provenance: harvested`) and
 self-stamped `confidence: C`. Four of seven kpi_code rules warned against confusing something with deliveries —
@@ -87,9 +87,9 @@ def _surface_terms(concept: dict, doc: dict) -> set:
     guess that happened to work, and the scrape is kept only for concepts that declare none."""
     out = _declared_aliases(doc) | {str(concept.get("name") or ""), str(concept.get("label") or ""),
                                     str(concept.get("german") or "")}
-    # CONTAINS, not endswith. German compounds put the stem anywhere: `Produktionsantrag` does not
-    # end in "produktion" and an endswith filter dropped it, which lost the one overlap that makes
-    # IstProd/Prodant a genuine confusion. The first cut of this check reported that real pair as
+    # CONTAINS, not endswith. Compound nouns put the stem anywhere: a compound that merely CONTAINS a
+    # stem does not end in it, and an endswith filter dropped it, which lost the one overlap that makes
+    # the production pair a genuine confusion. The first cut of this check reported that real pair as
     # baseless for exactly that reason.
     blob = str(doc)
     for w in re.findall(r"\b([A-ZÄÖÜ][a-zäöüß]{5,})\b", blob):
@@ -125,7 +125,7 @@ def _column_like(tok: str) -> bool:
     grounded column set alone flags 17 rules, of which 7 are false — `value` in "an empty result framed
     as a real zero ... substituting another measure's value" is the English word, not v_<source>_kpi.value,
     and `region` reads the same way. Requiring an underscore drops to 9, all genuine, but loses `iso2`
-    in market.resolve.by_code_not_label ("resolve name_en/name_de/iso2 -> market_code"), which is real.
+    in a market resolution rule ("resolve a localised name or iso2 -> market_code"), which is real.
     Underscore-OR-digit keeps that one and none of the false ones.
 
     THE HONEST BOUNDARY, stated rather than hidden: a single-word lowercase column — value, role,
@@ -221,7 +221,7 @@ def _binds_conformance(concepts: dict) -> list:
     injected as a probe) passed all eleven compile phases clean.
 
     WHY THIS RATHER THAN TEMPLATED PROSE. The operator asked whether rule prose should mark its
-    identifiers in a jinja form — {{market_code}}, {{<dataset>.dim_country_register}}. It should not: `binds:`
+    identifiers in a jinja form — {{market_code}}, {{<dataset>.dim_market_register}}. It should not: `binds:`
     IS that declaration, sitting six lines above the sentence, and templating the prose would give one
     fact two homes that can disagree. What was missing was never the notation; it was anything checking
     that the two agree. Where a reference should genuinely be DEREFERENCED rather than marked, MAC

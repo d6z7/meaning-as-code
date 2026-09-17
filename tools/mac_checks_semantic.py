@@ -137,7 +137,7 @@ def check_fact_homes(b) -> list:
 
     SEVERITY. Restated-and-agreeing is a WARNING: nothing is wrong today and nothing keeps the copies
     in step. Restated-and-disagreeing is an ERROR: something downstream is already reading the wrong
-    one. That is not a theoretical ordering — it is the exact sequence `ideal_stock` went through.
+    one. That is not a theoretical ordering — it is the exact sequence a target-inventory measure went through.
 
     WOULD FALSELY FIRE ON: a subject whose two statements are not really the same subject. The family
     guards this at its source and was measured doing so — keying by (measure, AXIS) rather than
@@ -285,7 +285,7 @@ def check_dead_guards(b) -> list:
 
     TWO INDEPENDENT SUPPRESSIONS, both measured to kill the same 7 false positives on their own, kept
     together because they fail differently:
-      * TEMPLATE — the value carries or is followed by a placeholder opener (`kpi = dtc_<variant>`).
+      * TEMPLATE — the value carries or is followed by a placeholder opener (`kpi = sales_<variant>`).
         The rule wrote a pattern; it never pinned anything.
       * FAMILY   — the value is a proper prefix of a real domain member. It selects a family of rows,
         which is a legitimate thing for a rule to do and never a dead guard.
@@ -392,7 +392,7 @@ def check_confidence_earned(b) -> list:
       SME has ratified the meaning". An object asserting both is a generator certifying its own guess
       at the one level a reader trusts without checking.
 
-      That combination is not cosmetic; it cost a real number. `ideal_stock` claimed its measure was
+      That combination is not cosmetic; it cost a real number. A target-inventory measure claimed it was
       additive across markets and models. The framework law derives Target -> non_aggregable on the
       categorical axis and the bundle's own register agreed with the law. The claim survived review
       because it did not LOOK like a guess — it looked like a ratified fact — and an anchor duly

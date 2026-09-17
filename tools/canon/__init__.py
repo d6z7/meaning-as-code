@@ -100,7 +100,7 @@ def _collist(v, what: str) -> str:
     was never dereferenced by the caller, and the only safe act is to fail loudly.
 
     WHY THE LIST HANDLING. Interpolating the parameter raw is how this canon emitted
-    `PARTITION BY ['<source>_brand_country_code', '<source>_model_code', ...]` — a Python list repr, invalid SQL
+    `PARTITION BY ['<source>_scoped_market_code', '<source>_product_code', ...]` — a Python list repr, invalid SQL
     — from a binding whose YAML declared a perfectly ordinary list (<domain>/<dataset>, 2026-08-19, shipped and
     reverted the same day). The declared form was right; the canon corrupted it."""
     items = [v] if isinstance(v, str) else list(v or ())
@@ -123,7 +123,7 @@ def snapshot_collapse(table, *, natural_key, order_by, valid_from=None, valid_to
       * a real cell key is composite — <dataset>'s v_<source>_kpi is SEVEN columns, and a partition missing one
         of them (role) silently folds six reporting perspectives into one arbitrary row;
       * the vintage rarely breaks ties alone. <dataset>'s own protosql records `<source>_created_at
-        DESC is not optional` beside `config_reporting_month DESC`, and this canon could not express
+        DESC is not optional` beside `reporting_month DESC`, and this canon could not express
         it — which is one of the two reasons that fragment exists at all. mac.schema.json says a
         ProtoSqlFile "is usually a workaround for a canon that is missing or broken, and the better
         fix is upstream". This is that fix."""

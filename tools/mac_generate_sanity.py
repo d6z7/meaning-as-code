@@ -301,8 +301,8 @@ def _fingerprint(root: pathlib.Path, stem: str):
       is a rule that lets the pair through, and 12 duplicate checks with it.
 
       NOT LOOSER than this. One pair on this estate carries the SAME COLUMN NAMES and is not a
-      mirror at all: the two sides disagree on the row count, 523.235 against 651.544, because one
-      filters. Five of their checks render identical payloads over those different rows, so a rule
+      mirror at all: the two sides disagree on the row count, one carrying about a fifth fewer rows,
+      because one filters. Five of their checks render identical payloads over those different rows, so a rule
       that compared payloads alone would delete real coverage — the failure this rule exists to
       avoid, and the reason the row count is half the fingerprint.
     """

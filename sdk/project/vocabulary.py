@@ -109,7 +109,7 @@ VOCAB = [
             ("code", "A plain coded key."),
             (
                 "namespace_code",
-                "A code namespaced by another dimension (e.g. brand-scoped country code).",
+                "A code namespaced by another dimension (e.g. a region-scoped store code).",
             ),
             ("fk_name", "Identity via a foreign-key name."),
             (

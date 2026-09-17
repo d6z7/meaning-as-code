@@ -14,7 +14,7 @@ patterns, which is why two generators cover the whole current set.
                            never return a zero, never substitute the confusable measure.
                            NO SQL CAN TEST THAT. Covered by a CORPUS QUESTION.
 
-`ist_prod.exclusion.no_evidence` declares `confusable: [Prodant]`, and Bentley publishes neither. A
+`units_produced.exclusion.no_evidence` declares `confusable: [UnitsRequested]`, and one brand publishes neither. A
 property proves the rows are absent; only asking the engine proves it says "not reported" rather than
 handing back an empty result a reader takes for zero. That distinction is the whole reason the corpus
 exists, and it is why measuring coverage in properties alone would report a comfortable lie.
@@ -101,9 +101,9 @@ def refusal_question(concept, rule, p) -> dict:
         },
         "about": [concept],
         "exercises": [rule["id"]],
-        # NO RATIONALE IS WRITTEN HERE. The first version hardcoded one sentence — "Bentley
-        # publishes no IstProd and no Prodant" — into all five questions, where it was FALSE for
-        # three of them: every brand publishes a delivery measure and order_intake. A generated
+        # NO RATIONALE IS WRITTEN HERE. The first version hardcoded one sentence — "that brand
+        # publishes neither production measure" — into all five questions, where it was FALSE for
+        # three of them: every brand publishes a delivery measure and new orders. A generated
         # claim that is not generated FROM a measurement is exactly the defect this bundle spent
         # 2026-08-20 removing, and it took an hour to reintroduce. The rationale is filled by
         # measuring per rule; until then it says so.
