@@ -4,10 +4,18 @@
 WHAT THIS DRAWS, AND WHAT IT REFUSES TO READ
 --------------------------------------------
 Relations, columns, keys, references, cardinality and participation — the DATA plane's own picture,
-built from `data/references/*.yaml` (measured through the connector seam by
-`tools/mac_references.py`), `data/sources/*.yaml` (the columns) and `data/profiles/*.yaml` (the
-measured key). It reads NOTHING under `ontology/`. There is no fallback to `ontology/edges.yaml`
-and there must not be one.
+measured through the connector seam by `tools/mac_references.py` and projected here. It reads
+NOTHING under `ontology/`. There is no fallback to `ontology/edges.yaml` and there must not be one.
+
+ONE BUILDER, TWO PHYSICAL PLANES, selected by `build(root, plane=...)` — see PLANES below:
+  sources  `data/references/*.yaml` + `data/sources/*.yaml` + `data/profiles/*.yaml` — what was
+           LANDED, and the profile's MEASURED key.
+  served   `data/references_served/*.yaml` + `data/datasets/*.yaml` + `data/profiles/*.yaml` — what
+           the transforms LEFT, and the descriptor's DECLARED key roles (on a served relation the
+           role IS the promotion step's contract, which is why it is read rather than overlaid).
+Both are PHYSICAL and the served one is not "more semantic" for being downstream. Every rule in this
+file is shared between them: a second builder would be a second place for the crow's-foot mapping,
+the proof channel and the dangling treatment to drift.
 
 That fallback is the defect being removed. An ontology edge relates BUSINESS OBJECTS; a physical
 reference relates RELATIONS AND COLUMNS; they look alike and are not the same claim. One artifact
@@ -31,15 +39,16 @@ heading. An empty measured model is the correct answer to "what does the warehou
 authored lines is a different question's answer wearing this one's label.
 
 WHERE EACH RENDERED FACT COMES FROM, so nothing on the page is unattributable:
-  box               one per `data/references/<stem>.yaml` — the relations the measurer could READ.
-                    Not the descriptors it could not, and not the served datasets: this is the
-                    physical plane, and a relation the catalog does not have has no physical box.
-  column + type     `data/sources/<stem>.yaml#columns[]`, verbatim.
-  PK badge          `data/profiles/<stem>.yaml#identity_evidence.key` — the MEASURED key, read and
-                    never re-derived. The role is OVERLAID here rather than written back into the
-                    descriptor: the descriptor's own note calls `role: value` "the NEUTRAL physical
-                    role and not a ruling", and a source file should not claim a role that a
-                    measurement, not the catalog, established.
+  box               one per `<this plane's artifact dir>/<stem>.yaml` — the relations the measurer
+                    could READ. Not the descriptors it could not: a relation the catalog does not
+                    have has no physical box, on either plane.
+  column + type     `<this plane's descriptor dir>/<stem>.yaml#columns[]`, verbatim.
+  PK badge          SOURCES: `data/profiles/<stem>.yaml#identity_evidence.key` — the MEASURED key,
+                    read and never re-derived, and OVERLAID rather than written back into the
+                    descriptor (whose own note calls `role: value` "the NEUTRAL physical role and
+                    not a ruling"; a source file should not claim a role a measurement established).
+                    SERVED: the descriptor's declared `primary_key`/`composite_key_part`, read as
+                    written — there the role is the authored contract, not a neutral placeholder.
   FK badge          any column named on the `from` side of a measured reference. Same overlay.
   crow's foot       CARDINALITY + PARTICIPATION, measured. The terminal AT a box says how many rows
                     of THAT relation relate to one row of the other: `max` from the measured maximum
@@ -82,10 +91,42 @@ KEY_ROLES = ("primary_key", "composite_key_part", "foreign_key")
 PROVED, DISPROVED, UNPROVED, UNRESOLVED, DEFERRED = (
     "proved", "disproved", "unproved", "unresolved", "deferred")
 
-REFS_DIR = "data/references"
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# THE TWO PHYSICAL PLANES — ONE HOME, AND THIS IS IT.
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# A warehouse has two populations of relations, and they point at each other differently:
+#   sources   what was LANDED (`data/sources/*.yaml`) — the delivery's own structure, redundancy and
+#             all. This bundle's example: 8 relations, 17 of 28 measured references drawn.
+#   served    what the transforms LEFT (`data/datasets/*.yaml`) — the structure a question actually
+#             traverses. Sparser by construction, because dissolving redundancy is what a transform
+#             plane is for, and the CONTRAST between the two numbers is the most useful thing a
+#             reader gets from seeing both.
+# BOTH ARE PHYSICAL. Neither reads `ontology/edges.yaml`, and the served plane is not one step closer
+# to the ontology for being downstream: an ontology edge relates BUSINESS OBJECTS, and nothing here
+# has an opinion about a business object. A `concept:` key in either artifact is the conflation this
+# whole family exists to undo.
+#
+# WHY THE TABLE LIVES IN THE LIBRARY AND NOT IN THE DERIVER. `tools/mac_references.py` WRITES these
+# directories and `tools/check_physical_references.py` gates them, so the deriver looks like the
+# natural owner — but tools may import sdk and sdk may not import tools, and two copies of this
+# pairing is the two-homes-for-one-fact shape that has cost this estate a plane at a time (the first
+# drifting floor would be invisible in both copies). So it is declared HERE and both tools import it.
+PLANES = {
+    "sources": {"descriptors": "data/sources", "out": "data/references"},
+    "served": {"descriptors": "data/datasets", "out": "data/references_served"},
+}
+DEFAULT_PLANE = "sources"
+REFS_DIR = PLANES[DEFAULT_PLANE]["out"]
+
+
 #: The command that produces the artifact. Named in the empty state, because "this is missing" is
-#: half an answer and the other half is what to run.
-PRODUCER = "python3 meaning-as-code/tools/mac_references.py <bundle root>"
+#: half an answer and the other half is what to run — and the plane is part of the command, since
+#: running it without `--plane` measures the OTHER plane and leaves this diagram just as empty.
+def producer(plane: str = DEFAULT_PLANE) -> str:
+    return f"python3 meaning-as-code/tools/mac_references.py <bundle root> --plane {plane}"
+
+
+PRODUCER = producer(DEFAULT_PLANE)
 
 
 def _load(path: Path) -> dict:
@@ -119,7 +160,7 @@ def _card(max_word: str, participation: str) -> str | None:
     return pair[0] if participation == "mandatory" else pair[1]
 
 
-def _proof_of(e: dict) -> dict:
+def _proof_of(e: dict, refs_dir: str = REFS_DIR) -> dict:
     """A measured reference's own numbers, as the five-state proof channel the view already draws.
 
     It is PROVED because it was MEASURED — the `why` carries the denominator in words, so a reader
@@ -129,7 +170,7 @@ def _proof_of(e: dict) -> dict:
     ev = e.get("evidence") or {}
     nn, orph = ev.get("child_nonnull"), ev.get("orphan_rows")
     if nn is None or orph is None:
-        return {"state": UNPROVED, "ref": f"{REFS_DIR}/{e['from']['relation']}.yaml#{e.get('id')}",
+        return {"state": UNPROVED, "ref": f"{refs_dir}/{e['from']['relation']}.yaml#{e.get('id')}",
                 "why": "the measurement carries no child_nonnull/orphan_rows denominator",
                 "members": 1, "members_proved": 0}
     why = (f"{nn - orph:,} of {nn:,} row(s) matched, {orph:,} orphan row(s) over "
@@ -141,27 +182,45 @@ def _proof_of(e: dict) -> dict:
     if e.get("ambiguous_with"):
         why += (f"; AMBIGUOUS — {', '.join(e['ambiguous_with'])} measure(s) identically and value "
                 f"inclusion cannot separate them. Neither is chosen; this needs a ruling")
-    return {"state": PROVED, "ref": f"{REFS_DIR}/{e['from']['relation']}.yaml#{e.get('id')}",
+    return {"state": PROVED, "ref": f"{refs_dir}/{e['from']['relation']}.yaml#{e.get('id')}",
             "why": why, "members": 1, "members_proved": 1,
             "numbers": {k: v for k, v in ev.items() if isinstance(v, (int, float))}}
 
 
-def _entities(root: Path, refs: dict, fk_columns: dict) -> list:
-    """One box per MEASURED relation, with the descriptor's columns and the profile's key."""
+def _entities(root: Path, refs: dict, fk_columns: dict, plane: str = DEFAULT_PLANE) -> list:
+    """One box per MEASURED relation, with the descriptor's columns and this plane's key.
+
+    WHERE THE KEY COMES FROM IS PLANE-SPECIFIC, and it is the one thing that differs:
+      sources   `data/profiles/<stem>.yaml#identity_evidence.key` — the MEASURED key. A source
+                descriptor's own note calls `role: value` "the NEUTRAL physical role and not a
+                ruling", so a role there is not evidence of identity and is not read as one.
+      served    the descriptor's DECLARED `primary_key` / `composite_key_part` roles. On a served
+                relation the role IS the authored contract — it is what the promotion step decided —
+                so it is read as written rather than overlaid from a profile that carries no
+                identity_evidence for this plane at all.
+    """
+    ddir = PLANES[plane]["descriptors"]
+    declared_plane = plane != DEFAULT_PLANE
     out = []
     for stem in sorted(refs):
-        src = _load(root / "data" / "sources" / f"{stem}.yaml")
+        src = _load(root / ddir / f"{stem}.yaml")
         prof = _load(root / "data" / "profiles" / f"{stem}.yaml")
-        key = list(((prof.get("identity_evidence") or {}).get("key")) or [])
+        if declared_plane:
+            key = [c["name"] for c in (src.get("columns") or [])
+                   if c.get("name") and c.get("role") in ("primary_key", "composite_key_part")]
+        else:
+            key = list(((prof.get("identity_evidence") or {}).get("key")) or [])
         keyset = set(key)
         fks = fk_columns.get(stem, set())
         cols = []
         for c in src.get("columns") or []:
             name = c.get("name")
-            # THE ROLE IS OVERLAID, NOT WRITTEN BACK. See the module header: the descriptor's own
-            # note calls `role: value` the neutral physical role and not a ruling, and the key was
-            # established by a MEASUREMENT rather than by the catalog. Writing it into the file
-            # would also move the data-plane approval digest for a fact no engine can observe.
+            # THE ROLE IS OVERLAID, NOT WRITTEN BACK. See the module header: on the sources plane the
+            # key was established by a MEASUREMENT rather than by the catalog, and writing it into
+            # the file would also move the data-plane approval digest for a fact no engine can
+            # observe. On the served plane the first branch is a no-op — the role it computes is the
+            # role the descriptor already declares — which is what makes the two planes render
+            # identically without the projector needing two code paths.
             if name in keyset:
                 role = "primary_key" if len(key) == 1 else "composite_key_part"
             elif name in fks:
@@ -212,10 +271,13 @@ def _components(entities: list, rels: list) -> list[list[str]]:
     return sorted((sorted(g) for g in groups.values()), key=lambda g: (-len(g), g[0]))
 
 
-def _unavailable(root, reason: str) -> dict:
+def _unavailable(root, reason: str, plane: str = DEFAULT_PLANE) -> dict:
     """The honest empty state. An empty model that SAYS WHY, never the other plane's data."""
     return {
         "plane": "physical",
+        "physical_plane": plane,
+        "artifact_directory": PLANES[plane]["out"],
+        "descriptor_plane": PLANES[plane]["descriptors"],
         "entities": [], "relationships": [], "unrealised_edges": [], "components": [],
         "counts": {"entities": 0, "relationships": 0, "physical": 0, "business": 0,
                    "concept_edges": 0, "concept_edges_total": 0, "with_cardinality": 0,
@@ -226,7 +288,7 @@ def _unavailable(root, reason: str) -> dict:
         "duplicate_ids": [],
         "unavailable": {
             "reason": reason,
-            "how": PRODUCER,
+            "how": producer(plane),
             "note": ("This diagram is the PHYSICAL plane and is measured from the warehouse through "
                      "the connector seam. It does not fall back to ontology/edges.yaml: an ontology "
                      "edge relates business objects, not relations and columns, and drawing one "
@@ -236,26 +298,35 @@ def _unavailable(root, reason: str) -> dict:
     }
 
 
-def build(root=None, **_legacy) -> dict:
-    """The measured physical ER model for a bundle root, or an explicitly-empty one with a reason.
+def build(root=None, plane: str = DEFAULT_PLANE, **_legacy) -> dict:
+    """The measured physical ER model for ONE plane of a bundle, or an explicitly-empty one + reason.
+
+    `plane` selects WHICH physical population is drawn — see PLANES at the top of this file. One
+    builder serves both deliberately: every rule below (the crow's-foot mapping, the proof channel,
+    the dangling treatment, the components, the accounting error) is plane-independent, and a second
+    builder would be a second place for each of them to drift.
 
     `**_legacy` swallows the old ontology-era positional arguments if any caller still passes them:
     they are NOT read, and a caller that supplies `ont_edges` gets a physical model built without it
     rather than a silent ontology diagram.
     """
+    if plane not in PLANES:
+        return _unavailable(root, f"unknown physical plane {plane!r}; this projector draws "
+                                  f"{sorted(PLANES)}", DEFAULT_PLANE)
+    refs_dir, ddir = PLANES[plane]["out"], PLANES[plane]["descriptors"]
     if not root:
         return _unavailable(root, "no bundle root was supplied to the projector, so the measured "
-                                  "reference artifact could not be located")
+                                  "reference artifact could not be located", plane)
     root = Path(root)
-    files = sorted(glob.glob(str(root / REFS_DIR / "*.yaml")))
+    files = sorted(glob.glob(str(root / refs_dir / "*.yaml")))
     if not files:
-        n_src = len(glob.glob(str(root / "data" / "sources" / "*.yaml")))
+        n_src = len(glob.glob(str(root / ddir / "*.yaml")))
         return _unavailable(
             root,
-            f"this bundle carries NO measured reference artifact: {REFS_DIR}/ holds no file, over "
-            f"{n_src} declared source relation(s). Nothing has measured how its relations point at "
-            f"each other, so this diagram has nothing to draw and will not borrow another plane's "
-            f"relationships to fill the page")
+            f"this bundle carries NO measured reference artifact for the {plane} plane: "
+            f"{refs_dir}/ holds no file, over {n_src} declared relation(s) in {ddir}/. Nothing has "
+            f"measured how those relations point at each other, so this diagram has nothing to draw "
+            f"and will not borrow another plane's relationships to fill the page", plane)
 
     refs, entries, dangling = {}, [], []
     for fp in files:
@@ -268,7 +339,7 @@ def build(root=None, **_legacy) -> dict:
     fk_columns: dict[str, set] = {}
     for e in entries:
         fk_columns.setdefault(e["from"]["relation"], set()).add(e["from"]["column"])
-    entities = _entities(root, refs, fk_columns)
+    entities = _entities(root, refs, fk_columns, plane)
     by_id = {e["id"] for e in entities}
 
     rels, unknown = [], set()
@@ -311,7 +382,7 @@ def build(root=None, **_legacy) -> dict:
             "ambiguous_with": e.get("ambiguous_with") or [],
             "needs_ruling": e.get("needs_ruling"),
             "participation": part,
-            "proof": _proof_of(e),
+            "proof": _proof_of(e, refs_dir),
             "confidence": "C",
             "realized_by": [],
         })
@@ -342,7 +413,7 @@ def build(root=None, **_legacy) -> dict:
             # INFERENCE about the missing parent — weaker than a reference that could be measured
             # against one, because there is no parent to measure against. It must not draw as proved.
             "proof": {"state": UNPROVED if d.get("verdict") == "dangling" else UNRESOLVED,
-                      "ref": f"{REFS_DIR}/{frm.get('relation')}.yaml#{d.get('id')}",
+                      "ref": f"{refs_dir}/{frm.get('relation')}.yaml#{d.get('id')}",
                       "why": (d.get("basis_detail") or d.get("note") or ""),
                       "members": 1, "members_proved": 0},
         })
@@ -351,7 +422,13 @@ def build(root=None, **_legacy) -> dict:
     ids = [r["id"] for r in rels]
     return {
         # THE DISCRIMINATOR. One field, read by the three places the view still has to choose a word.
+        # It says PHYSICAL-vs-ontology and nothing else; WHICH physical plane is `physical_plane`
+        # below. Collapsing the two into one field is how a client that only wanted to know "may I
+        # say the word concept here" ends up branching on a plane it has no opinion about.
         "plane": "physical",
+        "physical_plane": plane,
+        "artifact_directory": refs_dir,
+        "descriptor_plane": ddir,
         "entities": entities,
         "relationships": rels,
         # Named rather than skipped: a reference this diagram cannot draw is a fact about the

@@ -1100,7 +1100,17 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
     # because the bundles with an ontology keep their lines. A bundle with no measured artifact gets
     # an explicitly-empty model carrying the reason and the command that would produce one.
     # The ontology's own relationship diagram is a DIFFERENT view with a different nav entry.
-    result["er_model"] = er_model.build(root=Path(data_dir).parent)
+    #
+    # TWO PLANES, TWO PAYLOADS, ONE BUILDER. The warehouse has two populations of relations and they
+    # point at each other differently: what was LANDED (data/sources) and what the transforms LEFT
+    # (data/datasets). Both are physical. `er_model` is the landed one and `er_model_served` the
+    # served one, and the SERVED KEY IS ALWAYS PRESENT even when nothing has measured that plane —
+    # it then carries `unavailable` with the reason and the exact command, which is the honest empty
+    # state. Omitting the key on an unmeasured plane would make "never measured" and "this build is
+    # too old to know about the served plane" indistinguishable to the client, and a client that
+    # cannot tell those apart renders absence as completeness.
+    result["er_model"] = er_model.build(root=Path(data_dir).parent, plane="sources")
+    result["er_model_served"] = er_model.build(root=Path(data_dir).parent, plane="served")
     if out_dir:
         (Path(out_dir) / "objects.json").write_text(json.dumps(result, indent=2, sort_keys=True))
         (Path(out_dir) / "lineage_graph.json").write_text(

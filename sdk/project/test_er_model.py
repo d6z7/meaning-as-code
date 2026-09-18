@@ -130,9 +130,113 @@ def test_a_bundle_with_no_measured_artifact_draws_NOTHING(tmp_path):
 def test_the_empty_state_NAMES_what_is_missing_and_how_to_produce_it(tmp_path):
     m = E.build(root=_bundle(tmp_path))
     u = m["unavailable"]
-    assert "data/references" in u["reason"] and "2 declared source relation(s)" in u["reason"]
-    assert "mac_references.py" in u["how"]
+    # THE DENOMINATOR IS THE POINT: "no artifact" is half an answer; "no artifact over 2 declared
+    # relations" is the fact, and the directory name is what tells a reader WHICH plane is empty.
+    assert "data/references/ holds no file" in u["reason"]
+    assert "2 declared relation(s) in data/sources/" in u["reason"]
+    assert "mac_references.py" in u["how"] and "--plane sources" in u["how"]
     assert "ontology/edges.yaml" in u["note"]
+
+
+# --- THE TWO PHYSICAL PLANES -------------------------------------------------------------------
+# One builder draws both. Each test below is a way the second plane could quietly become the first
+# one wearing a different label, which is the failure that would make the pair of tabs a lie.
+
+
+def _served_bundle(root, *, references=None, measured=True):
+    """A bundle whose SERVED plane is authored: data/datasets + data/references_served."""
+    _bundle(root)                                        # the sources plane, unmeasured
+    (root / "data" / "datasets").mkdir(parents=True, exist_ok=True)
+    cols = {"v_fact": [("FactKey", "primary_key"), ("DimKey", "foreign_key"), ("Amount", "value")],
+            "v_dim": [("DimKey", "primary_key"), ("Label", "discriminator")]}
+    for stem, cs in cols.items():
+        (root / "data" / "datasets" / f"{stem}.yaml").write_text(yaml.safe_dump(
+            {"of": stem, "table": {"name": stem, "schema": "own_schema"},
+             "columns": [{"name": c, "type": "bigint", "role": r} for c, r in cs]}))
+    if not measured:
+        return root
+    (root / "data" / "references_served").mkdir(parents=True, exist_ok=True)
+    refs = references if references is not None else [{
+        "id": "v_fact.DimKey__v_dim.DimKey",
+        "from": {"relation": "v_fact", "column": "DimKey"},
+        "to": {"relation": "v_dim", "column": "DimKey"},
+        "parent_key_role": "identity", "verdict": "real", "drawn": True,
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "mandatory",
+                          "parent_unreferenced": 0},
+        "evidence": {"child_nonnull": 9, "orphan_rows": 0, "orphan_distinct": 0,
+                     "parent_distinct": 3},
+        "name_match": True,
+    }]
+    by_child = {stem: {"of": stem, "relation": f"own_schema.{stem}",
+                       "admission": {"inclusion_required": 1.0},
+                       "references": [], "references_dangling": [], "candidates_rejected": []}
+                for stem in cols}
+    for r in refs:
+        by_child[r["from"]["relation"]]["references"].append(r)
+    for stem, doc in by_child.items():
+        (root / "data" / "references_served" / f"{stem}.yaml").write_text(yaml.safe_dump(doc))
+    return root
+
+
+def test_the_served_plane_draws_its_own_population_not_the_sources_one(tmp_path):
+    m = E.build(root=_served_bundle(tmp_path), plane="served")
+    assert [e["id"] for e in m["entities"]] == ["v_dim", "v_fact"]
+    assert "alpha" not in str([e["id"] for e in m["entities"]])
+    assert m["counts"]["relationships"] == 1 and m["counts"]["proved"] == 1
+    assert m["physical_plane"] == "served"
+    assert m["artifact_directory"] == "data/references_served"
+    assert m["descriptor_plane"] == "data/datasets"
+
+
+def test_both_planes_still_say_plane_physical(tmp_path):
+    # NEGATIVE CONTROL. `plane` is the PHYSICAL-vs-ontology discriminator the client branches on to
+    # decide whether it may say the word "concept". Neither physical plane may change it — a client
+    # that saw "served" there would fall through to the ontology wording.
+    root = _served_bundle(tmp_path)
+    assert E.build(root=root, plane="sources")["plane"] == "physical"
+    assert E.build(root=root, plane="served")["plane"] == "physical"
+    assert E.build(root=root, plane="served")["counts"]["concept_edges_total"] == 0
+
+
+def test_the_served_plane_takes_its_key_from_the_DECLARED_role(tmp_path):
+    # MUTANT-shaped: the served bundle has NO identity_evidence for its datasets at all (the profile
+    # plane carries none for them). A projector reading the profile would badge no primary key and
+    # the diagram would lose the one thing a key badge is for.
+    m = E.build(root=_served_bundle(tmp_path), plane="served")
+    dim = next(e for e in m["entities"] if e["id"] == "v_dim")
+    fact = next(e for e in m["entities"] if e["id"] == "v_fact")
+    assert dim["keys"] == ["DimKey"]
+    assert [c["role"] for c in dim["columns"]] == ["primary_key", "discriminator"]
+    assert [c["role"] for c in fact["columns"]] == ["primary_key", "foreign_key", "value"]
+
+
+def test_an_unmeasured_served_plane_is_EMPTY_WITH_A_REASON_not_the_sources_lines(tmp_path):
+    # THE DEFECT THIS FORBIDS: falling back to the other physical plane is exactly as wrong as
+    # falling back to the ontology, and far easier to do by accident because both are "physical".
+    root = _served_bundle(tmp_path, measured=False)
+    _bundle(root, references=[])                          # give SOURCES a measured artifact
+    m = E.build(root=root, plane="served")
+    assert m["entities"] == [] and m["relationships"] == []
+    assert "data/references_served/ holds no file" in m["unavailable"]["reason"]
+    assert "2 declared relation(s) in data/datasets/" in m["unavailable"]["reason"]
+    assert "--plane served" in m["unavailable"]["how"]
+    assert m["physical_plane"] == "served"
+
+
+def test_an_unknown_plane_refuses_rather_than_defaulting(tmp_path):
+    m = E.build(root=_served_bundle(tmp_path), plane="ontology")
+    assert m["entities"] == [] and "unknown physical plane" in m["unavailable"]["reason"]
+
+
+def test_the_plane_table_pairs_each_descriptor_dir_with_its_own_artifact_dir():
+    # NEGATIVE CONTROL for the ONE HOME rule: two planes must not share a directory on either side,
+    # or one plane's measurement would overwrite the other's and the pair of tabs would show the
+    # same picture twice.
+    outs = [v["out"] for v in E.PLANES.values()]
+    descs = [v["descriptors"] for v in E.PLANES.values()]
+    assert len(set(outs)) == len(outs) and len(set(descs)) == len(descs)
+    assert E.REFS_DIR == E.PLANES[E.DEFAULT_PLANE]["out"]
 
 
 def test_an_ontology_present_does_NOT_become_the_physical_diagram(tmp_path):

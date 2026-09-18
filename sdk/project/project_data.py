@@ -30,6 +30,27 @@ _COV_CHIP = {"resolved": "✓ resolved", "partial": "◐ partial", "gap": "⚠ o
 _COV_ORDER = {"gap": 0, "partial": 1, "resolved": 2}
 
 
+def _disposition(iss: dict) -> str:
+    """The HUMAN's ruling as one phrase, for the projected markdown.
+
+    A SECOND AXIS FROM `resolution`, which is a transform's claim out of the resolution map. The
+    same entry can read `✓ resolved` there and `accepted · operator` here, and a reader shown only
+    the first is shown a machine's opinion where a person's ruling exists.
+
+    ABSENCE IS NAMED, NOT BLANK. `mac.dq_status` is closed precisely so that a missing status is a
+    finding rather than a fourth meaning, and a blank cell reads as "nothing to say" instead.
+    """
+    status = str(iss.get("status") or "").strip()
+    if not status:
+        return "no status recorded"
+    # `open` IS THE VOCABULARY'S OWN WORD for "recorded and undispositioned", and it requires no
+    # ruler — so it must not read as a ruling that forgot to name one.
+    if status == "open":
+        return "open — nobody has ruled"
+    who = str(iss.get("ruled_by") or "").strip()
+    return f"{status} · ruled by {who}" if who else f"{status} · no ruler named"
+
+
 def _fm(d: dict) -> str:
     return "---\n" + yaml.safe_dump(d, sort_keys=False, allow_unicode=True) + "---\n"
 
@@ -217,9 +238,17 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "description": str(iss.get("finding", ""))[:200],
             "tags": tags,
         }
+        # THE RULING, ON THE HEADER LINE, beside severity/confidence/resolution. It used to be
+        # absent from every projected surface, so the page for an entry a named person had
+        # accepted read exactly like the page for one nobody had opened.
+        _status = str(iss.get("status") or "").strip()
+        _ruler = str(iss.get("ruled_by") or "").strip()
+        _reason = str(iss.get("reason") or "").strip()
+        _disp_term = f" · disposition **{_disposition(iss)}**"
         body = [
             f"`{iss.get('id', '')}` · severity **{sev}** · confidence **{conf}**"
-            + (f" · resolution **{_COV_CHIP.get(cov, cov)}**" if cov else ""),
+            + (f" · resolution **{_COV_CHIP.get(cov, cov)}**" if cov else "")
+            + _disp_term,
             "",
             "## Finding",
             str(iss.get("finding", "—")),
@@ -233,6 +262,18 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "## Sign-off required",
             str(iss.get("sme_owner", "—")),
         ]
+        # THE RULING ITSELF, where a reader can see it beside the question that asked for it. Only
+        # when one exists: an invented "Disposition: none" heading would make an absence look like
+        # a section somebody filled in.
+        if _status:
+            body += [
+                "",
+                "## Disposition",
+                "",
+                f"**{_status}** — ruled by **{_ruler or 'nobody named'}**.",
+                "",
+                _reason or "_No reason recorded. `accepted` and `wont_fix` both require one._",
+            ]
         # resolution — the gold transform (if any) that dissolves this impurity
         if res:
             body += [
@@ -479,9 +520,21 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     ndocs = 0
     # ---- Issues & inconsistencies — ONE overview page aggregating everything found ----
     sev = {"high": 0, "medium": 0, "low": 0}
+    # THE DISPOSITION TALLY, beside the severity one and counted the same way: DECLARED values
+    # only, with the absence counted separately rather than folded into a fourth meaning.
+    # `mac_vocabulary.yaml#dq_status` is closed and says why — `open` means somebody WROTE `open`,
+    # so a missing status is a FINDING, not a synonym for it. On a legacy register measured at
+    # 45 of 45 with no status key, defaulting would have fabricated 45 human rulings.
+    by_status: dict = {}
+    status_absent = 0
     for iss in issues:
         if iss.get("severity") in sev:
             sev[iss["severity"]] += 1
+        stv = str(iss.get("status") or "").strip()
+        if stv:
+            by_status[stv] = by_status.get(stv, 0) + 1
+        else:
+            status_absent += 1
     unrec = len(issues) - covc["resolved"] - covc["partial"] - covc["gap"]
     ov = [
         f"Everything the harvest + reconciliation found for this source: "
@@ -493,8 +546,11 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         "",
         "## All findings",
         "",
-        "| severity | finding | table | impurity | resolution |",
-        "|---|---|---|---|---|",
+        # `resolution` is what a TRANSFORM claims; `disposition` is what a PERSON ruled. Both
+        # columns, never merged: the two entries an operator had ruled on used to print
+        # "✓ resolved" and "not yet reconciled", and neither said who had accepted them.
+        "| severity | finding | table | impurity | resolution | disposition |",
+        "|---|---|---|---|---|---|",
     ]
     for iss in sorted(
         issues,
@@ -511,7 +567,7 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         ov.append(
             f"| {iss.get('severity', '?')} | [{title}]({iss['_id']}.md) "
             f"| {iss.get('_table') or '—'} | {r.get('impurity_class') or iss.get('impurity_class', '')} "
-            f"| {chip} {rts} |"
+            f"| {chip} {rts} | {_disposition(iss)} |"
         )
     opens = sorted(
         [(fid, r) for fid, r in resmap.items() if r.get("coverage") in ("gap", "partial")],
@@ -812,6 +868,11 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "gap": covc["gap"],
             "unreconciled": unrec,
             "by_severity": sev,
+            # DECLARED dispositions only, e.g. {"accepted": 2, "open": 4}, so a consumer can draw
+            # the "ruled" step against a real denominator instead of a hard-coded zero. A plain
+            # dict, for a diff-stable artifact.
+            "by_status": by_status,
+            "status_absent": status_absent,
         },
         "findings": [],
     }
@@ -829,6 +890,27 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
                 "title": iss.get("title", ""),
                 "severity": iss.get("severity"),
                 "confidence": iss.get("confidence"),
+                # THE DISPOSITION — what a HUMAN decided, a different axis from `coverage` below
+                # (what a TRANSFORM claims). The two diverge on live data: an entry can carry
+                # coverage `resolved` — a transform's claim, from the agent-writable resolution
+                # map — while its status is `accepted`, a person's ruling. Drawing them as one
+                # chip states a machine's claim as a human's.
+                #
+                # CARRIED RAW, NEVER DEFAULTED. `mac.dq_status` is a closed set in which `open`
+                # means somebody WROTE `open`, so a missing status must arrive as null: coercing
+                # it would fabricate a ruling. `ruled_by` and `reason` are the two fields
+                # `accepted` and `wont_fix` REQUIRE, and they are the difference between an issue
+                # a named human examined and tolerated and one nobody has read. `ruled_by` passes
+                # through VERBATIM — it is a role in the register and this payload is committed to
+                # a repo with a remote, so the projector must not resolve it to a display name.
+                #
+                # NOT computed here: any notion of "ruled", "covered" or "terminal". That needs
+                # mac_vocabulary.yaml#dq_status, whose two readers (check_dq_resolution_sync.py,
+                # check_data_plane_approved.py) hold an NS-/DQ- asymmetry a third implementation
+                # would disagree with. The verdict reaches a page from the gate, not from here.
+                "status": iss.get("status"),
+                "ruled_by": iss.get("ruled_by"),
+                "reason": iss.get("reason"),
                 "table": iss.get("_table"),
                 # HOW `table` WAS ARRIVED AT. True means no human declared it and the projector
                 # matched the issue's prose against column names to pick one. A consumer that

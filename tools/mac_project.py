@@ -13,6 +13,8 @@ roots instead of hardcoding `concepts/` / `tables/`:
     L.descriptors  # dir holding TableFile descriptors                (flat: root/tables; two-plane: root/data/datasets)
     L.transforms   # dir holding TransformFile descriptors            (None unless declared: two-plane data/transforms)
     L.sources      # dir holding raw-input TableFile descriptors      (None unless declared: two-plane data/sources)
+    L.references         # dir holding the SOURCES plane's measured ReferenceFiles  (data/references)
+    L.references_served  # dir holding the SERVED plane's measured ReferenceFiles   (data/references_served)
     L.planes       # {} when flat; {"data": "...", "ontology": "..."} when two-plane
 
 The model already binds a concept to its descriptor by RELATION NAME, not by path, so nothing in the YAML
@@ -53,16 +55,26 @@ def resolve(root):
         # editing its manifest. It is the DATA plane's own relationship family and has nothing to do
         # with the ontology's: the ontology relates business objects, this relates relations.
         refs = (root / (m.get("references") or "data/references")).resolve()
+        # THE SECOND PHYSICAL PLANE'S reference family. `references` above measures how the LANDED
+        # relations point at each other; this measures the SERVED ones. Two directories because they
+        # are two populations measured against two descriptor planes, and one directory would mean
+        # one plane's measurement overwriting the other's. Defaulted on the same precedent as its
+        # three siblings: a bundle gains it without editing its manifest. The pairing
+        # (descriptor plane <-> artifact directory) is declared in sdk/project/er_model.py#PLANES,
+        # which the measurer and the gate both read; these two keys are where a bundle may MOVE
+        # either directory, exactly as it may move data/references.
+        refs_served = (root / (m.get("references_served") or "data/references_served")).resolve()
         return SimpleNamespace(root=root, ontology=onto.resolve(), descriptors=desc.resolve(),
                                transforms=tfm, sources=srcs, profiles=profs, samples=samps,
-                               references=refs, planes=planes, two_plane=bool(planes))
+                               references=refs, references_served=refs_served,
+                               planes=planes, two_plane=bool(planes))
     # THE FLAT BRANCH MUST CARRY THE ATTRIBUTE TOO, even as None. It returns `sources=None` and
     # `profiles=None`, so a consumer that only read the manifest branch AttributeErrors here and
     # then TypeErrors globbing a None plane — and every fixture in every gate's self-test carries a
     # manifest, so nothing would ever have caught it.
     return SimpleNamespace(root=root.resolve(), ontology=root.resolve(), descriptors=(root / "tables").resolve(),
                            transforms=None, sources=None, profiles=None, samples=None,
-                           references=None, planes={}, two_plane=False)
+                           references=None, references_served=None, planes={}, two_plane=False)
 
 
 def field_meaning(concept_doc):

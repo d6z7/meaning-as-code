@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """mac_references.py — MEASURE a bundle's PHYSICAL referential structure, through the connector.
 
-    python3 tools/mac_references.py <root> [--dry-run] [--verify] [--json] [--self-test]
+    python3 tools/mac_references.py <root> [--plane sources|served]
+                                    [--dry-run] [--verify] [--json] [--self-test]
 
 WHAT THIS FILE IS ABOUT, AND THE WORD IT REFUSES TO USE
 -------------------------------------------------------
@@ -112,8 +113,56 @@ NAME = "mac_references"
 CONTRACT = "mac.references/1"
 TOOL = "mac_references.py/1"
 SCHEMA_VERSION = "0.1.14-develop"
-OUT_DIR = "data/references"
 RUN_RECORD = "references.run.json"
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# THE TWO PHYSICAL PLANES — and why one tool measures both rather than two tools measuring one each.
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# A warehouse has TWO populations of relations and they point at each other differently. The LANDED
+# relations (`data/sources/*.yaml`) carry the delivery's own referential structure, redundancy and
+# all. The SERVED relations (`data/datasets/*.yaml`) carry what the transforms left, which is the
+# structure a question actually traverses. Both are PHYSICAL: relations, columns, keys, references,
+# cardinality, participation. NEITHER reads `ontology/edges.yaml`, and the served plane is not one
+# step closer to the ontology for being downstream — an ontology edge relates BUSINESS OBJECTS, and
+# nothing here has an opinion about a business object.
+#
+# WHY NOT A SECOND TOOL. Every verdict in this file — the type-class prune, the inclusion floor, the
+# DOMAIN EXERCISE second test, the direction resolution, the ambiguity refusal, the dangling
+# self-calibration — is plane-independent arithmetic, and the estate's measured failure mode is one
+# fact with two homes. A `mac_references_served.py` would be that, and the first floor to drift
+# between the two copies would be invisible in both.
+#
+# THE ONE THING THAT GENUINELY DIFFERS IS WHERE THE PARENT KEY COMES FROM, and it differs because
+# the two descriptor planes mean different things by `role`:
+#   sources   the profile's MEASURED key (`identity_evidence.key`). A source descriptor's own note
+#             calls `role: value` "the NEUTRAL physical role and not a ruling", so a role there is
+#             not evidence of identity and this tool will not read one.
+#   served    the descriptor's DECLARED key roles (`primary_key` / `composite_key_part`). On a served
+#             relation the role IS the authored contract — it is what the promotion step decided and
+#             what `sdk/project/er_model.py#KEY_ROLES` already reads — so reading it here is reading
+#             the plane's own statement of identity, not inferring one. It is a DECLARATION and the
+#             artifact says so in `key_source`, so a reader never has to guess which it was.
+# Everything a VERDICT turns on is still measured against the warehouse either way: the parent key
+# only decides which pairs are CANDIDATES.
+#
+# THE PAIRING ITSELF IS NOT DECLARED HERE. `sdk/project/er_model.py#PLANES` owns which descriptor
+# plane goes with which artifact directory, because the PROJECTOR and this DERIVER must never
+# disagree about it and sdk may not import tools. This table adds only the two things the deriver
+# owns and the projector has no use for: the refusal's unit noun, and where the parent key comes
+# from. A second copy of `descriptors`/`out` here is exactly the drift both files warn about.
+from sdk.project.er_model import DEFAULT_PLANE, PLANES as _PLANE_DIRS          # noqa: E402
+
+_PLANE_EXTRA = {
+    "sources": {"unit": "source descriptor", "key_from": "profile"},
+    "served": {"unit": "served dataset descriptor", "key_from": "descriptor_role"},
+}
+PLANES = {pl: {**dirs, **_PLANE_EXTRA[pl]} for pl, dirs in _PLANE_DIRS.items()}
+
+#: The three `role` values that declare identity on a SERVED descriptor. `foreign_key` is
+#: deliberately NOT here: a declared foreign key is a CLAIM about a target, and this tool measures
+#: those rather than believing them — admitting it as a parent endpoint would let an author's
+#: assumption enter the candidate set as evidence.
+DECLARED_KEY_ROLES = ("primary_key", "composite_key_part")
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -556,38 +605,64 @@ def _load(path: Path) -> dict:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
 
 
-def read_plane(root: Path):
-    """(sources, profiles, findings). The population is the SOURCE descriptors — what was landed.
+def read_plane(root: Path, plane: str = DEFAULT_PLANE):
+    """(relations, profiles, findings). The population is `PLANES[plane]["descriptors"]`.
 
-    A source descriptor names the relation and its namespace; the profile beside it carries the
-    measured key and the per-column census. A relation with one and not the other is a FINDING, not
-    something to fill in: half a measurement is how a plane comes to disagree with itself.
+    A descriptor names the relation and its namespace; the profile beside it carries the per-column
+    census, and — on the SOURCES plane — the measured key. A relation with one and not the other is a
+    FINDING, not something to fill in: half a measurement is how a plane comes to disagree with
+    itself.
+
+    THE PROFILE DIRECTORY IS SHARED BY BOTH PLANES and that is not a collision: profiles are keyed by
+    DESCRIPTOR STEM, a served stem is a name the promotion step coined (`check_served_name_distinct`
+    gates exactly that), and `mac_profile.py` already accepts a stem "under data/datasets or
+    data/sources" and writes both to `data/profiles/`. One census plane, two descriptor planes.
+
+    ON THE SERVED PLANE THE KEY COMES FROM THE DESCRIPTOR, not the profile — see PLANES above for
+    why the two descriptor planes mean different things by `role`. It is read from the roles the
+    promotion step declared and it is carried as a declaration; nothing here re-derives a key and
+    nothing here promotes a declaration to a measurement.
     """
-    sources, profiles, findings = {}, {}, []
-    for p in sorted(glob.glob(str(root / "data" / "sources" / "*.yaml"))):
+    spec = PLANES[plane]
+    ddir = spec["descriptors"]
+    relations, profiles, findings = {}, {}, []
+    declared_keys = {}
+    for p in sorted(glob.glob(str(root / ddir / "*.yaml"))):
         doc = _load(Path(p))
         stem = doc.get("of") or Path(p).stem
         tbl = doc.get("table") or {}
         if not tbl.get("name"):
             findings.append({"relation": stem, "exit": 1,
-                             "detail": f"data/sources/{Path(p).name} declares no table.name, so "
+                             "detail": f"{ddir}/{Path(p).name} declares no table.name, so "
                                        f"there is no relation to measure"})
             continue
-        sources[stem] = {"name": tbl.get("name"), "schema": tbl.get("schema"),
-                         "file": f"data/sources/{Path(p).name}"}
+        relations[stem] = {"name": tbl.get("name"), "schema": tbl.get("schema"),
+                           "file": f"{ddir}/{Path(p).name}"}
+        if spec["key_from"] == "descriptor_role":
+            declared_keys[stem] = [c["name"] for c in (doc.get("columns") or [])
+                                   if c.get("name") and c.get("role") in DECLARED_KEY_ROLES]
     for p in sorted(glob.glob(str(root / "data" / "profiles" / "*.yaml"))):
         doc = _load(Path(p))
         stem = doc.get("of") or Path(p).stem
         profiles[stem] = {
             "rows": (doc.get("profile") or {}).get("rows"),
             "cols": {c["name"]: c for c in (doc.get("columns") or []) if c.get("name")},
-            "key": list(((doc.get("identity_evidence") or {}).get("key")) or []),
+            "key": (declared_keys.get(stem, []) if spec["key_from"] == "descriptor_role"
+                    else list(((doc.get("identity_evidence") or {}).get("key")) or [])),
             "file": f"data/profiles/{Path(p).name}",
         }
-    return sources, profiles, findings
+    return relations, profiles, findings
 
 
-def read_catalog(conn, sources, profiles):
+def key_source(plane: str, stem: str, profiles: dict) -> str:
+    """Where THIS plane's parent key came from, as the artifact records it. One home for the string."""
+    if PLANES[plane]["key_from"] == "descriptor_role":
+        return (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role in "
+                f"{list(DECLARED_KEY_ROLES)} — DECLARED by the promotion step, not re-derived here")
+    return f"{profiles[stem]['file']}#identity_evidence.key"
+
+
+def read_catalog(conn, sources, profiles, plane: str = DEFAULT_PLANE):
     """(catalog, namespaces, findings). Types come from the ENGINE, never from a descriptor.
 
     The descriptor's `type` is a declaration; `describe_relation` is a measurement, and the two
@@ -619,10 +694,18 @@ def read_catalog(conn, sources, profiles):
                                        f"is not a measurement, so this relation is not judged"})
             continue
         if stem not in profiles or not profiles[stem]["key"]:
+            # THE WORD IS PLANE-SPECIFIC AND THAT IS THE POINT. A sources relation's key is
+            # MEASURED; a served relation's is DECLARED by the promotion step. Printing one word for
+            # both would tell a reader the served plane measured something it read.
+            declared = PLANES[plane]["key_from"] == "descriptor_role"
+            kind = "declared key" if declared else "measured key"
+            where = (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role in "
+                     f"{list(DECLARED_KEY_ROLES)}" if declared
+                     else f"data/profiles/{stem}.yaml#identity_evidence.key")
             findings.append({"relation": stem, "exit": 1,
-                             "detail": f"{stem} has no measured key (data/profiles/{stem}.yaml# "
-                                       f"identity_evidence.key); this tool READS the key and will "
-                                       f"not re-derive one, so {stem} is not a parent endpoint"})
+                             "detail": f"{stem} has no {kind} ({where}); this tool READS the key "
+                                       f"and will not re-derive one, so {stem} is not a parent "
+                                       f"endpoint"})
         catalog[stem] = {"columns": cols, "relation": ".".join((*ns, src["name"]))}
         namespaces[stem] = ns
     return catalog, namespaces, findings
@@ -714,7 +797,8 @@ def _dangling_entry(carrier, others, conv, keycols, corroboration) -> dict:
     }
 
 
-def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, scope) -> bytes:
+def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, scope,
+                         plane: str = DEFAULT_PLANE) -> bytes:
     """One relation's artifact -> its exact bytes. PURE and CLOCKLESS, so a re-run is byte-identical.
 
     `admission:` is repeated in EVERY file on purpose. A reader opens one file, and an entry whose
@@ -726,10 +810,16 @@ def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, s
         "relation": catalog[stem]["relation"],
         "measurement": {
             "contract": CONTRACT,
-            "key_source": f"{profiles[stem]['file']}#identity_evidence.key",
+            # WHICH OF THE TWO PHYSICAL PLANES THIS FILE IS. Without it a reader holding one
+            # artifact cannot tell a landed relation's references from a served relation's, and the
+            # two are different claims about different populations. See PLANES at the top of
+            # tools/mac_references.py.
+            "plane": plane,
+            "descriptor_plane": PLANES[plane]["descriptors"],
+            "key_source": key_source(plane, stem, profiles),
             "relations_in_scope": scope["relations_in_scope"],
             "parent_endpoints": scope["parent_endpoints"],
-            "run_record": f"{OUT_DIR}/{RUN_RECORD}",
+            "run_record": f"{PLANES[plane]['out']}/{RUN_RECORD}",
             "single_column_references_only": True,
             "note": (
                 "SINGLE-COLUMN references only in this contract. A genuinely composite reference "
@@ -753,12 +843,13 @@ def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, s
 # THE COMMAND
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 
-def measure_bundle(root: Path, conn, measurer_factory=None, *, dry_run=False):
+def measure_bundle(root: Path, conn, measurer_factory=None, *, dry_run=False,
+                   plane: str = DEFAULT_PLANE):
     """Everything except writing. Returns a record the writer and the reporter both read."""
-    sources, profiles, findings = read_plane(root)
+    sources, profiles, findings = read_plane(root, plane)
     if not sources:
         raise ReferencesRefused("__EMPTY__", D.EMPTY_EXIT)
-    catalog, namespaces, cat_findings = read_catalog(conn, sources, profiles)
+    catalog, namespaces, cat_findings = read_catalog(conn, sources, profiles, plane)
     findings += cat_findings
     if not catalog:
         raise ReferencesRefused(
@@ -776,7 +867,8 @@ def measure_bundle(root: Path, conn, measurer_factory=None, *, dry_run=False):
     if dry_run:
         return {"dry": True, "candidates": candidates, "pruned": pruned, "considered": considered,
                 "catalog": catalog, "namespaces": namespaces, "profiles": prof_in_scope,
-                "parents": parents, "findings": findings, "sources": sources}
+                "parents": parents, "findings": findings, "sources": sources,
+                "plane": plane}
 
     measurer = (measurer_factory or SqlMeasurer)(conn, namespaces)
     results = []
@@ -793,6 +885,7 @@ def measure_bundle(root: Path, conn, measurer_factory=None, *, dry_run=False):
     return {"dry": False, "results": results, "pruned": pruned, "considered": considered,
             "catalog": catalog, "namespaces": namespaces, "profiles": prof_in_scope,
             "parents": parents, "findings": findings, "sources": sources,
+            "plane": plane,
             "dangling": dangling, "convention": conv, "keycols": keycols,
             "statements": getattr(measurer, "statements", len(candidates))}
 
@@ -831,7 +924,7 @@ def compose(rec) -> dict:
             sorted(by_child_entries[stem], key=lambda e: e["id"]),
             sorted(by_child_rejected[stem], key=lambda e: e["id"]),
             sorted(by_child_dangling[stem], key=lambda e: e["id"]),
-            scope)
+            scope, rec.get("plane", DEFAULT_PLANE))
     return out
 
 
@@ -845,11 +938,15 @@ def run_record(rec, files, *, engine: str) -> dict:
     results = rec["results"]
     by_verdict = Counter(r["verdict"] for r in results)
     by_direction = Counter(r.get("direction") for r in results if r["verdict"] == "real")
+    plane = rec.get("plane", DEFAULT_PLANE)
     return {
         "contract": CONTRACT,
         "generated_by": TOOL,
         "measured_at": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
         "engine": engine,
+        "plane": plane,
+        "descriptor_plane": PLANES[plane]["descriptors"],
+        "key_from": PLANES[plane]["key_from"],
         "admission": dict(ADMISSION),
         "denominators": {
             "relations_in_scope": len(rec["catalog"]),
@@ -884,9 +981,13 @@ def run_record(rec, files, *, engine: str) -> dict:
 def _report(rec, files, *, engine, verify, wrote, differs):
     lines = []
     d = run_record(rec, files, engine=engine)["denominators"]
+    plane = rec.get("plane", DEFAULT_PLANE)
+    lines.append(
+        f"  plane {plane} · descriptors {PLANES[plane]['descriptors']} -> "
+        f"{PLANES[plane]['out']} · parent key from {PLANES[plane]['key_from']}")
     lines.append(
         f"  seam {engine} · {d['relations_in_scope']} relation(s) in scope · "
-        f"{d['relations_with_a_measured_key']} of {d['relations_in_scope']} carry a measured key")
+        f"{d['relations_with_a_measured_key']} of {d['relations_in_scope']} carry a key")
     lines.append(
         f"  {d['parent_endpoints']} parent endpoint(s) · {d['pairs_considered']} pair(s) considered "
         f"· {d['pairs_pruned']} pruned "
@@ -917,6 +1018,13 @@ def main(argv=None) -> int:                                                     
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?", help="the bundle root (REQUIRED; this command writes files)")
+    ap.add_argument("--plane", choices=sorted(PLANES), default=DEFAULT_PLANE,
+                    help=("which PHYSICAL plane to measure: `sources` (data/sources -> "
+                          "data/references, parent key from the profile's measured "
+                          "identity_evidence.key) or `served` (data/datasets -> "
+                          "data/references_served, parent key from the descriptor's declared "
+                          "primary_key/composite_key_part roles). Both are physical; neither reads "
+                          "ontology/edges.yaml. Default: sources"))
     ap.add_argument("--dry-run", action="store_true",
                     help="print the statement each candidate WOULD run; reads and writes nothing")
     ap.add_argument("--verify", action="store_true",
@@ -932,13 +1040,14 @@ def main(argv=None) -> int:                                                     
     if not root.is_dir():
         print(f"could not run: {root} is not a directory", file=sys.stderr)
         return 2
-    declared = len(glob.glob(str(root / "data" / "sources" / "*.yaml")))
+    spec = PLANES[a.plane]
+    declared = len(glob.glob(str(root / spec["descriptors"] / "*.yaml")))
     if not declared:
         if a.json:
             print(json.dumps({"state": "no-descriptors", "measured_nothing": True,
-                              "relations": 0}, indent=1))
+                              "plane": a.plane, "relations": 0}, indent=1))
             return D.EMPTY_EXIT
-        return D.refuse_empty(NAME, root / "data" / "sources", unit="source descriptor")
+        return D.refuse_empty(NAME, root / spec["descriptors"], unit=spec["unit"])
 
     try:
         conn, advisories = open_reader(root, extra=EXTRA_CONNECTORS or None)
@@ -949,10 +1058,10 @@ def main(argv=None) -> int:                                                     
         print(f"  [advisory] {adv}")
 
     try:
-        rec = measure_bundle(root, conn, dry_run=a.dry_run)
+        rec = measure_bundle(root, conn, dry_run=a.dry_run, plane=a.plane)
     except ReferencesRefused as exc:
         if str(exc) == "__EMPTY__":
-            return D.refuse_empty(NAME, root / "data" / "sources", unit="source descriptor")
+            return D.refuse_empty(NAME, root / spec["descriptors"], unit=spec["unit"])
         print(f"✗ {exc}")
         return exc.exit_code
 
@@ -975,18 +1084,19 @@ def main(argv=None) -> int:                                                     
     rec["corroboration"] = _corroborate(conn, rec)
 
     files = compose(rec)
-    out = root / OUT_DIR
+    out_dir = spec["out"]
+    out = root / out_dir
     wrote, differs = [], []
     if a.verify:
         for stem, data in sorted(files.items()):
             p = out / f"{stem}.yaml"
             old = p.read_bytes() if p.exists() else b""
-            (wrote if old == data else differs).append(f"{OUT_DIR}/{stem}.yaml")
+            (wrote if old == data else differs).append(f"{out_dir}/{stem}.yaml")
     else:
         out.mkdir(parents=True, exist_ok=True)
         for stem, data in sorted(files.items()):
             (out / f"{stem}.yaml").write_bytes(data)
-            wrote.append(f"{OUT_DIR}/{stem}.yaml")
+            wrote.append(f"{out_dir}/{stem}.yaml")
         (out / RUN_RECORD).write_text(
             json.dumps(run_record(rec, files, engine=conn.id), indent=1, ensure_ascii=False) + "\n",
             encoding="utf-8")
@@ -1008,7 +1118,8 @@ def main(argv=None) -> int:                                                     
     head = "PASS" if code == 0 else ("FAIL" if code == 1 else "INCOMPLETE")
     verb = "verified" if a.verify else "wrote"
     n_dang = sum(len(v) for v in rec["dangling"].values())
-    print(f"{head}: {NAME} — {verb} {len(wrote)} of {len(files)} relation file(s) over "
+    print(f"{head}: {NAME} [plane {rec.get('plane', DEFAULT_PLANE)}] — {verb} {len(wrote)} of "
+          f"{len(files)} relation file(s) over "
           f"{len(rec['catalog'])} relation(s) in scope; {len(drawn)} reference(s) drawn of "
           f"{len(rec['results'])} candidate(s) measured ({len(amb)} ambiguous, needing a ruling); "
           f"{n_dang} dangling reference(s) reported; engine {conn.id}"
@@ -1412,6 +1523,52 @@ def _self_test() -> int:                                                        
                                         for f in rec7["findings"]),
              f"files = {sorted(_f7)}, findings = {rec7['findings']}")
 
+        # ── THE SERVED PLANE reads its key from the DESCRIPTOR'S DECLARED ROLES, and the two planes
+        #    do not see each other. Three separate claims, because each is a way to be wrong:
+        #      · the served population comes from data/datasets, not data/sources;
+        #      · the parent key comes from role primary_key/composite_key_part, NOT from the
+        #        profile's identity_evidence — the mutant below gives the profile a DIFFERENT key,
+        #        so a tool still reading the profile would report that one and fail here;
+        #      · `foreign_key` is NOT admitted as a parent key: a declared FK is a claim about a
+        #        target, and this tool measures those rather than believing them.
+        planes = base / "planes"
+        (planes / "data" / "datasets").mkdir(parents=True)
+        (planes / "data" / "profiles").mkdir(parents=True, exist_ok=True)
+        (planes / "data" / "sources").mkdir(parents=True, exist_ok=True)
+        (planes / "data" / "datasets" / "v_served.yaml").write_text(yaml.safe_dump({
+            "of": "v_served",
+            "table": {"name": "v_served", "schema": "own_schema"},
+            "columns": [{"name": "ServedKey", "role": "primary_key"},
+                        {"name": "OtherRef", "role": "foreign_key"},
+                        {"name": "Payload", "role": "value"}],
+        }), encoding="utf-8")
+        (planes / "data" / "profiles" / "v_served.yaml").write_text(yaml.safe_dump({
+            "of": "v_served", "relation": "own_schema.v_served",
+            "profile": {"rows": 3},
+            "columns": [{"name": "ServedKey", "distinct": 3, "nulls": 0},
+                        {"name": "OtherRef", "distinct": 3, "nulls": 0},
+                        {"name": "Payload", "distinct": 1, "nulls": 0}],
+            "identity_evidence": {"key": ["Payload"]},     # the WRONG key, on purpose
+        }), encoding="utf-8")
+        srv_rels, srv_profs, srv_find = read_plane(planes, "served")
+        src_rels, _, _ = read_plane(planes, "sources")
+        case("MUTANT the served plane takes its key from the DESCRIPTOR, not the profile",
+             (sorted(srv_rels) == ["v_served"] and srv_profs["v_served"]["key"] == ["ServedKey"]
+              and src_rels == {} and not srv_find),
+             f"served relations={sorted(srv_rels)} key={srv_profs.get('v_served', {}).get('key')} "
+             f"(profile declares ['Payload']) · sources relations={sorted(src_rels)}")
+        case("NEGATIVE CONTROL the two planes write to different artifact directories",
+             (PLANES["sources"]["out"] != PLANES["served"]["out"]
+              and PLANES["sources"]["descriptors"] != PLANES["served"]["descriptors"]
+              and "foreign_key" not in DECLARED_KEY_ROLES),
+             f"{PLANES} · DECLARED_KEY_ROLES={DECLARED_KEY_ROLES}")
+        case("NEGATIVE CONTROL every plane's artifact names the plane it measured",
+             all(b"plane: " in render_relation_file(
+                     "gamma", rec7["catalog"], rec7["profiles"], [], [], [],
+                     {"relations_in_scope": 1, "parent_endpoints": 1}, pl)
+                 for pl in PLANES),
+             "an artifact that does not name its plane is unreadable beside the other plane's")
+
     total = len(cases)
     if bad:
         print(f"FAIL: {NAME} self-test — {len(bad)} of {total} case(s) failed")
@@ -1426,8 +1583,10 @@ def _self_test() -> int:                                                        
           f"parent for a dangling column, a silently-chosen parent among equals, a mutual inclusion "
           f"drawn twice, type-class mismatch, a one-value child column, more distinct values than "
           f"the key has, an empty population, a re-derived key, a relation the catalog does not "
-          f"have) and {controls} negative control(s) (a name-mismatched reference found, "
-          f"byte-identity across two runs, no clock in a relation file)")
+          f"have, a served plane reading the profile's key instead of the descriptor's) and "
+          f"{controls} negative control(s) (a name-mismatched reference found, byte-identity across "
+          f"two runs, no clock in a relation file, two planes with two artifact directories, every "
+          f"artifact naming its own plane)")
     return 0
 
 

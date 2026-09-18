@@ -84,7 +84,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import mac_diag as D                                                             # noqa: E402
 
 NAME = "check_physical_references"
-REFS_DIR = "data/references"
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+# THE TWO PHYSICAL PLANES. Read from the deriver rather than restated — `tools/mac_references.py`
+# owns which descriptor plane pairs with which artifact directory, and a gate that kept its own copy
+# of that pairing is exactly the two-homes-for-one-fact shape this family exists to undo. If the
+# deriver cannot be imported the gate refuses (exit 2) rather than judging one plane and calling it
+# the bundle: a gate that silently checks half a bundle reports absence as completeness, which is
+# this estate's recurring defect and the reason this file exists.
+# ══════════════════════════════════════════════════════════════════════════════════════════════════
+from mac_references import PLANES                                                # noqa: E402
+
+#: The SOURCES plane's artifact directory, named once for the self-test's fixtures (which seed that
+#: plane). Every production path reads `PLANES[plane]["out"]` — this is not a second home for it.
+REFS_DIR = PLANES["sources"]["out"]
 
 #: The meaning plane's words. A data-plane reference file that uses one has re-made the conflation
 #: this family exists to undo. `join_rule` is here too: a join expressed as a STRING is the shape
@@ -119,10 +132,15 @@ def _load(p: Path):
         return {}, " ".join(str(exc).split())
 
 
-def declared_relations(root: Path):
-    """{stem: {columns}} from data/sources — the ENTITY population a diagram can draw boxes for."""
+def declared_relations(root: Path, plane: str = "sources"):
+    """{stem: {columns}} from this plane's descriptors — the ENTITY population a diagram can box.
+
+    THE POPULATION IS THE DESCRIPTOR PLANE, NEVER THE ARTIFACT DIRECTORY. An absent references file
+    is invisible to a gate that counts only what it reads, which is how "fewer references than this
+    warehouse has" comes to read as a clean measurement.
+    """
     out = {}
-    for p in sorted(glob.glob(str(root / "data" / "sources" / "*.yaml"))):
+    for p in sorted(glob.glob(str(root / PLANES[plane]["descriptors"] / "*.yaml"))):
         doc, _err = _load(Path(p))
         stem = doc.get("of") or Path(p).stem
         out[stem] = {c.get("name") for c in (doc.get("columns") or []) if c.get("name")}
@@ -138,12 +156,14 @@ def _endpoint_ok(ep):
         and ep["column"]
 
 
-def check(root: Path):                                                          # noqa: C901
+def check(root: Path, plane: str = "sources"):                                  # noqa: C901
     """(findings, counts). PURE over the files. Never repairs, never completes, never exempts."""
     findings = []
-    relations = declared_relations(root)
+    ddir = PLANES[plane]["descriptors"]
+    refs_dir = PLANES[plane]["out"]
+    relations = declared_relations(root, plane)
     profiled = profiled_relations(root)
-    files = sorted(glob.glob(str(root / REFS_DIR / "*.yaml")))
+    files = sorted(glob.glob(str(root / refs_dir / "*.yaml")))
     seen_ids, admissions, counts = defaultdict(list), {}, Counter()
     counts["relations_declared"] = len(relations)
     counts["files"] = len(files)
@@ -202,7 +222,7 @@ def check(root: Path):                                                          
                     findings.append(Finding(
                         "ENDPOINT_UNRESOLVED", where,
                         f"`{side}` names relation {ep['relation']!r}, which has no descriptor under "
-                        f"data/sources/ ({len(relations)} declared). A diagram has no box for it, "
+                        f"{ddir}/ ({len(relations)} declared). A diagram has no box for it, "
                         f"and the renderer DROPS such a line with no error and no mark — the "
                         f"reference would vanish rather than be wrong"))
                 elif ep["column"] not in relations[ep["relation"]]:
@@ -263,7 +283,7 @@ def check(root: Path):                                                          
                 findings.append(Finding(
                     "ENDPOINT_UNRESOLVED", where,
                     f"is carried by relation {d['from']['relation']!r}, which has no descriptor "
-                    f"under data/sources/"))
+                    f"under {ddir}/"))
 
     for eid, homes in sorted(seen_ids.items()):
         if len(homes) > 1:
@@ -288,8 +308,8 @@ def check(root: Path):                                                          
     for stem in sorted(relations):
         if stem in profiled and stem not in have:
             findings.append(Finding(
-                "UNMEASURED_RELATION", f"{REFS_DIR}/{stem}.yaml",
-                f"{stem} has a source descriptor and a profile but NO references file. The "
+                "UNMEASURED_RELATION", f"{refs_dir}/{stem}.yaml",
+                f"{stem} has a descriptor under {ddir}/ and a profile but NO references file. The "
                 f"population is the descriptors, not this directory — an absent file is invisible "
                 f"to a gate that counts only what it reads"))
     counts["relations_measured"] = len(have & set(relations))
@@ -300,6 +320,11 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("root", nargs="?")
+    ap.add_argument("--plane", choices=sorted(PLANES), default=None,
+                    help=("check ONE physical plane instead of every plane this bundle declares. "
+                          "Default: every plane with descriptors — so a bundle that measured its "
+                          "sources and not its served relations is told so, with the denominator, "
+                          "rather than being green on half a warehouse"))
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
@@ -312,38 +337,89 @@ def main(argv=None) -> int:
         print(f"could not run: {root} is not a directory", file=sys.stderr)
         return 2
 
-    sources = glob.glob(str(root / "data" / "sources" / "*.yaml"))
-    if not sources:
+    # ── WHICH PLANES THIS BUNDLE HAS, AND WHICH IT HAS MEASURED. Both are reported, because they
+    #    are different facts and the second one being silent is how "this warehouse has fewer
+    #    references than it has" comes to read as a measurement.
+    if a.plane:
+        wanted = [a.plane]
+    else:
+        wanted = [pl for pl in PLANES if glob.glob(str(root / PLANES[pl]["descriptors"] / "*.yaml"))]
+    if not wanted:
+        dirs = ", ".join(PLANES[pl]["descriptors"] for pl in PLANES)
         if a.json:
-            print(json.dumps({"state": "no-source-descriptors", "measured_nothing": True}, indent=1))
+            print(json.dumps({"state": "no-descriptors", "measured_nothing": True,
+                              "descriptor_planes": dirs}, indent=1))
             return D.EMPTY_EXIT
-        return D.refuse_empty(NAME, root / "data" / "sources", unit="source descriptor")
-    refs = glob.glob(str(root / REFS_DIR / "*.yaml"))
-    if not refs:
+        # THE UNIT STRING STAYS VERBATIM. `mac_diag.empty_mark` is a CROSS-TOOL signal — a CI
+        # script, the compiler and this file's own self-test all grep it — so the plane detail goes
+        # on its own line beside the marker rather than inside it.
+        print(f"  [planes] looked for a descriptor in every physical plane: {dirs}")
+        return D.refuse_empty(NAME, root / PLANES["sources"]["descriptors"],
+                              unit="source descriptor")
+    measured = [pl for pl in wanted if glob.glob(str(root / PLANES[pl]["out"] / "*.yaml"))]
+    if not measured:
+        # NEITHER plane is measured. That is the original refusal, and it names every artifact
+        # directory it looked in so the reader is not left guessing which one was expected.
+        outs = ", ".join(PLANES[pl]["out"] for pl in wanted)
         if a.json:
             print(json.dumps({"state": "no-references-plane", "measured_nothing": True,
-                              "relations_declared": len(sources)}, indent=1))
+                              "planes_declared": wanted, "artifact_directories": outs},
+                             indent=1))
             return D.EMPTY_EXIT
-        return D.refuse_empty(NAME, root / REFS_DIR, unit="references file")
+        print(f"  [planes] {len(wanted)} plane(s) declare descriptors and NONE is measured; "
+              f"looked in: {outs}")
+        return D.refuse_empty(NAME, root / PLANES[wanted[0]]["out"], unit="references file")
 
-    findings, counts = check(root)
-    by_class = Counter(f.cls for f in findings)
-    code = 1 if findings else 0
+    per_plane, findings_all, code = {}, [], 0
+    for pl in wanted:
+        declared = len(declared_relations(root, pl))
+        if pl not in measured:
+            # NOT A FINDING AND NOT A PASS: this plane was never measured. Printed WITH ITS
+            # DENOMINATOR (0 of N) and with the command that produces it, because a plane that is
+            # simply absent from the output is a plane a reader assumes is clean.
+            per_plane[pl] = {"state": "not-measured", "relations_declared": declared,
+                             "relations_measured": 0, "artifact_directory": PLANES[pl]["out"]}
+            continue
+        f, counts = check(root, pl)
+        findings_all += [{**x.as_dict(), "plane": pl} for x in f]
+        code = 1 if (code or f) else 0
+        per_plane[pl] = {"state": "checked", "findings": [x.as_dict() for x in f],
+                         "by_class": dict(sorted(Counter(x.cls for x in f).items())),
+                         "counts": dict(sorted(counts.items())),
+                         "artifact_directory": PLANES[pl]["out"]}
+        if not a.json:
+            for x in f:
+                print(f"  [plane {pl}]\n{x}")
+
     if a.json:
-        print(json.dumps({"findings": [f.as_dict() for f in findings],
-                          "by_class": dict(sorted(by_class.items())),
-                          "counts": dict(sorted(counts.items())), "exit": code},
+        print(json.dumps({"planes": per_plane, "findings": findings_all, "exit": code},
                          indent=1, ensure_ascii=False))
         return code
-    for f in findings:
-        print(f)
+    for pl in wanted:
+        r = per_plane[pl]
+        if r["state"] == "not-measured":
+            print(f"  [not measured] plane {pl}: 0 of {r['relations_declared']} declared "
+                  f"relation(s) carry a references file — {r['artifact_directory']}/ holds none. "
+                  f"Produce it with: python3 tools/mac_references.py <root> --plane {pl}")
+            continue
+        c, bc = r["counts"], r["by_class"]
+        head = "PASS" if not bc else "FAIL"
+        print(f"  {head}: plane {pl} ({r['artifact_directory']}) — {c['relations_measured']} of "
+              f"{c['relations_declared']} declared relation(s) carry a references file; "
+              f"{c['drawn']} of {c['references']} measured reference(s) drawn, {c['dangling']} "
+              f"dangling, {c['rejected']} candidate(s) recorded as rejected; "
+              f"{sum(bc.values())} finding(s)" + (f" — {bc}" if bc else ""))
     head = "PASS" if code == 0 else "FAIL"
-    print(f"{head}: {NAME} — {counts['relations_measured']} of {counts['relations_declared']} "
-          f"declared relation(s) carry a references file; {counts['drawn']} of "
-          f"{counts['references']} measured reference(s) drawn, {counts['dangling']} dangling, "
-          f"{counts['rejected']} candidate(s) recorded as rejected; "
-          f"{len(findings)} finding(s)"
-          + (f" — {dict(sorted(by_class.items()))}" if findings else ""))
+    checked = [pl for pl in wanted if per_plane[pl]["state"] == "checked"]
+    tot = {k: sum(per_plane[pl]["counts"].get(k, 0) for pl in checked)
+           for k in ("relations_declared", "relations_measured", "references", "drawn", "dangling",
+                     "rejected")}
+    print(f"{head}: {NAME} — {len(checked)} of {len(wanted)} physical plane(s) measured "
+          f"({', '.join(checked) or 'none'}); {tot['relations_measured']} of "
+          f"{tot['relations_declared']} declared relation(s) across those plane(s) carry a "
+          f"references file; {tot['drawn']} of {tot['references']} measured reference(s) drawn, "
+          f"{tot['dangling']} dangling, {tot['rejected']} candidate(s) recorded as rejected; "
+          f"{len(findings_all)} finding(s)")
     return code
 
 
@@ -533,8 +609,29 @@ def _self_test() -> int:                                                        
         rc, _o = _run(base / "not-a-directory-at-all")
         case("MUTANT a root that is not a directory could-not-run", rc == 2, f"exit {rc}")
 
+        # ── HALF A WAREHOUSE MUST NOT READ AS A CLEAN ONE. A bundle that declares served
+        #    datasets and has never measured them gets an explicit `[not measured]` line CARRYING
+        #    ITS DENOMINATOR, not silence; and asking for that plane alone refuses (exit 2) rather
+        #    than passing on an empty population. Both are the absence-as-completeness defect.
+        semiplane = base / "semiplane"
+        _seed(semiplane)
+        (semiplane / "data" / "datasets").mkdir(parents=True, exist_ok=True)
+        for stem in ("v_one", "v_two"):
+            (semiplane / "data" / "datasets" / f"{stem}.yaml").write_text(yaml.safe_dump(
+                {"of": stem, "table": {"name": stem, "schema": "own_schema"},
+                 "columns": [{"name": "K", "role": "primary_key"}]}), encoding="utf-8")
+        rc, out = _run(semiplane)
+        case("MUTANT a declared-but-unmeasured plane is reported with its denominator, not silence",
+             rc == 0 and "[not measured] plane served: 0 of 2" in out
+             and "1 of 2 physical plane(s) measured" in out,
+             f"exit {rc}: {out.strip()[-300:]}")
+        rc, out = _run(semiplane, "--plane", "served")
+        case("MUTANT --plane on an unmeasured plane refuses (exit 2), not PASS",
+             rc == D.EMPTY_EXIT and D.empty_mark("references file") in out,
+             f"exit {rc}: {out.strip()[-200:]}")
+
         ok_json = True
-        for root_ in (base / "clean", base / "unresolved", bare, noplane):
+        for root_ in (base / "clean", base / "unresolved", bare, noplane, semiplane):
             _rc, out = _run(root_, "--json")
             try:
                 json.loads(out)
@@ -556,7 +653,8 @@ def _self_test() -> int:                                                        
           f"admission blocks, no participation, a cardinality and a participation outside their "
           f"closed sets, a dangling entry that acquired a parent, a dangling entry with no basis, "
           f"a hidden ambiguity, a profiled relation with no file, no source descriptors, no "
-          f"references plane, a root that is not a directory) and {neg} negative control(s) (a "
+          f"references plane, a root that is not a directory, a declared-but-unmeasured plane "
+          f"passing in silence, --plane on an unmeasured plane) and {neg} negative control(s) (a "
           f"clean family, both denominators on the verdict line, a DECLARED ambiguity, --json on "
           f"every state)")
     return 0
