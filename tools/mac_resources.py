@@ -55,13 +55,154 @@ GENERATOR = "mac_resources.py/1"
 #:
 #: `flat: True` is the one that cost the most: the page builder writes `<stem>.md` at the concepts
 #: ROOT even when the concept it describes is nested, so doc and schema paths differ in shape.
+#: `producer` is the KEY INTO `PRODUCERS` below — the command that actually runs this writer. It is
+#: separate from `by` because `by` names the MODULE (three spellings, historically) while the
+#: question a reproduction record has to answer is "which declared command reaches it".
 DERIVED: tuple[dict, ...] = (
-    {"glob": "objects.json", "by": "sdk.project.objects", "kind": "object-index"},
-    {"glob": "ontology/concepts/*.md", "by": "sdk.project.mac_okf", "kind": "read-view", "flat": True},
-    {"glob": "ontology/concepts/rules/*.md", "by": "sdk.project.mac_okf", "kind": "read-view"},
-    {"glob": "data/**/*.md", "by": "sdk.project.project_data", "kind": "read-view"},
-    {"glob": "compile.json", "by": "mac_compile", "kind": "verdict"},
-    {"glob": "lineage_graph.json", "by": "lineage_project.py", "kind": "graph"},
+    {"glob": "objects.json", "by": "sdk.project.objects", "kind": "object-index",
+     "producer": "projector"},
+    {"glob": "ontology/concepts/*.md", "by": "sdk.project.mac_okf", "kind": "read-view", "flat": True,
+     "producer": "projector"},
+    {"glob": "ontology/concepts/rules/*.md", "by": "sdk.project.mac_okf", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "ontology/concepts/index.md", "by": "sdk.project.mac_okf", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "data/**/*.md", "by": "sdk.project.project_data", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "compile.json", "by": "mac_compile", "kind": "verdict", "producer": "compiler"},
+    {"glob": "lineage_graph.json", "by": "lineage_project.py", "kind": "graph",
+     "producer": "projector"},
+    # ── ADDED 2026-09-18, and the reason this table exists at all ────────────────────────────────
+    # Everything below was ALREADY being written by a tool and was in NO machine-readable table, so
+    # nothing could ask "is this family's producer declared anywhere". `data/samples` rotted for
+    # months on exactly that hole (3 of 25 headers stale, one short by ten of twenty-two columns,
+    # and a decision record citing the stale file as proof). The entries carry the write site so a
+    # reader can check the attribution rather than trust it.
+    {"glob": "index.md", "by": "sdk.project.project_data:515", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "data/profiles/*.yaml", "by": "mac_profile.py:255", "kind": "measurement",
+     "producer": "profiler"},
+    {"glob": "data/samples/*.csv", "by": "mac_sample.py", "kind": "preview", "producer": "sampler"},
+    {"glob": "data/references/*.yaml", "by": "mac_references.py --plane sources",
+     "kind": "reference-structure", "producer": "references"},
+    {"glob": "data/references_served/*.yaml", "by": "mac_references.py --plane served",
+     "kind": "reference-structure", "producer": "references"},
+    {"glob": "data/lookups/*.csv", "by": "harvest --mode lookups", "kind": "register",
+     "producer": "lookup-build"},
+    {"glob": "data/quality/*.json", "by": "sdk.project.project_data:930", "kind": "dashboard",
+     "producer": "projector"},
+    {"glob": "ontology/vocabulary.json", "by": "sdk.project.vocabulary (objects.py:1161)",
+     "kind": "read-view", "producer": "projector"},
+    {"glob": "ontology/ontology_quality.json", "by": "sdk.project.ontology_quality (objects.py:1129)",
+     "kind": "dashboard", "producer": "projector"},
+    {"glob": "ontology/edges.json", "by": "sdk.project.objects:1176", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "ontology/diagnostics.json", "by": "sdk.cli.harvest:333", "kind": "dashboard",
+     "producer": "projector"},
+    {"glob": "ontology/SME-QUESTIONS.md", "by": "sdk.project.objects:184", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "knowledge/*.md", "by": "sdk.project.knowledge:115", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "references/*.md", "by": "sdk.project.references:133", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "references/known_issues/*.md", "by": "sdk.project.references:175", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "interventions/LEDGER.md", "by": "sdk.project.project_data:846", "kind": "read-view",
+     "producer": "projector"},
+    {"glob": "acceptance/questions_dashboard.json", "by": "sdk.project.questions:557",
+     "kind": "dashboard", "producer": "question-projector"},
+)
+
+#: WHICH DECLARED COMMAND REACHES A PRODUCER. `entrypoints` are substrings of a command string, and
+#: each one is a door that PROVABLY reaches the writer — the citation is in `why` so the claim can be
+#: checked. Substring matching is deliberately generous: the question is "does the record name a way
+#: to remake this", not "is the command spelled the canonical way".
+#:
+#: THE ONE THAT MATTERS: `--mode onboard` reaches the WHOLE projector, because
+#: sdk/cli/harvest.py:1230 ends the onboard flow with `project_source(cr, ...)` under the comment
+#: "5) PROJECT (offline, deterministic) — ALWAYS, in both dry-run and accept". A gate that looked
+#: only for `--mode project` would call a bundle that declares `--mode onboard --accept` undeclared,
+#: and the remedy it demanded — a standalone `projection` stage that was never run — would make the
+#: reproduction record LESS true than the silence it replaced.
+PRODUCERS: dict[str, dict] = {
+    "projector": {
+        "entrypoints": ("--mode project", "--mode onboard", "sdk.container.save",
+                        "project_objects.py", "regen_projections"),
+        "why": "sdk/cli/harvest.py:1230 (onboard ends in project_source) and harvest.py --mode "
+               "project, the offline door; project_source runs project_data.build_data + objects + "
+               "mac_okf + knowledge + references + _semantic_diagnostics + compile_gate in ONE run",
+    },
+    "compiler": {
+        "entrypoints": ("mac_compile.py", "--mode project", "--mode onboard"),
+        "why": "compile.json is written by compile_gate inside project_source (harvest.py:512) and "
+               "by tools/mac_compile.py run directly",
+    },
+    "profiler": {
+        "entrypoints": ("mac_profile.py", "mac_profile_split.py", "mac_admit_identity.py"),
+        "why": "tools/mac_profile.py:255 writes data/profiles/<stem>.yaml; the splitter and the "
+               "identity admitter rewrite the same family",
+    },
+    "sampler": {
+        "entrypoints": ("mac_sample.py",),
+        "why": "tools/mac_sample.py writes data/samples/<stem>.sample.csv + samples.run.json",
+    },
+    "references": {
+        "entrypoints": ("mac_references.py",),
+        "why": "tools/mac_references.py writes data/references{,_served}/<stem>.yaml",
+    },
+    "lookup-build": {
+        "entrypoints": ("--mode lookups", ".lookup.build.py"),
+        "why": "harvest --mode lookups builds the registers; a bundle may instead declare its "
+               "per-register `<x>.lookup.build.py`, which is the same producer by another door",
+    },
+    "question-projector": {
+        "entrypoints": ("sdk.project.questions",),
+        "why": "sdk/project/questions.py:557 — its own module, invoked as `python3 -m "
+               "sdk.project.questions <bundle>` (what console_api shells)",
+    },
+}
+
+#: AUTHORED families: a human or a model wrote them and NO tool reproduces them, so a reproduction
+#: record must NOT claim to produce them. Registered here so that "nothing produces this" can be
+#: told apart from "nobody has said where this comes from" — the two were indistinguishable, and the
+#: second is the defect.
+AUTHORED: tuple[dict, ...] = (
+    {"glob": "data/sources/*.yaml", "kind": "source", "by": "model (harvest --mode data) or hand"},
+    {"glob": "data/datasets/*.yaml", "kind": "dataset", "by": "model (harvest --mode data) or hand"},
+    {"glob": "data/transforms/*.yaml", "kind": "transform", "by": "model or hand"},
+    {"glob": "data/transforms/*.sql", "kind": "transform-sql", "by": "model or hand"},
+    {"glob": "data/transforms/*.why.md", "kind": "rationale", "by": "hand",
+     "note": "beats the generic data/**/*.md read-view glob on specificity: this one is NOT projected"},
+    {"glob": "data/quality/*.yaml", "kind": "dq-register",
+     "by": "SME/operator, or a model in a declared authoring stage",
+     "note": "the register and the resolution map are the SOURCE OF TRUTH the dashboard projects "
+             "FROM. Whether a stage may claim to `produce` them is BUNDLE-SPECIFIC and measured "
+             "both ways in this estate: one bundle declares them under an `authoring: model` "
+             "stage (an LLM authored that register), another's are an SME's own rulings. A "
+             "framework registry cannot decide that, so it states only the part that is always "
+             "true: no TOOL reproduces them."},
+    {"glob": "data/lookups/*.py", "kind": "build-script", "by": "hand"},
+    {"glob": "ontology/*.yaml", "kind": "ontology-ssot", "by": "hand"},
+    {"glob": "ontology/*.md", "kind": "prose", "by": "hand",
+     "note": "prose beside the plane; a bundle may document itself. The projector's OWN pages in "
+             "this directory are registered above and win on specificity."},
+    {"glob": "**/*.parquet", "kind": "engine-store", "by": "the engine / a landing load",
+     "note": "not a semantic artifact: the bytes a connector reads. Registered so a bundle that "
+             "keeps its landing data inside the data plane is not a finding."},
+)
+
+#: DELIBERATELY NOT DECLARED in any reproduction record, with the reason. A `produces` pattern that
+#: CANNOT FAIL adds no signal and inflates the denominator — the run record is written in the same
+#: branch as the per-relation files it accounts for, so it can never miss while they hit. Contoso's
+#: manifest already ruled on this in prose ("FOUR PATTERNS AND NOT SIX"); this is the machine-readable
+#: form of that ruling, so a disk-sourced population does not false-red on it in every bundle.
+NOT_DECLARED: tuple[dict, ...] = (
+    {"glob": "data/samples/samples.run.json", "by": "mac_sample.py:677",
+     "reason": "run record, written in the same branch as the previews it accounts for"},
+    {"glob": "data/references/references.run.json", "by": "mac_references.py:1100",
+     "reason": "run record, written in the same branch as the reference files it accounts for"},
+    {"glob": "data/references_served/references.run.json", "by": "mac_references.py:1100",
+     "reason": "run record, written in the same branch as the reference files it accounts for"},
 )
 
 #: plane -> (glob relative to the bundle root, kind)

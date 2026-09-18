@@ -29,6 +29,47 @@ _SEV_ORDER = {"high": 0, "medium": 1, "low": 2}
 _COV_CHIP = {"resolved": "✓ resolved", "partial": "◐ partial", "gap": "⚠ open gap"}
 _COV_ORDER = {"gap": 0, "partial": 1, "resolved": 2}
 
+# ─── FIELD PARITY: what these projections deliberately do NOT carry, and why ─────────────────────
+# Every per-finding dict below is a HAND-WRITTEN ALLOW-LIST of `iss.get(...)` calls, and that shape
+# is why `status`, `ruled_by` and `reason` were absent from the dashboard while sitting in memory:
+# on a register carrying `status` on 6 of 6, the projection carried it on 0 of 6, so the console
+# could not tell an issue a named human examined and tolerated from an issue nobody has read.
+#
+# Dropping a field is legitimate — a roll-up is a summary. Dropping it SILENTLY is not. So each
+# projection declares its omissions here, WITH A REASON, and tools/check_projection_field_parity.py
+# reads these tables, runs this projector over a synthetic register carrying every field the schema
+# and the vocabulary declare, and refuses any field that neither reaches the page nor appears below.
+# The tables are checked BOTH WAYS: a field declared omitted that the page does carry is a stale
+# claim and fails too, because an unchecked omission table rots into the same confident wrong answer
+# as the prose it replaced.
+#
+# `mac.schema.json#$defs.DataQualityRegisterFile` declares the fields; `mac_vocabulary.yaml#dq_status`
+# declares `status` and the `ruled_by` + `reason` its rulings REQUIRE — the second authority is the
+# one that carries the three fields the defect dropped, so a schema-only check stays green through it.
+
+#: THE STRUCTURED SURFACE — the console's only structured input. It carries EVERYTHING, on purpose.
+DQ_DASHBOARD_OMITS: dict[str, str] = {}
+
+#: THE PER-ISSUE PAGE — the detail view. Also complete; a reader who opens one issue gets all of it.
+DQ_ISSUE_PAGE_OMITS: dict[str, str] = {}
+
+#: THE ROLL-UP — one table row per issue, so it is a SUMMARY by design.
+DQ_OVERVIEW_OMITS: dict[str, str] = {
+    "finding": "the roll-up is one row per issue; the finding prose is the per-issue page's job and "
+               "is linked from the row's title",
+    "current_handling": "same row-budget reason — carried in full on the per-issue page",
+    "residual_risk": "same row-budget reason — carried in full on the per-issue page",
+    "sme_owner": "the roll-up is not the sign-off surface; SME-QUESTIONS.md is, and it is projected "
+                 "from this same register in the same run",
+    "confidence": "grading is shown on the per-issue page beside the finding it grades; the row "
+                  "shows severity, which is what the table is sorted by",
+    "reason": "the ruling's PHRASE is carried (`_disposition`: status + who ruled), the prose of "
+              "why is the per-issue page's Disposition section",
+}
+# NOT LISTED, and measured rather than assumed: `ruled_by` IS carried here — `_disposition` renders
+# "accepted · ruled by <who>" into the row. It was listed above on a first pass and the parity gate
+# refused the claim, which is the whole point of checking the table in both directions.
+
 
 def _disposition(iss: dict) -> str:
     """The HUMAN's ruling as one phrase, for the projected markdown.
