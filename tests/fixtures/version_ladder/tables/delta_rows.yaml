@@ -1,0 +1,6 @@
+# delta sits ON THE FLOOR. If a derivation ever computes a set that excludes the floor,
+# this rung falls out first and the test says so.
+metadata: { table: delta_rows, source: LADDER, version: '1.0', schema_version: '0.1.9', status: verified, owner: t }
+table: { name: delta_rows, schema: s, type: table }
+columns:
+  - { name: delta_id, type: string, role: primary_key }

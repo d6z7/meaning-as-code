@@ -1,0 +1,11 @@
+# THE VERSION LADDER — one routed file per generation the gate must keep checking.
+# alpha carries the PRE-RELEASE spelling of CURRENT. It is the file a bump evicts first:
+# the old hand-typed RECOGNIZED kept only {CURRENT, base(CURRENT)}, so opening the next
+# generation dropped BOTH spellings of the outgoing one. Synthetic names only (public repo).
+metadata: { concept: Alpha, source: LADDER, version: '1.0', schema_version: '0.1.14-develop', status: production, owner: t }
+concept:
+  name: Alpha
+  label: Alpha
+  class: entity
+  definition: "Ladder rung at the pre-release spelling of CURRENT."
+grounding: { kind: sql_table, table: delta_rows, schema: s, key_column: delta_id }

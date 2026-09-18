@@ -1,0 +1,8 @@
+# gamma sits one generation behind CURRENT — the largest cohort on disk estate-wide.
+metadata: { concept: Gamma, source: LADDER, version: '1.0', schema_version: '0.1.13', status: production, owner: t }
+concept:
+  name: Gamma
+  label: Gamma
+  class: entity
+  definition: "Ladder rung one generation behind CURRENT."
+grounding: { kind: sql_table, table: delta_rows, schema: s, key_column: delta_id }

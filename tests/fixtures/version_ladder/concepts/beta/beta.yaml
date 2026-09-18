@@ -1,0 +1,10 @@
+# beta carries the RELEASED spelling of CURRENT — what bundle files stamp while develop
+# is open on a pre-release. Both spellings must stay recognized together (CONFORMANCE: the
+# "63 files silently skipped" incident).
+metadata: { concept: Beta, source: LADDER, version: '1.0', schema_version: '0.1.14', status: production, owner: t }
+concept:
+  name: Beta
+  label: Beta
+  class: entity
+  definition: "Ladder rung at the released spelling of CURRENT."
+grounding: { kind: sql_table, table: delta_rows, schema: s, key_column: delta_id }

@@ -233,19 +233,35 @@ def check_invalid_artifacts(bundle, root) -> list:
             witnesses=ws,
             note=f"mac.schema.json#/$defs/{definition} · failing keyword `{keyword}`"))
 
-    # A file whose schema_version the framework does not recognize is NOT validated. That is a hole in
-    # coverage wearing a green tick, so it is reported — as a warning, because incremental migration is
-    # the documented intent of the RECOGNIZED set.
+    # A routed file that was NOT validated is a hole in coverage wearing a green tick.
+    #
+    # THIS WAS A WARNING AND IS NOW AN ERROR, in the same change that made it an error in the gate.
+    # A gate reporting ERROR while the compiler reports WARNING is the same defect one layer up — two
+    # modules deciding the same policy independently — and the severity mattered, not just the wording:
+    # sdk/cli/harvest.py's compile gate blocks only on error severity, so under WARNING a bundle could
+    # be PROJECTED with a third of it never validated, and compile.json would record verdict COMPILES.
+    # Measured: example_tpch_ontology at a bumped CURRENT reported 0 errors with 14 of 40 files
+    # unvalidated. The old note said this "becomes an error when the migration these versions are
+    # transitional for is done"; the recognized range is no longer transitional — it is a permanent
+    # floor — so the condition the note was waiting for will never arrive, and the severity is settled.
+    #
+    # The DENOMINATOR is printed too. MAC001 next door already reads "N of M yaml file(s)"; a count
+    # with no denominator is exactly what this whole class of finding exists to refuse.
     if skipped:
+        by_reason = defaultdict(int)
+        for r, _sv in skipped:
+            by_reason[next((v.unchecked_reason for v in verdicts if _rel(v.path, root) == r), "?")] += 1
         out.append(Diagnostic(
-            code="MAC002", severity=WARNING, source=SOURCE,
-            summary=(f"{de(len(skipped))} routed file(s) were NOT validated — their "
-                     f"metadata.schema_version is outside the recognized set, so they claim a definition "
-                     f"nothing checked"),
+            code="MAC002", severity=ERROR, source=SOURCE,
+            summary=(f"{de(len(skipped))} of {de(len(enum.routed))} routed file(s) were NOT validated "
+                     f"— they claim a definition that nothing checked "
+                     f"({', '.join(f'{n} {why}' for why, n in sorted(by_reason.items()))})"),
             witnesses=[Witness(file=r, path="metadata.schema_version",
-                               detail=f"declares {sv!r}") for r, sv in sorted(skipped)],
-            note=(f"recognized: {', '.join(sorted(VS.RECOGNIZED))} (current {VS.CURRENT}); "
-                  f"becomes an error when the migration these versions are transitional for is done")))
+                               detail=f"declares {sv!r}" if sv else "carries no schema_version")
+                       for r, sv in sorted(skipped)],
+            note=(f"recognized: {VS.RECOGNIZED.describe()}, current {VS.CURRENT} — the floor is "
+                  f"declared once in tools/version.py (SCHEMA_VERSION_FLOOR) and the range is derived "
+                  f"from it, so it cannot narrow on a bump; reconform the file, or correct the floor")))
     return out
 
 
