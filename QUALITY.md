@@ -31,7 +31,8 @@ against the change. The framework branch and the applied-instance migration that
 
 3. **Version bumped atomically — if the change warrants it.** A new `$def`, a new/changed key, a changed
    enum, or a promotion bumps `schema_version`. Then it must move **everywhere, in lockstep** (per
-   [RELEASING.md](RELEASING.md)): schema `title` + `$comment`, `tools/validate_schema.py` `CURRENT`/`RECOGNIZED`,
+   [RELEASING.md](RELEASING.md)): schema `title` + `$comment`, `tools/validate_schema.py` `CURRENT`
+   (only — `RECOGNIZED` is derived from a declared floor and must not be hand-edited),
    **every** model file's `metadata.schema_version` (repo-wide sweep), `mac_vocabulary.yaml`, a new
    `CONFORMANCE.md` changelog entry, and version-stating prose in `README.md`/`FRAMEWORK.md`. Verify a
    single version value remains (`grep -rho "schema_version: *'[^']*'" example_*_ontology | sort -u`).

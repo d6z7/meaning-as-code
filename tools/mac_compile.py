@@ -80,6 +80,7 @@ import check_framework_selfconform as SELFCONF
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
+import validate_schema as VS                      # noqa: E402  (coverage: the denominator, one home)
 from mac_diag import (CODES, ERROR, INFO, ORDER, UNKNOWN_MARK, WARNING, Diagnostic, Witness,  # noqa: E402
                       render, summarise)
 
@@ -670,6 +671,18 @@ def main(argv=None) -> int:
     print(f"── MAC compiler ── {root} ── {started.strftime('%Y-%m-%d %H:%M:%S')} UTC ──")
     print(f"   {de(len(en.all_yaml))} yaml enumerated: {de(len(en.routed))} carry a MAC definition, "
           f"{de(len(en.unknown))} carry none, {de(len(en.waived))} declared out of scope")
+    # ROUTED IS NOT VALIDATED, and this header printed only `routed` — which does not move at all when
+    # coverage collapses. Measured on example_tpch_ontology at a bumped CURRENT: the header still read
+    # "40 routed" while 14 of those 40 had been validated by nothing. The self-normalising denominator
+    # relocating one layer up is still the self-normalising denominator.
+    try:
+        _cov = VS.coverage(en, VS.validate_files(en))
+        print(f"   {de(_cov.validated)} of {de(_cov.routed)} routed file(s) VALIDATED "
+              f"({de(_cov.gated)} version-gated, {de(_cov.exempt)} exempt)"
+              + (f" · {de(_cov.unchecked)} UNCHECKED · {de(_cov.unparsed)} unparsed"
+                 if (_cov.unchecked or _cov.unparsed) else ""))
+    except Exception as _e:                        # a coverage line must never take down a compile
+        print(f"   coverage UNKNOWN (not absent): {_e}")
     print(f"   {de(len(b.concepts()))} concept(s) · {de(len(b.objects()))} object(s) · "
           f"{de(len(b.registers()))} register(s) · {de(len(PHASES))} native phase(s) + "
           f"{de(n_wrapped)} wrapped gate(s) · {de(wall, 2)} s\n")

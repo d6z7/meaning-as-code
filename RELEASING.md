@@ -23,8 +23,15 @@ If any one of these disagrees, do not tag.
 
 1. **Bump the number in lockstep:**
    - `mac.schema.json` — the `title` (`… formal schema vX.Y.Z`).
-   - `tools/validate_schema.py` — `CURRENT = 'X.Y.Z'` (and `RECOGNIZED`; keep it **strict** = `{CURRENT}`
-     unless a migration grace is explicitly intended and documented).
+   - `tools/validate_schema.py` — `CURRENT = 'X.Y.Z'`, and **nothing else in that file**.
+     `RECOGNIZED` is **DERIVED** — a declared floor (`SCHEMA_VERSION_FLOOR` in `tools/version.py`)
+     plus every version up to `CURRENT`, both spellings — and **must not be hand-edited**.
+     This bullet used to read "keep it **strict** = `{CURRENT}`", which *was the trap written down as
+     mandatory procedure*: following it literally validates almost nothing while printing a perfect
+     fraction (simulated on a large consuming bundle: `0/0 checked file(s) clean`, its 631 schema
+     errors falling to 0). Re-declare the floor only when a deployment deliberately stops supporting a
+     generation — and sweep `sdk/authoring/` and `tools/mac_to_meta.py` first, because they still
+     template new files at `0.1.13`.
    - **every** model file's `metadata.schema_version` (the worked examples; a repo-wide sweep).
    - `CONFORMANCE.md` — a changelog entry for `X.Y.Z` (what changed, and any migration note).
    - any prose that states the current version (`README.md` Status, `FRAMEWORK.md` front-matter companions).

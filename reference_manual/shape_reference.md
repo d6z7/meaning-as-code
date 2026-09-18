@@ -581,8 +581,18 @@ conformance:  # What this bundle declares about its own conformance
 
 reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the artifacts…
   narrative: <…>  # string · path to the human-readable twin, e.g
+  pipelines:  # v0.1.19: THE TWO PIPELINES, and the only place a reader of a day-zero…  # closed: only keys above
+    data:  # REQUIRED  # closed: only keys above
+      entry: <…>  # REQUIRED · string · the command an operator types to START this pipeline
+      exit: <…>  # REQUIRED · one of: value · What ENDING this pipeline means
+    ontology:  # REQUIRED  # closed: only keys above
+      entry: <…>  # REQUIRED · string · the command an operator types to START the ontology pipeline
+      requires:  # closed: only keys above
+        pipeline: <…>  # enum: data · the pipeline whose declared exit must be reached before this one may…
+      exit: <…>  # one of: value · What ENDING this pipeline means
   stages:  # REQUIRED
     - <item>
+      pipeline: <…>  # enum: data | ontology · v0.1.19: WHICH of the two declared pipelines this stage belongs to
       id: <…>  # REQUIRED · string
       authoring: <…>  # REQUIRED · enum: tool | model | hand | model-then-hand · WHO authors this stage's outputs
       command: <…>  # string · the command that performs it, when there is one

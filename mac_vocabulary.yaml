@@ -773,3 +773,131 @@ diagnostic_code:
         equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC,
         rather than declaring beside it. Enforced by tools/check_extension_keys.py, which exits
         non-zero, because a check that does not block is not enforcement.
+
+# ===========================================================================
+# mac.data_plane_gate — WHY the ontology pipeline is closed. One home for the
+# reject codes the guard, the CLI gate and the console page all cite.
+# ===========================================================================
+data_plane_gate:
+  kind: vocabulary
+  closed: true
+  description: >
+    The reject classes of the DATA→ONTOLOGY handoff, as a closed set. A bundle may declare TWO
+    pipelines (mac.schema.json#ProjectFile.reproduction.pipelines): a DATA pipeline whose declared
+    exit is a named human's sign-off over the issues its own register holds, and an ONTOLOGY
+    pipeline that may not start until that exit is reached. Three consumers read the same verdict —
+    the PreToolUse guard that refuses a write, the CLI that refuses to start the ontology pipeline,
+    and the console page that tells the operator what is blocking — so the code set lives HERE and
+    not three times. `not_declared` is the only member that is NOT a block: a bundle that declares
+    one pipeline is governed by the operator's unlock marker alone, exactly as before.
+
+    WHY A CODE AND NOT JUST A SENTENCE. The sentence is rendered to a human and will be reworded;
+    the code is joined on. A page grouping by sentence re-groups every time the wording improves.
+
+    WHAT THIS SET DELIBERATELY DOES NOT CONTAIN: a member for "too many issues", for "severity too
+    high", or for any count a bundle or a framework could declare as a threshold. The gate reads no
+    grading field. `severity` is machine-authored (capped at `confidence: I` by CORE.md §4), so a
+    gate reading it would grade the machine against its own opinion — and a non-defect parked at
+    `high` would block an ontology forever on bookkeeping rather than on data. Measured
+    2026-09-18: a live register's entry was edited from `severity: high` to `severity: low` the
+    same day a severity-reading gate was proposed, its own inline comment naming the coming gate as
+    the reason. Goodhart arrived within hours. The threshold here is per-issue HUMAN COVERAGE, and
+    the only way to move it is for a person to name the specific thing.
+  terms:
+    not_declared:
+      description: >
+        The bundle declares no `reproduction.pipelines`, so the two-pipeline gate does not apply.
+        EXIT 0, and not a block — the legacy affordance (the operator's `.ontology-unlocked`
+        marker) governs its ontology plane unchanged. The one member that is a PASS.
+      blocks: false
+    approval_missing:
+      description: >
+        Two pipelines are declared and the data pipeline's declared exit does not exist: no
+        sign-off file at the path the manifest names. The normal state of a bundle still in the
+        data pipeline — the page must not paint it red.
+      blocks: true
+    approval_unreadable:
+      description: >
+        The sign-off exists and cannot be parsed. Counts as NO approval (deny — the safe
+        direction), and the refusal prints the offending line number so the operator can fix their
+        own typo. A file no agent may write is a file only the operator can un-break; that cost is
+        disclosed rather than eliminated.
+      blocks: true
+    approval_unratified:
+      description: >
+        The sign-off exists but does not ratify: its `status` is not `applied`, its `verdict` is
+        not `confirmed`, or its `outcome` is not `ratified`. A draft is not an approval.
+      blocks: true
+    approval_agent_stamped:
+      description: >
+        The sign-off's write stamp names an agent (`submitted_via: agent`) or an identity nobody
+        verified or declared (`identity_basis: imported`). An agent may write a DESCRIPTION; only a
+        human may write a DISPOSITION. Rejecting the honestly-stamped case is what makes the
+        dishonest one a lie rather than a shortcut.
+      blocks: true
+    issue_uncovered:
+      description: >
+        A registered issue id the sign-off does not name. This is the threshold, and it is why no
+        number is invented: the count of uncovered ids must be 0, and it cannot move unless a human
+        names the specific thing. No wildcard is permitted — if per-issue naming is too many ids,
+        the fix is a coarser REGISTER, never a coarser gate.
+      blocks: true
+    issue_undispositioned:
+      description: >
+        A graded DEFECT (`DQ-` id) carrying no terminal `mac.dq_status` term, or one whose term's
+        own `requires:` list is unmet. The law is READ from `mac.dq_status`, never restated here.
+      blocks: true
+    resolved_on_non_defect:
+      description: >
+        A CATEGORY ERROR, and the one reject class that exists because a disposition can be written
+        by a machine. `mac.dq_status.resolved` requires NOTHING — its evidence is structural, the
+        cross-link in impurity_resolution_map.yaml — and both the register and that map are
+        agent-writable, so a gate reading "status is not open" is satisfiable with no human name
+        anywhere. `resolved` means A TRANSFORM DISSOLVED A DEFECT. An `NS-` entry is a relation
+        MEASURED AND DELIBERATELY NOT SERVED: it was never a defect and no transform dissolved it,
+        so `resolved` cannot be true of it and is refused. The honest disposition of a
+        non-promotion is `accepted` or `wont_fix`, both of which name a ruler.
+
+        DISCLOSED GAP, not fixed here: `mac.dq_status` has no term meaning "measured, and it is not
+        a defect". Non-promotions are therefore dispositioned with defect-shaped words. Adding a
+        term to a closed vocabulary is a framework change with its own gate consequences; this
+        member refuses the one spelling that lets a machine clear the register, and names the gap.
+      blocks: true
+    coverage_dangling:
+      description: >
+        The sign-off names an id the register no longer holds. Distinct from `issue_uncovered` and
+        reported separately, because they are opposite failures — a human approved something that
+        has since been renamed or deleted, versus something they never saw.
+      blocks: true
+    plane_moved:
+      description: >
+        The sign-off's digest no longer matches the data plane as it stands. The ontology already
+        authored is NOT deleted and NOT invalidated — doing that would be the blanket lock's
+        mistake in a new costume. Further ontology authoring stops, the plane reads STALE with the
+        date of the sign-off it invalidates, and the moved files are named so the diff is the
+        review.
+      blocks: true
+    register_unrun:
+      description: >
+        Datasets are served and the register holds zero issues. That is a step that did not run,
+        not a clean bill of health, so the data plane cannot be approved from it. A gate that
+        passes having measured nothing is worse than none (CORE.md §2).
+      blocks: true
+    no_datasets:
+      description: >
+        Nothing is served, so there is nothing for an ontology to bind to. Vacuity, refused in the
+        other direction.
+      blocks: true
+    stage_unassigned:
+      description: >
+        `pipelines` is declared and a `reproduction.stages[]` entry carries no `pipeline`, so a
+        half-migrated manifest cannot read as complete.
+      blocks: true
+    gate_unreachable:
+      description: >
+        An input could not be read — the manifest, the register, the vocabulary, or the framework
+        itself is absent beside the bundle. UNKNOWN => DENY, per the estate's own compile-gate
+        rule: unreachable means unknown means refuse. A gate that could not run must never read as
+        an open door. On the console this is the one state that is neither green nor red: it says
+        the gate could not judge.
+      blocks: true

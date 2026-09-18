@@ -326,6 +326,31 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
 
     # which .sql realizations exist (a transform view is only offered when its sql is present)
     sql_stems = {p.stem for p in (data_dir / "transforms").glob("*.sql")}
+
+    # WHICH READ-VIEW PAGES HAVE ACTUALLY BEEN PROJECTED.
+    #
+    # `paths["doc"]` and `paths["cleaning"]` were computed from the descriptor stem
+    # UNCONDITIONALLY, while `sample`, `sql` and `data` in the same dicts were existence-gated. The
+    # asymmetry was invisible for as long as this index was only ever written at the END of a
+    # projection run, by which point every page existed. It stops being invisible the moment the
+    # index is DERIVED PER REQUEST so an operator can see an object as soon as its descriptor
+    # lands: the .md is written by the page builder, so a descriptor that landed minutes ago has no
+    # page, and `doc` is the DEFAULT tab — the object opened on "Failed to load doc: no such bundle
+    # file". Measured on a bundle mid-ingestion: 21 such tabs, two per dataset, plus every source.
+    #
+    # Gated with a directory GLOB rather than a Path.exists() per object, in the idiom `sql_stems`
+    # and the sample stems above already use: one listing per plane instead of one stat per row.
+    # `_views` needs no change — it already drops a view whose path is None — so one gate here
+    # fixes every consumer at once (this index, the CLI's objects.json, and a live derivation).
+    _md_stems = {
+        sub: ({p.stem for p in (data_dir / sub).glob("*.md")} if (data_dir / sub).exists() else set())
+        for sub in ("datasets", "sources", "transforms", "lookups")
+    }
+    # Concept pages are written FLAT even when the concept yaml is filed by domain (the page
+    # builder writes ontology/concepts/<stem>.md), so the probe is flat too.
+    _cdoc_stems = (
+        {p.stem for p in _cdir.glob("*.md")} if _cdir and _cdir.exists() else set()
+    )
     # baked samples — datasets: <name>.sample.csv (from the served view); sources: <name>.src.sample.csv
     # (from the raw table). Offered as the object's Sample view.
     _sdir = data_dir / "samples"
@@ -341,6 +366,25 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
     source_sample_stems = (
         {p.name[: -len(".src.sample.csv")] for p in _sdir.glob("*.src.sample.csv")}
         if _sdir.exists()
+        else set()
+    )
+    # THE CENSUS — data/profiles/<stem>.yaml, what the relation CONTAINS as measured, offered as
+    # the object's Profile view between Schema (what it CLAIMS) and Sample (what it LOOKS like).
+    #
+    # ONE SET FOR BOTH KINDS, unlike the samples above. A sample disambiguates in the FILENAME
+    # (<stem>.sample.csv from the served view vs <stem>.src.sample.csv from the raw table) because
+    # the two are different measurements of two different relations. A profile carries no such
+    # suffix: the filename is the descriptor stem alone, so sources and datasets share one flat
+    # namespace here. No stem collides in the bundles measured (one bundle's 8 profiles are all
+    # sources; another's 25 split 12 sources / 13 datasets, every stem unique across the two
+    # planes), but nothing structural prevents it — a source and a dataset sharing a stem would
+    # show one census on both objects. Worth knowing; not worth a second directory to fix.
+    #
+    # Existence-gated by a directory GLOB, for the reason stated at _md_stems above: this index is
+    # DERIVED PER REQUEST, so a Path.exists() here is one stat per object on every poll.
+    profile_stems = (
+        {p.stem for p in (data_dir / "profiles").glob("*.yaml")}
+        if (data_dir / "profiles").exists()
         else set()
     )
 
@@ -466,8 +510,10 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
 
     def _views(kind, paths, lineage_flag, quality):
         order = {
-            "dataset": ["doc", "schema", "sample", "cleaning", "sql", "lineage", "quality"],
-            "source": ["doc", "schema", "sample", "lineage", "quality"],
+            # schema -> profile -> sample is the argument for the Profile tab, made visible as an
+            # ordering: what the relation CLAIMS, what it CONTAINS, what it LOOKS like.
+            "dataset": ["doc", "schema", "profile", "sample", "cleaning", "sql", "lineage", "quality"],
+            "source": ["doc", "schema", "profile", "sample", "lineage", "quality"],
             "lookup": ["doc", "data", "schema"],
             "concept": ["doc", "schema"],
             "quality": ["dashboard", "register", "health"],
@@ -481,6 +527,9 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             "sql": bool(paths.get("sql")),
             "data": bool(paths.get("data")),
             "sample": bool(paths.get("sample")),  # a baked 10-row sample of the produced view
+            # A name present in `order` but absent from `have` is dropped SILENTLY by the
+            # have.get(v) below — no error and no tab. Both halves or neither.
+            "profile": bool(paths.get("profile")),  # the measured census (rows/distinct/nulls)
             "cleaning": bool(
                 paths.get("cleaning")
             ),  # the TRANSFORMATION step (labelled so in the UI)
@@ -572,12 +621,19 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         inputs.sort(key=lambda i: (i["kind"], i["ref"]))
         quality = q_by_table.get(dstem, []) + q_by_table.get(_rel_bare(relation), [])
         paths = {
-            "doc": f"data/datasets/{dstem}.md",
+            # doc/cleaning are EXISTENCE-GATED like sample/sql below — see _md_stems.
+            "doc": f"data/datasets/{dstem}.md" if dstem in _md_stems["datasets"] else None,
             "schema": f"data/datasets/{dstem}.yaml",
             "sample": f"data/samples/{dstem}.sample.csv" if dstem in dataset_sample_stems else None,
+            # Keyed on the DESCRIPTOR stem, like every other entry in this dict — not on the
+            # object id (`_rel_bare(relation)`). The two coincide whenever the transform keeps the
+            # descriptor's name, which is the common case and so hides the difference; on a bundle
+            # whose transform RENAMES the produced relation, an id-keyed lookup silently finds no
+            # profile. The profile file is written beside the descriptor and is named for it.
+            "profile": f"data/profiles/{dstem}.yaml" if dstem in profile_stems else None,
             "sql": f"data/transforms/{tstem}.sql" if (tstem in sql_stems) else None,
             "cleaning": f"data/transforms/{tstem}.md"
-            if tstem
+            if tstem and tstem in _md_stems["transforms"]
             else None,  # the transformation (why/how)
             "transform": f"data/transforms/{tstem}.yaml" if tstem else None,
         }
@@ -619,11 +675,12 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         tbl = src.get("table") or {}
         quality = q_by_table.get(sstem, [])
         paths = {
-            "doc": f"data/sources/{sstem}.md",
+            "doc": f"data/sources/{sstem}.md" if sstem in _md_stems["sources"] else None,
             "schema": f"data/sources/{sstem}.yaml",
             "sample": f"data/samples/{sstem}.src.sample.csv"
             if sstem in source_sample_stems
             else None,
+            "profile": f"data/profiles/{sstem}.yaml" if sstem in profile_stems else None,
         }
         objects.append(
             {
@@ -645,7 +702,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         stem = csv.stem
         yaml_sib = data_dir / "lookups" / f"{stem}.yaml"
         paths = {
-            "doc": f"data/lookups/{stem}.md",
+            "doc": f"data/lookups/{stem}.md" if stem in _md_stems["lookups"] else None,
             "data": f"data/lookups/{csv.name}",
             "schema": f"data/lookups/{stem}.yaml" if yaml_sib.exists() else None,
         }
@@ -826,7 +883,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         con = c.get("concept") or {}
         contract = c.get("contract") or {}
         paths = {
-            "doc": f"ontology/concepts/{cstem}.md",
+            "doc": f"ontology/concepts/{cstem}.md" if cstem in _cdoc_stems else None,
             "schema": concept_schema_path.get(cstem, f"ontology/concepts/{cstem}.yaml"),
         }
         # FULL rule logic (id/subject/kind/confidence/scope/binds + when/then/never) so the concept
@@ -1031,22 +1088,19 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
     # were not enough.
     lgraph = lineage_graph.build(objects)
     result["lineage_graph"] = lgraph
-    # ---- the ENTITY-RELATIONSHIP model: entities with keys + relationships with authored CARDINALITY,
-    # resolved to the exact join columns. See sdk/project/er_model.py — the crow's feet are the
-    # cardinality authored in edges.yaml, not an inference.
-    _dsrel = {
-        stem: _rel_bare(
-            ((transforms.get(ds_transform.get(stem)) or {}).get("produces") or {}).get("relation")
-            or stem
-        )
-        for stem in datasets
-    }
-    # `root` lets er_model resolve each edge's cited evidence into a PROOF STATE, the way
-    # ontology_quality is already handed one. Without it every edge reads "unresolved" —
-    # correct, and visibly so, rather than silently proved.
-    result["er_model"] = er_model.build(
-        datasets, concepts, ont_edges, _dsrel, root=Path(data_dir).parent
-    )
+    # ---- the PHYSICAL ENTITY-RELATIONSHIP model: relations with their measured keys, and the
+    # references between them with MEASURED cardinality and participation. See
+    # sdk/project/er_model.py — the crow's feet are measured from the warehouse through the
+    # connector seam (tools/mac_references.py -> data/references/), NOT read from ontology/edges.yaml.
+    #
+    # `ont_edges` IS DELIBERATELY NOT PASSED, and this is the whole point of the change. An ontology
+    # edge relates BUSINESS OBJECTS; a physical reference relates RELATIONS AND COLUMNS. Feeding the
+    # first to the physical diagram is the conflation being removed, and "use the measured artifact
+    # if present, else the ontology" is the easiest way to re-make it — it LOOKS like it works,
+    # because the bundles with an ontology keep their lines. A bundle with no measured artifact gets
+    # an explicitly-empty model carrying the reason and the command that would produce one.
+    # The ontology's own relationship diagram is a DIFFERENT view with a different nav entry.
+    result["er_model"] = er_model.build(root=Path(data_dir).parent)
     if out_dir:
         (Path(out_dir) / "objects.json").write_text(json.dumps(result, indent=2, sort_keys=True))
         (Path(out_dir) / "lineage_graph.json").write_text(

@@ -361,6 +361,39 @@ bundle must reach the start before anything is allowed to run.
   WITH a `realized_by` is canon-backed (deterministic); WITHOUT, its prose is model-interpreted. Optional and
   backward-compatible. Per RELEASING.md, the tag, schema title, validator `CURRENT`, and every example
   `schema_version` move to `0.1.9` together.
+- **`0.1.19`** adds the **two-pipeline declaration** to `reproduction` (additive and OPTIONAL, so every
+  `0.1.14` manifest remains valid and no existing bundle turns red): **`reproduction.pipelines`** — a CLOSED
+  object over exactly two properties, `data` and `ontology`, each with a manually-typed **`entry`** command;
+  an OPTIONAL **`pipeline: data | ontology`** on each `reproduction.stages[]` entry; a new
+  **`PipelineExit`** `$def` (`{approval}` XOR `{gate, must_exit}`); and a CONDITIONAL — once `pipelines` is
+  present, **every** stage must carry a `pipeline`, so a half-migrated record cannot read as complete.
+
+  **What the block declares, and why it is a CORE key.** The data pipeline's `exit` is not a
+  produces-glob: it is **`{approval: <path to a human sign-off>}`**. The ontology pipeline may not start
+  until that exit is reached, and the ontology guard denies every governed write to the sign-off path
+  UNCONDITIONALLY — no unlock marker lifts it — so **an agent cannot satisfy the exit condition**. An exit
+  an agent can reach is not an exit. `{gate, must_exit}` is the other, deliberately different shape, for a
+  pipeline whose completion a checker can decide; conflating "a tool said yes" with "a person said yes" is
+  the defect the block exists to prevent. It is a core key and **not** an `^x-` extension because that
+  hatch was CLOSED in `0.1.14` and `check_extension_keys` refuses it as **MAC012** — and because the
+  measured lesson is this exact case: `x-grain` held the grain, was unreachable by every gate, and two of
+  four declarations rotted into false while still reading as VERIFIED. Exactly two properties, so a THIRD
+  pipeline is a schema change with a decision record rather than a config value. Read by
+  `tools/check_data_plane_approved.py` and by the ontology guard.
+
+  **VERSION-BUMP STATUS — DISCLOSED, NOT DONE, and it needs the operator.** Per RELEASING.md a
+  `mac.schema.json` change bumps `schema_version` **in lockstep** across four homes: the schema `title`,
+  `tools/validate_schema.py`'s `CURRENT` (`RECOGNIZED` is now **derived** from a declared floor and is
+  not hand-edited), **every** model file's `metadata.schema_version`
+  (a repo-wide sweep across bundles), and this changelog. Only this changelog entry and the schema keys
+  are written here. `CURRENT` was deliberately **left at `0.1.14-develop`**, because the validator
+  *enforces files at the current version and SKIPS the rest* — so flipping `CURRENT` before the sweep
+  would silently stop checking every `0.1.14` bundle in the estate, which buys a bigger number at the
+  cost of coverage. That trade is the one this document exists to refuse. Note also that the schema
+  `title` already read `v0.1.18-develop` while `CURRENT` read `0.1.14-develop` **before** this change:
+  the two were already out of step, and this entry does not repair that. **The release is the
+  operator's act**: bump the four homes together, then sweep.
+
 - **`0.1.12`** adds, on the same contract, a first-class home for a **business relation's NL-trigger
   vocabulary** (additive over `0.1.11`, so `0.1.11` files remain valid): the business-edge `type` enum
   widens from `identity` to **`identity | shared_attribute`** (`shared_attribute` = a symmetric business

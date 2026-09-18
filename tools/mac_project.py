@@ -44,11 +44,25 @@ def resolve(root):
         # the MEASUREMENT plane. Defaults beside the descriptors rather than requiring a manifest
         # entry, so an existing bundle gains it without editing anything.
         profs = (root / (m.get("profiles") or "data/profiles")).resolve()
+        # the PREVIEW plane — the measurement plane's twin, defaulted on the same precedent and for
+        # the same reason: neither of the estate's two bundles declares it, and an existing bundle
+        # must gain it without editing its manifest.
+        samps = (root / (m.get("samples") or "data/samples")).resolve()
+        # the REFERENCE plane — how the relations point at each other, MEASURED. Defaulted on the
+        # same precedent as the two above, and for the same reason: a bundle must gain it without
+        # editing its manifest. It is the DATA plane's own relationship family and has nothing to do
+        # with the ontology's: the ontology relates business objects, this relates relations.
+        refs = (root / (m.get("references") or "data/references")).resolve()
         return SimpleNamespace(root=root, ontology=onto.resolve(), descriptors=desc.resolve(),
-                               transforms=tfm, sources=srcs, profiles=profs,
-                               planes=planes, two_plane=bool(planes))
+                               transforms=tfm, sources=srcs, profiles=profs, samples=samps,
+                               references=refs, planes=planes, two_plane=bool(planes))
+    # THE FLAT BRANCH MUST CARRY THE ATTRIBUTE TOO, even as None. It returns `sources=None` and
+    # `profiles=None`, so a consumer that only read the manifest branch AttributeErrors here and
+    # then TypeErrors globbing a None plane — and every fixture in every gate's self-test carries a
+    # manifest, so nothing would ever have caught it.
     return SimpleNamespace(root=root.resolve(), ontology=root.resolve(), descriptors=(root / "tables").resolve(),
-                           transforms=None, sources=None, profiles=None, planes={}, two_plane=False)
+                           transforms=None, sources=None, profiles=None, samples=None,
+                           references=None, planes={}, two_plane=False)
 
 
 def field_meaning(concept_doc):

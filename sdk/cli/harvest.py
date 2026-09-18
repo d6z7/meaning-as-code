@@ -14,6 +14,16 @@ sdk.authoring.operations (the single, status-gated writer), then projects the re
                    <name>.lookup.csv (name->code) so runtime resolves inline, never by probing the EAV.
                    DRY-RUN by default (no AWS); --accept profiles + writes the CSVs live.
   --mode concepts  author one MAC concept per table (validated against the grammar)
+  --mode ontology  THE ONTOLOGY PIPELINE, and the operator-facing name for the second of the two
+                   manually-started pipelines. Umbrella over concepts -> project. GATED: a bundle
+                   that declares `reproduction.pipelines` may not start this pipeline until its
+                   DATA pipeline has reached its declared exit — a named human's sign-off at
+                   governance/data_plane_approval.yaml. The gate runs BEFORE any billed call, and
+                   `--mode concepts` is gated identically so the older spelling is not a way round
+                   it. There is DELIBERATELY NO OVERRIDE FLAG: `--project-anyway` exists because it
+                   overrides a MACHINE finding and records its reason, while a flag that overrides
+                   a HUMAN act is an agent forging consent — and any agent that can type a command
+                   can pass a flag. See tools/check_data_plane_approved.py.
   --mode project   OFFLINE re-projection only (no AWS/Bedrock) — regenerate the served read view
                    (objects.json + quality/vocab + *.md), ALWAYS threading column-level lineage.
                    This is the single supported way to regen before publish; never hand-run
@@ -1190,9 +1200,30 @@ def onboard(
         print("  concepts: present — untouched (onboarding never authors concepts)")
     else:
         print(
-            "  concepts: NOT RUN — onboarding stops at the data plane. Author the ontology, then:"
+            "  concepts: NOT RUN — onboarding stops at the data plane. This is the END OF THE DATA"
         )
-        print("            python -m sdk.cli.harvest --content-root <root> --mode concepts")
+        print("            PIPELINE, and the ontology pipeline is a SECOND, MANUALLY STARTED one.")
+
+    # THE HANDOFF, and it carries the gate's verdict rather than a cheerful instruction. A bundle
+    # that declares two pipelines cannot start the second one until a human has signed the data
+    # plane off, so printing only the next command would send the operator into a refusal.
+    try:
+        sys.path.insert(0, str(_REPO / "tools"))
+        import check_data_plane_approved as _gate
+        _st = _gate.approval_state(cr)
+        if not _st.applies:
+            print("            This bundle declares ONE pipeline, so the two-pipeline gate does "
+                  "not apply.")
+            print("            python -m sdk.cli.harvest --content-root <root> --mode ontology")
+        elif _st.approved:
+            print(f"            The data plane is APPROVED by {_st.approval.get('by')} on "
+                  f"{_st.approval.get('at')}. Start the ontology pipeline:")
+            print("            python -m sdk.cli.harvest --content-root <root> --mode ontology")
+        else:
+            print()
+            _gate.print_ruling(_st)
+    except Exception as _exc:   # never let the handoff print fail an onboarding that succeeded
+        print(f"            (the data-plane approval gate could not be consulted: {_exc})")
 
     # 5) PROJECT (offline, deterministic) — ALWAYS, in both dry-run and accept. GATED: a bundle that
     #    does not compile stops here, in dry-run too, so onboarding cannot mint a read view over one.
@@ -1232,7 +1263,7 @@ def main():
     ap.add_argument("--databases", nargs="*", default=[], help="Glue database name(s)")
     ap.add_argument(
         "--mode",
-        choices=["data", "materialize", "lookups", "concepts", "project", "onboard"],
+        choices=["data", "materialize", "lookups", "concepts", "project", "onboard", "ontology"],
         default="data",
         help="data/concepts author via AWS+Bedrock; materialize/lookups create the "
         "own-schema views + name->code registers (DRY-RUN by default, --accept to run "
@@ -1307,6 +1338,55 @@ def main():
         return 2
 
 
+class OntologyPipelineClosed(RuntimeError):
+    """The data pipeline has not reached its declared exit, so the ontology pipeline may not start.
+
+    Deliberately distinct from `CompileRefused`: that one means the bundle does not compile, a
+    MACHINE finding with an override. This one means A HUMAN HAS NOT ACTED, and has none.
+    """
+
+
+def _require_data_plane_approved(cr: Path) -> None:
+    """The ONE gate between the two manually-started pipelines, called BEFORE any billed call.
+
+    THE SPLIT THE OPERATOR ASKED FOR IS A GATE BETWEEN TWO COMMANDS THAT ALREADY DO NOT CHAIN.
+    `onboard()` has stopped at the data plane since 2026-08-18 and says so in its own output; what
+    was missing was (a) anything DECLARING that there are two pipelines, and (b) anything ENFORCING
+    the second one's precondition. This is (b) on the CLI side; the PreToolUse guard is (b) on the
+    agent side, because the measured 10:09 failure came through an AGENT'S WRITE and not through
+    this CLI, so a CLI-only gate would never have fired. Both resolve to the same verdict and
+    `check_data_plane_approved.py --agree` asserts they agree on the live bundle.
+
+    A bundle that declares one pipeline is untouched: the gate exits 0 and does not apply.
+    """
+    try:
+        sys.path.insert(0, str(_REPO / "tools"))
+        import check_data_plane_approved as gate
+    except Exception as exc:  # the framework is not importable — say so, do not pretend to judge
+        raise OntologyPipelineClosed(
+            f"the data-plane approval gate could not be loaded ({exc}), so whether this bundle's "
+            f"data plane is approved is UNKNOWN. Unknown means refuse: nothing was authored."
+        ) from exc
+    st = gate.approval_state(cr)
+    if not st.applies or st.approved:
+        if st.applies:
+            ap = st.approval
+            print(f"  gate:     data plane APPROVED by {ap.get('by')} on {ap.get('at')} "
+                  f"({len(st.covered)} of {st.issues_total} registered issue(s) covered, digest "
+                  f"matches over {st.digest_files} file(s)) — the ontology pipeline may run")
+        return
+    lines = [gate.verdict_line(st), ""]
+    for f in st.findings:
+        lines += [f"  [{f.code}] {f.sentence}", f"      ACT:      {f.act}",
+                  f"      EVIDENCE: {f.evidence}"]
+    lines += [
+        "",
+        "  Nothing was authored and nothing was billed. Approving the data plane is the",
+        "  OPERATOR'S act: no flag on this command can substitute for it, deliberately.",
+    ]
+    raise OntologyPipelineClosed("\n".join(lines))
+
+
 def _dispatch(a, cr: Path) -> int:
     # --scaffold is a standalone action (no model / no AWS).
     if a.scaffold:
@@ -1354,8 +1434,24 @@ def _dispatch(a, cr: Path) -> int:
     if a.mode == "data" and not a.databases:
         print("--databases is required for --mode data (one or more Glue database names)")
         return 2
+
+    # THE ONTOLOGY PIPELINE'S ENTRY CONDITION, checked before a single billed call. `concepts` is
+    # gated identically to `ontology`: the older spelling must not be a way round the gate.
+    if a.mode in ("concepts", "ontology"):
+        try:
+            _require_data_plane_approved(cr)
+        except OntologyPipelineClosed as e:
+            print(f"harvest: THE ONTOLOGY PIPELINE IS CLOSED\n{e}")
+            return 2   # the run was REFUSED; nothing was written, deliberately distinct from a
+                       # stage that ran and failed
+
     fn = harvest_data if a.mode == "data" else harvest_concepts
     fn(cr, a.databases, a.limit, refresh=a.refresh, project_anyway=a.project_anyway, **cfg)
+    if a.mode == "ontology":
+        # The umbrella: the ontology pipeline ends by re-projecting the read view. Still OFFLINE,
+        # still gated by the compiler — independence of PIPELINE was never independence of
+        # CONFORMANCE.
+        project_source(cr, project_anyway=a.project_anyway)
     return 0
 
 
