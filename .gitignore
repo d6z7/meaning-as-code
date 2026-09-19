@@ -38,3 +38,8 @@ registers/estate_terms.txt
 # checked out at another commit. It must never be staged: git would record it as a gitlink to an
 # embedded repository, and the checkout can predate a scrub of this tree.
 .claude/
+
+# The ontology lock-disarm marker. It is the OPERATOR's, it is created by hand, and it must
+# never travel: committed, it would arrive disarmed in every clone. Ignored so that a
+# `git add -A` in a bundle where the operator has unlocked cannot carry it in.
+.ontology-unlocked
