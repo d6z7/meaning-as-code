@@ -50,7 +50,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from sdk.project.mac_okf import (  # noqa: E402
+from sdk.project.concept_page_content import (  # noqa: E402
     _column_descriptions,
     _edge_joins,
     _merged_col_meta,

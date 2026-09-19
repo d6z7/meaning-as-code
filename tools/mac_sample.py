@@ -944,7 +944,7 @@ def plan_concept_samples(root: Path, ontology: Path, dataset_targets, *, stems=N
     case in which `fields_undrawn` can be non-empty once every source is attempted.
     """
     from mac_generate_ontology_tests import column_types, member_population
-    from sdk.project.mac_okf import _grounding_fields
+    from sdk.project.concept_page_content import _grounding_fields
 
     by_rel = {}
     for t in dataset_targets:
@@ -1286,8 +1286,8 @@ def derive_concepts(root: Path, blocks, conn, *, seed: str, limit: int, disclosu
                "draw": "stratified" if blk.grain == "key" else "window",
                "members_declared": (len(blk.declared) if blk.declared else None),
                "members_declared_from": blk.declared_from or None,
-               "columns_from": "sdk/project/mac_okf.py#_grounding_fields — the concept page's own "
-                               "Fields table, in its order",
+               "columns_from": "sdk/project/concept_page_content.py#_grounding_fields — the "
+                               "concept page's own Fields table, in its order",
                "member_predicate": blk.member_where, "member_basis": blk.member_basis,
                "member_grain": blk.grain, "member_grain_basis": blk.grain_basis,
                "member_key": blk.member_key,
@@ -1810,8 +1810,8 @@ def main(argv=None) -> int:
             "limit": a.concept_limit, "seed": seed, "seed_from": seed_from,
             "disclosure": disclosure, "disclosure_basis": basis,
             "columns": "exactly the concept page's Fields table, in its order, from "
-                       "sdk/project/mac_okf.py#_grounding_fields — the sample shows ONLY the "
-                       "columns the concept declares",
+                       "sdk/project/concept_page_content.py#_grounding_fields — the sample "
+                       "shows ONLY the columns the concept declares",
             "population": "the concept's OWN members: grounding.value_filter where declared, else "
                           "grounding.discriminator IS NOT NULL, else the whole host relation — "
                           "read through tools/mac_generate_ontology_tests.py#member_population, "

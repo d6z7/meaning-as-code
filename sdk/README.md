@@ -11,7 +11,8 @@ The **only** code that may write the ontology SSOT (`sources/**`). Disallowed op
 ```
 grammar/    pinned schema + closed vocab (no forked copy of mac.schema.json)
 authoring/  operations.py (sole writer) · author_concept.py · data_plane.py · exemplars/
-project/    mac_okf · project_data · objects · lineage   (deterministic, read-only over SSOT)
+project/    concept_page_content (what a page SAYS) · mac_okf (the OKF projection of it)
+            project_data · objects · lineage            (deterministic, read-only over SSOT)
 engine/     harvest/ okf_core/ okf_aws/ chat/            (AWS-touching; candidates only)
 gate/       check_boundaries · check_write_paths · check_read_paths · check_rule_lock
             ruling_coverage · annotation_isolation · provenance · publish · run_checks.sh

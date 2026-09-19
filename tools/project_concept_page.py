@@ -17,8 +17,9 @@ file exists to meet, and it is the FOURTH surface of one defect: the object inde
 
 ONE AUTHOR, AND THIS FILE IS NOT IT
 
-The page's author is `sdk.project.mac_okf.concept_page`, over the whole-bundle context
-`sdk.project.mac_okf.page_inputs` computes — the same two calls `mac_okf.build` makes for every
+The page's author is `sdk.project.mac_okf.concept_page` — the OKF head over the page's own
+content, which lives in `sdk.project.concept_page_content` and is where `page_inputs` (the
+whole-bundle context) now is too. They are the same two calls `mac_okf.build` makes for every
 page it writes. Nothing here renders a heading, a field row, a relationship or a sentence. A page
 re-implemented in the reader would be a SECOND AUTHOR for one artifact, which is how a graph and a
 list came to disagree about one bundle, and it is the defect class this estate spends its time
@@ -125,7 +126,8 @@ for _p in (str(ROOT), str(ROOT / "tools")):
 import yaml  # noqa: E402
 
 from sdk.grammar.resolve import schema_path  # noqa: E402
-from sdk.project.mac_okf import concept_page, load_concepts, page_inputs  # noqa: E402
+from sdk.project.concept_page_content import page_inputs  # noqa: E402
+from sdk.project.mac_okf import concept_page, load_concepts  # noqa: E402
 
 #: SEAM_CONTRACT.md §3 — the version of the contract this envelope is written against.
 ENVELOPE = "mac.seam/1"

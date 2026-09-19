@@ -76,7 +76,8 @@ TOOLS = REPO / "tools"
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(TOOLS))
 
-from sdk.project.mac_okf import build, load_concepts, page_inputs  # noqa: E402
+from sdk.project.concept_page_content import page_inputs  # noqa: E402
+from sdk.project.mac_okf import build, load_concepts  # noqa: E402
 
 fails = 0
 
