@@ -5,13 +5,52 @@ THE RULING THIS IMPLEMENTS. A bundle may declare TWO pipelines, both started man
 
     reproduction:
       pipelines:
-        data:     { entry: <command>, exit: { approval: governance/data_plane_approval.yaml } }
+        data:     { entry: <command>, exit: { register: data/quality/data_quality_register.yaml } }
         ontology: { entry: <command>, requires: { pipeline: data } }
 
-The DATA pipeline's declared exit is not "the files exist". It is A NAMED HUMAN'S SIGN-OFF over the
-issues the bundle's own register holds. The ONTOLOGY pipeline may not start until that exit is
-reached — and then it runs INDEPENDENTLY: its own command, its own clock, no warehouse, no billed
-call, no data stage chained into it.
+The DATA pipeline's declared exit is not "the files exist". It is ITS OWN REGISTER, FULLY
+DISPOSITIONED: every registered issue carrying a TERMINAL `mac.dq_status` term (`accepted`,
+`wont_fix` or `resolved`) with that term's own `requires:` met — which, for the two terms that claim
+a human acted, means a `ruled_by` name and a `reason`. An `open` issue closes the pipeline. The
+ONTOLOGY pipeline may not start until that exit is reached — and then it runs INDEPENDENTLY: its own
+command, its own clock, no warehouse, no billed call, no data stage chained into it.
+
+WHAT CHANGED ON 2026-09-18, AND THE HONEST ACCOUNTING OF WHAT IT COST
+--------------------------------------------------------------------
+Until that day the exit was a SEPARATE FILE, `governance/data_plane_approval.yaml`, and this gate
+refused until a named human saved one. The operator refused the artifact — "i dont want to sign of
+anything !!!" — and asked, in the same breath, when the ontology would start. Both are answered by
+the same change, and it is a SIMPLIFICATION rather than a weakening of what they actually asked
+for, which was, verbatim and earlier: "we cannot automatically proceed with creating ontology as
+long as we did not approve the configuration of datasets in full amount. this means we did not
+reduce the # of issues to the acceptable minimum."
+
+THAT CONDITION LIVES IN THE REGISTER. It is where the reduction is recorded, one argued disposition
+at a time, each with its own `ruled_by` and its own `reason`. The separate file duplicated it in a
+LESS informative form — one date and one name against N individually-argued dispositions — so the
+duplicate goes and the register is the exit. The sign-off was the BUILD'S design choice; it was
+never the operator's requirement.
+
+THE PRICE, WRITTEN INTO THE GATE RATHER THAN GLOSSED. The sign-off existed to be the one artifact
+an agent provably cannot write: the guard denies that path unconditionally, marker or not. The
+register IS agent-writable — deliberately, and the guard's own self-test asserts it — and in fact an
+agent typed the `ruled_by: operator` lines on a live register on the operator's conversational
+instruction. So collapsing the exit onto the register drops the guarantee from PREVENTION to
+ATTRIBUTION: git blame, the named ruler, the reason text and the decision record, not a token the
+agent cannot reach. That is not a regression being hidden. It is the ceiling this estate had already
+reached and recorded — see "WHAT THIS GATE DOES NOT CLAIM" below, whose own words are "Real
+authorization is out-of-band … and in a single-identity self-merge estate there is no second party
+to hold that token. The honest claim, in the estate's own words, is DETECTED-AND-BLOCKED,
+AUTHORIZED OUT-OF-BAND." A ceremony that buys nothing the operator wants is worse than an honest
+ceiling. The refusal text below says so, and so does the known-gap list in
+mac-integration-kit/ontology/planes/PIPELINES.md §8.
+
+AN APPROVAL FILE THAT IS PRESENT IS STILL HONOURED, NEVER IGNORED. `approval_missing` is retired —
+no sign-off is required and none will be asked for — but every other `approval_*` reject class stays
+live over a file that EXISTS: unreadable, unratified, agent-stamped, `covers:` incomplete or
+dangling, digest stale. A bundle that carries a sign-off must not silently lose it, and the only way
+to make that true is for the file to keep being able to FAIL. `resolved_on_non_defect` stays too: it
+is the one guard against the one disposition a machine can write naming nobody.
 
 WHAT THIS REPLACES, AND WHY. The old mechanism was a blanket path lock: every path under a bundle's
 `ontology/` was denied unless the operator had touched an unlock marker. Measured 2026-09-18 10:09,
@@ -23,9 +62,9 @@ that A HUMAN HAD NOT YET APPROVED THE DATASET CONFIGURATION. So the blanket goes
 stricter and better-aimed replaces it — this gate, which a human and only a human can open.
 
 THE THRESHOLD IS NOT A NUMBER ANYBODY INVENTED. "The acceptable minimum of issues" is per-issue
-HUMAN COVERAGE: every id in the register must be NAMED in the sign-off, and every graded DEFECT
-(`DQ-`) must additionally carry a terminal `mac.dq_status` term whose own `requires:` list is met.
-The count of uncovered ids must be 0, and it cannot move unless a person names the specific thing.
+DISPOSITION: every id in the register — `NS-` disclosure and `DQ-` defect alike — must carry a
+terminal `mac.dq_status` term whose own `requires:` list is met. The count of undispositioned ids
+must be 0, and it cannot move unless a person rules on the specific thing and says why.
 
 SEVERITY IS NEVER READ — not weighted, not thresholded, not reported by this gate. Two reasons, and
 the second is measured. (a) `severity` is machine-authored, capped at `confidence: I` by CORE.md §4,
@@ -41,16 +80,24 @@ THE TWO KINDS OF REGISTER ENTRY are the estate's own convention, not a coinage h
 header defines `NS-<AREA>-<nn>` as "a relation … MEASURED and deliberately NOT SERVED" and
 `DQ-<AREA>-<nn>` as "a data DEFECT, graded and dispositioned"; the console already splits them the
 same way (mac_console/ingest_progress.py filters `id.startswith("DQ-")` at :799 and `NS-` at :800,
-its docstring recording the bug that taught it to). So: a `DQ-` id needs a DISPOSITION; an `NS-` id
-needs only to be NAMED in the sign-off, because acknowledging a disclosure is a different act from
-dispositioning a defect.
+its docstring recording the bug that taught it to). BOTH KINDS NOW NEED A DISPOSITION, and that is
+what widened on 2026-09-18: an `NS-` id used to need only to be NAMED in the sign-off, because
+acknowledging a disclosure is a different act from dispositioning a defect — and the sign-off was
+where that acknowledgement lived. With the sign-off retired there is nowhere else for it to be
+recorded, so it is recorded in the register like everything else. The prefix still matters for one
+thing and one thing only: `resolved` is refused on an `NS-` id, because no transform dissolved a
+relation that was deliberately not served.
 
-WHY TWO ARTIFACTS AND NOT ONE. The register DESCRIBES and is agent-writable. The sign-off
-AUTHORISES and is agent-unwritable (the guard denies it unconditionally, unlock marker or not). An
-agent can therefore fake a disposition and cannot fake the approval, so faking one buys nothing.
-And because the register is INSIDE the digest, a disposition written after the sign-off moves the
-roll-up and STALES the approval it was meant to satisfy — which is what closes the one hole a
-machine could otherwise walk through, `mac.dq_status.resolved` requiring no `ruled_by` at all.
+WHY ONE ARTIFACT AND NOT TWO, NOW. The register both DESCRIBES and DISPOSITIONS, and it is
+agent-writable. The old arrangement put the authorising half in a file the guard denies
+unconditionally, so an agent could fake a disposition and not the approval, and faking one bought
+nothing; and because the register sits INSIDE the digest, a disposition written after the sign-off
+staled the approval it was meant to satisfy. That ladder is gone with the second artifact, and what
+replaces it is weaker and is named as weaker: per-issue ATTRIBUTION (`ruled_by`, `reason`, git
+blame, the decision record) and `resolved_on_non_defect` standing over the one spelling a machine
+can write naming nobody. Staleness is no longer a concept on this path, and that is not a loss: the
+register IS the live state and is re-read on every run, so there is no signed snapshot left to go
+out of date.
 
 WHAT THIS GATE DOES NOT CLAIM. No file-based mechanism is un-forgeable against an agent with
 unrestricted shell access. The guard's Bash matcher DETECTS the obvious shell writes and a
@@ -67,7 +114,7 @@ Usage
     python3 tools/check_data_plane_approved.py <bundle-root>
     python3 tools/check_data_plane_approved.py <bundle-root> --json
     python3 tools/check_data_plane_approved.py <bundle-root> --print-ruling     # CORE.md §6
-    python3 tools/check_data_plane_approved.py <bundle-root> --print-approval   # the block to save
+    python3 tools/check_data_plane_approved.py <bundle-root> --print-approval   # RETIRED — a note
     python3 tools/check_data_plane_approved.py <bundle-root> --agree [--guard PATH]
     python3 tools/check_data_plane_approved.py --self-test
 
@@ -75,10 +122,12 @@ Usage
     exit 1 = it may not, and every blocker is named with its denominator
     exit 2 = could not run, which is not a verdict
 
-THIS TOOL WRITES NO FILE. `--print-approval` emits the block to STDOUT for the human to save and
-commit; there is deliberately no `--approve` and no `--ratify-anyway`. `--project-anyway` exists
-elsewhere because it overrides a MACHINE finding and records its reason; a flag that overrides a
-HUMAN act is an agent forging consent, and any agent that can type a command can pass a flag.
+THIS TOOL WRITES NO FILE, and there is deliberately no `--approve`, no `--rule` and no
+`--ratify-anyway`. `--project-anyway` exists elsewhere because it overrides a MACHINE finding and
+records its reason; a flag that writes a HUMAN's disposition is an agent forging consent, and any
+agent that can type a command can pass a flag. `--print-approval` is RETIRED to a note: it used to
+emit the sign-off block for a human to save, and there is no longer a sign-off to save. It keeps its
+name so no caller breaks, and prints what the exit is instead.
 """
 from __future__ import annotations
 
@@ -103,10 +152,16 @@ VOCABULARY = _ROOT / "mac_vocabulary.yaml"
 
 EXIT_PASS, EXIT_FAIL, EXIT_COULD_NOT_RUN = 0, 1, 2
 
-# The sign-off's default home. A bundle names its own in the manifest
-# (reproduction.pipelines.data.exit.approval); this is the path a scaffold writes.
-DEFAULT_APPROVAL = "governance/data_plane_approval.yaml"
+# The register is the DATA pipeline's exit. A bundle names its own in the manifest
+# (reproduction.pipelines.data.exit.register); this is the conventional path every tool in the
+# estate already hardcodes, so it is also the default.
 REGISTER_REL = "data/quality/data_quality_register.yaml"
+
+# The OPTIONAL sign-off's default home, kept because a bundle that carries one must keep working.
+# NOT REQUIRED and never asked for: `approval_missing` is retired. A bundle may still name its own
+# path in `reproduction.pipelines.data.exit.approval`, and if a file exists there it is validated
+# exactly as before — honoured, never ignored.
+DEFAULT_APPROVAL = "governance/data_plane_approval.yaml"
 
 # The reserved sign-off id. `s.` is the sign-off prefix the estate's question ledger already uses.
 SIGN_OFF_ID = "s.data-plane.approved"
@@ -250,9 +305,13 @@ class State:
     findings: list = field(default_factory=list)
     approval: dict = field(default_factory=dict)
     approval_path: str = DEFAULT_APPROVAL
+    approval_present: bool = False        # a sign-off EXISTS, so it is validated. Never required.
+    register_path: str = REGISTER_REL     # the DATA pipeline's declared exit
     issues_total: int = 0
     issues_dq: int = 0
     issues_ns: int = 0
+    ruled: list = field(default_factory=list)          # ids at a terminal term with its evidence
+    undispositioned: list = field(default_factory=list)  # ids that leave the exit unreached
     covered: list = field(default_factory=list)
     uncovered: list = field(default_factory=list)
     datasets: int = 0
@@ -343,7 +402,11 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
                 f"add `pipeline: data` or `pipeline: ontology` to the `{stage.get('id', '?')}` stage",
                 "mac.project.yaml#reproduction.stages"))
 
+    # THE DECLARED EXIT. `register` is the shape since 2026-09-18; `approval` is the older one and
+    # is still read, so a bundle that names a sign-off keeps naming one. Neither key being present
+    # is legal and means the conventional register path: an exit nobody declared is still an exit.
     exit_decl = ((pipelines.get("data") or {}).get("exit") or {})
+    st.register_path = exit_decl.get("register") or REGISTER_REL
     st.approval_path = exit_decl.get("approval") or DEFAULT_APPROVAL
 
     # ---- the data plane as it stands
@@ -353,17 +416,17 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
     st.digest_now, rels = data_plane_digest(root)
     st.digest_files = len(rels)
 
-    # ---- the register
-    reg_path = root / REGISTER_REL
+    # ---- the register: THE DECLARED EXIT ITSELF, not a thing the exit refers to
+    reg_path = root / st.register_path
     issues: list = []
     if not reg_path.is_file():
         st.findings.append(Finding(
             "gate_unreachable",
-            f"The data-quality register is absent, so there is nothing to approve and nothing to "
-            f"count. A bundle with {st.datasets} served dataset(s) and no register has not finished "
-            f"its data pipeline.",
+            f"The data-quality register is absent, and it IS this pipeline's declared exit — so "
+            f"there is nothing to disposition and nothing to count. A bundle with {st.datasets} "
+            f"served dataset(s) and no register has not finished its data pipeline.",
             "python -m sdk.cli.harvest --content-root <root> --mode onboard --accept",
-            REGISTER_REL))
+            st.register_path))
     else:
         try:
             reg = yaml.safe_load(reg_path.read_text(encoding="utf-8")) or {}
@@ -371,7 +434,7 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
         except Exception as exc:
             st.findings.append(Finding(
                 "gate_unreachable", f"The register cannot be parsed: {exc}",
-                "fix the register", REGISTER_REL))
+                "fix the register", st.register_path))
     ids = [str(r.get("id", "")).strip() for r in issues if str(r.get("id", "")).strip()]
     st.issues_total = len(ids)
     st.issues_dq = sum(1 for i in ids if i.startswith("DQ-"))
@@ -391,10 +454,15 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
             f"is a step that did not run, not a clean bill of health, so the data plane cannot be "
             f"approved from it.",
             "python -m sdk.cli.harvest --content-root <root> --mode onboard --accept",
-            REGISTER_REL))
+            st.register_path))
 
-    # ---- the disposition law, per entry. `NS-` ids are NOT defects and need no status change;
-    #      `DQ-` ids must carry a terminal term with that term's own `requires:` met.
+    # ---- THE EXIT CONDITION: the disposition law, applied to EVERY registered entry.
+    #
+    # WIDENED 2026-09-18 from `DQ-` ids to every id. Before, an `NS-` disclosure needed only to be
+    # NAMED in a separate sign-off — acknowledging a disclosure is a different act from
+    # dispositioning a defect, and the sign-off was where the acknowledgement lived. The sign-off is
+    # retired, so there is nowhere else for it to be recorded and it is recorded here, like
+    # everything else. The prefix still decides one thing: `resolved` is refused on an `NS-` id.
     law = _dq_law() if vocabulary is None else (
         ((yaml.safe_load(Path(vocabulary).read_text(encoding="utf-8")) or {}).get("dq_status") or {})
         .get("terms") or {})
@@ -402,31 +470,40 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
     for r in issues:
         rid = str(r.get("id", "")).strip()
         status = str(r.get("status", "") or "").strip()
-        if rid.startswith("NS-"):
-            # THE CATEGORY ERROR. `resolved` requires nothing and both the register and the
-            # resolution map are agent-writable, so this is the one spelling that would let a
-            # machine clear the register with no human name anywhere.
-            if status == "resolved":
-                st.findings.append(Finding(
-                    "resolved_on_non_defect",
-                    f"{rid} is marked `resolved`, and it is not a defect: an `NS-` entry is a "
-                    f"relation measured and deliberately not served, so no transform dissolved it. "
-                    f"`resolved` is the one disposition `mac.dq_status` lets a machine write without "
-                    f"naming anybody, which is why it is refused here. The honest disposition of a "
-                    f"non-promotion is `accepted` or `wont_fix`, and both name a ruler.",
-                    f"set {rid} to `accepted` (or `wont_fix`) with `ruled_by:` and `reason:`",
-                    f"{REGISTER_REL}#{rid}"))
+        if rid.startswith("NS-") and status == "resolved":
+            # THE CATEGORY ERROR, and THE ONE REJECT CLASS THAT EXISTS BECAUSE THE EXIT IS NOW A
+            # FILE AN AGENT CAN WRITE. `resolved` requires nothing, and both the register and the
+            # resolution map are agent-writable, so it is the one spelling that would let a machine
+            # clear the register with no human name anywhere. It is why NS-ORDERS-01 on the live
+            # register is `accepted` and not `resolved`.
+            st.findings.append(Finding(
+                "resolved_on_non_defect",
+                f"{rid} is marked `resolved`, and it is not a defect: an `NS-` entry is a "
+                f"relation measured and deliberately not served, so no transform dissolved it. "
+                f"`resolved` is the one disposition `mac.dq_status` lets a machine write without "
+                f"naming anybody, which is why it is refused here — and with the register as this "
+                f"pipeline's exit, it is the only thing standing between a machine and the gate. "
+                f"The honest disposition of a non-promotion is `accepted` or `wont_fix`, and both "
+                f"name a ruler.",
+                f"set {rid} to `accepted` (or `wont_fix`) with `ruled_by:` and `reason:`",
+                f"{st.register_path}#{rid}"))
+            st.undispositioned.append(rid)
             continue
-        if not rid.startswith("DQ-"):
-            continue
+        kind = "a graded defect" if rid.startswith("DQ-") else \
+               "a relation measured and deliberately not served" if rid.startswith("NS-") else \
+               "a registered issue"
         if status not in terminal:
             st.findings.append(Finding(
                 "issue_undispositioned",
-                f"{rid} is a graded defect whose status is "
-                f"{'`' + status + '`' if status else 'absent'} — nobody has ruled on it. The closed "
-                f"set is mac.dq_status; `open` means recorded and undispositioned.",
-                f"give {rid} a terminal disposition with `ruled_by:` and `reason:`",
-                f"{REGISTER_REL}#{rid}"))
+                f"{rid} is {kind} whose status is "
+                f"{'`' + status + '`' if status else 'absent'} — nobody has ruled on it, so this "
+                f"bundle's DATA pipeline has not reached its declared exit. The closed set is "
+                f"mac.dq_status; `open` means recorded and undispositioned, and it is the honest "
+                f"default rather than a failure to write.",
+                f"give {rid} a terminal disposition (`accepted`, `wont_fix` or `resolved`) with "
+                f"`ruled_by:` and `reason:`",
+                f"{st.register_path}#{rid}"))
+            st.undispositioned.append(rid)
             continue
         missing = [k for k in (law.get(status, {}).get("requires") or [])
                    if not str(r.get(k, "") or "").strip()]
@@ -435,25 +512,23 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
                 "issue_undispositioned",
                 f"{rid} is `{status}`, which claims a human acted, and it is missing "
                 f"{', '.join('`' + m + '`' for m in missing)}. mac.dq_status requires those on that "
-                f"term because it is the term that makes the claim.",
-                f"add {', '.join(missing)} to {rid}", f"{REGISTER_REL}#{rid}"))
+                f"term because it is the term that makes the claim — and since the exit collapsed "
+                f"onto this file, that name IS the attribution the gate rests on.",
+                f"add {', '.join(missing)} to {rid}", f"{st.register_path}#{rid}"))
+            st.undispositioned.append(rid)
+        else:
+            st.ruled.append(rid)
 
-    # ---- the sign-off: the data pipeline's declared exit
+    # ---- the OPTIONAL sign-off. NOT the exit any more, and its absence is NOT a finding: the
+    # retired `approval_missing` class carries the reason and what the retirement cost. What is
+    # still true is that a file which EXISTS is validated exactly as before — honoured, never
+    # ignored — so a bundle that carries a sign-off cannot silently lose it by having the exit move
+    # out from under it, and every `approval_*` class below can still turn a green bundle red.
+    st.uncovered = list(st.undispositioned)
     ap_path = root / st.approval_path
     if not ap_path.is_file():
-        st.findings.append(Finding(
-            "approval_missing",
-            f"The ontology pipeline has not been started: this bundle's data plane is not approved. "
-            f"{len(ids)} of {len(ids)} registered issues are uncovered"
-            f"{' (' + ', '.join(ids) + ')' if ids and len(ids) <= 8 else ''}, and no data-plane "
-            f"sign-off exists at {st.approval_path}. Approving is your act: rule on each issue, then "
-            f"sign off there. No agent can do it for you, and nothing in the ontology plane may be "
-            f"written until you have.",
-            f"python3 tools/check_data_plane_approved.py <root> --print-approval  "
-            f"# then save it to {st.approval_path} and commit",
-            st.approval_path))
-        st.uncovered = ids
         return st
+    st.approval_present = True
 
     try:
         st.approval = parse_flat(ap_path.read_text(encoding="utf-8"))
@@ -505,16 +580,23 @@ def approval_state(root: Path, *, vocabulary: Path | None = None) -> State:
     # ---- per-issue coverage. THE THRESHOLD, and nobody invented a number.
     covers = [c.strip() for c in re.split(r"[,\s]+", str(ap.get("covers", "") or "")) if c.strip()]
     st.covered = covers
-    st.uncovered = [i for i in ids if i not in covers]
+    unnamed = [i for i in ids if i not in covers]
+    # THE BLOCKING SET IS THE UNION, because the two questions are different. `undispositioned` is
+    # the EXIT (every issue ruled); `unnamed` is a defect in a sign-off that EXISTS and claims to
+    # cover this register. A page or a verdict that showed only one would report a closed pipeline
+    # with nothing listed against it.
+    st.uncovered = st.undispositioned + [i for i in unnamed if i not in st.undispositioned]
     dangling = [c for c in covers if c not in ids]
-    if st.uncovered:
+    if unnamed:
         st.findings.append(Finding(
             "issue_uncovered",
-            f"The data plane is not approved: {len(st.uncovered)} of {len(ids)} registered issues are "
-            f"not named in the sign-off ({', '.join(st.uncovered)}). The threshold is per-issue human "
-            f"acknowledgement, so the count cannot move unless a person names the specific thing. No "
-            f"wildcard is permitted — if that is too many ids, the fix is a coarser register.",
-            f"name each id in the sign-off's `covers:` field in {st.approval_path}",
+            f"This bundle carries a sign-off and that sign-off does not cover its register: "
+            f"{len(unnamed)} of {len(ids)} registered issues are not named in it "
+            f"({', '.join(unnamed)}). A sign-off is no longer required — but one that is present is "
+            f"honoured rather than ignored, and a present sign-off that covers only part of the "
+            f"register is a half-finished human act, not a passing one. Delete it or complete it.",
+            f"name each id in the sign-off's `covers:` field in {st.approval_path}, or delete the "
+            f"sign-off: the exit is {st.register_path} and the register alone can satisfy it",
             st.approval_path))
     if dangling:
         st.findings.append(Finding(
@@ -608,13 +690,24 @@ def console_block(root: Path) -> dict:
         "pipelines": {
             "declared": st.declared,
             "current": pipeline,
-            "data": {"exit": {"kind": "approval", "ref": st.approval_path,
-                              "satisfied": st.approved}},
+            # `kind` CHANGED FROM "approval" TO "register" on 2026-09-18 and `ref` with it, so a
+            # page that renders the exit names the file the operator actually has to work in. The
+            # retired sign-off keeps a home of its own below (`data_plane.approval_*`) rather than
+            # being deleted from the contract: a bundle that carries one still shows it.
+            "data": {"exit": {"kind": "register", "ref": st.register_path,
+                              "satisfied": st.approved,
+                              "guarantee": "attribution",
+                              "ruled": len(st.ruled), "of": st.issues_total}},
             "ontology": {"requires": {"pipeline": "data", "satisfied": st.approved},
                          "blocked": st.applies and not st.approved},
         },
         "data_plane": {
             "approved": st.approved,
+            # A SIGN-OFF IS OPTIONAL SINCE 2026-09-18. `approval_present: false` with
+            # `approved: true` is now a NORMAL state and the page must not paint it as missing
+            # evidence — the evidence is per-issue, in `issues.ruled`.
+            "approval_present": st.approval_present,
+            "approval_required": False,
             # NEVER a restatement of the file's own `status:` field — recomputed from the plane.
             "approved_by_role": (ap.get("role") or None),
             "approved_at": (ap.get("at") or None),
@@ -626,10 +719,15 @@ def console_block(root: Path) -> dict:
             "moved_files": st.moved_files,
         },
         "issues": {
-            "register": REGISTER_REL,
+            "register": st.register_path,
             "total": st.issues_total,
             "defects": st.issues_dq,
             "non_promotions": st.issues_ns,
+            # `ruled` IS THE EXIT'S NUMERATOR — ids at a terminal term with that term's evidence.
+            # `covered_by_approval` remains the OPTIONAL sign-off's own list, and is empty when no
+            # sign-off exists; a page must read `ruled` for the gate and never `covered_by_approval`.
+            "ruled": st.ruled,
+            "undispositioned": st.undispositioned,
             "covered_by_approval": st.covered,
             "uncovered": st.uncovered,
             # by_severity IS DELIBERATELY ABSENT. A page that paints severities beside a closed gate
@@ -664,49 +762,65 @@ def print_ruling(st: State) -> None:
     print(f"WHAT IS NOT ESTABLISHED, and is yours to settle: whether these datasets are configured "
           f"as you intend, and whether each registered issue is acceptable.")
     print()
-    if st.uncovered:
-        print("PER ISSUE — each needs your acknowledgement, and a graded defect needs a disposition:")
-        for i in st.uncovered:
+    if st.undispositioned:
+        print("PER ISSUE — each needs a terminal disposition with its named ruler and reason:")
+        for i in st.undispositioned:
             print(f"  · {i}")
         print()
-    print("CONSEQUENCE OF APPROVING:  the ontology pipeline opens and concepts may be authored.")
+    print("CONSEQUENCE OF RULING:     the ontology pipeline opens and concepts may be authored.")
     print("CONSEQUENCE OF DECLINING:  the data plane stays open to change; no concept is authored.")
     print("NOTE: this gate reads NO severity field. A non-defect graded `high` blocks nothing.")
+    print("NOTE: THERE IS NO SEPARATE SIGN-OFF TO WRITE. The exit is the register itself, so what")
+    print("      it buys is ATTRIBUTION — a named ruler and a reason per issue — and not")
+    print("      PREVENTION: the register is a file an agent can write. That is the ceiling this")
+    print("      estate already had; a second artifact saying the same thing did not raise it.")
     print()
-    print("RECOMMENDATION: rule on each issue in the register, then:")
-    print("  python3 tools/check_data_plane_approved.py <root> --print-approval")
-    print(f"  # save the block to {st.approval_path}, write the decision record, and commit")
+    print(f"RECOMMENDATION: rule on each issue above in {st.register_path} —")
+    print("  status: accepted | wont_fix | resolved   ·   ruled_by: <a named person or role>")
+    print("  reason: <why it is real, and why it is being lived with>")
 
 
 def print_approval(st: State) -> None:
-    """The block to save. THIS TOOL WRITES NO FILE — the consent is the human's own act."""
-    ids = ", ".join(st.covered or st.uncovered)
-    print(f"# {st.approval_path} — the DATA pipeline's declared exit.")
-    print("#")
-    print("# THIS FILE IS THE ONE ACT NO AGENT CAN PERFORM. The guard denies Edit/Write/MultiEdit/")
-    print("# NotebookEdit on this path UNCONDITIONALLY — the unlock marker does not lift it, because")
-    print("# an unlock the agent can also satisfy is not a gate. Save it yourself and commit it.")
-    print("#")
-    print("# Verify, do not transcribe: the digest below is RECOMPUTED from the files on every run")
-    print("# and compared to this value. The only fields that constitute your consent are `by`,")
-    print("# `at` and `covers`.")
-    print(f"id: {SIGN_OFF_ID}")
-    print("kind: sign_off")
-    print("plane: data")
-    print("status: applied")
-    print("verdict: confirmed")
-    print("outcome: ratified")
-    print(f"covers: {ids}")
-    print(f"register: {REGISTER_REL}")
-    print(f"digest: {st.digest_now}")
-    print("lock: data/data_plane.lock")
-    print("decision: decisions/NNNN-approve-the-data-plane.md   # write this record too")
-    print("rev: 1")
-    print("at: '<YYYY-MM-DD>'                                   # the date you approved")
-    print("by: <your name or role>                              # never 'the team', never a tool")
-    print("role: operator")
-    print("identity_basis: local-declared                       # `verified` once the API verifies it")
-    print("submitted_via: human")
+    """RETIRED 2026-09-18 — a NOTE, and no longer a block to save.
+
+    This used to emit `governance/data_plane_approval.yaml` for a human to save and commit. There is
+    nothing to save any more: the DATA pipeline's exit is the register, and the operator who was
+    meant to sign this refused it — having already ruled on every issue in that register, one at a
+    time, each with its own recorded argument.
+
+    The flag KEEPS ITS NAME so no caller, doc or refusal message breaks on it, and prints what the
+    exit actually is. A tool that silently did nothing would be worse than one that says so.
+    """
+    print("RETIRED — there is no sign-off block to save, and none is required.")
+    print("=" * 78)
+    print(f"THE DATA PIPELINE'S EXIT IS ITS REGISTER: {st.register_path}")
+    print("Every registered issue must carry a TERMINAL mac.dq_status term with that term's own")
+    print("evidence — `accepted` and `wont_fix` require `ruled_by` and `reason`; `resolved` is")
+    print("evidenced structurally and is refused on an `NS-` id. An `open` issue closes the")
+    print("pipeline. Nothing else is asked of you.")
+    print()
+    print("WHY THIS WENT AWAY. The separate file duplicated the register in a LESS informative")
+    print(f"form: one date and one name against {st.issues_total} individually-argued dispositions.")
+    print("It was this build's design choice and never the operator's requirement, whose actual")
+    print("words were that the ontology may not proceed until the number of issues is reduced to an")
+    print("acceptable minimum — which is recorded in the register, per issue, with a reason.")
+    print()
+    print("WHAT IT COST, AND IT IS NOT NOTHING. The sign-off was the one artifact an agent provably")
+    print("cannot write: the guard denies that path unconditionally, marker or not. The register is")
+    print("agent-writable. So this exit rests on ATTRIBUTION — a named ruler, a reason, git blame,")
+    print("the decision record — and not on PREVENTION. In a single-identity self-merge estate")
+    print("there is no second party to hold a token anyway; the honest claim, in the estate's own")
+    print("words, is DETECTED-AND-BLOCKED, AUTHORIZED OUT-OF-BAND. See PIPELINES.md §8 gap 11.")
+    print()
+    if st.approval_present:
+        print(f"THIS BUNDLE DOES CARRY A SIGN-OFF at {st.approval_path}, and it is still HONOURED:")
+        print("every approval reject class is live over it, so it can still fail. Completing it or")
+        print("deleting it are both valid; ignoring it is not.")
+    else:
+        print(f"No sign-off exists at {st.approval_path} and none will be asked for. If one is")
+        print("present in some bundle it is still validated — honoured, never ignored.")
+    print()
+    print("  python3 tools/check_data_plane_approved.py <root> --print-ruling   # the prepared ruling")
 
 
 # ======================================================================== guard agreement
@@ -745,19 +859,27 @@ def verdict_line(st: State) -> str:
                 "marker alone, unchanged.")
     if st.approved:
         ap = st.approval
-        return (f"PASS: check_data_plane_approved — data plane APPROVED by {ap.get('by')} on "
-                f"{ap.get('at')} (role {ap.get('role')}, identity {ap.get('identity_basis')}, "
-                f"{ap.get('decision')}); {len(st.covered)} of {st.issues_total} registered issue(s) "
-                f"covered by the sign-off ({st.issues_dq} graded defect(s) dispositioned, "
-                f"{st.issues_ns} non-promotion(s) acknowledged); digest matches over "
-                f"{st.digest_files} data-plane file(s). The ontology pipeline may be started "
-                f"manually. Severity was not read.")
+        # THE DENOMINATOR IS THE RULED COUNT OVER THE REGISTERED COUNT, because the register is the
+        # exit. The sign-off, when one exists, is reported as the SECOND clause — present and
+        # honoured, never the thing that opened the gate.
+        signed = (f"; a sign-off is also present at {st.approval_path} and was honoured: by "
+                  f"{ap.get('by')} on {ap.get('at')} (role {ap.get('role')}, identity "
+                  f"{ap.get('identity_basis')}, {ap.get('decision')}), digest matches over "
+                  f"{st.digest_files} data-plane file(s)") if st.approval_present else \
+                 (f"; no sign-off file exists and none is required — the exit is the register, and "
+                  f"what it buys is ATTRIBUTION (`ruled_by` per issue), not PREVENTION")
+        return (f"PASS: check_data_plane_approved — the DATA pipeline has reached its declared exit "
+                f"({st.register_path}): {len(st.ruled)} of {st.issues_total} registered issue(s) "
+                f"carry a terminal disposition with its required evidence ({st.issues_dq} graded "
+                f"defect(s), {st.issues_ns} non-promotion(s)); 0 open{signed}. The ontology pipeline "
+                f"may be started manually. Severity was not read.")
     classes = sorted({f.code for f in st.findings})
     return (f"FAIL: check_data_plane_approved — the ontology pipeline is CLOSED: "
             f"{len(st.findings)} blocker(s) in {len(classes)} class(es) [{', '.join(classes)}] over "
             f"{st.issues_total} registered issue(s) ({st.issues_dq} graded defect(s), "
-            f"{st.issues_ns} non-promotion(s)) and {st.digest_files} data-plane file(s); "
-            f"{len(st.uncovered)} of {st.issues_total} issue(s) uncovered")
+            f"{st.issues_ns} non-promotion(s)) in {st.register_path} and {st.digest_files} "
+            f"data-plane file(s); {len(st.uncovered)} of {st.issues_total} issue(s) unresolved "
+            f"({len(st.undispositioned)} undispositioned)")
 
 
 # ======================================================================== self-test
@@ -773,7 +895,7 @@ reproduction:
     data:
       entry: harvest --mode onboard --accept
       exit:
-        approval: governance/data_plane_approval.yaml
+        register: data/quality/data_quality_register.yaml
     ontology:
       entry: harvest --mode ontology
       requires:
@@ -875,14 +997,35 @@ def _self_test() -> int:
         want("not_declared does not apply", st.applies, False)
         want("not_declared has no blockers", codes(st), [])
 
-        # CLEAN 2 — the whole happy path. A first ingestion, ruled and signed.
-        b = _seed(tmp, "beta"); _rule(b); _sign(b)
+        # CLEAN 2 — THE WHOLE HAPPY PATH, AND IT IS THE ONE THAT CHANGED. A first ingestion whose
+        # register is fully ruled, with NO SIGN-OFF FILE ANYWHERE. This assertion used to require
+        # `_sign(b)` as well; the sign-off was retired on 2026-09-18 (see the module docstring and
+        # mac_vocabulary.yaml#data_plane_gate.approval_missing) and the register is the exit.
+        b = _seed(tmp, "beta"); _rule(b)
         st = approval_state(b)
-        want("a ruled and signed data plane is approved", (st.approved, codes(st)), (True, []))
+        want("a fully-ruled register alone opens the pipeline",
+             (st.approved, codes(st)), (True, []))
+        want("…and no sign-off file was involved", st.approval_present, False)
+        want("…and every registered id counts as ruled", len(st.ruled), st.issues_total)
 
-        # MUTANT per reject class.
+        # CLEAN 3 — A BUNDLE THAT DOES CARRY A SIGN-OFF STILL WORKS. Honoured, never ignored.
+        b = _seed(tmp, "beta_signed"); _rule(b); _sign(b)
+        st = approval_state(b)
+        want("a ruled register plus a valid sign-off is approved",
+             (st.approved, codes(st)), (True, []))
+        want("…and the sign-off is reported as present", st.approval_present, True)
+
+        # RETIRED CLASS — an absent sign-off is NO LONGER A FINDING. The mutant that used to seed
+        # `approval_missing` (a bundle with no sign-off) now seeds `issue_undispositioned`, because
+        # its register is unruled; that is the exit doing the work the ceremony used to do.
         st = approval_state(_seed(tmp, "m_missing"))
-        want("approval_missing", "approval_missing" in codes(st), True)
+        want("approval_missing is retired and never emitted",
+             "approval_missing" in codes(st), False)
+        want("an unruled register closes the pipeline instead",
+             "issue_undispositioned" in codes(st), True)
+        b = _seed(tmp, "m_missing_ruled"); _rule(b)
+        want("and an absent sign-off over a RULED register is no finding at all",
+             codes(approval_state(b)), [])
 
         b = _seed(tmp, "m_unreadable"); _rule(b); _sign(b)
         p = b / "governance" / "data_plane_approval.yaml"
@@ -954,10 +1097,39 @@ def _self_test() -> int:
             _sign(b)
             want(f"severity {sev} does not move the verdict", approval_state(b).approved, True)
 
-        # NEGATIVE CONTROL 2 — an `NS-` id needs NO status change, only acknowledgement. `open` on a
-        # non-promotion is honest and must not block once the human has named it.
+        # INVERTED 2026-09-18, DELIBERATELY, AND THIS IS THE ASSERTION THAT ENCODES THE NEW EXIT.
+        # This used to be a NEGATIVE CONTROL reading "an acknowledged NS- id at `open` does not
+        # block": an `NS-` disclosure needed only to be NAMED in the sign-off, because acknowledging
+        # a disclosure is a different act from dispositioning a defect — and the sign-off was where
+        # the acknowledgement lived. With the sign-off retired there is nowhere else to record it,
+        # so it is recorded in the register like everything else, and `open` closes the pipeline.
+        # The control is kept as its inverse rather than deleted, so the change is visible here.
         b = _seed(tmp, "neg_ns_open"); _rule(b, ns="open"); _sign(b)
-        want("an acknowledged NS- id at `open` does not block", approval_state(b).approved, True)
+        st = approval_state(b)
+        want("an NS- id at `open` now BLOCKS — the register is the exit", st.approved, False)
+        want("…as issue_undispositioned", "issue_undispositioned" in codes(st), True)
+        want("…naming that id", st.undispositioned, ["NS-ALPHA-01"])
+        # …and the same id at a terminal term with its evidence clears, sign-off or no sign-off.
+        b = _seed(tmp, "neg_ns_wont_fix"); _rule(b, ns="wont_fix")
+        want("`wont_fix` is terminal and clears with a namer and a reason",
+             approval_state(b).approved, True)
+
+        # AN `accepted` THAT NAMES NOBODY BLOCKS ON EITHER KIND OF ID. `ruled_by` IS the attribution
+        # the exit now rests on, so a terminal word without one is not a disposition.
+        for kind, rid in (("non-promotion", "NS-ALPHA-01"), ("graded defect", "DQ-ALPHA-01")):
+            b = _seed(tmp, f"m_anon_{rid}"); _rule(b)
+            p = b / "data" / "quality" / "data_quality_register.yaml"
+            lines, inside, keep = p.read_text(encoding="utf-8").split("\n"), False, []
+            for ln in lines:
+                if ln.strip().startswith("- id:"):
+                    inside = rid in ln
+                if inside and ln.strip().startswith("ruled_by:"):
+                    continue
+                keep.append(ln)
+            p.write_text("\n".join(keep), encoding="utf-8")
+            st = approval_state(b)
+            want(f"an `accepted` {kind} naming nobody blocks", st.approved, False)
+            want(f"…and {rid} is the id reported", st.undispositioned, [rid])
 
         # NEGATIVE CONTROL 3 — the projected twins and the preview plane must NOT move the digest,
         # or every projection invalidates the approval and operators learn to re-sign reflexively.
@@ -991,10 +1163,18 @@ def _self_test() -> int:
             sys.stderr.write(f"  {f}\n")
         print(f"FAIL: check_data_plane_approved self-test — {len(fails)} of {n} assertions failed")
         return EXIT_FAIL
+    # THE BLOCKING COUNT IS DERIVED FROM `blocks:`, NOT FROM `len(terms) - 1`. It was that
+    # arithmetic until 2026-09-18, when a SECOND non-blocking member appeared (`approval_missing`,
+    # retired) and the subtraction quietly over-counted by one. A denominator computed by guessing
+    # how many exceptions there are is a denominator that lies the first time there are two.
+    blocking = sorted(t for t, v in terms.items() if (v or {}).get("blocks"))
     print(f"PASS: check_data_plane_approved self-test — {n}/{n} assertions: one mutant per each of "
-          f"{len(terms) - 1} blocking reject class(es) plus `not_declared`, and 6 negative controls "
-          f"(severity inert at low/medium/high, an acknowledged NS- id at `open`, projection and "
-          f"preview churn, comment reflow) — severity is on no code path the verdict depends on")
+          f"{len(blocking)} blocking reject class(es), plus the {len(terms) - len(blocking)} "
+          f"non-blocking member(s) ({', '.join(t for t in terms if t not in blocking)}) asserted "
+          f"NOT to block, and 8 negative controls (severity inert at low/medium/high, a ruled "
+          f"register with no sign-off anywhere, a ruled register WITH one, `wont_fix` as terminal, "
+          f"projection and preview churn, comment reflow) — severity is on no code path the verdict "
+          f"depends on, and the exit is {REGISTER_REL}")
     return EXIT_PASS
 
 

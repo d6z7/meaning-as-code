@@ -784,12 +784,18 @@ data_plane_gate:
   description: >
     The reject classes of the DATA→ONTOLOGY handoff, as a closed set. A bundle may declare TWO
     pipelines (mac.schema.json#ProjectFile.reproduction.pipelines): a DATA pipeline whose declared
-    exit is a named human's sign-off over the issues its own register holds, and an ONTOLOGY
-    pipeline that may not start until that exit is reached. Three consumers read the same verdict —
-    the PreToolUse guard that refuses a write, the CLI that refuses to start the ontology pipeline,
-    and the console page that tells the operator what is blocking — so the code set lives HERE and
-    not three times. `not_declared` is the only member that is NOT a block: a bundle that declares
-    one pipeline is governed by the operator's unlock marker alone, exactly as before.
+    exit is ITS OWN REGISTER, FULLY DISPOSITIONED — every registered issue carrying a terminal
+    `mac.dq_status` term with that term's own evidence — and an ONTOLOGY pipeline that may not
+    start until that exit is reached. Three consumers read the same verdict — the PreToolUse guard
+    that refuses a write, the CLI that refuses to start the ontology pipeline, and the console page
+    that tells the operator what is blocking — so the code set lives HERE and not three times.
+
+    TWO MEMBERS ARE NOT BLOCKS. `not_declared`: a bundle that declares one pipeline is governed by
+    the operator's unlock marker alone, exactly as before. `approval_missing`: RETIRED 2026-09-18,
+    when the exit collapsed from a separate sign-off file onto the register it described — read its
+    own entry for the reason and for what the collapse costs (PREVENTION drops to ATTRIBUTION).
+    Every other `approval_*` member is still a block, because a sign-off file that IS present is
+    honoured rather than ignored.
 
     WHY A CODE AND NOT JUST A SENTENCE. The sentence is rendered to a human and will be reworded;
     the code is joined on. A page grouping by sentence re-groups every time the wording improves.
@@ -812,10 +818,29 @@ data_plane_gate:
       blocks: false
     approval_missing:
       description: >
-        Two pipelines are declared and the data pipeline's declared exit does not exist: no
-        sign-off file at the path the manifest names. The normal state of a bundle still in the
-        data pipeline — the page must not paint it red.
-      blocks: true
+        RETIRED 2026-09-18, and kept as a member rather than deleted so a joined-on code does not
+        vanish from a closed set and so the reason survives where the code did. It used to mean:
+        two pipelines are declared and no sign-off file exists at the path the manifest names.
+        WHY IT IS NO LONGER A BLOCK. The separate sign-off file was the BUILD'S design choice, not
+        the operator's requirement. The operator's requirement, verbatim, was "we cannot
+        automatically proceed with creating ontology as long as we did not approve the
+        configuration of datasets in full amount. this means we did not reduce the # of issues to
+        the acceptable minimum" — and that reduction is recorded in the REGISTER, one argued
+        disposition at a time, which the separate file then duplicated in a LESS informative form:
+        one date and one name against N individually-argued dispositions. So the exit collapsed
+        onto the register (`issue_undispositioned` is the blocker that carries it) and the operator
+        stopped being asked to sign a second artifact saying what the first one already said.
+        WHAT THE COLLAPSE COSTS, because it is not nothing: the sign-off was the one artifact an
+        agent provably cannot write — the guard denies that path unconditionally, marker or not —
+        and the register IS agent-writable. The guarantee therefore drops from PREVENTION to
+        ATTRIBUTION: git blame, the `ruled_by` name and the reason text, not a token no agent can
+        reach. That is the ceiling this estate had already reached and recorded in its own words,
+        DETECTED-AND-BLOCKED, AUTHORIZED OUT-OF-BAND, and a ceremony that buys nothing the operator
+        wants is worse than an honest ceiling. See PIPELINES.md §8 gap 11.
+        AN APPROVAL FILE THAT IS PRESENT IS STILL HONOURED — every `approval_*` member below stays
+        a block — so a bundle that carries one does not silently lose it.
+      blocks: false
+      retired: '2026-09-18'
     approval_unreadable:
       description: >
         The sign-off exists and cannot be parsed. Counts as NO approval (deny — the safe
@@ -844,8 +869,16 @@ data_plane_gate:
       blocks: true
     issue_undispositioned:
       description: >
-        A graded DEFECT (`DQ-` id) carrying no terminal `mac.dq_status` term, or one whose term's
-        own `requires:` list is unmet. The law is READ from `mac.dq_status`, never restated here.
+        ANY registered issue carrying no terminal `mac.dq_status` term, or one whose term's own
+        `requires:` list is unmet. The law is READ from `mac.dq_status`, never restated here.
+        THIS IS THE DATA PIPELINE'S EXIT CONDITION since 2026-09-18, and it widened that day from
+        graded defects (`DQ-`) to EVERY id. Before, an `NS-` non-promotion needed only to be NAMED
+        in a separate sign-off, because acknowledging a disclosure is a different act from
+        dispositioning a defect — and the sign-off was where the acknowledgement lived. With the
+        sign-off retired (see `approval_missing`) there is nowhere else for an `NS-` entry's
+        acknowledgement to be recorded, so it is recorded in the register like everything else: a
+        terminal disposition with a namer and a reason. An `open` issue closes the pipeline and is
+        named with its id and the denominator.
       blocks: true
     resolved_on_non_defect:
       description: >
