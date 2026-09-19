@@ -58,6 +58,7 @@ import re
 import sqlite3
 import sys
 from decimal import Decimal, InvalidOperation
+import pathlib
 from pathlib import Path
 
 import yaml
@@ -275,6 +276,27 @@ def evaluate(prop: dict, rows: list[dict]) -> tuple[bool, list[str]]:
 
 
 # ── main ─────────────────────────────────────────────────────────────────────────────────────
+def _relative_target(db: str | None, root) -> str | None:
+    """The warehouse path as the RECORD should carry it: bundle-relative when it is inside the
+    bundle, unchanged when it is not.
+
+    A run record is evidence and it is committed, so any absolute path in it is the operator's
+    home directory published to whoever reads the repo. Measured after the fact by the public
+    leak gate: 16 findings over 8 records, every one this single field. Scrubbing the records is
+    not the fix — the producer reintroduces it on the next run, which is exactly what happened.
+
+    Only the SPELLING changes; the target is the same file. A path outside the bundle is left
+    alone rather than made relative with `..`, which would be neither readable nor portable —
+    that case is a real disclosure and belongs in front of a person, not silently rewritten.
+    """
+    if not db:
+        return None
+    try:
+        return pathlib.Path(db).resolve().relative_to(pathlib.Path(root).resolve()).as_posix()
+    except (ValueError, OSError):
+        return db
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="free (local) acceptance-suite runner + run-record writer")
     ap.add_argument("--bundle", required=True, help="bundle root")
@@ -317,7 +339,13 @@ def main(argv=None) -> int:
     # runner unable to bill, and it is deliberately the first thing done with `engine:`.
     declared_engine = suite.get("engine") or {}
     engine = {"kind": a.engine, "billed": False, "synthetic": a.engine == "dry-run",
-              "target": a.db or (":memory:" if a.engine != "dry-run" else None),
+              # BUNDLE-RELATIVE WHERE IT CAN BE, because this string is COMMITTED. A run record is
+              # evidence and lives in the repo, so `--db ./contoso.duckdb` resolving to an absolute
+              # path puts the operator's home directory into every record the suite writes. Caught
+              # by the public-repo leak gate after the fact: 16 findings over 8 records, all one
+              # line, and hand-scrubbing two of them earlier only proved the producer keeps
+              # reintroducing it. The target is the same file either way; only the spelling moves.
+              "target": _relative_target(a.db, root) or (":memory:" if a.engine != "dry-run" else None),
               "declared_engine": declared_engine or None}
 
     eng = None
