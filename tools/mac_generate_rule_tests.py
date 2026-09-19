@@ -30,15 +30,23 @@ import argparse
 import datetime as dt
 import glob
 import pathlib
+import sys
 
 import yaml
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mac_project as P       # noqa: E402
 
 GEN = "mac_generate_rule_tests.py/2"
 
 
 def rules_of(root: pathlib.Path):
     out = []
-    for f in sorted(glob.glob(str(root / "ontology" / "concepts" / "*.yaml"))):
+    # SAME FIX AS mac_generate_ontology_tests.py, same measurement: a depth-0 glob saw 0 of
+    # mac-ontology-contoso's 17 foldered concepts and reported "0 rules" as a clean result.
+    # check_rule_coverage.py — which measures the ceiling THIS generator sets — already reads
+    # through mac_project.concept_files, so the two disagreed about the denominator.
+    for f in P.concept_files(root):
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         cn = (d.get("concept") or {}).get("name")
         for r in (d.get("contract") or {}).get("rules") or []:
@@ -82,7 +90,15 @@ def refusal_question(concept, rule, p) -> dict:
     return {
         "question": {
             "id": f"RULE_{rule['id'].replace('.', '_').upper()}",
-            "text": (f"What was {concept} for a brand and market that does not report it?"),
+            # THE SLOT IS A PARAMETER, NOT A LITERAL. This read "for a brand and market", which is
+            # one bundle's two axes hardcoded into the framework: contoso has no market at all, so
+            # every question generated there asked about a scope the bundle does not model. The
+            # generator already contradicted itself two lines down — `must_say` said "for that
+            # scope" while the question said "brand and market" — and the canon declares the word:
+            # refuse_measure_no_row(slot="scope"), which is what `when` is rendered from. Same class
+            # of leak, and same fix, as the "<dataset>-rules-generated" suite-name placeholder below.
+            "text": (f"What was {concept} for a {p.get('slot') or 'scope'} "
+                     f"that does not report it?"),
             "class": "REFUSAL", "expected_outcome": "REFUSE",
         },
         "kind": "route",
@@ -152,7 +168,9 @@ def main() -> int:
     eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
            or {}).get("engine") or {}
     out.write_text(yaml.safe_dump({
-        "suite": "<dataset>-rules-generated", "version": "1.0",
+        # Same fix and same reason as mac_generate_ontology_tests.py: this was the scrub placeholder
+        # "<dataset>-rules-generated", written into every bundle's run record verbatim.
+        "suite": f"{root.name}-rules-generated", "version": "1.0",
         "purpose": ("DOES THE WAREHOUSE STILL SATISFY THE RULES THE ONTOLOGY DECLARES? Generated FROM "
                     "the rules, one property per machine-readable data-shape rule. Behaviour rules "
                     "cannot be tested here and are generated as corpus questions instead."),
@@ -162,6 +180,12 @@ def main() -> int:
     print(f"\n  -> {out.relative_to(root)}")
 
     qdir = root / "acceptance" / "oracle"
+    # CREATE IT. This assumed acceptance/oracle/ already existed — true of the one bundle that has a
+    # hand-authored corpus of 101 files, false of every bundle generating its FIRST corpus question.
+    # Measured on mac-ontology-contoso 2026-09-18: --apply wrote rules_generated.yaml and then died
+    # with FileNotFoundError on the first question, leaving the suite on disk and the questions it
+    # declares nowhere — a half-applied generation, which is the state hardest to notice.
+    qdir.mkdir(parents=True, exist_ok=True)
     for c, r, q in questions:
         f = qdir / f"{q['question']['id']}.yaml"
         f.write_text(yaml.safe_dump(q, sort_keys=False, allow_unicode=True, width=100),

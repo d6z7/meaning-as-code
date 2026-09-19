@@ -54,6 +54,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sqlite3
 import sys
 from decimal import Decimal, InvalidOperation
@@ -63,10 +64,51 @@ import yaml
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import suite_record as _rec  # noqa: E402
+from mac_resolve_declared import resolve_declared  # noqa: E402
 
 LOCAL_ENGINES = ("dry-run", "sqlite", "duckdb")
 HARD_FAIL = {"blocker", "major"}
 SEVERITY_ORDER = {"blocker": 0, "major": 1, "minor": 2, "info": 3}
+
+#: A schema-qualified relation in a property's SQL. Qualified only, deliberately: an unqualified
+#: name in this estate is a defect (see `mac_generate_ontology_tests._rel`), and counting rows of
+#: something resolved by a search path would watermark a relation the property may not have read.
+_RELATION = re.compile(r"\bFROM\s+([a-z_][a-z0-9_]*\.[a-z_][a-z0-9_]*)", re.IGNORECASE)
+
+
+def relations_read(props) -> set:
+    """Every qualified relation this run's properties touch, `information_schema` excluded."""
+    out: set = set()
+    for p in props:
+        out |= {m.group(1) for m in _RELATION.finditer(p.get("sql") or "")}
+    return {r for r in out if "information_schema" not in r.lower()}
+
+
+def watermark(eng, props) -> dict:
+    """One cheap row count per relation this run read, recorded beside the results.
+
+    `source_watermark` HAD BEEN A KEY WITH NOTHING IN IT. Measured on a live two-plane bundle: both run
+    records carried `source_watermark: {}` — present, empty, and therefore unable to mark anything
+    stale. The field exists because of a recorded incident: an operator quoted a figure off a dashboard
+    that was an ORDER OF MAGNITUDE low, because the source had loaded overnight and "the run record
+    carried {suite, version, engine} and nothing else, so nothing on the page could say the number
+    predates the data it describes."
+
+    A key present and empty is worse than absent: a reader takes it for a watermark. So the free
+    runner populates it. Row count only, and no newest-write: a local DuckDB bundle has no
+    estate-wide write-timestamp column, and inventing one per relation is how a watermark starts
+    lying. A relation that cannot be counted records its error rather than being omitted — omission
+    reads as "nothing to report"."""
+    marks: dict = {}
+    for rel in sorted(relations_read(props)):
+        try:
+            rows, _ = eng.query(f"SELECT count(*) AS rows FROM {rel}")
+            marks[rel] = {"rows": rows[0]["rows"], "newest_write": None,
+                          "note": "row count only — no write-timestamp column is declared for this "
+                                  "relation, so freshness is not measurable from here"}
+        except Exception as exc:
+            marks[rel] = {"error": str(exc)[:160]}
+    return marks
 
 
 def _num(v):
@@ -294,14 +336,47 @@ def main(argv=None) -> int:
 
     fresh, errors = [], 0
     for p in selected:
+        # `source` AND `assertion` ARE CARRIED, NOT DROPPED. The record used to be
+        # {id, family, severity, statement} plus the verdict, and the two fields that say WHAT THE
+        # CHECK WAS MEASURED AGAINST and WHAT IT ASSERTED never left the suite file — 67 of 67
+        # properties in the measured bundle declare both, 0 of 67 results carried either.
+        #
+        # A CONSUMER MEASURED THE COST. The console derives a check's PLANE from `source` alone
+        # (data/… is a claim about the data, ontology/… a claim about the model, and a red means a
+        # different desk), so every result on both boards fell into "Unclassified — the source line
+        # names neither plane", and the coverage tab's relation list, derived from the same string,
+        # was empty by construction rather than by absence of coverage. The fact existed in the
+        # suite and was discarded in transit.
+        #
+        # ADDITIVE AND SAFE: the record's readers key on `id` and `status`
+        # (check_cards_match_runs, check_run_records, suite_history), and no gate asserts a closed
+        # key set. `sql` is deliberately NOT copied — the query's home on the console is the card
+        # projection (test_card_project.py), and duplicating it per result would put two copies of
+        # every statement in a file that is diffed on every run.
         rec = {"id": p["id"], "family": p.get("family", ""), "severity": p.get("severity", "info"),
-               "statement": " ".join((p.get("statement") or "").split())}
+               "statement": " ".join((p.get("statement") or "").split()),
+               "source": p.get("source") or "", "assertion": p.get("assertion")}
         try:
             if a.engine == "dry-run":
                 rows = synth_rows(p, p["id"] in a.fail)
                 meta = {"kind": "dry-run", "rows_returned": len(rows), "synthetic": True}
             else:
-                rows, meta = eng.query(p["sql"])
+                # RENDER THE DECLARATION BEFORE THE ENGINE SEES IT. A `conformance` property MUST
+                # read every asserted value out of the declaration at run time — that is the whole
+                # difference between the two test kinds — so its SQL arrives carrying `@cols:` /
+                # `@n:` / `@frag:` markers and is not SQL yet.
+                #
+                # MEASURED, and this line is the fix: without it the marker text reached DuckDB and
+                # 20 of a live two-plane bundle's 33 generated conformance properties died as
+                # `Parser Error: syntax error at or near ":"`, examined 0, while the estate's gates
+                # all read PASS. The framework EMITTED a marker grammar its own free runner could
+                # not execute; the only resolver in the estate lived inside one bundle.
+                #
+                # It REFUSES rather than substituting nothing: `Unresolved` is caught by the same
+                # handler below and recorded as an ERROR on that property, naming the marker and the
+                # file it looked in. Rendering a blank would partition on five columns while
+                # reporting six, and both halves would agree with each other and with nothing else.
+                rows, meta = eng.query(resolve_declared(root, p["sql"]))
             passed, notes = evaluate(p, rows)
             acc, frz = p.get("accepted"), p.get("frozen")
             rec.update(status="PASS" if passed else
@@ -328,7 +403,8 @@ def main(argv=None) -> int:
             prev = None
     results = _rec.carry_forward(prev, fresh, declared_ids)
     doc = _rec.build(suite=suite, suite_file=suite_file, root=root, engine=engine,
-                     results=results, declared_ids=declared_ids)
+                     results=results, declared_ids=declared_ids,
+                     source_watermark=watermark(eng, selected) if eng else None)
 
     c = _rec.recount(doc)
     print(f"\n── SUMMARY  declared {doc['declared']} · examined {c['examined']} · "

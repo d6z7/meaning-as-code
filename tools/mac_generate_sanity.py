@@ -45,6 +45,8 @@ import sys
 
 import yaml
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mac_project as P                         # noqa: E402  flat AND foldered concept planes
 from mac_profile import _as_text, _is_complex   # ONE definition, not a second CAST
 
 GEN = "mac_generate_sanity.py/5"
@@ -59,9 +61,20 @@ def concepts_on(root: pathlib.Path, stem: str) -> list[str]:
     """The concepts grounding on this relation. `validates` takes a concept.name, and this generator
     wrote the DATASET STEM into it for 206 properties — a name no concept has, so the attribution
     resolved to nothing and the third rung of the trust gradient could not be measured for any object.
-    The field validated fine, because a stem is a string like any other."""
+    The field validated fine, because a stem is a string like any other.
+
+    AND THEN IT GLOBBED AT DEPTH 0. `ontology/concepts/*.yaml` matches a FLAT plane only. Measured on
+    a live two-plane bundle, whose 17 concepts are filed under subject folders: the glob returned 0
+    files, so every one of the 67 projected properties carried `validates: []` — and the suite still
+    read 67 of 67 PASS. `mac.schema.json:2608` requires `validates[]` precisely because without it
+    "FRAMEWORK.md §8's third rung cannot be measured for any object", and an EMPTY LIST satisfies a
+    required field. So the attribution was absent, required, and green.
+
+    Both sibling generators already resolve through `mac_project.concept_files`, which walks flat AND
+    foldered layouts; this one was the last holdout. It is the same depth-0 defect that has bitten
+    eight gates in this estate."""
     out = set()
-    for f in glob.glob(str(root / "ontology" / "concepts" / "*.yaml")):
+    for f in P.concept_files(root):
         d = yaml.safe_load(open(f, encoding="utf-8")) or {}
         name = ((d.get("concept") or {}).get("name"))
         if not name:

@@ -161,6 +161,22 @@ def fingerprint(root: Path, suite_file: Path) -> tuple[str | None, bool, str]:
     return commit, dirty, "sha256:" + h.hexdigest()[:16]
 
 
+def plane_fingerprint(root: Path) -> str:
+    """A content hash over the bundle's DECLARED MEANING ALONE — `ontology/**/*.yaml`, no suite.
+
+    `fingerprint()` above folds the suite file in, which is correct for identifying ONE suite's
+    result and makes the value useless for comparing TWO. This is the half that is shared: every
+    suite run against one ontology in one pass gets the same value, so a rung can refuse to roll two
+    suites into one verdict when they saw different meanings — and can tell that apart from the
+    normal case of two different suites."""
+    h = hashlib.sha256()
+    d = root / "ontology"
+    for p in sorted(d.rglob("*.yaml")) if d.is_dir() else []:
+        h.update(p.name.encode())
+        h.update(p.read_bytes())
+    return "sha256:" + h.hexdigest()[:16]
+
+
 def _has_evidence(r: dict) -> bool:
     """Did the engine actually LOOK at something for this result?
 
@@ -202,6 +218,22 @@ def build(*, suite: dict, suite_file: Path, root: Path, engine: dict,
     disagree with the body at the moment it is written."""
     commit, dirty, onto = fingerprint(root, suite_file)
     doc = {
+        # THE PLANE'S OWN FINGERPRINT, and it exists because the field beside it CANNOT be compared
+        # across two suites. `ontology_fingerprint` hashes THE SUITE FILE plus `ontology/**/*.yaml`,
+        # so two suites of one bundle differ by construction and always will.
+        #
+        # MEASURED, and it is why this field is here: a live two-plane bundle's two records carried
+        # f21a229f6891278b and d8761686e342b513 140 seconds apart, and three separate readings of
+        # that pair concluded "the ontology moved between the two runs". It had not. Recomputed:
+        # the ontology-only hash is bcc94e4b50cba7c2 for BOTH, and each recorded value is exactly
+        # that suite's own bytes folded in. A difference that is guaranteed carries no information,
+        # and a rule of the form "refuse to roll up two suites whose fingerprints differ" written
+        # against it would refuse every pair forever.
+        #
+        # So: this is the value two suites run in the same pass SHARE when they saw one ontology,
+        # and the one a ladder rung may compare. The combined hash stays exactly as it was — it is
+        # the right identity for ONE suite's result, which is what it was added for.
+        "plane_fingerprint": plane_fingerprint(root),
         "suite": suite.get("suite") or Path(suite_file).stem,
         "version": str(suite.get("version", "")),
         "run_at": run_at or _dt.datetime.now().astimezone().isoformat(timespec="seconds"),

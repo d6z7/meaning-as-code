@@ -30,6 +30,15 @@ move a red without one.* A field is adopted when something refuses to proceed wi
                       property with no result must be NOT_RUN, not absent, because absence reads
                       as nothing-to-report.
     BAD_STATUS        a status outside `PASS|FAIL|ACCEPTED|FROZEN|ERROR|NOT_RUN`.
+    UNEVALUATED       `declared > 0` and `examined == 0` — the suite COULD NOT EVALUATE, which is
+                      neither a pass nor a fail. Measured: this gate printed
+                      `PASS — 0 defect(s) over 2 record(s) for 2 declared suite(s)`, exit 0, on a
+                      bundle whose conformance suite was 33 declared / 0 examined / 33 ERROR.
+                      Every other class was silent and each was right to be: ERROR is inside the
+                      allowed status set, `total == declared` so SHORT_POPULATION had nothing to
+                      say, and `examined: 0` agreed with the recount so neither did
+                      HEADER_DISAGREES. A suite that errors on everything was indistinguishable,
+                      to every gate in this estate, from a suite that passes.
     GITIGNORED        the record is written to a path git refuses to track. Written and
                       uncommittable is indistinguishable from never written, one week later.
 
@@ -102,13 +111,17 @@ def _head(root: Path) -> str | None:
         return None
 
 
-def inspect(root: Path) -> tuple[list[tuple], list[str], int, int]:
-    """``(defects, notes, n_records, n_suites)``. One pass, no side effects."""
+def inspect(root: Path) -> tuple[list[tuple], list[str], int, int, int, int]:
+    """``(defects, notes, n_records, n_suites, examined, declared)``. One pass, no side effects.
+
+    THE LAST TWO ARE THE DENOMINATOR THAT WAS MISSING. `0 defect(s) over 2 record(s)` is a true
+    sentence about a bundle that examined nothing; "67 of 100 declared propert(ies) examined" is the
+    number that cannot be read as clean."""
     suites = declared_suites(root)
     head = _head(root)
     defects: list[tuple] = []
     notes: list[str] = []
-    n_records = 0
+    n_records = n_examined = n_declared = 0
 
     for suite_file, ids in suites.items():
         rel = _rec.runs_path(suite_file)
@@ -132,6 +145,8 @@ def inspect(root: Path) -> tuple[list[tuple], list[str], int, int]:
             defects.append(("NO_DENOMINATOR", rel, "no `declared`/`total` — the denominator is "
                                                    "whatever the run selected"))
         c = _rec.recount(doc)
+        n_examined += c["examined"]
+        n_declared += doc.get("declared") if isinstance(doc.get("declared"), int) else c["total"]
         for key in ("total", "examined", "skipped"):
             if doc.get(key) is not None and doc[key] != c[key]:
                 defects.append(("HEADER_DISAGREES", rel,
@@ -149,6 +164,41 @@ def inspect(root: Path) -> tuple[list[tuple], list[str], int, int]:
         if bad:
             defects.append(("BAD_STATUS", rel, f"status outside the closed set: {', '.join(bad)}"))
 
+        # UNEVALUATED — A SUITE THAT COULD NOT EVALUATE IS NOT A PASSING SUITE AND NOT A FAILING ONE.
+        #
+        # THE MEASURED HOLE THIS CLASS CLOSES. On 2026-09-18 this gate printed
+        #
+        #     PASS: check_run_records — 0 defect(s) over 2 record(s) for 2 declared suite(s)
+        #
+        # exit 0, on a live two-plane bundle, where one of those two records read
+        # `declared: 33, examined: 0, tally: {ERROR: 33}`. Every existing class stayed silent and
+        # each was right to: ERROR is inside the allowed status set, `total == declared` so
+        # SHORT_POPULATION had nothing to say, and `examined: 0` AGREED with the recount so
+        # HEADER_DISAGREES had nothing to say either. The record was honest and the gate was honest
+        # and the plane was dark. A suite that errors on everything was indistinguishable, to every
+        # gate in this estate, from a suite that passes.
+        #
+        # So the arithmetic is stated directly: declared > 0 and examined == 0 is a DEFECT, never a
+        # green zero. The numerator that matters is `examined`, recomputed from evidence by
+        # `recount` — which is why this reads `c["examined"]` and not the header's claim.
+        errs = c["tally"].get("ERROR", 0)
+        if isinstance(dec, int) and dec > 0 and c["examined"] == 0:
+            defects.append(("UNEVALUATED", rel,
+                            f"{dec} declared propert{'y' if dec == 1 else 'ies'} and 0 examined"
+                            + (f" — {errs} ERROR: the suite could not evaluate, which is news about "
+                               f"the INSTRUMENT (runner, generator, connector) and must be routed to "
+                               f"its author before its subject" if errs else
+                               " — no result carries evidence, so this record says nothing about "
+                               "the data or the model")))
+        elif errs:
+            # REPORTED WITH ITS COUNT, not a defect: a suite that examined most of its population
+            # and errored on part of it has produced evidence, and the part it could not reach is
+            # the number an operator could not otherwise see. An ERROR is neither PASS nor FAIL —
+            # folding it into red sends an operator to debug the subject, which is the wrong
+            # building.
+            notes.append(f"ERRORED    {rel} — {errs} of {c['total']} result(s) could not evaluate "
+                         f"({c['examined']} examined); an ERROR is an instrument defect, not a red")
+
         if (doc.get("engine") or {}).get("synthetic"):
             notes.append(f"SYNTHETIC  {rel} — engine {(doc.get('engine') or {}).get('kind')}: "
                          f"proves the write path, is NOT a measurement of the data")
@@ -164,14 +214,14 @@ def inspect(root: Path) -> tuple[list[tuple], list[str], int, int]:
         if doc.get("commit_dirty"):
             notes.append(f"DIRTY      {rel} — run against an uncommitted working tree; the commit "
                          f"names something nobody else can reproduce")
-    return defects, notes, n_records, len(suites)
+    return defects, notes, n_records, len(suites), n_examined, n_declared
 
 
 def report(root: Path) -> int:
     if not root.is_dir():
         print(f"could not run: {root} is not a directory", file=sys.stderr)
         return 2
-    defects, notes, n_records, n_suites = inspect(root)
+    defects, notes, n_records, n_suites, examined, declared = inspect(root)
     if n_suites == 0:
         # 0 DECLARED IS NOT 0 FAILURES. A gate that passes over an empty population reads exactly
         # like a clean result, which is the defect that had `check_no_fabricated_identifiers`
@@ -189,13 +239,15 @@ def report(root: Path) -> int:
         print(f"  {n}")
     if not defects:
         print(f"PASS: check_run_records — 0 defect(s) over {n_records} record(s) for "
-              f"{n_suites} declared suite(s)"
+              f"{n_suites} declared suite(s); {examined} of {declared} declared propert"
+              f"{'y' if declared == 1 else 'ies'} examined"
               + (f"  [{len(notes)} note(s)]" if notes else ""))
         return 0
     for cls, rel, why in defects:
         print(f"  [{cls}] {rel}: {why}", file=sys.stderr)
     print(f"\nFAIL: check_run_records — {len(defects)} defect(s) over {n_records} record(s) for "
-          f"{n_suites} declared suite(s)", file=sys.stderr)
+          f"{n_suites} declared suite(s); {examined} of {declared} declared propert"
+          f"{'y' if declared == 1 else 'ies'} examined", file=sys.stderr)
     return 1
 
 
@@ -261,6 +313,15 @@ def _self_test() -> int:
         ("BAD_STATUS", lambda r: _save(r, {**_load(r), "results": [
             {**_load(r)["results"][0], "status": "GREEN"}, _load(r)["results"][1]]}),
          "BAD_STATUS", 1),
+        # THE MUTANT FOR THE NEWEST CLASS, and it is shaped like the live defect exactly: every
+        # result ERROR, `rows: None` (the runner's own "nothing was examined" marker, deliberately
+        # not `[]`), and a HEADER THAT AGREES — examined 0, total 2 — so that no other class can
+        # claim the rejection. Before UNEVALUATED existed this fixture exited 0.
+        ("UNEVALUATED (every property errored, header honest)",
+         lambda r: _save(r, {**_load(r), "examined": 0, "total": 2, "results": [
+             {**x, "status": "ERROR", "rows": None,
+              "notes": ['Parser Error: syntax error at or near ":"']}
+             for x in _load(r)["results"]]}), "UNEVALUATED", 1),
         ("GITIGNORED", None, "GITIGNORED", 1),          # needs a real repo; built below
         ("NO_SUITE (0 declared is not clean)",
          lambda r: (r / "acceptance" / "properties.yaml").unlink(), "", 2),
@@ -277,7 +338,7 @@ def _self_test() -> int:
                 (root / ".gitignore").write_text("acceptance/*_runs.json\n", encoding="utf-8")
             elif mutate:
                 mutate(root)
-            defects, _notes, n_rec, n_suites = inspect(root)
+            defects, _notes, n_rec, n_suites, _ex, _dec = inspect(root)
             classes = {c for c, _, _ in defects}
             # The gate's own output is SWALLOWED here. A self-test that interleaves eleven FAIL
             # banners with its own verdict is unreadable, and an unreadable proof gets skipped.
