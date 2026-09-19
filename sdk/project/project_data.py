@@ -360,14 +360,44 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
                 label,
                 "source",
                 "lifecycle:draft",
-                f"confidence:{tbl.get('confidence', 'C')}",
+                # READ IT WHERE IT IS DECLARED, AND DEFAULT TO THE LOWEST TIER, NOT THE HIGHEST.
+                # This read `tbl.get('confidence', 'C')` — the `table:` block, where a source's
+                # confidence has never lived; it is declared under `metadata:`. Measured: the
+                # lookup missed on 8 of 8 source descriptors, every one declaring `I`, and every
+                # page rendered `confidence:C`.
+                #
+                # `C` is CONFORMANCE §1's L3 — "an SME has ratified the meaning" — and
+                # check_confidence_earned exists to catch an object claiming it with no
+                # ratification on record. So a defaulting bug here does not produce a blank a
+                # reader can question; it produces the most reassuring answer in the vocabulary,
+                # on every page, for a raw landing table nobody has confirmed.
+                #
+                # THE DEFAULT IS NOW `Q` (needs-SME). An undeclared tier is not a confirmed one:
+                # if nothing says who ratified this, the honest reading is that nobody has.
+                f"confidence:{(src.get('metadata') or {}).get('confidence') or tbl.get('confidence') or 'Q'}",
             ],
         }
-        body = ["## Columns", "", "| column | type | role | confidence |", "|---|---|---|---|"]
+        # NO PER-COLUMN CONFIDENCE ON A SOURCE, and it is not a display choice — the column was
+        # empty by construction and redundant by design. Measured on a live bundle: **0 of 96**
+        # source columns carry `confidence`, so the column rendered 96 blanks; and the trust tier
+        # this page needs is already stamped ONCE, at source level, in the frontmatter tag two
+        # lines above (`confidence:{tbl.confidence}`, carried by 8 of 8 source descriptors).
+        #
+        # A RAW SOURCE IS TRUSTED AS A WHOLE OR NOT AT ALL. Operator ruling: "you already have
+        # confidence on the data source as whole and this is enough. no need to evaluate each
+        # column." A delivered table's columns are not independently ratified — one delivery, one
+        # provenance, one tier. Reintroducing the column would ask an author to answer 96 times a
+        # question the plane answers once.
+        #
+        # THIS IS NOT THE BLANK-CELL RULE'S OPPOSITE. That rule says a blank which means "nothing
+        # is declared HERE" must stay visible and be counted. This column was never a slot anything
+        # could declare into on this plane: the schema allows it, no source uses it, and the fact it
+        # would carry lives elsewhere and is shown. An empty column whose emptiness is structural is
+        # not information; it is a question asked of the wrong plane.
+        body = ["## Columns", "", "| column | type | role |", "|---|---|---|"]
         for c in src.get("columns", []) or []:
             body.append(
-                f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} "
-                f"| {c.get('confidence', '')} |"
+                f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} |"
             )
         # The doc is the raw schema-of-record (Columns). Lineage and quality findings live in the
         # object's TABS (Lineage / Quality) — not repeated here; a raw source has no ontology concept.
