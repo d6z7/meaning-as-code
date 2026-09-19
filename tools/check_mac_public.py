@@ -511,6 +511,50 @@ def scan_refs(root: Path, compiled=None):
 FLOOR_FILE = SELF.parent / "mac_public_floor.txt"
 
 
+#: A bundle's declared waivers, for a finding the per-line marker CANNOT reach.
+#:
+#: WHY A SECOND MECHANISM EXISTS, and why it is narrow. The inline marker
+#: (`mac-public-allow=<rule>`) is the right instrument almost everywhere: it sits on the line it
+#: waives, so a reader of that line sees the waiver. It cannot work on a line that is DATA. Measured
+#: case: a generated CSV preview whose `Vehicle` column contains a real manufacturer name on one of
+#: 20 synthetic rows. Appending a comment marker would land inside the final field, turning a
+#: coordinate into a non-numeric cell — corrupting the fixture to satisfy a pattern matcher — and the
+#: file's sha256 is recorded in its own run manifest, so any byte change falsifies that manifest and
+#: is reverted by the next deterministic regeneration anyway.
+#:
+#: SO THE WAIVER LIVES BESIDE THE BUNDLE, NOT INSIDE THE DATA. `.mac-public-waivers` at the bundle
+#: root, one entry per line: `<path>:<line>:<rule>  <reason>`. Every field is required, INCLUDING
+#: the reason — a waiver whose reason is blank is refused, because an unexplained exemption is
+#: indistinguishable from a leak somebody got tired of.
+#:
+#: IT IS NOT A QUIET PASS. A waived finding is counted and printed in the verdict, so a reader is
+#: told what was excused and can disagree. That is the whole difference between a waiver and a hole:
+#: `PASS — 0 leak(s) over 323 file(s), 1 waived` says something a bare PASS does not.
+WAIVER_FILE = ".mac-public-waivers"
+
+
+def _declared_waivers(root: Path) -> dict:
+    """{(relpath, lineno, rule) -> reason} from the bundle's waiver register."""
+    f = Path(root) / WAIVER_FILE
+    if not f.exists():
+        return {}
+    out: dict = {}
+    for raw in f.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = raw.split("#", 1)[0].strip()
+        if not line:
+            continue
+        head, _, reason = line.partition("  ")
+        parts = head.strip().rsplit(":", 2)
+        if len(parts) != 3 or not reason.strip():
+            continue  # malformed or unexplained: waives nothing, and the finding stands
+        path, lineno, rule = parts
+        try:
+            out[(path.strip(), int(lineno), rule.strip())] = reason.strip()
+        except ValueError:
+            continue
+    return out
+
+
 def _floor(root: Path) -> int | None:
     """The declared floor, or None when none is declared (then any finding fails)."""
     if not FLOOR_FILE.is_file():
@@ -628,8 +672,32 @@ def main(argv=None) -> int:
         print(f"could not run: {root} — 0 file(s) inspected, which is not the same as clean",
               file=sys.stderr)
         return 2
+    # THE DECLARED WAIVERS ARE APPLIED HERE, LAST, AND THEY ARE NEVER SILENT. Applying them after
+    # the scan rather than during it keeps one property that matters: the finding was genuinely
+    # MADE, so a waiver that stops matching — the line moved, the rule was renamed, the data was
+    # regenerated — shows up as an unused entry instead of quietly protecting nothing.
+    _waivers = _declared_waivers(root)
+    if _waivers:
+        _kept, _excused = [], []
+        for h in hits:
+            where, lineno, label, _shown = h
+            key = (str(where), int(lineno), label.split(" (")[0])
+            (_excused if key in _waivers else _kept).append((h, _waivers.get(key)))
+        hits = [h for h, _r in _kept]
+        for h, reason in _excused:
+            print(f"  waived — {format_hit(h, redact, rule_numbers)}\n      because: {reason}",
+                  file=sys.stderr)
+        _unused = set(_waivers) - {(str(w), int(ln), lb.split(" (")[0]) for w, ln, lb, _s in
+                                   [h for h, _ in _excused]}
+        for key in sorted(_unused):
+            print(f"  [STALE WAIVER] {key[0]}:{key[1]}:{key[2]} waives nothing — the finding it "
+                  f"names is gone. Remove it, or it will excuse a future one.", file=sys.stderr)
+        _waived_note = f", {len(_excused)} waived"
+    else:
+        _waived_note = ""
+
     if not hits:
-        print(f"PASS: check_mac_public — 0 leak(s) over {denom}")
+        print(f"PASS: check_mac_public — 0 leak(s) over {denom}{_waived_note}")
         return 0
     floor = _floor(root)
     if floor is not None and len(hits) <= floor:
