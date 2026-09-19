@@ -366,6 +366,26 @@ def main() -> int:
                 return 2
             ruled[c.strip()] = how
 
+        # ── TWO PLANES, AND THE SCHEMA SAYS WHICH ─────────────────────────────────────────────
+        # The MEASURED blocks belong to the ProfileFile. mac.schema.json defines
+        # `identity_evidence` and `columns[].determined_by` on ProfileFile; TableFile — what
+        # validate_schema.py routes data/datasets/ and data/sources/ to — is
+        # additionalProperties:false with NEITHER, and its `columns[]` items likewise with no
+        # `profile`. So writing either onto the descriptor produced a file the validator rejects
+        # AND put the key where no consumer looks: every reader takes it from
+        # data/profiles/<stem>.yaml#identity_evidence.key, so the operator got a success message
+        # and check_grain_key_consistency still told them to run this tool. Only `role` stays on
+        # the descriptor — a role is an AUTHORED design fact, and TableFile defines it.
+        ppath = root / "data" / "profiles" / f"{path.stem}.yaml"
+        prof = load_profile(root, path.stem)
+        if not prof:
+            # No profile plane yet. Seed the fields ProfileFile REQUIRES from what is already in
+            # hand rather than writing a file the validator rejects.
+            prof = {"metadata": {"schema_version": (doc.get("metadata") or {}).get("schema_version"),
+                                 "generated_by": TOOL},
+                    "of": path.stem, "relation": rel, "profile": doc.get("profile")}
+        pcols = {str(c["name"]): c for c in (prof.get("columns") or [])}
+
         for col in doc.get("columns") or []:
             n = str(col["name"])
             v = verdict.get(n)
@@ -377,13 +397,25 @@ def main() -> int:
             # COLLAPSIBLE is deliberately NOT written. It is the residue, and a residue the machine
             # settles is not a residue. The column keeps whatever role it has — 'unknown' is already
             # forbidden in production files, so the existing gate holds the line until a human rules.
+            pc = pcols.get(n)
             if n in fd:
-                col.setdefault("profile", {})["determined_by"] = sorted(fd[n])
-            elif n in probed and (col.get("profile") or {}).get("determined_by"):
-                del col["profile"]["determined_by"]
+                if pc is None:
+                    pc = {"name": n}
+                    prof.setdefault("columns", []).append(pc)
+                    pcols[n] = pc
+                pc["determined_by"] = sorted(fd[n])
+            elif pc is not None and n in probed and pc.get("determined_by"):
+                del pc["determined_by"]
                 print(f"     cleared a determinant list no longer measured: {n}")
+            # Residue of the plane defect above: an earlier run of this tool wrote determined_by
+            # here. Removed so a re-run leaves the descriptor valid instead of half-migrated.
+            if (col.get("profile") or {}).pop("determined_by", None) is not None:
+                print(f"     moved a determinant list off the descriptor: {n}")
 
-        doc["identity_evidence"] = {
+        if doc.pop("identity_evidence", None) is not None:
+            print("     moved identity_evidence off the descriptor into the profile plane")
+
+        prof["identity_evidence"] = {
             "measured_at": stamp,
             "source_watermark": wm,
             "method": TOOL,
@@ -402,11 +434,15 @@ def main() -> int:
                          "disagree": int(by[c]["disagree"]), "verdict": verdict[c]}
                         for c in basis if c in by],
         }
-        doc["identity_evidence"] = {k: v for k, v in doc["identity_evidence"].items()
-                                    if v is not None or k in ("source_watermark", "stratum")}
+        prof["identity_evidence"] = {k: v for k, v in prof["identity_evidence"].items()
+                                     if v is not None or k in ("source_watermark", "stratum")}
+        ppath.parent.mkdir(parents=True, exist_ok=True)
+        ppath.write_text(yaml.safe_dump(prof, sort_keys=False, allow_unicode=True, width=100),
+                         encoding="utf-8")
         path.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
                         encoding="utf-8")
-        print(f"\n  written → {path.relative_to(root)}")
+        print(f"\n  written → {ppath.relative_to(root)} (evidence, determined_by)"
+              f"\n            {path.relative_to(root)} (column roles)")
         if collapsible:
             print(f"  {len(collapsible)} column(s) left UNRULED on purpose — the residue is a human's")
     else:
