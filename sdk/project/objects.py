@@ -289,6 +289,45 @@ def _edge_index(ont_edges: list, root) -> dict:
     }
 
 
+def load_ont_edges(ontology_concepts_dir) -> tuple[list, str | None]:
+    """WHERE edges.yaml LIVES, resolved ONCE. Returns (edges, parse_error).
+
+    This resolution was inline in build_objects, so a live reader that wanted the edge set became a
+    SECOND AUTHOR of "where the edge file is" — the defect class this estate removes. build_objects
+    now calls this and so does tools/project_edges.py, so there is one answer.
+
+    THE PARSE ERROR IS RETURNED, NOT SWALLOWED. `_load` returns None on unreadable YAML, which made
+    "edges.yaml will not parse" and "edges.yaml declares no relationships" the same empty list —
+    the second is a measurement and the first is a failure to look, and a surface that cannot tell
+    them apart renders a defect as a clean bill of health.
+    """
+    p = Path(ontology_concepts_dir).parent / "edges.yaml" if ontology_concepts_dir else None
+    if not p or not p.exists():
+        return [], None
+    try:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8"))
+    except Exception as e:  # noqa: BLE001 — a state to report, not to raise
+        return [], f"{type(e).__name__}: {e}"
+    return list((doc or {}).get("edges") or []), None
+
+
+def edge_index(root, ontology_concepts_dir=None) -> dict:
+    """THE PUBLIC DOOR to the edge index — `_edge_index` with its arguments supplied.
+
+    Declared for tools/project_edges.py, which serves the console's live /edges route. The object
+    index is reachable as `build_objects(..., out_dir=None)`'s return value; the EDGE index is not
+    (it is computed inside build_objects' `if out_dir:` branch and written straight to disk), so a
+    live reader has to reach the author some other way. This is that way, and it borrows nothing:
+    the projection path below still calls `_edge_index` on bytes it already has.
+
+    Writes nothing. Two local reads: `<root>/ontology/edges.yaml` (via the dir given, or the
+    conventional layout) and `<root>/evidence/edge_measurements.json` if it exists.
+    """
+    cdir = ontology_concepts_dir or (Path(root) / "ontology" / "concepts")
+    ont_edges, _err = load_ont_edges(cdir)
+    return _edge_index(ont_edges, root)
+
+
 def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, out_dir=None) -> dict:
     data_dir = Path(data_dir)
     sources = {p.stem: _load(p) or {} for p in sorted((data_dir / "sources").glob("*.yaml"))}
@@ -468,14 +507,9 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         except Exception:
             return None, None
 
-    _edges_yaml = (
-        Path(ontology_concepts_dir).parent / "edges.yaml" if ontology_concepts_dir else None
-    )
-    ont_edges = (
-        ((_load(_edges_yaml) or {}).get("edges") or [])
-        if (_edges_yaml and _edges_yaml.exists())
-        else []
-    )
+    # ONE RESOLUTION of where edges.yaml lives — see load_ont_edges. The parse error is bound
+    # rather than dropped so this path can report it too when it learns to.
+    ont_edges, _edges_parse_error = load_ont_edges(ontology_concepts_dir)
     joins: dict = {}  # stem -> {"out": [...], "in": [...]}
     for e in ont_edges:
         ep = e.get("endpoints") or {}
