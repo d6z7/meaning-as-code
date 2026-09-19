@@ -83,6 +83,16 @@ DERIVED: tuple[dict, ...] = (
     {"glob": "data/profiles/*.yaml", "by": "mac_profile.py:255", "kind": "measurement",
      "producer": "profiler"},
     {"glob": "data/samples/*.csv", "by": "mac_sample.py", "kind": "preview", "producer": "sampler"},
+    # THE CONCEPT MEMBER DRAW, AND IT IS AN ONTOLOGY ARTIFACT, NOT A DATA ONE. Same tool, second
+    # draw (`mac_sample.py --plane concepts`), and a different plane on purpose: the entry above
+    # previews a RELATION at the columns a DESCRIPTOR declares, while this one draws a CONCEPT's
+    # own members — the population is `grounding.discriminator` / `value_filter` and the columns
+    # are the concept's Fields table, so nothing in the data plane can say what the file is. It
+    # lived at `data/samples/concepts/*.csv` until the operator ruled the plane wrong. ONE FILE
+    # PER GROUNDING SOURCE: a concept over two relations cuts `<stem>.<relation>.sample.csv` twice
+    # and a single-source concept keeps the bare `<stem>.sample.csv`.
+    {"glob": "ontology/samples/*.csv", "by": "mac_sample.py --plane concepts",
+     "kind": "member-draw", "producer": "sampler"},
     {"glob": "data/references/*.yaml", "by": "mac_references.py --plane sources",
      "kind": "reference-structure", "producer": "references"},
     {"glob": "data/references_served/*.yaml", "by": "mac_references.py --plane served",
@@ -144,7 +154,10 @@ PRODUCERS: dict[str, dict] = {
     },
     "sampler": {
         "entrypoints": ("mac_sample.py",),
-        "why": "tools/mac_sample.py writes data/samples/<stem>.sample.csv + samples.run.json",
+        "why": "tools/mac_sample.py writes data/samples/<stem>.sample.csv + its samples.run.json "
+               "(the relation preview), and --plane concepts writes ontology/samples/"
+               "<stem>[.<relation>].sample.csv + its own samples.run.json (the concept member "
+               "draw). TWO DRAWS, TWO PLANES, ONE COMMAND — one entrypoint reaches both",
     },
     "references": {
         "entrypoints": ("mac_references.py",),
@@ -199,6 +212,12 @@ AUTHORED: tuple[dict, ...] = (
 NOT_DECLARED: tuple[dict, ...] = (
     {"glob": "data/samples/samples.run.json", "by": "mac_sample.py:677",
      "reason": "run record, written in the same branch as the previews it accounts for"},
+    {"glob": "ontology/samples/samples.run.json", "by": "mac_sample.py --plane concepts",
+     "reason": "run record, written in the same branch as the concept blocks it accounts for. A "
+               "SECOND record and not a second copy: it holds the concept draw and its stamps, "
+               "the file above holds the relation previews and theirs, and each carries a POINTER "
+               "at the other rather than any of its facts — one record for two draws could only "
+               "ever stamp one of them truthfully, and measurably did not"},
     {"glob": "data/references/references.run.json", "by": "mac_references.py:1100",
      "reason": "run record, written in the same branch as the reference files it accounts for"},
     {"glob": "data/references_served/references.run.json", "by": "mac_references.py:1100",
