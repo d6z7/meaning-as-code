@@ -589,6 +589,11 @@ conformance:  # What this bundle declares about its own conformance
       path: <…>  # REQUIRED · string · glob, bundle-relative
       reason: <…>  # REQUIRED · string
 
+disclosure:  # WHAT THIS BUNDLE PERMITS TO BE PUBLISHED OUT OF ITS OWN DATA
+  samples:  # MAY THE ROWS THEMSELVES BE RENDERED ON A GENERATED PAGE? The sampler…  # closed: only keys above
+    publish: <…>  # REQUIRED · boolean · `true` publishes the drawn member rows onto the generated concept pages
+    reason: <…>  # string · WHY THESE ROWS MAY LEAVE THE BUNDLE — required when `publish` is true…
+
 reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the artifacts…
   narrative: <…>  # string · path to the human-readable twin, e.g
   pipelines:  # v0.1.19: THE TWO PIPELINES, and the only place a reader of a day-zero…  # closed: only keys above

@@ -2350,6 +2350,52 @@
           },
           "additionalProperties": false
         },
+        "disclosure": {
+          "type": "object",
+          "description": "WHAT THIS BUNDLE PERMITS TO BE PUBLISHED OUT OF ITS OWN DATA. A bundle-level POLICY statement, in the same idiom as `conformance.out_of_scope`: a claim plus the reason for it, made once, in the manifest, where a reader and a gate both find it — never per page and never per concept, because a per-page switch is a per-page mistake. Distinct from `capabilities` (what the container CAN do) and from `publish` (where output GOES): this says what the bundle's own rows are allowed to become. CLOSED (`additionalProperties: false`) so a second disclosure question is a schema change with a record rather than a key somebody adds on a Tuesday.",
+          "additionalProperties": false,
+          "properties": {
+            "samples": {
+              "type": "object",
+              "description": "MAY THE ROWS THEMSELVES BE RENDERED ON A GENERATED PAGE? The sampler (tools/mac_sample.py --plane concepts) draws a seeded random sample of each concept's MEMBERS into data/samples/concepts/. Whether those rows may be RENDERED to a reader — the console's Sample view, or any other surface that shows them — is this key's decision. The rendered concept page carries no rows: the operator ruled the sample belongs on its own view and not on the page, so the semantic page stays semantic. That is safe for a bundle over synthetic data and it is a data leak for a bundle over customer data — and the two bundles produce the SAME PAGE from the same code, so the difference cannot live in the projector. It lives here. DEFAULT WITHHELD, and a bundle that says nothing withholds: the harm is asymmetric (a withheld sample costs a reader one convenience; a published one cannot be recalled), and the measured shape is concrete — one live bundle's raw preview already trips the public-repo leak gate on a real organisation name, and the same page in a customer bundle would publish forty customer rows. WITHHOLDING IS NOT SILENCE: the page still renders the section, still says a sample exists, and still states the member count. Absent altogether, this key means withheld, which is why it is optional and why no bundle turns red for lacking it.",
+              "additionalProperties": false,
+              "required": [
+                "publish"
+              ],
+              "properties": {
+                "publish": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "`true` publishes the drawn member rows onto the generated concept pages. BOOLEAN, DELIBERATELY, AND THE READER CHECKS FOR `true` AND NOT FOR TRUTHINESS: `publish: \"no\"` is a truthy string in Python, and a disclosure gate a typo can open is not a gate. There is no per-concept override, and that is the design: an exception list is a place for the one row nobody re-read."
+                },
+                "reason": {
+                  "type": "string",
+                  "description": "WHY THESE ROWS MAY LEAVE THE BUNDLE — required when `publish` is true (see this object's `allOf`), and rendered ON the page under the sample, so the justification travels with the thing it justifies instead of staying in a manifest nobody opens. Not required for withholding: refusing to publish needs no defence, publishing does. Say what makes the data publishable (synthetic, licensed, already public), not who approved it."
+                }
+              },
+              "allOf": [
+                {
+                  "$comment": "PUBLISHING IS THE CLAIM THAT NEEDS A BASIS. A bundle may withhold without a word, but the manifest line that turns forty rows of its data into a published page must say what makes that safe — the same shape conformance.out_of_scope already requires of its escape hatch, where `path` without `reason` is refused.",
+                  "if": {
+                    "properties": {
+                      "publish": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "publish"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "reason"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        },
         "reproduction": {
           "type": "object",
           "description": "How this bundle is rebuilt — as DATA, so a gate can check the artifacts still match the record. Prose cannot: <dataset>'s REPRODUCTION.md carried two stale claims simultaneously (a prohibition naming one of the two commands that trigger it, and a gate list naming three of eleven checkers, retired). Both read as authoritative.",
