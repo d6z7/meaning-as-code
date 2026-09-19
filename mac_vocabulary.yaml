@@ -78,7 +78,9 @@ binding_mode:
 # ===========================================================================
 # mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
 # non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
-# over axis_kind (4 types × 2 kinds = 8 universal cells). Each cell references a mac.aggregation_effect term.
+# over axis_kind (5 types × 2 kinds = 10 universal cells). Each cell references a mac.aggregation_effect term.
+# The count was written as "4 types × 2 kinds = 8" and the table below has listed FIVE members since
+# v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
 # An applied ontology's measures reference these members; they never re-encode the matrix.
 # ===========================================================================
 MeasureType:
