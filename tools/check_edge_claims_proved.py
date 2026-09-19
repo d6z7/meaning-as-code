@@ -164,8 +164,14 @@ def main() -> int:
     if not edges:
         return D.refuse_empty("check_edge_claims_proved", edges_file, unit="edge")
 
-    # THE CLAIMING POPULATION, not every edge. An edge that asserts no cardinality asserts nothing
-    # to prove, and counting it would inflate the denominator with abstentions.
+    # THE CLAIMING POPULATION. The filter is KEPT and its meaning has CHANGED: since schema
+    # v0.1.18 a cardinality is REQUIRED at both ends of every edge, so abstention can no longer be
+    # authored and `claiming` is now the whole edge set — measured 17 of 17 and 32 of 32 on the
+    # estate's two bundles on 2026-09-18. It is not dead code: it still separates a grandfathered
+    # or hand-edited file from a conforming one, and it keeps this gate's denominator honest if the
+    # requirement is ever relaxed. What it no longer does is exclude anything a conforming bundle
+    # contains — so `claiming` and `edges` being equal is the EXPECTED state, not a coincidence, and
+    # a reader who sees them differ is looking at a file the grammar would now refuse.
     claiming = [
         e
         for e in edges

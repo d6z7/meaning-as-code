@@ -380,11 +380,21 @@ governance:  # Housekeeping
       by: <…>  # string
       rationale: <…>  # string
 
-planned_edges: [ ... ]
+planned_edges:  # v0.1.18: a PROMOTION CANDIDATE, and DELIBERATELY NOT AN EDGE
+  - <item>
+    edge_id: <…>  # REQUIRED · string · REQUIRED — the id this candidate will keep when it is promoted to an…
+    status: <…>  # string · where the candidate stands, e.g
+    business_relation_minted_as: <…>  # string · the business edge id this candidate will be minted as, when the…
+    blocked_by: <…>  # string · WHAT IS MISSING, not that something is
+    measured_reference: <…>  # string · bundle-relative path to the physical-plane reference file that measured…
+    reference_id: <…>  # string · the id of the entry in that references file, so the quote can be…
+    evidence: <…>  # string · the measurement, WITH ITS DENOMINATORS, quoted from…
+    becomes_an_edge_when: <…>  # string · REQUIRED IN PRACTICE, not in the grammar: the condition whose arrival…
+    notes: <…>  # string
 
 edges:  # REQUIRED
   - <item>
-    edge_id: <…>  # string
+    edge_id: <…>  # REQUIRED · string
     level: <…>  # REQUIRED · enum: physical | business | federation
     type: <…>  # REQUIRED · string
     endpoints:  # REQUIRED  # closed: only keys above
@@ -393,13 +403,13 @@ edges:  # REQUIRED
         concept: <…>  # REQUIRED · string · REQUIRED — the concept at this end of the edge.
         ref: <…>  # string · pointer to the concept definition (path#anchor), resolved cross-file by…
         role: <…>  # string · the relationship role/name read from this end (typically on `from`): e.g
-        cardinality: <…>  # string
+        cardinality: <…>  # REQUIRED · enum: 1 | 0..1 | 1..N | 0..N · REQUIRED on BOTH ends — how many partners a row at the other end finds…
       to:  # REQUIRED · v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table  # closed: only keys above
         source: <…>  # string · the source/ontology this concept belongs to (enables cross-source…
         concept: <…>  # REQUIRED · string · REQUIRED — the concept at this end of the edge.
         ref: <…>  # string · pointer to the concept definition (path#anchor), resolved cross-file by…
         role: <…>  # string · the relationship role/name read from this end (typically on `from`): e.g
-        cardinality: <…>  # string
+        cardinality: <…>  # REQUIRED · enum: 1 | 0..1 | 1..N | 0..N · REQUIRED on BOTH ends — how many partners a row at the other end finds…
     join_rule: <…>  # string
     verified_by: <…>  # string · (additive) a resolvable ref (path.yaml#id) to a data expectation that…
     realized_by: <…>

@@ -1,0 +1,12 @@
+# NEGATIVE fixture — MUST be rejected: `*` is not in the closed cardinality vocabulary. Nothing
+# maps it, so every projector falls back to its own default and the drawn picture disagrees with
+# the SHACL shape over the same edge.
+edges:
+  - edge_id: beta__to__gamma
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Beta,  cardinality: "*" }    # ← illegal: outside the closed set
+      to:   { concept: Gamma, cardinality: "1" }
+    join_rule: beta.gamma_key = gamma.gamma_key
+    verified_by: data/expectations/beta__to__gamma.yaml

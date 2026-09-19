@@ -1,0 +1,23 @@
+# NEGATIVE fixture — MUST be rejected: a planned edge with no `edge_id`. The ENDPOINT rules stop at
+# `edges[]` — a planned edge's whole content is that no join exists to declare, so it carries no
+# endpoints and no cardinality, deliberately. The one rule that does carry across is nameability:
+# a candidate nothing can name is a candidate nothing can promote, and the decision that promotes
+# it could not say which one it promoted.
+planned_edges:
+  - status: planned                    # ← illegal: no edge_id
+    blocked_by: no served gamma relation
+    becomes_an_edge_when: a gamma dimension is promoted to a served relation
+
+# `edges` is required on an EdgesFile, and one fully-specified edge is carried here so that the
+# validator's error path names `planned_edges/0` — the field this fixture is about. A negative
+# fixture rejected for a DIFFERENT reason than the one it was written for is a test that passes
+# while the rule it names is broken.
+edges:
+  - edge_id: alpha__to__beta
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Alpha, cardinality: "0..N" }
+      to:   { concept: Beta,  cardinality: "1" }
+    join_rule: alpha.beta_key = beta.beta_key
+    verified_by: data/expectations/alpha__to__beta.yaml

@@ -1,0 +1,15 @@
+# NEGATIVE fixture — MUST be rejected, and this is the SUBTLE one: `1..1` reads as perfectly legal
+# and means the same as `1`. It is refused because no judge applies it (check_edge_joins_measured's
+# EXACTLY_ONE is {"1"}) and mac_to_shacl, finding no entry for it, ships (minCount 0, maxCount 1) —
+# so a declared `exactly one` becomes `at most one` in the artifact, with no error anywhere. A
+# token that validates and is judged by nothing is a false-green factory. The pending table-link
+# proposal (C5) admits `1..1` and `N` TOGETHER WITH the judges that read them, not before.
+edges:
+  - edge_id: gamma__to__alpha
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Gamma, cardinality: "0..N" }
+      to:   { concept: Alpha, cardinality: "1..1" }   # ← illegal here: use "1" until C5 lands
+    join_rule: gamma.alpha_key = alpha.alpha_key
+    verified_by: data/expectations/gamma__to__alpha.yaml

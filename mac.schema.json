@@ -85,15 +85,17 @@
     },
     "PipelineExit": {
       "type": "object",
-      "description": "What ENDING this pipeline means. `approval` names the bundle-relative path of a human sign-off \u2014 the data pipeline's exit, and the one condition no agent can satisfy, because the guard denies that path unconditionally. `gate`+`must_exit` names a machine verdict instead, for a pipeline whose completion a checker can decide. The two are deliberately different shapes: confusing 'a tool said yes' with 'a person said yes' is the defect this whole block exists to prevent.",
+      "description": "What ENDING this pipeline means. THREE SHAPES, deliberately different, because confusing 'a tool said yes' with 'a person said yes' is the defect this whole block exists to prevent. `register` names the bundle-relative path of a data-quality register every one of whose issues must carry a terminal disposition \u2014 the DATA pipeline's exit since 2026-09-18, and the shape a new bundle declares. `approval` names the bundle-relative path of a separate human sign-off; it was the data pipeline's exit before that date and is kept because a bundle that already declares one must keep working. `gate`+`must_exit` names a machine verdict, for a pipeline whose completion a checker can decide. WHY `register` REPLACED `approval` AS THE SHAPE TO DECLARE: the separate file duplicated the register in a LESS informative form \u2014 one date and one name against N individually-argued dispositions \u2014 and the operator it was built for refused to sign it, having already ruled on every issue one at a time. WHAT THE COLLAPSE COSTS, stated rather than glossed: the sign-off path is one the ontology guard denies UNCONDITIONALLY, so an agent cannot write it; a register is agent-writable, so this exit rests on ATTRIBUTION (`ruled_by`, `reason`, git blame) and not on PREVENTION. Carried in mac_vocabulary.yaml#data_plane_gate.approval_missing and in the gate's own refusal text.",
       "additionalProperties": false,
       "minProperties": 1,
       "oneOf": [
+        {"required": ["register"]},
         {"required": ["approval"]},
         {"required": ["gate", "must_exit"]}
       ],
       "properties": {
-        "approval": {"type": "string", "description": "bundle-relative path to a HUMAN SIGN-OFF. The ontology guard denies every governed write to this path unconditionally — no unlock marker lifts it — so an agent cannot satisfy this exit condition. That is the point: an exit an agent can reach is not an exit."},
+        "register": {"type": "string", "description": "bundle-relative path to a DATA-QUALITY REGISTER whose every issue must carry a terminal `mac.dq_status` term with that term's own `requires:` met. An `open` issue, or an `accepted`/`wont_fix` naming nobody, leaves this exit UNREACHED and the ontology pipeline closed. The evidence is per-issue and individually argued, which is strictly more than one signature over a list of ids — and the file is agent-writable, so this exit rests on ATTRIBUTION rather than on a token no agent can reach. An approval file present alongside it is still honoured."},
+        "approval": {"type": "string", "description": "bundle-relative path to a HUMAN SIGN-OFF. The ontology guard denies every governed write to this path unconditionally — no unlock marker lifts it — so an agent cannot satisfy this exit condition. SUPERSEDED by `register` as the shape a new bundle declares (2026-09-18) and still honoured wherever it appears: a bundle that carries a sign-off must not silently lose it."},
         "gate": {"type": "string", "description": "the command whose exit code decides this pipeline's completion — a MACHINE verdict, never a substitute for a human one."},
         "must_exit": {"type": "integer", "description": "the exit code the gate must return."}
       }
@@ -364,9 +366,10 @@
     "EdgeEndpoint": {
       "type": "object",
       "required": [
-        "concept"
+        "concept",
+        "cardinality"
       ],
-      "description": "v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table. It names the concept at this end; the physical relation lives in that concept's grounding plus the edge's join_rule/realized_by. Authoring an endpoint as a `view`/`key` is FORBIDDEN (additionalProperties:false rejects them): a join between stored relations that is not a join between concepts is a pipeline transform, not an ontology edge. This is what keeps edges at the semantic stage and out of the data/pipeline stage.",
+      "description": "v0.1.6: an edge endpoint is a CONCEPT, never a raw view/table. It names the concept at this end; the physical relation lives in that concept's grounding plus the edge's join_rule/realized_by. Authoring an endpoint as a `view`/`key` is FORBIDDEN (additionalProperties:false rejects them): a join between stored relations that is not a join between concepts is a pipeline transform, not an ontology edge. This is what keeps edges at the semantic stage and out of the data/pipeline stage. v0.1.18: an endpoint is FULLY DEFINED or it is not an endpoint — `concept` AND `cardinality` are both required. An endpoint that names a concept and promises nothing about how many partners a row finds is half an edge: the projectors then supply the missing half themselves, silently (see `cardinality`).",
       "properties": {
         "source": {
           "type": "string",
@@ -385,7 +388,14 @@
           "description": "the relationship role/name read from this end (typically on `from`): e.g. placedBy, measuredForCountry."
         },
         "cardinality": {
-          "type": "string"
+          "type": "string",
+          "enum": [
+            "1",
+            "0..1",
+            "1..N",
+            "0..N"
+          ],
+          "description": "REQUIRED on BOTH ends — how many partners a row at the other end finds here. `1` exactly one (every key resolves AND finds at most one) · `0..1` at most one (may resolve nothing, must never find two) · `1..N` every key resolves, fan-out unbounded · `0..N` promises nothing, so nothing can contradict it. CLOSED, and the set is a MEASUREMENT of what the framework can actually judge and draw, not a taste: these four are the intersection of every live consumer's map (sdk/project/er_model.py CARDINALITY, tools/mac_to_shacl.py CARD, tools/mac_to_mermaid.py CARD_L/CARD_R, tools/check_edge_joins_measured.py EXACTLY_ONE/AT_MOST_ONE) and they are also exactly the four values the estate's edges use across all of their endpoints. WHY `1..1` AND `N` ARE REFUSED THOUGH THEY READ AS LEGAL: both are synonyms of a value already here (`1..1` = `1`, `N` = `0..N`) and both are SILENTLY MIS-RENDERED rather than rejected by a projector that meets them — mac_to_shacl defaults an unmapped value to (minCount 0, maxCount 1), so a declared `1..1` ships as `at most one`, weaker than the claim; mac_to_mermaid defaults the left terminal to `||`, so a declared `N` is DRAWN as exactly one, the opposite of the claim. Admitting a token that no judge reads and two projectors quietly rewrite is the silent-default class this requirement exists to close. `N..N` is in no consumer map, no bundle and no proposal, so it is refused outright. WIDENING THIS SET IS ONE CHANGE, NOT TWO: the pending table-link proposal (C5) adds `1..1` and `N` TOGETHER WITH the judges that would then read them; adding them here first would put the token in the grammar and leave it judged by nothing. AND THE VALUE IS A MEASUREMENT, NOT A CHOICE: sharpen `0..N` to `1` only with a measurement, and cite it in `verified_by`/`realized_by` rather than retyping the number."
         }
       },
       "additionalProperties": false
@@ -1698,18 +1708,64 @@
           "$ref": "#/$defs/governance"
         },
         "planned_edges": {
-          "type": "array"
+          "type": "array",
+          "description": "v0.1.18: a PROMOTION CANDIDATE, and DELIBERATELY NOT AN EDGE. A planned edge's whole content is the ABSENCE of a declarable endpoint — 'no join exists to declare' — so the endpoint rules that govern `edges[]` (an EdgeEndpoint at each end, a cardinality on both) STOP HERE, and applying them would turn every entry in the estate red for having correctly declared nothing. What DOES carry across is the one rule that is about nameability rather than about joins: an entry must have an `edge_id`, because a candidate nothing can name is a candidate nothing can cite or promote. Before this version the array had no item schema at all, so an entry could be any value whatever.",
+          "items": {
+            "type": "object",
+            "required": [
+              "edge_id"
+            ],
+            "properties": {
+              "edge_id": {
+                "type": "string",
+                "description": "REQUIRED — the id this candidate will keep when it is promoted to an edge, so the decision that promotes it names the same thing the plan did."
+              },
+              "status": {
+                "type": "string",
+                "description": "where the candidate stands, e.g. `planned`."
+              },
+              "business_relation_minted_as": {
+                "type": "string",
+                "description": "the business edge id this candidate will be minted as, when the promoted physical edge and the business relation are not the same name."
+              },
+              "blocked_by": {
+                "type": "string",
+                "description": "WHAT IS MISSING, not that something is. A candidate blocked for no stated reason is indistinguishable from one nobody worked out."
+              },
+              "measured_reference": {
+                "type": "string",
+                "description": "bundle-relative path to the physical-plane reference file that measured the candidate key. This is where the evidence LIVES; the `evidence` string below quotes it and does not replace it."
+              },
+              "reference_id": {
+                "type": "string",
+                "description": "the id of the entry in that references file, so the quote can be checked against its source."
+              },
+              "evidence": {
+                "type": "string",
+                "description": "the measurement, WITH ITS DENOMINATORS, quoted from `measured_reference`."
+              },
+              "becomes_an_edge_when": {
+                "type": "string",
+                "description": "REQUIRED IN PRACTICE, not in the grammar: the condition whose arrival turns this candidate into an edge. Absent, a planned edge is a wish with an id."
+              },
+              "notes": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
         },
         "edges": {
           "type": "array",
           "items": {
             "type": "object",
             "required": [
+              "edge_id",
               "level",
               "type",
               "endpoints"
             ],
-            "description": "v0.5: edge type must be LEGAL for its level. Illegal types 'denormalized' and 'literal_equal' were removed (denormalized → not an edge; literal_equal → value_mapped_key).",
+            "description": "v0.5: edge type must be LEGAL for its level. Illegal types 'denormalized' and 'literal_equal' were removed (denormalized → not an edge; literal_equal → value_mapped_key). v0.1.18: `edge_id` is REQUIRED. An edge nothing can name is an edge nothing can cite — `@join:` dereferences `edge:<edge_id>`, a rule and a decision record refer to an edge by it, and `realized_by`/`verified_by` are how it cites its evidence. It is also already load-bearing and failing in the WRONG PLACE: tools/protosql_render.py indexes edges by id and silently DROPS one that has none, so `@join:` then reports `edge-not-found` and blames the caller for a defect in the edge; the runtime synthesises a POSITIONAL id instead, which silently renames when edges are reordered. Requiring it moves that refusal to the grammar, where the author can see it.",
             "properties": {
               "edge_id": {
                 "type": "string"

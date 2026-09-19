@@ -1,0 +1,14 @@
+# NEGATIVE fixture — MUST be rejected: `endpoints.to` names its concept and declares no
+# cardinality. An endpoint that promises nothing about how many partners a row finds is half an
+# endpoint, and the projectors then supply the other half themselves: mac_to_shacl ships
+# (minCount 0, maxCount 1) and mac_to_mermaid draws a crow's foot, neither of which anybody
+# authored. v0.1.18 requires `cardinality` on both ends.
+edges:
+  - edge_id: alpha__to__beta
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Alpha, cardinality: "0..N" }
+      to:   { concept: Beta }          # ← illegal: no cardinality
+    join_rule: alpha.beta_key = beta.beta_key
+    verified_by: data/expectations/alpha__to__beta.yaml

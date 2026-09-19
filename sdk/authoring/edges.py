@@ -12,6 +12,18 @@ Physical `foreign_key` edges are generatable deterministically and grounded (the
 joins). Business (identity / shared_attribute) and federation edges additionally require
 `realized_by` / `resolved_by` rule anchors — those are a follow-up layer, noted but not fabricated
 here (an edge without a real anchor would fail the grammar, and we never write a lie).
+
+CARDINALITY IS DECLARED AND NOT INVENTED (v0.1.18). The grammar now requires a cardinality at both
+ends, so this generator MUST emit one — and it has measured nothing, so the only value it may write
+is the one that CLAIMS NOTHING: `0..N` at both ends. That is the same rule as the paragraph above,
+applied to a number instead of to an anchor. Sharpening an end to `1` or `0..1` is a MEASUREMENT
+(`check_edge_joins_measured` / `mac_measure_edges` prove containment and fan-out, and the verdict is
+cited in `verified_by`), never a guess a generator is entitled to make: a declared `1` whose
+containment turns out partial is REFUSED at render time rather than quietly downgraded, so an
+optimistic default here would manufacture refusals from data nobody had looked at. An explicit
+`0..N` is strictly more than the absence it replaces — absence was indistinguishable from ignorance,
+and `check_edge_claims_proved` now reports these as claiming-but-unproved rather than silently
+skipping them.
 """
 
 from __future__ import annotations
@@ -27,6 +39,20 @@ _SCHEMA = _load_schema()
 _EF = dict(_SCHEMA["$defs"]["EdgesFile"])
 _EF["$defs"] = _SCHEMA["$defs"]
 _EDGES_VALIDATOR = jsv.validator_for(_SCHEMA)(_EF)
+
+#: The only cardinality a GENERATOR may write: the one that claims nothing. Verified against the
+#: grammar's own closed set at import, so this module cannot drift from the standard silently — a
+#: schema that dropped the value would break here, loudly, instead of emitting edges the validator
+#: then refuses one at a time (and `_valid_edge` DROPS a refused edge, so the symptom would be an
+#: empty edge list rather than an error).
+UNMEASURED_CARDINALITY = "0..N"
+_CARD_CLOSED = tuple(
+    (_SCHEMA["$defs"]["EdgeEndpoint"]["properties"].get("cardinality") or {}).get("enum") or ())
+if _CARD_CLOSED and UNMEASURED_CARDINALITY not in _CARD_CLOSED:
+    raise ValueError(
+        f"the grammar's closed cardinality set {list(_CARD_CLOSED)} no longer contains "
+        f"{UNMEASURED_CARDINALITY!r}, which is the only value a generator that has measured nothing "
+        f"is entitled to write. Pick the new claims-nothing token deliberately; do not default")
 
 
 def _bare(rel: str) -> str:
@@ -73,7 +99,11 @@ def physical_edges(datasets_info: list, concept_of: dict) -> list:
                 "edge_id": eid,
                 "level": "physical",
                 "type": "foreign_key",
-                "endpoints": {"from": {"concept": frm}, "to": {"concept": to}},
+                # `0..N` BOTH ENDS, deliberately: the weakest true claim. Nothing here has measured
+                # containment or fan-out, and the grammar requires a value — so it gets the one that
+                # promises nothing and that no measurement can contradict. See the module docstring.
+                "endpoints": {"from": {"concept": frm, "cardinality": UNMEASURED_CARDINALITY},
+                              "to": {"concept": to, "cardinality": UNMEASURED_CARDINALITY}},
                 "join_rule": f"{di['produces_relation']}.{fk.get('from_column')} = "
                 f"{fk.get('to_table')}.{fk.get('to_column')}",
             }

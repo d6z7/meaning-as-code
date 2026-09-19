@@ -1,0 +1,15 @@
+# NEGATIVE fixture — MUST be rejected: `relation` is not an EdgeEndpoint key. This is a REGRESSION
+# test, not new enforcement — `additionalProperties: false` has always refused it — and it is here
+# because the pending table-link proposal adds `relation` beside `concept` on an endpoint. When
+# that lands, THIS fixture is the one that must be re-decided deliberately rather than discovered.
+# Until then: a join between stored relations that is not a join between concepts is a pipeline
+# transform, not an ontology edge.
+edges:
+  - edge_id: alpha__to__beta__by_relation
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Alpha, cardinality: "0..N", relation: raw.alpha }   # ← illegal key
+      to:   { concept: Beta,  cardinality: "1" }
+    join_rule: alpha.beta_key = beta.beta_key
+    verified_by: data/expectations/alpha__to__beta.yaml

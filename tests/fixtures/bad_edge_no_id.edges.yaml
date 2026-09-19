@@ -1,0 +1,12 @@
+# NEGATIVE fixture — MUST be rejected: an edge with no `edge_id`. An edge nothing can name is an
+# edge nothing can cite: `@join:` dereferences `edge:<edge_id>`, and protosql_render's index drops
+# an id-less edge silently, so the renderer then reports `edge-not-found` and blames the caller for
+# a defect in the edge. v0.1.18 requires `edge_id`.
+edges:
+  - level: physical                    # ← illegal: no edge_id
+    type: foreign_key
+    endpoints:
+      from: { concept: Alpha, cardinality: "0..N" }
+      to:   { concept: Beta,  cardinality: "1" }
+    join_rule: alpha.beta_key = beta.beta_key
+    verified_by: data/expectations/alpha__to__beta.yaml

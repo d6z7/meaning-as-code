@@ -1,0 +1,14 @@
+# NEGATIVE fixture — MUST be rejected: `many` is not in the closed cardinality vocabulary. It is
+# the MEASURED plane's word (data/references/*.yaml speaks one/many over child/parent) and the two
+# vocabularies are not interchangeable — a measurer that emitted `0..N` would be deciding how the
+# picture reads, and an edge that says `many` has borrowed a word that no judge and no projector
+# here can turn into a terminal.
+edges:
+  - edge_id: alpha__to__gamma
+    level: physical
+    type: foreign_key
+    endpoints:
+      from: { concept: Alpha, cardinality: "0..N" }
+      to:   { concept: Gamma, cardinality: many }   # ← illegal: outside the closed set
+    join_rule: alpha.gamma_key = gamma.gamma_key
+    verified_by: data/expectations/alpha__to__gamma.yaml

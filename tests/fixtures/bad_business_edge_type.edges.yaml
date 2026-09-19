@@ -5,6 +5,8 @@ edges:
     level: business
     type: foreign_key     # ← illegal: business ⊂ {identity, shared_attribute}
     endpoints:
-      from: { concept: A, ref: a.yaml#concept }
-      to:   { concept: B, ref: b.yaml#concept }
+      # Fully specified on purpose (v0.1.18 requires a cardinality on both ends): the ONLY
+      # defect in this fixture must be the illegal `type`, or it stops testing the type rule.
+      from: { concept: A, ref: a.yaml#concept, cardinality: "0..N" }
+      to:   { concept: B, ref: b.yaml#concept, cardinality: "1" }
     resolved_by: "rules.yaml#rules.x"
