@@ -311,6 +311,36 @@ def load_ont_edges(ontology_concepts_dir) -> tuple[list, str | None]:
     return list((doc or {}).get("edges") or []), None
 
 
+def load_dq_findings(data_dir) -> tuple[dict, str | None]:
+    """WHERE the quality dashboard lives and WHETHER it read, resolved ONCE.
+
+    Returns ({raw table -> [finding id, ...]}, parse_error) — the per-source Quality tab.
+
+    THE PARSE ERROR IS RETURNED, NOT SWALLOWED, and that is the whole reason this door exists.
+    This read used to sit inline in build_objects under `except Exception: pass`, so a truncated
+    dq_dashboard.json and a dashboard with no findings produced the SAME object index, byte for
+    byte: every source lost its Quality tab and nothing anywhere said so. Measured by
+    tools/check_seam_contract.py against the public example bundle — of 20 traced inputs, this was
+    the ONE whose corruption changed the payload not at all.
+
+    Same shape as load_ont_edges above and for the same reason: build_objects calls it, and so does
+    tools/project_objects.py, which has to report what it could not read. One resolution, one
+    report, no second author.
+    """
+    p = Path(data_dir) / "quality" / "dq_dashboard.json"
+    if not p.exists():
+        return {}, None
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        by_table: dict = {}
+        for f in (doc or {}).get("findings") or []:
+            if f.get("table"):
+                by_table.setdefault(f["table"], []).append(f.get("id"))
+    except Exception as e:  # noqa: BLE001 — a state to report, not to raise
+        return {}, f"{type(e).__name__}: {e}"
+    return by_table, None
+
+
 def edge_index(root, ontology_concepts_dir=None) -> dict:
     """THE PUBLIC DOOR to the edge index — `_edge_index` with its arguments supplied.
 
@@ -385,11 +415,10 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         sub: ({p.stem for p in (data_dir / sub).glob("*.md")} if (data_dir / sub).exists() else set())
         for sub in ("datasets", "sources", "transforms", "lookups")
     }
-    # Concept pages are written FLAT even when the concept yaml is filed by domain (the page
-    # builder writes ontology/concepts/<stem>.md), so the probe is flat too.
-    _cdoc_stems = (
-        {p.stem for p in _cdir.glob("*.md")} if _cdir and _cdir.exists() else set()
-    )
+    # NO PROBE FOR CONCEPT PAGES. There used to be one here — the flat `ontology/concepts/*.md`
+    # stems — because a concept's page was a build artifact like every other. It is derived live
+    # now (see the concept block's `paths.doc` below), so there is nothing on disk to probe and a
+    # probe would only re-introduce the gate that hid the tab on un-projected bundles.
     # baked samples — datasets: <name>.sample.csv (from the served view); sources: <name>.src.sample.csv
     # (from the raw table). Offered as the object's Sample view.
     _sdir = data_dir / "samples"
@@ -478,15 +507,10 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         except Exception:
             pass
 
-    q_by_table: dict = {}
-    _dash = Path(data_dir) / "quality" / "dq_dashboard.json"
-    if _dash.exists():
-        try:
-            for f in json.loads(_dash.read_text()).get("findings") or []:
-                if f.get("table"):
-                    q_by_table.setdefault(f["table"], []).append(f.get("id"))
-        except Exception:
-            pass
+    # ONE RESOLUTION of where the dashboard lives and ONE report of whether it read — see
+    # load_dq_findings. The parse error is bound rather than dropped so this path can report it too
+    # when it learns to; tools/project_objects.py already does, through the same door.
+    q_by_table, _dash_parse_error = load_dq_findings(data_dir)
 
     # ---- ONTOLOGY EDGES -> concept correlations (the relationship projection) --------------------
     # edges.yaml (concept->concept physical FK joins) is the authoritative link source. Project it
@@ -917,7 +941,15 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
         con = c.get("concept") or {}
         contract = c.get("contract") or {}
         paths = {
-            "doc": f"ontology/concepts/{cstem}.md" if cstem in _cdoc_stems else None,
+            # A CONCEPT'S PAGE IS NO LONGER GATED ON THE .md EXISTING, and it is the only object
+            # kind that is not. Every other page here is a build artifact whose absence means "not
+            # projected yet" — the reason this gate exists. A concept's page is DERIVED from the
+            # concept on every request now (tools/project_concept_page.py -> the console's
+            # /concept-page route), so its existence is the CONCEPT's existence, and a bundle that
+            # has never been projected has every page it declares. Gating it on the artifact took
+            # the Page tab away from exactly the bundles the live derivation was built for: the
+            # ones with no .md at all.
+            "doc": f"ontology/concepts/{cstem}.md",
             "schema": concept_schema_path.get(cstem, f"ontology/concepts/{cstem}.yaml"),
         }
         # FULL rule logic (id/subject/kind/confidence/scope/binds + when/then/never) so the concept
