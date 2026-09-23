@@ -254,6 +254,10 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
             },
             "route": route,
             "answer": answer_text,
+            # The decomposed answer, when the engine sent one (`mac_console.ask_present`). Absent
+            # rather than null-filled for a run that produced none, so "this engine does not
+            # decompose" and "this answer had no parts" stay distinguishable.
+            **({"answer_parts": ask["answer_parts"]} if ask.get("answer_parts") else {}),
             "sql": sqls,
             "sql_valid": sql_valid,
             "sql_errors": list(ask.get("sql_errors") or []),
