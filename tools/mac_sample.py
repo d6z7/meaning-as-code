@@ -375,7 +375,13 @@ def plan_samples(root: Path, *, planes=("sources", "datasets"), stems=None):
                 # churn instead of showing it. Appending the rest costs nothing and removes the
                 # dependency.
                 order_by=cols, notes=notes))
-    if wanted is not None:
+    # A STEM IS ONLY UNKNOWN IF THIS PLANE WAS ASKED FOR. `--plane concepts` passes `planes=()`
+    # here — the relation preview is not being cut at all — and a stem naming a CONCEPT was still
+    # reported NO_SUCH_STEM against relation descriptors, failing the whole run. Measured: drawing
+    # one concept by name was impossible, because every concept grounds on a relation whose
+    # descriptor is named after the RELATION and not after the concept. Asking for nothing cannot
+    # fail to find something.
+    if wanted is not None and planes:
         for miss in sorted(wanted - seen_stems):
             findings.append({"kind": "?", "stem": miss, "file": "", "class": "NO_SUCH_STEM",
                              "detail": f"--stems named {miss!r}, which no descriptor under "
