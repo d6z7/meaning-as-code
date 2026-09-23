@@ -222,7 +222,7 @@ older document is the one that has drifted. Recorded rather than silently correc
 | `ADR-006` Phase 3 | the system-ontology concepts live in the framework repo | they are generated in memory by the platform's `meaning_plane.py`; that directory does not exist |
 | `ADR-006` Phase 5 | a "quality refactor", pass rate unchanged | the corpus's one anti-join question is blocked on it, so it is a feature dependency |
 | `ADR-006` §8 criterion 4 | "a new bundle works without planner changes" | not met — the interpreter's prompt carries 23 worked examples naming one bundle's concepts and values |
-| `ADR-005`, `ADR-006`, `ADR-007` | all `Status: PROPOSED` | four of ADR-006's five phases are merged |
+| `ADR-006`, `ADR-007` | `Status: PROPOSED` | four of ADR-006's five phases are merged. **ADR-005 was listed here in error and is ADOPTED** — it carries the operator's own ruling in its status line |
 | `FOLD_GRAMMAR.md` header | describes an unratified decision | true, but that decision is also **superseded in approach** by `0005`, which the header does not say |
 
 **The last row is the one to fix first**, because it is the same defect in documentation form: a
