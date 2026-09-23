@@ -295,6 +295,18 @@ def enumerate_bundle(root, layout=None):
         return any(fnmatch.fnmatch(relpath, d) or relpath.startswith(d.rstrip('*').rstrip('/') + '/')
                    for d in declared if d)
 
+    # OUT OF SCOPE MEANS OUT OF SCOPE, WHOEVER CLAIMED THE FILE. `declared` used to be consulted
+    # only for files no route matched, so a bundle could not take a ROUTED file out of scope at
+    # all — and the remedy this gate prints ("declare them in conformance.out_of_scope") did
+    # nothing for one. The pattern globs above claim by LOCATION, not by content: every
+    # `acceptance/*.yaml` is routed to PropertiesFile, so a corpus file that is not a property
+    # suite is validated against a definition it never claimed and fails on its own shape, with
+    # no way for the bundle to say so. Filtering here makes the declaration mean what the gate
+    # says it means. A file both routed and declared is reported as WAIVED, never as clean:
+    # the count still shows it, so taking something out of scope stays visible.
+    _routed_declared = [f for f in files if is_declared(os.path.relpath(f, root))]
+    files = [f for f in files if f not in _routed_declared]
+
     known = {os.path.realpath(f) for f in files}
     unknown, waived = [], []
     for f in all_yaml:
@@ -305,6 +317,7 @@ def enumerate_bundle(root, layout=None):
             continue
         rel = os.path.relpath(f, root)
         (waived if is_declared(rel) else unknown).append(rel)
+    waived += [os.path.relpath(f, root) for f in _routed_declared]
     return Enumeration(root=root, layout=layout, routed=tuple(files), all_yaml=tuple(all_yaml),
                        declared=tuple(declared), unknown=tuple(unknown), waived=tuple(waived))
 
