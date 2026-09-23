@@ -98,9 +98,26 @@ operations:
   - name: ratio
     asks: a share, a percentage, or one figure per another
     requires: [Intent.denominator naming a second subject]
-    contributes: {select: <numerator> / NULLIF(<denominator>, 0)}
+    contributes: {select: nothing}
     branches_in_runtime: false
-    emerges_from: Intent.denominator being populated
+    emerges_from: nothing — see `unread` below
+    unread: >-
+      `Intent.denominator` IS DECLARED AND IS READ BY NOTHING. It is a field on the model, the
+      interpreter's prompt instructs the model to fill it ("For ratios, set `denominator`"), the
+      model does fill it — and no line of the planner mentions it. So a ratio question plans, and
+      what it plans is the NUMERATOR ALONE.
+
+      MEASURED on a 70-question corpus: "revenue per customer by country" and "average order value
+      by country" compile to the SAME SQL as each other and as a plain total — SUM(revenue) GROUP
+      BY country. Three different questions, one answer, and it is an answer to none of them. They
+      count as PLANNING, which is exactly the limit the corpus replay was built to expose: it says
+      a query was formed, never that the query answers the question.
+
+      THIS IS THE ESTATE'S OWN DEFECT, ONE LAYER FURTHER IN than where it has been found before —
+      not an ontology declaration the runtime ignores, but a field of the INTENT it ignores. An
+      earlier draft of this file asserted the division as fact. The drift gate could not catch
+      that: §5 says in as many words that it checks the vocabulary and the branches and NOT the
+      contributions. The corpus replay caught it.
 
   - name: define
     asks: what a declaration says

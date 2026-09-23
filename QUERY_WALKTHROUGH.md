@@ -405,6 +405,19 @@ All three are recorded in `grammar/query_grammar.yaml#projection`.
 | W6 | — refused, naming the missing declaration | — |
 | W7 | — refused, and the grammar is the gap | — |
 
+### A WARNING THE SEVEN CASES DO NOT CARRY
+
+Every trace above plans, and every one of them is right. **Planning is not answering**, and the
+corpus has a case where the difference bites: `ratio`. `Intent.denominator` is declared on the
+model, the prompt tells the model to fill it, the model fills it — and no line of the planner
+reads it. So *"revenue per customer by country"* and *"average order value by country"* compile
+to the same SQL as each other and as a plain total: `SUM(revenue) GROUP BY country`. Three
+questions, one answer, and it answers none of them.
+
+They count as PLANNING in every number this document quotes. That is the limit of a replay, said
+plainly: it proves a query was formed, never that the query answers the question. Only an oracle
+does that — which is why `acceptance/intents.yaml` and the oracles are separate artifacts.
+
 **Six of seven get their shape from declarations.** That is the measured claim of
 `QUERY_GRAMMAR.md` §1, shown rather than asserted: the operation is not what decides the SQL.
 
