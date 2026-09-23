@@ -98,38 +98,28 @@ operations:
   - name: ratio
     asks: a share, a percentage, or one figure per another
     requires: [Intent.denominator naming a second subject]
-    contributes: {refusal: unsupported_intent}
+    contributes: {select: "(<numerator>) / NULLIF(<denominator aggregate>, 0)"}
     branches_in_runtime: false
-    emerges_from: >-
-      nothing — the division is not built. The planner refuses when `denominator` is SET, which is
-      a branch on the FIELD and not on the operation name: `ratio` is still never tested for. The
-      drift gate insisted on that distinction when this entry first claimed otherwise, and it is
-      the right one — an operation word nothing reads is exactly what this grammar exists to
-      surface. See `unread` below.
-    unread: >-
-      `Intent.denominator` IS DECLARED AND IS READ BY NOTHING. It is a field on the model, the
-      interpreter's prompt instructs the model to fill it ("For ratios, set `denominator`"), the
-      model does fill it — and no line of the planner mentions it. So a ratio question plans, and
-      what it plans is the NUMERATOR ALONE.
-
-      MEASURED on a 70-question corpus: "revenue per customer by country" and "average order value
-      by country" compile to the SAME SQL as each other and as a plain total — SUM(revenue) GROUP
-      BY country. Three different questions, one answer, and it is an answer to none of them. They
-      count as PLANNING, which is exactly the limit the corpus replay was built to expose: it says
-      a query was formed, never that the query answers the question.
-
-      THIS IS THE ESTATE'S OWN DEFECT, ONE LAYER FURTHER IN than where it has been found before —
-      not an ontology declaration the runtime ignores, but a field of the INTENT it ignores. An
-      earlier draft of this file asserted the division as fact. The drift gate could not catch
-      that: §5 says in as many words that it checks the vocabulary and the branches and NOT the
-      contributions. The corpus replay caught it.
-
-      NOW IT REFUSES. A `denominator` this planner cannot honour returns `unsupported_intent`
-      naming the field, rather than serving the numerator. The division is still not built — the
-      change is that the gap is legible instead of being discovered by someone reconciling a
-      number that was never the one asked for. Corpus: 4 questions moved from planning to
-      refusing, which is 4 fewer wrong answers and 4 fewer plans, in that order of importance.
-
+    emerges_from: Intent.denominator being populated
+    note: >-
+      THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism.
+      A measure with a derivation rule contributes that rule's template; a countable contributes
+      COUNT(DISTINCT <its canonical_key>). So "per customer" divides by the customers a bare
+      "how many customers" would have counted — one definition of a count, never two that drift.
+      The denominator is also JOINED like any other term, so a denominator with no path refuses
+      `no_join_path` naming both ends rather than composing SQL the engine would reject.
+      NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the
+      only honest cell.
+    was_unread_until: '2026-09-24'
+    history: >-
+      DECLARED AND READ BY NOTHING for as long as it existed. The field was on the model, the
+      prompt asked the model to fill it, the model filled it — and no step of the planner
+      mentioned it, so a ratio question planned its NUMERATOR ALONE. Measured on a 70-question
+      corpus: "revenue per customer by country" and "average order value by country" compiled to
+      the SAME SQL as each other and as a plain total. It refused for a day, which was honest and
+      not an answer. Verified on build: average order value now returns 2 341.01, matching an
+      INDEPENDENT computation (the mean of per-order totals) exactly, where dividing by the line
+      count gives 976.96 — 2.40x out, and plausible.
   - name: define
     asks: what a declaration says
     requires: [the meaning plane — the generated system concepts]
