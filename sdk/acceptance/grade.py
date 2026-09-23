@@ -256,6 +256,20 @@ def disposition(ask_result: dict) -> str:
     ask_result = ask_result or {}
     answer = ask_result.get("answer") or ""
     sql = ask_result.get("sql") or []
+    # THE ENGINE'S OWN WORD FIRST, AND PROSE ONLY WHERE THERE IS NONE. A deterministic Refusal or
+    # Clarification arrives with `status` and `route` already saying so — the caller KNOWS which
+    # branch it took — and the prose scan below could not see it, because a structured refusal
+    # carries its reason in `error` and leaves `answer` empty. Measured on a 70-question corpus:
+    # 6 correct refusals were captured as `wiki+athena` with a blank answer, and the board then
+    # reported them as "answered without executing SQL" — an ungoverned commit, which is the
+    # opposite of what happened.
+    #
+    # This is the same direction `sdk/acceptance/flags.py` was written in: it exists because
+    # judging answers by substring-matching prose was "measurably inverted". Asking the engine
+    # instead of guessing from its wording is not a tuning of that machine, it is not using it.
+    declared = str(ask_result.get("status") or ask_result.get("route") or "").strip().lower()
+    if declared in ("refuse", "refusal", "clarify", "clarification", "decline", "declined"):
+        return "GOVERNED_REFUSAL"
     if _looks_refusal(answer):
         return "GOVERNED_REFUSAL"
     if sql:
