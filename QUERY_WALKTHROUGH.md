@@ -315,6 +315,84 @@ to a newcomer: the term *is* known, just not as a dimension.
 
 ---
 
+## 8b. W8 · CHOOSING THE COLUMNS — projection
+
+> **"Which products were NOT sold in 2024?"** returns product codes. How do I show the name?
+
+This is the one thing the grammar can do that nothing above says out loud, so it is worked here.
+
+### The vocabulary: a slice IS the projection
+
+```
+slices: [{term: Product, column: ProductName}]
+```
+
+```sql
+-- without it
+SELECT DISTINCT dim_contoso_product.ProductCode AS product
+-- with it
+SELECT DISTINCT dim_contoso_product.ProductName, dim_contoso_product.ProductCode AS product
+```
+
+One `slices` entry per column you want. `term` names the concept, `column` names which of its
+columns. Any column the concept declares works — a dimension, or a plain attribute:
+
+```
+slices: [{term: Product, column: Manufacturer}]
+  →  SELECT DISTINCT dim_contoso_product.Manufacturer, …
+```
+
+### `ordering.by` is a second, quieter route
+
+A column named in `ordering` is pulled into the SELECT even when no slice names it:
+
+```
+slices:   [{term: Product, column: ProductName}]
+ordering: {by: Price, direction: desc}   limit: 5
+
+→ SELECT DISTINCT ProductName, ProductCode AS product, Price
+  ORDER BY Price DESC LIMIT 5
+```
+
+That is how *"top 5 most expensive products, by name"* is expressed — and it is why the question
+is answerable without any new grammar.
+
+### On an aggregate, a slice is also the GRAIN — this is the part to watch
+
+```
+subject: NetSalesAmount, operation: sum
+slices:  [{term: Product, column: ProductName}]
+
+→ SELECT ProductName, SUM(…) … GROUP BY ProductName
+```
+
+The name is shown **because it is grouped by**. Say both and both are grouped:
+
+```
+slices: [{term: Product, column: ProductKey}, {term: Product, column: ProductName}]
+→ GROUP BY ProductKey, ProductName
+```
+
+which is the correct form: the key decides the grain, the name rides along because it is
+functionally dependent on it. Grouping by the name **alone** merges any two products that share
+one. In the worked bundle nothing merges today — 2 517 products, 2 517 distinct names — but that
+is a property of this snapshot, not a declaration, and the Product concept says its identity
+resolves *to a ProductKey*. Prefer naming the key.
+
+### THE THREE GAPS, and they are real
+
+1. **There is no display-only column.** Every column you add joins the `GROUP BY`. On an aggregate
+   you cannot say *"show this, do not group by it"* — you can only say something that happens to
+   be harmless when the column is functionally dependent on the key.
+2. **The identity column is always appended and cannot be suppressed.** Ask for the name and you
+   get `ProductName, ProductCode AS product`. There is no way to ask for the name alone.
+3. **Naming the identity column explicitly duplicates it** —
+   `SELECT DISTINCT ProductName, ProductCode, ProductCode AS product`. A defect, not a design.
+
+All three are recorded in `grammar/query_grammar.yaml#projection`.
+
+---
+
 ## 9. WHAT THE SEVEN CASES SHOW TOGETHER
 
 | | the SQL came from | not from |

@@ -147,6 +147,40 @@ declaration_states:
     effect: refuse ontology_gap — a period that bound to nothing would label a total it did not take
 
 # ─────────────────────────────────────────────────────────────────────────────────────────────
+# PROJECTION — which columns come back. There is no `projection` field on the Intent: the columns
+# are chosen through `slices`, and on an aggregate that ALSO sets the grain. Written down because
+# it is the one part of the grammar with no obvious name, so a reader looking for "how do I show
+# the product name instead of its id" finds nothing by searching for it.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+projection:
+  how: >-
+    One `slices` entry per column: {term: <concept>, column: <column>}. Any column the concept
+    declares — dimension or attribute. A column named in `ordering.by` is pulled into the SELECT
+    too, which is how "top 5 by price, shown by name" needs no new grammar.
+  on_list: the slices ARE the projection — SELECT DISTINCT <columns>
+  on_aggregate: >-
+    the slices are the projection AND the GROUP BY. Naming the key beside the display column
+    (ProductKey, ProductName) is the correct form: the key decides the grain and the name rides
+    along, functionally dependent on it. Naming the display column ALONE merges any two members
+    that share one.
+  gaps:
+    - id: no_display_only_column
+      what: a column shown but NOT grouped by
+      why: >-
+        every slice joins the GROUP BY, so on an aggregate "show this" and "group by this" cannot
+        be said apart. Harmless where the column is functionally dependent on the key, and not
+        expressible where it is not.
+    - id: identity_column_not_suppressible
+      what: asking for one column still returns the concept's identity column beside it
+      example: a slice on ProductName yields "ProductName, ProductCode AS product"
+      why: the identity is appended by the assembler and no field withholds it
+    - id: identity_column_duplicated
+      what: naming the identity column as a slice emits it TWICE
+      example: "SELECT DISTINCT ProductName, ProductCode, ProductCode AS product"
+      why: the assembler appends the identity without checking whether a slice already named it
+      note: a defect, not a design — unlike the two above, this one is fixable without new grammar
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
 # WHAT THIS GRAMMAR CANNOT SAY. Recorded so the gap is visible rather than discovered.
 # ─────────────────────────────────────────────────────────────────────────────────────────────
 not_expressible:
