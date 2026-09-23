@@ -1960,12 +1960,23 @@ def _member_line(r) -> str:
     shown = "withheld" if r.get("state") == "WITHHELD" else f"{rows}"
     bits = [f"{shown} of {pop} {unit}(s)"]
     if r.get("member_grain") == "key":
+        # A KEY-GRAIN DRAW LEADS WITH ITS MEMBERS, and the row population follows it. The two
+        # numbers were the other way round, and on a concept whose members and rows are the
+        # confusable pair — an ORDER and an order ITEM — a reader took the leading 223 974 for
+        # the number of orders. It is the row count, it is correctly recorded, and it was simply
+        # standing where the headline goes.
+        #
+        # NOTHING RECORDED CHANGES. `population` still means the rows the concept CLAIMS, which is
+        # a distinct fact from both the host rows and the members — one concept here claims 15 of
+        # its host's 74 — so redefining it would destroy a number nothing else carries. This is
+        # the order of two phrases on one line.
+        bits = [f"{r.get('members_present')} of {r.get('members_total')} "
+                f"{r.get('member_key')} member(s), stratified",
+                f"drawn from {pop} {unit}(s)"] if shown != "withheld" else bits
         # THE MEMBER GUARANTEE, WITH ITS DENOMINATOR, and never the row count standing in for it:
         # the draw is stratified, so "40 rows" says nothing at all about how many members are on
         # the page. It used to print "one row per <key>", which described the collapse this draw
         # replaced and would now be simply false.
-        bits.append(f"{r.get('members_present')} of {r.get('members_total')} "
-                    f"{r.get('member_key')} member(s), stratified")
         if r.get("rows_declared_only"):
             bits.append(f"+{r.get('rows_declared_only')} declared member(s) with NO row in the "
                         f"data ({', '.join(r.get('members_absent') or ())})")
