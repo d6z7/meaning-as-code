@@ -1,7 +1,17 @@
 <!-- STATUS: PROPOSED. This describes decisions/0004 in mac-ontology-contoso, which the operator
      has NOT ratified. The code it documents is landed and INERT: the law is consulted only where a
      bundle declares a fold plane, and no bundle declares one. Two points ARE ruled and marked so.
-     Do not treat this as framework guidance until 0004 is ratified. -->
+     Do not treat this as framework guidance until 0004 is ratified.
+
+     AND 0004 IS SUPERSEDED IN APPROACH BY 0005, which this header used to omit. 0005's words:
+     "Its measurements stand; its proposal largely should not be built. The premise all three
+     records share — that the model needs new declarations — was measured wrong: the facts are
+     mostly declared already and the runtime does not read them." So: the MEASUREMENTS below are
+     sound and were taken against the real warehouse. The PROPOSAL — a new fold plane a bundle
+     authors — is the shape 0005 warns against, and should be weighed against wiring what is
+     already declared before any of it is built. Read 0005 first.
+
+     See QUERY_GRAMMAR.md for the orthogonal axis (what a question contributes to a SELECT). -->
 
 # THE FOLD GRAMMAR
 ### How to say what a number means, in words a domain expert can check

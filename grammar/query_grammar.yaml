@@ -1,0 +1,161 @@
+# THE QUERY GRAMMAR — what an operation contributes to SQL, and what it needs declared.
+#
+# STATUS: PROPOSED. Not ratified. The runtime does not read this file: it is checked AGAINST the
+# runtime by tools/check_query_grammar.py, which reds when the two disagree. That is deliberate —
+# see QUERY_GRAMMAR.md §5. A declaration nothing reads is the estate's recorded defect (the worked bundle's
+# decisions/0005), so this one is born with a reader even though it is not yet an input.
+#
+# WHAT THIS FILE IS FOR. The operation vocabulary already existed, in two homes that cannot be
+# reviewed: a Python `StrEnum` and a prose paragraph in the interpreter's prompt. This is not a
+# tenth declaration — it is the same closed vocabulary, written where a person can read it beside
+# what it does, and where a gate can check it.
+#
+# THE MEASURED FINDING THIS FILE RECORDS. The operation is NOT what decides the SQL. Four of the
+# nine members change anything at all, and between them they make three decisions. Everything
+# else is emergent: from what the subject DECLARES, and from which optional Intent fields the
+# interpreter filled. `branches_in_runtime` says, per operation, which it is — and the gate
+# proves the answer against the code rather than trusting this comment.
+
+metadata:
+  schema: mac.query_grammar/1
+  status: PROPOSED
+  measured_against: mac-platform @ packages/mac-runtime/src/mac_runtime/planner
+  measured_on: '2026-09-23'
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# THE SKELETON. Every operation contributes to the same SELECT, and contributes nothing else.
+# There is no per-operation code path and no per-question-shape route; an operation that needed
+# one would be a defect in this grammar, not a new branch.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+skeleton: SELECT … FROM <anchor> JOIN … WHERE … GROUP BY … ORDER BY … LIMIT …
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# THE NINE WORDS. `requires` is what must be DECLARED for the operation to be plannable at all —
+# the thing that refuses when it is missing. `contributes` is what it adds to the skeleton.
+# `branches_in_runtime` is measured: true means some code tests for this operation by name.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+operations:
+
+  - name: count
+    asks: how many distinct instances
+    requires: [identity.canonical_key]
+    contributes: {select: COUNT(DISTINCT <canonical_key>)}
+    branches_in_runtime: true
+    branches: [non_fold_ops]    # lets a non-measure subject past the fold gate
+    refuses_when: the subject declares no canonical_key and no rule
+    note: >-
+      The key does the work, not the word. The worked bundle's decisions/0005 proved the route by giving each
+      concept `COUNT(DISTINCT <the key it already declares>)` and planning it unchanged.
+
+  - name: sum
+    asks: the total of a number
+    requires: [semantics.measure_type, a measure column or a derivation rule]
+    contributes: {select: SUM(<measure expression>)}
+    branches_in_runtime: false
+    emerges_from: the fold law over the subject's declared measure
+    refuses_when: nothing declares a number the subject carries
+
+  - name: average
+    asks: the mean of a number
+    requires: [semantics.measure_type, a measure column or a derivation rule]
+    contributes: {select: AVG(<measure expression>)}
+    branches_in_runtime: false
+    emerges_from: the fold law over the subject's declared measure
+    open_question: >-
+      A plain mean does not COMPOSE — a breakdown and a grand total disagree. The fold grammar
+      says so and names `weighted_mean` as the operator that does. This grammar does not yet say
+      which one `average` selects, and the answer belongs in the fold plane, not here.
+
+  - name: list
+    asks: which members exist
+    requires: [a column to list — canonical_key, or a named slice column]
+    contributes: {select: SELECT DISTINCT <column>}
+    branches_in_runtime: true
+    branches: [non_fold_ops, select_distinct]
+
+  - name: rank
+    asks: the top or bottom N
+    requires: [an aggregate to order by, or a declared column named in `ordering.by`]
+    contributes: {order_by: <aggregate|column> <direction>, limit: <limit>}
+    branches_in_runtime: false
+    emerges_from: Intent.ordering and Intent.limit being populated
+    note: >-
+      `rank` is a NAME for a shape the skeleton already had. Setting ordering+limit produces the
+      same SQL whatever the operation says, which is why the word is not branched on.
+
+  - name: compare
+    asks: two or more members side by side
+    requires: [a dimension both members share]
+    contributes: {group_by: <axis>, where: <axis> IN (<members>)}
+    branches_in_runtime: false
+    emerges_from: slices plus an IN filter — it desugars, and nothing reads the word
+    open_question: >-
+      DESUGARING IS NOT OBVIOUSLY RIGHT AND IS RECORDED AS UNSETTLED. "Germany versus France"
+      becomes one grouped result with two rows. A reader asking to COMPARE may mean a difference,
+      a ratio, or two columns side by side, and none of those is what this produces. Measured on
+      the corpus, compare questions plan — that says the SQL is valid, not that it answers.
+
+  - name: ratio
+    asks: a share, a percentage, or one figure per another
+    requires: [Intent.denominator naming a second subject]
+    contributes: {select: <numerator> / NULLIF(<denominator>, 0)}
+    branches_in_runtime: false
+    emerges_from: Intent.denominator being populated
+
+  - name: define
+    asks: what a declaration says
+    requires: [the meaning plane — the generated system concepts]
+    contributes: {from: <meta_ relation>, where: <identifier> = <name>}
+    branches_in_runtime: true
+    branches: [non_fold_ops]
+    note: >-
+      Not a special route. The meaning plane is a bundle like any other, generated rather than
+      authored, and `define` reads it with the same skeleton — which is the whole claim.
+
+  - name: exists
+    asks: whether any instance is absent, or present
+    requires: [identity.canonical_key, an event concept carrying it]
+    contributes: {where: <key> NOT IN (SELECT <key> FROM <event> WHERE …)}
+    branches_in_runtime: true
+    branches: [non_fold_ops, anti_join]
+    also: skips the period gate — the period belongs to the subquery, not the outer query
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# THE SECOND AXIS. The operation names what was asked; the DECLARATION STATE decides whether it
+# can be answered and which SQL comes out. The same operation over the same question is three
+# different plans depending only on what the ontology says — which is why an operation-by-shape
+# matrix cannot describe this grammar, and why each row below is a refusal a bundle can fix.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+declaration_states:
+  - state: subject declares a measure column or a rule
+    effect: foldable — sum and average are available
+  - state: subject declares identity.canonical_key
+    effect: countable — COUNT(DISTINCT key), no rule needed
+  - state: subject declares neither
+    effect: refuse unsupported_intent — nothing declares a number it carries
+  - state: an edge joins the subject to every named term
+    effect: plannable
+  - state: no edge path exists between subject and a named term
+    effect: refuse no_join_path — the hop is undeclared, not absent from the data
+  - state: a filtered term declares a register or an inline value domain
+    effect: the name resolves to a code offline
+  - state: a filtered term declares neither
+    effect: refuse ontology_gap — no register, so a name cannot become a code
+  - state: the subject's relation declares a period column
+    effect: a period filter binds
+  - state: it does not
+    effect: refuse ontology_gap — a period that bound to nothing would label a total it did not take
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+# WHAT THIS GRAMMAR CANNOT SAY. Recorded so the gap is visible rather than discovered.
+# ─────────────────────────────────────────────────────────────────────────────────────────────
+not_expressible:
+  - id: having
+    what: a predicate on an AGGREGATE rather than on a row
+    example: countries where the average order value exceeds 500
+    why: every filter the Intent can carry lands in WHERE; there is no HAVING
+    measured: the one corpus question of 70 that no hand-written intent could encode
+  - id: correlated_subquery_filter
+    what: a filter INSIDE the subquery an anti-join builds
+    example: stores in Italy with no sales
+    why: exists contributes one subquery and the Intent cannot qualify it
