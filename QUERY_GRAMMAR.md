@@ -7,6 +7,10 @@
 # THE QUERY GRAMMAR
 ### How a question becomes SQL, in words a reviewer can check
 
+> **New to this? Read [QUERY_WALKTHROUGH.md](QUERY_WALKTHROUGH.md) first.** It follows seven real
+> questions end to end with traced output from the landed planner. This file is the reference
+> behind it, and a reference only answers questions you already know to ask.
+
 The fold grammar answers *what may be done to this number*. This one answers a different question:
 *what does a question contribute to a SELECT, and what must be declared before it can.* They are
 orthogonal and neither contains the other.
