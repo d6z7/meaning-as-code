@@ -98,9 +98,14 @@ operations:
   - name: ratio
     asks: a share, a percentage, or one figure per another
     requires: [Intent.denominator naming a second subject]
-    contributes: {select: nothing}
+    contributes: {refusal: unsupported_intent}
     branches_in_runtime: false
-    emerges_from: nothing — see `unread` below
+    emerges_from: >-
+      nothing — the division is not built. The planner refuses when `denominator` is SET, which is
+      a branch on the FIELD and not on the operation name: `ratio` is still never tested for. The
+      drift gate insisted on that distinction when this entry first claimed otherwise, and it is
+      the right one — an operation word nothing reads is exactly what this grammar exists to
+      surface. See `unread` below.
     unread: >-
       `Intent.denominator` IS DECLARED AND IS READ BY NOTHING. It is a field on the model, the
       interpreter's prompt instructs the model to fill it ("For ratios, set `denominator`"), the
@@ -118,6 +123,12 @@ operations:
       earlier draft of this file asserted the division as fact. The drift gate could not catch
       that: §5 says in as many words that it checks the vocabulary and the branches and NOT the
       contributions. The corpus replay caught it.
+
+      NOW IT REFUSES. A `denominator` this planner cannot honour returns `unsupported_intent`
+      naming the field, rather than serving the numerator. The division is still not built — the
+      change is that the gap is legible instead of being discovered by someone reconciling a
+      number that was never the one asked for. Corpus: 4 questions moved from planning to
+      refusing, which is 4 fewer wrong answers and 4 fewer plans, in that order of importance.
 
   - name: define
     asks: what a declaration says
