@@ -56,7 +56,7 @@ Before proposing anything, the estate's own test applies: *is this declared and 
 
 **Two homes for one fact, and each is missing what the other has.** 06 has stage attribution and no
 implementation; `acceptance/` has an implementation, a projector and a console, and no stage
-attribution at all. Reconciling them is §8's first open item and it is not an agent's call.
+attribution at all. Reconciling them is §9's first open item and it is not an agent's call.
 
 **Measured consequence, today:** the worked bundle records **20 refusals of 70 run**. A refused
 capture carries `answer`, `route`, `sql`, `sql_valid`, `sql_errors`, `error`, two fingerprints — and
@@ -209,34 +209,175 @@ specified and nobody built:
 
 ---
 
-## 4. THE TWO LEGS — one set of categories, two subjects
+## 4. THE THREE LEGS — one vocabulary, three subjects
 
-The operator's split is correct and it is a **subject** split, not a vocabulary split:
+The operator's split is a **subject** split, not a vocabulary split. The ten categories, the metric
+definitions and the runners are shared; what changes is what the instrument is pointed at.
 
-**Leg A — framework conformance.** Subject: the grammar and the planner. Answers *is the FRAMEWORK
-complete and stable?* Needs bundle-independent subjects, of which there are two kinds:
+| leg | subject | answers | corpus |
+|---|---|---|---|
+| **A — conformance** | the grammar and the planner | does the FRAMEWORK handle each pattern? | synthetic reference bundles |
+| **B — acceptance** | one ontology | is THIS bundle right, and does the engine answer ITS questions? | the bundle's own corpus |
+| **C — benchmark** | the whole pipeline, comparably | how do we compare to published work, and does the grammar generalise? | third-party (BIRD, Spider) |
 
-* **Synthetic reference bundles** — small ontologies that isolate exactly one pattern each: a
-  nullable dimension · an SCD-2 relation · a degenerate dimension · a many-to-many · a non-additive
-  measure · a multi-hop join · an empty-result question. Each is a dozen lines and a handful of
-  rows.
-* **An external corpus** — a BIRD database, for encodability (§3.2) and for the experiment in §6.
+**Leg A** needs bundle-independent subjects: small ontologies isolating exactly one pattern each — a
+nullable dimension · an SCD-2 relation · a degenerate dimension · a many-to-many · a non-additive
+measure · a multi-hop join · a question with an empty result. Each is a dozen lines and a handful of
+rows. **This is also the way past n = 1**: the `entity_key` / `versioned_by` redesign is deferred
+pending more than one sample, and building a minimal synthetic SCD-2 bundle is an afternoon where
+finding a second real one is a quarter.
 
-**This is also the way past n=1.** The `entity_key` / `versioned_by` redesign is deferred pending
-more than one sample, and finding a second *real* versioned bundle is slow. Building a minimal
-synthetic one that exhibits the pattern is an afternoon, and it is a legitimate second sample for a
-structural claim.
+**Leg B** is what `acceptance/` already is.
 
-**Leg B — bundle acceptance.** Subject: one ontology. Answers *is THIS bundle correctly declared, and
-does the engine answer ITS questions?* This is what `acceptance/` already is.
+**Leg C** is §5, and it is the operator's explicit requirement: *"at least one (best fit) framework
+for testing of text-2-sql … a large corpus of third party questions … benchmark what we do with
+that what other do … and use this as a standard for our acceptance where it makes sense."*
 
-**Shared — and this is the whole point of the split:** the Intent algebra (3.0), the metric
-definitions, the runners (paraphrase · metamorphic · differential), the synthesised-instance
-generator, and the report schema. Both legs emit the same shape, so one board reads both.
+**Shared across all three:** the Intent algebra (3.0), the metric definitions (§5.5), the runners
+(paraphrase · metamorphic · differential), the synthesised-instance generator, the denotation
+comparator, and the report schema. One board reads all three.
 
 ---
 
-## 5. WOULD IT HAVE GONE RED? — validated against defects already found
+## 5. LEG C — the external benchmark, and how to be honest about it
+
+### 5.1 The corpus: BIRD primary, Spider for breadth
+
+| | scale | why it is here |
+|---|---|---|
+| **BIRD** | ~12.7k question–SQL pairs · 95 databases · 37 domains · ships SQLite | **primary.** Dirty values, a public leaderboard with **EX** and **VES**, and — decisive for us — a hand-written **external-knowledge `evidence` string per question**, which is a per-question semantic layer and therefore the thing our ontology claims to replace |
+| **Spider 1.0** | ~10.2k questions · 200 databases · ships SQLite | **breadth.** Largely saturated, so it is a *floor and a regression corpus*, not a headline. Its value is **200 databases = 200 independent chances to catch a bundle-specific assumption** |
+| **Spider 2.0(-lite)** | ~600 enterprise tasks | stretch. Closest to real warehouses; hardest to run |
+| **TrustSQL** | abstention-scored | the only corpus that rewards declining — the published form of **HUMILITY** |
+
+*(Figures are from published descriptions and must be re-verified against the release actually
+downloaded; a benchmark quoted from memory is the zero-denominator mistake this estate keeps
+finding.)*
+
+### 5.2 THE COMPARABILITY PROBLEM — and it is the whole design
+
+**MAC is not entered in the same event.** A text-to-SQL baseline gets *(question, schema)* and must
+emit SQL. MAC gets *(question, a curated ontology)*. That is strictly more input, so a bare *"we
+beat X on BIRD"* would be dishonest and any reviewer would say so first.
+
+Four controls make the comparison mean something. **None is optional.**
+
+**(1) Bundle-depth tiers — the fair comparison is L0.**
+
+| tier | how the bundle is produced | human effort | runs on |
+|---|---|---|---|
+| **L0 — schema** | **generated**: tables → concepts, FKs → edges, column types → field_roles, PKs → `identity.canonical_key` | none | all 95 DBs |
+| **L1 — profiled** | L0 + **generated** from a data profile: cardinality, null rates, candidate keys, value registers auto-cut from low-cardinality columns | none | all 95 DBs |
+| **L2 — authored** | L1 + a human adds rules, default readings, refusal scope, disclosures | hours per DB | a handful |
+
+**L0 receives no more human input than the baselines do**, so L0-versus-published is an apples-to-apples
+number. L1 and L2 then measure what declaration *buys* — and the curve of **accuracy against
+declaration depth is this estate's entire thesis rendered as a graph**. It is also the only version
+of the claim that survives an adversarial reading.
+
+The tiering follows TESTING.md's own rule, applied to bundles rather than tests: **derive the
+enumeration, author the meaning.** L0 and L1 are enumeration.
+
+**(2) A same-model control, and without it every number is uninterpretable.** Run the *same* LLM
+through a standard text-to-SQL baseline prompt on the same databases, and through MAC. Same model,
+same questions, different scaffolding. Otherwise an improvement is confounded with model choice and
+the result says nothing about the architecture.
+
+**(3) The evidence ablation — the sharpest experiment available to us.**
+
+```
+baseline  +  BIRD evidence          (published)
+baseline  −  BIRD evidence          (published ablations, or re-run)
+MAC (L2)  −  BIRD evidence          ← ours
+```
+
+If MAC-without-evidence reaches baseline-with-evidence, the ontology has **subsumed** the
+per-question hints: declared once instead of hand-written ~1.5k times, and reusable by every future
+question on that database. That is a fair claim with a number behind it, and it is the closest
+published analogue to what a semantic layer is for.
+
+**(4) Held-out discipline, and per-database reporting.** Bundles are authored against a train split
+and reported on a held-out split. Results are reported **per database**, never only as an average —
+an aggregate hides exactly the variance that would show a bundle-specific assumption.
+
+### 5.3 THE GOLD-SQL → GOLD-INTENT TRANSPILER — how the corpus gets large
+
+Hand-writing gold intents for thousands of questions is impossible, and it is also unnecessary.
+`sqlglot` (30.18.0, already a dependency) decomposes gold SQL into precisely the components an
+Intent carries — verified 2026-09-24 on a Spider-shaped query:
+
+```
+aggregates  COUNT(*)            ->  operation + subject
+GROUP BY    T1.name             ->  slices
+WHERE       T1.age > 30         ->  filters
+JOIN ... ON T1.id = T2.sid      ->  the join path the edges must support
+ORDER BY    COUNT(*) DESC       ->  ordering
+LIMIT       3                   ->  limit
+```
+
+So the transpiler runs over the whole corpus and every question lands in one of two buckets:
+
+* **transpiles** → a candidate gold intent, free, at scale → feeds RECOGNITION scoring (3.1);
+* **does not transpile** → **an encodability gap, detected automatically** → feeds COMPLETENESS
+  (3.2) and names the missing grammar feature.
+
+**This converts encodability from a hand-authored metric into a generated one**, which is the only
+reason a large corpus is affordable at all. It is the single highest-leverage component in Leg C.
+
+**Two honest limits, stated because they bound every claim built on it.** A gold-SQL-derived intent
+**inherits gold SQL's interpretation**, so it measures *expressiveness*, never *whether the reading
+was right* — it cannot adjudicate an `SST-Q3`-class ambiguity, where two faithful readings give 58
+and 59. And the transpiler itself needs an INSTRUMENT test: seeded mutants, or it becomes a
+generated oracle agreeing with its own source, which is TESTING.md's mirror.
+
+### 5.4 The denotation comparator
+
+**EX compares result sets, not SQL text** — which is what makes Leg C possible at all, because our
+SQL runs over a *served* plane and gold runs over the raw schema. Two queries over different
+relations can still denote the same answer.
+
+The comparator must align columns **by meaning, not by name** — our aliases are generated
+(`net_sales_amount`), gold's are the source's. It needs explicit, declared rulings on row order,
+column order, duplicate rows, and NULL-versus-empty, because every text-to-SQL evaluator makes those
+choices differently and a silent choice here quietly moves the headline number. The estate already
+holds this concept: the `oracle-check` agent judges *"by MEANING, not by matching column-name
+strings."*
+
+### 5.5 WHAT WE ADOPT AS STANDARD — the operator's acceptance requirement
+
+Adopted as **shared metric definitions**, used by all three legs so one number is comparable across
+them and to published work:
+
+| adopted | from | used in |
+|---|---|---|
+| **EX — execution accuracy**, denotation match | Spider / BIRD | A · B · C |
+| **VES — valid efficiency score** | BIRD | C, advisory in B |
+| **abstention scoring** — a correct refusal is a pass | TrustSQL | HUMILITY, all legs |
+| held-out split · per-database reporting · same-model control | standard practice | C, and B when a bundle changes |
+
+**Our flags are not replaced.** `outcome · pins · value · rules` are strictly richer than a single
+pass/fail — EX cannot distinguish a right number from a right number reached by a forbidden route,
+and `pins` can. So **EX becomes one derived number emitted alongside them**, which is what puts our
+acceptance on a public axis without discarding what it knows that the public axis does not.
+
+Where it does **not** make sense, and this is a deliberate limit: EX cannot grade a refusal, a
+clarification, or a disclosure. Those stay on HUMILITY and on the flags. A bundle reporting only EX
+would score its 20 correct refusals as 20 losses.
+
+### 5.6 What we will be able to claim, and what we will not
+
+**Can:** *"At L0 — a generated bundle, no human input — MAC scores X on BIRD dev against the same
+model's Y through a standard prompt."* · *"L2 authoring of N hours moves that database from X to
+Z."* · *"MAC without per-question evidence reaches W, where the baseline with evidence reaches V."* ·
+*"Of K questions, J were not expressible as an Intent, and here are the features they needed."*
+
+**Cannot:** any leaderboard claim, since we are not submitting to a held-out test server and our
+input differs · any claim from an aggregate that hides per-database variance · any claim about
+*meaning* from a gold-SQL-derived intent (§5.3).
+
+---
+
+## 6. WOULD IT HAVE GONE RED? — validated against defects already found
 
 A gate that cannot go red is the zero-denominator pass wearing a green tick. The proposal is checked
 the way `check_query_grammar.py --self-test` checks itself: against real, dated defects.
@@ -260,16 +401,16 @@ properties, and not improved by anything proposed here.
 
 ---
 
-## 6. THE ACADEMIC IMPORTS, and the one experiment worth running
+## 7. THE ACADEMIC IMPORTS — what each is for, and the one we refuse
 
 | import | used for | note |
 |---|---|---|
-| Spider — component-wise exact-set-match | per-field intent scoring (3.0) | the decomposition, not the benchmark |
+| Spider — component-wise exact-set-match | per-field intent scoring (3.0) | the decomposition **and**, in Leg C, the breadth corpus |
 | Spider-Syn · Spider-Realistic · Dr.Spider | paraphrase stability (3.1) | method applies to **our** corpus; their data optional |
 | NatSQL · SemQL coverage | encodability (3.2) | IR coverage is the published form of this metric |
 | TLP · NoREC · PQS (DBMS testing) | metamorphic invariants (3.3) | TLP is the NULL detector, exactly |
 | TrustSQL | abstention scoring (3.4) | the only benchmark that rewards declining |
-| BIRD | Leg A corpus, and below | ships databases, so differential execution is possible |
+| BIRD | **Leg C primary corpus — §5** | ships databases, carries per-question `evidence`, has a public EX/VES leaderboard |
 | Cosette · SPES · VeriEQL | **NOT adopted** | see below |
 
 **Why no SQL-equivalence prover.** Not primarily decidability — though general SQL equivalence is
@@ -282,37 +423,38 @@ level is not just hard here, it is the wrong question. Equivalence at the **answ
 synthesised instances, is the right one — and it is the only method that would have caught the NULL
 bug.
 
-### The experiment
-
-BIRD supplies hand-written **external knowledge evidence** per question — domain hints the model
-needs to read the question correctly. That is a per-question semantic layer, and it sets up a clean
-test of this entire estate's thesis:
-
-> Build a MAC bundle over one BIRD database. Run its questions **without** the evidence strings.
-> **Does declaring the knowledge once, in an ontology, match or beat supplying it per question?**
-
-A number either way is worth more than another architectural argument. If the ontology loses, that
-is the most valuable thing we could learn this quarter.
+**The BIRD evidence ablation is not restated here** — it is §5.2 control (3), where it belongs
+alongside the other three controls that make it mean something. A sharp experiment quoted twice is
+two homes for one fact.
 
 ---
 
-## 7. SEQUENCING
+## 8. SEQUENCING
 
-Phases 1–3 need **no database, no warehouse credentials and no Bedrock session**.
+Phases 1–4 need **no warehouse credentials and no Bedrock session**. Phase 2 needs neither a gold
+answer nor a database.
 
-1. **Intent algebra** (3.0) — canonical form, equivalence, per-field diff. Everything depends on it.
-2. **Paraphrase stability** (3.1) over the existing 77 questions. Self-consistency, no gold. Will
-   produce findings immediately: STORE-01 vs STORE-02 is already a known instance of the class.
-3. **Encodability** (3.2) over one BIRD database — hand-written gold intents, counted. The first
-   external evidence that the grammar is not just Contoso-shaped.
-4. **Metamorphic invariants** (3.3) — TLP and the collapse invariants first, since both have a
-   known-red on record to prove they can fail.
-5. **Stage attribution** (3.4) — build what 06 §3 specified. Requires §8's first ruling.
-6. **Leg A synthetic bundles**, then the BIRD bundle and the §6 experiment.
+| # | build | unblocks | needs |
+|---|---|---|---|
+| 1 | **Intent algebra** (3.0) — canon · equivalence · per-field diff | everything below | nothing |
+| 2 | **Paraphrase stability** (3.1) over the existing 77 | first real RECOGNITION number | nothing |
+| 3 | **Gold-SQL → gold-intent transpiler** (5.3) + its mutant test | encodability at corpus scale | a benchmark download |
+| 4 | **Encodability** (3.2) over BIRD dev + Spider | the first evidence the grammar is not Contoso-shaped | phase 3 |
+| 5 | **Metamorphic invariants** (3.3) — TLP and the collapse pair first | COMPOSITION, and two known-reds to prove they fail | a local DB |
+| 6 | **Stage attribution** (3.4), per 06 §3 | splits the 20 refusals by stage | §9's first ruling |
+| 7 | **L0/L1 bundle generator** (5.2) + denotation comparator (5.4) | the L0 apples-to-apples number on all 95 DBs | phases 1, 5 |
+| 8 | **Leg A synthetic bundles** | past n = 1; unblocks the deferred `entity_key` work | phase 5 |
+| 9 | **L2 bundle + same-model control + evidence ablation** (5.2) | the headline claims of 5.6 | 7, 8, live model |
+
+**Phases 3 and 4 are the ones to reach for early.** They are where the operator's requirement is
+actually satisfied — a large third-party corpus, scored on an axis other people publish on — and
+they need no engine run, no anchor and no ontology authoring. The number they produce (*"of K BIRD
+questions, J are not expressible as an Intent, and here are the features they need"*) is the most
+decision-useful single figure available to this project right now.
 
 ---
 
-## 8. WHAT THIS REFUSES TO DECIDE — the operator's
+## 9. WHAT THIS REFUSES TO DECIDE — the operator's
 
 * **`acceptance/` or `eval/`.** 06-SPEC designed a suite format nobody adopted; `acceptance/` is a
   working implementation nobody specified. One must become the other's home. Picking is a ruling
@@ -325,10 +467,18 @@ Phases 1–3 need **no database, no warehouse credentials and no Bedrock session
   with an instrument behind it.
 * **`SST-Q3`** — what a question phrased as a negation should return when 58 and 59 are both
   faithful. Any stability metric scores it, and none of them can rule it.
+* **What we are allowed to claim publicly from Leg C**, and how the ontology's extra input is
+  disclosed whenever a number leaves this estate. §5.6 proposes the honest boundary and §5.2 the
+  four controls that support it; **whether we publish, and in what venue, is not an agent's call**.
+  A benchmark number is the easiest thing in this document to quote without its denominator, and
+  this estate's own history says that is exactly what happens.
+* **Whether a generated L0 bundle may carry `authority: derived` oracles at all.** It is a bundle
+  nobody authored, grading questions nobody vetted. Useful as a *floor measurement*; a category
+  error if it were ever read as acceptance.
 
 ---
 
-## 9. HOW THIS PROPOSAL IS ITSELF CHECKED
+## 10. HOW THIS PROPOSAL IS ITSELF CHECKED
 
 Per TESTING.md, a claim is worth what its check is worth:
 
