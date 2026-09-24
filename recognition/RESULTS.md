@@ -4,6 +4,62 @@
 
 # RECOGNITION — RESULTS
 
+## 2026-09-24 · **OPUS vs SONNET** — the answer depends on the model 18 % of the time
+
+77 questions, each read by both models, planned and executed. `claude-opus-*` vs `claude-sonnet-5`,
+via the local CLI. 0 errors.
+
+```
+SAME INTENT      40   51.9 %
++ absorbed       23   29.9 %   different intent, same answer
+                 ---------
+SAME ANSWER      63   81.8 %   <- the one that matters
+CONSEQUENTIAL    14   18.2 %   the MODEL changed the answer
+```
+
+Divergence by field: `slices` 16 · `filters` 12 · `operation` 9 · `subject` 3 · `denominator` 3.
+
+### This cuts against a core design claim
+
+The architecture says everything after the Intent is deterministic, so the answer is a property of
+the ONTOLOGY and swapping models is safe. **On this corpus it is 82 % a property of the ontology
+and 18 % a property of the model.** Nearly one question in five comes back differently depending
+on which model is configured, and nothing in the answer says so.
+
+The 30 % "absorbed" band is the encouraging half and is the registers earning their place: two
+models name a thing differently and resolution makes it not matter. The 18 % is the bill.
+
+### Three of the fourteen are a DEFECT, not a disagreement
+
+`AGG-03`, `AGG-08`, `AGG-10` — opus produced SQL that **failed to execute**.
+
+| | opus | sonnet |
+|---|---|---|
+| slice on `Country` | `column='CountryCode'` | `column=None` |
+
+`CountryCode` is a column of the STORE dimension; these questions ask for the CUSTOMER's country.
+The `Country` concept spans both roles and says so in its own definition — *"in either of the two
+roles a line carries it in: the country of the CUSTOMER who bought, and the country of the STORE
+that sold"* — but the prompt lists its groupable columns as **one flat set**, with nothing saying
+which column belongs to which role. A model that picks the more specific-looking name loses.
+
+The planner then emitted SQL naming a column absent from the relation it selects from. **Broken
+SQL is worse than either reading**: a refusal is a conversation and a wrong number is at least a
+number. Candidate invariant — *every column an emitted statement references exists on a relation
+that statement selects from* — which needs no oracle and would have caught this.
+
+### The genuinely ambiguous ones
+
+`AGG-14` "total net revenue converted to USD" — opus **218 814 471.66** (every currency summed),
+sonnet **111 862 187.56** (USD rows only). Neither converts anything. `MQ-12` "total sales in
+dollars" — opus answers, sonnet refuses. `ADV-01` "gross vs net by brand" — opus reads the subject
+as `GrossSalesAmount`, sonnet as `NetSalesAmount`.
+
+These are the currency and default-reading questions the bundle already flags, and the models
+disagreeing on them is the corpus working: **two defensible readings, no declaration choosing.**
+
+---
+
 ## 2026-09-24 · Stage 2c · **CALIBRATION, re-run** — the gate cannot catch the failure that matters
 
 Re-run after anchoring 4 of the 12 gated questions. 77 interpreted, planned **ungated**, graded

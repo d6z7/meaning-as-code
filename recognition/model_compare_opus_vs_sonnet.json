@@ -1,0 +1,3592 @@
+{
+  "a": "opus",
+  "b": "sonnet",
+  "rows": [
+    {
+      "id": "RC03",
+      "question": "What product colors are available in our catalog?",
+      "opus": {
+        "intent": {
+          "subject": "color",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "rows:16"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "color",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "rows:16"
+      }
+    },
+    {
+      "id": "RC01",
+      "question": "What brands do we sell?",
+      "opus": {
+        "intent": {
+          "subject": "brand",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "rows:11"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "brand",
+          "operation": "list",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "rows:11"
+      }
+    },
+    {
+      "id": "RC02",
+      "question": "List all countries where we have customers.",
+      "opus": {
+        "intent": {
+          "subject": "country",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "rows:8"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "country",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.92,
+        "answer": "rows:8"
+      }
+    },
+    {
+      "id": "RC05",
+      "question": "How many stores do we have?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:67.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:67.0000"
+      }
+    },
+    {
+      "id": "RC04",
+      "question": "How many customers do we have?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:104990.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:104990.0000"
+      }
+    },
+    {
+      "id": "RC06",
+      "question": "How many products are in our catalog?",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:2517.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:2517.0000"
+      }
+    },
+    {
+      "id": "RC08",
+      "question": "How many stores are closed?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:8.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:8.0000"
+      }
+    },
+    {
+      "id": "RC07",
+      "question": "How many customers are in Germany?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:9981.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:9981.0000"
+      }
+    },
+    {
+      "id": "RC09",
+      "question": "How many products does the Contoso brand have?",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:710.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:710.0000"
+      }
+    },
+    {
+      "id": "RC10",
+      "question": "How many orders were placed in 2024?",
+      "opus": {
+        "intent": {
+          "subject": "order",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:15899.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "order",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:15899.0000"
+      }
+    },
+    {
+      "id": "RC11",
+      "question": "How many distinct products were sold in 2023?",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2023-01-01",
+            "2024-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:2485.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2023-01-01",
+            "2024-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:2485.0000"
+      }
+    },
+    {
+      "id": "RC12",
+      "question": "How many female customers are in Europe?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "continent",
+              "eq",
+              "europe"
+            ],
+            [
+              "gender",
+              "eq",
+              "female"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "continent",
+              "eq",
+              "europe"
+            ],
+            [
+              "gender",
+              "eq",
+              "female"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "RC13",
+      "question": "How many orders were placed in euros during Q1 2024?",
+      "opus": {
+        "intent": {
+          "subject": "order",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "currencycode",
+              "eq",
+              "eur"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:1099.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "order",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "currency",
+              "eq",
+              "eur"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:1099.0000"
+      }
+    },
+    {
+      "id": "AGG-01",
+      "question": "What is the total net revenue?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:218814471.6587"
+      }
+    },
+    {
+      "id": "RC14",
+      "question": "How many customers are aged between 25 and 44?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "ageband",
+              "in",
+              [
+                25.0,
+                30.0,
+                35.0,
+                40.0
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "age_band_5y",
+              "gte",
+              25.0
+            ],
+            [
+              "age_band_5y",
+              "lte",
+              44.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "value:31553.0000"
+      }
+    },
+    {
+      "id": "AGG-02",
+      "question": "What is the total quantity sold?",
+      "opus": {
+        "intent": {
+          "subject": "quantitysold",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:703621.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "quantitysold",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:703621.0000"
+      }
+    },
+    {
+      "id": "RC15",
+      "question": "How many different products did customers in France buy in Q1 2024?",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "france"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:359.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "fr"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:359.0000"
+      }
+    },
+    {
+      "id": "AGG-04",
+      "question": "Break down net revenue by brand",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.96,
+        "answer": "value:19594532.3089"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:19594532.3089"
+      }
+    },
+    {
+      "id": "AGG-05",
+      "question": "What is the net revenue in Germany?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "de"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "value:24638830.1795"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "de"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "value:24638830.1795"
+      }
+    },
+    {
+      "id": "AGG-06",
+      "question": "What is the net revenue for the Contoso brand?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:38431107.3179"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.88,
+        "answer": "value:38431107.3179"
+      }
+    },
+    {
+      "id": "AGG-03",
+      "question": "Show net revenue by customer country",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "country",
+              "countrycode"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "country",
+              null
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:111862187.5602"
+      }
+    },
+    {
+      "id": "AGG-07",
+      "question": "What was the net revenue in Q1 2024?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:9494485.5698"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2024-04-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:9494485.5698"
+      }
+    },
+    {
+      "id": "AGG-09",
+      "question": "Which brand sold more in total, Contoso or Fabrikam?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [
+            [
+              "brand",
+              "in",
+              [
+                "contoso",
+                "fabrikam"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.87,
+        "answer": "value:19594532.3089"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [
+            [
+              "brand",
+              "in",
+              [
+                "contoso",
+                "fabrikam"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:19594532.3089"
+      }
+    },
+    {
+      "id": "AGG-08",
+      "question": "Compare net revenue in Germany versus France",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "country",
+              "countrycode"
+            ]
+          ],
+          "filters": [
+            [
+              "country",
+              "in",
+              [
+                "de",
+                "fr"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.92,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [
+            [
+              "country",
+              "in",
+              [
+                "de",
+                "fr"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:6674724.8486"
+      }
+    },
+    {
+      "id": "AGG-10",
+      "question": "What are the top 5 countries by net revenue?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "country",
+              "countrycode"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 5,
+          "denominator": null
+        },
+        "confidence": 0.88,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "country",
+              null
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 5,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "value:111862187.5602"
+      }
+    },
+    {
+      "id": "AGG-13",
+      "question": "What is the ratio of gross revenue to net revenue?",
+      "opus": {
+        "intent": {
+          "subject": "grosssalesamount",
+          "operation": "ratio",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.95,
+        "answer": "value:1.0630"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "grosssalesamount",
+          "operation": "ratio",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.95,
+        "answer": "value:1.0630"
+      }
+    },
+    {
+      "id": "AGG-11",
+      "question": "What are the top 3 products by quantity sold?",
+      "opus": {
+        "intent": {
+          "subject": "quantitysold",
+          "operation": "rank",
+          "slices": [
+            [
+              "product",
+              null
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 3,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:303016.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "quantitysold",
+          "operation": "rank",
+          "slices": [
+            [
+              "product",
+              "productname"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 3,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:1542.0000"
+      }
+    },
+    {
+      "id": "AGG-12",
+      "question": "What percentage of total net revenue comes from Germany?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.9,
+        "answer": "value:1.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.85,
+        "answer": "value:1.0000"
+      }
+    },
+    {
+      "id": "MQ-01",
+      "question": "What is the definition of Customer in this bundle?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "define",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:104990.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "define",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.97,
+        "answer": "value:104990.0000"
+      }
+    },
+    {
+      "id": "MQ-02",
+      "question": "How many concepts are there in the ontology?",
+      "opus": {
+        "intent": {
+          "subject": "concept",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:20.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "concept",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:20.0000"
+      }
+    },
+    {
+      "id": "AGG-15",
+      "question": "Show net revenue by brand and customer country for 2024",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ],
+            [
+              "customer",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:93200.7691"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "brand",
+              null
+            ],
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:93200.7691"
+      }
+    },
+    {
+      "id": "MQ-03",
+      "question": "How many rules bind CurrencyCode?",
+      "opus": {
+        "intent": {
+          "subject": "rulebinding",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "rulebinding",
+              "eq",
+              "currencycode"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "rulebinding",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "column_name",
+              "eq",
+              "currencycode"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "AGG-14",
+      "question": "What is the total net revenue converted to USD?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.78,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "currency",
+              "eq",
+              "usd"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "value:111862187.5602"
+      }
+    },
+    {
+      "id": "MQ-04",
+      "question": "What concepts is OrderLine connected to?",
+      "opus": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [
+            [
+              "to_concept",
+              "to_concept"
+            ]
+          ],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "orderline"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "plan-raised:UnknownConceptError"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "orderline"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "plan-raised:UnknownConceptError"
+      }
+    },
+    {
+      "id": "MQ-05",
+      "question": "Which concepts have open questions?",
+      "opus": {
+        "intent": {
+          "subject": "openquestion",
+          "operation": "list",
+          "slices": [
+            [
+              "openquestion",
+              "concept_id"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "rows:18"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "openquestion",
+          "operation": "list",
+          "slices": [
+            [
+              "openquestion",
+              "concept_id"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "rows:18"
+      }
+    },
+    {
+      "id": "MQ-07",
+      "question": "What is the revenue from the online store?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "store",
+              "eq",
+              "online"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "store",
+              "eq",
+              "online"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-08",
+      "question": "Which products were NOT sold in 2024?",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "value:201031.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "quantitysold",
+              "eq",
+              0.0
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.65,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-06",
+      "question": "What is the average store size in square meters?",
+      "opus": {
+        "intent": {
+          "subject": "squaremeters",
+          "operation": "average",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.58,
+        "answer": "value:1504.5455"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "average",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.35,
+        "answer": "value:1504.5455"
+      }
+    },
+    {
+      "id": "MQ-10",
+      "question": "Which stores closed after 2020?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "closedate",
+              "gt",
+              "2020-12-31"
+            ],
+            [
+              "status",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "store",
+              "gt",
+              "2020-12-31"
+            ],
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-09",
+      "question": "Are there any stores in Italy with no sales?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "exists",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "italy"
+            ],
+            [
+              "netsalesamount",
+              "eq",
+              0.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.68,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "exists",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "italy"
+            ],
+            [
+              "netsalesamount",
+              "eq",
+              0.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.7,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-12",
+      "question": "Total sales in dollars",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.4,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "currency",
+              "eq",
+              "dollars"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-13",
+      "question": "Show all edges from the Customer concept and what each connects to",
+      "opus": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [
+            [
+              "edge",
+              "to_concept"
+            ]
+          ],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "customer"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "plan-raised:UnknownConceptError"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "customer"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "plan-raised:UnknownConceptError"
+      }
+    },
+    {
+      "id": "MQ-11",
+      "question": "Show me revenue by country for customers in the same country as their store",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "country",
+              "countrycode"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [
+            [
+              "customer",
+              "eq",
+              "store",
+              "countrycode"
+            ]
+          ],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.78,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [
+            [
+              "customer",
+              "eq",
+              "store",
+              "countrycode"
+            ]
+          ],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.88,
+        "answer": "execute-failed"
+      }
+    },
+    {
+      "id": "MQ-15",
+      "question": "What is the average customer age?",
+      "opus": {
+        "intent": {
+          "subject": "ageband",
+          "operation": "average",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.2,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "ageband",
+          "operation": "average",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.15,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "MQ-14",
+      "question": "How many constraints are there across all concepts, and which concept has the most?",
+      "opus": {
+        "intent": {
+          "subject": "declaredconstraint",
+          "operation": "count",
+          "slices": [
+            [
+              "declaredconstraint",
+              "concept_id"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "declaredconstraint",
+          "operation": "rank",
+          "slices": [
+            [
+              "declaredconstraint",
+              "concept_id"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 10,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-03",
+      "question": "Revenue per customer by country",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "customer"
+        },
+        "confidence": 0.9,
+        "answer": "value:3347.7005"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "customer"
+        },
+        "confidence": 0.85,
+        "answer": "value:3347.7005"
+      }
+    },
+    {
+      "id": "ADV-01",
+      "question": "Compare gross vs net revenue by brand in 2024",
+      "opus": {
+        "intent": {
+          "subject": "grosssalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.82,
+        "answer": "value:1.0615"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.4,
+        "answer": "value:2371833.5101"
+      }
+    },
+    {
+      "id": "ADV-02",
+      "question": "Which brand has the highest margin (gross minus net) in Europe?",
+      "opus": {
+        "intent": {
+          "subject": "grosssalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "brand",
+              "brand"
+            ]
+          ],
+          "filters": [
+            [
+              "continent",
+              "eq",
+              "europe"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 1,
+          "denominator": "netsalesamount"
+        },
+        "confidence": 0.35,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "grosssalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "brand",
+              null
+            ]
+          ],
+          "filters": [
+            [
+              "continent",
+              "eq",
+              "europe"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "aggregate",
+            "desc"
+          ],
+          "limit": 1,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-04",
+      "question": "Monthly revenue trend for Germany in 2024",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [
+            [
+              "calendarday",
+              "month"
+            ]
+          ],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.82,
+        "answer": "value:299707.5912"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [
+            [
+              "calendarday",
+              "yearmonth"
+            ]
+          ],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:359481.0958"
+      }
+    },
+    {
+      "id": "ADV-05",
+      "question": "Which month in 2024 had the biggest drop in revenue vs the previous month?",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "calendarday",
+              "yearmonth"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": [
+            "aggregate",
+            "asc"
+          ],
+          "limit": 1,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "value:1177300.0193"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "rank",
+          "slices": [
+            [
+              "calendarday",
+              "yearmonth"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": [
+            "aggregate",
+            "asc"
+          ],
+          "limit": 1,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "value:1177300.0193"
+      }
+    },
+    {
+      "id": "ADV-06",
+      "question": "Year-over-year revenue growth by country",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "calendarday",
+              "year"
+            ],
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.58,
+        "answer": "value:2024.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [
+            [
+              "calendarday",
+              "year"
+            ],
+            [
+              "country",
+              null
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.6,
+        "answer": "value:2023.0000"
+      }
+    },
+    {
+      "id": "ADV-08",
+      "question": "Average order value by country",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "order"
+        },
+        "confidence": 0.72,
+        "answer": "value:2288.9622"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "order"
+        },
+        "confidence": 0.85,
+        "answer": "value:2288.9622"
+      }
+    },
+    {
+      "id": "ADV-07",
+      "question": "Revenue in Q1 2024 vs Q1 2023",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "calendarday",
+              "yearquarter"
+            ]
+          ],
+          "filters": [
+            [
+              "calendarday",
+              "in",
+              [
+                "2023-q1",
+                "2024-q1"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.8,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [
+            [
+              "calendarday",
+              "yearquarter"
+            ]
+          ],
+          "filters": [
+            [
+              "calendarday",
+              "in",
+              [
+                "q1 2023",
+                "q1 2024"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-11",
+      "question": "Revenue from new customers (first order in 2024) vs returning customers",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.28,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "compare",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.25,
+        "answer": "value:218814471.6587"
+      }
+    },
+    {
+      "id": "ADV-09",
+      "question": "Countries where average order value exceeds 500",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "average",
+          "slices": [
+            [
+              "country",
+              null
+            ]
+          ],
+          "filters": [
+            [
+              "netsalesamount",
+              "gt",
+              500.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "order"
+        },
+        "confidence": 0.72,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [
+            [
+              "netsalesamount",
+              "gt",
+              500.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "order"
+        },
+        "confidence": 0.8,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-12",
+      "question": "Revenue from high-value products (Price > 1000)",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "price",
+              "gt",
+              1000.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "price",
+              "gt",
+              1000.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-10",
+      "question": "Products sold in more than 5 countries",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "gt",
+              5.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [
+            [
+              "country",
+              null
+            ]
+          ],
+          "filters": [
+            [
+              "country",
+              "gt",
+              5.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "execute-failed"
+      }
+    },
+    {
+      "id": "ADV-13",
+      "question": "Stores that sell more than the average store",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "list",
+          "slices": [
+            [
+              "store",
+              null
+            ]
+          ],
+          "filters": [
+            [
+              "netsalesamount",
+              "gt",
+              "average_over_stores"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.7,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "list",
+          "slices": [
+            [
+              "store",
+              null
+            ]
+          ],
+          "filters": [
+            [
+              "store",
+              "gt",
+              "average"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-14",
+      "question": "Revenue from products in the Electronics category sold in German stores",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ],
+            [
+              "productcategory",
+              "eq",
+              "electronics"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "germany"
+            ],
+            [
+              "productcategory",
+              "eq",
+              "electronics"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-15",
+      "question": "How many customers bought Contoso brand products in stores outside their home country?",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [
+            [
+              "store",
+              "ne",
+              "customer",
+              "country"
+            ]
+          ],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.72,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "brand",
+              "eq",
+              "contoso"
+            ]
+          ],
+          "join_filters": [
+            [
+              "customer",
+              "ne",
+              "store",
+              "countrycode"
+            ]
+          ],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.8,
+        "answer": "execute-failed"
+      }
+    },
+    {
+      "id": "ADV-17",
+      "question": "Brands sold in every country",
+      "opus": {
+        "intent": {
+          "subject": "brand",
+          "operation": "list",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.4,
+        "answer": "rows:88"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "brand",
+          "operation": "list",
+          "slices": [
+            [
+              "country",
+              "country"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.6,
+        "answer": "rows:88"
+      }
+    },
+    {
+      "id": "ADV-16",
+      "question": "Products sold in both Germany and France",
+      "opus": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "france"
+            ],
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.62,
+        "answer": "rows:0"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "product",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "france"
+            ],
+            [
+              "country",
+              "eq",
+              "germany"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.65,
+        "answer": "rows:0"
+      }
+    },
+    {
+      "id": "ADV-18",
+      "question": "Customers who bought in all 4 quarters of 2024",
+      "opus": {
+        "intent": {
+          "subject": "customer",
+          "operation": "list",
+          "slices": [
+            [
+              "calendarday",
+              "quarter"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.55,
+        "answer": "value:476.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "customer",
+          "operation": "list",
+          "slices": [
+            [
+              "calendarday",
+              "yearquarter"
+            ]
+          ],
+          "filters": [],
+          "join_filters": [],
+          "period": [
+            "2024-01-01",
+            "2025-01-01"
+          ],
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.4,
+        "answer": "value:510.0000"
+      }
+    },
+    {
+      "id": "ADV-19",
+      "question": "Which rules mention CurrencyCode and what do they forbid?",
+      "opus": {
+        "intent": {
+          "subject": "contractrule",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "column_name",
+              "eq",
+              "currencycode"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.68,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "contractrule",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "column_name",
+              "eq",
+              "currencycode"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-22",
+      "question": "Revenue",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.95,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": null,
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:218814471.6587"
+      }
+    },
+    {
+      "id": "ADV-20",
+      "question": "Concepts with more than 3 open questions",
+      "opus": {
+        "intent": {
+          "subject": "openquestion",
+          "operation": "count",
+          "slices": [
+            [
+              "openquestion",
+              "concept_id"
+            ]
+          ],
+          "filters": [
+            [
+              "openquestion",
+              "gt",
+              3.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.68,
+        "answer": "execute-failed"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "openquestion",
+          "operation": "list",
+          "slices": [
+            [
+              "openquestion",
+              "concept_id"
+            ]
+          ],
+          "filters": [
+            [
+              "openquestion",
+              "gt",
+              3.0
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "execute-failed"
+      }
+    },
+    {
+      "id": "ADV-23",
+      "question": "Sales in Turkey",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "turkey"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "sum",
+          "slices": [],
+          "filters": [
+            [
+              "country",
+              "eq",
+              "turkey"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.15,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "ADV-21",
+      "question": "Show me the full lineage from OrderLine to Continent",
+      "opus": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "orderline"
+            ],
+            [
+              "to_concept",
+              "eq",
+              "continent"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.72,
+        "answer": "plan-raised:UnknownConceptError"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "edge",
+          "operation": "list",
+          "slices": [],
+          "filters": [
+            [
+              "from_concept",
+              "eq",
+              "orderline"
+            ],
+            [
+              "to_concept",
+              "eq",
+              "continent"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.7,
+        "answer": "plan-raised:UnknownConceptError"
+      }
+    },
+    {
+      "id": "ADV-24",
+      "question": "How many stores are open",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "status",
+              "ne",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.5,
+        "answer": "value:59.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "not_in",
+              [
+                "closed",
+                "restructured"
+              ]
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.6,
+        "answer": "value:59.0000"
+      }
+    },
+    {
+      "id": "ADV-25",
+      "question": "Average price",
+      "opus": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "average",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.3,
+        "answer": "value:218814471.6587"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "netsalesamount",
+          "operation": "ratio",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": "quantitysold"
+        },
+        "confidence": 0.55,
+        "answer": "value:310.9834"
+      }
+    },
+    {
+      "id": "STORE-02",
+      "question": "How many stores are not closed?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "ne",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.86,
+        "answer": "value:59.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "ne",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "value:59.0000"
+      }
+    },
+    {
+      "id": "STORE-03",
+      "question": "How many stores have been restructured?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "restructured"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:0.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "restructured"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:0.0000"
+      }
+    },
+    {
+      "id": "STORE-01",
+      "question": "How many stores are still open?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "open"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.75,
+        "answer": "refused:refusal"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "closedate",
+              "eq",
+              "null"
+            ],
+            [
+              "status",
+              "eq",
+              "null"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.75,
+        "answer": "refused:refusal"
+      }
+    },
+    {
+      "id": "STORE-06",
+      "question": "How many store versions are recorded?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.78,
+        "answer": "value:67.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:67.0000"
+      }
+    },
+    {
+      "id": "STORE-04",
+      "question": "When was the first store closed?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "rank",
+          "slices": [
+            [
+              "store",
+              "closedate"
+            ]
+          ],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "closedate",
+            "asc"
+          ],
+          "limit": 1,
+          "denominator": null
+        },
+        "confidence": 0.72,
+        "answer": "value:1.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "rank",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": [
+            "closedate",
+            "asc"
+          ],
+          "limit": 1,
+          "denominator": null
+        },
+        "confidence": 0.85,
+        "answer": "execute-failed"
+      }
+    },
+    {
+      "id": "STORE-07",
+      "question": "How many of our stores have closed?",
+      "opus": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.9,
+        "answer": "value:8.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "count",
+          "slices": [],
+          "filters": [
+            [
+              "storestatus",
+              "eq",
+              "closed"
+            ]
+          ],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.93,
+        "answer": "value:8.0000"
+      }
+    },
+    {
+      "id": "STORE-05",
+      "question": "What is the total floor space of our stores in square meters?",
+      "opus": {
+        "intent": {
+          "subject": "squaremeters",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.4,
+        "answer": "value:99300.0000"
+      },
+      "sonnet": {
+        "intent": {
+          "subject": "store",
+          "operation": "sum",
+          "slices": [],
+          "filters": [],
+          "join_filters": [],
+          "period": null,
+          "ordering": null,
+          "limit": null,
+          "denominator": null
+        },
+        "confidence": 0.2,
+        "answer": "value:99300.0000"
+      }
+    }
+  ]
+}
