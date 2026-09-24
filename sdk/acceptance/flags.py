@@ -293,6 +293,10 @@ def evaluate(
     sql = [s for s in (answer.get("sql") or []) if isinstance(s, str) and s.strip()]
     n_sql = len(sql)
     answer_text = answer.get("answer") or ""
+    # DID THE ENGINE ANSWER AT ALL? A capture with no statements and no result value is a
+    # clarification or a refusal -- see _flag_value 4.4.1b.
+    _res = answer.get("result") if isinstance(answer, dict) else None
+    produced_result = bool(n_sql) or (isinstance(_res, dict) and _res.get("value") is not None)
 
     # THE LEAD ONLY — first 400 whitespace-normalised characters. The refusal scan is a 34-marker
     # substring test including "would need", "no data" and "would you like". A governed answer that
@@ -319,7 +323,7 @@ def evaluate(
     flags = [
         _flag_outcome(expected, n_sql, declined, markers, lead, counts["must_pin"]),
         _flag_pins(expected, parsed, n_sql),
-        _flag_value(expected, anchor, advisory, answer_text),
+        _flag_value(expected, anchor, advisory, answer_text, produced_result),
         _flag_rules(concept_rules, parsed, n_sql),
     ]
     return {"verdict": _rollup(flags), "flags": flags, **base}
@@ -534,7 +538,13 @@ _APPROX = re.compile(r"^\s*~\s*[-+0-9]")
 _YEAR_LO, _YEAR_HI = 1900, 2100
 
 
-def _flag_value(expected: dict, anchor: dict | None, advisory: list, answer_text: str) -> dict:
+def _flag_value(
+    expected: dict,
+    anchor: dict | None,
+    advisory: list,
+    answer_text: str,
+    produced_result: bool = True,
+) -> dict:
     advisory_ids = [a.get("_anchor_id") for a in advisory if a.get("_anchor_id")]
     anchor_expected = (anchor or {}).get("expected") or {}
     evidence: dict = {
@@ -560,6 +570,22 @@ def _flag_value(expected: dict, anchor: dict | None, advisory: list, answer_text
     else:
         return _flag(
             "value", "na", "no independent anchor for this question", {**evidence, "source": None}
+        )
+
+    # --- 4.4.1b THERE MUST BE AN ANSWER TO GRADE ---------------------------------------------
+    # A clarification's headline is PROSE, and this scans a headline for numbers. Measured
+    # 2026-09-24: "I'm not confident I understood ... (self-score 0.30, threshold 0.50)" yielded
+    # the candidate 0.50, which was then graded against the anchor and FAILED — three false value
+    # failures on one board run, each reading "headline reads 0,50". The engine had not answered
+    # at all; declining is the `outcome`/HUMILITY axis, and reporting it as a wrong NUMBER blames
+    # it for a number it never produced.
+    if not produced_result:
+        return _flag(
+            "value",
+            "na",
+            "the engine produced no result to grade (a clarification or refusal is scored on "
+            "`outcome`, not here)",
+            {**evidence, "source": source},
         )
 
     evidence["source"] = source
