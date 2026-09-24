@@ -284,6 +284,23 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
             # WHAT THE MODEL WAS GIVEN — hash, size and section headings; the text itself lives
             # once at acceptance/prompts/<sha>.txt.
             **({"prompt": ask["prompt"]} if ask.get("prompt") else {}),
+            # THE STAGES THE RUN ACTUALLY WENT THROUGH, and the one that owns the outcome.
+            #
+            # THIS KEY IS WHY THE BOARD WAS UNDEBUGGABLE. The engine called `mac_runtime.ask.ask()`
+            # -- the entry point that returns an answer and emits nothing -- while the Chat called
+            # `run_pipeline`, which emits a typed event per stage. Same stages, two doors, and the
+            # corpus was wired to the blind one. Measured 2026-09-24: 21 of 77 captures were bare
+            # refusals carrying no intent, no prompt and no parts, while the runtime had produced
+            # the stage, the confidence AND the rejected intent every time.
+            #
+            # `stage` is DERIVED, never asserted: it is the last stage that did not finish `ok`,
+            # so a reader can recompute it from `stages` and disagree with us if we are wrong.
+            **({"stages": ask["stages"]} if ask.get("stages") else {}),
+            **({"stage": ask["stage"]} if ask.get("stage") else {}),
+            # A refusal's typed reason and what it named as missing. The prose already said it;
+            # these make it countable without parsing English.
+            **({"reason_code": ask["reason_code"]} if ask.get("reason_code") else {}),
+            **({"missing": ask["missing"]} if ask.get("missing") else {}),
             "sql": sqls,
             "sql_valid": sql_valid,
             "sql_errors": list(ask.get("sql_errors") or []),
