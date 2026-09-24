@@ -4,6 +4,35 @@
 
 # PLANNER INVARIANTS — RESULTS
 
+## 2026-09-24 (end of day) · `operation_honoured` closed — 179 checks, **0 RED**
+
+```
+collapse_reduces      1 of 1     held
+complement           37 of 37    held
+filter_monotone     113 of 113   held
+operation_honoured   28 of 28    held     (was 10 of 28)
+```
+
+The 18 reds were one root cause with three faces, all fixed in `mac-platform@debfaee`:
+
+* a column declared `field_role: measure` was **not in the measure vocabulary at all** — so
+  `SquareMeters` never reached the model and the planner could not resolve it;
+* the **count route** took a subject that declares a number, because its premise ("there is no
+  number to fold") is false for a countable that also carries a measure;
+* the **aggregate ignored the operation** — `average` emitted `SUM`;
+* and the **legacy countable path** ran regardless of operation, so `average` on a concept with no
+  number at all returned a COUNT instead of reaching the refusal written for exactly that case.
+
+**The invariant was built in the morning against two known defects and closed a third it was not
+built for.** That is the whole argument for an authored-once metamorphic check over a per-rule
+assertion: `operation_honoured` needed no oracle, no anchor and no knowledge of what a store is,
+and it named 15 concepts at once.
+
+Anchors confirm the fix rather than the invariant alone: `SquareMeters` average → **1 504.55**
+(ANCHOR_18), sum → **99 300** (ANCHOR_15, previously a refusal).
+
+---
+
 ## 2026-09-24 (later still) · `operation_honoured` — a systemic wrong-number defect
 
 ```
