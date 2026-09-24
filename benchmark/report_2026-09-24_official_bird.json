@@ -1,0 +1,957 @@
+[
+  {
+    "corpus": "bird_dev_official_20240627",
+    "total": 1534,
+    "encodable": 1075,
+    "declarable": 174,
+    "blocked": 285,
+    "rate_encodable": 70.08,
+    "rate_reachable": 81.42,
+    "features": {
+      "computed_select_column": 43,
+      "null_test": 98,
+      "negation_over_nullable": 61,
+      "expression_in_where": 30,
+      "subquery": 88,
+      "subquery_in_where": 80,
+      "window_function": 5,
+      "arithmetic_over_aggregate": 159,
+      "like": 42,
+      "outer_join": 1,
+      "subquery_in_from": 33,
+      "case_when": 114,
+      "multi_key_ordering": 5,
+      "multiple_aggregates": 9,
+      "cte": 9,
+      "or_in_where": 12,
+      "set_operation": 1,
+      "antijoin_except": 2
+    },
+    "sole_blocker": {
+      "expression_in_where": 23,
+      "like": 35,
+      "subquery_in_from": 22,
+      "multi_key_ordering": 4,
+      "multiple_aggregates": 4,
+      "subquery": 5,
+      "cte": 2,
+      "null_test": 25,
+      "window_function": 1,
+      "subquery_in_where": 2,
+      "negation_over_nullable": 3,
+      "or_in_where": 2
+    },
+    "by_database": {
+      "california_schools": {
+        "declarable": 11,
+        "blocked": 19,
+        "encodable": 59
+      },
+      "financial": {
+        "encodable": 81,
+        "declarable": 15,
+        "blocked": 10
+      },
+      "toxicology": {
+        "blocked": 20,
+        "encodable": 107,
+        "declarable": 18
+      },
+      "card_games": {
+        "blocked": 59,
+        "encodable": 115,
+        "declarable": 17
+      },
+      "codebase_community": {
+        "blocked": 36,
+        "encodable": 137,
+        "declarable": 13
+      },
+      "superhero": {
+        "encodable": 102,
+        "blocked": 14,
+        "declarable": 13
+      },
+      "formula_1": {
+        "encodable": 116,
+        "blocked": 49,
+        "declarable": 9
+      },
+      "european_football_2": {
+        "encodable": 86,
+        "blocked": 25,
+        "declarable": 18
+      },
+      "thrombosis_prediction": {
+        "declarable": 28,
+        "encodable": 99,
+        "blocked": 36
+      },
+      "student_club": {
+        "encodable": 134,
+        "blocked": 8,
+        "declarable": 16
+      },
+      "debit_card_specializing": {
+        "encodable": 39,
+        "declarable": 16,
+        "blocked": 9
+      }
+    },
+    "by_bucket": {
+      "simple": {
+        "declarable": 44,
+        "encodable": 757,
+        "blocked": 124
+      },
+      "moderate": {
+        "blocked": 109,
+        "encodable": 264,
+        "declarable": 91
+      },
+      "challenging": {
+        "blocked": 52,
+        "encodable": 54,
+        "declarable": 39
+      }
+    },
+    "examples": {
+      "computed_select_column": "What is the highest eligible free rate for K-12 students in the schools in Alameda County?",
+      "null_test": "Please list the lowest three eligible free rates for students aged 5-17 in continuation sc",
+      "negation_over_nullable": "Please list the lowest three eligible free rates for students aged 5-17 in continuation sc",
+      "expression_in_where": "Please list the lowest three eligible free rates for students aged 5-17 in continuation sc",
+      "subquery": "What is the number of SAT test takers of the schools with the highest FRPM count for K-12 ",
+      "subquery_in_where": "What is the number of SAT test takers of the schools with the highest FRPM count for K-12 ",
+      "window_function": "Rank schools by their average score in Writing where the score is greater than 499, showin",
+      "arithmetic_over_aggregate": "Rank schools by their average score in Writing where the score is greater than 499, showin",
+      "like": "Name schools in Riverside which the average of average math score for SAT is grater than 4",
+      "outer_join": "What is the average score in writing for the schools that were opened after 1991 or closed",
+      "subquery_in_from": "List the names of virtual schools that are among the top 5 in their respective counties ba",
+      "case_when": "What is the ratio of merged Unified School District schools in Orange County to merged Ele",
+      "multi_key_ordering": "What is the gender of the oldest client who opened his/her account in the highest average ",
+      "multiple_aggregates": "How many owner and disponent dispositions are there from account number 1 to account numbe",
+      "cte": "What is the ratio of Hydrogen elements in molecule ID TR006? List the ratio with its label",
+      "or_in_where": "What are the borderless cards available without powerful foils?",
+      "set_operation": "Who has the highest average finishing rate between the highest and shortest football playe",
+      "antijoin_except": "Among the events attended by more than 10 members of the Student_Club, how many of them ar"
+    }
+  },
+  {
+    "corpus": "spider_dev",
+    "total": 1034,
+    "encodable": 866,
+    "declarable": 31,
+    "blocked": 137,
+    "rate_encodable": 83.75,
+    "rate_reachable": 86.75,
+    "features": {
+      "multiple_aggregates": 28,
+      "subquery": 81,
+      "subquery_in_where": 81,
+      "negation_over_nullable": 46,
+      "antijoin_except": 31,
+      "like": 14,
+      "set_operation": 14,
+      "subquery_in_from": 2
+    },
+    "sole_blocker": {
+      "multiple_aggregates": 28,
+      "like": 14,
+      "set_operation": 12,
+      "subquery_in_from": 2
+    },
+    "by_database": {
+      "concert_singer": {
+        "encodable": 32,
+        "blocked": 11,
+        "declarable": 2
+      },
+      "pets_1": {
+        "encodable": 32,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "car_1": {
+        "encodable": 78,
+        "blocked": 12,
+        "declarable": 2
+      },
+      "flight_2": {
+        "encodable": 76,
+        "declarable": 2,
+        "blocked": 2
+      },
+      "employee_hire_evaluation": {
+        "encodable": 30,
+        "blocked": 8
+      },
+      "cre_Doc_Template_Mgt": {
+        "encodable": 76,
+        "blocked": 4,
+        "declarable": 4
+      },
+      "course_teach": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "museum_visit": {
+        "encodable": 14,
+        "blocked": 4
+      },
+      "wta_1": {
+        "encodable": 60,
+        "blocked": 2
+      },
+      "battle_death": {
+        "encodable": 12,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "student_transcripts_tracking": {
+        "encodable": 72,
+        "blocked": 4,
+        "declarable": 2
+      },
+      "tvshow": {
+        "encodable": 52,
+        "blocked": 6,
+        "declarable": 4
+      },
+      "poker_player": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "voter_1": {
+        "encodable": 12,
+        "blocked": 3
+      },
+      "world_1": {
+        "encodable": 90,
+        "blocked": 26,
+        "declarable": 4
+      },
+      "orchestra": {
+        "encodable": 36,
+        "blocked": 4
+      },
+      "network_1": {
+        "encodable": 44,
+        "declarable": 4,
+        "blocked": 8
+      },
+      "dog_kennels": {
+        "blocked": 26,
+        "declarable": 4,
+        "encodable": 52
+      },
+      "singer": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "real_estate_properties": {
+        "encodable": 4
+      }
+    },
+    "by_bucket": {},
+    "examples": {
+      "multiple_aggregates": "What is the average, minimum, and maximum age of all singers from France?",
+      "subquery": "List all song names by singers above the average age.",
+      "subquery_in_where": "List all song names by singers above the average age.",
+      "negation_over_nullable": "Show the stadium names without any concert.",
+      "antijoin_except": "Show names for all stadiums except for stadiums having a concert in year 2014.",
+      "like": "what is the name and nation of the singer who have a song having 'Hey' in its name?",
+      "set_operation": "Which are the car makers which produce at least 2 models and more than 3 car makers ? List",
+      "subquery_in_from": "How many countries speak both English and Dutch?"
+    }
+  },
+  {
+    "corpus": "spider_train",
+    "total": 7000,
+    "encodable": 5803,
+    "declarable": 221,
+    "blocked": 976,
+    "rate_encodable": 82.9,
+    "rate_reachable": 86.06,
+    "features": {
+      "multiple_aggregates": 185,
+      "subquery": 504,
+      "subquery_in_where": 499,
+      "negation_over_nullable": 219,
+      "like": 165,
+      "set_operation": 97,
+      "antijoin_except": 209,
+      "computed_select_column": 20,
+      "or_in_where": 5,
+      "multi_key_ordering": 19,
+      "subquery_in_from": 9,
+      "expression_in_where": 8,
+      "having_without_aggregate": 3
+    },
+    "sole_blocker": {
+      "multiple_aggregates": 179,
+      "like": 154,
+      "set_operation": 95,
+      "subquery": 5,
+      "multi_key_ordering": 19,
+      "subquery_in_from": 7,
+      "expression_in_where": 6,
+      "having_without_aggregate": 3
+    },
+    "by_database": {
+      "department_management": {
+        "encodable": 13,
+        "blocked": 3
+      },
+      "farm": {
+        "encodable": 36,
+        "blocked": 4
+      },
+      "student_assessment": {
+        "encodable": 45,
+        "blocked": 8
+      },
+      "bike_1": {
+        "encodable": 70,
+        "blocked": 24,
+        "declarable": 10
+      },
+      "book_2": {
+        "encodable": 20,
+        "blocked": 1
+      },
+      "musical": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "twitter_1": {
+        "encodable": 20,
+        "blocked": 7
+      },
+      "product_catalog": {
+        "declarable": 2,
+        "encodable": 32,
+        "blocked": 8
+      },
+      "flight_1": {
+        "encodable": 82,
+        "blocked": 10,
+        "declarable": 4
+      },
+      "allergy_1": {
+        "encodable": 76,
+        "blocked": 20,
+        "declarable": 2
+      },
+      "store_1": {
+        "encodable": 104,
+        "blocked": 6,
+        "declarable": 2
+      },
+      "journal_committee": {
+        "encodable": 16,
+        "blocked": 1,
+        "declarable": 1
+      },
+      "customers_card_transactions": {
+        "encodable": 72,
+        "blocked": 4,
+        "declarable": 4
+      },
+      "race_track": {
+        "encodable": 34,
+        "blocked": 6,
+        "declarable": 2
+      },
+      "coffee_shop": {
+        "encodable": 14,
+        "declarable": 1,
+        "blocked": 3
+      },
+      "chinook_1": {
+        "encodable": 64,
+        "declarable": 8,
+        "blocked": 12
+      },
+      "insurance_fnol": {
+        "encodable": 28,
+        "blocked": 12,
+        "declarable": 2
+      },
+      "medicine_enzyme_interaction": {
+        "encodable": 38,
+        "blocked": 4,
+        "declarable": 2
+      },
+      "university_basketball": {
+        "encodable": 38,
+        "blocked": 8
+      },
+      "phone_1": {
+        "encodable": 24,
+        "blocked": 4,
+        "declarable": 1
+      },
+      "match_season": {
+        "encodable": 54,
+        "blocked": 4
+      },
+      "climbing": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "body_builder": {
+        "encodable": 21,
+        "declarable": 1,
+        "blocked": 2
+      },
+      "election_representative": {
+        "encodable": 18,
+        "blocked": 2
+      },
+      "apartment_rentals": {
+        "encodable": 72,
+        "blocked": 8
+      },
+      "game_injury": {
+        "encodable": 15,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "soccer_1": {
+        "encodable": 9,
+        "blocked": 5
+      },
+      "performance_attendance": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "college_2": {
+        "encodable": 110,
+        "blocked": 50,
+        "declarable": 10
+      },
+      "debate": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "insurance_and_eClaims": {
+        "encodable": 24,
+        "blocked": 14,
+        "declarable": 2
+      },
+      "customers_and_invoices": {
+        "encodable": 70,
+        "blocked": 8,
+        "declarable": 4
+      },
+      "wedding": {
+        "encodable": 16,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "theme_gallery": {
+        "encodable": 30,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "epinions_1": {
+        "encodable": 21,
+        "blocked": 9
+      },
+      "riding_club": {
+        "encodable": 16,
+        "blocked": 1
+      },
+      "gymnast": {
+        "encodable": 38,
+        "declarable": 2
+      },
+      "small_bank_1": {
+        "encodable": 32,
+        "blocked": 14,
+        "declarable": 4
+      },
+      "browser_web": {
+        "encodable": 14,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "wrestler": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "school_finance": {
+        "encodable": 18,
+        "blocked": 7,
+        "declarable": 1
+      },
+      "protein_institute": {
+        "encodable": 14,
+        "blocked": 5,
+        "declarable": 1
+      },
+      "cinema": {
+        "declarable": 1,
+        "encodable": 24,
+        "blocked": 5
+      },
+      "products_for_hire": {
+        "encodable": 15,
+        "blocked": 3
+      },
+      "phone_market": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "gas_company": {
+        "encodable": 38,
+        "blocked": 6,
+        "declarable": 2
+      },
+      "party_people": {
+        "encodable": 40,
+        "blocked": 2,
+        "declarable": 2
+      },
+      "pilot_record": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "cre_Doc_Control_Systems": {
+        "encodable": 30,
+        "declarable": 2,
+        "blocked": 1
+      },
+      "company_1": {
+        "encodable": 7
+      },
+      "local_govt_in_alabama": {
+        "encodable": 12,
+        "blocked": 2,
+        "declarable": 1
+      },
+      "formula_1": {
+        "encodable": 68,
+        "blocked": 10,
+        "declarable": 2
+      },
+      "machine_repair": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "entrepreneur": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "perpetrator": {
+        "encodable": 20,
+        "blocked": 1
+      },
+      "csu_1": {
+        "encodable": 64,
+        "blocked": 6
+      },
+      "candidate_poll": {
+        "encodable": 30,
+        "blocked": 10
+      },
+      "movie_1": {
+        "encodable": 68,
+        "blocked": 24,
+        "declarable": 6
+      },
+      "county_public_safety": {
+        "encodable": 30,
+        "blocked": 10
+      },
+      "inn_1": {
+        "encodable": 62,
+        "blocked": 12
+      },
+      "local_govt_mdm": {
+        "encodable": 12,
+        "declarable": 1,
+        "blocked": 1
+      },
+      "party_host": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "storm_record": {
+        "encodable": 32,
+        "blocked": 10,
+        "declarable": 2
+      },
+      "election": {
+        "encodable": 64,
+        "blocked": 4
+      },
+      "news_report": {
+        "encodable": 15,
+        "blocked": 3
+      },
+      "restaurant_1": {
+        "encodable": 21,
+        "blocked": 1
+      },
+      "customer_deliveries": {
+        "encodable": 14,
+        "declarable": 1,
+        "blocked": 1
+      },
+      "icfp_1": {
+        "encodable": 56,
+        "blocked": 10
+      },
+      "sakila_1": {
+        "encodable": 72,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "loan_1": {
+        "encodable": 68,
+        "blocked": 8,
+        "declarable": 4
+      },
+      "behavior_monitoring": {
+        "encodable": 35,
+        "blocked": 4,
+        "declarable": 1
+      },
+      "assets_maintenance": {
+        "blocked": 4,
+        "encodable": 26,
+        "declarable": 1
+      },
+      "station_weather": {
+        "encodable": 13,
+        "blocked": 3
+      },
+      "college_1": {
+        "encodable": 152,
+        "blocked": 8,
+        "declarable": 4
+      },
+      "sports_competition": {
+        "encodable": 44,
+        "blocked": 6,
+        "declarable": 2
+      },
+      "manufacturer": {
+        "encodable": 13,
+        "blocked": 3
+      },
+      "hr_1": {
+        "encodable": 82,
+        "blocked": 40,
+        "declarable": 2
+      },
+      "music_1": {
+        "encodable": 60,
+        "blocked": 36,
+        "declarable": 4
+      },
+      "baseball_1": {
+        "encodable": 80,
+        "blocked": 2
+      },
+      "mountain_photos": {
+        "encodable": 13,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "program_share": {
+        "encodable": 38,
+        "declarable": 2
+      },
+      "e_learning": {
+        "encodable": 72,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "insurance_policies": {
+        "blocked": 6,
+        "declarable": 4,
+        "encodable": 38
+      },
+      "hospital_1": {
+        "encodable": 84,
+        "declarable": 6,
+        "blocked": 10
+      },
+      "ship_mission": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "student_1": {
+        "encodable": 64,
+        "declarable": 2,
+        "blocked": 2
+      },
+      "company_employee": {
+        "encodable": 13,
+        "blocked": 3
+      },
+      "film_rank": {
+        "encodable": 38,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "cre_Doc_Tracking_DB": {
+        "encodable": 84,
+        "declarable": 4,
+        "blocked": 2
+      },
+      "club_1": {
+        "encodable": 70
+      },
+      "tracking_grants_for_research": {
+        "blocked": 16,
+        "encodable": 62
+      },
+      "network_2": {
+        "encodable": 54,
+        "blocked": 26,
+        "declarable": 6
+      },
+      "decoration_competition": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "document_management": {
+        "encodable": 34,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "company_office": {
+        "encodable": 36,
+        "blocked": 4
+      },
+      "solvency_ii": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "entertainment_awards": {
+        "encodable": 21,
+        "blocked": 1
+      },
+      "customers_campaigns_ecommerce": {
+        "encodable": 14,
+        "blocked": 1
+      },
+      "college_3": {
+        "encodable": 64,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "department_store": {
+        "encodable": 60,
+        "blocked": 26,
+        "declarable": 2
+      },
+      "aircraft": {
+        "encodable": 38,
+        "blocked": 8
+      },
+      "local_govt_and_lot": {
+        "encodable": 14,
+        "declarable": 1,
+        "blocked": 2
+      },
+      "school_player": {
+        "encodable": 38,
+        "blocked": 2
+      },
+      "store_product": {
+        "encodable": 36,
+        "blocked": 8
+      },
+      "soccer_2": {
+        "encodable": 76,
+        "blocked": 26,
+        "declarable": 4
+      },
+      "device": {
+        "encodable": 36,
+        "blocked": 4
+      },
+      "cre_Drama_Workshop_Groups": {
+        "encodable": 74,
+        "blocked": 4,
+        "declarable": 4
+      },
+      "music_2": {
+        "encodable": 92,
+        "blocked": 2,
+        "declarable": 6
+      },
+      "manufactory_1": {
+        "encodable": 64,
+        "blocked": 14,
+        "declarable": 2
+      },
+      "tracking_software_problems": {
+        "encodable": 40,
+        "blocked": 6,
+        "declarable": 2
+      },
+      "shop_membership": {
+        "blocked": 10,
+        "encodable": 32,
+        "declarable": 2
+      },
+      "voter_2": {
+        "encodable": 64,
+        "blocked": 4,
+        "declarable": 4
+      },
+      "products_gen_characteristics": {
+        "encodable": 80,
+        "blocked": 4,
+        "declarable": 2
+      },
+      "swimming": {
+        "encodable": 26,
+        "blocked": 3,
+        "declarable": 1
+      },
+      "railway": {
+        "encodable": 20,
+        "blocked": 1
+      },
+      "customers_and_products_contacts": {
+        "encodable": 12,
+        "blocked": 3
+      },
+      "dorm_1": {
+        "encodable": 66,
+        "blocked": 30,
+        "declarable": 4
+      },
+      "customer_complaints": {
+        "encodable": 36,
+        "blocked": 10
+      },
+      "workshop_paper": {
+        "encodable": 28,
+        "blocked": 2
+      },
+      "tracking_share_transactions": {
+        "encodable": 38,
+        "blocked": 2,
+        "declarable": 1
+      },
+      "cre_Theme_park": {
+        "encodable": 78,
+        "blocked": 4,
+        "declarable": 2
+      },
+      "game_1": {
+        "encodable": 62,
+        "blocked": 18,
+        "declarable": 6
+      },
+      "customers_and_addresses": {
+        "encodable": 70,
+        "blocked": 14,
+        "declarable": 4
+      },
+      "music_4": {
+        "encodable": 54,
+        "declarable": 2,
+        "blocked": 4
+      },
+      "roller_coaster": {
+        "encodable": 16,
+        "blocked": 1
+      },
+      "ship_1": {
+        "encodable": 38,
+        "blocked": 8,
+        "declarable": 2
+      },
+      "city_record": {
+        "encodable": 34,
+        "blocked": 4,
+        "declarable": 2
+      },
+      "e_government": {
+        "encodable": 28,
+        "blocked": 10,
+        "declarable": 2
+      },
+      "school_bus": {
+        "encodable": 14,
+        "declarable": 1,
+        "blocked": 3
+      },
+      "flight_company": {
+        "encodable": 17,
+        "blocked": 2
+      },
+      "cre_Docs_and_Epenses": {
+        "encodable": 74,
+        "declarable": 4,
+        "blocked": 6
+      },
+      "scientist_1": {
+        "encodable": 30,
+        "blocked": 16,
+        "declarable": 2
+      },
+      "wine_1": {
+        "encodable": 62,
+        "blocked": 18,
+        "declarable": 2
+      },
+      "train_station": {
+        "encodable": 17,
+        "blocked": 5,
+        "declarable": 1
+      },
+      "driving_school": {
+        "encodable": 81,
+        "blocked": 10,
+        "declarable": 2
+      },
+      "activity_1": {
+        "encodable": 76,
+        "declarable": 8,
+        "blocked": 4
+      },
+      "flight_4": {
+        "encodable": 72,
+        "blocked": 10
+      },
+      "tracking_orders": {
+        "encodable": 58,
+        "blocked": 2
+      },
+      "architecture": {
+        "encodable": 14,
+        "blocked": 3
+      },
+      "culture_company": {
+        "encodable": 34,
+        "declarable": 2,
+        "blocked": 2
+      }
+    },
+    "by_bucket": {},
+    "examples": {
+      "multiple_aggregates": "What are the maximum and minimum budget of the departments?",
+      "subquery": "How many departments are led by heads who are not mentioned?",
+      "subquery_in_where": "How many departments are led by heads who are not mentioned?",
+      "negation_over_nullable": "How many departments are led by heads who are not mentioned?",
+      "like": "Which head's name has the substring 'Ha'? List the id and name.",
+      "set_operation": "What are the id of students who registered courses or attended courses?",
+      "antijoin_except": "What are the ids of stations that have latitude above 37.4 and never had bike availability",
+      "computed_select_column": "Find the day in which the difference between the max temperature and min temperature was t",
+      "or_in_where": "Find the names of users whose emails contain \u2018superstar\u2019 or \u2018edu\u2019.",
+      "multi_key_ordering": "List the names of all courses ordered by their titles and credits.",
+      "subquery_in_from": "Find the number of schools that have more than one donator whose donation amount is less t",
+      "expression_in_where": "List how many times the number of people in the room reached the maximum occupancy of the ",
+      "having_without_aggregate": "How many restaurant is the Sandwich type restaurant?"
+    }
+  }
+]
