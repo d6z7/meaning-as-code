@@ -281,6 +281,9 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
             # Absent rather than null-filled, so "this engine does not report one" stays
             # distinguishable from "this run had none".
             **({"intent": ask["intent"]} if ask.get("intent") else {}),
+            # WHAT THE MODEL WAS GIVEN — hash, size and section headings; the text itself lives
+            # once at acceptance/prompts/<sha>.txt.
+            **({"prompt": ask["prompt"]} if ask.get("prompt") else {}),
             "sql": sqls,
             "sql_valid": sql_valid,
             "sql_errors": list(ask.get("sql_errors") or []),

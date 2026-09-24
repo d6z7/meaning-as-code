@@ -379,7 +379,7 @@ one. In the worked bundle nothing merges today — 2 517 products, 2 517 distinc
 is a property of this snapshot, not a declaration, and the Product concept says its identity
 resolves *to a ProductKey*. Prefer naming the key.
 
-### THE THREE GAPS, and they are real
+### THE THREE ESTATE, and they are real
 
 1. **There is no display-only column.** Every column you add joins the `GROUP BY`. On an aggregate
    you cannot say *"show this, do not group by it"* — you can only say something that happens to

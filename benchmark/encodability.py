@@ -74,7 +74,6 @@ DECLARABLE = {
 }
 
 DECLARED_GAPS = {
-    "having": "having",
     "null_test": "null_test",
     "subquery_in_where": "correlated_subquery_filter",
     "negation_over_nullable": "negation_over_nullable",
@@ -123,8 +122,17 @@ def _blockers(tree: exp.Expression) -> list[str]:
         add("window_function")
     if list(tree.find_all(exp.Case)):
         add("case_when")
-    if tree.args.get("having"):
-        add("having")
+    # HAVING IS NO LONGER A GAP -- `Intent.having` carries it (2026-09-24). A threshold names its
+    # own measure and its own operation, which is what 416 of the 460 blocked questions need:
+    # they SELECT an identity and filter it by an aggregate they never show.
+    #
+    # THE RESIDUE IS STILL A GAP, and is still counted as one: a HAVING with NO aggregate in it
+    # (three questions in the whole corpus) compares a plain column after grouping, which the
+    # Intent has nowhere to put. Counting the whole feature as closed would be claiming 460 where
+    # 457 is true.
+    having_node = tree.args.get("having")
+    if having_node is not None and not list(having_node.find_all(exp.AggFunc)):
+        add("having_without_aggregate")
     if list(tree.find_all(exp.Is)):
         add("null_test")
     if list(tree.find_all(exp.Like, exp.ILike)):
@@ -272,7 +280,6 @@ _SELF_TEST = [
     ("SELECT a FROM t INTERSECT SELECT b FROM u", "blocked", "set_operation"),
     ("SELECT count(*) FROM (SELECT * FROM t) x", "blocked", "subquery_in_from"),
     ("SELECT a FROM t WHERE id IN (SELECT id FROM u)", "blocked", "subquery_in_where"),
-    ("SELECT c, count(*) FROM t GROUP BY c HAVING count(*) > 5", "blocked", "having"),
     ("SELECT a, row_number() OVER (PARTITION BY b) FROM t", "blocked", "window_function"),
     ("SELECT a FROM t WHERE b IS NULL", "blocked", "null_test"),
     ("SELECT a FROM t WHERE b LIKE '%x%'", "blocked", "like"),
@@ -283,7 +290,23 @@ _SELF_TEST = [
     # Is/Like in WHERE must NOT also surface as expression_in_where -- they have their own names
     ("SELECT a FROM t WHERE b IS NULL AND c LIKE 'x%'", "blocked", "null_test"),
     # a DECLARABLE feature beside a BLOCKED one is blocked -- the bucket is the worst of them
-    ("SELECT sum(CASE WHEN a THEN 1 END) FROM t GROUP BY c HAVING count(*) > 2", "blocked", "having"),
+    ("SELECT a FROM t WHERE b LIKE '%x%' AND c IN (SELECT c FROM u)", "blocked", "subquery_in_where"),
+    # HAVING WITH NO AGGREGATE is still a gap: a plain column compared after grouping has nowhere
+    # to go on the Intent. Three questions in the whole corpus, and counted rather than waved
+    # through -- `Intent.having` closed 457 of 460, not 460.
+    ("SELECT a FROM t GROUP BY a HAVING b > 5", "blocked", "having_without_aggregate"),
+]
+
+#: HAVING WITH AN AGGREGATE IS ENCODABLE (2026-09-24) -- `Intent.having` carries it. Kept as its
+#: own list because these are the cases the feature was BUILT for, and a regression here is a
+#: regression in the headline number.
+_SELF_TEST_HAVING = [
+    # the shape that dominates: an identity selected, an aggregate thresholded and never shown
+    ("SELECT district FROM t GROUP BY district HAVING sum(amount) > 10000", "encodable"),
+    # the same thing with the aggregate also asked for
+    ("SELECT c, count(*) FROM t GROUP BY c HAVING count(*) > 5", "encodable"),
+    # a threshold beside a DECLARABLE feature is declarable, not blocked
+    ("SELECT sum(CASE WHEN a THEN 1 END) FROM t GROUP BY c HAVING count(*) > 2", "declarable"),
 ]
 
 
@@ -295,7 +318,13 @@ def _self_test() -> int:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}/{want_feature}; got {bucket}/{feats}")
-    n = len(_SELF_TEST)
+    for sql, want_bucket in _SELF_TEST_HAVING:
+        bucket, feats = classify(sql)
+        if bucket != want_bucket:
+            bad += 1
+            print(f"  FAIL  {sql[:64]!r}")
+            print(f"        wanted {want_bucket}; got {bucket}/{feats}")
+    n = len(_SELF_TEST) + len(_SELF_TEST_HAVING)
     print(f"\n{'FAIL' if bad else 'OK'} — encodability self-test: {n - bad} of {n} seeded cases behaved")
     print("  (each reject class gets one mutant; a classifier that cannot reject cannot report)")
     return 1 if bad else 0
@@ -334,7 +363,7 @@ def report(rows: list[dict], name: str, dialect: str) -> dict:
     print(f"  reachable   {enc + dec:>5}  {pct(enc + dec):>5.1f} %   UPPER BOUND (see DECLARABLE)")
     print(f"  BLOCKED     {blk:>5}  {pct(blk):>5.1f} %   real grammar gaps")
 
-    print("\n  GRAMMAR GAPS ONLY — 'sole' = questions this feature ALONE costs us:")
+    print("\n  GRAMMAR ESTATE ONLY — 'sole' = questions this feature ALONE costs us:")
     print(f"    {'feature':<26}{'appears':>9}{'% corpus':>10}{'sole':>7}   declared?")
     for f, n in feat_hits.most_common():
         if f in DECLARABLE:
