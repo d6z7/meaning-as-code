@@ -16,7 +16,10 @@ concept:
   label: A11
   class: measure
   definition: >-
-    The number carried by one column of main.district, named after the column because nothing authored a better name. Type INTEGER.    ADDITIVITY IS UNDECLARED: nothing here says whether summing it across rows is    meaningful, and the fold gate has no declaration to consult.
+    The number carried by one column of main.district, named after the column
+    because nothing authored a better name. Type INTEGER.
+    ADDITIVITY IS UNDECLARED: nothing here says whether summing it across rows is
+    meaningful, and the fold gate has no declaration to consult.
 grounding:
   kind: sql_table
   table: district
@@ -29,4 +32,4 @@ grounding:
     profiler and as a dimension to anyone who knows the business.
 governance:
   owner: generated
-  last_reviewed: 2026-09-25
+  last_reviewed: 2026-09-24
