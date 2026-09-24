@@ -254,6 +254,9 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
                 "provider": provider,
                 "model": model,
                 "effort": effort,
+                # The id the provider actually used, where it reports one — an alias like
+                # `sonnet` is not a model and moves under you.
+                **({"resolved_model": eng["resolved_model"]} if eng.get("resolved_model") else {}),
                 "mode": mode,
                 "athena": athena,
             },
