@@ -263,6 +263,14 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
             # rather than null-filled for a run that produced none, so "this engine does not
             # decompose" and "this answer had no parts" stay distinguishable.
             **({"answer_parts": ask["answer_parts"]} if ask.get("answer_parts") else {}),
+            # THE INTENT THAT PRODUCED THIS, when the engine sent one. Without it a capture holds
+            # the SQL but not the reading it came from, so nothing downstream can say whether a
+            # wrong answer was misread or mis-planned -- 06-SPEC asked for that attribution in
+            # July. It also puts `confidence` in the record, which is the only way to check a
+            # threshold that currently gates ~19 % of the board on an unvalidated self-score.
+            # Absent rather than null-filled, so "this engine does not report one" stays
+            # distinguishable from "this run had none".
+            **({"intent": ask["intent"]} if ask.get("intent") else {}),
             "sql": sqls,
             "sql_valid": sql_valid,
             "sql_errors": list(ask.get("sql_errors") or []),
