@@ -429,28 +429,110 @@ two homes for one fact.
 
 ---
 
-## 8. SEQUENCING
+## 8. THE ITINERARY
 
-Phases 1–4 need **no warehouse credentials and no Bedrock session**. Phase 2 needs neither a gold
-answer nor a database.
+### 8.1 THE INTENTION — four claims, and what would kill each
 
-| # | build | unblocks | needs |
+Not "build a test framework". The intention is to be able to **say, with a number and a denominator,
+which part of the pipeline owns any given failure — on an axis other people publish on.**
+
+That decomposes into four claims. Each is written so it can be **refuted**, per the estate's own
+research loop: *state it, design the test that kills it, run that first.*
+
+| | claim | instrument | **what kills it** |
 |---|---|---|---|
-| 1 | **Intent algebra** (3.0) — canon · equivalence · per-field diff | everything below | nothing |
-| 2 | **Paraphrase stability** (3.1) over the existing 77 | first real RECOGNITION number | nothing |
-| 3 | **Gold-SQL → gold-intent transpiler** (5.3) + its mutant test | encodability at corpus scale | a benchmark download |
-| 4 | **Encodability** (3.2) over BIRD dev + Spider | the first evidence the grammar is not Contoso-shaped | phase 3 |
-| 5 | **Metamorphic invariants** (3.3) — TLP and the collapse pair first | COMPOSITION, and two known-reds to prove they fail | a local DB |
-| 6 | **Stage attribution** (3.4), per 06 §3 | splits the 20 refusals by stage | §9's first ruling |
-| 7 | **L0/L1 bundle generator** (5.2) + denotation comparator (5.4) | the L0 apples-to-apples number on all 95 DBs | phases 1, 5 |
-| 8 | **Leg A synthetic bundles** | past n = 1; unblocks the deferred `entity_key` work | phase 5 |
-| 9 | **L2 bundle + same-model control + evidence ablation** (5.2) | the headline claims of 5.6 | 7, 8, live model |
+| **C1 EXPRESSIVENESS** | the Intent can express the questions people actually ask | encodability (3.2) over BIRD + Spider, via the transpiler (5.3) | a large fraction of an external corpus that no Intent can encode |
+| **C2 STABILITY** | the same question, asked differently, reaches the same Intent | paraphrase invariance (3.1) | paraphrases of one question producing materially different intents |
+| **C3 SOUNDNESS** | a correct Intent yields a correct answer | metamorphic invariants (3.3) + anchors (3.4) | an invariant violated, or an anchor disagreeing with the engine |
+| **C4 THE PRODUCT CLAIM** | declaring meaning **once** beats supplying it **per question** | the evidence ablation (5.2 control 3) | MAC at L2 without evidence failing to reach the baseline with it |
 
-**Phases 3 and 4 are the ones to reach for early.** They are where the operator's requirement is
-actually satisfied — a large third-party corpus, scored on an axis other people publish on — and
-they need no engine run, no anchor and no ontology authoring. The number they produce (*"of K BIRD
-questions, J are not expressible as an Intent, and here are the features they need"*) is the most
-decision-useful single figure available to this project right now.
+**C1–C3 are about the framework and we control them. C4 is the business.** C4 is also the only one
+that can be lost outright, and losing it is the most valuable single result available to this
+project — it would say the semantic layer is not paying for itself *on this workload*, which no
+amount of internal green can tell us.
+
+**Today all four are unfalsifiable**, because every instrument that could kill one is missing or
+pointed at a corpus of 77 questions from one bundle.
+
+### 8.2 THE ROUTE
+
+Ordered by **information per unit of effort**, not by dependency alone. Each stage ends in a number
+that changes what the next stage should be.
+
+| # | stage | build | the number out | size | needs |
+|---|---|---|---|---|---|
+| **0** | Provisioning | download BIRD dev + Spider; pin versions; record checksums | corpus sizes, with denominators | S | network |
+| **1** | *The Intent becomes a subject* | `canon` · `equivalent` · `diff` (3.0) | — (foundation) | S | nothing |
+| **2** | *Stability, free* | paraphrase harness (3.1) over our 77 | **C2's first number** | S | 1, a model |
+| **3** | *The outside world* | gold-SQL → gold-intent transpiler (5.3) + its mutants | transpile rate | M | 0, 1 |
+| **4** | **The headline** | encodability (3.2) over BIRD dev + Spider | **C1's number, and the ranked gap list** | S | 3 |
+| **5** | *The planner under law* | metamorphic invariants (3.3): TLP + collapse pair first | **C3's number**; 2 known-reds must go red | M | a local DB |
+| **6** | *Splitting the refusals* | stage attribution (3.4) per 06 §3 | 20 refusals → interpret/resolve/plan/execute | M | §9 ruling 1 |
+| **7** | *The floor* | L0/L1 bundle generator + denotation comparator (5.2, 5.4) | **EX at zero human input, all 95 DBs** | L | 1, 5 |
+| **8** | *Past n = 1* | Leg A synthetic reference bundles | conformance per pattern | M | 5 |
+| **9** | *The thesis* | L2 bundle + same-model control + evidence ablation | **C4's number** | L | 7, 8, live model |
+
+**Stages 0–4 need no warehouse credentials, no Bedrock session and no ontology authoring.** Stage 2
+needs a model but no gold and no database. **Stage 4 is where the operator's requirement is actually
+satisfied** and it arrives early on purpose.
+
+### 8.3 PRE-REGISTERED DECISION RULES
+
+**Agreed before the numbers are seen**, because a threshold chosen afterwards is a rationalisation.
+These are proposals; the operator sets the cut points.
+
+**After stage 4 — encodability on BIRD dev:**
+
+| result | reading | what we do next |
+|---|---|---|
+| **≥ 90 %** | the grammar is not the bottleneck | skip to stages 6–7; effort moves to interpretation and the L0 floor |
+| **70–90 %** | the gap list *is* the roadmap | close the top three missing features, re-run stage 4, then continue |
+| **< 70 %** | the Intent model is under-specified for real workloads | **stop Leg C.** No benchmark claim is meaningful until the grammar is redesigned |
+
+**After stage 2 — paraphrase agreement on our 77:**
+
+| result | reading | what we do next |
+|---|---|---|
+| **≥ 95 %** | stability is not the dominant error source | proceed; revisit only on regression |
+| **80–95 %** | the per-field diff names the weak field | fix that field's prompting or its declarations first |
+| **< 80 %** | interpretation dominates | deprioritise planner work until it is fixed — a sound planner behind an unstable interpreter is invisible |
+
+**After stage 5 — the two known-reds:** if TLP does **not** go red on `Status <> 'Closed'`, or the
+collapse invariant does **not** go red on `PARTITION BY StoreKey`, **the instrument is broken, not
+the planner.** Fix the instrument before trusting a single green from it. This is the INSTRUMENT
+category applied to ourselves.
+
+**After stage 9 — C4:** state the result in both directions before running it. If MAC-without-evidence
+reaches baseline-with-evidence, the ontology subsumes per-question hints. If it does not, we report
+that, and the next question is whether the gap is the ontology's depth (fix: L2 authoring) or the
+architecture's (fix: unknown, and worth knowing).
+
+### 8.4 RULINGS, AND THE STAGE EACH ONE BLOCKS
+
+Nothing before stage 6 is blocked. Stated so no stage stalls waiting on a decision nobody knew was
+needed.
+
+| ruling (§9) | blocks | when it is needed |
+|---|---|---|
+| `acceptance/` or `eval/` is the home | **stage 6** | before stage attribution is written anywhere |
+| may a generated **L0** bundle carry oracles | **stage 7** | before the floor number is quoted as anything |
+| is a `derived` anchor a legal TRUTH authority | interpretation of **5, 7, 9** | does not block building; blocks *claiming* |
+| what may be said publicly from Leg C | **publication only** | before any number leaves the estate |
+| `SST-Q3`, EXECUTION category, RECOGNITION vs HUMILITY | nothing here | as convenient |
+
+### 8.5 WHAT ARRIVED LOOKS LIKE
+
+The fixed point, in the shape TESTING.md §7 uses.
+
+| | today | arrived |
+|---|---|---|
+| refusals carrying the stage that produced them | **0 of 20** | every one |
+| corpora the grammar has been measured against | **1** (77 questions, one bundle) | BIRD dev + Spider, per-database |
+| questions with a gold Intent | **0 scored** | every transpilable question, generated |
+| planner invariants that hold framework-wide | **0** | TLP + the collapse pair + the four in 3.3 |
+| bundles the framework is proven on | **1** | 1 real + the Leg A patterns + L0 on 95 |
+| `Intent.confidence` | consumed, never validated | calibrated, or removed |
+| the four claims of 8.1 | **unfalsifiable** | each carrying a number and the test that could kill it |
 
 ---
 
