@@ -87,6 +87,11 @@ def _now() -> str:
 
 
 def _provider_of(model: str) -> str:
+    """Inferred ONLY when the caller declares nothing — see the call site, which prefers
+    `engine.provider`. Inference defaults to "bedrock", so the first captures produced through
+    the local Claude Code CLI were stamped `provider: bedrock` until the console started
+    declaring it. A record that misreports which model produced it is worse than no record.
+    """
     m = (model or "").lower()
     return (
         "openai"
