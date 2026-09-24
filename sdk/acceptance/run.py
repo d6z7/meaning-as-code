@@ -263,6 +263,10 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
                 "mode": mode,
                 "athena": athena,
             },
+            # WHICH DATA the answer came from, beside which model produced it. Absent when the
+            # caller reports none, so "this engine does not say" stays distinguishable from
+            # "this run had no connection".
+            **({"connection": payload["connection"]} if payload.get("connection") else {}),
             "route": route,
             "answer": answer_text,
             # The decomposed answer, when the engine sent one (`mac_console.ask_present`). Absent
