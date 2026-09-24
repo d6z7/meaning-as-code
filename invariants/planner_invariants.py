@@ -83,6 +83,20 @@ def make_intent(**kw):
                 {**t, "utterance": t.get("utterance") or str(t.get("term", ""))}
                 for t in payload[key]
             ]
+    # THE GROUP FORMS TAKE THE SAME COURTESY. `any_of`/`all_of` hold FilterRefs one level down,
+    # and a probe that has to spell out an utterance for every member is a probe nobody writes.
+    for key in ("any_of", "all_of"):
+        if key in payload:
+            payload[key] = [
+                {
+                    "filters": [
+                        {**t, "utterance": t.get("utterance") or str(t.get("term", ""))}
+                        for t in (g.get("filters") or [])
+                    ],
+                    "utterance": g.get("utterance") or "",
+                }
+                for g in payload[key]
+            ]
     return Intent.model_validate(payload)
 
 
@@ -208,6 +222,126 @@ def inv_filter_monotone(subject, term, value, index, resolver, con):
     ok = f.value <= base.value + 1e-9
     return ("filter_monotone", ok,
             f"{subject}/{term}={value!r}: filtered {f.value:g} vs population {base.value:g}")
+
+
+def widens_verdict(one: float, two: float) -> str:
+    """"ok" | "red" — adding an ALTERNATIVE must not reduce the count.
+
+    PURE, so the mutant can be seeded without a warehouse. The mutant that matters is `any_of`
+    emitted as a conjunction: two alternatives would then match FEWER rows than one, which is
+    exactly what a missing outer parenthesis or an `AND` where an `OR` belongs produces -- valid
+    SQL, a plausible number, nothing on the page.
+    """
+    return "ok" if two >= one - 1e-9 else "red"
+
+
+def narrows_verdict(one: float, two: float) -> str:
+    """"ok" | "red" — adding a REQUIREMENT must not increase the count.
+
+    The mirror mutant, and the likelier one: `all_of` shares its shape with `any_of`, so emitting
+    it as a disjunction is a one-word slip. Two requirements would then match MORE than one.
+    """
+    return "ok" if two <= one + 1e-9 else "red"
+
+
+def same_count_verdict(a: float, b: float) -> str:
+    """"ok" | "red" — two spellings of ONE condition must return one number."""
+    return "ok" if abs(a - b) < 1e-9 else "red"
+
+
+def inv_any_of_widens(subject, term, value, index, resolver, con):
+    """I5 — adding an ALTERNATIVE can never REDUCE a count.
+
+    `any_of` is an OR, so a second group can only let more rows through. The failure this
+    catches is the one that has no symptom: a missing outer parenthesis. `WHERE x = 1 AND a OR b`
+    parses as `(x = 1 AND a) OR b`, which is valid SQL, runs clean, and quietly answers a much
+    WIDER question than was asked -- or, with the operands the other way round, a narrower one.
+    Nothing on the page would show it.
+    """
+    one = run_intent(make_intent(
+        measure=subject, operation="count",
+        any_of=[{"filters": [{"term": term, "op": "eq", "value": value}]}],
+    ), index, resolver, con)
+    two = run_intent(make_intent(
+        measure=subject, operation="count",
+        any_of=[{"filters": [{"term": term, "op": "eq", "value": value}]},
+                {"filters": [{"term": term, "op": "ne", "value": value}]}],
+    ), index, resolver, con)
+    if not (one.ok and two.ok):
+        return None
+    ok = widens_verdict(one.value, two.value) == "ok"
+    return ("any_of_widens", ok,
+            f"{subject}/{term}: one alternative {one.value:g}, two {two.value:g}")
+
+
+def inv_any_of_one_group_is_a_filter(subject, term, value, index, resolver, con):
+    """I6 — a disjunction of ONE group must equal that group as a plain filter.
+
+    The strongest statement available about placement: a term inside a disjunction has to resolve
+    to the same column, through the same join, with the same operator, as the same term outside
+    one. It held only because the predicate renderer is SHARED; a copy of that logic is exactly
+    what this would catch drifting.
+    """
+    plain = run_intent(make_intent(
+        measure=subject, operation="count",
+        filters=[{"term": term, "op": "eq", "value": value}],
+    ), index, resolver, con)
+    grouped = run_intent(make_intent(
+        measure=subject, operation="count",
+        any_of=[{"filters": [{"term": term, "op": "eq", "value": value}]}],
+    ), index, resolver, con)
+    if not (plain.ok and grouped.ok):
+        return None
+    ok = same_count_verdict(plain.value, grouped.value) == "ok"
+    return ("any_of_one_group_is_a_filter", ok,
+            f"{subject}/{term}={value!r}: filter {plain.value:g} vs any_of {grouped.value:g}")
+
+
+def inv_all_of_narrows(subject, term, value, index, resolver, con):
+    """I7 — adding a REQUIRED condition can never INCREASE a count.
+
+    `all_of` is an AND over groups, so a second requirement can only remove identities. This is
+    the quantifier check: if `all_of` were emitted as a disjunction -- the single likeliest
+    mistake, since it shares its shape with `any_of` -- this goes red immediately, because two
+    requirements would then match MORE than one.
+    """
+    one = run_intent(make_intent(
+        measure=subject, operation="count",
+        all_of=[{"filters": [{"term": term, "op": "eq", "value": value}]}],
+    ), index, resolver, con)
+    two = run_intent(make_intent(
+        measure=subject, operation="count",
+        all_of=[{"filters": [{"term": term, "op": "eq", "value": value}]},
+                {"filters": [{"term": term, "op": "ne", "value": value}]}],
+    ), index, resolver, con)
+    if not (one.ok and two.ok):
+        return None
+    ok = narrows_verdict(one.value, two.value) == "ok"
+    return ("all_of_narrows", ok,
+            f"{subject}/{term}: one requirement {one.value:g}, two {two.value:g}")
+
+
+def inv_having_monotone(subject, index, resolver, con):
+    """I8 — raising a threshold can never INCREASE the number of groups that survive it.
+
+    The direction check for HAVING. An operator emitted the wrong way round (`<` for `gt`) passes
+    every unit test that only asserts "a HAVING appeared", and returns a plausible number.
+    """
+    low = run_intent(make_intent(
+        measure=subject, operation="count",
+        having=[{"subject": subject, "operation": "count", "op": "gt", "value": 0,
+                 "utterance": "more than 0"}],
+    ), index, resolver, con)
+    high = run_intent(make_intent(
+        measure=subject, operation="count",
+        having=[{"subject": subject, "operation": "count", "op": "gt", "value": 1_000_000_000,
+                 "utterance": "more than a billion"}],
+    ), index, resolver, con)
+    if not (low.ok and high.ok):
+        return None
+    ok = narrows_verdict(low.value, high.value) == "ok"
+    return ("having_monotone", ok,
+            f"{subject}: threshold 0 -> {low.value:g}, threshold 1e9 -> {high.value:g}")
 
 
 #: What each operation MUST put in the SELECT. A planner that answers a different question than
@@ -384,6 +518,16 @@ _SELF_TEST = [
     ("operation   average -> a rule's own SUM, not ours to rule", operation_verdict("average", "SELECT SUM(q*p)"), "skip"),
     ("collapse    74 kept of 74 (the Store defect)",           collapse_verdict(74, 74), "red"),
     ("collapse    67 kept of 74 (fixed)",                      collapse_verdict(67, 74), "ok"),
+    # THE THREE GROUP FORMS, one mutant per reject class. Each seeded case is a defect that
+    # would be INVISIBLE live: valid SQL, a plausible number, no symptom on the page.
+    ("any_of      2 alternatives match FEWER than 1 (emitted as AND)", widens_verdict(50, 20), "red"),
+    ("any_of      2 alternatives match more than 1",                  widens_verdict(50, 80), "ok"),
+    ("any_of      one group differs from the same plain filter",      same_count_verdict(50, 47), "red"),
+    ("any_of      one group equals the same plain filter",            same_count_verdict(50, 50), "ok"),
+    ("all_of      2 requirements match MORE than 1 (emitted as OR)",  narrows_verdict(50, 80), "red"),
+    ("all_of      2 requirements match fewer than 1",                 narrows_verdict(50, 20), "ok"),
+    ("having      a higher threshold keeps MORE (operator reversed)", narrows_verdict(50, 80), "red"),
+    ("having      a higher threshold keeps fewer",                    narrows_verdict(50, 3), "ok"),
 ]
 
 
@@ -426,7 +570,7 @@ def main(argv=None) -> int:
 
     # collapse: one check per countable concept, no probe values needed
     for subject in sorted(index.concepts):
-        for fn in (inv_collapse_reduces, inv_operation_honoured):
+        for fn in (inv_collapse_reduces, inv_operation_honoured, inv_having_monotone):
             r = fn(subject, index, resolver, con)
             if r:
                 results.append(r)
@@ -439,7 +583,8 @@ def main(argv=None) -> int:
                                index, resolver, con)
         if probe_run.note.startswith("PLAN RAISED"):
             crashes.append(f"{subject}: {probe_run.note}")
-        for fn in (inv_complement, inv_filter_monotone):
+        for fn in (inv_complement, inv_filter_monotone, inv_any_of_widens,
+                   inv_any_of_one_group_is_a_filter, inv_all_of_narrows):
             r = fn(subject, term, value, index, resolver, con)
             if r:
                 results.append(r)
