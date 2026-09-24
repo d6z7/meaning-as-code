@@ -4,6 +4,55 @@
 
 # RECOGNITION — RESULTS
 
+## 2026-09-24 · Stage 2b · **CALIBRATION** — inconclusive, and the reason is the finding
+
+`recognition/calibration.py`, all 77 questions interpreted and planned **ungated**, graded against
+the anchors. 11 minutes, `claude_code` + sonnet, no AWS.
+
+```
+confidence       n  planned  graded  correct   gate
+0.00–0.30       2        1       0        —   BLOCKED
+0.30–0.50      10        5       0        —   BLOCKED
+0.50–0.80      11        8       1      0/1   allowed
+0.80–1.01      54       37      14    13/14   allowed
+```
+
+### It cannot answer its own question, and that is worth more than a number
+
+**Zero of the 12 questions the gate blocks has an anchor.** Every one of the 16 anchored questions
+sits at confidence **0.60–0.97**. So nothing here can say whether a blocked reading would have been
+right — the comparison has no data on the side that matters.
+
+**Our TRUTH plane covers exactly the questions least in need of it.** The anchors cluster on the
+confident half; the hard half has no independent ground truth at all. That is a statement about the
+CORPUS, not about the model, and no amount of re-running fixes it.
+
+### What it does establish
+
+* **High confidence is reliable: 13 of 14 correct at ≥ 0.80.** Worth having.
+* **The gate is partly redundant.** Of the 12 it blocks, **5 the planner would have refused
+  anyway** (`refusal`) and 1 raised — so for half of them the gate is a second "no" over the top of
+  a first one. Only **6** are readings the gate actually discards that would have produced a number.
+* **The blocked questions look genuinely underspecified** — *"Average price"*, *"Total sales in
+  dollars"*, *"Sales in Turkey"*, *"What is the average customer age?"*. A low self-score on those
+  may be the model being right about the question rather than wrong about the answer. These are the
+  `SST-Q3` class, and a confident answer to them would be the worse outcome.
+
+### What would make it conclusive
+
+**Anchor the gated questions.** Anchors are derived by two SQL routes and cost nothing but care;
+12 of them would put ground truth where the hard cases are and make this measurement answerable.
+
+Two of the twelve will not take a numeric anchor and should not be forced to: *"Sales in Turkey"*
+is a HUMILITY case (the right answer is a refusal if Turkey is not in the data), and *"Show me the
+full lineage from OrderLine to Continent"* is not a number at all. Those need a declared expected
+OUTCOME, not a value.
+
+**Until that is done, the 0.50 threshold is neither vindicated nor convicted, and this record says
+so rather than picking the flattering reading.**
+
+---
+
 ## 2026-09-24 · Stage 2 · **C2 STABILITY** — pilot, 12 of 77 questions
 
 First measurement of the interpreter this project has ever had, and it runs with **no AWS
