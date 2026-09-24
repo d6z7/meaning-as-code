@@ -4,6 +4,36 @@
 
 # PLANNER INVARIANTS — RESULTS
 
+## 2026-09-24 (later still) · `operation_honoured` — a systemic wrong-number defect
+
+```
+176 checks, 18 RED        self-test 11 of 11 (seeded mutants)
+  collapse_reduces      1 of 1     held
+  complement           34 of 34    held
+  filter_monotone     113 of 113   held
+  operation_honoured   10 of 28    held     <- new
+```
+
+**Asked to AVERAGE a countable concept, the planner emits a COUNT.** 15 concepts, every one of
+them: `Store`, `Product`, `Order`, `Country`, `Currency`, `Color`, … It is not fifteen bugs, it is
+one behaviour — `average` on a subject with no measure column falls through to the count route —
+and it is the wrong-number class: valid SQL, a real figure, a different question.
+
+Found from MQ-06, where the interpreter said `subject=Store, operation=average` and the engine
+answered **67** against an anchor of **1 504.55**. Counting stores is not their average size.
+
+### The invariant claims less than the first version did
+
+The first cut required `average` to emit `AVG(` and flagged anything else. That reds every
+RULE-DERIVED measure — `NetSalesAmount` is `SUM(Quantity * NetPrice)` and the **rule owns its
+SQL**, so what an "average" of it should emit is a fold-plane question this file has no business
+ruling on. 13 concepts went red and most were the instrument overreaching.
+
+What survives is narrow and undeniable: **counting is never averaging or summing.** A refusal is
+explicitly not a violation — refusing to average a countable is the other correct answer.
+
+---
+
 ## 2026-09-24 (later) · both reds FIXED
 
 ```

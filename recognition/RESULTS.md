@@ -4,6 +4,60 @@
 
 # RECOGNITION — RESULTS
 
+## 2026-09-24 · Stage 2c · **CALIBRATION, re-run** — the gate cannot catch the failure that matters
+
+Re-run after anchoring 4 of the 12 gated questions. 77 interpreted, planned **ungated**, graded
+against 21 anchors.
+
+```
+confidence       n  planned  graded  correct   gate
+0.00–0.30       5        3       1      0/1   BLOCKED
+0.30–0.50       6        2       0        —   BLOCKED
+0.50–0.80      13        6       1      0/1   allowed
+0.80–1.01      53       40      14    13/14   allowed
+```
+
+### The finding, and it is not the one the experiment was designed for
+
+**Three answers were wrong against an anchor. Two of them passed the gate.**
+
+| | confidence | engine | anchor | |
+|---|---|---|---|---|
+| MQ-06 average store size | **0.70** | 67 | 1 504.55 | **allowed** |
+| STORE-06 store versions | **0.90** | 67 | 74 | **allowed** |
+| ADV-13 stores above average | 0.25 | −1 | 8 | blocked |
+
+**A confidence gate cannot catch a confidently wrong answer — that is what the words mean.** The
+band with the best record, ≥ 0.80 at 13 of 14, contains the single most dangerous failure on the
+board. Raising the threshold would not have caught either: 0.90 is above any threshold anyone
+would set, and a threshold that rejects 0.90 rejects everything.
+
+So the honest conclusion is neither "raise it" nor "lower it". **The gate is the wrong instrument
+for this failure class**, and the right one is an invariant that reads the SQL — see
+`invariants/RESULTS.md`, where MQ-06 became a framework-wide check the same afternoon.
+
+### MQ-06 is two defects in one question
+
+The intent was `subject='Store', operation='average'` — **the model named the CONCEPT, not the
+measure** (`SquareMeters`). That is a RECOGNITION failure. Then the planner, asked to average
+something carrying no number, emitted `COUNT(DISTINCT StoreCode)` and returned **67** — a real
+figure, and the answer to a different question. That is a COMPOSITION failure, and it is generic.
+
+### Confidence is not stable on one question either
+
+MQ-06 self-scored **0.70** in the calibration run and **0.15** on a re-interpretation minutes
+later, same model, same prompt. A threshold applied to a number that moves 0.55 between runs of
+the same question is not gating on a property of the question.
+
+### What still cannot be measured
+
+Of the 11 blocked readings only **1** has an anchor, because most of the blocked set cannot have
+one — the value is absent from the data, or the question is genuinely ambiguous. That part of the
+2026-09-24 record stands: the gate is mostly catching bad QUESTIONS, and on those a confident
+answer would be the worse outcome.
+
+---
+
 ## 2026-09-24 · Stage 2b · **CALIBRATION** — inconclusive, and the reason is the finding
 
 `recognition/calibration.py`, all 77 questions interpreted and planned **ungated**, graded against

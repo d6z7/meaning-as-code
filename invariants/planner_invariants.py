@@ -210,6 +210,64 @@ def inv_filter_monotone(subject, term, value, index, resolver, con):
             f"{subject}/{term}={value!r}: filtered {f.value:g} vs population {base.value:g}")
 
 
+#: What each operation MUST put in the SELECT. A planner that answers a different question than
+#: the one asked is the wrong-number class, and this is the cheapest detector for it.
+_OP_AGGREGATE = {"count": "COUNT(", "sum": "SUM(", "average": "AVG("}
+
+
+def operation_verdict(operation: str, sql: str) -> str:
+    """"skip" | "ok" | "red" — pure, so the self-test can seed it.
+
+    ONLY COUNT-SUBSTITUTION IS CLAIMED, and the first version claimed more than it could defend.
+    It required `average` to emit AVG( and flagged everything else, which reds every RULE-DERIVED
+    measure: `NetSalesAmount` is `SUM(Quantity * NetPrice)` and the RULE owns its SQL, so what an
+    "average" of it should emit is a fold-plane question this file has no business ruling on.
+    13 concepts went red and most of them were the instrument overreaching.
+
+    What survives is narrow and undeniable: **counting is never averaging or summing.** If the
+    intent says `average` and the SQL says COUNT, the engine answered a different question.
+    """
+    op = (operation or "").lower()
+    if op not in ("average", "sum"):
+        return "skip"
+    up = (sql or "").upper().replace("COUNT (", "COUNT(")
+    if _OP_AGGREGATE[op] in up:
+        return "ok"
+    return "red" if "COUNT(" in up else "skip"
+
+
+def inv_operation_honoured(subject, index, resolver, con):
+    """I4 — the SQL must compute the OPERATION that was asked for.
+
+    MEASURED 2026-09-24. `MQ-06` "what is the average store size in square metres" produced
+    `subject=Store, operation=average` — the model named the CONCEPT instead of the measure — and
+    the planner emitted `COUNT(DISTINCT StoreCode)` and returned **67** against an anchor of
+    **1504.55**. Valid SQL, a real figure, and the answer to a different question.
+
+    Asking to AVERAGE something that carries no number is not a request the planner can honour by
+    counting it. Either it refuses, or it answers what was asked; silently substituting the
+    aggregate is the wrong-number class, and no oracle is needed to see it -- the intent says
+    `average` and the SQL says COUNT.
+    """
+    from mac_runtime.models import Plan
+    from mac_runtime.planner import plan as run_plan
+
+    for op in ("average", "sum"):
+        try:
+            p_ = run_plan(make_intent(measure=subject, operation=op), index, resolver)
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(p_, Plan):
+            continue  # a refusal is the CORRECT other answer here, never a violation
+        verdict = operation_verdict(op, p_.sql_preview)
+        if verdict == "red":
+            return ("operation_honoured", False,
+                    f"{subject}: operation={op!r} planned, but the SQL computes "
+                    f"{'COUNT' if 'COUNT(' in p_.sql_preview.upper() else 'something else'} "
+                    f"— it answers a different question")
+    return ("operation_honoured", True, f"{subject}: every planned operation is the one asked for")
+
+
 def inv_collapse_reduces(subject, index, resolver, con):
     """I3 — a DECLARED collapse must actually collapse.
 
@@ -319,6 +377,11 @@ _SELF_TEST = [
     ("complement  8 + 59 of 67 (the same, fixed)",             complement_verdict(8, 59, 67), "ok"),
     ("complement  1 + 3 of 3 (a one-to-many term)",            complement_verdict(1, 3, 3), "skip"),
     ("complement  0 + 0 of 0 (empty population)",              complement_verdict(0, 0, 0), "ok"),
+    ("operation   average -> COUNT(...) (the MQ-06 defect)",  operation_verdict("average", "SELECT COUNT(DISTINCT x)"), "red"),
+    ("operation   average -> AVG(...)",                       operation_verdict("average", "SELECT AVG(x)"), "ok"),
+    ("operation   sum -> SUM(...)",                           operation_verdict("sum", "SELECT SUM(x)"), "ok"),
+    ("operation   list -> not an aggregate, not checked",     operation_verdict("list", "SELECT DISTINCT x"), "skip"),
+    ("operation   average -> a rule's own SUM, not ours to rule", operation_verdict("average", "SELECT SUM(q*p)"), "skip"),
     ("collapse    74 kept of 74 (the Store defect)",           collapse_verdict(74, 74), "red"),
     ("collapse    67 kept of 74 (fixed)",                      collapse_verdict(67, 74), "ok"),
 ]
@@ -363,9 +426,10 @@ def main(argv=None) -> int:
 
     # collapse: one check per countable concept, no probe values needed
     for subject in sorted(index.concepts):
-        r = inv_collapse_reduces(subject, index, resolver, con)
-        if r:
-            results.append(r)
+        for fn in (inv_collapse_reduces, inv_operation_honoured):
+            r = fn(subject, index, resolver, con)
+            if r:
+                results.append(r)
 
     checked = 0
     for subject, term, value in probes(index, con):

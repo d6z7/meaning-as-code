@@ -18,14 +18,6 @@
       "outcome": "executed"
     },
     {
-      "id": "RC02",
-      "question": "List all countries where we have customers.",
-      "anchor": null,
-      "confidence": 0.9,
-      "subject": "Country",
-      "outcome": "executed"
-    },
-    {
       "id": "RC04",
       "question": "How many customers do we have?",
       "anchor": 104990.0,
@@ -33,16 +25,6 @@
       "subject": "Customer",
       "outcome": "executed",
       "value": 104990.0,
-      "correct": true
-    },
-    {
-      "id": "RC06",
-      "question": "How many products are in our catalog?",
-      "anchor": 2517.0,
-      "confidence": 0.95,
-      "subject": "Product",
-      "outcome": "executed",
-      "value": 2517.0,
       "correct": true
     },
     {
@@ -56,29 +38,47 @@
       "correct": true
     },
     {
-      "id": "RC07",
-      "question": "How many customers are in Germany?",
-      "anchor": 9981.0,
+      "id": "RC02",
+      "question": "List all countries where we have customers.",
+      "anchor": null,
+      "confidence": 0.9,
+      "subject": "Country",
+      "outcome": "executed"
+    },
+    {
+      "id": "RC06",
+      "question": "How many products are in our catalog?",
+      "anchor": 2517.0,
       "confidence": 0.95,
-      "subject": "Customer",
+      "subject": "Product",
       "outcome": "executed",
-      "value": 9981.0,
+      "value": 2517.0,
       "correct": true
     },
     {
       "id": "RC08",
       "question": "How many stores are closed?",
       "anchor": null,
-      "confidence": 0.9,
+      "confidence": 0.85,
       "subject": "Store",
       "outcome": "executed",
       "value": 8.0
     },
     {
+      "id": "RC07",
+      "question": "How many customers are in Germany?",
+      "anchor": 9981.0,
+      "confidence": 0.9,
+      "subject": "Customer",
+      "outcome": "executed",
+      "value": 9981.0,
+      "correct": true
+    },
+    {
       "id": "RC09",
       "question": "How many products does the Contoso brand have?",
       "anchor": null,
-      "confidence": 0.92,
+      "confidence": 0.95,
       "subject": "Product",
       "outcome": "executed",
       "value": 710.0
@@ -87,7 +87,7 @@
       "id": "RC10",
       "question": "How many orders were placed in 2024?",
       "anchor": 15899.0,
-      "confidence": 0.95,
+      "confidence": 0.9,
       "subject": "Order",
       "outcome": "executed",
       "value": 15899.0,
@@ -115,29 +115,38 @@
       "id": "RC13",
       "question": "How many orders were placed in euros during Q1 2024?",
       "anchor": null,
-      "confidence": 0.95,
+      "confidence": 0.94,
       "subject": "Order",
       "outcome": "executed",
       "value": 1099.0
     },
     {
+      "id": "RC15",
+      "question": "How many different products did customers in France buy in Q1 2024?",
+      "anchor": null,
+      "confidence": 0.9,
+      "subject": "Product",
+      "outcome": "executed",
+      "value": 359.0
+    },
+    {
       "id": "AGG-01",
       "question": "What is the total net revenue?",
       "anchor": 218814471.65866,
-      "confidence": 0.97,
+      "confidence": 0.9,
       "subject": "NetSalesAmount",
       "outcome": "executed",
       "value": 218814471.65866,
       "correct": true
     },
     {
-      "id": "RC15",
-      "question": "How many different products did customers in France buy in Q1 2024?",
+      "id": "RC14",
+      "question": "How many customers are aged between 25 and 44?",
       "anchor": null,
       "confidence": 0.85,
-      "subject": "Product",
+      "subject": "Customer",
       "outcome": "executed",
-      "value": 359.0
+      "value": 31553.0
     },
     {
       "id": "AGG-02",
@@ -150,22 +159,13 @@
       "correct": true
     },
     {
-      "id": "RC14",
-      "question": "How many customers are aged between 25 and 44?",
+      "id": "AGG-03",
+      "question": "Show net revenue by customer country",
       "anchor": null,
-      "confidence": 0.88,
-      "subject": "Customer",
-      "outcome": "executed",
-      "value": 31553.0
-    },
-    {
-      "id": "AGG-04",
-      "question": "Break down net revenue by brand",
-      "anchor": null,
-      "confidence": 0.95,
+      "confidence": 0.93,
       "subject": "NetSalesAmount",
       "outcome": "executed",
-      "value": 19594532.30885
+      "value": 13360672.60516
     },
     {
       "id": "AGG-05",
@@ -178,15 +178,6 @@
       "correct": true
     },
     {
-      "id": "AGG-03",
-      "question": "Show net revenue by customer country",
-      "anchor": null,
-      "confidence": 0.94,
-      "subject": "NetSalesAmount",
-      "outcome": "executed",
-      "value": 13360672.60516
-    },
-    {
       "id": "AGG-07",
       "question": "What was the net revenue in Q1 2024?",
       "anchor": 9494485.56976,
@@ -195,6 +186,15 @@
       "outcome": "executed",
       "value": 9494485.56976,
       "correct": true
+    },
+    {
+      "id": "AGG-04",
+      "question": "Break down net revenue by brand",
+      "anchor": null,
+      "confidence": 0.9,
+      "subject": "NetSalesAmount",
+      "outcome": "executed",
+      "value": 19594532.30885
     },
     {
       "id": "AGG-06",
@@ -209,9 +209,10 @@
       "id": "AGG-08",
       "question": "Compare net revenue in Germany versus France",
       "anchor": null,
-      "confidence": 0.88,
+      "confidence": 0.92,
       "subject": "NetSalesAmount",
-      "outcome": "execute failed: Binder Error: Values list \"dim_contoso_customer\" d"
+      "outcome": "executed",
+      "value": 24638830.1795
     },
     {
       "id": "AGG-09",
@@ -267,6 +268,15 @@
       "outcome": "refusal"
     },
     {
+      "id": "AGG-15",
+      "question": "Show net revenue by brand and customer country for 2024",
+      "anchor": null,
+      "confidence": 0.9,
+      "subject": "NetSalesAmount",
+      "outcome": "executed",
+      "value": 93200.7691
+    },
+    {
       "id": "MQ-02",
       "question": "How many concepts are there in the ontology?",
       "anchor": null,
@@ -276,30 +286,29 @@
       "value": 20.0
     },
     {
-      "id": "AGG-15",
-      "question": "Show net revenue by brand and customer country for 2024",
-      "anchor": null,
-      "confidence": 0.92,
-      "subject": "NetSalesAmount",
-      "outcome": "executed",
-      "value": 93200.7691
-    },
-    {
-      "id": "AGG-14",
-      "question": "What is the total net revenue converted to USD?",
-      "anchor": null,
-      "confidence": 0.8,
-      "subject": "NetSalesAmount",
-      "outcome": "executed",
-      "value": 111862187.56017
-    },
-    {
       "id": "MQ-03",
       "question": "How many rules bind CurrencyCode?",
       "anchor": null,
       "confidence": 0.9,
       "subject": "RuleBinding",
       "outcome": "refusal"
+    },
+    {
+      "id": "MQ-04",
+      "question": "What concepts is OrderLine connected to?",
+      "anchor": null,
+      "confidence": 0.9,
+      "subject": "Edge",
+      "outcome": "plan raised UnknownConceptError"
+    },
+    {
+      "id": "AGG-14",
+      "question": "What is the total net revenue converted to USD?",
+      "anchor": null,
+      "confidence": 0.85,
+      "subject": "NetSalesAmount",
+      "outcome": "executed",
+      "value": 111862187.56017
     },
     {
       "id": "MQ-05",
@@ -318,22 +327,6 @@
       "outcome": "refusal"
     },
     {
-      "id": "MQ-04",
-      "question": "What concepts is OrderLine connected to?",
-      "anchor": null,
-      "confidence": 0.9,
-      "subject": "Edge",
-      "outcome": "plan raised UnknownConceptError"
-    },
-    {
-      "id": "MQ-06",
-      "question": "What is the average store size in square meters?",
-      "anchor": null,
-      "confidence": 0.3,
-      "subject": "SquareMeters",
-      "outcome": "refusal"
-    },
-    {
       "id": "MQ-09",
       "question": "Are there any stores in Italy with no sales?",
       "anchor": null,
@@ -342,18 +335,28 @@
       "outcome": "refusal"
     },
     {
-      "id": "MQ-11",
-      "question": "Show me revenue by country for customers in the same country as their store",
-      "anchor": null,
-      "confidence": 0.85,
-      "subject": "NetSalesAmount",
-      "outcome": "execute failed: Conversion Error: Could not convert string 'AU' to"
+      "id": "MQ-08",
+      "question": "Which products were NOT sold in 2024?",
+      "anchor": 56.0,
+      "confidence": 0.6,
+      "subject": "Product",
+      "outcome": "refusal"
+    },
+    {
+      "id": "MQ-06",
+      "question": "What is the average store size in square meters?",
+      "anchor": 1504.55,
+      "confidence": 0.7,
+      "subject": "Store",
+      "outcome": "executed",
+      "value": 67.0,
+      "correct": false
     },
     {
       "id": "MQ-10",
       "question": "Which stores closed after 2020?",
       "anchor": null,
-      "confidence": 0.85,
+      "confidence": 0.8,
       "subject": "Store",
       "outcome": "refusal"
     },
@@ -361,26 +364,25 @@
       "id": "MQ-12",
       "question": "Total sales in dollars",
       "anchor": null,
-      "confidence": 0.3,
+      "confidence": 0.35,
       "subject": "NetSalesAmount",
       "outcome": "refusal"
     },
     {
-      "id": "MQ-08",
-      "question": "Which products were NOT sold in 2024?",
+      "id": "MQ-11",
+      "question": "Show me revenue by country for customers in the same country as their store",
       "anchor": null,
-      "confidence": 0.4,
-      "subject": "Product",
-      "outcome": "executed",
-      "value": 201031.0
+      "confidence": 0.82,
+      "subject": "NetSalesAmount",
+      "outcome": "execute failed: Conversion Error: Could not convert string 'AU' to"
     },
     {
       "id": "MQ-13",
       "question": "Show all edges from the Customer concept and what each connects to",
       "anchor": null,
-      "confidence": 0.95,
+      "confidence": 0.9,
       "subject": "Edge",
-      "outcome": "plan raised UnknownConceptError"
+      "outcome": "executed"
     },
     {
       "id": "MQ-15",
@@ -395,7 +397,7 @@
       "id": "MQ-14",
       "question": "How many constraints are there across all concepts, and which concept has the most?",
       "anchor": null,
-      "confidence": 0.9,
+      "confidence": 0.8,
       "subject": "DeclaredConstraint",
       "outcome": "refusal"
     },
@@ -403,7 +405,7 @@
       "id": "ADV-03",
       "question": "Revenue per customer by country",
       "anchor": null,
-      "confidence": 0.75,
+      "confidence": 0.82,
       "subject": "NetSalesAmount",
       "outcome": "executed",
       "value": 3347.7004773640692
@@ -412,7 +414,7 @@
       "id": "ADV-02",
       "question": "Which brand has the highest margin (gross minus net) in Europe?",
       "anchor": null,
-      "confidence": 0.3,
+      "confidence": 0.25,
       "subject": "GrossSalesAmount",
       "outcome": "refusal"
     },
@@ -426,31 +428,30 @@
       "value": 266907.7444
     },
     {
-      "id": "ADV-05",
-      "question": "Which month in 2024 had the biggest drop in revenue vs the previous month?",
+      "id": "ADV-01",
+      "question": "Compare gross vs net revenue by brand in 2024",
       "anchor": null,
-      "confidence": 0.7,
-      "subject": "NetSalesAmount",
+      "confidence": 0.6,
+      "subject": "GrossSalesAmount",
       "outcome": "executed",
-      "value": 3282292.8864
+      "value": 1.0615079132994665
     },
     {
       "id": "ADV-06",
       "question": "Year-over-year revenue growth by country",
       "anchor": null,
-      "confidence": 0.6,
+      "confidence": 0.55,
       "subject": "NetSalesAmount",
       "outcome": "executed",
-      "value": 2024.0
+      "value": 2023.0
     },
     {
-      "id": "ADV-01",
-      "question": "Compare gross vs net revenue by brand in 2024",
+      "id": "ADV-05",
+      "question": "Which month in 2024 had the biggest drop in revenue vs the previous month?",
       "anchor": null,
-      "confidence": 0.55,
-      "subject": "GrossSalesAmount",
-      "outcome": "executed",
-      "value": 1.0615079132994665
+      "confidence": 0.6,
+      "subject": "NetSalesAmount",
+      "outcome": "execute failed: Binder Error: Referenced column \"period_over_perio"
     },
     {
       "id": "ADV-08",
@@ -459,13 +460,21 @@
       "confidence": 0.8,
       "subject": "NetSalesAmount",
       "outcome": "executed",
-      "value": 2413.058351252094
+      "value": 2288.9622417611786
     },
     {
       "id": "ADV-07",
       "question": "Revenue in Q1 2024 vs Q1 2023",
       "anchor": null,
-      "confidence": 0.9,
+      "confidence": 0.87,
+      "subject": "NetSalesAmount",
+      "outcome": "refusal"
+    },
+    {
+      "id": "ADV-09",
+      "question": "Countries where average order value exceeds 500",
+      "anchor": null,
+      "confidence": 0.7,
       "subject": "NetSalesAmount",
       "outcome": "refusal"
     },
@@ -473,23 +482,15 @@
       "id": "ADV-10",
       "question": "Products sold in more than 5 countries",
       "anchor": null,
-      "confidence": 0.7,
+      "confidence": 0.6,
       "subject": "Product",
       "outcome": "execute failed: Binder Error: Cannot compare values of type VARCHA"
-    },
-    {
-      "id": "ADV-09",
-      "question": "Countries where average order value exceeds 500",
-      "anchor": null,
-      "confidence": 0.8,
-      "subject": "NetSalesAmount",
-      "outcome": "refusal"
     },
     {
       "id": "ADV-11",
       "question": "Revenue from new customers (first order in 2024) vs returning customers",
       "anchor": null,
-      "confidence": 0.3,
+      "confidence": 0.2,
       "subject": "NetSalesAmount",
       "outcome": "executed",
       "value": 218814471.65866
@@ -498,24 +499,15 @@
       "id": "ADV-12",
       "question": "Revenue from high-value products (Price > 1000)",
       "anchor": null,
-      "confidence": 0.8,
+      "confidence": 0.85,
       "subject": "NetSalesAmount",
       "outcome": "refusal"
-    },
-    {
-      "id": "ADV-13",
-      "question": "Stores that sell more than the average store",
-      "anchor": null,
-      "confidence": 0.35,
-      "subject": "NetSalesAmount",
-      "outcome": "executed",
-      "value": -1.0
     },
     {
       "id": "ADV-14",
       "question": "Revenue from products in the Electronics category sold in German stores",
       "anchor": null,
-      "confidence": 0.45,
+      "confidence": 0.35,
       "subject": "NetSalesAmount",
       "outcome": "refusal"
     },
@@ -523,42 +515,52 @@
       "id": "ADV-15",
       "question": "How many customers bought Contoso brand products in stores outside their home country?",
       "anchor": null,
-      "confidence": 0.82,
+      "confidence": 0.8,
       "subject": "Customer",
       "outcome": "execute failed: Parser Error: syntax error at or near \"ne\"\n\nLINE 6"
+    },
+    {
+      "id": "ADV-16",
+      "question": "Products sold in both Germany and France",
+      "anchor": 1840.0,
+      "confidence": 0.6,
+      "subject": "Product",
+      "outcome": "executed"
+    },
+    {
+      "id": "ADV-13",
+      "question": "Stores that sell more than the average store",
+      "anchor": 8.0,
+      "confidence": 0.25,
+      "subject": "NetSalesAmount",
+      "outcome": "executed",
+      "value": -1.0,
+      "correct": false
     },
     {
       "id": "ADV-17",
       "question": "Brands sold in every country",
       "anchor": null,
-      "confidence": 0.55,
+      "confidence": 0.3,
       "subject": "Brand",
       "outcome": "executed"
-    },
-    {
-      "id": "ADV-18",
-      "question": "Customers who bought in all 4 quarters of 2024",
-      "anchor": null,
-      "confidence": 0.65,
-      "subject": "Customer",
-      "outcome": "executed",
-      "value": 470.0
     },
     {
       "id": "ADV-19",
       "question": "Which rules mention CurrencyCode and what do they forbid?",
       "anchor": null,
-      "confidence": 0.85,
+      "confidence": 0.8,
       "subject": "ContractRule",
-      "outcome": "refusal"
+      "outcome": "plan raised UnknownConceptError"
     },
     {
-      "id": "ADV-20",
-      "question": "Concepts with more than 3 open questions",
+      "id": "ADV-18",
+      "question": "Customers who bought in all 4 quarters of 2024",
       "anchor": null,
-      "confidence": 0.75,
-      "subject": "OpenQuestion",
-      "outcome": "execute failed: Binder Error: Cannot compare values of type VARCHA"
+      "confidence": 0.55,
+      "subject": "Customer",
+      "outcome": "executed",
+      "value": 487.0
     },
     {
       "id": "ADV-22",
@@ -568,6 +570,14 @@
       "subject": "NetSalesAmount",
       "outcome": "executed",
       "value": 218814471.65866
+    },
+    {
+      "id": "ADV-20",
+      "question": "Concepts with more than 3 open questions",
+      "anchor": null,
+      "confidence": 0.75,
+      "subject": "OpenQuestion",
+      "outcome": "plan raised UnknownConceptError"
     },
     {
       "id": "ADV-23",
@@ -581,36 +591,18 @@
       "id": "ADV-21",
       "question": "Show me the full lineage from OrderLine to Continent",
       "anchor": null,
-      "confidence": 0.45,
+      "confidence": 0.55,
       "subject": "Edge",
-      "outcome": "plan raised UnknownConceptError"
+      "outcome": "executed"
     },
     {
       "id": "ADV-24",
       "question": "How many stores are open",
       "anchor": null,
-      "confidence": 0.6,
+      "confidence": 0.3,
       "subject": "Store",
       "outcome": "executed",
-      "value": 59.0
-    },
-    {
-      "id": "ADV-16",
-      "question": "Products sold in both Germany and France",
-      "anchor": null,
-      "confidence": 0.3,
-      "subject": "Product",
-      "outcome": "executed",
-      "value": 602036.0
-    },
-    {
-      "id": "ADV-25",
-      "question": "Average price",
-      "anchor": null,
-      "confidence": 0.3,
-      "subject": "Product",
-      "outcome": "executed",
-      "value": 2517.0
+      "value": 67.0
     },
     {
       "id": "STORE-02",
@@ -626,39 +618,35 @@
       "id": "STORE-03",
       "question": "How many stores have been restructured?",
       "anchor": 0.0,
-      "confidence": 0.9,
+      "confidence": 0.85,
       "subject": "Store",
       "outcome": "executed",
       "value": 0.0,
       "correct": true
     },
     {
+      "id": "ADV-25",
+      "question": "Average price",
+      "anchor": null,
+      "confidence": 0.3,
+      "subject": "Price",
+      "outcome": "refusal"
+    },
+    {
       "id": "STORE-01",
       "question": "How many stores are still open?",
       "anchor": 58.0,
-      "confidence": 0.6,
+      "confidence": 0.7,
       "subject": "Store",
-      "outcome": "executed",
-      "value": 59.0,
-      "correct": false
+      "outcome": "refusal"
     },
     {
       "id": "STORE-04",
       "question": "When was the first store closed?",
       "anchor": null,
-      "confidence": 0.85,
+      "confidence": 0.8,
       "subject": "Store",
       "outcome": "execute failed: Binder Error: column \"CloseDate\" must appear in th"
-    },
-    {
-      "id": "STORE-06",
-      "question": "How many store versions are recorded?",
-      "anchor": 74.0,
-      "confidence": 0.9,
-      "subject": "Store",
-      "outcome": "executed",
-      "value": 67.0,
-      "correct": false
     },
     {
       "id": "STORE-07",
@@ -671,10 +659,20 @@
       "correct": true
     },
     {
+      "id": "STORE-06",
+      "question": "How many store versions are recorded?",
+      "anchor": 74.0,
+      "confidence": 0.9,
+      "subject": "Store",
+      "outcome": "executed",
+      "value": 67.0,
+      "correct": false
+    },
+    {
       "id": "STORE-05",
       "question": "What is the total floor space of our stores in square meters?",
       "anchor": 99300.0,
-      "confidence": 0.9,
+      "confidence": 0.3,
       "subject": "SquareMeters",
       "outcome": "refusal"
     }
