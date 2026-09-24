@@ -80,6 +80,30 @@ DECLARED_GAPS = {
 }
 
 
+def _is_in_list_in_disguise(or_node: exp.Or) -> bool:
+    """``A = x OR A = y OR A = z`` -- one column, every branch an equality. That is `in`.
+
+    Anything else is a real disjunction: two columns (`a = 1 OR b = 2`), or one column with mixed
+    operators (`TP <= 6.0 OR TP >= 8.5`, a range), neither of which any single `FilterRef` states.
+    """
+    cols: set[str] = set()
+    stack = [or_node]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, exp.Or):
+            stack.extend([node.this, node.expression])
+            continue
+        if not isinstance(node, exp.EQ):
+            return False
+        # the comparison must be column-to-literal, and every branch on the SAME column
+        sides = [node.this, node.expression]
+        named = [x for x in sides if isinstance(x, exp.Column)]
+        if len(named) != 1:
+            return False
+        cols.add(named[0].sql())
+    return len(cols) == 1
+
+
 def _blockers(tree: exp.Expression) -> list[str]:
     """Every reason a query of this shape cannot become an Intent. Empty list = encodable."""
     found: list[str] = []
@@ -169,8 +193,18 @@ def _blockers(tree: exp.Expression) -> list[str]:
 
     # --- WHERE must be a conjunction of comparisons -------------------------
     if where is not None:
-        if list(where.find_all(exp.Or)):
-            add("or_in_where")
+        # AN `OR` OVER ONE COLUMN, ALL EQUALITY, IS AN `in` LIST -- and `FilterOp.IN` has existed
+        # on the Intent the whole time. `StatusType = 'Closed' OR StatusType = 'Active'` is
+        # `StatusType IN ('Closed', 'Active')`, which the planner already emits.
+        #
+        # MEASURED: 73 of the 242 questions blocked SOLELY by this feature (30.2 %) are that
+        # shape. Counting them as a grammar gap made the gap look half again as large as it is
+        # and would have sent a third of the OR work at a feature that needed no code. Same class
+        # of defect as `Is`/`Like` being double-counted and `EXCEPT` being called a set operation.
+        for or_node in where.find_all(exp.Or):
+            if not _is_in_list_in_disguise(or_node):
+                add("or_in_where")
+                break
         if list(where.find_all(exp.Not)):
             add("negation_over_nullable")
         # `exp.Binary` is a WIDE net -- Is and Like are Binary too, and the first version counted
@@ -284,6 +318,8 @@ _SELF_TEST = [
     ("SELECT a FROM t WHERE b IS NULL", "blocked", "null_test"),
     ("SELECT a FROM t WHERE b LIKE '%x%'", "blocked", "like"),
     ("SELECT a FROM t WHERE b = 1 OR c = 2", "blocked", "or_in_where"),
+    # one column but MIXED operators is a range, not a membership list
+    ("SELECT a FROM t WHERE b <= 1 OR b >= 9", "blocked", "or_in_where"),
     ("SELECT count(*), sum(x) FROM t", "blocked", "multiple_aggregates"),
     ("SELECT a FROM t ORDER BY a, b", "blocked", "multi_key_ordering"),
     ("SELECT a FROM t WHERE x - y > 5", "blocked", "expression_in_where"),
@@ -300,6 +336,14 @@ _SELF_TEST = [
 #: HAVING WITH AN AGGREGATE IS ENCODABLE (2026-09-24) -- `Intent.having` carries it. Kept as its
 #: own list because these are the cases the feature was BUILT for, and a regression here is a
 #: regression in the headline number.
+#: `A = x OR A = y` IS `A IN (x, y)` and always was. Seeded because the opposite -- counting it
+#: as a gap -- is what inflated this feature by 30 %.
+_SELF_TEST_OR_AS_IN = [
+    ("SELECT a FROM t WHERE b = 1 OR b = 2", "encodable"),
+    ("SELECT a FROM t WHERE b = 1 OR b = 2 OR b = 3", "encodable"),
+    ("SELECT a FROM t WHERE c = 9 AND (b = 1 OR b = 2)", "encodable"),
+]
+
 _SELF_TEST_HAVING = [
     # the shape that dominates: an identity selected, an aggregate thresholded and never shown
     ("SELECT district FROM t GROUP BY district HAVING sum(amount) > 10000", "encodable"),
@@ -318,13 +362,13 @@ def _self_test() -> int:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}/{want_feature}; got {bucket}/{feats}")
-    for sql, want_bucket in _SELF_TEST_HAVING:
+    for sql, want_bucket in _SELF_TEST_HAVING + _SELF_TEST_OR_AS_IN:
         bucket, feats = classify(sql)
         if bucket != want_bucket:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}; got {bucket}/{feats}")
-    n = len(_SELF_TEST) + len(_SELF_TEST_HAVING)
+    n = len(_SELF_TEST) + len(_SELF_TEST_HAVING) + len(_SELF_TEST_OR_AS_IN)
     print(f"\n{'FAIL' if bad else 'OK'} — encodability self-test: {n - bad} of {n} seeded cases behaved")
     print("  (each reject class gets one mutant; a classifier that cannot reject cannot report)")
     return 1 if bad else 0
