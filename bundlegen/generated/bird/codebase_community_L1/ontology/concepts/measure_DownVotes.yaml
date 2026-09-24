@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: users
   schema: main
+  sources:
+    - relation: users
+      columns: [DownVotes]
   field_roles:
     DownVotes: codebase_community.field_role.measure
   note: >-

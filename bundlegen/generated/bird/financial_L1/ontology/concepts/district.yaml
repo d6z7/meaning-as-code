@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: district
   schema: main
+  sources:
+    - relation: district
+      key: district_id
+      columns: [district_id, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16]
   field_roles:
     district_id: financial.field_role.key
     A2: financial.field_role.dimension

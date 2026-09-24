@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: satscores
   schema: main
+  sources:
+    - relation: satscores
+      columns: [NumGE1500]
   field_roles:
     NumGE1500: california_schools.field_role.measure
   note: >-

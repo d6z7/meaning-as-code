@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: posts
   schema: main
+  sources:
+    - relation: posts
+      key: Id
+      columns: [Id, PostTypeId, AcceptedAnswerId, CreaionDate, Score, ViewCount, Body, OwnerUserId, LasActivityDate, Title, Tags, AnswerCount, CommentCount, FavoriteCount, LastEditorUserId, LastEditDate, CommunityOwnedDate, ParentId, ClosedDate, OwnerDisplayName, LastEditorDisplayName]
   field_roles:
     Id: codebase_community.field_role.key
     PostTypeId: codebase_community.field_role.dimension

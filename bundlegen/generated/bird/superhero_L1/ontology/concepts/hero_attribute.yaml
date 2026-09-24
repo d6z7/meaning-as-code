@@ -21,6 +21,9 @@ grounding:
   kind: sql_table
   table: hero_attribute
   schema: main
+  sources:
+    - relation: hero_attribute
+      columns: [hero_id, attribute_id, attribute_value]
   field_roles:
     hero_id: superhero.field_role.key
     attribute_id: superhero.field_role.key

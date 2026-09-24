@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: Patient
   schema: main
+  sources:
+    - relation: Patient
+      key: ID
+      columns: [ID, SEX, Birthday, Description, First Date, Admission, Diagnosis]
   field_roles:
     ID: thrombosis_prediction.field_role.key
     SEX: thrombosis_prediction.field_role.dimension

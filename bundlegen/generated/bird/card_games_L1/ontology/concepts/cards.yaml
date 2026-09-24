@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: cards
   schema: main
+  sources:
+    - relation: cards
+      key: id
+      columns: [id, artist, asciiName, availability, borderColor, cardKingdomFoilId, cardKingdomId, colorIdentity, colorIndicator, colors, convertedManaCost, duelDeck, edhrecRank, faceConvertedManaCost, faceName, flavorName, flavorText, frameEffects, frameVersion, hand, hasAlternativeDeckLimit, hasContentWarning, hasFoil, hasNonFoil, isAlternative, isFullArt, isOnlineOnly, isOversized, isPromo, isReprint, isReserved, isStarter, isStorySpotlight, isTextless, isTimeshifted, keywords, layout, leadershipSkills, life, loyalty, manaCost, mcmId, mcmMetaId, mtgArenaId, mtgjsonV4Id, mtgoFoilId, mtgoId, multiverseId, name, number, originalReleaseDate, originalText, originalType, otherFaceIds, power, printings, promoTypes, purchaseUrls, rarity, scryfallId, scryfallIllustrationId, scryfallOracleId, setCode, side, subtypes, supertypes, tcgplayerProductId, text, toughness, type, types, uuid, variations, watermark]
   field_roles:
     id: card_games.field_role.key
     artist: card_games.field_role.dimension

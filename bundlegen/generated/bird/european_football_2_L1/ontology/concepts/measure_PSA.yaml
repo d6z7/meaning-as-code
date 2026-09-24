@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Match
   schema: main
+  sources:
+    - relation: Match
+      columns: [PSA]
   field_roles:
     PSA: european_football_2.field_role.measure
   note: >-

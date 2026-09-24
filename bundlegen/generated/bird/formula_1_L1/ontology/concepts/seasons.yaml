@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: seasons
   schema: main
+  sources:
+    - relation: seasons
+      key: year
+      columns: [year, url]
   field_roles:
     year: formula_1.field_role.key
     url: formula_1.field_role.dimension

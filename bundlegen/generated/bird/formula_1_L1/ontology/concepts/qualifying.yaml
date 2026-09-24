@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: qualifying
   schema: main
+  sources:
+    - relation: qualifying
+      key: qualifyId
+      columns: [qualifyId, raceId, driverId, constructorId, number, position, q1, q2, q3]
   field_roles:
     qualifyId: formula_1.field_role.key
     raceId: formula_1.field_role.key

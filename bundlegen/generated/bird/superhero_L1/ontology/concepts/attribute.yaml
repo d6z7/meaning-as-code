@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: attribute
   schema: main
+  sources:
+    - relation: attribute
+      key: id
+      columns: [id, attribute_name]
   field_roles:
     id: superhero.field_role.key
     attribute_name: superhero.field_role.dimension

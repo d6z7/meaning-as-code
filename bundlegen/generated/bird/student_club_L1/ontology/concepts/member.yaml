@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: member
   schema: main
+  sources:
+    - relation: member
+      key: member_id
+      columns: [member_id, first_name, last_name, email, position, t_shirt_size, phone, zip, link_to_major]
   field_roles:
     member_id: student_club.field_role.key
     first_name: student_club.field_role.dimension

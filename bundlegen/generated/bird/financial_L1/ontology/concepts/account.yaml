@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: account
   schema: main
+  sources:
+    - relation: account
+      key: account_id
+      columns: [account_id, district_id, frequency, date]
   field_roles:
     account_id: financial.field_role.key
     district_id: financial.field_role.key

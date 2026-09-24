@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: races
   schema: main
+  sources:
+    - relation: races
+      columns: [round]
   field_roles:
     round: formula_1.field_role.measure
   note: >-

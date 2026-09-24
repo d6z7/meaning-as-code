@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: schools
   schema: main
+  sources:
+    - relation: schools
+      key: CDSCode
+      columns: [CDSCode, NCESDist, NCESSchool, StatusType, County, District, School, Street, StreetAbr, City, Zip, State, MailStreet, MailStrAbr, MailCity, MailZip, MailState, Phone, Ext, Website, OpenDate, ClosedDate, Charter, CharterNum, FundingType, DOC, DOCType, SOC, SOCType, EdOpsCode, EdOpsName, EILCode, EILName, GSoffered, GSserved, Virtual, Magnet, Latitude, Longitude, AdmFName1, AdmLName1, AdmEmail1, AdmFName2, AdmLName2, AdmEmail2, AdmFName3, AdmLName3, AdmEmail3, LastUpdate]
   field_roles:
     CDSCode: california_schools.field_role.key
     NCESDist: california_schools.field_role.dimension

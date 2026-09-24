@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: frpm
   schema: main
+  sources:
+    - relation: frpm
+      columns: [Enrollment (K-12)]
   field_roles:
     Enrollment (K-12): california_schools.field_role.measure
   note: >-

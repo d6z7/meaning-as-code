@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: frpm
   schema: main
+  sources:
+    - relation: frpm
+      columns: [Charter School (Y/N)]
   field_roles:
     Charter School (Y/N): california_schools.field_role.measure
   note: >-

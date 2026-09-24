@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: Team_Attributes
   schema: main
+  sources:
+    - relation: Team_Attributes
+      key: id
+      columns: [id, team_fifa_api_id, team_api_id, date, buildUpPlaySpeed, buildUpPlaySpeedClass, buildUpPlayDribbling, buildUpPlayDribblingClass, buildUpPlayPassing, buildUpPlayPassingClass, buildUpPlayPositioningClass, chanceCreationPassing, chanceCreationPassingClass, chanceCreationCrossing, chanceCreationCrossingClass, chanceCreationShooting, chanceCreationShootingClass, chanceCreationPositioningClass, defencePressure, defencePressureClass, defenceAggression, defenceAggressionClass, defenceTeamWidth, defenceTeamWidthClass, defenceDefenderLineClass]
   field_roles:
     id: european_football_2.field_role.key
     team_fifa_api_id: european_football_2.field_role.key

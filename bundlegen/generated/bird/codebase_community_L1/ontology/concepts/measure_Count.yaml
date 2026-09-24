@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: tags
   schema: main
+  sources:
+    - relation: tags
+      columns: [Count]
   field_roles:
     Count: codebase_community.field_role.measure
   note: >-

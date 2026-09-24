@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: yearmonth
   schema: main
+  sources:
+    - relation: yearmonth
+      columns: [Consumption]
   field_roles:
     Consumption: debit_card_specializing.field_role.measure
   note: >-

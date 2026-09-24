@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: molecule
   schema: main
+  sources:
+    - relation: molecule
+      key: molecule_id
+      columns: [molecule_id, label]
   field_roles:
     molecule_id: toxicology.field_role.key
     label: toxicology.field_role.dimension

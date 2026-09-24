@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Player_Attributes
   schema: main
+  sources:
+    - relation: Player_Attributes
+      columns: [sprint_speed]
   field_roles:
     sprint_speed: european_football_2.field_role.measure
   note: >-

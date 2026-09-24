@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: major
   schema: main
+  sources:
+    - relation: major
+      key: major_id
+      columns: [major_id, major_name, department, college]
   field_roles:
     major_id: student_club.field_role.key
     major_name: student_club.field_role.dimension

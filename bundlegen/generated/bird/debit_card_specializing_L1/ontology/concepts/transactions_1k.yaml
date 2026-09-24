@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: transactions_1k
   schema: main
+  sources:
+    - relation: transactions_1k
+      key: TransactionID
+      columns: [TransactionID, Date, Time, CustomerID, CardID, GasStationID, ProductID, Amount, Price]
   field_roles:
     TransactionID: debit_card_specializing.field_role.key
     Date: debit_card_specializing.field_role.period

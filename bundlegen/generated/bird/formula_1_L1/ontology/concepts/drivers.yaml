@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: drivers
   schema: main
+  sources:
+    - relation: drivers
+      key: driverId
+      columns: [driverId, driverRef, number, code, forename, surname, dob, nationality, url]
   field_roles:
     driverId: formula_1.field_role.key
     driverRef: formula_1.field_role.dimension

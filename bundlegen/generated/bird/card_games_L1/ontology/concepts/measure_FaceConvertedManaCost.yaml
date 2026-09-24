@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: cards
   schema: main
+  sources:
+    - relation: cards
+      columns: [faceConvertedManaCost]
   field_roles:
     faceConvertedManaCost: card_games.field_role.measure
   note: >-

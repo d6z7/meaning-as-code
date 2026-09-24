@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: schools
   schema: main
+  sources:
+    - relation: schools
+      columns: [Magnet]
   field_roles:
     Magnet: california_schools.field_role.measure
   note: >-

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: sets
   schema: main
+  sources:
+    - relation: sets
+      key: id
+      columns: [id, baseSetSize, block, booster, code, isFoilOnly, isForeignOnly, isNonFoilOnly, isOnlineOnly, isPartialPreview, keyruneCode, mcmId, mcmIdExtras, mcmName, mtgoCode, name, parentCode, releaseDate, tcgplayerGroupId, totalSetSize, type]
   field_roles:
     id: card_games.field_role.key
     baseSetSize: card_games.field_role.measure

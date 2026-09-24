@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: income
   schema: main
+  sources:
+    - relation: income
+      key: income_id
+      columns: [income_id, date_received, amount, source, notes, link_to_member]
   field_roles:
     income_id: student_club.field_role.key
     date_received: student_club.field_role.dimension

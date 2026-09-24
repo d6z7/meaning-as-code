@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: order
   schema: main
+  sources:
+    - relation: order
+      key: order_id
+      columns: [order_id, account_id, bank_to, account_to, amount, k_symbol]
   field_roles:
     order_id: financial.field_role.key
     account_id: financial.field_role.key

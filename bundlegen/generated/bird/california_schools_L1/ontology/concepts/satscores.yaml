@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: satscores
   schema: main
+  sources:
+    - relation: satscores
+      key: cds
+      columns: [cds, rtype, sname, dname, cname, enroll12, NumTstTakr, AvgScrRead, AvgScrMath, AvgScrWrite, NumGE1500]
   field_roles:
     cds: california_schools.field_role.key
     rtype: california_schools.field_role.dimension

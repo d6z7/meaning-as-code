@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: users
   schema: main
+  sources:
+    - relation: users
+      columns: [Age]
   field_roles:
     Age: codebase_community.field_role.measure
   note: >-

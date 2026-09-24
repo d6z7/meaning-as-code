@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: publisher
   schema: main
+  sources:
+    - relation: publisher
+      key: id
+      columns: [id, publisher_name]
   field_roles:
     id: superhero.field_role.key
     publisher_name: superhero.field_role.dimension

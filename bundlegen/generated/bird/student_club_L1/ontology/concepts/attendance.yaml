@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: attendance
   schema: main
+  sources:
+    - relation: attendance
+      key: link_to_event
+      columns: [link_to_event, link_to_member]
   field_roles:
     link_to_event: student_club.field_role.key
     link_to_member: student_club.field_role.key

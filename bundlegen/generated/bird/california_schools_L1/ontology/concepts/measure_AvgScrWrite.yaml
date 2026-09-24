@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: satscores
   schema: main
+  sources:
+    - relation: satscores
+      columns: [AvgScrWrite]
   field_roles:
     AvgScrWrite: california_schools.field_role.measure
   note: >-

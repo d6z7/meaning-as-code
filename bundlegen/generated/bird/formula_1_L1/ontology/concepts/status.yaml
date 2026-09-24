@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: status
   schema: main
+  sources:
+    - relation: status
+      key: statusId
+      columns: [statusId, status]
   field_roles:
     statusId: formula_1.field_role.key
     status: formula_1.field_role.dimension

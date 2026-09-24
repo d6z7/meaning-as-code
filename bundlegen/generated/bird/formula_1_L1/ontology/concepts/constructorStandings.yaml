@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: constructorStandings
   schema: main
+  sources:
+    - relation: constructorStandings
+      key: constructorStandingsId
+      columns: [constructorStandingsId, raceId, constructorId, points, position, positionText, wins]
   field_roles:
     constructorStandingsId: formula_1.field_role.key
     raceId: formula_1.field_role.key

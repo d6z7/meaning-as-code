@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: colour
   schema: main
+  sources:
+    - relation: colour
+      key: id
+      columns: [id, colour]
   field_roles:
     id: superhero.field_role.key
     colour: superhero.field_role.dimension

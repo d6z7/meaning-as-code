@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: circuits
   schema: main
+  sources:
+    - relation: circuits
+      key: circuitId
+      columns: [circuitId, circuitRef, name, location, country, lat, lng, alt, url]
   field_roles:
     circuitId: formula_1.field_role.key
     circuitRef: formula_1.field_role.dimension

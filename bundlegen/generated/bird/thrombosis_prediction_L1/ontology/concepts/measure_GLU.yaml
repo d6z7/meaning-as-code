@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Laboratory
   schema: main
+  sources:
+    - relation: Laboratory
+      columns: [GLU]
   field_roles:
     GLU: thrombosis_prediction.field_role.measure
   note: >-

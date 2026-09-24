@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: disp
   schema: main
+  sources:
+    - relation: disp
+      key: disp_id
+      columns: [disp_id, client_id, account_id, type]
   field_roles:
     disp_id: financial.field_role.key
     client_id: financial.field_role.key

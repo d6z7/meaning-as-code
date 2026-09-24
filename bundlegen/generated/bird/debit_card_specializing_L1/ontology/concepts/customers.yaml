@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: customers
   schema: main
+  sources:
+    - relation: customers
+      key: CustomerID
+      columns: [CustomerID, Segment, Currency]
   field_roles:
     CustomerID: debit_card_specializing.field_role.key
     Segment: debit_card_specializing.field_role.dimension

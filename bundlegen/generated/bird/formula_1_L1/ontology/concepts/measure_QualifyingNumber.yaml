@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: qualifying
   schema: main
+  sources:
+    - relation: qualifying
+      columns: [number]
   field_roles:
     number: formula_1.field_role.measure
   note: >-

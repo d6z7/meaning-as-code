@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: sets
   schema: main
+  sources:
+    - relation: sets
+      columns: [isOnlineOnly]
   field_roles:
     isOnlineOnly: card_games.field_role.measure
   note: >-

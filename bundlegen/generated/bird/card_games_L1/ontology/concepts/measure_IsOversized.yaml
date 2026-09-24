@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: cards
   schema: main
+  sources:
+    - relation: cards
+      columns: [isOversized]
   field_roles:
     isOversized: card_games.field_role.measure
   note: >-

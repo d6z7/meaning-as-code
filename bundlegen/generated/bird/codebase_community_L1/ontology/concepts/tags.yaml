@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: tags
   schema: main
+  sources:
+    - relation: tags
+      key: Id
+      columns: [Id, TagName, Count, ExcerptPostId, WikiPostId]
   field_roles:
     Id: codebase_community.field_role.key
     TagName: codebase_community.field_role.dimension

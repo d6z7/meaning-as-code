@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: foreign_data
   schema: main
+  sources:
+    - relation: foreign_data
+      key: id
+      columns: [id, flavorText, language, multiverseid, name, text, type, uuid]
   field_roles:
     id: card_games.field_role.key
     flavorText: card_games.field_role.dimension

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: gasstations
   schema: main
+  sources:
+    - relation: gasstations
+      key: GasStationID
+      columns: [GasStationID, ChainID, Country, Segment]
   field_roles:
     GasStationID: debit_card_specializing.field_role.key
     ChainID: debit_card_specializing.field_role.dimension

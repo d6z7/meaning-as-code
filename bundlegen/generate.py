@@ -363,6 +363,12 @@ def emit_measure_concept(t: Table, col: Column, ns: str, schema: str, tier: str)
         "  kind: sql_table",
         f"  table: {t.name}",
         f"  schema: {schema}",
+        "  sources:",
+        f"    - relation: {t.name}",
+        # A MEASURE SERVES ONE COLUMN, not the relation's whole width. Declaring every column
+        # here would tell `sql.py` this concept has many candidate display columns when it has
+        # exactly one, and the "exactly one" branch is the one that gets it right.
+        f"      columns: [{_y(col.name)}]",
         "  field_roles:",
         f"    {_y(col.name)}: {ns}.field_role.measure",
         "  note: >-",
@@ -418,6 +424,24 @@ def emit_concept(t: Table, pk: str | None, klass: str, ns: str, schema: str, tie
         "  kind: sql_table",
         f"  table: {t.name}",
         f"  schema: {schema}",
+        # THE COLUMNS THIS RELATION SERVES, which the planner reads as `served_columns`.
+        #
+        # LEFT OUT UNTIL 2026-09-25, AND IT COST MORE THAN IT LOOKS. Three planner sites read it
+        # -- `sql.py` picks a display column when a concept declares exactly one, and both
+        # `grounded_columns` and `plan` read it alongside the identity columns. A generated
+        # bundle declared ZERO columns while the hand-authored one declares them on all 20
+        # concepts, so the planner fell back everywhere that consults them.
+        #
+        # That would have depressed the L0/L1 number for a reason having NOTHING to do with what
+        # the tier can express -- the exact confounder that makes a benchmark figure worthless.
+        # The generator has known every column all along; it simply never wrote them down.
+        "  sources:",
+        f"    - relation: {t.name}",
+    ]
+    if pk:
+        lines.append(f"      key: {_y(pk)}")
+    lines.append("      columns: [" + ", ".join(_y(c.name) for c in t.columns) + "]")
+    lines += [
         "  field_roles:",
     ]
     for col, role in roles.items():

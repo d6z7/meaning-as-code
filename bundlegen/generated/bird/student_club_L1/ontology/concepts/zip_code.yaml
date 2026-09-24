@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: zip_code
   schema: main
+  sources:
+    - relation: zip_code
+      key: zip_code
+      columns: [zip_code, type, city, county, state, short_state]
   field_roles:
     zip_code: student_club.field_role.key
     type: student_club.field_role.dimension

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: results
   schema: main
+  sources:
+    - relation: results
+      key: resultId
+      columns: [resultId, raceId, driverId, constructorId, number, grid, position, positionText, positionOrder, points, laps, time, milliseconds, fastestLap, rank, fastestLapTime, fastestLapSpeed, statusId]
   field_roles:
     resultId: formula_1.field_role.key
     raceId: formula_1.field_role.key

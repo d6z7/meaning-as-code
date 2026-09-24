@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: loan
   schema: main
+  sources:
+    - relation: loan
+      key: loan_id
+      columns: [loan_id, account_id, date, amount, duration, payments, status]
   field_roles:
     loan_id: financial.field_role.key
     account_id: financial.field_role.key

@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Player
   schema: main
+  sources:
+    - relation: Player
+      columns: [weight]
   field_roles:
     weight: european_football_2.field_role.measure
   note: >-

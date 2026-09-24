@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: frpm
   schema: main
+  sources:
+    - relation: frpm
+      key: CDSCode
+      columns: [CDSCode, Academic Year, County Code, District Code, School Code, County Name, District Name, School Name, District Type, School Type, Educational Option Type, NSLP Provision Status, Charter School (Y/N), Charter School Number, Charter Funding Type, IRC, Low Grade, High Grade, Enrollment (K-12), Free Meal Count (K-12), Percent (%) Eligible Free (K-12), FRPM Count (K-12), Percent (%) Eligible FRPM (K-12), Enrollment (Ages 5-17), Free Meal Count (Ages 5-17), Percent (%) Eligible Free (Ages 5-17), FRPM Count (Ages 5-17), Percent (%) Eligible FRPM (Ages 5-17), 2013-14 CALPADS Fall 1 Certification Status]
   field_roles:
     CDSCode: california_schools.field_role.key
     Academic Year: california_schools.field_role.dimension

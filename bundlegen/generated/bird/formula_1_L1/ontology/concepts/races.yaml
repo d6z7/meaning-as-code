@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: races
   schema: main
+  sources:
+    - relation: races
+      key: raceId
+      columns: [raceId, year, round, circuitId, name, date, time, url]
   field_roles:
     raceId: formula_1.field_role.key
     year: formula_1.field_role.key

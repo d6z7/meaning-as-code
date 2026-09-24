@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: budget
   schema: main
+  sources:
+    - relation: budget
+      key: budget_id
+      columns: [budget_id, category, spent, remaining, amount, event_status, link_to_event]
   field_roles:
     budget_id: student_club.field_role.key
     category: student_club.field_role.dimension

@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: hero_attribute
   schema: main
+  sources:
+    - relation: hero_attribute
+      columns: [attribute_value]
   field_roles:
     attribute_value: superhero.field_role.measure
   note: >-

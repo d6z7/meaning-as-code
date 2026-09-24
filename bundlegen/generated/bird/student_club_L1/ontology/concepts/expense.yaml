@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: expense
   schema: main
+  sources:
+    - relation: expense
+      key: expense_id
+      columns: [expense_id, expense_description, expense_date, cost, approved, link_to_member, link_to_budget]
   field_roles:
     expense_id: student_club.field_role.key
     expense_description: student_club.field_role.dimension

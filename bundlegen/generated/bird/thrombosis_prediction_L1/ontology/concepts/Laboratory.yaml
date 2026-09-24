@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: Laboratory
   schema: main
+  sources:
+    - relation: Laboratory
+      key: ID
+      columns: [ID, Date, GOT, GPT, LDH, ALP, TP, ALB, UA, UN, CRE, T-BIL, T-CHO, TG, CPK, GLU, WBC, RBC, HGB, HCT, PLT, PT, APTT, FG, PIC, TAT, TAT2, U-PRO, IGG, IGA, IGM, CRP, RA, RF, C3, C4, RNP, SM, SC170, SSA, SSB, CENTROMEA, DNA, DNA-II]
   field_roles:
     ID: thrombosis_prediction.field_role.key
     Date: thrombosis_prediction.field_role.key

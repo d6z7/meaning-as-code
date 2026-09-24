@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: expense
   schema: main
+  sources:
+    - relation: expense
+      columns: [cost]
   field_roles:
     cost: student_club.field_role.measure
   note: >-

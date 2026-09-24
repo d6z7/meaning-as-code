@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: results
   schema: main
+  sources:
+    - relation: results
+      columns: [positionOrder]
   field_roles:
     positionOrder: formula_1.field_role.measure
   note: >-

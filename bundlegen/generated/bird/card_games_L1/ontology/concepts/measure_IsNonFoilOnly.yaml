@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: sets
   schema: main
+  sources:
+    - relation: sets
+      columns: [isNonFoilOnly]
   field_roles:
     isNonFoilOnly: card_games.field_role.measure
   note: >-

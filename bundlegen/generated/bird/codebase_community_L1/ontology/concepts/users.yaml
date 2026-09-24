@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: users
   schema: main
+  sources:
+    - relation: users
+      key: Id
+      columns: [Id, Reputation, CreationDate, DisplayName, LastAccessDate, WebsiteUrl, Location, AboutMe, Views, UpVotes, DownVotes, AccountId, Age, ProfileImageUrl]
   field_roles:
     Id: codebase_community.field_role.key
     Reputation: codebase_community.field_role.measure

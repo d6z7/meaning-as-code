@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: postLinks
   schema: main
+  sources:
+    - relation: postLinks
+      key: Id
+      columns: [Id, CreationDate, PostId, RelatedPostId, LinkTypeId]
   field_roles:
     Id: codebase_community.field_role.key
     CreationDate: codebase_community.field_role.period

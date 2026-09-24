@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: pitStops
   schema: main
+  sources:
+    - relation: pitStops
+      columns: [lap]
   field_roles:
     lap: formula_1.field_role.measure
   note: >-

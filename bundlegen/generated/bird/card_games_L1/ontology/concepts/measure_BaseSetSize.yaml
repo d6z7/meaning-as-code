@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: sets
   schema: main
+  sources:
+    - relation: sets
+      columns: [baseSetSize]
   field_roles:
     baseSetSize: card_games.field_role.measure
   note: >-

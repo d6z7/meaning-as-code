@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: rulings
   schema: main
+  sources:
+    - relation: rulings
+      key: id
+      columns: [id, date, text, uuid]
   field_roles:
     id: card_games.field_role.key
     date: card_games.field_role.period

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: postHistory
   schema: main
+  sources:
+    - relation: postHistory
+      key: Id
+      columns: [Id, PostHistoryTypeId, PostId, RevisionGUID, CreationDate, UserId, Text, Comment, UserDisplayName]
   field_roles:
     Id: codebase_community.field_role.key
     PostHistoryTypeId: codebase_community.field_role.dimension

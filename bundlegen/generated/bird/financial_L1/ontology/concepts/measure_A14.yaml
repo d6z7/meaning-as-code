@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: district
   schema: main
+  sources:
+    - relation: district
+      columns: [A14]
   field_roles:
     A14: financial.field_role.measure
   note: >-

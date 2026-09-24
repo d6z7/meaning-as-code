@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: gender
   schema: main
+  sources:
+    - relation: gender
+      key: id
+      columns: [id, gender]
   field_roles:
     id: superhero.field_role.key
     gender: superhero.field_role.dimension

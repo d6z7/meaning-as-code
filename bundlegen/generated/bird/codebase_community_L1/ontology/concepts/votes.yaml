@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: votes
   schema: main
+  sources:
+    - relation: votes
+      key: Id
+      columns: [Id, PostId, VoteTypeId, CreationDate, UserId, BountyAmount]
   field_roles:
     Id: codebase_community.field_role.key
     PostId: codebase_community.field_role.key

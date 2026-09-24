@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: League
   schema: main
+  sources:
+    - relation: League
+      key: id
+      columns: [id, country_id, name]
   field_roles:
     id: european_football_2.field_role.key
     country_id: european_football_2.field_role.dimension

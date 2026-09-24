@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: comments
   schema: main
+  sources:
+    - relation: comments
+      columns: [Score]
   field_roles:
     Score: codebase_community.field_role.measure
   note: >-

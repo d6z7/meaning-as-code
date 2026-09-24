@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: card
   schema: main
+  sources:
+    - relation: card
+      key: card_id
+      columns: [card_id, disp_id, type, issued]
   field_roles:
     card_id: financial.field_role.key
     disp_id: financial.field_role.key

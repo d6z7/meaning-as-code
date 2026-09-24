@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: comments
   schema: main
+  sources:
+    - relation: comments
+      key: Id
+      columns: [Id, PostId, Score, Text, CreationDate, UserId, UserDisplayName]
   field_roles:
     Id: codebase_community.field_role.key
     PostId: codebase_community.field_role.key

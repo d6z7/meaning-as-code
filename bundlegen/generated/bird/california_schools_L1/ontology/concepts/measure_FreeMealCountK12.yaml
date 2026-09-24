@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: frpm
   schema: main
+  sources:
+    - relation: frpm
+      columns: [Free Meal Count (K-12)]
   field_roles:
     Free Meal Count (K-12): california_schools.field_role.measure
   note: >-

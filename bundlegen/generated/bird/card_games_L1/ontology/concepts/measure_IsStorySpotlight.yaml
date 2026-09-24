@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: cards
   schema: main
+  sources:
+    - relation: cards
+      columns: [isStorySpotlight]
   field_roles:
     isStorySpotlight: card_games.field_role.measure
   note: >-

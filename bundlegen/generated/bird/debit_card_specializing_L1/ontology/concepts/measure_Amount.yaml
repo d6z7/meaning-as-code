@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: transactions_1k
   schema: main
+  sources:
+    - relation: transactions_1k
+      columns: [Amount]
   field_roles:
     Amount: debit_card_specializing.field_role.measure
   note: >-

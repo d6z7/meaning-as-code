@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: driverStandings
   schema: main
+  sources:
+    - relation: driverStandings
+      columns: [wins]
   field_roles:
     wins: formula_1.field_role.measure
   note: >-

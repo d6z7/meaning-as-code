@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: posts
   schema: main
+  sources:
+    - relation: posts
+      columns: [AnswerCount]
   field_roles:
     AnswerCount: codebase_community.field_role.measure
   note: >-

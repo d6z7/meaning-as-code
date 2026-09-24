@@ -21,6 +21,9 @@ grounding:
   kind: sql_table
   table: Examination
   schema: main
+  sources:
+    - relation: Examination
+      columns: [ID, Examination Date, aCL IgG, aCL IgM, ANA, ANA Pattern, aCL IgA, Diagnosis, KCT, RVVT, LAC, Symptoms, Thrombosis]
   field_roles:
     ID: thrombosis_prediction.field_role.key
     Examination Date: thrombosis_prediction.field_role.period

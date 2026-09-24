@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: order
   schema: main
+  sources:
+    - relation: order
+      columns: [account_to]
   field_roles:
     account_to: financial.field_role.measure
   note: >-

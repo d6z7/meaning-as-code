@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: trans
   schema: main
+  sources:
+    - relation: trans
+      key: trans_id
+      columns: [trans_id, account_id, date, type, operation, amount, balance, k_symbol, bank, account]
   field_roles:
     trans_id: financial.field_role.key
     account_id: financial.field_role.key

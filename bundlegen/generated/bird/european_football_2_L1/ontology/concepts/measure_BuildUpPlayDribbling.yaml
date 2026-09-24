@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Team_Attributes
   schema: main
+  sources:
+    - relation: Team_Attributes
+      columns: [buildUpPlayDribbling]
   field_roles:
     buildUpPlayDribbling: european_football_2.field_role.measure
   note: >-

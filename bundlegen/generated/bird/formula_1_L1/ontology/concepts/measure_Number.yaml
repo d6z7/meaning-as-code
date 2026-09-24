@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: drivers
   schema: main
+  sources:
+    - relation: drivers
+      columns: [number]
   field_roles:
     number: formula_1.field_role.measure
   note: >-

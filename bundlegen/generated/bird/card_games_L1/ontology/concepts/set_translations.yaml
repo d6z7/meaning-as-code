@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: set_translations
   schema: main
+  sources:
+    - relation: set_translations
+      key: id
+      columns: [id, language, setCode, translation]
   field_roles:
     id: card_games.field_role.key
     language: card_games.field_role.dimension

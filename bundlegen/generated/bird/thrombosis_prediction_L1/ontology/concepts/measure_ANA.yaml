@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Examination
   schema: main
+  sources:
+    - relation: Examination
+      columns: [ANA]
   field_roles:
     ANA: thrombosis_prediction.field_role.measure
   note: >-

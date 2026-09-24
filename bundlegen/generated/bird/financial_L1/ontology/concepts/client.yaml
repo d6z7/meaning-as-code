@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: client
   schema: main
+  sources:
+    - relation: client
+      key: client_id
+      columns: [client_id, gender, birth_date, district_id]
   field_roles:
     client_id: financial.field_role.key
     gender: financial.field_role.dimension

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: alignment
   schema: main
+  sources:
+    - relation: alignment
+      key: id
+      columns: [id, alignment]
   field_roles:
     id: superhero.field_role.key
     alignment: superhero.field_role.dimension

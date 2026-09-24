@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: lapTimes
   schema: main
+  sources:
+    - relation: lapTimes
+      columns: [milliseconds]
   field_roles:
     milliseconds: formula_1.field_role.measure
   note: >-

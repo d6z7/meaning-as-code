@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: legalities
   schema: main
+  sources:
+    - relation: legalities
+      key: id
+      columns: [id, format, status, uuid]
   field_roles:
     id: card_games.field_role.key
     format: card_games.field_role.dimension

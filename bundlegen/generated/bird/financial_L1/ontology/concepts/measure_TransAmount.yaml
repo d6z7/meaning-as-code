@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: trans
   schema: main
+  sources:
+    - relation: trans
+      columns: [amount]
   field_roles:
     amount: financial.field_role.measure
   note: >-

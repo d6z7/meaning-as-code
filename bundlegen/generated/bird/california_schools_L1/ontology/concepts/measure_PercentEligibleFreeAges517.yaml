@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: frpm
   schema: main
+  sources:
+    - relation: frpm
+      columns: [Percent (%) Eligible Free (Ages 5-17)]
   field_roles:
     Percent (%) Eligible Free (Ages 5-17): california_schools.field_role.measure
   note: >-

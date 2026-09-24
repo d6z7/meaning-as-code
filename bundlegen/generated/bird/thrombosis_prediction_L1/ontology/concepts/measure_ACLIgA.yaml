@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: Examination
   schema: main
+  sources:
+    - relation: Examination
+      columns: [aCL IgA]
   field_roles:
     aCL IgA: thrombosis_prediction.field_role.measure
   note: >-

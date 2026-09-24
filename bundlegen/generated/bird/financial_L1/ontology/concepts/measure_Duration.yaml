@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: loan
   schema: main
+  sources:
+    - relation: loan
+      columns: [duration]
   field_roles:
     duration: financial.field_role.measure
   note: >-

@@ -26,6 +26,10 @@ grounding:
   kind: sql_table
   table: badges
   schema: main
+  sources:
+    - relation: badges
+      key: Id
+      columns: [Id, UserId, Name, Date]
   field_roles:
     Id: codebase_community.field_role.key
     UserId: codebase_community.field_role.key

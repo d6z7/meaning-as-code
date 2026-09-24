@@ -24,6 +24,9 @@ grounding:
   kind: sql_table
   table: superhero
   schema: main
+  sources:
+    - relation: superhero
+      columns: [weight_kg]
   field_roles:
     weight_kg: superhero.field_role.measure
   note: >-
