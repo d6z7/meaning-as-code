@@ -1185,8 +1185,27 @@ def _str_list(value, *, lower: bool = False) -> list:
 
 
 def _is_error_capture(answer) -> bool:
+    """Did this run ERROR? Read from the stages first, then the two legacy top-level keys.
+
+    MEASURED 2026-09-25, and it is the first thing stage recording surfaced: **11 of 77 questions
+    failed with a SQL Binder or Parser Error at the execute stage, and this returned False for
+    every one of them.** `result.status` was `no_value` and `answer["error"]` was null, so the
+    verdict rollup called them `unproven` and the page said "Product: no value returned." — a
+    sentence that reads as "the query ran and found nothing" about a query that did not run.
+
+    A PARSER ERROR MEANS WE EMITTED INVALID SQL. A binder error means we named something the
+    warehouse does not have. Neither is an absent value, and a grader that cannot tell them apart
+    reports our own defects as the data's silence.
+
+    `stages` is the capture's record of what each stage DID, written by the pipeline itself. The
+    two legacy keys stay, because captures taken before stages existed carry only those and must
+    keep grading exactly as they did.
+    """
     if not isinstance(answer, dict):
         return False
+    for stage in answer.get("stages") or []:
+        if isinstance(stage, dict) and stage.get("status") == "error":
+            return True
     result = answer.get("result")
     result = result if isinstance(result, dict) else {}
     return bool(answer.get("error")) or result.get("status") == "error"

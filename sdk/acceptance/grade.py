@@ -359,6 +359,23 @@ def run_status(answer: dict | None) -> str:
     legacy_disposition = (answer.get("verdict") or {}).get("disposition")
     if answer.get("error") or result.get("status") == "error":
         return "error"
+    # A STAGE THAT ERRORED IS AN ERROR, whatever the top-level keys say.
+    #
+    # MEASURED 2026-09-25, the first thing stage recording surfaced: **11 of 77 questions failed
+    # with a SQL Binder or Parser Error at the execute stage and the board called every one of
+    # them `answered`**. `result.status` was `no_value` and the capture's `error` was null, so
+    # this fell through to the last branch, and the page said "Product: no value returned." — a
+    # sentence that reads as "the query ran and found nothing" for a query that did not run.
+    #
+    # A parser error means we emitted SYNTACTICALLY INVALID SQL. A binder error means we named
+    # something the warehouse does not have. Neither is an answer, and neither should ever have
+    # been countable as one.
+    #
+    # Read from `stages` and nowhere else: the capture records what each stage did, and this is
+    # the one evaluator, so the fact belongs here rather than being re-derived per reader.
+    for stage in answer.get("stages") or []:
+        if isinstance(stage, dict) and stage.get("status") == "error":
+            return "error"
     if answer.get("route") == "refusal" or legacy_disposition == "GOVERNED_REFUSAL":
         return "refused"
     if executed and (sql or result.get("value") is not None):
