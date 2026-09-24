@@ -211,3 +211,31 @@ not_expressible:
     what: a filter INSIDE the subquery an anti-join builds
     example: stores in Italy with no sales
     why: exists contributes one subquery and the Intent cannot qualify it
+  - id: null_test
+    what: a filter testing whether a column IS NULL or IS NOT NULL
+    example: how many stores are still open
+    why: >-
+      FilterOp is a closed set of eight comparison operators and none of them is a null test.
+      A value literal cannot stand in: 'NULL' is the four-character string.
+    measured: >-
+      2026-09-24, contoso. The bundle RULES that operating stores are read from CloseDate IS NULL
+      ("because no status code says so") and the planner refuses the question unresolved_term. The
+      declaration is correct, machine-readable, and unreachable — the estate's signature defect in
+      its purest form, and the first instance found where the unread declaration is a RULE the
+      bundle wrote specifically to stop a wrong answer.
+  - id: negation_over_nullable
+    what: >-
+      a negated filter (ne / not_in) that should keep rows where the column is NULL
+    example: how many stores are not closed
+    why: >-
+      NE renders <> and NOT_IN renders NOT IN. Both are SQL three-valued logic, so every NULL row
+      is discarded silently. The Intent can SAY "not closed"; it cannot say whether the unstatused
+      rows are meant, and they almost always are — an absence is normally the complement being
+      asked for.
+    measured: >-
+      2026-09-24, contoso. "How many stores are not closed" — the planner emits
+      `Status <> 'Closed'` and returns 6. The answer is 59. The 59 stores carrying no status are
+      exactly the ones the question is about, and `<>` drops all of them. NOT A REFUSAL AND NOT AN
+      ERROR: a plausible small number, from valid SQL, with nothing in the result to say so.
+    severity: >-
+      the worst class in this file — the other gaps refuse, this one answers

@@ -228,12 +228,29 @@ older document is the one that has drifted. Recorded rather than silently correc
 **The last row is the one to fix first**, because it is the same defect in documentation form: a
 record that is accurate about itself and silent about the record that overtook it.
 
-### The one thing this grammar cannot express
+### What this grammar cannot express — four gaps, and the fourth is the dangerous one
 
 `HAVING` — a predicate on an aggregate rather than on a row. *"Countries where the average order
 value exceeds 500"* is the corpus's single un-encodable question. Every filter the Intent can carry
 lands in `WHERE`. A second, related gap: `exists` contributes one subquery and the Intent cannot
 qualify what is *inside* it, which is why an anti-join with a cross-table filter is unreachable.
 
-Both are recorded in `grammar/query_grammar.yaml#not_expressible`, so the gap is visible rather
+**Two more were found on 2026-09-24**, by adding seven questions about one versioned dimension —
+and they are a different kind of gap, because they are about NULL rather than about shape:
+
+- **No null test.** `FilterOp` is a closed set of eight comparison operators and none of them asks
+  whether a column is null. *"How many stores are still open"* refuses `unresolved_term` — against
+  a bundle that **rules** operating stores are read from `CloseDate IS NULL` and says in the same
+  breath why no status code can answer it. The declaration is correct, machine-readable, and
+  unreachable.
+- **Negation over a nullable column silently drops the nulls.** `ne` renders `<>` and `not_in`
+  renders `NOT IN`; both are three-valued logic. *"How many stores are not closed"* plans, executes
+  and returns **6**. The answer is **59**. The fifty-three missing stores are exactly the ones the
+  question is about — they carry no status at all, which is what "not closed" normally means.
+
+**The fourth is the worst class of gap in this file, because the other three refuse and it
+answers.** A refusal is a conversation. A plausible small integer, from valid SQL, with nothing in
+the result to mark it, is the failure the whole grammar exists to make impossible.
+
+All four are recorded in `grammar/query_grammar.yaml#not_expressible`, so the gap is visible rather
 than rediscovered.
