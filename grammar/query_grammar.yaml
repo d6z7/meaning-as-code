@@ -239,3 +239,49 @@ not_expressible:
       ERROR: a plausible small number, from valid SQL, with nothing in the result to say so.
     severity: >-
       the worst class in this file — the other gaps refuse, this one answers
+
+  # ---------------------------------------------------------------------------------------------
+  # MEASURED 2026-09-24 against 9 568 third-party questions over 171 databases — BIRD dev (1 534),
+  # Spider dev (1 034) and Spider train (7 000), by benchmark/encodability.py. Every count below is
+  # `sole`: questions this feature ALONE costs, so the numbers are additive and are a roadmap.
+  # Reachable today is 74.0 %; closing the first five takes it to 89.4 %.
+  # NOT in this list, deliberately: computed measures (CASE WHEN aggregation, column arithmetic,
+  # outer joins). Those are absorbed by a DECLARED rule — 4.2 % of the corpus — and are ontology
+  # authoring, not a grammar gap.
+  # ---------------------------------------------------------------------------------------------
+  - id: set_operation
+    what: INTERSECT or UNION — two independent row-sets combined on a key
+    example: countries where a singer over 40 AND a singer under 30 are from
+    why: >-
+      one Intent describes one row-set. EXCEPT is NOT in this gap — it is the anti-join the
+      `exists` operation already covers.
+    measured: 353 questions, the second largest single gap
+  - id: disjunctive_filter
+    what: OR between predicates in WHERE
+    example: staff in Georgia or Utah
+    why: Intent.filters is a conjunction; there is no way to express alternation
+    measured: 244 questions. Small to fix and there is no design question in it
+  - id: multiple_measures
+    what: two different aggregates in one answer
+    example: the count of orders AND their total value, side by side
+    why: Intent carries ONE subject; `denominator` is a second only to divide by
+    measured: 208 questions
+  - id: string_match
+    what: LIKE / prefix / substring matching
+    example: districts whose name starts with 'Riverside'
+    why: FilterOp has eight comparison operators and none matches a pattern
+    measured: 205 questions. Note this is resolution's job in MAC — a register resolves a name to a
+      code offline — so some of these are a REGISTER gap in the bundle rather than a grammar gap
+  - id: multi_key_ordering
+    what: ORDER BY more than one key
+    example: rank by score descending, then by name
+    why: OrderingSpec carries a single `by`
+    measured: 60 questions. The cheapest entry in this list to close
+  - id: derived_table
+    what: a CTE or a subquery in FROM
+    example: any two-step computation gold SQL writes as WITH
+    why: the planner composes one FROM from the anchor and its join path
+    measured: >-
+      41 sole, but 714 questions mention a subquery SOMEWHERE and only 7 are blocked by that
+      alone — subqueries almost always co-occur with another gap, so this is NOT where to start.
+      Recorded because the raw count is the misleading one.
