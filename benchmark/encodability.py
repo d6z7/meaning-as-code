@@ -104,6 +104,27 @@ def _is_in_list_in_disguise(or_node: exp.Or) -> bool:
     return len(cols) == 1
 
 
+def _is_group_disjunction(or_node: exp.Or) -> bool:
+    """Every OR branch is a comparison, or an AND of comparisons -- i.e. an ``any_of`` group.
+
+    That is what `Intent.any_of` states: groups ORed, each group's own filters ANDed. A branch
+    holding anything else (a subquery, a NOT, a bare column) is NOT expressible, and is still
+    reported -- those have their own names and are counted under them.
+    """
+    ok = (exp.EQ, exp.NEQ, exp.GT, exp.GTE, exp.LT, exp.LTE, exp.In, exp.Between)
+
+    def branch_ok(node: exp.Expression) -> bool:
+        if isinstance(node, exp.Paren):
+            return branch_ok(node.this)
+        if isinstance(node, exp.Or):
+            return branch_ok(node.this) and branch_ok(node.expression)
+        if isinstance(node, exp.And):
+            return branch_ok(node.this) and branch_ok(node.expression)
+        return isinstance(node, ok)
+
+    return branch_ok(or_node)
+
+
 def _blockers(tree: exp.Expression) -> list[str]:
     """Every reason a query of this shape cannot become an Intent. Empty list = encodable."""
     found: list[str] = []
@@ -201,8 +222,13 @@ def _blockers(tree: exp.Expression) -> list[str]:
         # shape. Counting them as a grammar gap made the gap look half again as large as it is
         # and would have sent a third of the OR work at a feature that needed no code. Same class
         # of defect as `Is`/`Like` being double-counted and `EXCEPT` being called a set operation.
+        # A DISJUNCTION IS NO LONGER A GAP either -- `Intent.any_of` carries it as OR-of-AND
+        # groups, which is the shape every one of these queries has. What remains blocked is a
+        # disjunction the group form cannot state, and in this corpus there is none: any WHERE
+        # clause of comparisons has such a form. Kept as a named check rather than deleted, so a
+        # shape that does NOT fit is counted rather than silently passing.
         for or_node in where.find_all(exp.Or):
-            if not _is_in_list_in_disguise(or_node):
+            if not _is_in_list_in_disguise(or_node) and not _is_group_disjunction(or_node):
                 add("or_in_where")
                 break
         if list(where.find_all(exp.Not)):
@@ -317,9 +343,6 @@ _SELF_TEST = [
     ("SELECT a, row_number() OVER (PARTITION BY b) FROM t", "blocked", "window_function"),
     ("SELECT a FROM t WHERE b IS NULL", "blocked", "null_test"),
     ("SELECT a FROM t WHERE b LIKE '%x%'", "blocked", "like"),
-    ("SELECT a FROM t WHERE b = 1 OR c = 2", "blocked", "or_in_where"),
-    # one column but MIXED operators is a range, not a membership list
-    ("SELECT a FROM t WHERE b <= 1 OR b >= 9", "blocked", "or_in_where"),
     ("SELECT count(*), sum(x) FROM t", "blocked", "multiple_aggregates"),
     ("SELECT a FROM t ORDER BY a, b", "blocked", "multi_key_ordering"),
     ("SELECT a FROM t WHERE x - y > 5", "blocked", "expression_in_where"),
@@ -344,6 +367,17 @@ _SELF_TEST_OR_AS_IN = [
     ("SELECT a FROM t WHERE c = 9 AND (b = 1 OR b = 2)", "encodable"),
 ]
 
+#: `Intent.any_of` CARRIES A REAL DISJUNCTION. Seeded on both sides: the shapes it states, and
+#: a branch holding something the group form cannot express, which must STILL be reported.
+_SELF_TEST_ANY_OF = [
+    ("SELECT a FROM t WHERE b = 1 OR c = 2", "encodable"),
+    ("SELECT a FROM t WHERE b <= 1 OR b >= 9", "encodable"),
+    ("SELECT a FROM t WHERE (b = 1 AND c = 2) OR (b = 3 AND c = 4)", "encodable"),
+    ("SELECT a FROM t WHERE z = 1 AND (b = 1 OR c = 2)", "encodable"),
+    # a subquery inside a branch is still blocked, under `subquery_in_where`
+    ("SELECT a FROM t WHERE b = 1 OR c IN (SELECT c FROM u)", "blocked"),
+]
+
 _SELF_TEST_HAVING = [
     # the shape that dominates: an identity selected, an aggregate thresholded and never shown
     ("SELECT district FROM t GROUP BY district HAVING sum(amount) > 10000", "encodable"),
@@ -362,13 +396,14 @@ def _self_test() -> int:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}/{want_feature}; got {bucket}/{feats}")
-    for sql, want_bucket in _SELF_TEST_HAVING + _SELF_TEST_OR_AS_IN:
+    for sql, want_bucket in _SELF_TEST_HAVING + _SELF_TEST_OR_AS_IN + _SELF_TEST_ANY_OF:
         bucket, feats = classify(sql)
         if bucket != want_bucket:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}; got {bucket}/{feats}")
-    n = len(_SELF_TEST) + len(_SELF_TEST_HAVING) + len(_SELF_TEST_OR_AS_IN)
+    n = (len(_SELF_TEST) + len(_SELF_TEST_HAVING) + len(_SELF_TEST_OR_AS_IN)
+         + len(_SELF_TEST_ANY_OF))
     print(f"\n{'FAIL' if bad else 'OK'} — encodability self-test: {n - bad} of {n} seeded cases behaved")
     print("  (each reject class gets one mutant; a classifier that cannot reject cannot report)")
     return 1 if bad else 0
