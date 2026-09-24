@@ -103,7 +103,12 @@ def run_intent(intent, index, resolver, con) -> Run:
     try:
         p = run_plan(intent, index, resolver)
     except Exception as exc:
-        return Run(False, None, False, f"plan raised {type(exc).__name__}")
+        # A CRASH IS NOT "NOT APPLICABLE". An earlier version returned this quietly, every
+        # invariant then returned None for the affected subject, and the report said 0 RED with
+        # the checks simply ABSENT -- while the planner was raising AttributeError on every
+        # Store probe. A vanished check reads like a passing one at a glance, which is the
+        # failure this whole harness exists to prevent, committed by the harness itself.
+        return Run(False, None, False, f"PLAN RAISED {type(exc).__name__}: {str(exc)[:70]}")
     if not isinstance(p, Plan):
         return Run(False, None, False, type(p).__name__.lower())
     sql, params = p.sql_preview, dict(p.params or {})
@@ -122,6 +127,23 @@ def run_intent(intent, index, resolver, con) -> Run:
 # --------------------------------------------------------------------------- #
 # THE INVARIANTS — authored once. Each returns (name, ok, detail) or None to skip.
 # --------------------------------------------------------------------------- #
+
+
+def complement_verdict(eq: float, ne: float, base: float) -> str:
+    """"skip" | "ok" | "red" — the whole decision, pure, so it can be seeded.
+
+    OVER  (eq + ne > base)  the term is multi-valued per subject -> the claim does not apply
+    UNDER (eq + ne < base)  instances are in NEITHER half        -> the defect
+    """
+    total = eq + ne
+    if total > base + 1e-9:
+        return "skip"
+    return "ok" if abs(total - base) < 1e-9 else "red"
+
+
+def collapse_verdict(kept: float, raw: float) -> str:
+    """"ok" | "red". A declared collapse that keeps every row ran and collapsed nothing."""
+    return "ok" if kept < raw else "red"
 
 
 def inv_complement(subject, term, value, index, resolver, con):
@@ -161,9 +183,10 @@ def inv_complement(subject, term, value, index, resolver, con):
     # Under-count is the interesting direction and the only one this invariant claims: an instance
     # that is neither `= v` nor `<> v` has been silently dropped, which over a nullable column is
     # exactly what SQL's three-valued logic does.
-    if total > base.value + 1e-9:
+    verdict = complement_verdict(eq.value, ne.value, base.value)
+    if verdict == "skip":
         return None
-    ok = abs(total - base.value) < 1e-9
+    ok = verdict == "ok"
     return (
         "complement",
         ok,
@@ -210,7 +233,7 @@ def inv_collapse_reduces(subject, index, resolver, con):
         ).fetchone()[0]
     except Exception:
         return None
-    ok = kept < raw
+    ok = collapse_verdict(kept, raw) == "ok"
     return ("collapse_reduces", ok,
             f"{subject}: collapse kept {kept} of {raw} rows"
             + ("" if ok else "  — IT COLLAPSED NOTHING"))
@@ -286,6 +309,40 @@ def probes(index, con, per_term: int = 3):
 # --------------------------------------------------------------------------- #
 
 
+#: SEEDED MUTANTS, NOT LIVE DEFECTS. The first version of this self-test asserted that the two
+#: recorded Store defects still reproduced. It passed while they existed and then FAILED THE DAY
+#: THEY WERE FIXED — which is backwards: an instrument must not depend on its subject being
+#: broken. These seed the decision directly, so the check keeps proving it can reject forever.
+#: The historical numbers are kept as cases because they are the ones that mattered.
+_SELF_TEST = [
+    ("complement  8 + 6 of 67 (the Store defect, 2026-09-24)", complement_verdict(8, 6, 67), "red"),
+    ("complement  8 + 59 of 67 (the same, fixed)",             complement_verdict(8, 59, 67), "ok"),
+    ("complement  1 + 3 of 3 (a one-to-many term)",            complement_verdict(1, 3, 3), "skip"),
+    ("complement  0 + 0 of 0 (empty population)",              complement_verdict(0, 0, 0), "ok"),
+    ("collapse    74 kept of 74 (the Store defect)",           collapse_verdict(74, 74), "red"),
+    ("collapse    67 kept of 74 (fixed)",                      collapse_verdict(67, 74), "ok"),
+]
+
+
+def _self_test(results, crashes) -> int:
+    bad = 0
+    for label, got, want in _SELF_TEST:
+        if got != want:
+            bad += 1
+            print(f"  FAIL  {label}: wanted {want!r}, got {got!r}")
+    print(f"\n{'-' * 78}")
+    if crashes:
+        print(f"FAIL — {len(crashes)} probe(s) crashed the planner; a crash is not a skip.")
+        return 1
+    if bad:
+        print(f"FAIL — self-test: {len(_SELF_TEST) - bad} of {len(_SELF_TEST)} seeded cases behaved")
+        print("  Fix the harness before trusting a single green from it.")
+        return 1
+    print(f"OK — self-test: {len(_SELF_TEST)} of {len(_SELF_TEST)} seeded cases behaved "
+          f"(one mutant per reject class, independent of any live defect)")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--bundle", required=True)
@@ -302,6 +359,7 @@ def main(argv=None) -> int:
     con = duckdb.connect(a.db, read_only=True)
 
     results: list[tuple[str, bool, str]] = []
+    crashes: list[str] = []
 
     # collapse: one check per countable concept, no probe values needed
     for subject in sorted(index.concepts):
@@ -313,11 +371,20 @@ def main(argv=None) -> int:
     for subject, term, value in probes(index, con):
         if checked >= a.limit:
             break
+        probe_run = run_intent(make_intent(measure=subject, operation="count"),
+                               index, resolver, con)
+        if probe_run.note.startswith("PLAN RAISED"):
+            crashes.append(f"{subject}: {probe_run.note}")
         for fn in (inv_complement, inv_filter_monotone):
             r = fn(subject, term, value, index, resolver, con)
             if r:
                 results.append(r)
                 checked += 1
+
+    if crashes:
+        print(f"\n!! {len(crashes)} probe(s) CRASHED the planner — these are not skips:")
+        for c in sorted(set(crashes))[:6]:
+            print(f"     {c}")
 
     reds = [r for r in results if not r[1]]
     by_inv: dict[str, list[int]] = {}
@@ -335,32 +402,7 @@ def main(argv=None) -> int:
             print(f"  [{name}] {detail}")
 
     if a.self_test:
-        # Target the two recorded defects directly. The first version relied on the derived
-        # enumeration reaching them, and `--limit` truncated alphabetically before `Store` —
-        # so the harness reported a clean self-test failure for the right reason.
-        for subj, term, val in [("Store", "StoreStatus", "Closed")]:
-            r = inv_complement(subj, term, val, index, resolver, con)
-            if r:
-                results.append(r)
-                if not r[1]:
-                    reds.append(r)
-
-        # THE INSTRUMENT'S OWN TEST. Two defects are on record for this bundle; if neither goes
-        # red the harness is broken, not the planner, and no green from it means anything.
-        want = {
-            "complement": "StoreStatus",   # eq + ne must not partition -> Status <> drops NULLs
-            "collapse_reduces": "Store",   # PARTITION BY StoreKey keeps 74 of 74
-        }
-        missed = [
-            inv for inv, needle in want.items()
-            if not any(n == inv and not ok and needle in d for n, ok, d in results)
-        ]
-        print(f"\n{'-' * 78}")
-        if missed:
-            print("FAIL — the instrument did not reproduce known defects:", ", ".join(missed))
-            print("  Fix the harness before trusting a single green from it.")
-            return 1
-        print("OK — self-test: both recorded defects reproduced (complement, collapse_reduces)")
+        return _self_test(results, crashes)
     return 0
 
 

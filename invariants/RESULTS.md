@@ -4,6 +4,42 @@
 
 # PLANNER INVARIANTS — RESULTS
 
+## 2026-09-24 (later) · both reds FIXED
+
+```
+151 checks, 0 RED          self-test 6 of 6 (seeded mutants)
+  collapse_reduces      1 of 1     held
+  complement           37 of 37    held
+  filter_monotone     113 of 113   held
+```
+
+Fixed in `mac-platform` — `FilterOp.NE` now renders `IS DISTINCT FROM`, and
+`reporting_cycle()` reads the declared `params.natural_key` before falling back to
+`cell_key`. Verified against anchors derived from the data by two routes, neither the engine:
+
+| | before | after | anchor |
+|---|---|---|---|
+| RC05 how many stores | 67 | 67 | 67 |
+| STORE-07 have closed | 8 | 8 | 8 |
+| **STORE-02 not closed** | **6** | **59** | 59 |
+| **STORE-03 restructured** | **6** | **0** | 0 |
+
+### The self-test had to be rebuilt, and the reason is a general one
+
+It asserted that the two recorded defects still reproduced. It passed while they existed and
+**failed the day they were fixed** — an instrument must never depend on its subject being broken.
+It now seeds the decision directly (`complement_verdict`, `collapse_verdict` are pure), so it keeps
+proving it can reject forever. The historical numbers survive as seeded cases.
+
+### And the harness itself reported a false green
+
+Mid-fix, a typo raised `AttributeError` inside the planner on every `Store` probe. `run_intent`
+caught it, every invariant returned "not applicable", and the report read **`0 RED` with the checks
+simply absent** — while the planner was crashing. A vanished check looks like a passing one at a
+glance. Crashes are now surfaced separately and fail the self-test outright.
+
+---
+
 ## 2026-09-24 · Stage 5 · **C3 SOUNDNESS**
 
 `invariants/planner_invariants.py`, against `mac-ontology-contoso` and its local DuckDB.
