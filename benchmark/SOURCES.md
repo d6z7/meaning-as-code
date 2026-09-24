@@ -43,6 +43,23 @@ the per-question way of supplying meaning, and the claim MAC has to beat.
    debit_card_specializing  64
 ```
 
+## Where it lives on this machine
+
+`/Users/<operator>/dev/benchmarks/bird/` — OUTSIDE every repository, because 2.0 GB does not belong
+in git and a benchmark corpus is an input, not source.
+
+```
+benchmarks/bird/dev.zip                          the download, kept beside its checksum
+benchmarks/bird/sha256.txt
+benchmarks/bird/dev_20240627/dev.json            1 534 questions + gold SQL + evidence
+benchmarks/bird/dev_20240627/dev_databases/      11 SQLite databases, 1.4 GB
+benchmarks/bundles/<db>_L1/                      GENERATED bundles, one per database
+```
+
+The bundles are regenerable from the databases in seconds and the databases are re-fetchable from
+the URL and checksum above, so nothing here is precious — but nothing here is reproducible from
+the repos alone either, which is why the URL and the sha256 are recorded and not just the path.
+
 ## Spider
 
 `spider_dev.parquet` (1 034) and `spider_train.parquet` (7 000). **Origin not recorded**, same
