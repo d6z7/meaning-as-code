@@ -104,6 +104,26 @@ def _is_in_list_in_disguise(or_node: exp.Or) -> bool:
     return len(cols) == 1
 
 
+def _same_query_two_wheres(setop: exp.SetOperation) -> bool:
+    """Both sides identical apart from their WHERE clause.
+
+    That is the shape `all_of`/`any_of` state. Sides that differ structurally are two different
+    queries and remain blocked -- the check is deliberately strict, because calling a genuine
+    two-query shape "encodable" would inflate the headline with questions we cannot answer.
+    """
+    left, right = setop.this, setop.expression
+
+    def skeleton(sel: exp.Expression) -> str | None:
+        if not isinstance(sel, exp.Select):
+            return None
+        bare = sel.copy()
+        bare.set("where", None)
+        return " ".join(bare.sql().split())
+
+    a, b = skeleton(left), skeleton(right)
+    return a is not None and a == b
+
+
 def _is_group_disjunction(or_node: exp.Or) -> bool:
     """Every OR branch is a comparison, or an AND of comparisons -- i.e. an ``any_of`` group.
 
@@ -139,7 +159,18 @@ def _blockers(tree: exp.Expression) -> list[str]:
         if isinstance(tree, exp.Except):
             add("antijoin_except")
         elif isinstance(tree, exp.SetOperation):
-            add("set_operation")
+            # THE TOP-LEVEL CASE, and it is the common one: `SELECT ... UNION SELECT ...` parses
+            # as a Union node, not a Select with a Union inside it. The nested branch below was
+            # updated first and this one was not, so every same-query set operation still read
+            # as blocked -- caught by the seeded cases, which is what they are for.
+            if not _same_query_two_wheres(tree):
+                add("set_operation")
+            else:
+                # the branches still have to be inspectable: a blocked feature INSIDE one is
+                # still blocked, so classify the left side and carry its findings.
+                inner = _blockers(tree.this) if isinstance(tree.this, exp.Select) else []
+                for f in inner:
+                    add(f)
         else:
             add("not_a_select")
         return found
@@ -153,7 +184,19 @@ def _blockers(tree: exp.Expression) -> list[str]:
     # INTERSECT and UNION are genuinely beyond it: two independent row-sets combined on a key,
     # which no single Intent describes.
     for setop in tree.find_all(exp.SetOperation):
-        add("antijoin_except" if isinstance(setop, exp.Except) else "set_operation")
+        if isinstance(setop, exp.Except):
+            add("antijoin_except")
+        elif _same_query_two_wheres(setop):
+            # BOTH SIDES ARE THE SAME QUERY UNDER TWO WHEREs, which is 243 of the 353 -- and each
+            # operator maps onto a field the Intent now has:
+            #   INTERSECT -> `all_of`, the identity must have a row matching EACH group
+            #   UNION     -> `any_of`, the row matches ANY group (and the list is distinct)
+            # Neither needs a set operation to express, so neither is a grammar gap.
+            continue
+        else:
+            # Sides that differ STRUCTURALLY -- different aggregates, different relations, a CTE
+            # per branch -- are genuinely two queries. 110 questions, still counted.
+            add("set_operation")
 
     # a derived table in FROM, or any subquery anywhere
     for sub in tree.find_all(exp.Subquery):
@@ -337,7 +380,10 @@ _SELF_TEST = [
     ("SELECT a FROM t EXCEPT SELECT a FROM u", "declarable", "antijoin_except"),
     # --- blocked: beyond the Intent AND beyond any declaration ---------------
     ("WITH s AS (SELECT 1) SELECT * FROM s", "blocked", "cte"),
+    # sides that differ STRUCTURALLY are two queries and stay blocked
     ("SELECT a FROM t INTERSECT SELECT b FROM u", "blocked", "set_operation"),
+    ("SELECT count(*) FROM t WHERE a=1 INTERSECT SELECT x FROM t WHERE a=2", "blocked",
+     "set_operation"),
     ("SELECT count(*) FROM (SELECT * FROM t) x", "blocked", "subquery_in_from"),
     ("SELECT a FROM t WHERE id IN (SELECT id FROM u)", "blocked", "subquery_in_where"),
     ("SELECT a, row_number() OVER (PARTITION BY b) FROM t", "blocked", "window_function"),
@@ -378,6 +424,14 @@ _SELF_TEST_ANY_OF = [
     ("SELECT a FROM t WHERE b = 1 OR c IN (SELECT c FROM u)", "blocked"),
 ]
 
+#: SAME QUERY, TWO WHEREs -- `all_of` for INTERSECT, `any_of` for UNION. Seeded because the
+#: distinction from a structurally-different pair is the whole basis of the claim.
+_SELF_TEST_SETOP = [
+    ("SELECT s FROM pets WHERE k='cat' INTERSECT SELECT s FROM pets WHERE k='dog'", "encodable"),
+    ("SELECT c FROM t WHERE age > 40 INTERSECT SELECT c FROM t WHERE age < 30", "encodable"),
+    ("SELECT n FROM t WHERE l='en' UNION SELECT n FROM t WHERE l='nl'", "encodable"),
+]
+
 _SELF_TEST_HAVING = [
     # the shape that dominates: an identity selected, an aggregate thresholded and never shown
     ("SELECT district FROM t GROUP BY district HAVING sum(amount) > 10000", "encodable"),
@@ -396,14 +450,14 @@ def _self_test() -> int:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}/{want_feature}; got {bucket}/{feats}")
-    for sql, want_bucket in _SELF_TEST_HAVING + _SELF_TEST_OR_AS_IN + _SELF_TEST_ANY_OF:
+    for sql, want_bucket in _SELF_TEST_HAVING + _SELF_TEST_OR_AS_IN + _SELF_TEST_ANY_OF + _SELF_TEST_SETOP:
         bucket, feats = classify(sql)
         if bucket != want_bucket:
             bad += 1
             print(f"  FAIL  {sql[:64]!r}")
             print(f"        wanted {want_bucket}; got {bucket}/{feats}")
     n = (len(_SELF_TEST) + len(_SELF_TEST_HAVING) + len(_SELF_TEST_OR_AS_IN)
-         + len(_SELF_TEST_ANY_OF))
+         + len(_SELF_TEST_ANY_OF) + len(_SELF_TEST_SETOP))
     print(f"\n{'FAIL' if bad else 'OK'} — encodability self-test: {n - bad} of {n} seeded cases behaved")
     print("  (each reject class gets one mutant; a classifier that cannot reject cannot report)")
     return 1 if bad else 0
