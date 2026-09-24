@@ -60,44 +60,143 @@
   "$defs": {
     "DataPlaneApprovalFile": {
       "type": "object",
-      "description": "v0.1.19: THE DATA PIPELINE'S DECLARED EXIT \u2014 a named human's sign-off that this bundle's dataset configuration is approved, and the one artifact in a bundle that NO AGENT MAY WRITE: the ontology guard denies every governed write to this path unconditionally, and no unlock marker lifts it, because an unlock the agent can also satisfy is not a gate. FLAT SCALARS ONLY, and that is load-bearing rather than tidy: the PreToolUse guard must read this file, it is copied into .claude/hooks/ with no import path, and it FAILS CLOSED on a protected path \u2014 so a PyYAML import error in it would deny every edit in the repository. The guard therefore parses this file with ~20 lines of standard library, and sdk/gate + tools/check_guard_seam.py prove that parser and yaml.safe_load agree over every shape. Nesting here would break that, which is why additionalProperties is false and every value is a scalar. The write stamp reuses the question-ledger vocabulary rather than inventing one: submitted_via must be `human` (an agent may write a DESCRIPTION; only a human may write a DISPOSITION) and identity_basis distinguishes a verified sign-in from a locally declared identity, so a weaker approval reads as weaker rather than as equal. `covers` names EVERY registered issue id: the threshold is per-issue human acknowledgement and no wildcard is permitted. `digest` says WHICH data plane was approved \u2014 recomputed from the files on every run, so an approval is a statement about one state and not a permanent licence.",
+      "description": "v0.1.19: THE DATA PIPELINE'S DECLARED EXIT — a named human's sign-off that this bundle's dataset configuration is approved, and the one artifact in a bundle that NO AGENT MAY WRITE: the ontology guard denies every governed write to this path unconditionally, and no unlock marker lifts it, because an unlock the agent can also satisfy is not a gate. FLAT SCALARS ONLY, and that is load-bearing rather than tidy: the PreToolUse guard must read this file, it is copied into .claude/hooks/ with no import path, and it FAILS CLOSED on a protected path — so a PyYAML import error in it would deny every edit in the repository. The guard therefore parses this file with ~20 lines of standard library, and sdk/gate + tools/check_guard_seam.py prove that parser and yaml.safe_load agree over every shape. Nesting here would break that, which is why additionalProperties is false and every value is a scalar. The write stamp reuses the question-ledger vocabulary rather than inventing one: submitted_via must be `human` (an agent may write a DESCRIPTION; only a human may write a DISPOSITION) and identity_basis distinguishes a verified sign-in from a locally declared identity, so a weaker approval reads as weaker rather than as equal. `covers` names EVERY registered issue id: the threshold is per-issue human acknowledgement and no wildcard is permitted. `digest` says WHICH data plane was approved — recomputed from the files on every run, so an approval is a statement about one state and not a permanent licence.",
       "additionalProperties": false,
-      "required": ["id", "status", "verdict", "outcome", "covers", "digest", "decision", "at", "by", "role", "identity_basis", "submitted_via"],
+      "required": [
+        "id",
+        "status",
+        "verdict",
+        "outcome",
+        "covers",
+        "digest",
+        "decision",
+        "at",
+        "by",
+        "role",
+        "identity_basis",
+        "submitted_via"
+      ],
       "properties": {
-        "id": {"const": "s.data-plane.approved", "description": "the reserved sign-off id. `s.` is the sign-off prefix the question ledger already uses."},
-        "kind": {"const": "sign_off"},
-        "plane": {"const": "data"},
-        "status": {"const": "applied", "description": "applying is a human developer act; a draft is not an approval."},
-        "verdict": {"enum": ["confirmed", "rejected", "confirmed_with_changes"], "description": "what the human said about the plane they were asked to ratify. Only `confirmed` opens the ontology pipeline."},
-        "outcome": {"enum": ["ratified", "change_applied", "decision_recorded", "no_change_needed"]},
-        "covers": {"type": "string", "description": "EVERY registered issue id, comma- or space-separated. No wildcard: the count of uncovered ids must be 0 and cannot move unless a person names the specific thing. If that is too many ids, the fix is a coarser REGISTER, never a coarser gate."},
-        "register": {"type": "string"},
-        "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
-        "lock": {"type": "string", "description": "the reviewable per-file digest sibling. EVIDENCE, never AUTHORITY: it lives outside the protected set and is agent-writable by design, because it is what the operator diffs. Forging it buys nothing — the gate computes the roll-up from the FILES and compares it to `digest` here, so the lock is never the compared value."},
-        "decision": {"type": "string", "description": "the durable decision record, decisions/NNNN-<slug>.md. The gate fails when it names no file that exists."},
-        "rev": {"type": ["integer", "string"], "minimum": 1},
-        "at": {"type": "string"},
-        "by": {"type": "string", "minLength": 1, "description": "the named person or role who approved — never \"the team\", never a tool."},
-        "role": {"type": "string"},
-        "identity_basis": {"enum": ["verified", "local-declared"], "description": "verified = a signed-in identity. local-declared = the identity the person who started a local server declared; NOT authentication, and shown as weaker. `imported` is deliberately absent: a sign-off written by an importer ratifies nothing."},
-        "submitted_via": {"const": "human", "description": "an agent may write a DESCRIPTION; only a human may write a DISPOSITION. Rejecting the honestly-stamped agent case is what makes the dishonest one a lie rather than a shortcut."}
+        "id": {
+          "const": "s.data-plane.approved",
+          "description": "the reserved sign-off id. `s.` is the sign-off prefix the question ledger already uses."
+        },
+        "kind": {
+          "const": "sign_off"
+        },
+        "plane": {
+          "const": "data"
+        },
+        "status": {
+          "const": "applied",
+          "description": "applying is a human developer act; a draft is not an approval."
+        },
+        "verdict": {
+          "enum": [
+            "confirmed",
+            "rejected",
+            "confirmed_with_changes"
+          ],
+          "description": "what the human said about the plane they were asked to ratify. Only `confirmed` opens the ontology pipeline."
+        },
+        "outcome": {
+          "enum": [
+            "ratified",
+            "change_applied",
+            "decision_recorded",
+            "no_change_needed"
+          ]
+        },
+        "covers": {
+          "type": "string",
+          "description": "EVERY registered issue id, comma- or space-separated. No wildcard: the count of uncovered ids must be 0 and cannot move unless a person names the specific thing. If that is too many ids, the fix is a coarser REGISTER, never a coarser gate."
+        },
+        "register": {
+          "type": "string"
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "lock": {
+          "type": "string",
+          "description": "the reviewable per-file digest sibling. EVIDENCE, never AUTHORITY: it lives outside the protected set and is agent-writable by design, because it is what the operator diffs. Forging it buys nothing — the gate computes the roll-up from the FILES and compares it to `digest` here, so the lock is never the compared value."
+        },
+        "decision": {
+          "type": "string",
+          "description": "the durable decision record, decisions/NNNN-<slug>.md. The gate fails when it names no file that exists."
+        },
+        "rev": {
+          "type": [
+            "integer",
+            "string"
+          ],
+          "minimum": 1
+        },
+        "at": {
+          "type": "string"
+        },
+        "by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "the named person or role who approved — never \"the team\", never a tool."
+        },
+        "role": {
+          "type": "string"
+        },
+        "identity_basis": {
+          "enum": [
+            "verified",
+            "local-declared"
+          ],
+          "description": "verified = a signed-in identity. local-declared = the identity the person who started a local server declared; NOT authentication, and shown as weaker. `imported` is deliberately absent: a sign-off written by an importer ratifies nothing."
+        },
+        "submitted_via": {
+          "const": "human",
+          "description": "an agent may write a DESCRIPTION; only a human may write a DISPOSITION. Rejecting the honestly-stamped agent case is what makes the dishonest one a lie rather than a shortcut."
+        }
       }
     },
     "PipelineExit": {
       "type": "object",
-      "description": "What ENDING this pipeline means. THREE SHAPES, deliberately different, because confusing 'a tool said yes' with 'a person said yes' is the defect this whole block exists to prevent. `register` names the bundle-relative path of a data-quality register every one of whose issues must carry a terminal disposition \u2014 the DATA pipeline's exit since 2026-09-18, and the shape a new bundle declares. `approval` names the bundle-relative path of a separate human sign-off; it was the data pipeline's exit before that date and is kept because a bundle that already declares one must keep working. `gate`+`must_exit` names a machine verdict, for a pipeline whose completion a checker can decide. WHY `register` REPLACED `approval` AS THE SHAPE TO DECLARE: the separate file duplicated the register in a LESS informative form \u2014 one date and one name against N individually-argued dispositions \u2014 and the operator it was built for refused to sign it, having already ruled on every issue one at a time. WHAT THE COLLAPSE COSTS, stated rather than glossed: the sign-off path is one the ontology guard denies UNCONDITIONALLY, so an agent cannot write it; a register is agent-writable, so this exit rests on ATTRIBUTION (`ruled_by`, `reason`, git blame) and not on PREVENTION. Carried in mac_vocabulary.yaml#data_plane_gate.approval_missing and in the gate's own refusal text.",
+      "description": "What ENDING this pipeline means. THREE SHAPES, deliberately different, because confusing 'a tool said yes' with 'a person said yes' is the defect this whole block exists to prevent. `register` names the bundle-relative path of a data-quality register every one of whose issues must carry a terminal disposition — the DATA pipeline's exit since 2026-09-18, and the shape a new bundle declares. `approval` names the bundle-relative path of a separate human sign-off; it was the data pipeline's exit before that date and is kept because a bundle that already declares one must keep working. `gate`+`must_exit` names a machine verdict, for a pipeline whose completion a checker can decide. WHY `register` REPLACED `approval` AS THE SHAPE TO DECLARE: the separate file duplicated the register in a LESS informative form — one date and one name against N individually-argued dispositions — and the operator it was built for refused to sign it, having already ruled on every issue one at a time. WHAT THE COLLAPSE COSTS, stated rather than glossed: the sign-off path is one the ontology guard denies UNCONDITIONALLY, so an agent cannot write it; a register is agent-writable, so this exit rests on ATTRIBUTION (`ruled_by`, `reason`, git blame) and not on PREVENTION. Carried in mac_vocabulary.yaml#data_plane_gate.approval_missing and in the gate's own refusal text.",
       "additionalProperties": false,
       "minProperties": 1,
       "oneOf": [
-        {"required": ["register"]},
-        {"required": ["approval"]},
-        {"required": ["gate", "must_exit"]}
+        {
+          "required": [
+            "register"
+          ]
+        },
+        {
+          "required": [
+            "approval"
+          ]
+        },
+        {
+          "required": [
+            "gate",
+            "must_exit"
+          ]
+        }
       ],
       "properties": {
-        "register": {"type": "string", "description": "bundle-relative path to a DATA-QUALITY REGISTER whose every issue must carry a terminal `mac.dq_status` term with that term's own `requires:` met. An `open` issue, or an `accepted`/`wont_fix` naming nobody, leaves this exit UNREACHED and the ontology pipeline closed. The evidence is per-issue and individually argued, which is strictly more than one signature over a list of ids — and the file is agent-writable, so this exit rests on ATTRIBUTION rather than on a token no agent can reach. An approval file present alongside it is still honoured."},
-        "approval": {"type": "string", "description": "bundle-relative path to a HUMAN SIGN-OFF. The ontology guard denies every governed write to this path unconditionally — no unlock marker lifts it — so an agent cannot satisfy this exit condition. SUPERSEDED by `register` as the shape a new bundle declares (2026-09-18) and still honoured wherever it appears: a bundle that carries a sign-off must not silently lose it."},
-        "gate": {"type": "string", "description": "the command whose exit code decides this pipeline's completion — a MACHINE verdict, never a substitute for a human one."},
-        "must_exit": {"type": "integer", "description": "the exit code the gate must return."}
+        "register": {
+          "type": "string",
+          "description": "bundle-relative path to a DATA-QUALITY REGISTER whose every issue must carry a terminal `mac.dq_status` term with that term's own `requires:` met. An `open` issue, or an `accepted`/`wont_fix` naming nobody, leaves this exit UNREACHED and the ontology pipeline closed. The evidence is per-issue and individually argued, which is strictly more than one signature over a list of ids — and the file is agent-writable, so this exit rests on ATTRIBUTION rather than on a token no agent can reach. An approval file present alongside it is still honoured."
+        },
+        "approval": {
+          "type": "string",
+          "description": "bundle-relative path to a HUMAN SIGN-OFF. The ontology guard denies every governed write to this path unconditionally — no unlock marker lifts it — so an agent cannot satisfy this exit condition. SUPERSEDED by `register` as the shape a new bundle declares (2026-09-18) and still honoured wherever it appears: a bundle that carries a sign-off must not silently lose it."
+        },
+        "gate": {
+          "type": "string",
+          "description": "the command whose exit code decides this pipeline's completion — a MACHINE verdict, never a substitute for a human one."
+        },
+        "must_exit": {
+          "type": "integer",
+          "description": "the exit code the gate must return."
+        }
       }
     },
     "connectorRef": {
@@ -1351,6 +1450,10 @@
                 },
                 "note": {
                   "type": "string"
+                },
+                "counts_as": {
+                  "type": "string",
+                  "description": "The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane."
                 }
               },
               "required": [
@@ -2405,8 +2508,24 @@
           "allOf": [
             {
               "$comment": "v0.1.19: A HALF-MIGRATED RECORD MUST NOT READ AS COMPLETE. Declaring two pipelines and leaving a stage unassigned would let a manifest claim the split while the record could not say which pipeline half its stages ran in — the same failure shape as a narrative pointing at a missing file.",
-              "if": {"required": ["pipelines"]},
-              "then": {"properties": {"stages": {"items": {"required": ["id", "authoring", "pipeline"]}}}}
+              "if": {
+                "required": [
+                  "pipelines"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "stages": {
+                    "items": {
+                      "required": [
+                        "id",
+                        "authoring",
+                        "pipeline"
+                      ]
+                    }
+                  }
+                }
+              }
             }
           ],
           "properties": {
@@ -2416,33 +2535,56 @@
             },
             "pipelines": {
               "type": "object",
-              "description": "v0.1.19: THE TWO PIPELINES, and the only place a reader of a day-zero bundle learns there are two. A bundle may declare a DATA pipeline and an ONTOLOGY pipeline, each with its own MANUALLY STARTED entry point, and the data pipeline's `exit` is not a produces-glob but A NAMED HUMAN'S SIGN-OFF. That one line is the whole governance ruling made checkable: the ontology pipeline may not start until a person has approved the dataset configuration. WHY A CORE KEY AND NOT AN EXTENSION: `^x-` was CLOSED in v0.1.14 and check_extension_keys refuses it as MAC012, and the measured lesson is exactly this case \u2014 x-grain held the grain, was unreachable by every gate, and two of four declarations rotted into false while still reading as VERIFIED. A declaration no gate can reach is worse than none. ADDITIVE AND OPTIONAL: a manifest without this key declares one pipeline, the two-pipeline gate does not apply to it, and its ontology plane stays governed by the operator's unlock marker exactly as before \u2014 so no existing bundle turns red. EXACTLY TWO PROPERTIES, additionalProperties false: a THIRD pipeline is then a schema change, which is a decision with a record, rather than a config value somebody adds on a Tuesday. Read by tools/check_data_plane_approved.py and by the ontology guard.",
+              "description": "v0.1.19: THE TWO PIPELINES, and the only place a reader of a day-zero bundle learns there are two. A bundle may declare a DATA pipeline and an ONTOLOGY pipeline, each with its own MANUALLY STARTED entry point, and the data pipeline's `exit` is not a produces-glob but A NAMED HUMAN'S SIGN-OFF. That one line is the whole governance ruling made checkable: the ontology pipeline may not start until a person has approved the dataset configuration. WHY A CORE KEY AND NOT AN EXTENSION: `^x-` was CLOSED in v0.1.14 and check_extension_keys refuses it as MAC012, and the measured lesson is exactly this case — x-grain held the grain, was unreachable by every gate, and two of four declarations rotted into false while still reading as VERIFIED. A declaration no gate can reach is worse than none. ADDITIVE AND OPTIONAL: a manifest without this key declares one pipeline, the two-pipeline gate does not apply to it, and its ontology plane stays governed by the operator's unlock marker exactly as before — so no existing bundle turns red. EXACTLY TWO PROPERTIES, additionalProperties false: a THIRD pipeline is then a schema change, which is a decision with a record, rather than a config value somebody adds on a Tuesday. Read by tools/check_data_plane_approved.py and by the ontology guard.",
               "additionalProperties": false,
-              "required": ["data", "ontology"],
+              "required": [
+                "data",
+                "ontology"
+              ],
               "properties": {
                 "data": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["entry", "exit"],
+                  "required": [
+                    "entry",
+                    "exit"
+                  ],
                   "properties": {
-                    "entry": {"type": "string", "description": "the command an operator types to START this pipeline. Manual by rule: nothing chains into it."},
-                    "exit": {"$ref": "#/$defs/PipelineExit"}
+                    "entry": {
+                      "type": "string",
+                      "description": "the command an operator types to START this pipeline. Manual by rule: nothing chains into it."
+                    },
+                    "exit": {
+                      "$ref": "#/$defs/PipelineExit"
+                    }
                   }
                 },
                 "ontology": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["entry"],
+                  "required": [
+                    "entry"
+                  ],
                   "properties": {
-                    "entry": {"type": "string", "description": "the command an operator types to START the ontology pipeline. Independent in TRIGGER, in INPUTS and in FAILURE from the data pipeline — it needs no warehouse and no billed call — but NOT independent in TRUTH: see reproduction.pipelines.data.exit."},
+                    "entry": {
+                      "type": "string",
+                      "description": "the command an operator types to START the ontology pipeline. Independent in TRIGGER, in INPUTS and in FAILURE from the data pipeline — it needs no warehouse and no billed call — but NOT independent in TRUTH: see reproduction.pipelines.data.exit."
+                    },
                     "requires": {
                       "type": "object",
                       "additionalProperties": false,
                       "properties": {
-                        "pipeline": {"enum": ["data"], "description": "the pipeline whose declared exit must be reached before this one may start."}
+                        "pipeline": {
+                          "enum": [
+                            "data"
+                          ],
+                          "description": "the pipeline whose declared exit must be reached before this one may start."
+                        }
                       }
                     },
-                    "exit": {"$ref": "#/$defs/PipelineExit"}
+                    "exit": {
+                      "$ref": "#/$defs/PipelineExit"
+                    }
                   }
                 }
               }
@@ -2457,7 +2599,10 @@
                 ],
                 "properties": {
                   "pipeline": {
-                    "enum": ["data", "ontology"],
+                    "enum": [
+                      "data",
+                      "ontology"
+                    ],
                     "description": "v0.1.19: WHICH of the two declared pipelines this stage belongs to. Required on EVERY stage once reproduction.pipelines is present (see the conditional below), so a half-migrated record cannot read as complete. READ by the console rather than inferred from the stage key: a page that guesses which pipeline a stage belongs to is a second home for a fact the manifest already states."
                   },
                   "id": {
@@ -3153,46 +3298,84 @@
         "measurement": {
           "type": "object",
           "description": "WHAT WAS IN SCOPE, so no count in this file can be read without its denominator. `relations_in_scope` and `parent_endpoints` are the population the candidate space was generated from; `key_source` names where the parent keys were READ (they are never re-derived here — two answers to 'what is the key' is the drift the plane exists to prevent). Carries NO CLOCK on purpose: the per-relation file is byte-identical across runs over unchanged data and the measurement time lives in the run record it names.",
-          "type": "object",
           "additionalProperties": true,
-          "required": ["contract", "relations_in_scope", "parent_endpoints"],
+          "required": [
+            "contract",
+            "relations_in_scope",
+            "parent_endpoints"
+          ],
           "properties": {
-            "contract": {"type": "string"},
-            "key_source": {"type": "string"},
-            "relations_in_scope": {"type": "integer", "minimum": 1},
-            "parent_endpoints": {"type": "integer", "minimum": 0},
-            "run_record": {"type": "string"},
-            "single_column_references_only": {"type": "boolean"},
-            "note": {"type": "string"}
+            "contract": {
+              "type": "string"
+            },
+            "key_source": {
+              "type": "string"
+            },
+            "relations_in_scope": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "parent_endpoints": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "run_record": {
+              "type": "string"
+            },
+            "single_column_references_only": {
+              "type": "boolean"
+            },
+            "note": {
+              "type": "string"
+            }
           }
         },
         "admission": {
           "type": "object",
           "description": "EVERY NUMBER A VERDICT TURNS ON, repeated in every file it judges. A reader opens ONE file, and an entry whose verdict depends on a floor must not be readable without that floor. Nothing that decides a verdict may live only in a Python constant: the inclusion-only version of this measurement admitted a demographic column as a reference to a product key at 1.000000 over 104,990 rows, and the reviewer who would have caught it could not see the rule.",
           "additionalProperties": true,
-          "required": ["inclusion_required", "domain_exercise_floor"],
+          "required": [
+            "inclusion_required",
+            "domain_exercise_floor"
+          ],
           "properties": {
-            "inclusion_required": {"type": "number"},
-            "near_miss_floor": {"type": "number"},
-            "domain_exercise_floor": {"type": "number"},
-            "distinct_tolerance": {"type": "number"},
-            "min_child_distinct": {"type": "integer"}
+            "inclusion_required": {
+              "type": "number"
+            },
+            "near_miss_floor": {
+              "type": "number"
+            },
+            "domain_exercise_floor": {
+              "type": "number"
+            },
+            "distinct_tolerance": {
+              "type": "number"
+            },
+            "min_child_distinct": {
+              "type": "integer"
+            }
           }
         },
         "references": {
           "type": "array",
           "description": "the measured references this relation carries. `drawn: false` means real and superseded by a stronger parent — recorded, not deleted.",
-          "items": {"$ref": "#/$defs/MeasuredReference"}
+          "items": {
+            "$ref": "#/$defs/MeasuredReference"
+          }
         },
         "references_dangling": {
           "type": "array",
           "description": "columns that follow this bundle's OWN key-naming convention, are not keys, and have NO parent relation in scope. `to` is null and that is the class: the moment a dangling reference acquires a parent it is a claim, and claims are measured. Reported, never invented and never dropped.",
-          "items": {"$ref": "#/$defs/DanglingReference"}
+          "items": {
+            "$ref": "#/$defs/DanglingReference"
+          }
         },
         "candidates_rejected": {
           "type": "array",
           "description": "WHAT WAS CONSIDERED AND REFUSED, with its numbers. An operator who cannot see this cannot tell a missing reference from an unconsidered one.",
-          "items": {"$ref": "#/$defs/MeasuredReference"}
+          "items": {
+            "$ref": "#/$defs/MeasuredReference"
+          }
         }
       }
     },
@@ -3200,48 +3383,112 @@
       "type": "object",
       "description": "ONE END of a physical reference: a relation and a column, as two fields. Never a concept, and never a join string to be re-parsed.",
       "additionalProperties": false,
-      "required": ["relation", "column"],
+      "required": [
+        "relation",
+        "column"
+      ],
       "properties": {
-        "relation": {"type": "string"},
-        "column": {"type": "string"}
+        "relation": {
+          "type": "string"
+        },
+        "column": {
+          "type": "string"
+        }
       }
     },
     "MeasuredReference": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["id", "from", "to", "verdict", "evidence"],
+      "required": [
+        "id",
+        "from",
+        "to",
+        "verdict",
+        "evidence"
+      ],
       "properties": {
         "id": {
           "type": "string",
           "description": "keyed by RELATION AND COLUMN on BOTH ends. Two references can join one pair of relations on different columns; an id derived from the relation pair alone collides, and a renderer that identifies a line by id then cannot tell them apart — one silently stops responding to selection."
         },
-        "from": {"$ref": "#/$defs/ReferenceEndpoint", "description": "the CHILD relation: the one carrying the referencing column."},
-        "to": {"$ref": "#/$defs/ReferenceEndpoint", "description": "the PARENT relation: the one whose measured key column is referenced."},
+        "from": {
+          "$ref": "#/$defs/ReferenceEndpoint",
+          "description": "the CHILD relation: the one carrying the referencing column."
+        },
+        "to": {
+          "$ref": "#/$defs/ReferenceEndpoint",
+          "description": "the PARENT relation: the one whose measured key column is referenced."
+        },
         "parent_key_role": {
-          "enum": ["identity", "key_part"],
+          "enum": [
+            "identity",
+            "key_part"
+          ],
           "description": "identity = the parent's WHOLE measured key, so the reference names ONE ROW. key_part = one column of a composite key, so it names a VALUE SET. Conflating them draws a crow's foot that says something the data does not."
         },
-        "verdict": {"enum": ["real", "near_miss", "coincidental", "rejected", "no_denominator"]},
-        "drawn": {"type": "boolean"},
+        "verdict": {
+          "enum": [
+            "real",
+            "near_miss",
+            "coincidental",
+            "rejected",
+            "no_denominator"
+          ]
+        },
+        "drawn": {
+          "type": "boolean"
+        },
         "cardinality": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["child", "parent"],
+          "required": [
+            "child",
+            "parent"
+          ],
           "properties": {
-            "child": {"enum": ["one", "many"]},
-            "parent": {"enum": ["one", "many"]}
+            "child": {
+              "enum": [
+                "one",
+                "many"
+              ]
+            },
+            "parent": {
+              "enum": [
+                "one",
+                "many"
+              ]
+            }
           }
         },
         "participation": {
           "type": "object",
           "description": "NOT CARDINALITY. Three relations can all be one-to-many while one parent has 10 of 74 rows never referenced, another 52,801 of 104,990 and a third 0 of 2,517. Keys alone draw all three identically mandatory.",
           "additionalProperties": true,
-          "required": ["child", "parent"],
+          "required": [
+            "child",
+            "parent"
+          ],
           "properties": {
-            "child": {"enum": ["mandatory", "optional"]},
-            "parent": {"enum": ["mandatory", "optional"]},
-            "parent_unreferenced": {"type": "integer", "minimum": 0},
-            "child_without_parent": {"type": "integer", "minimum": 0}
+            "child": {
+              "enum": [
+                "mandatory",
+                "optional"
+              ]
+            },
+            "parent": {
+              "enum": [
+                "mandatory",
+                "optional"
+              ]
+            },
+            "parent_unreferenced": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "child_without_parent": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         },
         "evidence": {
@@ -3253,38 +3500,79 @@
           "type": "boolean",
           "description": "A LABEL FOR A READER, never an input to a verdict. Name matching alone would propose 14 of 171 measured candidates on the reference bundle and miss 8 of its 17 drawn references."
         },
-        "admitted_because": {"type": "string"},
-        "rejected_because": {"type": "string"},
-        "direction": {"enum": ["drawn", "superseded_by_reverse", "superseded_by_identity", "undecided_mutual"]},
-        "mutual_with": {"type": "string"},
-        "superseded_by": {"type": "array", "items": {"type": "string"}},
+        "admitted_because": {
+          "type": "string"
+        },
+        "rejected_because": {
+          "type": "string"
+        },
+        "direction": {
+          "enum": [
+            "drawn",
+            "superseded_by_reverse",
+            "superseded_by_identity",
+            "undecided_mutual"
+          ]
+        },
+        "mutual_with": {
+          "type": "string"
+        },
+        "superseded_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "ambiguous_with": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string"
+          },
           "description": "other parents that measure IDENTICALLY. Both are recorded and neither is chosen: value inclusion genuinely cannot separate them, and picking one would be a fabrication dressed as a measurement."
         },
-        "needs_ruling": {"type": "string"}
+        "needs_ruling": {
+          "type": "string"
+        }
       }
     },
     "DanglingReference": {
       "type": "object",
       "additionalProperties": true,
-      "required": ["id", "from", "to", "verdict", "basis"],
+      "required": [
+        "id",
+        "from",
+        "to",
+        "verdict",
+        "basis"
+      ],
       "properties": {
-        "id": {"type": "string"},
-        "from": {"$ref": "#/$defs/ReferenceEndpoint"},
+        "id": {
+          "type": "string"
+        },
+        "from": {
+          "$ref": "#/$defs/ReferenceEndpoint"
+        },
         "to": {
           "type": "null",
           "description": "NULL, always. Not a guess and not an omission: no parent relation exists."
         },
-        "verdict": {"const": "dangling"},
+        "verdict": {
+          "const": "dangling"
+        },
         "basis": {
           "type": "string",
           "description": "on what this was detected. WEAKER evidence than a measurement against a parent, because there is no parent to measure against — a bundle with no naming convention gets no dangling detection at all, and that must read as 'not detectable here', never as 'none exist'."
         },
-        "basis_detail": {"type": "string"},
-        "evidence": {"type": "object", "additionalProperties": true},
-        "note": {"type": "string"}
+        "basis_detail": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "note": {
+          "type": "string"
+        }
       }
     },
     "ProfileFile": {
