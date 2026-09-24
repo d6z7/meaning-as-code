@@ -141,8 +141,15 @@ def build_index(bundle: Path) -> dict:
     """
     root = Path(bundle)
     directory = root.joinpath(*CONCEPTS_SUBDIR)
+    # RECURSIVE, and it was not. `glob("*.yaml")` scans only the TOP of `ontology/concepts/`, and
+    # the worked bundle keeps every concept in a subdirectory — catalog/, customer/, store/, … —
+    # so the index loaded 0 concepts and found 0 rules. The `rules` flag then reported
+    # "the ontology states no concept rule with a never-clause" on all 77 questions, about a
+    # bundle declaring 36 of them. An entire grading axis was dead, and its own message said the
+    # ontology was at fault.
+    #
     # Sorted so the index is reproducible: glob order is filesystem order, not a contract.
-    files = sorted(directory.glob("*.yaml")) if directory.is_dir() else []
+    files = sorted(directory.rglob("*.yaml")) if directory.is_dir() else []
 
     rules: list[dict] = []
     errors: list[dict] = []
