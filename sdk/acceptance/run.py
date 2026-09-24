@@ -209,7 +209,10 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
     # while the assertions it was judged against were being rewritten under it.
     acc_fp = _io.acceptance_fingerprint(bundle)
     eng = payload.get("engine") or {}
-    model = eng.get("model") or ""
+    # WHAT WAS ASKED FOR, else WHAT RAN. A provider used with no explicit model
+    # takes its own default, and recording "" there loses the only true name the
+    # capture has — `resolved_model`, which the provider reported.
+    model = eng.get("model") or eng.get("resolved_model") or ""
     effort = eng.get("effort") or ""
     provider = eng.get("provider") or _provider_of(model)
     mode = payload.get("mode") or ("llm-execute" if payload.get("athena") else "llm-answer")
