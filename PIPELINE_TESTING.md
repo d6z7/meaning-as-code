@@ -175,11 +175,25 @@ Relations that must hold, each checkable by running two plans and comparing:
 | a collapse never increases row count, and is idempotent | **the collapse is a no-op or fans out** |
 | **TLP**: `p` ∪ `NOT p` ∪ `p IS NULL` equals the unpartitioned query | **three-valued logic drops rows** |
 
-The last two are not hypothetical. **TLP — Ternary Logic Partitioning, from the DBMS-testing line of
-work (Rigger & Su, alongside PQS and NoREC) — is precisely, mechanically, the detector for the defect
-found on 2026-09-24**: `Status <> 'Closed'` returning 6 where the answer is 59, because 59 of 67
-current stores carry a NULL status and `<>` discards every one. TLP finds that with no oracle, no
-anchor and no knowledge of what a store is.
+The last two are not hypothetical.
+
+> **CORRECTED 2026-09-24, on building it.** This section first claimed TLP — Ternary Logic
+> Partitioning, from the DBMS-testing line (Rigger & Su, with PQS and NoREC) — was "precisely,
+> mechanically, the detector" for the `Status <> 'Closed'` defect. **Applied as published, it is
+> not.** TLP partitions a query by `p / NOT p / p IS NULL` and checks the union equals the
+> unpartitioned query. Run against the planner's emitted SQL, that check **passes** on our defect:
+> 7 + 8 + 59 = 74. SQL is being perfectly consistent with itself. The bug is not an inconsistent
+> DBMS — TLP's actual subject — it is a **translation**: the Intent's `ne` does not mean SQL's
+> `<>`.
+>
+> The ternary *idea* survives, re-aimed one level up at the Intent's operator semantics:
+> **`|Q(T eq v)| + |Q(T ne v)| == |Q()|`** — `eq` and `ne` must partition the population, because
+> that is what a person means by "not". That form does go red: 8 + 6 = 14 against 67. Built as
+> `invariants/planner_invariants.py#inv_complement`.
+>
+> The correction is recorded rather than edited away because it is the general hazard in §7: an
+> academic technique adopted by name, aimed at a subject one level away from ours, looks right
+> until it is run.
 
 The collapse invariant is the detector for the second defect of the same day: `PARTITION BY
 StoreKey` leaving **74 of 74 rows**, a collapse that collapses nothing — which `store.yaml` had
@@ -527,12 +541,12 @@ The fixed point, in the shape TESTING.md §7 uses.
 | | today | arrived |
 |---|---|---|
 | refusals carrying the stage that produced them | **0 of 20** | every one |
-| corpora the grammar has been measured against | **1** (77 questions, one bundle) | BIRD dev + Spider, per-database |
+| corpora the grammar has been measured against | **4** — 77 local + BIRD dev + Spider dev + Spider train (9 568 questions, 171 DBs, 2026-09-24) | per-database, and held out |
 | questions with a gold Intent | **0 scored** | every transpilable question, generated |
-| planner invariants that hold framework-wide | **0** | TLP + the collapse pair + the four in 3.3 |
+| planner invariants that hold framework-wide | **3** (complement · collapse_reduces · filter_monotone, 2026-09-24) | + the rest of 3.3 |
 | bundles the framework is proven on | **1** | 1 real + the Leg A patterns + L0 on 95 |
 | `Intent.confidence` | consumed, never validated | calibrated, or removed |
-| the four claims of 8.1 | **unfalsifiable** | each carrying a number and the test that could kill it |
+| the four claims of 8.1 | **C1 = 74.0 %, C3 has an instrument with 2 known-reds; C2 and C4 still unfalsifiable** | each carrying a number and the test that could kill it |
 
 ---
 
