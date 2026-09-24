@@ -98,7 +98,7 @@ def generate(bundle: pathlib.Path, k: int, limit: int | None, model: str) -> int
                 print(f"  generate failed: {exc}")
                 continue
             existing[qid] = {"question": question, "variants": variants}
-            print(f"  {qid:<10} {len(variants)} variant(s)")
+            print(f"  {qid:<10} {len(variants)} variant(s)", flush=True)
 
     out_path.write_text(yaml.safe_dump(existing, sort_keys=True, width=100, allow_unicode=True))
     print(f"\nwrote {out_path} — {len(existing)} question(s)")
@@ -121,7 +121,7 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
     from mac_runtime.interpret.claude_code import ClaudeCodeInterpreter  # noqa: E402
     from mac_runtime.interpret.vocabulary import Vocabulary  # noqa: E402
 
-    index, _ = build()
+    index, resolver_for_plan = build()
     vocab = Vocabulary.from_index(index)
     try:
         object.__setattr__(vocab, "_index", index)
@@ -135,7 +135,8 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
         for i, phrasing in enumerate([entry["question"], *entry.get("variants", [])]):
             jobs.append((qid, i, phrasing))
 
-    print(f"interpreting {len(jobs)} phrasing(s) of {len(ids)} question(s), {workers} at a time\n")
+    print(f"interpreting {len(jobs)} phrasing(s) of {len(ids)} question(s), "
+          f"{workers} at a time\n", flush=True)
     results: dict[str, dict[int, Any]] = {}
     failures: dict[str, str] = {}
     t0 = time.time()
@@ -152,8 +153,31 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
                 results.setdefault(qid, {})[i] = intent
             except Exception as exc:  # noqa: BLE001
                 failures[f"job{n}"] = f"{type(exc).__name__}: {str(exc)[:90]}"
-            if n % 10 == 0:
-                print(f"  {n}/{len(jobs)}  ({time.time() - t0:.0f}s)")
+            if n % 5 == 0:
+                print(f"  {n}/{len(jobs)}  ({time.time() - t0:.0f}s)", flush=True)
+
+    # ---- does resolution ABSORB the disagreement? -------------------------------------
+    # AN UNSTABLE INTENT IS NOT AUTOMATICALLY A DEFECT, and the pilot proved it: two phrasings of
+    # "how many customers are in Germany" gave `Country eq 'DE'` and `Country eq 'Germany'`, and
+    # two of "how many stores are closed" gave the term as `Status` and `StoreStatus`. All four
+    # plan to the same SQL and the same number — the register resolves the spelling, which is
+    # precisely what a register is for. Reporting those as instability would indict the
+    # interpreter for something the architecture handles.
+    #
+    # So there are TWO rates, and both are honest:
+    #   intent-equivalent     the strict measure — did it read the question the same way
+    #   answer-equivalent     what a user experiences — did it come back with the same number
+    def _answer_of(intent):
+        from mac_runtime.models import Plan
+        from mac_runtime.planner import plan as run_plan
+        try:
+            p_ = run_plan(intent, index, resolver_for_plan)
+        except Exception:  # noqa: BLE001
+            return ("plan-raised",)
+        if not isinstance(p_, Plan):
+            return (type(p_).__name__,)
+        return ("sql", " ".join(p_.sql_preview.split()), tuple(sorted((p_.params or {}).items())))
+
 
     # ---- report ----
     stable, unstable, incomplete = [], [], []
@@ -169,10 +193,21 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
         for f, c in counts.items():
             field_counts[f] = field_counts.get(f, 0) + c
 
+    absorbed, consequential = [], []
+    for qid in unstable:
+        answers = {_answer_of(results[qid][i]) for i in sorted(results[qid])}
+        (absorbed if len(answers) == 1 else consequential).append(qid)
+
     graded = len(stable) + len(unstable)
     rate = 100.0 * len(stable) / graded if graded else 0.0
-    print(f"\n{'=' * 78}\nC2 STABILITY — {len(stable)} of {graded} questions stable ({rate:.1f} %)"
-          f"\n{'=' * 78}")
+    answer_stable = len(stable) + len(absorbed)
+    arate = 100.0 * answer_stable / graded if graded else 0.0
+    print(f"\n{'=' * 78}\nC2 STABILITY — {graded} questions graded\n{'=' * 78}")
+    print(f"  INTENT-equivalent   {len(stable):>4} of {graded}  ({rate:.1f} %)   read the same way")
+    print(f"  + absorbed by a register {len(absorbed):>+3}          "
+          f"differently named, same plan")
+    print(f"  ANSWER-equivalent   {answer_stable:>4} of {graded}  ({arate:.1f} %)   same number")
+    print(f"  CONSEQUENTIAL       {len(consequential):>4}          a different answer")
     if incomplete:
         print(f"  ungraded (fewer than 2 phrasings interpreted): {len(incomplete)}")
     if failures:
@@ -184,8 +219,13 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
         for f in FIELDS:
             if field_counts.get(f):
                 print(f"    {f:<16}{field_counts[f]:>5}")
+    if consequential:
+        print(f"\n  CONSEQUENTIAL — these change the ANSWER ({len(consequential)}):")
+        for qid in consequential[:10]:
+            print(f"    {qid}: {sets[qid]['question'][:66]}")
     if unstable:
-        print(f"\n  UNSTABLE ({len(unstable)}):")
+        print(f"\n  ALL UNSTABLE INTENTS ({len(unstable)}; "
+              f"{len(absorbed)} absorbed by resolution):")
         for qid in unstable[:12]:
             ordered = [results[qid][i] for i in sorted(results[qid])]
             print(f"    {qid}: {sets[qid]['question'][:66]}")
@@ -198,7 +238,8 @@ def measure(bundle: pathlib.Path, workers: int, limit: int | None, model: str) -
     out.write_text(json.dumps(
         {
             "graded": graded, "stable": len(stable), "rate": round(rate, 2),
-            "unstable": unstable, "incomplete": incomplete,
+            "unstable": unstable, "absorbed": absorbed, "consequential": consequential,
+            "answer_rate": round(arate, 2), "incomplete": incomplete,
             "field_counts": field_counts, "failures": failures,
             "canon": {q: {str(i): canon(v) for i, v in got.items()}
                       for q, got in results.items()},

@@ -1,0 +1,154 @@
+{
+  "graded": 4,
+  "stable": 4,
+  "rate": 100.0,
+  "unstable": [],
+  "absorbed": [],
+  "consequential": [],
+  "answer_rate": 100.0,
+  "incomplete": [],
+  "field_counts": {},
+  "failures": {},
+  "canon": {
+    "RC01": {
+      "2": {
+        "subject": "brand",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "0": {
+        "subject": "brand",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "1": {
+        "subject": "brand",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      }
+    },
+    "RC02": {
+      "0": {
+        "subject": "country",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "2": {
+        "subject": "country",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "1": {
+        "subject": "country",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      }
+    },
+    "RC03": {
+      "2": {
+        "subject": "color",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "1": {
+        "subject": "color",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "0": {
+        "subject": "color",
+        "operation": "list",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      }
+    },
+    "RC04": {
+      "0": {
+        "subject": "customer",
+        "operation": "count",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "1": {
+        "subject": "customer",
+        "operation": "count",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      },
+      "2": {
+        "subject": "customer",
+        "operation": "count",
+        "slices": [],
+        "filters": [],
+        "join_filters": [],
+        "period": null,
+        "ordering": null,
+        "limit": null,
+        "denominator": null
+      }
+    }
+  }
+}
