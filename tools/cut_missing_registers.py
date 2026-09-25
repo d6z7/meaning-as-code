@@ -57,7 +57,6 @@ def main(argv=None) -> int:
     sys.path.insert(0, "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src")
     import duckdb
     import yaml
-
     from mac_runtime.ontology import OntologyIndex
     from mac_runtime.resolver.registers import load_registers
 
@@ -68,12 +67,46 @@ def main(argv=None) -> int:
 
     index = OntologyIndex.from_directory(str(root))
     load = load_registers(str(root), index)
-    # A concept HAS values when something already resolves a non-self value for it.
+    # A concept HAS values when ANYTHING can resolve a non-self value for it — and that is two
+    # populations, not one.
+    #
+    # THE BUG THIS FIXES, and it is the root of the whole 2026-09-25 duplicate episode. This read
+    # only `load.entries`, which holds self-entries plus registers DERIVED from the data. A
+    # register the bundle DECLARES resolves through `RegisterResolver` and never appears in
+    # `entries` at all — so every concept with a working declared register looked valueless, and
+    # this tool cheerfully cut a second register for it. Thirteen duplicates, each worse than the
+    # file it shadowed, all from asking the wrong question.
     has_values = {e.concept for e in load.entries if e.identity != e.concept}
+    has_values |= {d.concept for d in load.declarations if d.status == "loaded"}
     con = duckdb.connect(db, read_only=True)
     lookups = root / "data" / "lookups"
 
-    cut, skipped = [], []
+    # WHAT IS ALREADY COVERED, BY COLUMN. The old guard was `if path.exists(): continue`, which
+    # is a guard on the FILENAME and let this tool write `country_country.lookup.csv` beside
+    # `contoso_country.lookup.csv`: two registers over `dim_contoso_customer.Country`, the new one
+    # labelling DE as 'DE' where the old one says 'Germany' and carries the continent roll-up and
+    # the '--' sentinel. Thirteen such duplicates were written on 2026-09-25 and every one was
+    # strictly worse than the file it shadowed.
+    #
+    # A REGISTER'S IDENTITY IS THE COLUMN IT WAS CUT FROM, never its name.
+    covered: dict[tuple[str, str], str] = {}
+    for existing in sorted(lookups.glob("*.lookup.csv")):
+        try:
+            import csv as _c
+            with existing.open(encoding="utf-8-sig", newline="") as fh:
+                existing_rows = list(_c.DictReader(fh))
+        except Exception:  # noqa: BLE001, S112 - an unreadable register cannot claim a column
+            continue
+        if not existing_rows:
+            continue
+        head = list(existing_rows[0])
+        if not head:
+            continue
+        views = {(r.get("source_view") or "").strip() for r in existing_rows if isinstance(r, dict)}
+        for view in views - {""}:
+            covered.setdefault((view, head[0]), existing.name)
+
+    cut, skipped, shadowed = [], [], []
     for name, concept in sorted(index.concepts.items()):
         if name in has_values:
             continue
@@ -88,7 +121,7 @@ def main(argv=None) -> int:
                     f'SELECT DISTINCT "{column}" FROM "{a.schema}"."{table}" '
                     f'WHERE "{column}" IS NOT NULL ORDER BY 1'
                 ).fetchall()
-            except Exception:  # noqa: BLE001 - a column we cannot read is simply not cut
+            except Exception:  # noqa: BLE001, S112 - a column we cannot read is simply not cut
                 continue
             values = [str(r[0]).strip() for r in rows if str(r[0]).strip()]
             if not (MIN_MEMBERS <= len(values) <= MAX_MEMBERS):
@@ -96,6 +129,14 @@ def main(argv=None) -> int:
                 continue
             path = lookups / f"{_slug(name)}_{_slug(column)}.lookup.csv"
             if path.exists():
+                continue
+            owner = covered.get((table, column))
+            if owner is not None:
+                # NOT A SKIP TO BE COUNTED AND FORGOTTEN. This column already has a register, so
+                # the reason its values do not resolve is upstream -- an undeclared register, or a
+                # canon the runtime does not implement. Cutting a second file would hide that and
+                # leave two registers disagreeing.
+                shadowed.append((name, column, owner))
                 continue
             # THE SAME SHAPE THE EXISTING REGISTERS USE, so the loader needs no change: the code
             # column is named after the ontology column, then label and search_key.
@@ -124,6 +165,15 @@ def main(argv=None) -> int:
         print(f"  {path.name:<44}{n:>8}")
     if not cut:
         print("  (nothing to cut — every low-cardinality dimension already resolves)")
+    if shadowed:
+        print(
+            f"\nREFUSED TO SHADOW {len(shadowed)} column(s). Each already has a register, so a "
+            f"value that will not resolve is NOT a missing register — look upstream, at whether "
+            f"the register is DECLARED and whether its canon is implemented "
+            f"(check_canon_implemented.py):"
+        )
+        for concept, column, owner in shadowed:
+            print(f"  {concept + chr(46) + column:<40} already covered by {owner}")
     if a.apply:
         for path, _n, text in cut:
             path.write_text(text, encoding="utf-8")
