@@ -315,6 +315,39 @@ Two registers over one column WILL disagree, and nothing in the runtime arbitrat
 refuse to write where a register already covers that source column, and say which file already
 covers it.
 
+### P6 — A LONE GUESS IS STILL A GUESS
+
+The ladder's last rung is ASK WITH CANDIDATES, and it must be reachable with ONE candidate. The
+clarify test asked only when two candidates TIED, so a single fuzzy match was treated as
+certainty:
+
+```
+'Asia'   -> Australia   (lookup:fuzzy, ratio 0.62)      BOUND, never asked
+'Germny' -> DE          (register:near-miss 0.92)       BOUND, never asked
+```
+
+A question about Asia was about to be answered with Australian numbers. **Offering one candidate
+is a question with one option, which is exactly what should be put to a person.**
+
+The exception, and it is not a judgement call: the NORMALIZED tier binds silently. `norm()` folds
+case and whitespace, so `FeMaLe` IS `female`. Asking there is pedantry, not caution.
+
+### P7 — DO NOT INVENT A CANON THAT AN IMPLEMENTED ONE ALREADY EXPRESSES
+
+Four concepts declared `mac.canon.grouping_from_register` and none of them needed it.
+`resolve_by_register` binds EVERY code a name covers — which is precisely a group over its
+members. Continent through the country register:
+
+```
+Europe -> Country IN ('DE','FR','GB','IT','NL')     19 564
+direct    Continent = 'Europe'                      19 564     AGREE
+```
+
+The roll-up route is the better of the two: the answer can name which countries it counted.
+
+**Before writing a new canon, check whether an implemented one already says it.** Reach for a new
+verb only when the meaning is genuinely absent, not when the existing verb is unfamiliar.
+
 ### P5 — THE ORDER OF DIAGNOSIS, when a value will not resolve
 
 Work it in this order. Every step but the last was skipped at least once this week:
@@ -338,3 +371,28 @@ Only after all six comes "the data is missing." It almost never is.
 5. `resolution.*` replacing `contract.resolution`'s prose; migrate contoso's 13 paragraphs.
 6. `check_register_membership` on a schedule; `warranty: monitored` becomes provable.
 7. Delete the prose the flags now enforce.
+
+---
+
+## PART 5 — STATUS, 2026-09-25
+
+| # | item | state |
+|---|---|---|
+| 1 | `domain.closure` + `complete_for`, mandatory | **open** — see below, it got MORE motivated today |
+| 2 | `filter_column` on the entry | **DONE** — `LookupEntry.column -> Candidate.column -> ResolvedFilter.concept_column`, 7 tests |
+| 3 | sentinels / `null_means` | **superseded by 1.5** — split the source instead; the Channel split is the open piece |
+| 4 | `axis.groupable` read by the prompt | **open** — 20 of 73 offered columns are declared `attribute` |
+| 5 | `resolution.*` replacing prose | **open** — 13 paragraphs to migrate |
+| 6 | `check_register_membership` on a schedule | **open** — the whole lookup gate chain is still offline |
+| 7 | delete the prose the flags enforce | **open** — follows 5 |
+
+**What landed today, measured.** "How many female customers are in Europe?" — a question that
+refused three different ways this week — now plans, executes and answers **19 564**, cross-checked
+against every cell of the dimension (5033+5075+19564+20024+27330+27964 = 104 990). All 11
+dimension probes resolve. 1 294 tests pass.
+
+**Why item 1 got more motivated, not less.** With the guessing fixed, `Asia` now REFUSES — no
+member matched. That is better than binding Australia, and it is still not the right answer. Asia
+is a real continent with no customers in this delivery, and the honest answer is **zero, with
+disclosure**, not "I do not know that word". Exactly the `complete_for: data | world` bit from
+§1.2. The defect was hiding behind a worse defect; fixing the worse one uncovered it.
