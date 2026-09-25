@@ -295,3 +295,51 @@ Several candidates become a **Clarification** carrying them. Nothing is substitu
 translation step does not exist at all. **This is why "How many female customers are in Europe?"
 still refuses** — the gender half now resolves; `Continent`/`Europe` has no register file, so
 nothing can be near it.
+
+---
+
+## PART 7 — WHERE IT STOPPED, AND THE ONE NEXT STEP
+
+### The question, after three defects were removed from it
+
+`"How many female customers are in Europe?"` now **PLANS**:
+
+```
+Plan  params: {'customer': 'female', 'continent': 'Europe'}
+```
+
+Both values resolve. It refused three different ways today and each cause is gone:
+1. `Female` routed to **AgeBand** (members 20..90) — fixed by putting VALUES in the prompt.
+2. *"no register for Customer"* — fixed by deriving undeclared registers.
+3. `Continent='Europe'` unresolvable — fixed by CUTTING the missing registers. `Europe` was a
+   value in the column the whole time; I had proposed ISO translation tables for it.
+
+### THE NEXT STEP, precisely
+
+The SQL is still wrong. The planner puts `female` on **`CustomerKey`** — Customer's identity
+column — instead of on `Gender`:
+
+```sql
+WHERE dim_contoso_customer.CustomerKey = 'female' AND ... .Continent = 'Europe'
+                            ^^^^^^^^^^^ should be Gender
+```
+
+**The register knows which column it was cut from; the entry does not carry it forward**, so the
+planner falls back to the concept's identity column. `LookupEntry` has `identity`, `concept`,
+`display`, `terms` — and no source column.
+
+**The fix: carry the register's source column onto the entry, and have the planner filter on it
+instead of the identity key when one is present.** `_place_filter` in `planner/plan.py` is where
+the choice is made; `rows_to_entries` and `_concept_for_undeclared` in `resolver/registers.py`
+already know the column (it is the CSV's first header field).
+
+**And this is the operator's original point returning:** a register that maps a COLUMN rather than
+a concept's IDENTITY is really a dimension of its own — *"you do have dimiension for GENDER"*.
+Either the column travels with the entry, or gender becomes a concept. The first is mechanical and
+needs no authoring, so it is the one to try.
+
+### State at the stop
+
+* All three repos committed and clean. Suite **1284 passed**, lint clean on everything touched.
+* `tools/check_answers.py`: **PASS 8 of 8 approved**; 65 of 77 still need approved references.
+* Console running on :8890 with every change above loaded.
