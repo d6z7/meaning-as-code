@@ -1,0 +1,239 @@
+# DNA — WHAT EVERY ONTOLOGY DESIGN MUST DECLARE
+
+*Instructions to myself, written 2026-09-25 on the operator's instruction: "YOU must write
+instructions to yourself what everything must be part of the ontology design."*
+
+This is a CHECKLIST, not an essay. If a dimension cannot answer every question in Part 1, the
+ontology is not finished — whatever else is green.
+
+---
+
+## THE LAW THIS ALL RESTS ON
+
+**A DECLARATION WITHOUT A CONSUMER IS A LIE.** Measured this week: `null_semantics` declared on 15
+of 16 contoso dimensions and read by NOTHING; `contract.resolution` declared on 13 of 16, in prose,
+read by nothing — and Continent's prose literally contains the fix for a live bug ("then filter on
+`Continent`"). Before adding any field to a concept model, name the code that will read it. If
+there is none, do not add the field.
+
+**PROSE IS NOT A DECLARATION.** It repeats, it drifts, and no runtime can act on it. Everything
+that determines BEHAVIOUR is a flag. Prose keeps exactly one job: saying what a thing IS, in one
+or two sentences. Every `IT IS NOT…` paragraph that restates what a flag enforces gets deleted
+when the flag lands.
+
+---
+
+## PART 1 — EVERY DIMENSION MUST ANSWER THESE
+
+### 1.1 Closure — what does a miss MEAN?
+
+```yaml
+domain:
+  closure: closed | open
+```
+
+* **closed** — the member list IS the domain. A non-member is answerable from the list alone,
+  with no probe.
+* **open** — the domain grows with the data. A name is resolved, never enumerated.
+
+MANDATORY. No default. A missing closure is exactly the ambiguity that produced this week's bugs:
+the resolver could not tell whether to refuse or to widen, so it guessed the same way for both.
+
+**Closure is NOT cardinality.** Product could be closed at 2 517 (a controlled catalogue);
+Continent is open at 3 (the world has seven). Cardinality decides how to PRESENT a domain —
+inline the members, or resolve them. Closure decides what a MISS means. One number must never do
+both jobs; `VALUE_LIMIT = 40` and `MAX_MEMBERS = 40` were doing exactly that.
+
+### 1.2 Complete for what — the data, or the world?
+
+```yaml
+domain:
+  complete_for: data | world     # may be defaulted at configuration level
+```
+
+* **data** — these are the members PRESENT. A word the model recognises as belonging to this kind
+  but absent from the list answers **ZERO, WITH DISCLOSURE** — not a refusal.
+  *"Sales in Asia"* → `0, and no customer in the delivery is in Asia.*
+* **world** — the list is the kind. Absent means NOT A MEMBER, and refuses.
+  *"Sales in Atlantis"* → refuse, that is not a continent.
+
+One bit, and it settles every hard case in contoso: Continent, Country, StoreStatus, Color, Brand,
+ProductCategory, ProductSubcategory. Set it once at configuration level for the bundle; override
+per dimension only where a dimension genuinely differs.
+
+The model already knows Asia is a continent. The bundle only has to say whether its list is the
+world's or its own.
+
+### 1.3 Warranty — WHY is the closure trustworthy?
+
+```yaml
+domain:
+  warranty: derived | monitored
+```
+
+* **derived** — the members come out of a transform rule. A new load CANNOT add one.
+  (AgeBand: 20..90 by `derive-age-band-as-of`.)
+* **monitored** — the members were observed, and a scheduled check reconciles them against the
+  source. (StoreStatus: 2 codes, measured — and tomorrow's load may carry `Relocated`.)
+
+**`unwatched` IS NOT A PERMITTED VALUE.** A closed set that nothing watches is a refusal backed by
+what we happened to see last Tuesday. That is the whole of the operator's ad-3 ruling:
+
+> *"even if it would have lookup table in the database … the content of the table might increase
+> overnight and we must get information about it. therefore a data quality monitoring must be
+> applied … this is not what any ontology alone can answer."*
+
+Correct, and it changes the shape of the problem: **closure is a CONTRACT, and a contract needs a
+WATCHDOG.** Observed-closed is not a weaker warranty than derived-closed — it is an equal one, on
+condition that something checks it daily and raises to a data engineer when it drifts. From the
+refresh onward, everything is as designed. An ontology that declares `closed` without naming the
+monitor is making a promise it has no way to keep.
+
+A closure question that cannot be settled by a transform rule is therefore not an ontology
+question at all — it is a monitoring requirement. Do not agonise over it; wire the check.
+
+### 1.4 Where a resolved value LANDS
+
+```yaml
+domain:
+  filter_column: Gender
+  resolve_to:    column | key | register
+```
+
+Without it the planner falls back to the concept's identity column, which is how
+`CustomerKey = 'female'` reached DuckDB. The register was CUT FROM a column; that column must
+travel with the entry. Never derived, never guessed — declared.
+
+### 1.5 Members that are in the DATA but not in the DOMAIN
+
+```yaml
+domain:
+  null_means:  <code> | absent
+  sentinels:   ['--']
+```
+
+Two distinct cases, both real in contoso:
+
+* **NULL as a state.** StoreStatus has no code for an operating store: 59 of 74 versions carry
+  NULL, 58 of them still open. "Operating" exists only as an absence, and the test is
+  `CloseDate IS NULL`.
+* **A non-null sentinel.** The online store version carries `--` in CountryCode and `Online` in
+  CountryName. `SELECT DISTINCT Country` returns NINE values; **eight are countries and one means
+  "this sale had no country."**
+  - *"In how many countries do we sell?"* → **8**. If `--` is a member, the machine answers 9.
+  - *"Sales by country"* → the Online row must still appear, labelled `Online`.
+
+  So `--` must be IN the register (the row resolves and displays) and NOT a member of the domain
+  (it is never counted as a country). A single closed/open flag cannot say both; `sentinels` is
+  what says it.
+
+### 1.6 The resolution ladder, per dimension
+
+```yaml
+resolution:
+  strategy:    [exact, normalized, prefix, fuzzy]
+  fuzzy_floor: 0.80
+  on_miss:     refuse | zero_disclosed | ask
+  candidates:  5 | suppress
+```
+
+The DEFAULT is the full ladder, per [[resolution-ladder-is-default]]: exact → normalized →
+prefix → fuzzy → ask with candidates. A dimension narrows it, never invents its own.
+
+`normalized` is not optional and is not a flag anyone declares: **case and whitespace folding is
+common sense.** `female`, `Female`, `FeMaLe` are one word. A runtime that refuses on case has a
+bug, not a strictness setting.
+
+`on_miss` follows from 1.1 + 1.2 and should be derivable, not restated:
+
+| closure | complete_for | a miss means |
+|---|---|---|
+| closed | world | **refuse** — not a member of the kind |
+| closed | data  | **zero, disclosed** — real word, no rows |
+| open   | *any* | **ladder, then ask with candidates** |
+
+### 1.7 What may be an AXIS
+
+```yaml
+axis:
+  groupable:     true | false
+  groupable_why: privacy | grain | derived
+  orderable:     true | false
+```
+
+`field_roles` already carries `dimension` vs `attribute`, and the prompt IGNORES it: 20 of 73
+offered columns are declared `attribute`, including `ZipCode`, which [customer.yaml] forbids as an
+axis on a measured privacy finding (DQ-CUSTOMER-02: ZipCode alone singles out 29 193 of 104 990
+rows). A ruling made from a measurement must produce a REFUSAL WITH ITS REASON, not a silent
+offer.
+
+### 1.8 Closed sets get a register; registers get a monitor
+
+Every `closure: closed` dimension has a register in `data/lookups/`, and every register has:
+* a `source_view` and a source COLUMN naming where it was cut from;
+* labels a person would say (`Germany`), not just codes (`DE`);
+* a scheduled reconciliation — see Part 2.
+
+**ONE REGISTER PER DIMENSION.** Two registers for one dimension WILL disagree. Found 2026-09-25:
+`contoso_country` (9 rows, labels `Germany`, carries the continent roll-up) and
+`country_country` (8 rows, labels `DE`, no roll-up, no sentinel) — the second cut by
+`cut_missing_registers.py` on top of an existing register it never checked for. A cutter must
+refuse to write where a register already covers that column.
+
+---
+
+## PART 2 — THE MONITOR (what the ontology cannot answer alone)
+
+The gate chain is real and it is **entirely offline**: `check_lookups.py` says so in its own
+docstring — *"it checks files on disk, never the warehouse."* `check_enumeration_closure.py`
+catches a closed set holding a guessed member; `check_vocabulary_drift.py` catches code that
+re-lists a closed vocabulary. None of them asks the database whether the members are still the
+members.
+
+**MISSING, and required by 1.3:** a scheduled `check_register_membership` that, for every register
+declaring a `source_view` + source column:
+
+```
+SELECT DISTINCT <column> FROM <source_view>     vs     the register's rows
+```
+
+* in the warehouse, not in the register → **STALE. Alert the data engineer; the register needs a
+  refresh.** Not a silent refusal to the user.
+* in the register, not in the warehouse → **PHANTOM member.** A closed set that can refuse a true
+  word, or offer a value that returns nothing.
+* identical → the `monitored` warranty holds for another day.
+
+This runs on a schedule against the live plane, not in the offline gate chain. It is the
+difference between an ontology that CLAIMS a domain is closed and one that KNOWS it.
+
+---
+
+## PART 3 — STANDING LAWS (do not relearn these)
+
+1. **Derive the enumeration, author the meaning.** Members are CUT FROM DATA. Nobody types a
+   member list. What a member MEANS is authored.
+2. **Never hardcode — every behaviour comes from a declaration.** No code branch per question
+   type, per bundle, per concept name. [[never-hardcode-use-declarations]]
+3. **Nothing bundle-specific in the prompt.** All specificity arrives through the ontology.
+4. **Pass/fail is the only verdict**, against a human-approved reference answer.
+   [[pass-fail-is-the-only-verdict]]
+5. **Fix the requirement, not the instance.** Ask why a mechanism exists before satisfying it.
+   [[fix-the-requirement-not-the-instance]]
+6. **Check for an unread declaration before proposing a new one.**
+   [[the-runtime-ignores-its-own-declarations]]
+7. **Common sense is not a declaration.** Case folding, "Europe is a continent", "female is a
+   gender" — the model brings these. The ontology declares what the model CANNOT know: which
+   column, which grain, which ruling, which refusal.
+
+---
+
+## PART 4 — THE ORDER TO BUILD IT IN
+
+1. `domain.closure` + `complete_for` on the model; parser; **mandatory** (a bundle without it
+   fails to load — a default would reintroduce the guess).
+2. `filter_column` — kills the identity-key fallback. Smallest fix, biggest live bug.
+3. `sentinels` + `null_means` read by the resolver and the count route.
+4. `axis.groupable` read by the prompt builder — drop `attribute` from the offered set.
+5. `resolution.*` replacing `contract.resolution`'s prose; migrate contoso's 13 paragraphs.
+6. `check_register_membership` on a schedule; `warranty: monitored` becomes provable.
+7. Delete the prose the flags now enforce.
