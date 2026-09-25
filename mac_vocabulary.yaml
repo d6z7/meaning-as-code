@@ -804,6 +804,12 @@ canon:
   description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
   members:
     composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
+    # ADDED 2026-09-25. Both had a full canon page -- signature, reference implementation, plug-in,
+    # limits -- and a pattern citing them back, and were absent from this list. A concept naming
+    # either would have failed reference resolution while the manual documented it in detail.
+    # Found by check_canon_documented.py, which compares this list, the pages and the runtime.
+    array_membership_guard: { serves: multivalued_bridge,        needs_sqlglot: true,  doc: "reject equality on a MANY-valued column; membership is the only correct test" }
+    opaque_code_guard:      { serves: contaminated_code,         needs_sqlglot: true,  doc: "reject reading meaning out of an opaque code's embedded structure; resolve by name instead" }
     # `params_from` names the DECLARATION each parameter is readable from. A binding that attaches
     # one of these is stating a fact that already has a home — MAC003 if it agrees, MAC004 if it does
     # not. Measured 2026-08-19: two <dataset> bindings attached `code` and BOTH disagreed with
