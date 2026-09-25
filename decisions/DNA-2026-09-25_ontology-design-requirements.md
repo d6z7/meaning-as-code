@@ -256,6 +256,78 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
 
 ---
 
+## PART 3B — PREMISES I MUST NOT NEED TO BE TOLD AGAIN
+
+*Written on the operator's instruction: "you must be able to repeat these premisses next time you
+build ontology without my help." Each one is a trap I walked into on 2026-09-25, with the
+measurement that proves it.*
+
+### P1 — BEFORE DECLARING A CANON, CHECK THE RUNTIME IMPLEMENTS IT
+
+Audited across contoso: **7 of 16 canon bindings name a UDF the loader has never supported.**
+
+```
+  6  mac.canon.resolve_by_register      KNOWN
+  3  mac.canon.enum_from_register       KNOWN
+  4  mac.canon.grouping_from_register   ** UNKNOWN TO THE LOADER **
+  2  mac.canon.refuse_measure_no_row    ** UNKNOWN **
+  1  mac.canon.snapshot_collapse        ** UNKNOWN **
+```
+
+The loader knows exactly two names (`register_declarations.py`: `RESOLVE_BY_REGISTER`,
+`ENUM_FROM_REGISTER`). Everything else parses as valid YAML, passes every gate, and does nothing.
+
+**This is why Continent, Brand, ProductCategory and ProductSubcategory had no resolvable values.**
+Their registers were never orphaned for want of a declaration — the declaration was there, written
+carefully, naming the right file and the right columns. The runtime simply did not implement the
+verb.
+
+**Rule: `grep` the runtime for the UDF name before writing it into a bundle.** A canon that
+nothing implements is a comment.
+
+### P2 — AN UNIMPLEMENTED CANON MUST FAIL LOUDLY, NEVER SKIP
+
+A declaration the runtime cannot honour must refuse at load with the concept and the UDF named. A
+silent skip is how four registers stayed dark long enough for me to rebuild them by hand. The same
+law as [[the-runtime-ignores-its-own-declarations]], stated for canons: **the loader may not decide
+on its own that part of the ontology does not exist.**
+
+### P3 — NEVER BUILD A WORKAROUND FOR AN UNIMPLEMENTED MECHANISM
+
+On 2026-09-25 I cut 15 registers from the warehouse to make `Continent='Europe'` resolve. It
+worked. **13 of the 15 duplicated registers the bundle already had**, and every duplicate was
+strictly worse:
+
+```
+contoso_country.lookup.csv   DE,Germany,germany,Europe,…   9 rows  labels, continent roll-up, sentinel
+country_country.lookup.csv   DE,DE,de,…                    8 rows  no labels, no roll-up, no sentinel
+```
+
+The second one cannot resolve the word "Germany". I had produced a worse copy of a better file,
+because I fixed the data instead of the reader.
+
+**Rule: when a fix produces data the bundle already contains, STOP. You are treating a symptom.**
+Ask what should have read the existing data and did not.
+
+### P4 — ONE REGISTER PER DIMENSION, ENFORCED BY THE CUTTER
+
+Two registers over one column WILL disagree, and nothing in the runtime arbitrates. A cutter must
+refuse to write where a register already covers that source column, and say which file already
+covers it.
+
+### P5 — THE ORDER OF DIAGNOSIS, when a value will not resolve
+
+Work it in this order. Every step but the last was skipped at least once this week:
+
+1. **Is there a register?** — `data/lookups/`
+2. **Is it DECLARED on the concept?** — `realized_by.udf` + `params.register`
+3. **Is the declared UDF IMPLEMENTED?** — grep the runtime *(this is the one that was missed)*
+4. **Did the register LOAD?** — a skipped load must be visible, never inferred
+5. **Does the entry carry its SOURCE COLUMN?** — else the planner filters on the identity key
+6. **Is the value in the PROMPT?** — a model cannot pick a value it was never shown
+
+Only after all six comes "the data is missing." It almost never is.
+
 ## PART 4 — THE ORDER TO BUILD IT IN
 
 1. `domain.closure` + `complete_for` on the model; parser; **mandatory** (a bundle without it
