@@ -228,3 +228,70 @@ question of "what fits in the prompt" disappears.
 **Of the 77 questions, how many return the approved answer?** Today: **8 of 8 judged, 8 of 77
 approved.** If that number does not rise next session, the plan is wrong and gets changed rather
 than added to.
+
+---
+
+## PART 6 — THE RESOLUTION LADDER, BUILT (added after the directive "IMPLEMENT ALL")
+
+### The operator's rule, verbatim
+
+> "in case common sense wording are used in the context that do not appear 1:1 in the dataset ...
+> a fallback search on this dimension will have to be done with LIKE ... if exact match has been
+> found take it, or if not then offer an option to take similar one from the multiple choices.
+> this can be adopted as rule of the thumb and DEFAULT behaviour. this is what we had partially in
+> estate and i do not understand why did it got forgotten!?!?!?!?!"
+
+**He is right that estate had it.** `archive-estate/ontology/query_rules.yaml:317` still reads
+*"Ask with candidates when a dimension or entity is underspecified"*, beside aliases declared on
+concepts and an explicit ban on silently substituting a near miss. **MAC kept the ban and lost the
+asking.**
+
+### What now happens
+
+```
+Germany   -> Plan {'country': 'DE'}       exact
+Germny    -> Plan {'country': 'DE'}       near miss, unambiguous
+GERMNY    -> Plan {'country': 'DE'}       case never decides
+Contos    -> Plan {'brand': 'Contoso'}
+gren      -> Plan {'color': 'Green'}
+fabricam  -> Plan {'brand': 'Fabrikam'}
+Q1        -> Plan {'calendarday': 'Q1'}   via a DERIVED register
+FeMaLe    -> Plan {'customer': 'female'}  via a DERIVED register
+Narnia    -> Refusal, naming the register and the columns compared
+```
+
+Several candidates become a **Clarification** carrying them. Nothing is substituted silently.
+
+### Three design points that cost a rewrite each, recorded so they are not re-learned
+
+1. **The matching lives in the REGISTER, not in shared entries.** Copying declared rows into
+   `entries` also answers UNSCOPED calls, and a register VALUE then resolves as though it were a
+   CONCEPT — "Borealis" would name one. An existing test caught it and was right.
+2. **The floor is measured, not chosen.** Germny→Germany 0.92, Contos→Contoso 0.92, gren→Green
+   0.89, blu→Blue 0.86 — and a spurious `A-300` for "Aurora Classic" at 0.72. Hence 0.80. Terms
+   under three characters are excluded: below that everything is near everything.
+3. **The code is not a search term.** Matching it would resolve a name the ontology never declared.
+
+### Also built in the same pass
+
+* **An undeclared register is readable.** 9 of 17 contoso registers had no declaration; 8 now
+  derive (1 cannot be attributed and is reported). A declaration gives a register its MEANING, not
+  permission to read values cut from the warehouse.
+* **The prompt carries VALUES** for small closed domains — 8 dimensions, 78 values, ~1 kB. The
+  model no longer guesses which concept owns a word: `Female` used to route to **AgeBand**
+  (members 20..90).
+* **The prompt is generic.** Zero bundle-specific tokens in the instruction block, with a test.
+
+### STILL OWED — the half of his design that is not built
+
+**A dimension must know whether it is OPEN or CLOSED.**
+
+* **CLOSED** — the full value set is known. A common-sense word that is not a member must be
+  TRANSLATED, not refused: `Europe` → the ISO countries → `WHERE country IN (...)`. This wants a
+  STANDARD object (continent → ISO2/3), which is what estate had.
+* **OPEN** — probe the data with LIKE and offer the choices.
+
+`VALUE_LIMIT` currently separates the two implicitly by size. It should be **declared**, and the
+translation step does not exist at all. **This is why "How many female customers are in Europe?"
+still refuses** — the gender half now resolves; `Continent`/`Europe` has no register file, so
+nothing can be near it.
