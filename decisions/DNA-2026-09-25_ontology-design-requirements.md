@@ -196,6 +196,86 @@ axis on a measured privacy finding (DQ-CUSTOMER-02: ZipCode alone singles out 29
 rows). A ruling made from a measurement must produce a REFUSAL WITH ITS REASON, not a silent
 offer.
 
+### 1.7B `attribute` IS NOT A KIND — IT IS FOUR STATEMENTS IN ONE WORD
+
+The operator's question, 2026-09-25: *"could we not say that the attribute is subset of dimension
+that can be tuned with flags on the dimension level ... like never axis"* — right in direction,
+and one flag is too few. Measured over contoso's 20 `attribute` columns, four different things are
+wearing the word:
+
+```
+CountryFull     vs Country        8 /   8 distinct,   8 pairs   1:1
+CountryName     vs CountryCode    9 /   9 distinct,   9 pairs   1:1
+MonthShort      vs Month         12 /  12 distinct,  12 pairs   1:1
+DayofWeekShort  vs DayofWeek       7 /   7 distinct,   7 pairs   1:1
+YearMonthNumber vs YearMonth     132 / 132 distinct, 132 pairs   1:1
+Manufacturer    vs Brand          11 /  11 distinct,  11 pairs   1:1
+StateFull       vs State         608 / 563 distinct, 608 pairs   N:1
+ZipCode          40 639 distinct over 104 990 rows
+City             34 581 distinct over 104 990 rows
+StartDT          11 305 distinct over 104 990 rows
+```
+
+**(a) ANOTHER NAMING REGISTER OF THE SAME THING — 6 of 20, every one 1:1.**
+
+The operator's ruling that settles what this IS (BRD-Q1):
+
+> *"Brand is Contoso, known as Contoso. But Manufacturer registered name is Contoso AG. One is what is
+> known to people of the world and the other is what is entered in the trade registers."*
+
+**TWO NAMING REGISTERS FOR ONE ENTITY**, not two entities. That is why the 1:1 holds by MEANING
+rather than by luck — every brand has exactly one trade-register entry. Had `Manufacturer` meant
+the OWNING company it would be 1:N (Northwind AG owns Contoso, CTSO and Contoso) and the modelling
+would be the opposite. The distinction between *a thing's other name* and *a thing's parent* is
+the whole question, and cardinality alone cannot tell you which you have.
+
+`GROUP BY CountryFull` yields exactly the 8 groups `GROUP BY Country` yields. So this is not
+"not an axis" — it is a **REDUNDANT** axis, and the flag is a RELATIONSHIP, not a prohibition:
+
+```yaml
+Manufacturer: { role: dimension, name_form_of: Brand,   register: legal }
+CountryFull:  { role: dimension, name_form_of: Country, register: long }
+MonthShort:   { role: dimension, name_form_of: Month,   register: short }
+```
+
+**AND THE RIGHT BEHAVIOUR IS REDIRECT, NOT REFUSE.** *"Sales by manufacturer"* is a good question:
+answer it by grouping on `Brand` and DISPLAYING `Manufacturer`. Refusing it — which is what
+`never_axis` does, and what this estate shipped on 2026-09-25 — trades a silent wrong answer for a
+wrong refusal. The improvement is real; the destination is redirect.
+
+**(b) A DIFFERENT LEVEL OF THE SAME THING — `StateFull` vs `State`, N:1.**
+
+608 long names over 563 codes: the long name is **finer**, so grouping on the code MERGES regions
+the name separates. The bundle files this beside case (a) with the note that grouping on the long
+name "would split the same geography two ways" — true of `Country`, and the wrong diagnosis here,
+where the two columns genuinely disagree about how many regions exist. This is a real axis at
+another grain, and the answer must disclose which level it used.
+
+**(c) TOO IDENTIFYING TO BE AN AXIS — `ZipCode` 40 639, `City` 34 581 over 104 990 rows.**
+
+**Only this group is a genuine prohibition**, and it carries a measured basis (DQ-CUSTOMER-02).
+This is where `never_axis` belongs, with its evidence so the refusal can cite it.
+
+**(d) NOT BUSINESS CONTENT AT ALL — `StartDT`, `EndDT`.**
+
+SCD-2 validity windows: when the ROW was written, not when anything happened. These are not a
+dimension you may not group by; they should not be in the business vocabulary at all. A different
+PLANE, not a weaker permission.
+
+**THE RESULTING SHAPE:**
+
+```yaml
+Gender:      { role: dimension }
+CountryFull: { role: dimension, name_form_of: Country, register: long }
+StateFull:   { role: dimension, finer_than: State }
+ZipCode:     { role: dimension, never_axis: privacy, evidence: DQ-CUSTOMER-02 }
+StartDT:     { role: system }
+```
+
+So `attribute` does collapse into `dimension`, as the operator proposed — but what replaces it is
+mostly a RELATIONSHIP between columns, and only one of the four is a prohibition. A single
+`never_axis` flag would have preserved the conflation in a new spelling.
+
 ### 1.8 Closed sets get a register; registers get a monitor
 
 Every `closure: closed` dimension has a register in `data/lookups/`, and every register has:
