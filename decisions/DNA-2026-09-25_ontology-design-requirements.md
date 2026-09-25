@@ -374,6 +374,28 @@ Only after all six comes "the data is missing." It almost never is.
 
 ---
 
+## PART 4B — WHICH PREMISES ARE ENFORCED
+
+A premise nobody checks is a premise nobody keeps — this document's own first law turned on
+itself. What holds each one today:
+
+| | premise | enforced by |
+|---|---|---|
+| P1 | canon must be implemented | **`check_canon_implemented.py`** — walks every `realized_by` in the document tree |
+| P2 | unimplemented canon fails loudly | **the loader** — reports each as a `SkippedRegister`; **console readiness** publishes them |
+| P3 | no workaround for an unimplemented mechanism | P1 + P5 make the real cause findable; not mechanically checkable |
+| P4 | one register per dimension | **`check_one_register_per_dimension.py`**, and **the cutter refuses by column** |
+| P5 | the diagnosis order | this document; step 3 is now a gate |
+| P6 | a lone guess still asks | **`test_planner_value_column.py`** — 3 near-miss cases + the normalized counter-case |
+| P7 | no canon an implemented one expresses | `mac_runtime/canon.py` `KNOWN_UNIMPLEMENTED` says so at the point of temptation |
+
+**`mac_runtime/canon.py` is the registry** — the canons this runtime honours and where, plus the
+ones it knowingly does not. `test_canon_registry.py` holds both lists to the source, stripping
+docstrings with `ast` first: `registers.py` names both unimplemented canons in PROSE, narrating
+this very defect, and a text search read that as evidence of support.
+
+---
+
 ## PART 5 — STATUS, 2026-09-25
 
 | # | item | state |
@@ -383,7 +405,7 @@ Only after all six comes "the data is missing." It almost never is.
 | 3 | sentinels / `null_means` | **superseded by 1.5** — split the source instead; the Channel split is the open piece |
 | 4 | `axis.groupable` read by the prompt | **open** — 20 of 73 offered columns are declared `attribute` |
 | 5 | `resolution.*` replacing prose | **open** — 13 paragraphs to migrate |
-| 6 | `check_register_membership` on a schedule | **open** — the whole lookup gate chain is still offline |
+| 6 | `check_register_membership` on a schedule | **open** — still the only gate that would touch the warehouse |
 | 7 | delete the prose the flags enforce | **open** — follows 5 |
 
 **What landed today, measured.** "How many female customers are in Europe?" — a question that
@@ -396,3 +418,9 @@ member matched. That is better than binding Australia, and it is still not the r
 is a real continent with no customers in this delivery, and the honest answer is **zero, with
 disclosure**, not "I do not know that word". Exactly the `complete_for: data | world` bit from
 §1.2. The defect was hiding behind a worse defect; fixing the worse one uncovered it.
+
+**Consolidation, same day.** Four locks, so the day's gains cannot quietly reverse: the canon gate
+(6 of 18 bindings caught on contoso), the duplicate-register gate, a cutter that refuses by COLUMN
+and now asks the right question about what already resolves, and skipped registers published in
+readiness (1 → 7 visible). Run against the same bundle it damaged yesterday, the cutter now says
+*"nothing to cut — every low-cardinality dimension already resolves"* and writes **0**.
