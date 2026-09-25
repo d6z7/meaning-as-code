@@ -315,6 +315,19 @@ Two registers over one column WILL disagree, and nothing in the runtime arbitrat
 refuse to write where a register already covers that source column, and say which file already
 covers it.
 
+### P8 — EVERY PRODUCED ARTIFACT NEEDS SOMETHING THAT PRODUCES IT
+
+`setup.sh` built contoso's eight landing tables and stopped. The six
+`CREATE OR REPLACE VIEW contoso_served.<name>` statements in `data/transforms/*.sql` — the
+relations every dataset descriptor names in `produces.relation`, and every question reads — were
+applied BY HAND, once, by someone. The database file is gitignored, so **a fresh clone ran the
+setup script, got no served schema at all, and every question failed.**
+
+The same law as P1 and P2 one plane down: a transform nobody runs is a declaration nobody reads.
+
+**Rule: if a file describes something that must EXIST, find the thing that creates it from that
+file. If there isn't one, that is the defect** — not the missing artifact.
+
 ### P6 — A LONE GUESS IS STILL A GUESS
 
 The ladder's last rung is ASK WITH CANDIDATES, and it must be reachable with ONE candidate. The
@@ -403,7 +416,7 @@ this very defect, and a text search read that as evidence of support.
 | 1 | `domain.closure` + `complete_for`, mandatory | **open** — see below, it got MORE motivated today |
 | 2 | `filter_column` on the entry | **DONE** — `LookupEntry.column -> Candidate.column -> ResolvedFilter.concept_column`, 7 tests |
 | 3 | sentinels / `null_means` | **superseded by 1.5** — split the source instead; the Channel split is the open piece |
-| 4 | `axis.groupable` read by the prompt | **open** — 20 of 73 offered columns are declared `attribute` |
+| 4 | `axis.groupable` read by the prompt | **DONE** — 73 → 46 offered; `GROUP BY ZipCode` now POLICY_DENIED |
 | 5 | `resolution.*` replacing prose | **open** — 13 paragraphs to migrate |
 | 6 | `check_register_membership` on a schedule | **open** — still the only gate that would touch the warehouse |
 | 7 | delete the prose the flags enforce | **open** — follows 5 |
@@ -424,3 +437,20 @@ disclosure**, not "I do not know that word". Exactly the `complete_for: data | w
 and now asks the right question about what already resolves, and skipped registers published in
 readiness (1 → 7 visible). Run against the same bundle it damaged yesterday, the cutter now says
 *"nothing to cut — every low-cardinality dimension already resolves"* and writes **0**.
+
+**Later the same day — C and A.**
+
+*C, the axis ruling.* `field_role: attribute` means display-only, never filter or group, and two
+places ignored it: the prompt OFFERED those columns (27 of 73) and the planner never read the role
+at all, so `GROUP BY ZipCode` planned and would have executed — against DQ-CUSTOMER-02, which
+measured that ZipCode alone singles out 29 193 of 104 990 rows. Now 46 columns offered, and a
+forbidden axis is `POLICY_DENIED` naming what CAN be grouped on instead.
+
+*A, the channel split.* The operator's ruling applied: `Channel` is derived in the store
+transform, declared `closure: closed` with warranty **derived** — produced by a CASE expression,
+so no watchdog is needed — and the country register's `--` row stops answering to the word
+`online`. Measured after: `'online'` as a Country resolves to **nothing**, as a Channel to
+**online**, and *"in how many countries do we sell"* answers **8** where it answered 9.
+
+*And the gap underneath both.* Fixing A meant editing a transform — which exposed that nothing
+ever ran the transforms. P8.
