@@ -39,6 +39,23 @@ file per worked pattern** — the most MAC-native shape: each pattern is a looku
 | [04_discipline.md](04_discipline.md) | **The discipline** — two orthogonal axes: the correctness gradient (ref. FRAMEWORK §8) and the determinism gradient (canon vs prose); why correctness must come *before* canonization; the manual's self-review discipline. | ✅ written |
 | [05_tutorial.md](05_tutorial.md) | **Tutorial: from blank canvas to a running model** — "hello, ontology" (one concept, run it), the author→gate→run→promote loop, growing to concept + edge + rule, and when to jump to a Ch.03 pattern. References the cookbook + example; doesn't restate them. | ✅ written |
 
+## Columns
+
+**What the ontology does with a column, and how to change it.** Read the trace first — it shows the
+machine the switches are switches on; the rest only makes sense after it.
+
+| File | Page | Status |
+| --- | --- | --- |
+| [how_a_question_becomes_sql.md](how_a_question_becomes_sql.md) | **How a question becomes SQL** — one question traced end to end in six steps. Each step names the declaration that decided it and what actually broke when that declaration was missing. Every number measured on a live bundle. **Start here.** | ✅ written |
+| [column_specification.md](column_specification.md) | **The column specification** — one principle (*a fact about one column is declared on that column*), the complete block, every key with its default and legal values, and what is measured rather than declared. | 🔧 proposal — the `columns:` block is not yet built |
+| [column_roles.md](column_roles.md) | **Column roles** — the five roles, read off the data. Opens with two real relations, every column assigned, so the shapes can be read from cardinality. | ✅ written |
+| [column_rulings.md](column_rulings.md) | **Column rulings** — the judgements measurement cannot make: `label_of` · `finer_than` · `scoped_by` · `never_axis`. Reference form per switch: synopsis, parameters, the constellation, what breaks without it, examples, errors. | ✅ written |
+
+Where a constellation already has a **pattern**, these pages link to it rather than restate it —
+`scoped_by` defers to [context_dependent_meaning](patterns/context_dependent_meaning.md), the
+several-dates trap to [role_playing_dimension](patterns/role_playing_dimension.md), closure to
+[explicit_closure](patterns/explicit_closure.md). The pattern is canonical.
+
 ## Shape reference
 
 The **per-object-type structural reference** — what keys exist, where they nest, what's required, the

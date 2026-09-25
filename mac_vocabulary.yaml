@@ -15,7 +15,8 @@ metadata:
   namespace: mac
   version: '0.1.13'
   status: active
-  defines: [aggregation_effect, axis_kind, binding_mode, MeasureType, rule_kind, canon, identity_kind]
+  defines: [aggregation_effect, axis_kind, binding_mode, MeasureType, rule_kind, canon, identity_kind,
+            column_role, identity_role, storage_role, column_ruling, name_register]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -57,6 +58,178 @@ axis_kind:
   terms:
     time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
     categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+
+# ===========================================================================
+# mac.column_role — WHAT A COLUMN IS, analytically: where a query may use it and the guardrail that
+# follows. ONE role per column, and it is DERIVABLE — cardinality, type and reference structure give
+# it, which is why a generator can assign it unaided over a thousand columns without a human.
+#
+# THIS IS THE FRAMEWORK'S, NOT THE APPLICATION'S, and that is a change. Until 2026-09-25 each bundle
+# declared these terms in its own vocabulary.yaml: TWENTY files defined what `dimension` means, seven
+# of them verbatim copies, and eleven generated ones gave all five terms the same placeholder
+# sentence — "generated role, inferred from column type and name" — because there was nothing to
+# point at. Meanwhile the runtime branched on the bare strings ("measure", "attribute", "dimension")
+# in six places and even guessed among three spellings of `period`. The framework already owned the
+# behaviour; it now owns the names.
+#
+# `attribute` IS DELIBERATELY ABSENT. It was never a role: it was four different JUDGEMENTS filed in
+# the slot where types live — another name for the same thing, a different level of the same thing,
+# too identifying to be an axis, and not business content at all. Judgements are authored and cannot
+# be derived, which is exactly why no generator ever assigned it. They live in `mac.column_ruling`.
+# ===========================================================================
+column_role:
+  kind: vocabulary
+  closed: true
+  description: The analytical role of a column — where a query may use it, and the default guardrail.
+  terms:
+    key: >
+      IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
+      joins on the exact value. Never matched against a label, and never aggregated — an identifier
+      that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
+      counts and what the fact joins on.
+    dimension: >
+      A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
+      (a register states every member, so a non-member is answerable without probing) or OPEN (names
+      resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
+      `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
+    measure: >
+      A NUMERIC PAYLOAD. Folded only as its mac.MeasureType and the axis allow — the law is stated
+      once there and never restated per concept. Never filtered on directly: a threshold on a
+      measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
+    period: >
+      THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
+      relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
+      `OrderDate` on a line that also carries `DeliveryDate`.
+    housekeeping: >
+      PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
+      housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
+      absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
+      validity window — when the ROW was written, not when anything happened. Grouping sales by it
+      is meaningless, and until this term existed it was spelled `attribute`, which reads as
+      "a dimension you may not use" rather than "not part of the business at all".
+      NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
+      for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+
+# ===========================================================================
+# mac.identity_role — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
+# narrower than `mac.identity_kind`, which is per CONCEPT and says how identity is ESTABLISHED
+# (iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending). The two answer
+# different questions and both are needed: the concept says identity is a composite; these say
+# WHICH columns compose it.
+#
+# WHY IT IS SEPARATE, and the mistake it corrects. A draft of the column specification invented
+# `canonical | natural | part | reference` for this slot. `part` duplicated `identity_kind.composite`
+# and `natural` was a category error -- a natural key is a statement about the KIND of identity, not
+# about a column's part in it, so it belongs on the concept and nowhere else. What is genuinely
+# per-column is only the three below.
+# ===========================================================================
+identity_role:
+  kind: vocabulary
+  closed: true
+  description: What part a column plays in its concept's identity (per column; see mac.identity_kind for the concept).
+  terms:
+    canonical: >
+      THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
+      discloses that it counted. Exactly one per concept, and a concept that legitimately has none
+      says so through `mac.identity_kind.composite` or `resolved_axis` rather than nominating a
+      column that does not identify.
+    part: >
+      ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
+      returns a set where a row was expected, and looks like an answer. Declared on every column of
+      the tuple; the concept declares `mac.identity_kind.composite` alongside.
+    reference: >
+      A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
+      points at is named separately; whether every value is PRESENT in the parent is a measurement,
+      not a declaration, and a reference with no parent relation in the delivery is recorded AS
+      dangling rather than dropped or invented.
+
+# ===========================================================================
+# mac.storage_role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
+# question may do with it. A column carries BOTH a storage_role and a column_role and they answer
+# different questions: `CountryCode` is storage `value` and analytically a `dimension`; `StoreKey`
+# is storage `primary_key` and analytically a `key`.
+#
+# DECLARED HERE BECAUSE IT WAS DECLARED NOWHERE. The dataset descriptors have used these five terms
+# all along — 72 columns on contoso alone — and no file in the estate defined them. One of them,
+# `dimension`, collided with the analytical vocabulary and meant something else there.
+# ===========================================================================
+storage_role:
+  kind: vocabulary
+  closed: true
+  description: The physical shape of a column in its relation, independent of its analytical role.
+  terms:
+    primary_key: >
+      The relation's own identity: one row per distinct value, measured rather than assumed.
+    foreign_key: >
+      A reference to another relation's identity. Whether every value is PRESENT in the parent is a
+      separate measurement — a declared key says the relationship is intended, not that it holds.
+    composite_key_part: >
+      One column of a multi-column identity. ALONE IT IDENTIFIES NOTHING, and using it as though it
+      did is the defect this term exists to make visible.
+    value: >
+      A payload column: it carries data, not identity and not a choice of row kind.
+    discriminator: >
+      A column whose value selects WHICH KIND of row this is — the column a perspective, status or
+      type is read from.
+
+# ===========================================================================
+# mac.column_ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
+# here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
+# a postcode identifies people, that one geography level is finer than another. This is why they must
+# not share a slot with `column_role`, which is derived — a slot that accepts both silts up, and
+# `attribute` is what that looks like after two years.
+#
+# A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
+# `evidence` naming the measurement, so the refusal can cite it rather than assert it.
+# ===========================================================================
+column_ruling:
+  kind: vocabulary
+  closed: true
+  description: An authored judgement about a column, beyond what measurement can establish.
+  terms:
+    label_of: >
+      THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
+      is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
+      named column and DISPLAY this one: a question asking in these words gets answered in them,
+      never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
+      the world calls it, "Contoso AG" is what the register calls it, and they are one company under
+      two naming registers. NOT a parent: had the column meant the OWNING company it would be
+      one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
+    finer_than: >
+      THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
+      legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
+      carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs
+      over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
+      double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
+      colliding code space instead — see `scoped_by`, and measure before you rule.
+    scoped_by: >
+      THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
+      filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
+      Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of
+      563 state codes are carried by more than one country and 0 collide WITHIN a country, so
+      `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
+      NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
+      parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
+    never_axis: >
+      THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
+      measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
+      CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
+      104 990 served customers and is the dominant identifier in the row.
+
+# ===========================================================================
+# mac.name_register — WHICH NAMING REGISTER a `label_of` ruling points at. One thing, several
+# names, each belonging to a different register: the world's, the statute book's, the schedule's.
+# ===========================================================================
+name_register:
+  kind: vocabulary
+  closed: true
+  description: Which register a name belongs to, when one thing carries several names.
+  terms:
+    common: "The name people use. 'Contoso', 'Germany', 'Monday'."
+    legal:  "The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'."
+    long:   "The unabbreviated form of a coded name. 'United Kingdom' for GB."
+    short:  "The abbreviated form. 'Mon' for Monday, 'Jan' for January."
+    code:   "A machine identifier standing for the name. 'GB', 'DE', a numeric key."
 
 # ===========================================================================
 # mac.binding_mode — HOW a question binds a dimension: the ROLE a referenced dimension plays in the query.
