@@ -104,28 +104,57 @@ Without it the planner falls back to the concept's identity column, which is how
 `CustomerKey = 'female'` reached DuckDB. The register was CUT FROM a column; that column must
 travel with the entry. Never derived, never guessed — declared.
 
-### 1.5 Members that are in the DATA but not in the DOMAIN
+### 1.5 A value that is in the DATA but not in the DOMAIN — SPLIT FIRST
+
+**THE RULE, and it is the operator's, 2026-09-25:**
+
+> *A sentinel that carries MEANING is a dimension in disguise. Split the source; do not flag the
+> value.*
+
+Ask one question of every sentinel: **is it a different KIND of thing, or is it an absence?**
+
+* **A different kind → SPLIT IT OUT as its own dimension.** No flag, no special case, and the
+  domain it was polluting becomes cleanly closed.
+* **An absence ("we do not know") → then, and only then, declare it:**
 
 ```yaml
 domain:
-  null_means:  <code> | absent
-  sentinels:   ['--']
+  null_means: unknown | <code>
 ```
 
-Two distinct cases, both real in contoso:
+**THE WORKED CASE, measured.** `dim_contoso_store` carries `CountryCode '--'` with CountryName and
+State both `Online` — [store.md](ontology/concepts/store.md) already calls it *"a SALES CHANNEL
+sitting in a store dimension"*, in prose, and then keeps it as a country anyway. Measured on the
+served plane:
 
-* **NULL as a state.** StoreStatus has no code for an operating store: 59 of 74 versions carry
-  NULL, 58 of them still open. "Operating" exists only as an absence, and the test is
-  `CloseDate IS NULL`.
-* **A non-null sentinel.** The online store version carries `--` in CountryCode and `Online` in
-  CountryName. `SELECT DISTINCT Country` returns NINE values; **eight are countries and one means
-  "this sale had no country."**
-  - *"In how many countries do we sell?"* → **8**. If `--` is a member, the machine answers 9.
-  - *"Sales by country"* → the Online row must still appear, labelled `Online`.
+```
+store dimension   online       1 row  (StoreKey 999999, StoreCode -1)
+                  physical    73 rows over 8 countries
+order lines       online   93 550   41.8 %
+                  physical 130 424   58.2 %
+```
 
-  So `--` must be IN the register (the row resolves and displays) and NOT a member of the domain
-  (it is never counted as a country). A single closed/open flag cannot say both; `sentinels` is
-  what says it.
+**41.8 % of the fact is not a sentinel — it is half the business filed under a punctuation mark.**
+The split is perfectly clean: one row, one key, a deterministic test (`CountryCode = '--'`), no
+judgement call.
+
+What the split yields, every item of which was otherwise a special case:
+
+1. **`Channel` becomes a real dimension** — `physical | online`, 2 members, produced by a rule, so
+   `warranty: derived`. No watchdog, because the rule DEFINES the domain rather than observing it.
+2. **`Country` becomes cleanly closed at 8** on the store side. The `sentinels:` flag I originally
+   proposed here is then unnecessary — which is the tell that the flag was the wrong instrument.
+3. ***"In how many countries do we sell?"* answers 8 by construction**, not by a carve-out.
+4. ***"Sales by country"*** discloses a channel with no country STRUCTURALLY, instead of carrying a
+   caveat that a reader has to notice.
+5. **Explicit search becomes possible.** This is live today and wrong: `contoso_country.lookup.csv`
+   maps search key `online` to a COUNTRY. So *"online sales"* currently resolves to a country
+   called Online. After the split it resolves to `Channel = online`, which is what was asked.
+
+**THE GENERAL FORM.** A column holding two kinds of thing is two columns. Reach for a flag only
+when the odd value is genuinely an absence — a NULL gender, an unrecorded date. StoreStatus's NULL
+IS such a case and stays a flag: 59 of 74 versions carry no status and "operating" is the absence
+itself, with the test `CloseDate IS NULL`. `--` is not an absence. It is a shop with no street.
 
 ### 1.6 The resolution ladder, per dimension
 
