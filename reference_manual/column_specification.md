@@ -488,6 +488,86 @@ These are **measured**. Declaring them would create a second home for a fact the
 
 ---
 
+## Validation spike — shapes this specification does NOT yet handle
+
+The block above was designed against **one bundle**. A spike against SystemC and estate on 2026-09-25 —
+checking whether the shape *crashes*, not whether those bundles could migrate, since both will be
+re-authored — found three constellations contoso has no equivalent of. **One of them the
+specification cannot express at all.**
+
+### 1. The measure TYPE is data, not a declaration — `SystemC.kpi`
+
+One concept holds **70 KPIs across six measure types**, served through four conformed views:
+
+```
+kpi_code        which KPI this row is
+measure_type    Runtime | Reliability | Stock | StockAge | Event | Scheduling
+value_seconds   the measure value
+```
+
+A `RuntimeMeasure` is a duration between two checkpoints — **averageable, never summed**. A
+`StockMeasure` is a count of orders in a state — **additive across dimensions**. Both arrive in the
+same column, and which one a row is comes from `measure_type` **on that row**.
+
+**`measure.type` on a column cannot say this.** It declares one type per column; here the type
+varies per row.
+
+How SystemC copes today is itself the finding:
+
+```yaml
+semantics:
+  additivity: { dimensions: non-additive, time: non-additive }
+```
+
+**One blanket non-additive over all six**, which is safe and lossy: the `StockMeasure` that *is*
+additive across products is refused along with the duration that is not.
+
+Two ways out, and the spike does not choose between them:
+
+* **Split the concept** — one per measure type, which the four conformed views already half-do. Then
+  `measure.type` is a declaration again and each gets its true fold rule. This is what "a completely
+  new ontology" makes possible.
+* **Let the type be read from a column** — `measure: { type_from: measure_type }`. More faithful to
+  the data, and it means the fold rule is not knowable until a row is read, which the planner
+  currently assumes it is.
+
+### 2. Several columns of the same kind, and two references to the same concept
+
+`SystemC.checkpoint_events` carries **five date columns**: `actual_ts` plus four planning anchors
+(`eta_first`, `eta_fix`, `src_column`, `eta_depot`).
+
+| | |
+|---|---|
+| expressible | `period: actual_ts`, the four ETAs as dimensions |
+| **not expressible** | *"vehicles late against the ZP8 ETA"* — comparing two dates where neither is *the* period |
+
+And `from_cp` / `to_cp` both reference the same `Checkpoint` concept in **different roles**.
+`identity: reference` + `references: Checkpoint` cannot tell them apart. This is
+[role_playing_dimension](patterns/role_playing_dimension.md) at the column level, and the block has
+no `role_name`.
+
+### 3. A concept class contoso does not use
+
+estate declares `meta` eight times, alongside `reference`, `enumeration`, `measure`, `entity` and
+`grouping`. Nothing in this specification is written with `meta` concepts in mind, and the spike did
+not establish what column facts they carry.
+
+### What the spike does NOT say
+
+- It does **not** say the specification is wrong. Two of the three are expressible with a small
+  addition (`role_name`, and splitting or `type_from`).
+- It does **not** say SystemC's current shape must be preserved — it will be re-authored.
+- It is a **first pass** over two bundles by reading declarations, not a proof. estate was surveyed
+  only at the level of concept classes.
+
+### One thing it does say, about `axis_kinds`
+
+SystemC populates `semantics.axis_kinds`; contoso populates it **zero** times; the runtime reads it
+**zero** times. A field one bundle fills carefully, another ignores entirely, and nothing consumes —
+which is the defect this specification exists to stop, found in the field it would have inherited.
+
+---
+
 ## The five defaults that decide behaviour
 
 A column with only `role:` behaves as if:
