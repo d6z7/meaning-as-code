@@ -39,17 +39,28 @@ file per worked pattern** — the most MAC-native shape: each pattern is a looku
 | [04_discipline.md](04_discipline.md) | **The discipline** — two orthogonal axes: the correctness gradient (ref. FRAMEWORK §8) and the determinism gradient (canon vs prose); why correctness must come *before* canonization; the manual's self-review discipline. | ✅ written |
 | [05_tutorial.md](05_tutorial.md) | **Tutorial: from blank canvas to a running model** — "hello, ontology" (one concept, run it), the author→gate→run→promote loop, growing to concept + edge + rule, and when to jump to a Ch.03 pattern. References the cookbook + example; doesn't restate them. | ✅ written |
 
-## Columns
+## Vocabulary reference
 
-**What the ontology does with a column, and how to change it.** Read the trace first — it shows the
-machine the switches are switches on; the rest only makes sense after it.
+**Every term MAC defines, and how to use it.** 20 notions, 119 terms — definitions rendered from
+`mac_vocabulary.yaml` (they cannot drift), guidance hand-written around them.
 
-| File | Page | Status |
+Start with the trace: it shows the machine the switches are switches on.
+
+| File | Page | Covers |
 | --- | --- | --- |
-| [how_a_question_becomes_sql.md](how_a_question_becomes_sql.md) | **How a question becomes SQL** — one question traced end to end in six steps. Each step names the declaration that decided it and what actually broke when that declaration was missing. Every number measured on a live bundle. **Start here.** | ✅ written |
-| [column_specification.md](column_specification.md) | **The column specification** — one principle (*a fact about one column is declared on that column*), the complete block, every key with its default and legal values, and what is measured rather than declared. | 🔧 proposal — the `columns:` block is not yet built |
-| [column_roles.md](column_roles.md) | **Column roles** — the five roles, read off the data. Opens with two real relations, every column assigned, so the shapes can be read from cardinality. | ✅ written |
-| [column_rulings.md](column_rulings.md) | **Column rulings** — the judgements measurement cannot make: `label_of` · `finer_than` · `scoped_by` · `never_axis`. Reference form per switch: synopsis, parameters, the constellation, what breaks without it, examples, errors. | ✅ written |
+| [how_a_question_becomes_sql.md](how_a_question_becomes_sql.md) | **How a question becomes SQL** — one question traced end to end in six steps, each naming the declaration that decided it and what broke without it. **Start here.** | — |
+| [column_specification.md](column_specification.md) | **The column specification** — *a fact about one column is declared on that column*. The complete block, every key, two worked concepts. | `identity_role` |
+| [column_roles.md](column_roles.md) | **Column roles** — the five roles read off two real relations, plus the physical role every column also carries. | `column_role` · `storage_role` |
+| [column_rulings.md](column_rulings.md) | **Column rulings** — judgements measurement cannot make, in reference form: synopsis, parameters, constellation, errors. | `column_ruling` · `name_register` |
+| [measures.md](measures.md) | **How a measure folds** — MeasureType × axis → the correct fold, in one table. | `MeasureType` · `axis_kind` · `aggregation_effect` · `binding_mode` |
+| [identity_and_rules.md](identity_and_rules.md) | **Identity and rules** — what makes one instance one instance, and what the engine must do. | `identity_kind` · `rule_kind` |
+| [canon_library.md](canon_library.md) | **The canon library** — the executable half of a declaration. Three lists that must agree; only 3 of 19 do anything today. | `canon` |
+| [refusals_and_findings.md](refusals_and_findings.md) | **Refusals, findings and gates** — what the engine says when it will not answer, what is wrong with a bundle, why a handoff was refused. | `outcome_class` · `diagnostic_code` · `data_plane_gate` |
+| [testing_and_quality.md](testing_and_quality.md) | **Testing and data quality** — what an instrument did versus what a human ruled. | `test_kind` · `test_status` · `dq_status` |
+| [connection.md](connection.md) | **Connection** — how a bundle reaches its data, brand-free. | `connector` · `credential_mode` |
+
+`python3 tools/gen_vocabulary_terms.py --check` fails if any rendered definition drifts from the
+vocabulary, or if a notion has no chapter. It is green: **20 of 20**.
 
 Where a constellation already has a **pattern**, these pages link to it rather than restate it —
 `scoped_by` defers to [context_dependent_meaning](patterns/context_dependent_meaning.md), the

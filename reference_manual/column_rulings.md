@@ -192,6 +192,37 @@ StateFull: { role: …dimension, rulings: { label_of: State, register: long } }
 
 ---
 
+## The `register` argument
+
+<!-- BEGIN GENERATED:vocabulary-terms:name_register (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> Which register a name belongs to, when one thing carries several names.
+
+*`mac.name_register` · 5 terms · closed — these are all of them*
+
+#### `mac.name_register.common`
+
+The name people use. 'Contoso', 'Germany', 'Monday'.
+
+#### `mac.name_register.legal`
+
+The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'.
+
+#### `mac.name_register.long`
+
+The unabbreviated form of a coded name. 'United Kingdom' for GB.
+
+#### `mac.name_register.short`
+
+The abbreviated form. 'Mon' for Monday, 'Jan' for January.
+
+#### `mac.name_register.code`
+
+A machine identifier standing for the name. 'GB', 'DE', a numeric key.
+<!-- END GENERATED:vocabulary-terms:name_register -->
+
+---
+
 # 2 · `finer_than`
 
 ## Synopsis

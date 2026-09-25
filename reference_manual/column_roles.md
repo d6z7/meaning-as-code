@@ -130,6 +130,68 @@ them: a load stamp is housekeeping whoever keeps the house.
 
 ---
 
+## 2B. The other role every column carries — `storage_role`
+
+A column carries **two** roles, and they answer different questions. `column_role` says what a
+QUERY may do with it; `storage_role` says what SHAPE it is in the relation.
+
+| column | storage_role | column_role |
+|---|---|---|
+| `dim_contoso_store.StoreKey` | `primary_key` | `key` |
+| `dim_contoso_store.CountryCode` | `value` | `dimension` |
+| `v_contoso_order_line.CustomerKey` | `foreign_key` | `key` |
+| `v_contoso_order_line.RowNumber` | `composite_key_part` | `key` |
+| `dim_contoso_store.Status` | `discriminator` | `dimension` |
+
+**You never author this one.** It is measured — the profile plane counts distinct values and nulls,
+the reference plane measures inclusion against candidate parents, and
+`data/datasets/<relation>.yaml` records what they found. If you are hand-writing a `storage_role`,
+something upstream failed.
+
+<!-- BEGIN GENERATED:vocabulary-terms:storage_role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> The physical shape of a column in its relation, independent of its analytical role.
+
+*`mac.storage_role` · 5 terms · closed — these are all of them*
+
+#### `mac.storage_role.primary_key`
+
+The relation's own identity: one row per distinct value, measured rather than assumed.
+
+#### `mac.storage_role.foreign_key`
+
+A reference to another relation's identity. Whether every value is PRESENT in the parent is a
+separate measurement — a declared key says the relationship is intended, not that it holds.
+
+#### `mac.storage_role.composite_key_part`
+
+One column of a multi-column identity. ALONE IT IDENTIFIES NOTHING, and using it as though it
+did is the defect this term exists to make visible.
+
+#### `mac.storage_role.value`
+
+A payload column: it carries data, not identity and not a choice of row kind.
+
+#### `mac.storage_role.discriminator`
+
+A column whose value selects WHICH KIND of row this is — the column a perspective, status or
+type is read from.
+<!-- END GENERATED:vocabulary-terms:storage_role -->
+
+### Anti-patterns
+
+**`composite_key_part` used as though it were a key.** It identifies nothing alone. A query
+filtering on one part of a composite identity returns a **set** where a row was expected, and looks
+like it returned an answer. That is what [`composite_key_guard`](canon/composite_key_guard.md)
+catches.
+
+**A `foreign_key` assumed to be present.** Declaring the reference says it is *intended*.
+Containment — whether every child value exists in the parent — is a separate measurement, and the
+reference plane records dangling references AS dangling rather than dropping them.
+`Customer.GeoAreaKey` is exactly that: 608 distinct values and no parent relation in this delivery.
+
+---
+
 ## 3. The two roles with a pattern behind them
 
 Two of the five roles exist because of a named constellation. **Those constellations are documented
