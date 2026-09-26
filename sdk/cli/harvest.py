@@ -13,7 +13,9 @@ sdk.authoring.operations (the single, status-gated writer), then projects the re
   --mode lookups   own-schema LOOKUP-BUILD: profile every resolvable dim view -> data/lookups/
                    <name>.lookup.csv (name->code) so runtime resolves inline, never by probing the EAV.
                    DRY-RUN by default (no AWS); --accept profiles + writes the CSVs live.
-  --mode concepts  author one MAC concept per table (validated against the grammar)
+  --mode concepts  SEARCH the whole relation inventory for the business notions it carries,
+                   then author a concept per NOTION (grammar-validated). Concept:relation
+                   is M:N — never one per table; see harvest_concepts PASS 1
   --mode ontology  THE ONTOLOGY PIPELINE, and the operator-facing name for the second of the two
                    manually-started pipelines. Umbrella over concepts -> project. GATED: a bundle
                    that declares `reproduction.pipelines` may not start this pipeline until its
@@ -887,10 +889,22 @@ def harvest_concepts(
     refresh=False,
     project_anyway=None,
 ):
-    """Regenerate the ONTOLOGY plane from scratch: author one concept (+ inline typed rules) per
-    produced dataset from the transformation layer, then LIFT the data layer's foreign_keys into
-    physical ontology EDGES between those concepts. All authoring routes through the status-gated
-    operations writer; edges are grammar-validated. Concepts need no Glue — only Bedrock is billed."""
+    """Regenerate the ONTOLOGY plane from scratch: SEARCH the whole relation inventory for the
+    BUSINESS NOTIONS it carries and author a concept (+ inline typed rules) per notion, then LIFT the
+    data layer's foreign_keys into physical ontology EDGES between those concepts. All authoring routes
+    through the status-gated operations writer; edges are grammar-validated. Concepts need no Glue —
+    only Bedrock is billed.
+
+    CONCEPT:RELATION IS M:N AND THIS TEXT USED TO DENY IT. It said "one concept per produced dataset",
+    and the help line above it said "one concept per table", while PASS 1 below has planned over the
+    whole inventory since the operator's ruling of 2026-08-18. The code was right and its own
+    documentation was wrong — in two drifted copies of this file.
+
+    The operator, 2026-09-26, on exactly this sentence: "datasets DO NEVER MATCH CONCEPTS 1:1 /
+    concepts must SEARCH for business LOGIC in data and create it independent of physical layer
+    objects. please DELETE misleading instruction!!!!!" One instance was deleted then; these two
+    survived because they describe what the tool does rather than instruct a reader, and a stale
+    description is the more durable kind of lie — it is read as evidence of behaviour."""
     if _PROFILE:
         os.environ.setdefault("AWS_PROFILE", _PROFILE)
     if _REGION:

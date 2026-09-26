@@ -128,6 +128,13 @@ def _self_test() -> int:
          "a complete measurement carrying a finding was rendered FAIL on a healthy first run")
     case("MUTANT exit 1 is a failure",
          classify(1, "Traceback (most recent call last)\n", refusals)[0] == "failed")
+    case("MUTANT a missing dependency is UNAVAILABLE, not a failure",
+         classify(1, "Traceback...\nModuleNotFoundError: No module named 'langchain_aws'\n",
+                  refusals)[0] == "unavailable",
+         "'fix your bundle' and 'install a dependency' send an operator to different places")
+    case("an unavailable stage reports WHAT is missing",
+         "langchain_aws" in classify(1, "ModuleNotFoundError: No module named 'langchain_aws'\n",
+                                     refusals)[1])
     case("MUTANT a refusal at exit 1 is still a refusal",
          classify(1, "REFUSED: no yaml module\n", refusals)[0] == "refused")
     case("a needs_ruling line is the NEEDS RULING line, not merely the last line",
@@ -150,6 +157,18 @@ def _self_test() -> int:
         case("CLEAN both planes present is present", _present(r, both) is True)
         case("MUTANT an empty directory is not presence",
              _present(r, "data/empty") is False)
+        # A DIRECTORY HOLDING ONLY A GENERATED READ-VIEW IS NOT THE DELIVERABLE. This is why the
+        # concepts stage declares `ontology/concepts/**/*.yaml` and not the directory: index.md is
+        # written there by the projection, and as a bare-directory predicate it resumed the billed
+        # authoring stage forever after one failed attempt.
+        (r / "ontology" / "concepts").mkdir(parents=True)
+        (r / "ontology" / "concepts" / "index.md").write_text("# read view", encoding="utf-8")
+        case("MUTANT a concepts dir holding only index.md is NOT concepts present",
+             _present(r, "ontology/concepts/**/*.yaml") is False,
+             "a failed authoring attempt must not block every retry")
+        (r / "ontology" / "concepts" / "customer.yaml").write_text("name: x", encoding="utf-8")
+        case("CLEAN one authored concept IS concepts present",
+             _present(r, "ontology/concepts/**/*.yaml") is True)
 
     # ── the deliverables table's own integrity ─────────────────────────────────────────────────────
     ids = [d["id"] for d in DELIVERABLES]
@@ -185,7 +204,7 @@ def _self_test() -> int:
 
     for line in bad:
         print(line)
-    total = 14
+    total = 18
     if bad:
         print(f"\nFAIL: mac_import self-test — {len(bad)} of {total} case(s) failed")
         return 1
@@ -193,7 +212,8 @@ def _self_test() -> int:
           f"(a refusal outranked by an exit code, a complete measurement called a failure, a real "
           f"failure, a refusal at exit 1, a two-plane stage resuming on one plane, an empty directory "
           f"counted as output, a duplicate deliverable id, an absence with no stated cause, a stage "
-          f"crediting an undefined deliverable) plus clean fixtures that must pass")
+          f"crediting an undefined deliverable, a missing dependency called a failure, a generated read-view counted as the "
+          f"deliverable it sits beside) plus clean fixtures that must pass")
     return 0
 
 
@@ -369,7 +389,15 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # proves invariants HOLD; a register says what is WRONG and who must rule on it.
         {"name": "dq-findings", "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
          "cmd": [_tool("mac_dq_findings.py"), str(root)]},
-        {"name": "concepts", "produces": "ontology/concepts", "d": "D4", "billed": True,
+        # `produces` IS THE DELIVERABLE'S OWN SHAPE, not the directory that holds it. As
+        # `ontology/concepts` it was satisfied by ANY file in that directory — and the projection
+        # writes `ontology/concepts/index.md` there, a generated read-view. Measured on the first
+        # --accept ever attempted: the authoring call could not start (a missing model client), the
+        # projection ran anyway and wrote index.md, and from then on the stage reported
+        # `RESUME — ontology/concepts present` while the same report said `NO D4 all concepts`. One
+        # failed attempt permanently blocked every retry, and the contradiction was printed in two
+        # lines of the same screen.
+        {"name": "concepts", "produces": "ontology/concepts/**/*.yaml", "d": "D4", "billed": True,
          "sdk": ["--mode", "concepts"]},
         # ---- the projection: objects.json, ER, lineage, vocabulary, ontology_quality ----------
         # `--project-anyway` WITH A STATED REASON, because on a first run the ontology plane is
@@ -426,6 +454,17 @@ def classify(returncode: int, out: str, refusals: tuple[str, ...]) -> tuple[str,
     if returncode == 3:
         return "needs_ruling", next((ln.strip() for ln in reversed(out.splitlines())
                                      if ln.startswith("NEEDS RULING")), lastline)[:88]
+    # A MISSING DEPENDENCY IS "COULD NOT RUN", NOT "FAILED", and the difference is the operator's next
+    # action. Measured on the first --accept ever attempted: the concepts stage reported
+    # `FAIL — ModuleNotFoundError: No module named 'langchain_aws'`, which reads as a defect in the
+    # bundle or in the stage. Nothing failed. The tool never started, because this machine cannot run
+    # it: the authoring path needs a model client that is not installed. "Fix your bundle" and "install
+    # a dependency" are different instructions, and a report that gives the first for the second sends
+    # an operator looking in the wrong place.
+    if any(m in out for m in ("ModuleNotFoundError", "ImportError:", "No module named")):
+        missing = next((ln.strip() for ln in reversed(out.splitlines())
+                        if "ModuleNotFoundError" in ln or "No module named" in ln), lastline)
+        return "unavailable", missing[:88]
     return "failed", lastline
 
 
@@ -493,7 +532,7 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     #: Calling any of them FAIL would teach an operator to ignore the word.
     refusals = ("could not run", "--project-anyway", "REFUSED:", "SKIP:", "NOTHING TO MEASURE")
     fails, refused, lastline = 0, 0, ""
-    needs_ruling = 0
+    needs_ruling = unavailable = 0
     for cmd in cmds:
         cwd = _sdk_root() if "sdk" in stage else None
         r = subprocess.run([sys.executable, *cmd] if cmd[0].endswith(".py") else cmd,
@@ -501,7 +540,9 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
                            cwd=str(cwd) if cwd else None)
         out = (r.stdout or "") + (r.stderr or "")
         kind, lastline = classify(r.returncode, out, refusals)
-        if kind == "refused":
+        if kind == "unavailable":
+            unavailable += 1
+        elif kind == "refused":
             refused += 1
         elif kind == "needs_ruling":
             needs_ruling += 1
@@ -510,6 +551,8 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     secs = time.time() - t0
     if fails:
         return (name, "FAIL", f"{fails} of {len(cmds)} call(s) failed — {lastline}", secs)
+    if unavailable:
+        return (name, "CANNOT", f"this machine cannot run the stage — {lastline}", secs)
     if needs_ruling:
         return (name, "NEEDS YOU", lastline, secs)
     if refused:
