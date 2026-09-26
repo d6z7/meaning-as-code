@@ -488,11 +488,21 @@ def check_instruction_compliance(obj: dict) -> tuple[list, list]:
     md = obj.get("metadata")
     if isinstance(md, dict) and str(md.get("confidence", "")).strip().upper() == "C":
         md["confidence"] = "I"
-        md["x-confidence-downgraded"] = (
-            "authored by a model and not yet ratified: C asserts an SME confirmed this meaning "
-            "(CONFORMANCE.md L3), which a model cannot do for its own output"
-        )
-        corrections.append("metadata.confidence C -> I (a model may not certify its own output)")
+        # THE REASON IS REPORTED, NOT WRITTEN AS AN `x-` KEY. This wrote
+        # `metadata.x-confidence-downgraded`, and CONFORMANCE.md §2 prohibits that outright: "`x-` keys
+        # are PROHIBITED. An `x-` key is a conformance error wherever it appears, diagnosed MAC012" —
+        # `ConceptFile.metadata` is `additionalProperties: false` with no legal place for a note, so
+        # nine concepts came out unable to compile, every one of them stamped by this function.
+        #
+        # §2 also records why it is not a nuance to document: the framework "was teaching, at its most
+        # effective surface, the one declaration two other mechanisms refuse", and its own remedy is
+        # "the model says it in prose or does not say it". The correction below IS that prose — it is
+        # returned to the caller and printed at write time — and the artifact already carries the fact
+        # in `confidence: I` beside `provenance: harvested`. A key nothing may check adds nothing.
+        corrections.append(
+            "metadata.confidence C -> I: a model may not certify its own output. C is CONFORMANCE §1's "
+            "L3, 'an SME has ratified the meaning', which a generator cannot assert about its own "
+            "guess — it would read as a ratified fact to anyone who did not check.")
 
     # A RULE MAC HAS A CANON FOR MUST BIND, NOT BE RETOLD IN PROSE.
     #
