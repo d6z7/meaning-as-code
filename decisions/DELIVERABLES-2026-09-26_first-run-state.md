@@ -96,7 +96,7 @@ list and failing.
 
 ---
 
-## FOUR DEFECTS THAT BLOCKED A FRESH IMPORT OUTRIGHT — ALL FIXED 2026-09-26
+## FIVE DEFECTS THAT BLOCKED OR CORRUPTED A FRESH IMPORT — ALL FIXED 2026-09-26
 
 All four were hit importing one bundle. Any first run on a DuckDB bundle hit all four.
 
@@ -107,6 +107,13 @@ All four were hit importing one bundle. Any first run on a DuckDB bundle hit all
 | **B3** | **`mac_references.py` crashed instead of reporting.** With zero candidate pairs it raised `ZeroDivisionError` on its own summary line, losing the finding that explains it. | now prints `0 pair(s) considered … NOTHING TO MEASURE: 0 of 6 relation(s) carry a key` | **fixed 2026-09-26** |
 
 | **B4** | **`mac_profile.py` died over LABELS.** It read `acceptance/properties.yaml` unguarded, and a fresh bundle has none, so a first run ended in a bare `FileNotFoundError` traceback. | the four engine keys are RECORDED in the evidence and decide nothing — which warehouse is opened is `connection.yaml`'s job | **fixed** — an absent file means unlabelled, not unrunnable |
+
+| **B5** | **THE IMPORT TOOK ANOTHER ONTOLOGY'S MEANING PLANE FOR DATA.** A bundle bound to a warehouse that already carried the 8 `meta_*` relations measured them like any other relation: 32 artifacts, including `data/samples/meta_concept.sample.csv` holding rows like `('AgeBand','enumeration')` — another bundle's CONCEPT NAMES as this one's data. The operator: *"you meta classes are populated from WHICH ontology?!?!?! this cannot be"*. | `meta_concept` 21 rows, `meta_field_role` 137 rows, both imported | **fixed** — `mac_descriptors` excludes them at the entry point, names them when it does, and takes the list from `mac_runtime.meaning_plane._META_DEFS` so a ninth relation is covered the day it is added. `check_meaning_plane_not_imported.py` notices it across all 8 planes. |
+
+**B5 was the most dangerous of the five**, and not because of the 32 files: the billed concept stage
+authors over the WHOLE relation inventory, so `meta_concept` in it would have been put to the model
+as "what business notion is this relation" — and the honest answer is *a concept*. The bundle would
+have grown an ontology ABOUT an ontology, with every gate passing.
 
 B1 + B2 + B4 together meant **the measurement plane could not be built on a DuckDB bundle at all**,
 and D3, D7, D9 and D10 all sit downstream of it. **Proven after the fix:** a bundle holding only

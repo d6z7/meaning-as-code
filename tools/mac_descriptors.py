@@ -41,6 +41,39 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import _plugin  # noqa: E402  - same directory; the seam that owns the connection
 
 GENERATOR = "mac_descriptors.py/1"
+MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
+
+#: The literal fallback, for an environment without the runtime importable. A FALLBACK, not a second
+#: source of truth — `meaning_plane_tables` prefers the runtime's own definition.
+_MEANING_PLANE_FALLBACK = frozenset({
+    "meta_concept", "meta_field_role", "meta_contract_rule", "meta_rule_binding",
+    "meta_edge", "meta_open_question", "meta_constraint", "meta_dataset",
+})
+
+
+def meaning_plane_tables() -> frozenset[str]:
+    """THE FRAMEWORK'S OWN MEANING PLANE — the relations an ontology PROJECTS ITSELF into, which a
+    bundle must never import as data.
+
+    THE DEFECT THIS PREVENTS, caught by the operator 2026-09-26: "you meta classes are populated from
+    WHICH ontology?!?!?! this cannot be." A bundle bound to a warehouse that already carried another
+    ontology's meaning plane imported all eight of those relations as if they were business data — 32
+    artifacts across descriptors, profiles, references and SAMPLES, the last of which held rows like
+    `('AgeBand','enumeration')`: another bundle's CONCEPT NAMES presented as this one's data.
+    `meta_concept` was measured at 21 rows, `meta_field_role` at 137.
+    And left in, the billed concept stage would have seen `meta_concept` in the relation inventory
+    and could have authored an ontology ABOUT an ontology.
+
+    ONE HOME, DERIVED. The names come from `mac_runtime.meaning_plane._META_DEFS`, which is what
+    EMITS them — so a ninth relation is excluded the day it is added, with nothing to remember.
+    """
+    try:
+        if MAC_RUNTIME_SRC not in sys.path:
+            sys.path.insert(0, MAC_RUNTIME_SRC)
+        from mac_runtime.meaning_plane import _META_DEFS
+        return frozenset(_META_DEFS)
+    except Exception:  # noqa: BLE001 - no runtime on the path is not a reason to import the plane
+        return _MEANING_PLANE_FALLBACK
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -68,14 +101,24 @@ def main(argv: list[str] | None = None) -> int:
     observed = datetime.now(UTC).date().isoformat()
 
     # ---- measure EVERY relation once, so the foreign-key pass can see the others -------------
+    plane = meaning_plane_tables()
     measured: dict[tuple[str, str], dict] = {}
+    excluded: list[str] = []
     for schema in (served, a.raw_schema):
         if not schema:
             continue
         for table in _tables(con, schema):
+            # THE MEANING PLANE IS NEVER THIS BUNDLE'S DATA. See `meaning_plane_tables`.
+            if table in plane:
+                excluded.append(table)
+                continue
             m = _measure(con, schema, table)
             if m:
                 measured[(schema, table)] = m
+    if excluded:
+        print(f"  EXCLUDED {len(excluded)} meaning-plane relation(s) — an ontology's own "
+              f"declarations projected into this warehouse, not this bundle's data:")
+        print(f"    {', '.join(sorted(set(excluded)))}")
     if not measured:
         print(f"NOTHING TO MEASURE: no relation in {served!r} or {a.raw_schema!r}")
         return 1
