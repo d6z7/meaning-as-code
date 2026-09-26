@@ -70,7 +70,7 @@ DELIVERABLES: list[dict] = [
     # into "all diagrams", which is the wrong category: a diagram is a RENDERING, lineage is a
     # measured claim about where a column came from, and it is what an operator follows when a
     # number is wrong.
-    {"id": "D15", "what": "lineage (measured from the engine)", "probe": "lineage_measured"},
+    {"id": "D15", "what": "lineage (engine + the console's graph)", "probe": "lineage_measured"},
     {"id": "D6", "what": "diagrams (mermaid / graph)", "glob": "ontology/*.mmd"},
     {"id": "D5", "what": "SME questions", "glob": "ontology/SME-QUESTIONS.md"},
     {"id": "D13", "what": "resource description", "glob": "*.mac"},
@@ -175,24 +175,54 @@ def _stages(root: pathlib.Path) -> list[dict]:
                          "per relation, which is a human's call"),
          "cmd": [_tool("mac_references.py"), str(root), "--plane", "sources"]},
         # ---- the ontology plane (concepts are BILLED) -----------------------------------------
+        # TRANSFORM DESCRIPTORS, and they are what the console's LINEAGE VIEW ultimately needs. The
+        # projection builds `objects.json#lineage_graph` from `data/transforms/*.yaml`, NOT from the
+        # .sql: measured 2026-09-26 on a bundle holding six .sql files and no descriptors, the graph
+        # came back with 14 nodes and 0 EDGES, every dataset "with no input". The operator's report
+        # was simply "i did not get lineage".
+        {"name": "transforms", "produces": "data/transforms/*.yaml", "d": "D15 D6",
+         "cmd": [_tool("mac_transforms.py"), str(root)]},
         {"name": "lookups", "produces": "data/lookups/*.csv", "d": "D12",
          "sdk": ["--mode", "lookups"]},
+        # ---- the DQ plane, ALL OF IT BEFORE THE PROJECTION ----------------------------------
+        # A measured ORDERING BUG of this file: `dq-findings` was documented as needing to run before
+        # `project` and was placed after it, so the projection built the dashboard from a register
+        # that did not exist yet and the board came out with 0 findings — the very symptom being
+        # fixed. The two suites need only the profiles, so they move up as well, which removes the
+        # circularity (findings read the run record) without needing a second pass.
+        # ---- the two suites: GENERATED, then EXECUTED. Generating is not testing. -------------
+        {"name": "dq-suite", "produces": "acceptance/data_sanity_generated.yaml", "d": "D7",
+         "cmd": [_tool("mac_generate_sanity.py"), str(root)]},
+        {"name": "dq-run", "produces": "acceptance/data_sanity_generated_runs.json", "d": "D7",
+         "suite": "acceptance/data_sanity_generated.yaml"},
+        # THE DQ FINDINGS REGISTER, and it must run BEFORE `project`: the console's data-quality
+        # board reads `data/quality/dq_dashboard.json`, which the projection builds FROM the register.
+        # With no register the board is `{"total": 0, "findings": []}` — "DQ is completely empty",
+        # which is what the operator saw while a suite of 86 cases was passing beside it. A suite
+        # proves invariants HOLD; a register says what is WRONG and who must rule on it.
+        {"name": "dq-findings", "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
+         "cmd": [_tool("mac_dq_findings.py"), str(root)]},
         {"name": "concepts", "produces": "ontology/concepts", "d": "D4", "billed": True,
          "sdk": ["--mode", "concepts"]},
         # ---- the projection: objects.json, ER, lineage, vocabulary, ontology_quality ----------
-        {"name": "project", "produces": "objects.json", "d": "D3 D6", "always": True,
-         "sdk": ["--mode", "project"]},
+        # `--project-anyway` WITH A STATED REASON, because on a first run the ontology plane is
+        # empty BY DESIGN and the projection's gate is written to refuse a bundle that does not
+        # compile. That gate protects against minting a read view over a BROKEN ontology; it is not
+        # meant to withhold the data-plane state an operator needs in order to author one. The flag
+        # requires a reason precisely so this is a decision on the record rather than a silent
+        # override — and everything the console shows (lineage, the DQ board, the ER model) comes out
+        # of this one stage.
+        {"name": "project", "produces": "objects.json", "d": "D3 D6 D15", "always": True,
+         "sdk": ["--mode", "project", "--project-anyway",
+                 "first run: the ontology plane is empty by design at this stage, and the operator "
+                 "needs the projected data-plane state — lineage, the DQ board, the descriptors — in "
+                 "order to author concepts from it"]},
         # LINEAGE FROM THE ENGINE, and it runs BEFORE `project` deliberately: the projection's own
         # lineage_graph needs an ontology plane, so on a first run this is the only lineage there is.
         {"name": "lineage", "produces": "data/lineage/lineage.json", "d": "D15",
          "cmd": [_tool("mac_lineage.py"), str(root)]},
         {"name": "resources", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},
-        # ---- the two suites: GENERATED, then EXECUTED. Generating is not testing. -------------
-        {"name": "dq-suite", "produces": "acceptance/data_sanity_generated.yaml", "d": "D7",
-         "cmd": [_tool("mac_generate_sanity.py"), str(root)]},
-        {"name": "dq-run", "produces": "acceptance/data_sanity_generated_runs.json", "d": "D7",
-         "suite": "acceptance/data_sanity_generated.yaml"},
         {"name": "ontology-suite", "produces": "acceptance/ontology_generated.yaml", "d": "D8",
          "cmd": [_tool("mac_generate_ontology_tests.py"), str(root)]},
         {"name": "ontology-run", "produces": "acceptance/ontology_generated_runs.json", "d": "D8",
@@ -408,8 +438,32 @@ def _lineage(root: pathlib.Path) -> tuple[bool, str]:
         return False, "the lineage artifact is unreadable"
     if not c.get("edges"):
         return False, "0 edges — measured but EMPTY"
+    # AND THE GRAPH THE CONSOLE ACTUALLY RENDERS. Reporting only my own artifact is how "lineage
+    # delivered" was claimed while the console's view was empty: objects.json#lineage_graph is what
+    # the page reads, and it is built from the transform descriptors, not from this file.
+    shown = _console_lineage(root)
     return True, (f"{c.get('nodes')} node(s), {c.get('edges')} edge(s), "
-                  f"{c.get('columns_with_a_stated_source')} of {c.get('columns')} column(s) traced")
+                  f"{c.get('columns_with_a_stated_source')} of {c.get('columns')} column(s) traced"
+                  f"  · console graph: {shown}")
+
+
+def _console_lineage(root: pathlib.Path) -> str:
+    """What `objects.json#lineage_graph` holds — the thing the console's lineage view renders."""
+    import json
+    f = root / "objects.json"
+    if not f.is_file():
+        return "objects.json ABSENT, so the console shows nothing"
+    try:
+        g = (json.loads(f.read_text(encoding="utf-8")) or {}).get("lineage_graph") or {}
+    except Exception:  # noqa: BLE001
+        return "objects.json unreadable"
+    nodes = g.get("nodes")
+    edges = g.get("edges")
+    n = len(nodes) if isinstance(nodes, list) else (nodes or 0)
+    e = len(edges) if isinstance(edges, list) else (edges or 0)
+    if not e:
+        return f"{n} node(s) and 0 EDGES — the view draws nothing; are there transform descriptors?"
+    return f"{n} node(s), {e} edge(s)"
 
 
 def _suite_cases(root: pathlib.Path, kind: str) -> tuple[bool, str]:
@@ -449,9 +503,28 @@ def _suite_results(root: pathlib.Path, kind: str) -> tuple[bool, str]:
     if prefix == "dq":
         reg = root / "data" / "quality" / "data_quality_register.yaml"
         dash = root / "data" / "quality" / "dq_dashboard.json"
-        found = [n for n, f in (("register", reg), ("dashboard", dash)) if f.is_file()]
-        extra = f"  · findings: {', '.join(found) if found else 'NO register, NO dashboard'}"
+        extra = "  · " + _dq_board(reg, dash)
     return True, f"{len(results)} case(s) · {worst}{extra}"
+
+
+def _dq_board(register: pathlib.Path, dashboard: pathlib.Path) -> str:
+    """What the console's data-quality board will SHOW. The register is the source; the dashboard is
+    what the page reads, and a register the projection has not picked up yet shows as empty."""
+    import json
+    if not register.is_file():
+        return "NO findings register — the DQ board will be empty"
+    if not dashboard.is_file():
+        return "register present, DASHBOARD NOT PROJECTED — the board reads the dashboard"
+    try:
+        stats = (json.loads(dashboard.read_text(encoding="utf-8")) or {}).get("stats") or {}
+    except Exception:  # noqa: BLE001
+        return "the dashboard is unreadable"
+    total = stats.get("total") or 0
+    if not total:
+        return "dashboard projected with 0 findings — re-project after raising them"
+    sev = stats.get("by_severity") or {}
+    return (f"board: {total} finding(s) ("
+            + ", ".join(f"{v} {k}" for k, v in sev.items() if v) + ")")
 
 
 def _tool(name: str) -> str:

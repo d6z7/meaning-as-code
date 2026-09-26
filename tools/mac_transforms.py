@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+"""mac_transforms.py — write the TRANSFORM DESCRIPTORS by measuring the warehouse's view definitions.
+
+THE MISSING LINK IN D15, and the operator found it the only way that counts: "i did not get lineage".
+I had produced `data/lineage/lineage.json` — my own artifact, which nothing in the console reads —
+and called lineage delivered. The console's lineage view reads `objects.json#lineage_graph`, written
+at PROJECTION time, and the projection builds that graph from `data/transforms/*.yaml`.
+
+With the .sql files present and no descriptors, the projection was explicit about it:
+
+    projected read view: {'sources': 8, 'transforms': 0, 'datasets': 6}; lineage flows: 0
+    lineage_graph: 14 nodes, 0 EDGES
+      datasets_with_no_input:   all 6
+      sources_feeding_nothing:  all 8
+    check_ontology_grounds_on_datasets [ERROR] served dataset 'dim_contoso_store' is produced by no
+      transformation — add data/transforms/dim_contoso_store.yaml; even a 1:1 passthrough must be
+      declared
+
+Fourteen nodes and nothing joining them. A `.sql` file is the RECIPE; the descriptor is the DECLARED
+claim about what it consumes and produces, and only the second is read.
+
+WHAT IT MEASURES — the same source as `mac_lineage`, projected into the shape the framework already
+defines:
+  * `produces.relation`  the view, schema-qualified
+  * `produces.sql_file`  the .sql beside it, when the bundle holds one
+  * `inputs[]`           every relation the view's own definition references, each with the
+                         descriptor that describes it, so the chain raw -> transform -> dataset
+                         closes and the projector can draw an edge
+
+WHAT IT DOES NOT CLAIM. No grain, no default reading, no "one row per X". A grain is a RULING — the
+descriptor generator states what the engine says and leaves the argument to ontology/concepts/. Where
+contoso's hand-authored descriptors carry a `grain:` line, that line is a person's judgement and this
+tool writes none.
+
+    python3 mac_transforms.py <bundle-root> [--check]
+"""
+
+from __future__ import annotations
+
+import argparse
+import pathlib
+import sys
+from datetime import UTC, datetime
+
+HERE = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import _plugin  # noqa: E402
+
+GENERATOR = "mac_transforms.py/1"
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("root", nargs="?", default=".")
+    ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    a = ap.parse_args(argv)
+
+    root = pathlib.Path(a.root).resolve()
+    try:
+        import mac_lineage
+        athena = _plugin.required(str(root), "Athena")
+    except Exception as exc:  # noqa: BLE001 - could-not-run is honest, never a finding
+        print(f"COULD NOT RUN: {exc}")
+        return 2
+
+    con = athena(root=str(root))
+    schema = getattr(con, "view_schema", None) or "main"
+    catalog = mac_lineage._catalog(con)
+    views = mac_lineage._views(con, schema)
+    if not views:
+        print(f"NOTHING TO MEASURE: no view in {schema!r} carries a definition. A bundle whose served "
+              f"relations are base TABLES has no transform to describe — its lineage lives in "
+              f"whatever built them.")
+        return 1
+
+    observed = datetime.now(UTC).date().isoformat()
+    drift, wrote, inputless = [], 0, []
+    for view, sql in sorted(views.items()):
+        refs = sorted(mac_lineage._refs(sql, catalog, schema, view))
+        if not refs:
+            inputless.append(view)
+        body = _render(root, schema, view, refs, catalog, observed)
+        out = root / "data" / "transforms" / f"{view}.yaml"
+        if a.check:
+            now = out.read_text(encoding="utf-8") if out.is_file() else ""
+            if _without_date(now) != _without_date(body):
+                drift.append(str(out.relative_to(root)))
+        else:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(body, encoding="utf-8")
+            wrote += 1
+            print(f"  {out.relative_to(root)}  <- {', '.join(refs) or 'NO INPUT MEASURED'}")
+    con.close()
+
+    if a.check:
+        if drift:
+            print(f"DRIFT — {len(drift)} transform descriptor(s) no longer match the warehouse:")
+            for d in drift:
+                print(f"  {d}")
+            return 1
+        print(f"OK — {len(views)} transform descriptors match the warehouse.")
+        return 0
+    if inputless:
+        print(f"\n  {len(inputless)} view(s) reference no relation this warehouse knows: "
+              f"{', '.join(inputless)}")
+        print("  The projector draws no edge for those, and the lineage graph will show them as "
+              "datasets with no input.")
+    print(f"\nwrote {wrote} transform descriptors, measured {observed}")
+    return 0
+
+
+def _render(root: pathlib.Path, schema: str, view: str, refs: list[str],
+            catalog: dict[str, str], observed: str) -> str:
+    sql_file = f"data/transforms/{view}.sql"
+    has_sql = (root / sql_file).is_file()
+    lines = [
+        f"# GENERATED by {GENERATOR} from the warehouse's own view definition — do not edit;",
+        "# re-run the generator.",
+        "#",
+        "# WHAT IT DECLARES: which relations this view CONSUMES and which it PRODUCES. That is what",
+        "# closes the chain raw -> transform -> dataset, and it is what the projection reads to draw",
+        "# the lineage graph the console shows. A `.sql` file alone is the recipe, and the projector",
+        "# does not read it: measured on a bundle holding six .sql files and no descriptors, the graph",
+        "# came back with 14 nodes and 0 EDGES.",
+        "#",
+        "# NO GRAIN IS CLAIMED HERE. 'One row per X' is a RULING and belongs in ontology/concepts/,",
+        "# where a person argues for it.",
+        "",
+        "metadata:",
+        f"  pipeline: {view}",
+        "  layer: data-transformation",
+        "  schema_version: '0.1.14'",
+        "  status: draft",
+        "  confidence: I",
+        f"  observed: '{observed}'",
+        f"  generated_by: {GENERATOR}",
+        "",
+        "produces:",
+        f"  relation: {schema}.{view}",
+    ]
+    if has_sql:
+        lines.append(f"  sql_file: {sql_file}")
+    lines.append("")
+    if not refs:
+        lines += ["# THE VIEW'S DEFINITION REFERENCES NO RELATION THIS WAREHOUSE KNOWS — a constant",
+                  "# select, or a reference the catalog cannot confirm. Declared empty rather than",
+                  "# guessed at.", "inputs: []"]
+        return "\n".join(lines) + "\n"
+    lines.append("inputs:")
+    for ref in refs:
+        kind = catalog.get(ref, "unknown")
+        bare = ref.split(".")[-1]
+        plane = "datasets" if kind == "view" else "sources"
+        descriptor = f"data/{plane}/{bare}.yaml"
+        lines += [
+            f"  - relation: {ref}",
+            f"    kind: {'served_dataset' if kind == 'view' else 'raw_source'}",
+        ]
+        if (root / descriptor).is_file():
+            lines.append(f"    descriptor: {descriptor}")
+        else:
+            lines.append(f"    # no descriptor at {descriptor} — the chain does not close here")
+    return "\n".join(lines) + "\n"
+
+
+def _without_date(text: str) -> str:
+    return "\n".join(ln for ln in text.splitlines() if "observed:" not in ln)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
