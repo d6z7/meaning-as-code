@@ -638,20 +638,56 @@ def read_plane(root: Path, plane: str = DEFAULT_PLANE):
             continue
         relations[stem] = {"name": tbl.get("name"), "schema": tbl.get("schema"),
                            "file": f"{ddir}/{Path(p).name}"}
-        if spec["key_from"] == "descriptor_role":
-            declared_keys[stem] = [c["name"] for c in (doc.get("columns") or [])
-                                   if c.get("name") and c.get("role") in DECLARED_KEY_ROLES]
+        # THE DESCRIPTOR'S KEY IS READ ON BOTH PLANES NOW. It used to be read only for `served`,
+        # because a SOURCE descriptor's roles were written by a model and carried no measurement —
+        # so the sources plane took its key from the profile's `identity_evidence`, which only
+        # `mac_admit_identity` writes and which needs `--measure <column>` per relation, a human's
+        # call. A first run therefore produced NO sources references and the sources ER drew no
+        # edges, which is exactly what the operator reported.
+        #
+        # WHAT CHANGED: `mac_descriptors.py` MEASURES the key — unique AND non-null over every row,
+        # a composite tuple when no single column is. VERIFIED against the one bundle where a human
+        # ran the admission test on all eight landings: the measured key equals the ADMITTED key on
+        # 8 of 8 (customer->CustomerKey, orderrows->(OrderKey,RowNumber), sales->(OrderKey,
+        # LineNumber), currencyexchange->(Date,FromCurrency,ToCurrency), and the four others).
+        #
+        # THE ADMITTED KEY STILL WINS WHERE IT EXISTS (see the profile read below), because the
+        # admission test is STRICTER: it separates IDENTITY from COLLAPSIBLE by whether removing a
+        # column makes a MEASURE disagree, which uniqueness alone cannot tell. That distinction is
+        # about GRAIN — what one row means — while a reference needs only "what can be pointed at",
+        # and uniqueness is exactly that property.
+        declared_keys[stem] = [c["name"] for c in (doc.get("columns") or [])
+                               if c.get("name") and c.get("role") in DECLARED_KEY_ROLES]
     for p in sorted(glob.glob(str(root / "data" / "profiles" / "*.yaml"))):
         doc = _load(Path(p))
         stem = doc.get("of") or Path(p).stem
         profiles[stem] = {
             "rows": (doc.get("profile") or {}).get("rows"),
             "cols": {c["name"]: c for c in (doc.get("columns") or []) if c.get("name")},
-            "key": (declared_keys.get(stem, []) if spec["key_from"] == "descriptor_role"
-                    else list(((doc.get("identity_evidence") or {}).get("key")) or [])),
+            # ADMITTED FIRST, MEASURED SECOND. On the served plane the descriptor IS the source of
+            # record; on the sources plane an admitted identity is the stronger claim and is
+            # preferred when a human has run the test, with the measured key as the fallback that
+            # makes a first run possible at all.
+            "key": _parent_key(spec, stem, declared_keys, doc),
             "file": f"data/profiles/{Path(p).name}",
         }
     return relations, profiles, findings
+
+
+def _parent_key(spec: dict, stem: str, declared_keys: dict, profile_doc: dict) -> list:
+    """The parent key for this relation, and WHICH claim it came from.
+
+    served  -> the descriptor's `columns[].role`, which is the source of record there.
+    sources -> the profile's ADMITTED identity when `mac_admit_identity` has run (the stricter
+               claim), else the descriptor's MEASURED key, which `mac_descriptors` derives by
+               testing uniqueness and non-nullity. Without that fallback a first run draws no
+               sources references at all.
+    """
+    admitted = list(((profile_doc.get("identity_evidence") or {}).get("key")) or [])
+    measured = declared_keys.get(stem, [])
+    if spec["key_from"] == "descriptor_role":
+        return measured
+    return admitted or measured
 
 
 def key_source(plane: str, stem: str, profiles: dict) -> str:

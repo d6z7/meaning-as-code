@@ -150,9 +150,9 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # RESUMEd — 1 profile for 22 relations, reported as done. A stage that iterates must resume
         # per ITEM, or "present" means "one of them is present".
         {"name": "profiles", "produces": "data/profiles/*.yaml", "d": "D9",
-         "each": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()
-                          if not (root / "data" / "profiles" / f"{rel}.yaml").is_file()],
-         "per_item": lambda: len(relations())},
+         "each": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()],
+         "missing": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()
+                             if not (root / "data" / "profiles" / f"{rel}.yaml").is_file()]},
         {"name": "samples", "produces": "data/samples/*.csv", "d": "D11",
          "cmd": [_tool("mac_sample.py"), str(root), "--plane", "all"]},
         # TWO STAGES, NOT ONE, because the two planes have different INPUTS and only one of them
@@ -182,8 +182,22 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # was simply "i did not get lineage".
         {"name": "transforms", "produces": "data/transforms/*.yaml", "d": "D15 D6",
          "cmd": [_tool("mac_transforms.py"), str(root)]},
+        # `--accept` ON THE LOOKUP CUTTER IS NOT A BILLING DECISION. harvest's help says
+        # "materialize/lookups create the own-schema views + name->code registers (DRY-RUN by
+        # default, --accept to run the DDL/profiling live)" — the flag means RUN THE PROFILING, and
+        # on a local DuckDB file that costs nothing. Treating it as billed left D12 empty on every
+        # free run, which the operator saw as "no lookups in console".
+        #
+        # SO IT IS PASSED ONLY WHEN THE WAREHOUSE IS LOCAL, decided from the bundle's own manifest
+        # by the same test the framework's DuckDB seam uses. Against a cloud warehouse the profiling
+        # IS billed and the stage stays dry until the operator says otherwise.
+        # THE FRAMEWORK'S OWN CUTTER, not harvest's. `harvest --mode lookups` profiles through AWS
+        # and on a local DuckDB bundle dies with `botocore NoCredentialsError: Unable to locate
+        # credentials` — measured. It predates the connector seam. `mac_lookups` projects the value
+        # domains `mac_profile` ALREADY captured onto the descriptors, so it needs no second scan and
+        # works for any engine the seam answers for.
         {"name": "lookups", "produces": "data/lookups/*.csv", "d": "D12",
-         "sdk": ["--mode", "lookups"]},
+         "cmd": [_tool("mac_lookups.py"), str(root)]},
         # ---- the DQ plane, ALL OF IT BEFORE THE PROJECTION ----------------------------------
         # A measured ORDERING BUG of this file: `dq-findings` was documented as needing to run before
         # `project` and was placed after it, so the projection built the dashboard from a register
@@ -235,11 +249,18 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     name, t0 = stage["name"], time.time()
     produced = stage.get("produces", "")
     # AN ITERATING STAGE ASKS ITS OWN ITEMS, never the shared glob. See the note on `profiles`.
+    # --refresh MEANS ALL ITEMS, and treating it as "still filter to the missing ones" was a
+    # measured bug: descriptors were rewritten, every profile already existed, the filter returned
+    # an empty list, and the stage reported "nothing to iterate — the stage before it produced
+    # nothing". Worse, `mac_profile` is what ADDS the value domains to a descriptor, so the register
+    # cutter downstream then wrote 0 registers from descriptors that had just been reset.
     todo: list[list[str]] = []
-    if "each" in stage and not a.refresh:
-        todo = stage["each"]()
-        total = stage["per_item"]() if "per_item" in stage else len(todo)
-        if not todo:
+    if "each" in stage:
+        todo = stage["each"]() if a.refresh else (
+            stage["missing"]() if "missing" in stage else stage["each"]()
+        )
+        if not todo and not a.refresh:
+            total = len(stage["each"]())
             return (name, "RESUME", f"all {total} item(s) present", 0.0)
     elif produced and not stage.get("always") and not a.refresh and _present(root, produced):
         return (name, "RESUME", f"{produced} present", 0.0)
@@ -250,7 +271,7 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     if "cmd" in stage:
         cmds = [stage["cmd"]]
     elif "each" in stage:
-        cmds = todo if not a.refresh else stage["each"]()
+        cmds = todo
         if not cmds:
             return (name, "CANNOT", "nothing to iterate — the stage before it produced nothing",
                     time.time() - t0)
@@ -259,8 +280,9 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
         if sdk is None:
             return (name, "CANNOT", "no sdk checkout found for the billed authoring",
                     time.time() - t0)
+        accept = a.accept or (stage.get("free_when_local") and _is_local(root))
         cmds = [[sys.executable, "-m", "sdk.cli.harvest", "--content-root", str(root),
-                 *stage["sdk"], *(["--accept"] if a.accept else [])]]
+                 *stage["sdk"], *(["--accept"] if accept else [])]]
     elif "suite" in stage:
         suite = root / stage["suite"]
         if not suite.is_file():
@@ -352,9 +374,12 @@ def _why(root: pathlib.Path, d: dict, a) -> str:
         return "generated FROM the profile, and the measurement plane is empty (see D9)."
     if d["id"] == "D9" and not _matches(root, "data/datasets/*.yaml"):
         return "a profile needs a descriptor to profile against (see D2)."
-    if d["id"] == "D12" and not a.accept:
-        return ("cutting a register READS the column's values, which is billed against a cloud "
-                "warehouse — the stage ran DRY. Re-run with --accept.")
+    if d["id"] == "D12":
+        if not _matches(root, "data/datasets/*.yaml"):
+            return "a register is cut from a descriptor's captured domain, and there are none (D2)."
+        return ("no column carries a captured value domain: `mac_profile` captures one only for a "
+                "column that is BOUNDED and ENUMERABLE, so a bundle of continuous measures has no "
+                "register to cut.")
     if d["id"] in ("D3", "D6"):
         if not _matches(root, "ontology/concepts/**/*.yaml"):
             return ("the projection GATE refuses a bundle with no ontology plane, which is correct "
@@ -544,6 +569,21 @@ def _present(root: pathlib.Path, pattern: str) -> bool:
         return bool(_matches(root, pattern))
     p = root / pattern
     return p.is_dir() and any(p.iterdir()) if p.is_dir() else p.is_file()
+
+
+def _is_local(root: pathlib.Path) -> bool:
+    """Is this bundle's warehouse a LOCAL file? Then profiling it is free.
+
+    Decided from the bundle's own manifest, by the same test the framework's DuckDB seam uses — not
+    from a list of connector names kept here, which would go stale the day a second local engine
+    appears.
+    """
+    try:
+        sys.path.insert(0, str(HERE))
+        import duckdb_seam
+        return duckdb_seam.connection_of(root) is not None
+    except Exception:  # noqa: BLE001 - unable to tell means NOT free
+        return False
 
 
 def _duckdb_file(root: pathlib.Path) -> pathlib.Path | None:
