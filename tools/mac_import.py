@@ -66,13 +66,23 @@ DELIVERABLES: list[dict] = [
     {"id": "D4", "what": "all concepts", "glob": "ontology/concepts/**/*.yaml"},
     {"id": "D4b", "what": "edges", "glob": "ontology/edges.yaml"},
     {"id": "D3", "what": "ER model (actual state)", "probe": "er"},
-    {"id": "D6", "what": "lineage diagram", "probe": "lineage"},
+    # LINEAGE IS ITS OWN DELIVERABLE, added 2026-09-26 on the operator's instruction. It was folded
+    # into "all diagrams", which is the wrong category: a diagram is a RENDERING, lineage is a
+    # measured claim about where a column came from, and it is what an operator follows when a
+    # number is wrong.
+    {"id": "D15", "what": "lineage (measured from the engine)", "probe": "lineage_measured"},
+    {"id": "D6", "what": "diagrams (mermaid / graph)", "glob": "ontology/*.mmd"},
     {"id": "D5", "what": "SME questions", "glob": "ontology/SME-QUESTIONS.md"},
     {"id": "D13", "what": "resource description", "glob": "*.mac"},
-    {"id": "D7", "what": "data quality tests EXECUTED",
-     "glob": "acceptance/data_sanity_generated_runs.json"},
-    {"id": "D8", "what": "ontology quality tests EXECUTED",
-     "glob": "acceptance/ontology_generated_runs.json"},
+    # DQ IS THREE DELIVERABLES, NOT ONE. The old single row was satisfied by the FILE EXISTING,
+    # which is the defect it exists to prevent: generating is not testing, and executing is not
+    # reporting. Measured on contoso, the run record carries 71 per-case results and a tally — a
+    # report saying "1 file" while 3 cases fail has told the operator nothing.
+    {"id": "D7a", "what": "DQ test cases", "probe": "dq_cases"},
+    {"id": "D7b", "what": "DQ tests executed", "glob": "acceptance/data_sanity_generated_runs.json"},
+    {"id": "D7c", "what": "DQ results (per case + findings)", "probe": "dq_results"},
+    {"id": "D8a", "what": "ontology test cases", "probe": "ont_cases"},
+    {"id": "D8b", "what": "ontology tests executed + results", "probe": "ont_results"},
 ]
 
 
@@ -172,6 +182,10 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # ---- the projection: objects.json, ER, lineage, vocabulary, ontology_quality ----------
         {"name": "project", "produces": "objects.json", "d": "D3 D6", "always": True,
          "sdk": ["--mode", "project"]},
+        # LINEAGE FROM THE ENGINE, and it runs BEFORE `project` deliberately: the projection's own
+        # lineage_graph needs an ontology plane, so on a first run this is the only lineage there is.
+        {"name": "lineage", "produces": "data/lineage/lineage.json", "d": "D15",
+         "cmd": [_tool("mac_lineage.py"), str(root)]},
         {"name": "resources", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},
         # ---- the two suites: GENERATED, then EXECUTED. Generating is not testing. -------------
@@ -322,13 +336,39 @@ def _why(root: pathlib.Path, d: dict, a) -> str:
         return ("the SME ledger is projected from the questions the ONTOLOGY raises "
                 "(concept open_questions + the data-quality register), so it is empty until D4 "
                 "exists and the register has been reconciled.")
+    if d["id"] in ("D8a", "D8b") and not _matches(root, "ontology/concepts/**/*.yaml"):
+        return ("the ontology suite is RENDERED from the concepts, so it declares 0 cases and "
+                "run_suite refuses it — \"0 declared is not 0 failures\". Comes with D4.")
+    if d["id"] == "D7c":
+        return ("the run record carries no per-case results, or the findings register has not been "
+                "projected — `project` writes data/quality/dq_dashboard.json from the register.")
+    if d["id"] == "D6":
+        return ("mac_to_mermaid.py / mac_to_graph.py are not yet stages of this run — the ER (D3) "
+                "and lineage (D15) projections are.")
+    if d["id"] == "D15":
+        return ("`mac_lineage` reads the warehouse's own view definitions — if it found none, the "
+                "served relations are base TABLES and their lineage lives in the transforms that "
+                "built them, not in the engine.")
     if d["id"] == "D4b":
         return "edges are authored by the same billed stage as the concepts (see D4)."
     return "the stage above reported FAIL or CANNOT — its last line says why."
 
 
 def _probe(root: pathlib.Path, kind: str) -> tuple[bool, str]:
-    """Read what the projection actually produced, rather than trusting that it ran."""
+    """Read what was actually produced, rather than trusting that a stage ran.
+
+    THE SUITE PROBES COME FIRST, and that ordering is a measured bug of this file: they were placed
+    AFTER the `objects.json` guard below, so on a bundle whose projection had refused they returned
+    "absent" without ever looking. The report then said D7a NO — 0 cases — for a suite holding 10
+    properties with a tally of 10 PASS. A probe that answers about a file it never opened is worse
+    than no probe: every other line of this report would have been believed too.
+    """
+    if kind == "lineage_measured":
+        return _lineage(root)
+    if kind in ("dq_cases", "ont_cases"):
+        return _suite_cases(root, kind)
+    if kind in ("dq_results", "ont_results"):
+        return _suite_results(root, kind)
     import json
     f = root / "objects.json"
     if not f.is_file():
@@ -349,6 +389,71 @@ def _probe(root: pathlib.Path, kind: str) -> tuple[bool, str]:
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
+#: The two generated suites, by deliverable prefix.
+_SUITES = {
+    "dq": ("acceptance/data_sanity_generated.yaml", "acceptance/data_sanity_generated_runs.json"),
+    "ont": ("acceptance/ontology_generated.yaml", "acceptance/ontology_generated_runs.json"),
+}
+
+
+def _lineage(root: pathlib.Path) -> tuple[bool, str]:
+    """The lineage MEASURED from the warehouse, plus the projection's own graph when it exists."""
+    import json
+    f = root / "data" / "lineage" / "lineage.json"
+    if not f.is_file():
+        return False, ""
+    try:
+        c = (json.loads(f.read_text(encoding="utf-8")) or {}).get("counts") or {}
+    except Exception:  # noqa: BLE001
+        return False, "the lineage artifact is unreadable"
+    if not c.get("edges"):
+        return False, "0 edges — measured but EMPTY"
+    return True, (f"{c.get('nodes')} node(s), {c.get('edges')} edge(s), "
+                  f"{c.get('columns_with_a_stated_source')} of {c.get('columns')} column(s) traced")
+
+
+def _suite_cases(root: pathlib.Path, kind: str) -> tuple[bool, str]:
+    """HOW MANY CASES the suite declares. A suite with none has asserted nothing, and "the file
+    exists" is exactly the answer this estate refuses elsewhere: never a PASS without its
+    denominator."""
+    import yaml
+    suite = root / _SUITES[kind.split("_")[0]][0]
+    if not suite.is_file():
+        return False, ""
+    try:
+        doc = yaml.safe_load(suite.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return False, "the suite is unreadable"
+    n = len(doc.get("properties") or [])
+    return n > 0, f"{n} case(s)" if n else "0 cases — GENERATED BUT EMPTY, so it can prove nothing"
+
+
+def _suite_results(root: pathlib.Path, kind: str) -> tuple[bool, str]:
+    """WHAT THE RUN FOUND, per case — the tally, not the file. Plus the DQ findings register, which
+    is the artifact an operator actually acts on."""
+    import json
+    prefix = kind.split("_")[0]
+    rec = root / _SUITES[prefix][1]
+    if not rec.is_file():
+        return False, ""
+    try:
+        doc = json.loads(rec.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001
+        return False, "the run record is unreadable"
+    results = doc.get("results") or []
+    tally = doc.get("tally") or {}
+    if not results:
+        return False, "the record carries NO per-case results — it ran and found nothing to say"
+    worst = ", ".join(f"{k} {v}" for k, v in sorted(tally.items()) if v) or f"{len(results)} cases"
+    extra = ""
+    if prefix == "dq":
+        reg = root / "data" / "quality" / "data_quality_register.yaml"
+        dash = root / "data" / "quality" / "dq_dashboard.json"
+        found = [n for n, f in (("register", reg), ("dashboard", dash)) if f.is_file()]
+        extra = f"  · findings: {', '.join(found) if found else 'NO register, NO dashboard'}"
+    return True, f"{len(results)} case(s) · {worst}{extra}"
+
+
 def _tool(name: str) -> str:
     return str(HERE / name)
 

@@ -63,13 +63,24 @@ no run calls it. `GAP` = no producer.
 | **D3** | ER diagram, actual state | `objects.json#er_model`, `#er_model_served` | `project` ← **`mac_references.py`** | **WIRED** — `project` writes the key, and it comes back with **0 entities** until references are measured |
 | **D4** | all concepts | `ontology/concepts/**/*.yaml`, `ontology/edges.yaml` | `harvest --mode concepts` | **IN** since 2026-09-26 — the instruction that withheld it is deleted; it authors over the WHOLE inventory (M:N, never per table) as `status: draft`, enforced by `check_concepts_not_per_table.py`. See R1. |
 | **D5** | SME questions, both planes | `governance/sme-questions.yaml`, `ontology/SME-QUESTIONS.md` | `mac_resources.py` | **WIRED** |
-| **D6** | all diagrams | `#lineage_graph`; Mermaid; property graph | `project` (lineage **IN**); `mac_to_mermaid.py`, `mac_to_graph.py` | **PART IN** — lineage only |
-| **D7** | data quality tests **executed** | `acceptance/data_sanity_generated.yaml` **+ `_runs.json`** | `mac_generate_sanity.py` **+ `run_suite.py`** | **WIRED** — and generating is not testing: the suite and the RUN RECORD are two artifacts |
-| **D8** | ontology quality tests **executed** | `acceptance/ontology_generated.yaml` **+ `_runs.json`** | `mac_generate_ontology_tests.py` **+ `run_suite.py`** | **WIRED** |
+| **D6** | all diagrams | Mermaid; property graph; ER (D3); lineage (D15) | `mac_to_mermaid.py`, `mac_to_graph.py` | **WIRED** |
+| **D15** | **lineage** | `objects.json#lineage_graph` (table level) + the column-level model | `project`; `lineage_project.py` | **IN** at table level — *added 2026-09-26 on the operator's instruction. It was folded into "all diagrams", which is wrong: a diagram is a rendering, lineage is a MEASURED claim about where a column came from, and it is what an operator follows when a number is wrong.* |
+| **D7a** | DQ **test cases** | `acceptance/data_sanity_generated.yaml` | `mac_generate_sanity.py` | **IN** |
+| **D7b** | DQ tests **executed** | `acceptance/data_sanity_generated_runs.json` | `run_suite.py` | **IN** |
+| **D7c** | DQ **results** | the record's `results[]` + `tally`; `data/quality/data_quality_register.yaml`; `dq_dashboard.json` | `run_suite.py`; `project` | **PART IN** — *split out 2026-09-26: the old single D7 was satisfied by the FILE EXISTING, which is the defect it exists to prevent. Measured on contoso: the record carries **71 per-case results** and a tally, and a report that says "1 file" while 3 cases fail has told the operator nothing.* |
+| **D8a** | ontology **test cases** | `acceptance/ontology_generated.yaml` | `mac_generate_ontology_tests.py` | **IN** |
+| **D8b** | ontology tests **executed + results** | `acceptance/ontology_generated_runs.json` | `run_suite.py` | **IN** |
 
 ---
 
-## D9..D14 — WHAT D1..D8 CANNOT EXIST WITHOUT
+**GENERATING IS NOT TESTING, AND EXECUTING IS NOT REPORTING.** Three artifacts, three
+deliverables — a generated suite has asserted nothing, a run record proves it ran, and only the
+`results[]` and `tally` say what it FOUND. Collapsing them is how a green dashboard gets published
+over three failing cases.
+
+---
+
+## D9..D14 — WHAT THE OTHERS CANNOT EXIST WITHOUT
 
 Not additions to the operator's list. Each one is a prerequisite discovered by trying to produce the
 list and failing.
