@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import re
 import sys
 from datetime import UTC, datetime
 
@@ -69,6 +70,8 @@ def main(argv: list[str] | None = None) -> int:
     findings += _all_null_columns(root, yaml)
     findings += _failing_cases(root)
     findings += _broken_references(root, yaml)
+    findings += _ambiguous_references(root, yaml)
+    findings += _dangling_keys(root, yaml)
 
     existing = _existing(root, yaml)
     merged = _merge(findings, existing)
@@ -207,6 +210,230 @@ def _needs(ruling: dict | None) -> str:
     answers = " | ".join(ruling.get("answers") or [])
     return (f"{ruling.get('question')}  ANSWER ONE OF: {answers}.  RECOMMENDED: "
             f"{ruling.get('recommendation')} — {ruling.get('because')}")
+
+
+def _ambiguous_references(root: pathlib.Path, yaml) -> list[dict]:
+    """A column that includes PERFECTLY into two different keys, so value evidence cannot choose.
+
+    THE MEASURER ALREADY REFUSES TO GUESS — it records `ambiguous_with` and `needs_ruling` rather than
+    picking — but the record sat in a reference artifact that no board reads, so the decision was
+    invisible and therefore never made. On a vanilla bundle there were 8 such entries; they are ONE
+    question asked 8 times, and grouping them is the difference between a decision and a backlog.
+
+    Severity is HIGH because the failure mode is a plausible number. Choosing the wrong side of an FX
+    pair does not error — it converts by the reciprocal rate, and the total still looks like money.
+    """
+    fams: dict[tuple, dict] = {}
+    for plane in ("references_served", "references"):
+        for f in sorted((root / "data" / plane).glob("*.yaml")):
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            for r in (doc.get("references") or []):
+                if not r.get("ambiguous_with"):
+                    continue
+                to = r.get("to") or {}
+                col = str((r.get("from") or {}).get("column"))
+                targets = tuple(sorted(set(r["ambiguous_with"]) |
+                                       {f"{to.get('relation')}.{to.get('column')}"}))
+                key = (col, targets)
+                fam = fams.setdefault(key, {"col": col, "targets": list(targets), "seen": 0,
+                                            "carriers": set()})
+                fam["seen"] += 1
+                fam["carriers"].add(str((r.get("from") or {}).get("relation")))
+    out = []
+    for (col, targets), fam in sorted(fams.items()):
+        n = fam["seen"]
+        out.append({
+            "id": f"DQ-AMBIGREF-{col.upper()}",
+            "title": f"`{col}` includes perfectly into {len(targets)} different keys — which is THE "
+                     f"reference?",
+            "severity": "high",
+            "measurement": (
+                f"measured on {n} reference(s) across {len(fam['carriers'])} relation(s) "
+                f"({', '.join(sorted(fam['carriers']))}): inclusion is 1.0 into every one of "
+                f"{', '.join(targets)}, at the same key role and over the same rows. Value inclusion "
+                f"CANNOT separate them, so neither was drawn as the sole reference."),
+            "needs": (f"Which of {', '.join(targets)} is THE reference for {col}?  "
+                      f"ANSWER ONE OF: {' | '.join(targets)} | both_are_real | neither.  "
+                      f"No recommendation is offered from the data because the data cannot carry one."),
+            "ruling": {
+                "question": f"{col} includes perfectly into all of {', '.join(targets)}. Which is THE "
+                            f"reference?",
+                "answers": list(targets) + ["both_are_real", "neither"],
+                "established": (
+                    f"inclusion 1.0 into each candidate, same key role, {n} instance(s) over "
+                    f"{len(fam['carriers'])} relation(s). The candidates are equally supported by "
+                    f"every measurement this platform can make."),
+                "for_the_human": (
+                    "Nothing in the values distinguishes these. A pair of endpoints that both hold the "
+                    "same domain — the two sides of a conversion, a ship-to and a bill-to, a parent and "
+                    "a predecessor — are identical to a measurement and opposite in meaning. Only the "
+                    "business's intent separates them."),
+                "consequences": {
+                    "one of the named targets": (
+                        "that reference is drawn, the others are recorded as rejected-by-ruling, and "
+                        "questions traverse the chosen direction. IF THE CHOICE IS WRONG THE NUMBERS "
+                        "DO NOT ERROR — they come back transformed the wrong way and still look "
+                        "plausible, which is the hardest defect to find later."),
+                    "both_are_real": (
+                        "two references are drawn and every traversal must say which it used; a "
+                        "question that does not name a direction becomes ambiguous rather than wrong."),
+                    "neither": (
+                        f"{col} stays an attribute, no line is drawn, and no question can traverse "
+                        f"from it — the join must be written by hand each time, where it is visible."),
+                },
+                "recommendation": None,
+                "because": (
+                    "NO RECOMMENDATION IS OFFERED, deliberately. Every other prepared ruling here "
+                    "carries one because the measurement leans one way; this one does not lean. "
+                    "Inventing a preference would dress a coin-toss as evidence, which is worse than "
+                    "asking."),
+            },
+        })
+    return out
+
+
+def _dangling_keys(root: pathlib.Path, yaml) -> list[dict]:
+    """A key-shaped column with no parent relation in scope — and three different reasons why.
+
+    The measurer reports these as `references_dangling` with `to: null`, correctly refusing to invent a
+    parent. What it cannot do is say WHICH kind of absence it is, and the three kinds want opposite
+    treatment. That distinction is computable from what is already measured, so the ruling arrives with
+    a recommendation rather than a shrug:
+
+      inline_dimension  a sibling column carries a label at the SAME cardinality, so the "parent" is
+                        already on the row (product.CategoryKey 8 distinct, product.CategoryName 8)
+      attribute_only    the information the key points at is already denormalised beside it
+                        (customer.GeoAreaKey, next to Continent/Country/State/City/ZipCode/Lat/Long)
+      missing_extract   neither — the dimension was genuinely not extracted, and anything grouped by
+                        it can only report opaque keys
+    """
+    # KEYED BY (PLANE, STEM), NOT BY STEM. A 1:1 passthrough gives the served relation its landing's
+    # name, so a stem-keyed map silently kept whichever plane was read last — the same collision that
+    # costs `mac_profile` half its profiles, reproduced here in the code written to explain it. Columns
+    # are MERGED across planes for the lookup because a same-named relation on both planes is the same
+    # relation, and a curated one that was renamed cannot collide at all.
+    desc: dict[str, dict[str, int]] = {}
+    for plane in ("datasets", "sources"):
+        for f in sorted((root / "data" / plane).glob("*.yaml")):
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            merged = desc.setdefault(f.stem, {})
+            for c in (doc.get("columns") or []):
+                if c.get("name") and c.get("distinct") is not None:
+                    merged[str(c["name"])] = c["distinct"]
+    fams: dict[str, dict] = {}
+    for plane in ("references_served", "references"):
+        for f in sorted((root / "data" / plane).glob("*.yaml")):
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            for r in (doc.get("references_dangling") or []):
+                frm = r.get("from") or {}
+                col, rel = str(frm.get("column")), str(frm.get("relation"))
+                fam = fams.setdefault(col, {"seen": 0, "by_rel": {}})
+                fam["seen"] += 1
+                fam["by_rel"].setdefault(rel, {"distinct": None, "span": None})
+                # THE KEY'S OWN CARDINALITY COMES FROM THE MEASURER, NOT THE DESCRIPTOR. First version
+                # of this read it from `data/datasets/<rel>.yaml#columns[].distinct` and got None for
+                # every key — the descriptor carries `distinct:` only where a value DOMAIN was
+                # captured, and an integer surrogate never is. So the bijection test found no twin for
+                # product.CategoryKey (8 distinct) beside product.CategoryName (8 distinct) and
+                # recommended `missing_extract` with a confident sentence. A recommendation resting on
+                # absent evidence is worse than none: it is wrong AND it looks reasoned.
+                # PER CARRIER. Aggregating one number across carriers paired customer's name with
+                # store's cardinality — GeoAreaKey reported 67 distinct (store) while the relation
+                # named was customer (608). Evidence and the thing it is evidence about must travel
+                # together.
+                ev = r.get("evidence") or {}
+                if ev.get("child_distinct") is not None:
+                    fam["by_rel"][rel]["distinct"] = ev["child_distinct"]
+                    if ev.get("min") is not None and ev.get("max") is not None:
+                        fam["by_rel"][rel]["span"] = (ev["min"], ev["max"])
+    out = []
+    for col, fam in sorted(fams.items()):
+        # THE TWIN TEST RUNS PER CARRIER, and the carrier it finds one on is the one reported.
+        hit = None
+        for rel_i in sorted(fam["by_rel"]):
+            n_i = fam["by_rel"][rel_i]["distinct"]
+            # EQUAL CARDINALITY IS NECESSARY AND NOT SUFFICIENT — the same lesson as this morning's
+            # dense-integer references. store.GeoAreaKey has 67 distinct and so do store.Description
+            # and store.State, over 74 rows; that is a COINCIDENCE, and recommending "the label already
+            # travels with the key" from it would have been a confident wrong answer.
+            #
+            # A LABEL SHARES ITS KEY'S SUBJECT, so the second signal is the name stem: CategoryKey and
+            # CategoryName both carry "Category". This does not make a NAME into a verdict — the
+            # reference measurer's law still holds and no reference is drawn here. It selects a
+            # RECOMMENDATION between answers a person will confirm, and without it the recommendation
+            # was wrong on 1 of 3 cases measured.
+            stem_i = re.sub(r"(?i)(key|id|code|no)$", "", col) or col
+            tw = sorted(c for c, d in desc.get(rel_i, {}).items()
+                        if c != col and n_i is not None and d == n_i
+                        and stem_i.casefold() in c.casefold())
+            if tw:
+                hit = (rel_i, n_i, tw, fam["by_rel"][rel_i]["span"])
+                break
+        rel = hit[0] if hit else sorted(fam["by_rel"])[0]
+        n = hit[1] if hit else fam["by_rel"][rel]["distinct"]
+        twins = hit[2] if hit else []
+        sp = (hit[3] if hit else fam["by_rel"][rel]["span"])
+        span = f", dense over {sp[0]}..{sp[1]}" if sp and str(n) == str(sp[1]) else ""
+        if twins:
+            rec = "inline_dimension"
+            why = (f"{rel}.{' / '.join(twins)} carries the SAME {n} distinct value(s) as {col}"
+                   f"{span} — the label already travels with the key, so a concept grounds on {rel} "
+                   f"and no parent relation is needed at all")
+        else:
+            # NO RECOMMENDATION, AND THE REASON IS STATED. Measurement separates inline_dimension from
+            # the other two (a same-cardinality twin either exists or it does not). It CANNOT separate
+            # attribute_only from missing_extract: whether the information the key points at is already
+            # denormalised beside it is a question about MEANING, not cardinality —
+            # customer.GeoAreaKey sits next to Continent/Country/State/City/ZipCode/Lat/Long, and no
+            # count reveals that those describe the same thing the key does.
+            rec = None
+            why = (f"no column of {rel} shares {col}'s {n if n is not None else 'measured'} distinct "
+                   f"value(s), so it is NOT an inline dimension. Between the remaining two answers the "
+                   f"measurement does not lean: whether the absent parent's information is already "
+                   f"denormalised beside this key is a question about meaning, not cardinality. What "
+                   f"would settle it is a look at {rel}'s other columns — if they already describe what "
+                   f"{col} points at, it is attribute_only; if nothing does, the extract is incomplete")
+        out.append({
+            "id": f"DQ-DANGLINGKEY-{col.upper()}",
+            "title": f"`{col}` is key-shaped and no relation in scope carries it as a key",
+            "severity": "medium",
+            "measurement": (
+                f"reported on {fam['seen']} plane-relation(s) "
+                f"({', '.join(f'{r} {v[chr(100)+chr(105)+chr(115)+chr(116)+chr(105)+chr(110)+chr(99)+chr(116)]} distinct' for r, v in sorted(fam['by_rel'].items()))}); "
+                f"{n if n is not None else 'an unmeasured number of'} distinct value(s) on {rel}. It "
+                f"follows this bundle's own key-naming convention and points at nothing."),
+            "needs": (f"Is the parent MISSING from the extract, already INLINE on the row, or is {col} "
+                      f"just an attribute?  ANSWER ONE OF: inline_dimension | attribute_only | "
+                      f"missing_extract.  "
+                      + (f"RECOMMENDED: {rec} — {why}" if rec else f"NO RECOMMENDATION — {why}")),
+            "ruling": {
+                "question": f"{col} is key-shaped with no parent in scope. Which absence is it?",
+                "answers": ["inline_dimension", "attribute_only", "missing_extract"],
+                "established": (
+                    f"{n if n is not None else '?'} distinct value(s) on {rel}; no relation in scope "
+                    f"declares {col} as a key; sibling column(s) at the same cardinality: "
+                    f"{', '.join(twins) or 'none'}."),
+                "for_the_human": (
+                    "A measurement sees an absence; it cannot see whether the absence is a gap in the "
+                    "extract or a modelling choice already made. Only someone who knows what was meant "
+                    "to be delivered can say."),
+                "consequences": {
+                    "inline_dimension": (
+                        "a concept is grounded on the carrying relation, using the key for identity and "
+                        "its twin for the label; no parent relation is ever needed and no line is drawn"),
+                    "attribute_only": (
+                        f"{col} is an opaque identifier and nothing groups by it — questions use the "
+                        f"denormalised attributes beside it instead"),
+                    "missing_extract": (
+                        "the extract is incomplete and it is recorded as such; until the dimension "
+                        "arrives, anything grouped by this key can report only opaque values, and every "
+                        "answer over it must say so"),
+                },
+                "recommendation": rec,
+                "because": why,
+            },
+        })
+    return out
 
 
 def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
