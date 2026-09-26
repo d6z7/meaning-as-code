@@ -333,13 +333,6 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
 7. **Common sense is not a declaration.** Case folding, "Europe is a continent", "female is a
    gender" — the model brings these. The ontology declares what the model CANNOT know: which
    column, which grain, which ruling, which refusal.
-9. **Every ontology projects an ER MODEL — always, and generated, and only what is REALIZED.**
-   A sample shows what one concept CONTAINS; the ER projection shows what the ontology CONNECTS,
-   and it is the only artifact in which an edge that joins NOTHING is visible. Draw an edge only
-   when it carries a realization, and there are exactly THREE: a `join_rule` (a predicate between
-   two relations), a `realized_by` column (one relation — the relationship IS a column of the row),
-   or a `resolved_by` RULE (the predicate is conditioned, so a rule carries it). Draw the
-   unrealized ones in a separate REPORT, never silently. See P10.
 8. **Every concept carries a SAMPLE of its real rows — always, and generated.** A concept states
    what a thing IS; the sample is the only artifact that shows what it actually CONTAINS, in the
    columns the concept itself declares. Authoring one is forbidden for the same reason authoring a
@@ -347,6 +340,27 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
    may be RENDERED to a reader is a separate, declared decision (`disclosure.samples`) that
    defaults to withheld — withholding is not silence, so the page still says a sample exists and
    over what denominator. See P9.
+9. **Every ontology projects an ER MODEL — always, and generated, and only what is REALIZED.**
+   A sample shows what one concept CONTAINS; the ER projection shows what the ontology CONNECTS,
+   and it is the only artifact in which an edge that joins NOTHING is visible. Draw an edge only
+   when it carries a realization, and there are exactly THREE: a `join_rule` (a predicate between
+   two relations), a `realized_by` column (one relation — the relationship IS a column of the row),
+   or a `resolved_by` RULE (the predicate is conditioned, so a rule carries it). Draw the
+   unrealized ones in a separate REPORT, never silently. See P10.
+10. **One IMPORT RUN must hand the operator the FULL STATE.** Not the files a run happens to make —
+    the state a person can continue tuning an ontology FROM: sources, assets, the measurement plane,
+    the referential structure, lineage, the ER model, concepts, registers, SME questions, and both
+    quality suites GENERATED AND EXECUTED WITH THEIR RESULTS. The list, with each item's producer and
+    its measured status, is [DELIVERABLES-2026-09-26_first-run-state.md](DELIVERABLES-2026-09-26_first-run-state.md)
+    — referenced and not copied, by law 1's own logic. The acceptance test is the operator's:
+    *"dont give me this shit over and over where i have to ask for functionality here and there."*
+    A deliverable that has to be asked for was not delivered. See P11.
+11. **Two bundles share NOTHING.** No file, path, connection or declaration of one may name another.
+    The single permitted cross-border act is comparing a reference ANSWER, which is a review
+    performed from OUTSIDE both and leaves no path inside either — and the ontology plane is excluded
+    from even that. See P12.
+12. **A GATE MUST NOT FAIL A WORKING BUNDLE, and must never SKIP where it should FAIL.** Both
+    failures teach an operator to ignore it, which is worse than having none. See P13.
 
 ---
 
@@ -493,6 +507,131 @@ about declarations. A hand-drawn diagram is a claim that ages the moment an edge
 one thing it must be able to say — *this edge realizes nothing* — is exactly what an author
 flattered by their own diagram will not draw.
 
+### P11 — A PRODUCED FILE IS NOT A DELIVERED DELIVERABLE. DELIVER WHERE THE OPERATOR LOOKS
+
+**The rule.** A deliverable is delivered when the operator can SEE it in the surface they use. A file
+on disk that no reader consumes is work, not delivery — and reporting it as present is a false claim
+about the state of the bundle.
+
+**Measured 2026-09-26, twice in one hour, and both times the operator had to tell me.**
+
+| I produced | I reported | what the operator saw |
+|---|---|---|
+| `data/lineage/lineage.json`, 13 nodes / 7 edges, measured from the engine | "lineage delivered" | *"i did not get lineage"* — the console renders `objects.json#lineage_graph`, which had **14 nodes and 0 edges** |
+| a generated DQ suite, 86 cases, 86 PASS | "DQ tests executed" | *"DQ is completely empty"* — the board reads `data/quality/dq_dashboard.json`, built from a findings register that did not exist |
+
+Both artifacts were real. Neither was where anything reads. The lineage graph needed
+`data/transforms/*.yaml` (a `.sql` is the RECIPE; the descriptor is the declared claim, and only the
+second is read), and the board needed a register of ISSUES — which a passing suite is not: **a suite
+proves invariants HOLD; a register says what is WRONG and who must rule on it.**
+
+**So a report must probe the CONSUMER, not the producer.** "`data/lineage/lineage.json` exists" is
+not the question; "what will the page draw" is. The state report now reads `objects.json` and the
+dashboard themselves and says *"0 EDGES — the view draws nothing"* when that is what is true.
+
+---
+
+### P12 — A WAREHOUSE THAT CARRIES ANOTHER ONTOLOGY'S MEANING PLANE WILL BE IMPORTED AS DATA
+
+**The rule.** A bundle holds its own landings, its own transforms and its own warehouse. One relative
+path is enough to lose that.
+
+**Measured 2026-09-26.** A bundle's `connection.yaml` named
+`../../../mac-ontology-contoso/contoso.duckdb`, and that warehouse carried the eight `meta_*`
+relations the runtime emits so a planner can answer questions ABOUT an ontology. The import measured
+them like any other relation: **32 artifacts**, including a sample file holding rows reading
+`('AgeBand','enumeration')` — another bundle's CONCEPT NAMES presented as this one's data.
+
+**And the worst outcome was still ahead.** The concept stage authors over the WHOLE relation
+inventory. Asked what business notion `meta_concept` represents, the honest answer is *a concept* —
+so the bundle would have grown an ontology ABOUT an ontology, from 21 rows of someone else's
+declarations, with every gate passing.
+
+Two things follow, and the second is the general one:
+  * exclude the meaning plane at the entry point, deriving its names from the module that EMITS them
+    so a ninth relation is covered the day it is added — and SAY SO when excluding, because a reader
+    comparing 22 relations against 14 descriptors needs to know why eight are missing;
+  * **a shared warehouse makes a bundle's state unprovable.** Re-run it a week later and a difference
+    is unattributable. That is the reason for law 11, not tidiness.
+
+---
+
+### P13 — A GATE THAT FAILS A WORKING BUNDLE GETS SILENCED, AND ONE THAT SKIPS GETS BELIEVED
+
+**The rule.** Before trusting a gate's verdict, run it against a bundle KNOWN to be correct. A gate
+is a claim about other people's work and has to earn it.
+
+**Measured 2026-09-26, building three gates in one afternoon — every one was wrong first:**
+
+  * `check_er_projection` reported **10 of 13 edges INERT on a bundle whose every question passed**.
+    `Edge.realized_by` is typed as a canon binding, so a plain `"relation.column"` parses to an empty
+    tuple and the string lands in `realized_by_ref`. It also printed **"SKIP: no edges"** for a bundle
+    with thirteen, because `index.edges` is a `Graph` with `edge_ids()`/`get_edge()` and no
+    `.values()` — reporting SKIP where FAIL belongs is the one failure mode a gate must not have.
+  * `check_bundle_isolation` produced **62 BREACHES** on rule pages linking their own concept as
+    `../brand.md`, which resolves INSIDE the bundle; and reported **180 lines of prose** as naming
+    another bundle because `example` is both a container name and an ordinary English word.
+  * `check_measure_denomination`, broadened to catch any phrasing, **flagged the CORRECTION as the
+    defect** — a fix contains the false claim's own words in order to deny it.
+
+**And the deeper lesson from that last one:** prose cannot be gated. A regex tuned to one phrasing
+misses its rephrasing; broadened, it cannot tell assertion from denial. That is not a tooling gap, it
+is a property of prose — and it is the argument for flags over paragraphs (law 8's cousin).
+
+**Give every gate a `--self-test` with seeded cases.** Mine caught two defects no bundle would have:
+a pattern that captured only the FIRST `../` so every relative path resolved one level up whatever
+its depth, and a comparison of a resolved path against an unresolved root, which on macOS makes
+`/tmp` and `/private/tmp` disagree.
+
+---
+
+### P14 — FUNCTIONAL DEPENDENCE IS NOT A HIERARCHY, AND IT IS NOT A LABEL EITHER
+
+**The rule.** "Each A maps to exactly one B" is satisfied by a PARENT, an ALIAS and a LABEL alike.
+Whatever you concluded from it, measure the OTHER direction before acting.
+
+**Measured twice, on different artifacts, from the same mistake:**
+
+  * `finer_than` was pointed at `State`/`StateFull` on the strength of 608 and 563 distinct values.
+    It is not a hierarchy: `CO` is Corse (FR), Como (IT) and Colorado (US) — 40 of 563 codes collide
+    ACROSS countries and 0 within. What the data showed was a code needing a SCOPE, not a level.
+  * a register cutter accepted `Year` as the LABEL of `YearQuarter`, because every quarter maps to
+    exactly one year. `Year` is a coarser AXIS; a register built on it resolves "2024" to one quarter
+    of four. Requiring the pairing to hold BOTH ways dropped four such registers and kept
+    `Country` <-> `CountryFull`.
+
+**And when a bijection IS found, which half is the CODE still has to be decided:** `DE` is the code
+and `Germany` the label, and iterating in column order got it backwards. The code is the terser half.
+
+---
+
+### P15 — CONCEPTS ARE NEVER 1:1 WITH DATASETS, AND THE FIX IS THE DRIVER, NOT WITHHOLDING THE STAGE
+
+**The operator, 2026-09-26, deleting an instruction I had accepted and repeated:** *"datasets DO NEVER
+MATCH CONCEPTS 1:1 — concepts must SEARCH for business LOGIC in data and create it independent of
+physical layer objects."*
+
+**What the deleted instruction said, and why it was wrong.** The import pipeline printed *"concepts:
+NOT RUN — onboarding stops at the data plane"*, justified by an outcome: a bundle came out at exactly
+20 concepts over 20 datasets. That number is real and it is a defect OF THE DRIVER — the loop called
+the model ONCE PER DATASET and named each file after the dataset stem, so 1:1 was true by
+construction. A caller that asks *"what is the concept for THIS table"* can only be answered with one
+concept per table.
+
+Withholding the stage left that driver unfixed and moved the cost onto the operator, who then has to
+ask for concepts — the very thing law 10 exists to end. **An unmarked guess and a withheld stage are
+both worse than a labelled draft:** the first hides that a decision was made, the second hides that
+one is needed. So the stage runs and writes `status: draft`.
+
+**And a shape a loop can produce must be REFUSED BY A CHECK, not requested by a paragraph** — the
+authoring prompt already said "A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping is M:N" and
+the loop produced 1:1 anyway. `check_concepts_not_per_table.py` fails a bundle only when all four hold
+at once: as many concepts as datasets, every concept on one relation, no relation shared, no relation
+declined. It never demands a NUMBER — a source whose notions genuinely align with its relations is
+legitimate; arriving there without looking is not.
+
+---
+
 ### P4 — ONE REGISTER PER DIMENSION, ENFORCED BY THE CUTTER
 
 Two registers over one column WILL disagree, and nothing in the runtime arbitrates. A cutter must
@@ -567,6 +706,12 @@ Only after all six comes "the data is missing." It almost never is.
 0b. **Project the ER model as soon as the edges exist** (P10), and read the count: an ontology
    claiming 13 edges and drawing 3 has ten that join nothing, which no amount of reading the YAML
    reveals.
+0c. **Run the import and read its STATE REPORT before authoring anything** (law 10, P11). One command
+   produces the data plane, the measurement plane, the referential structure, lineage, the registers,
+   both quality suites and the DQ findings — measured on one bundle: 12 of 19 deliverables from
+   nothing but a manifest and a connection. What it CANNOT produce it names, with the reason. Every
+   declaration below is a claim about values, and this is the step that puts the values in front of
+   you.
 1. `domain.closure` + `complete_for` on the model; parser; **mandatory** (a bundle without it
    fails to load — a default would reintroduce the guess).
 2. `filter_column` — kills the identity-key fallback. Smallest fix, biggest live bug.
@@ -593,7 +738,13 @@ itself. What holds each one today:
 | P6 | a lone guess still asks | **`test_planner_value_column.py`** — 3 near-miss cases + the normalized counter-case |
 | P7 | no canon an implemented one expresses | `mac_runtime/canon.py` `KNOWN_UNIMPLEMENTED` says so at the point of temptation |
 | P9 | every concept has a generated sample | **`check_concept_samples.py`** — every concept, its declared columns, and the sample's freshness against the ontology |
-| P10 | the ER model is projected, and unrealized edges are reported | **`check_er_projection.py`** — every declared edge must carry a `join_rule` or a `realized_by`, and the projection must exist and cover them |
+| P10 | the ER model is projected, and unrealized edges are reported | **`check_er_projection.py`** — every declared edge must carry a `join_rule`, a `realized_by` or a `resolved_by` rule |
+| P11 | a deliverable is delivered where the operator LOOKS | **`mac_import.py --report`** — probes the CONSUMER (`objects.json`, the DQ dashboard), never the producer, and prints the reason for every absence |
+| P12 | no bundle imports another's meaning plane | **`check_meaning_plane_not_imported.py`** across all 8 planes; **`mac_descriptors`** excludes them at the entry point and names them |
+| P11/12 | two bundles share nothing | **`check_bundle_isolation.py`** — a path into another bundle is a BREACH under `ontology/`, and a path outside the bundle that is neither a bundle nor the framework is a portability finding |
+| P13 | a gate is right before it is trusted | every gate ships `--self-test` with seeded cases, and is run against a bundle KNOWN to be correct before it is believed |
+| P14 | a dependence is measured BOTH ways | `mac_lookups` requires a bijection before accepting a label; `finer_than` is repointed at a pair that holds |
+| P15 | concepts are never per-table | **`check_concepts_not_per_table.py`** — fails only when all four clauses of the per-table shape hold at once |
 
 **`mac_runtime/canon.py` is the registry** — the canons this runtime honours and where, plus the
 ones it knowingly does not. `test_canon_registry.py` holds both lists to the source, stripping
