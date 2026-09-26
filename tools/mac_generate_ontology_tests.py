@@ -644,9 +644,18 @@ def main() -> int:
     if a.dry_run:
         print("\n  (dry run — nothing written)")
         return 0
-    eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
-           or {}).get("engine") or {}
+    # THE ENGINE KEYS ARE LABELS, and a first run has no `acceptance/properties.yaml` yet — defect
+    # B4 of DELIVERABLES-2026-09-26_first-run-state.md, in a second tool. Read unguarded, this died
+    # with a bare FileNotFoundError and the import stage reported FAIL for a file that decides
+    # nothing: which warehouse is opened is `connection.yaml`'s job. Absent means unlabelled.
+    _props = root / "acceptance" / "properties.yaml"
+    eng = ((yaml.safe_load(_props.read_text(encoding="utf-8")) or {}).get("engine") or {}
+           if _props.is_file() else {})
     out = root / a.out
+    # A WRITER CREATES ITS OWN PARENT. A first run has no `acceptance/` yet, and this died with
+    # FileNotFoundError on its own output path — the generated suite is the first thing that ever
+    # needs the directory, so refusing to make it means the directory can only be made by hand.
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(yaml.safe_dump({
         # DERIVED FROM THE BUNDLE, for the reason mac_generate_sanity.py:405 states: a name a tool
         # writes about a bundle is the bundle's to supply. This was the literal string
