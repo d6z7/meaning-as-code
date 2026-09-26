@@ -333,6 +333,20 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
 7. **Common sense is not a declaration.** Case folding, "Europe is a continent", "female is a
    gender" — the model brings these. The ontology declares what the model CANNOT know: which
    column, which grain, which ruling, which refusal.
+9. **Every ontology projects an ER MODEL — always, and generated, and only what is REALIZED.**
+   A sample shows what one concept CONTAINS; the ER projection shows what the ontology CONNECTS,
+   and it is the only artifact in which an edge that joins NOTHING is visible. Draw an edge only
+   when it carries a realization, and there are exactly THREE: a `join_rule` (a predicate between
+   two relations), a `realized_by` column (one relation — the relationship IS a column of the row),
+   or a `resolved_by` RULE (the predicate is conditioned, so a rule carries it). Draw the
+   unrealized ones in a separate REPORT, never silently. See P10.
+8. **Every concept carries a SAMPLE of its real rows — always, and generated.** A concept states
+   what a thing IS; the sample is the only artifact that shows what it actually CONTAINS, in the
+   columns the concept itself declares. Authoring one is forbidden for the same reason authoring a
+   member list is: it is a fact about data. Generate it, date it, regenerate it. Whether the rows
+   may be RENDERED to a reader is a separate, declared decision (`disclosure.samples`) that
+   defaults to withheld — withholding is not silence, so the page still says a sample exists and
+   over what denominator. See P9.
 
 ---
 
@@ -388,6 +402,96 @@ because I fixed the data instead of the reader.
 
 **Rule: when a fix produces data the bundle already contains, STOP. You are treating a symptom.**
 Ask what should have read the existing data and did not.
+
+### P9 — A CONCEPT WITHOUT A SAMPLE IS UNREVIEWABLE, AND I AUTHORED THREE WRONG DECLARATIONS
+### THAT A SAMPLE WOULD HAVE SHOWN AT A GLANCE
+
+**The rule.** Generate a sample for EVERY concept, from the columns that concept declares, before
+believing any of its declarations. Not for the relation — for the CONCEPT: the same relation read
+through two concepts is two different subsets, and the subset is the thing under review.
+
+**Measured 2026-09-26, authoring example/contoso2's 19 concepts.** Three declarations were wrong in
+a way no amount of re-reading the YAML revealed, and each one is visible in four rows of the
+concept's own columns:
+
+| what I declared | what the engine did | what the sample shows |
+|---|---|---|
+| `StoreStatus`: `StoreKey: { identity: canonical }` | `WHERE StoreKey = 'Closed'` — DuckDB refused to cast | `StoreKey` holds integers; `Status` holds `Closed`/`Restructured`. The identity is obviously the word column |
+| `StoreStatus`: `identity.kind: code` | refused: *"nothing declares which code is StoreStatus's"*, missing `variant_code` | two coded values on a store row, not a measure discriminator on a tall fact |
+| `Country`: `enum_from_register` on the code column | refused: *"No country named 'Germany' … compared with Country"* | `Country=DE` beside `CountryFull=Germany` — the word is in the OTHER column |
+
+On the varchar case the first one is worse than an error: `WHERE <key> = 'Closed'` returns zero
+rows and reads as an answer.
+
+**PER CONCEPT AND NOT PER RELATION, and this is not a preference — it is the difference between
+catching and missing.** example/contoso ALREADY HAS samples: 15 files under `data/samples/`, one per
+relation, cut by the framework's own `mac_sample.py`. They would not have caught any of the three
+defects above. `dim_contoso_store.sample.csv` shows all twelve columns of the store row, so a
+reviewer of `StoreStatus` — a concept that declares TWO of them — cannot tell from it which two the
+concept means, which is the entire question. Measured: the relation sample has 12 columns, the
+concept sample has 2, and the defect lives in the choice between them.
+
+**Why a sample and not a profile.** A profile counts (distinct, nulls, min, max) and a sample
+SHOWS. The three defects above are all shape mismatches between a declared role and the values in
+the column, and a count cannot make a shape visible. They are also exactly what a domain expert who
+does not read YAML can review — which is the operator's standing complaint about every artifact
+that names a thing without showing one: *"just the name is NOT example."*
+
+**And it is the cheapest evidence in the estate.** Twenty rows per concept, one seeded query each,
+free against a local warehouse. There is no argument for a concept that has never been looked at.
+
+### P10 — AN EDGE THAT JOINS NOTHING LOOKS EXACTLY LIKE AN EDGE. PROJECT THE ER MODEL AND IT
+### DOES NOT
+
+**The rule.** Project the ER model from the DECLARED edges and draw only the ones that carry a
+realization. An edge with neither a `join_rule` nor a `realized_by` is a line in a YAML file and
+nothing in a query.
+
+**Measured 2026-09-26, authoring example/contoso2.** I wrote 13 edges: 3 fact-to-dimension with a
+`join_rule`, and 10 same-table ones — Country, Gender, AgeBand on the customer row; Brand, Color and
+two categories on the product row; Status on the store row; Currency on the fact. All 13 parsed. All
+13 read as edges. **Ten of them were inert**, because a same-table edge needs `realized_by:
+"<relation>.<column>"` to name the column that realizes it, and I had written none.
+
+Nothing said so until a question failed:
+
+```
+PlannerTemplateError: the qualifier(s) dim_contoso_customer are bound by nothing in its
+FROM/JOIN clauses, which bind f
+```
+
+"Net revenue in Germany" needs the two-hop path fact -> Customer -> Country. The second hop could
+not be traversed, so the dimension was never joined and the filter named a relation the query did
+not bind. **An ER projection would have drawn 3 edges where the ontology claims 13**, and the gap
+is the whole defect — visible in a glance at a picture, invisible in thirteen correct-looking YAML
+blocks.
+
+**AND THE PROJECTION IS WHERE A WRONG EDGE NAME BECOMES OBVIOUS TOO.** contoso carries
+`order_line__denominated_in__currency`, whose name asserts the premise that each line's money is in
+its own CurrencyCode — measured false on 2026-09-26 (the undiscounted cross-currency price ratio is
+exactly 1.0, sd 0.0, on all ten pairs, against rate quotes spanning 0.6725..1.7253). A reader
+skimming twenty-four edge blocks does not notice; a reader looking at a diagram labelled
+*denominated in* does. Logged as OL-Q3.
+
+**THREE REALIZATIONS, AND THE THIRD IS NOT A LOOPHOLE.** A first version of the gate accepted only
+`join_rule` and `realized_by`, and flagged example/contoso's
+`order_line__converts_at__exchange_rate` as inert. That edge carries no predicate DELIBERATELY, and
+the bundle says why: the relationship is a three-clause conditioned join, and the single equality a
+gate could measure (`OrderDate = Date`) returns 25 quotes for every one of the 223 974 lines — a 25x
+fan-out that writes the exact defect the ExchangeRate concept's own rule forbids. So the realization
+is the RULE that resolves it, and a gate demanding a predicate there would be demanding the defect.
+`join_rule` · `realized_by` · `resolved_by` — and nothing else counts.
+
+**AND THE GATE MUST NOT FAIL A WORKING BUNDLE.** Its first run reported 10 of contoso2's 13 edges
+inert while every one of that bundle's 21 questions passed: `Edge.realized_by` is typed by the
+grammar as a CANON BINDING, so a plain `"dim_contoso_customer.Country"` parses to an empty tuple and
+the string lands in `realized_by_ref`. A gate that reds a bundle which demonstrably works is worse
+than no gate, because the next person silences it. Read every shape the parser accepts.
+
+**Why generated and never drawn.** The same reason as the member list and the sample: it is a fact
+about declarations. A hand-drawn diagram is a claim that ages the moment an edge is added, and the
+one thing it must be able to say — *this edge realizes nothing* — is exactly what an author
+flattered by their own diagram will not draw.
 
 ### P4 — ONE REGISTER PER DIMENSION, ENFORCED BY THE CUTTER
 
@@ -456,6 +560,13 @@ Only after all six comes "the data is missing." It almost never is.
 
 ## PART 4 — THE ORDER TO BUILD IT IN
 
+0. **Cut a sample per concept BEFORE reviewing a single declaration** (P9). It costs one seeded
+   query each, it is the only artifact that shows what a concept CONTAINS, and on 2026-09-26 it
+   would have caught three wrong declarations that re-reading the YAML did not. Step zero because
+   every step below is a claim about values, and this is the step that shows the values.
+0b. **Project the ER model as soon as the edges exist** (P10), and read the count: an ontology
+   claiming 13 edges and drawing 3 has ten that join nothing, which no amount of reading the YAML
+   reveals.
 1. `domain.closure` + `complete_for` on the model; parser; **mandatory** (a bundle without it
    fails to load — a default would reintroduce the guess).
 2. `filter_column` — kills the identity-key fallback. Smallest fix, biggest live bug.
@@ -481,6 +592,8 @@ itself. What holds each one today:
 | P5 | the diagnosis order | this document; step 3 is now a gate |
 | P6 | a lone guess still asks | **`test_planner_value_column.py`** — 3 near-miss cases + the normalized counter-case |
 | P7 | no canon an implemented one expresses | `mac_runtime/canon.py` `KNOWN_UNIMPLEMENTED` says so at the point of temptation |
+| P9 | every concept has a generated sample | **`check_concept_samples.py`** — every concept, its declared columns, and the sample's freshness against the ontology |
+| P10 | the ER model is projected, and unrealized edges are reported | **`check_er_projection.py`** — every declared edge must carry a `join_rule` or a `realized_by`, and the projection must exist and cover them |
 
 **`mac_runtime/canon.py` is the registry** — the canons this runtime honours and where, plus the
 ones it knowingly does not. `test_canon_registry.py` holds both lists to the source, stripping

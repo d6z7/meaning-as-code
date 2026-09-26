@@ -40,9 +40,59 @@ import re
 import sys
 
 MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
-#: A unit that says any of these is making a claim about denomination.
-_CLAIMS_PER_ROW = re.compile(r"denominated in the [^.]*\b(own|order's|row's)\b|NOT a single reporting", re.IGNORECASE)
+#: THE ORIGINAL, NARROW PATTERN — deliberately back after a measured failure. Broadening it to
+#: catch every rephrasing (see _HISTORICAL_CLAIMS) also made it flag the CORRECTION, because the
+#: corrected unit contains the false claim's own words in order to deny them: "the amount is STORED
+#: IN USD — not in the order's own CurrencyCode". A negation window did not save it either: the
+#: negator in "not in the order's own currency" is not adjacent to the phrase it negates.
+#:
+#: SO THIS GATE NO LONGER TRIES TO JUDGE A PARAGRAPH. It matches the one phrasing whose meaning is
+#: unambiguous, and everything else it REPORTS for a human to read. The real fix is the operator's
+#: own rule — "i want to refuse prosa ... and replace it with meaningfull flags" — a declared
+#: `denomination: single | per_row` on the measure, checked against the measured ratio. One
+#: comparison, no language. Logged for the bundle; until then this reads `semantics.unit` only.
+_CLAIMS_PER_ROW = re.compile(
+    r"denominated in the [^.]*\b(own|order's|row's)\b|NOT a single reporting", re.IGNORECASE
+)
 _CLAIMS_CURRENCY = re.compile(r"\bcurrenc", re.IGNORECASE)
+
+def claims_per_row(text: str) -> bool:
+    """Does this prose assert a per-row denomination, in the ONE phrasing this gate can judge?"""
+    return bool(_CLAIMS_PER_ROW.search(text or ""))
+
+#: THE REAL STRINGS, verbatim from the bundle before 2026-09-26. Each one stated a denomination the
+#: data contradicts, and each was in a DIFFERENT field, which is why the gate reads them all now.
+_HISTORICAL_CLAIMS = (
+    ("semantics.unit", "currency, denominated in the order's own CurrencyCode — NOT a single "
+                       "reporting currency"),
+    ("definition", "AND IT IS NOT A CROSS-CURRENCY FIGURE without a stated conversion: every "
+                   "amount is in the order's own CurrencyCode."),
+    ("definition", "IT IS ALSO NOT A CROSS-CURRENCY FIGURE. Every amount is denominated in the "
+                   "order's own CurrencyCode, so a figure summed over more than one currency is "
+                   "only defined once a conversion direction has been stated."),
+    ("rules.yaml logic", "THE RESULT IS NOT A SINGLE-CURRENCY NUMBER. Every amount is denominated "
+                         "in the order's own CurrencyCode"),
+    ("rules.yaml logic", "Measured 2026-09-18 over all 223 974 lines: 218 814 471.66 in the "
+                         "orders' own denominations."),
+    ("contract.default_reading", "A bare \"sales\" question means this relation at line grain, in "
+                                 "the order's own CurrencyCode, over OrderDate"),
+    ("contract.default_reading", "An unqualified brand total means NetSalesAmount for that brand's "
+                                 "products, in the order's own currency, per currency"),
+    ("contract.rules[].subject", "Amounts are store-local — a multi-currency sum needs a stated "
+                                 "conversion"),
+    ("contract.rules[].why", "the amounts are the store's local money, not a reporting currency"),
+    ("contract.rules[].never", "adding amounts denominated in different currencies as if they "
+                               "shared a unit"),
+)
+
+#: AND THE CORRECTED PROSE, which must NOT match -- a gate that flags the fix is worse than none.
+_CORRECTED_PROSE = (
+    "currency, and the amount is STORED IN USD — not in the order's own CurrencyCode. "
+    "`CurrencyCode` records the currency the order was TRANSACTED in",
+    "AND IT IS A SINGLE-CURRENCY FIGURE, so a cross-market total needs no conversion.",
+    "SUM THEM AS THEY ARE and report the figure in USD.",
+    "A bare \"sales\" question means this relation at line grain, in USD (the stored denomination",
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -83,7 +133,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"REFUSED: {type(exc).__name__}: {str(exc)[:160]}")
         return 2
 
+    # ---------------------------------------------------------------------------------------
+    # DENOMINATION IS A PROPERTY OF THE RELATION, NOT OF ONE CONCEPT — and getting that wrong
+    # left a hole this gate walked straight past on 2026-09-26. Judging each concept by its OWN
+    # measure columns means `NetSalesAmount` is judged by `NetPrice`, which is DISCOUNTED and
+    # cannot settle the question: its cross-currency ratio spreads 0.86..1.1628 purely from
+    # discount tiers, so the test returns `inconclusive` and the prose is never contradicted. The
+    # column that settles it, `UnitPrice`, is declared by the SIBLING concept GrossSalesAmount.
+    #
+    # PROVED BY RE-INTRODUCING THE FALSE CLAIM: put "every amount is in the order's own
+    # CurrencyCode" back into NetSalesAmount.definition and the per-concept version reported
+    # "contradictions: 0". So: establish ONE verdict per relation from the cleanest column on it,
+    # then hold every measure grounded there to that verdict.
+    # ---------------------------------------------------------------------------------------
     findings, checked = [], 0
+    relations: dict[str, dict] = {}
     for concept in sorted(index.concepts.values(), key=lambda c: c.name):
         if concept.klass != ConceptClass.MEASURE:
             continue
@@ -91,26 +155,82 @@ def main(argv: list[str] | None = None) -> int:
         roles = concept.grounding.field_roles or {}
         measures = [c for c, r in roles.items() if r.rsplit(".", 1)[-1] == "measure"]
         currency = _currency_column(con, relation, roles)
-        if not (relation and measures and currency):
-            continue
         period = _period_column(con, relation)
-        if not period:
+        if not (relation and measures and currency and period):
             continue
-        unit = str(concept.semantics.unit or "")
-        claims_per_row = bool(_CLAIMS_PER_ROW.search(unit))
-        # EVERY measure column, never a guess at which one the concept "means". A concept with two
-        # measure columns gets two lines; picking one of them by name is how this gate would
-        # reproduce the error it exists to catch.
-        for measure in sorted(measures):
-            entity, ratio, n, spread = _best_entity(con, relation, measure, currency, period, index)
-            checked += 1
+        rel = relations.setdefault(
+            relation, {"currency": currency, "period": period, "columns": {}, "concepts": []}
+        )
+        rel["concepts"].append(concept)
+        for measure in measures:
+            rel["columns"].setdefault(measure, None)
+
+    for relation, rel in sorted(relations.items()):
+        currency, period = rel["currency"], rel["period"]
+        print(f"\n  {relation}  (currency column: {currency}, period: {period})")
+        for measure in sorted(rel["columns"]):
+            rel["columns"][measure] = _best_entity(
+                con, relation, measure, currency, period, index
+            )
+            entity, ratio, n, spread = rel["columns"][measure]
             verdict = ("ONE denomination" if ratio is not None and abs(ratio - 1) < 0.02
                        else "PER-ROW denomination" if ratio is not None else "inconclusive")
-            note = (f"  on {entity}, {n} pairs, spread {spread:.3f}" if entity and spread is not None
-                    else "  no foreign key yields comparable pairs")
-            print(f"  {concept.name:20} {measure:12} vs {currency:13} "
-                  f"ratio={('n/a' if ratio is None else f'{ratio:.4f}'):>8}  {verdict}{note}")
-            _judge(findings, concept.name, measure, unit, ratio, claims_per_row, entity, period, currency)
+            note = (f"  on {entity}, {n} pairs, spread {spread:.3f}"
+                    if entity and spread is not None else "  no comparable pairs")
+            print(f"    {measure:14} ratio={('n/a' if ratio is None else f'{ratio:.4f}'):>8}  "
+                  f"{verdict}{note}")
+
+        # THE RELATION'S VERDICT comes from the column with the LOWEST SPREAD — the cleanest
+        # signal, which on a discounted fact is the LIST price. A wide spread means the column
+        # carries something else (a discount, a mix) and cannot answer the question; it does not
+        # mean the answer is "per-row".
+        decided = [
+            (spread, col, ratio)
+            for col, (entity, ratio, n, spread) in rel["columns"].items()
+            if ratio is not None and spread is not None
+        ]
+        if not decided:
+            print("    -> inconclusive for this relation: no column gives a clean signal")
+            continue
+        spread, col, ratio = min(decided)
+        one = abs(ratio - 1) < 0.02
+        print(f"    -> THE RELATION IS {'SINGLE' if one else 'PER-ROW'}-DENOMINATED, "
+              f"decided by {col} (ratio {ratio:.4f}, spread {spread:.3f})")
+
+        for concept in rel["concepts"]:
+            checked += 1
+            homes = _where_claimed(concept)
+            prose = _all_prose(concept)
+            # REPORT, NOT A VERDICT, and the reason is worth writing down. Deciding whether a
+            # PARAGRAPH asserts a per-row denomination means deciding whether it is asserting or
+            # DENYING one -- "the amount is STORED IN USD, not in the order's own CurrencyCode"
+            # contains the false claim's exact words in order to reject it. A broadened regex
+            # flagged that correction as the defect, and a negation window then failed on "not in
+            # the order's own currency" because the negator is not adjacent. Measured 2026-09-26.
+            #
+            # THE ANSWER IS NOT A CLEVERER REGEX. It is the operator's own rule: "i want to refuse
+            # prosa ... and replace it with meaningfull flags that define patterns and behaviour".
+            # A measure should DECLARE `denomination: single | per_row` and this gate should check
+            # that flag against the measured ratio -- one comparison, no language. Until the flag
+            # exists, these lines tell an author which fields to read; the FAIL below stays on the
+            # one field whose meaning is unambiguous.
+            if one and homes:
+                print(f"    NOTE {concept.name}: prose mentioning a per-row denomination in "
+                      f"{', '.join(homes)} — read these; this gate cannot judge a paragraph")
+            if one and claims_per_row(str(concept.semantics.unit or "")):
+                findings.append((
+                    concept.name,
+                    f"the relation is SINGLE-denominated — {col}'s cross-currency ratio is "
+                    f"{ratio:.4f} (spread {spread:.3f}) on the same entity and {period} — and "
+                    f"`semantics.unit` claims a PER-ROW denomination"
+                ))
+            elif not one and _CLAIMS_CURRENCY.search(prose) and not homes:
+                findings.append((
+                    concept.name,
+                    f"the relation is PER-ROW denominated ({col} ratio {ratio:.4f}) and this "
+                    f"concept's prose does not say so — a cross-currency total is not a quantity"
+                ))
+
     if not checked:
         print("SKIP: no measure sits beside a currency-shaped column in this bundle")
         return 0
@@ -140,19 +260,54 @@ def _currency_column(con, relation: str, roles: dict) -> str | None:
     return None
 
 
-def _judge(findings, name, measure, unit, ratio, claims_per_row, entity, period, currency) -> None:
+#: The prose a measure concept carries. Every one of these held the false claim at some point.
+def _all_prose(concept) -> str:
+    parts = [
+        str(concept.semantics.unit or ""),
+        str(concept.definition or ""),
+        str(getattr(concept.semantics, "purpose", "") or ""),
+        str(getattr(concept.contract, "default_reading", "") or "") if concept.contract else "",
+    ]
+    for rule in (getattr(concept.contract, "rules", None) or []) if concept.contract else []:
+        parts += [str(getattr(rule, f, "") or "") for f in ("subject", "when", "then", "never", "why")]
+    return "\n".join(parts)
+
+
+def _where_claimed(concept) -> list[str]:
+    """WHICH field carries the claim. A finding that says only "the prose" sends an author
+    grepping; this names the homes so each one can be fixed or deleted."""
+    homes = []
+    def look(label, text):
+        if text and claims_per_row(str(text)):
+            homes.append(label)
+    look("semantics.unit", concept.semantics.unit)
+    look("definition", concept.definition)
+    look("semantics.purpose", getattr(concept.semantics, "purpose", ""))
+    if concept.contract:
+        look("contract.default_reading", getattr(concept.contract, "default_reading", ""))
+        for rule in getattr(concept.contract, "rules", None) or []:
+            for f in ("subject", "when", "then", "never", "why"):
+                look(f"contract.rules[{getattr(rule, 'id', '?')}].{f}", getattr(rule, f, ""))
+    return homes
+
+
+def _judge(findings, name, measure, prose, ratio, asserts_per_row, entity, period, currency,
+           homes) -> None:
     """Compare what the data shows against what the prose claims."""
     if ratio is None:
         return
     one = abs(ratio - 1) < 0.02
-    if one and claims_per_row:
-        why = ("the unit claims a PER-ROW denomination and the data shows ONE: the same "
+    where = ("; claimed in " + ", ".join(homes)) if homes else ""
+    if one and asserts_per_row:
+        why = ("the prose claims a PER-ROW denomination and the data shows ONE: the same "
                f"{entity} on the same {period} costs the same under every {currency} "
-               f"(ratio {ratio:.4f})")
+               f"(ratio {ratio:.4f}){where}")
         findings.append((f"{name}.{measure}", why))
-    elif not one and _CLAIMS_CURRENCY.search(unit) and not claims_per_row:
-        why = (f"the data shows a PER-ROW denomination (ratio {ratio:.4f}) and the unit "
-               "does not say so — a cross-currency total is not a quantity")
+    elif not one and _CLAIMS_CURRENCY.search(prose) and not asserts_per_row:
+        why = (f"the data shows a PER-ROW denomination (ratio {ratio:.4f}) and the prose "
+               "does not say so — a cross-currency total is not a quantity. CHECK THE COLUMN "
+               "FIRST: a DISCOUNTED amount ratio spreads even under one denomination, so read "
+               "the undiscounted column's line above before believing this one")
         findings.append((f"{name}.{measure}", why))
 
 
