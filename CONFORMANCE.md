@@ -333,7 +333,38 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.14'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.15'`**.
+- **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
+  `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
+  there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept
+  metadata, enumeration members, rules, edges. §2's own test for a core key is the one it failed —
+  *"an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in
+  prose"* — and asserting `I` (inferred) about a type read out of `information_schema` is not
+  inference at all. Measured on one bundle: **224 column entries** carrying it, plus a `confidence`
+  column in all 23 lookup CSVs. The two data-plane families that already carried no belief —
+  profiles and references — were the ones getting it right.
+  - `TableFile.metadata` is **CLOSED** (`additionalProperties: false`, an explicit key set). It was an
+    open object — `additionalProperties` unset and `properties` **empty** — so it accepted any key,
+    which is the hatch both `confidence: I` and `status: draft` came through while the column object
+    beside it was strictly closed. `status` is constrained to **`[measured, retired]`**: it is a
+    lifecycle fact about the FILE, not a grade of the measurement, and `retired` has exactly one real
+    consumer (`check_datasets_are_grounded`, which skips a descriptor whose relation is gone).
+    **`draft` is no longer permitted** — a measurement is not a draft; it either happened or it did not.
+  - `TableFile.columns.items` **gains `distinct` and `register`**, and `TableFile.table` gains
+    `rows_measured`. These were being WRITTEN and READ already — by the register cutter, the register
+    membership monitor and the descriptor drift check — while the core did not define them, so
+    `additionalProperties: false` was rejecting 30 + 16 of them per bundle in silence.
+  - `ReferenceFile` **gains `references_broken`**, the band between drawn and rejected: too aligned
+    with a key to be coincidence, too broken to draw, each entry carrying a prepared ruling.
+  - **Why all of this was invisible: MAC002 had three claimed owners and no effective one.** The
+    native `structure` phase claimed it and does the enumeration half only; `validate_schema` genuinely
+    does the per-file half and was listed in `mac_compile`'s ABSORBED set — *asserting* coverage that
+    did not exist, so it was never run; and the wrapped owner `check_shapes` is a CONCEPT-plane gate
+    that legitimately measures nothing on a bundle with no ontology plane, which marked structural
+    validity UNKNOWN for the whole bundle. 82 real violations sat in the data plane while the compile
+    reported MAC002 as NOT COMPUTED. `validate_schema` is now wrapped as a real owner, and a code is
+    UNKNOWN only when **no** owner answered — a false absorption is worse than an admitted hole,
+    because a hole gets a TODO and an absorption gets a green tick.
 - A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
   the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.

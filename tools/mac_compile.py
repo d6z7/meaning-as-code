@@ -323,6 +323,28 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
 # half-parse that silently drops a line is worse than an honest blob.
 
 LEGACY = {
+    # THE REAL OWNER OF MAC002, un-absorbed 2026-09-26. It validates EVERY routed file on EVERY plane
+    # against the closed core, which is what the code means; `check_shapes` sees concepts only.
+    #
+    # WHAT THE ABSORPTION HID. `validate_schema` was listed in ABSORBED with the note "its enumeration
+    # + per-file validation ARE the MAC001/MAC002 checks" — so the compiler did not run it, on the
+    # grounds that a native check had taken over its question. The native structure phase does the
+    # ENUMERATION half (MAC001: an artifact with no definition) and not the PER-FILE half. Nothing did
+    # the per-file half. Measured on contoso4: `mac_compile` reported MAC002 as NOT COMPUTED while
+    # `validate_schema`, run by hand, reported 82 findings over 34 of 53 routed files —
+    #   30x distinct        on a column   (added by the descriptor slimming)
+    #   16x rows_measured   on @table
+    #   16x references_broken            (added by the broken-reference band)
+    #   12x references
+    #    1x expected        on the first-run contract
+    # every one of them `additionalProperties: false` rejecting a key the core does not define. The
+    # closed core the blueprint describes was real, checkable, and being violated in silence.
+    #
+    # An absorption note asserts coverage. This one asserted coverage that did not exist, and that is
+    # strictly worse than an admitted hole: a hole gets a TODO, a false absorption gets a green tick.
+    "validate_schema": ("MAC002",
+                        "it validates every routed file against the closed core — the per-file half of "
+                        "structural validity, which the native structure phase does not do"),
     "check_shapes": ("MAC002",
                      "a shape IS a definition; a concept failing it has a definition it does not satisfy"),
     "check_references": ("MAC008",
@@ -382,7 +404,6 @@ LEGACY = {
 # has taken over their question, and running them again would state one fact in two homes (MAC003) —
 # the compiler committing the defect it reports.
 ABSORBED = {
-    "validate_schema": "structure — its enumeration + per-file validation ARE the MAC001/MAC002 checks",
     "mac_diagnostics": "semantic — its fact analysis IS the MAC003/MAC004 check",
     "check_conformance": "adoption — its bundle loader + framework introspection ARE the MAC005 check",
     "check_intervention_ledger": "semantic MAC010 owns the protocol question; this gate's REMAINING "
@@ -506,6 +527,20 @@ def unknown_codes(diags, no_legacy: bool) -> set:
             out |= {c for c in re.findall(r"MAC\d{3}", d.summary) if c in CODES}
     if no_legacy:
         out |= {code for code, _why in LEGACY.values()}
+    # A CODE WITH SEVERAL OWNERS OVER DIFFERENT POPULATIONS IS NOT UNKNOWN WHEN ONE OF THEM ANSWERED.
+    #
+    # The rule above is right where owners share a population: if the only thing that can see a
+    # question crashed, the answer is unknown, and calling it clean is how 156 undefined artifacts
+    # stayed invisible. It is WRONG where owners see different populations, and MAC002 is exactly that
+    # — `validate_schema` validates every routed file on every plane; `check_shapes` sees concepts and
+    # nothing else. On a bundle with no ontology plane, check_shapes legitimately measures nothing, and
+    # under the old rule its refusal marked structural validity UNKNOWN for the WHOLE bundle — while
+    # 82 real violations sat in the data plane and validate_schema had already found every one.
+    #
+    # So a code is unknown only when NO owner produced a finding for it. One that did is PARTIAL, and
+    # partial is reported as partial rather than rounded to either end.
+    answered = {d.code for d in diags if UNKNOWN_MARK not in d.summary}
+    out -= answered
     # A RETIRED code is not UNKNOWN. "Not computed" means a question nobody answered; a withdrawn
     # code has no question left to answer. Reporting it as unknown would put it in the headline's
     # hole-count and make every compile read as incomplete, permanently.

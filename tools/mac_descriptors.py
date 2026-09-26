@@ -236,15 +236,19 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         "",
         "metadata:",
         f"  table: {table}",
-        "  schema_version: 0.1.14",
-        "  status: draft",
+        "  schema_version: 0.1.15",
+        # STATUS IS A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT. Every generated
+        # descriptor used to be born `draft`, which no reader consumed and which is not true of a
+        # measurement: it either happened or it did not. The one real consumer of this field is
+        # check_datasets_are_grounded, which skips a descriptor marked `retired` because the relation it
+        # describes is gone. v0.1.15 closes `metadata` and constrains the field to [measured|retired].
+        "  status: measured",
         f"  kind: {'served_dataset' if served else 'raw_source'}",
     ]
     if not served:
         lines.append("  external: true")
     lines += [
         f"  observed: '{observed}'",
-        "  confidence: I",
         f"  generated_by: {GENERATOR}",
         "",
         "table:",
@@ -252,7 +256,6 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         f"  schema: {schema}",
         f"  type: {'view' if served else 'table'}",
         f"  rows_measured: {m['rows']}",
-        "  confidence: I",
         "",
         "columns:",
     ]
@@ -268,7 +271,11 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         lines += [f"- name: {col}", f"  type: {_simple(typ)}", f"  role: {role}"]
         if role == "foreign_key":
             lines.append(f"  references: {fks[col]}")
-        lines.append("  confidence: I")
+        # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key
+        # was read by nothing. It sat on 224 column entries across two planes in one bundle. Removed
+        # from the core in v0.1.15 on CONFORMANCE.md §2's own test: "a key nothing consumes is a note,
+        # and a note belongs in prose." The operator put it plainly: nothing in the data plane needs a
+        # status like inferred — it is 1:1 from the source and it is pretty clear.
     return "\n".join(lines) + "\n"
 
 

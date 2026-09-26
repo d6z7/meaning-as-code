@@ -2081,7 +2081,38 @@
       ],
       "properties": {
         "metadata": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "table": {
+              "type": "string"
+            },
+            "schema_version": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string"
+            },
+            "observed": {
+              "type": "string",
+              "description": "the date the measurement was taken"
+            },
+            "generated_by": {
+              "type": "string"
+            },
+            "external": {
+              "type": "boolean"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "measured",
+                "retired"
+              ],
+              "description": "A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT. `retired` is read by check_datasets_are_grounded, which skips a descriptor whose relation is gone — the one real consumer. `draft` is NOT permitted: a measurement is not a draft, it either happened or it did not, and every generated descriptor was born `draft` for no reader at all."
+            }
+          },
+          "description": "CLOSED v0.1.15. It was an open object — `additionalProperties` unset and `properties` empty — so it accepted any key, and that is the hatch `status: draft` and `confidence: I` came through while the column object beside it was strictly closed."
         },
         "table": {
           "type": "object",
@@ -2105,11 +2136,14 @@
             "description": {
               "type": "string"
             },
-            "confidence": {
-              "$ref": "#/$defs/confidence"
+            "rows_measured": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "MEASURED row count at `metadata.observed`. Written by mac_descriptors and READ by its own --check, which reports DRIFT when the warehouse no longer agrees."
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "A MEASUREMENT CARRIES NO GRADE OF BELIEF. `confidence` was a core key on this object and NOTHING read it there — every reader in the framework reads confidence on an ONTOLOGY artifact (concept metadata, enumeration members, rules, edges). CONFORMANCE.md §2 step 2 is the test it failed: 'an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in prose.' Asserting 'inferred' about a type read out of information_schema is not inference. Removed v0.1.15; the two planes that already carried no belief (profiles, references) were the ones getting it right."
         },
         "derived_from": {
           "type": "object",
@@ -2167,9 +2201,6 @@
               "description": {
                 "type": "string"
               },
-              "confidence": {
-                "$ref": "#/$defs/confidence"
-              },
               "nullable": {
                 "type": "boolean"
               },
@@ -2186,9 +2217,23 @@
                 },
                 "uniqueItems": true,
                 "description": "the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then kept here rather than with the census, and the reason is lifecycle: this is the one measured fact a READER needs. An engine that does not know that one brand's home market is 'B_HOMELAND' invents 'B_HOME' by concatenation — that happened, the property PASSED, and the false absence read as 'that brand has no home market'. So the domain earns its place beside the meaning; the counts do not, and they live in data/profiles/ where a re-measurement cannot disturb anything that reads this file."
+              },
+              "distinct": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "MEASURED distinct value count. Written by mac_lookups when the captured `values:` list is cut into a register, and READ by the generated data-sanity suite and by the dangling-key ruling. It replaced the member list itself: 1,186 of 1,595 descriptor lines were member lists, 563 of them on one column that no register would take."
+              },
+              "register": {
+                "type": "string",
+                "description": "Path to the register that holds this column's members, relative to the bundle root. Written by mac_lookups, READ by check_register_membership, which re-measures those members against the warehouse — the monitor a closed set is owed (DNA 1.8)."
+              },
+              "references": {
+                "type": "string",
+                "description": "The parent this foreign_key column points at, as `relation.column`. Written by mac_descriptors for a column whose role is `foreign_key` and consumed as the FK declaration — undeclared in the core until v0.1.15, so additionalProperties was rejecting it in silence."
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "A MEASUREMENT CARRIES NO GRADE OF BELIEF. `confidence` was a core key on this object and NOTHING read it there — every reader in the framework reads confidence on an ONTOLOGY artifact (concept metadata, enumeration members, rules, edges). CONFORMANCE.md §2 step 2 is the test it failed: 'an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in prose.' Asserting 'inferred' about a type read out of information_schema is not inference. Removed v0.1.15; the two planes that already carried no belief (profiles, references) were the ones getting it right."
           }
         },
         "foreign_keys": {
@@ -2223,14 +2268,12 @@
               "cardinality_at_to": {
                 "type": "string"
               },
-              "confidence": {
-                "$ref": "#/$defs/confidence"
-              },
               "notes": {
                 "type": "string"
               }
             },
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "A MEASUREMENT CARRIES NO GRADE OF BELIEF. `confidence` was a core key on this object and NOTHING read it there — every reader in the framework reads confidence on an ONTOLOGY artifact (concept metadata, enumeration members, rules, edges). CONFORMANCE.md §2 step 2 is the test it failed: 'an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in prose.' Asserting 'inferred' about a type read out of information_schema is not inference. Removed v0.1.15; the two planes that already carried no belief (profiles, references) were the ones getting it right."
           }
         },
         "grounded_by_concepts": {
@@ -3017,7 +3060,7 @@
           "type": "array",
           "items": {
             "type": "object",
-            "description": "One finding.",
+            "description": "CLOSED v0.1.15, and widened to describe the GENERATED register as well as a hand-authored one. It required [id, title, finding] and declared only the hand-authored fields, while `mac_dq_findings` has been writing measurement / needs / status / ruled_by / raised_by all along — accepted in silence because `additionalProperties` was unset, and the required `finding` was missing without complaint because MAC002 was never computed. Both halves are now true at once.",
             "required": [
               "id",
               "title",
@@ -3055,8 +3098,74 @@
               },
               "sme_owner": {
                 "type": "string"
+              },
+              "needs": {
+                "type": "string",
+                "description": "What must happen for this finding to close — for a generated finding, the one-line form of the prepared ruling below."
+              },
+              "ruling": {
+                "type": "object",
+                "description": "A PREPARED RULING, to CORE.md §6: a closed question, its permitted answers, what was established with evidence, what only a human can settle, the consequence of EACH answer, and a recommendation — or an explicit statement that the measurement does not lean and why. Added v0.1.15 so a console can offer the answers as buttons rather than a text box.",
+                "properties": {
+                  "question": {
+                    "type": "string"
+                  },
+                  "answers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "established": {
+                    "type": "string"
+                  },
+                  "for_the_human": {
+                    "type": "string"
+                  },
+                  "consequences": {
+                    "type": "object"
+                  },
+                  "recommendation": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "because": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "open",
+                  "accepted",
+                  "rejected",
+                  "resolved",
+                  "waived"
+                ],
+                "description": "The DISPOSITION, which survives re-measurement: the measurement is refreshed, the ruling is not."
+              },
+              "ruled_by": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "raised_by": {
+                "type": "string",
+                "description": "the generator that measured it"
               }
-            }
+            },
+            "additionalProperties": false
           }
         }
       }
@@ -3376,6 +3485,13 @@
           "items": {
             "$ref": "#/$defs/MeasuredReference"
           }
+        },
+        "references_broken": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MeasuredReference"
+          },
+          "description": "References too aligned with a key to be coincidence and too broken to draw — measured between `broken_reference_floor` and `near_miss_floor` with the parent's key domain exercised. NOT DRAWN, RAISED: the ER model must not show a line the rows disobey, and each entry carries a prepared ruling (CORE.md §6). Added v0.1.15 with the band itself."
         }
       }
     },
@@ -3430,10 +3546,12 @@
           "enum": [
             "real",
             "near_miss",
+            "broken_reference",
             "coincidental",
             "rejected",
             "no_denominator"
-          ]
+          ],
+          "description": "`broken_reference` added v0.1.15: between near_miss and rejected — the child USES the parent's real key values and the overlap is not interval arithmetic, so it is a relationship, and 4 % of the rows disobey it. NOT DRAWN, RAISED."
         },
         "drawn": {
           "type": "boolean"

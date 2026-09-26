@@ -126,7 +126,7 @@ def _orphan_landings(root: pathlib.Path, yaml) -> list[dict]:
             "id": f"DQ-ORPHAN-{stem.upper()}",
             "title": f"raw landing `{stem}` is consumed by no transformation",
             "severity": "medium",
-            "measurement": (f"{rows:,} rows harvested and never curated; no "
+            "finding": (f"{rows:,} rows harvested and never curated; no "
                             f"data/transforms/*.yaml declares it as an input"
                             if isinstance(rows, int) else
                             "no data/transforms/*.yaml declares it as an input"),
@@ -149,7 +149,7 @@ def _keyless(root: pathlib.Path, yaml) -> list[dict]:
                 "id": f"DQ-NOKEY-{f.stem.upper()}",
                 "title": f"`{f.stem}` carries no measured key",
                 "severity": "high",
-                "measurement": ("no single column and no small tuple is unique AND non-null over "
+                "finding": ("no single column and no small tuple is unique AND non-null over "
                                 "every row"),
                 "needs": ("a key, or a ruling that this relation has none by design. Without one it "
                           "is not a parent endpoint, so no reference points at it and the ER model "
@@ -185,7 +185,7 @@ def _broken_references(root: pathlib.Path, yaml) -> list[dict]:
                     "title": f"`{child}` references `{parent}`, and {ev.get('orphan_rows')} row(s) "
                              f"break it",
                     "severity": "high",
-                    "measurement": (
+                    "finding": (
                         f"inclusion {ev.get('inclusion')} over {ev.get('child_nonnull')} non-null "
                         f"child row(s): {ev.get('orphan_rows')} row(s) carry "
                         f"{ev.get('orphan_distinct')} value(s) that no row of {parent} carries, while "
@@ -247,7 +247,7 @@ def _ambiguous_references(root: pathlib.Path, yaml) -> list[dict]:
             "title": f"`{col}` includes perfectly into {len(targets)} different keys — which is THE "
                      f"reference?",
             "severity": "high",
-            "measurement": (
+            "finding": (
                 f"measured on {n} reference(s) across {len(fam['carriers'])} relation(s) "
                 f"({', '.join(sorted(fam['carriers']))}): inclusion is 1.0 into every one of "
                 f"{', '.join(targets)}, at the same key role and over the same rows. Value inclusion "
@@ -397,7 +397,7 @@ def _dangling_keys(root: pathlib.Path, yaml) -> list[dict]:
             "id": f"DQ-DANGLINGKEY-{col.upper()}",
             "title": f"`{col}` is key-shaped and no relation in scope carries it as a key",
             "severity": "medium",
-            "measurement": (
+            "finding": (
                 f"reported on {fam['seen']} plane-relation(s) "
                 f"({', '.join(f'{r} {v[chr(100)+chr(105)+chr(115)+chr(116)+chr(105)+chr(110)+chr(99)+chr(116)]} distinct' for r, v in sorted(fam['by_rel'].items()))}); "
                 f"{n if n is not None else 'an unmeasured number of'} distinct value(s) on {rel}. It "
@@ -452,7 +452,7 @@ def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
             "id": f"DQ-DUP-{'-'.join(s.upper() for s in stems)}",
             "title": f"{' and '.join(f'`{s}`' for s in stems)} carry identical row counts",
             "severity": "low",
-            "measurement": f"{rows:,} rows each",
+            "finding": f"{rows:,} rows each",
             "needs": ("a ruling on which is the FACT OF RECORD. An equal row count is not proof of "
                       "duplication, and it is the shape a delivery shipping one fact twice takes."),
         })
@@ -472,7 +472,7 @@ def _all_null_columns(root: pathlib.Path, yaml) -> list[dict]:
                     "id": f"DQ-ALLNULL-{f.stem.upper()}-{str(c.get('name')).upper()}",
                     "title": f"`{f.stem}.{c.get('name')}` is null in every row",
                     "severity": "medium",
-                    "measurement": f"{nulls:,} of {rows:,} rows null",
+                    "finding": f"{nulls:,} of {rows:,} rows null",
                     "needs": ("a ruling: drop the column, or state what its absence MEANS. A served "
                               "column with no value is declared and empty."),
                 })
@@ -497,7 +497,7 @@ def _failing_cases(root: pathlib.Path) -> list[dict]:
             "id": f"DQ-CASE-{str(r.get('id'))[:44]}",
             "title": f"data-sanity case {r.get('id')} did not pass",
             "severity": {"blocker": "high"}.get(str(r.get("severity")), "medium"),
-            "measurement": str(r.get("detail") or r.get("statement") or "")[:200],
+            "finding": str(r.get("detail") or r.get("statement") or "")[:200],
             "needs": "a disposition: fix the data, or accept the reading with a reason.",
         })
     return out
@@ -529,7 +529,7 @@ def _merge(fresh: list[dict], existing: dict[str, dict]) -> list[dict]:
             "status": prev.get("status", "open"),
             "ruled_by": prev.get("ruled_by"),
             "reason": prev.get("reason"),
-            "measurement": f["measurement"],
+            "finding": f["finding"],
             "needs": f["needs"],
             # THE STRUCTURED RULING SURVIVES THE MERGE. This rebuild is a fixed key list by design —
             # it is what stops a re-measurement from resurrecting a closed finding — and a field not
@@ -544,7 +544,7 @@ def _merge(fresh: list[dict], existing: dict[str, dict]) -> list[dict]:
     # nothing measures any more is noise.
     for eid, prev in existing.items():
         if eid not in {f["id"] for f in fresh} and prev.get("status") != "open":
-            out.append({**prev, "measurement": (prev.get("measurement") or "")
+            out.append({**prev, "finding": (prev.get("finding") or "")
                         + "  [NO LONGER MEASURED — kept because it carries a ruling]"})
     return sorted(out, key=lambda f: ({"high": 0, "medium": 1, "low": 2}.get(f["severity"], 3),
                                       f["id"]))

@@ -437,14 +437,21 @@ edges:  # REQUIRED
 *discriminator key:* `table:` · *required:* `table`, `columns`
 
 ```yaml
-metadata:
+metadata:  # CLOSED v0.1.15
+  table: <…>  # string
+  schema_version: <…>  # string
+  kind: <…>  # string
+  observed: <…>  # string · the date the measurement was taken
+  generated_by: <…>  # string
+  external: <…>  # boolean
+  status: <…>  # enum: measured | retired · A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT
 
-table:  # REQUIRED
+table:  # REQUIRED · A MEASUREMENT CARRIES NO GRADE OF BELIEF
   name: <…>  # REQUIRED · string
   schema: <…>  # string
   type: <…>  # enum: table | view | materialized_view
   description: <…>  # string
-  confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
+  rows_measured: <…>  # integer · MEASURED row count at `metadata.observed`
 
 derived_from:  # (views only) LINEAGE — how this serving relation is built
   sources: [ ... ]  # the raw/upstream relation(s) this view is built from
@@ -458,11 +465,13 @@ columns:  # REQUIRED
     type: <…>  # string
     role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | composite_key_part | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     description: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     nullable: <…>  # boolean
     notes: <…>  # string
     enum_ref: <…>  # string
     values: [ ... ]  # the column's observed value DOMAIN, for a column small enough to…
+    distinct: <…>  # integer · MEASURED distinct value count
+    register: <…>  # string · Path to the register that holds this column's members, relative to the…
+    references: <…>  # string · The parent this foreign_key column points at, as `relation.column`
 
 foreign_keys:
   - <item>
@@ -473,7 +482,6 @@ foreign_keys:
     enforced: <…>  # boolean
     required: <…>  # boolean
     cardinality_at_to: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     notes: <…>  # string
 
 grounded_by_concepts:
@@ -743,6 +751,19 @@ issues:  # REQUIRED
     current_handling: <…>  # string
     residual_risk: <…>  # string
     sme_owner: <…>  # string
+    needs: <…>  # string · What must happen for this finding to close — for a generated finding,…
+    ruling:  # A PREPARED RULING, to CORE.md §6: a closed question, its permitted…  # closed: only keys above
+      question: <…>  # string
+      answers: [ ... ]
+      established: <…>  # string
+      for_the_human: <…>  # string
+      consequences:  # open: extra keys allowed
+      recommendation: <…>  # string|null
+      because: <…>  # string
+    status: <…>  # enum: open | accepted | rejected | resolved | waived · The DISPOSITION, which survives re-measurement: the measurement is…
+    ruled_by: <…>  # string|null
+    reason: <…>  # string|null
+    raised_by: <…>  # string · the generator that measured it
 ```
 
 ### ImpurityResolutionMapFile
