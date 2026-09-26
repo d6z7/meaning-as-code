@@ -33,7 +33,31 @@ from typing import Any
 # harvest model id may take; anything else is a typo we refuse at startup.
 _CONVERSE_PREFIXES = ("eu.", "us.", "global.")
 _OPENAI_PREFIXES = ("openai.", "gpt-")
-ALLOWED_PREFIXES = _CONVERSE_PREFIXES + _OPENAI_PREFIXES
+#: THE AGENT IN THE LOOP IS A THIRD PROVIDER, and the framework could not name it.
+#:
+#: `metadata.provenance` has admitted non-pipeline authoring since it was written — `harvested |
+#: authored | tuned` — but this shape gate admitted only REMOTE endpoints. So when the authoring model
+#: is the agent driving the session rather than a Bedrock or Mantle endpoint, there was no id that
+#: named the truth, and the reproducibility ledger would have recorded a remote model that did not
+#: produce the completion. A false provenance record is the one thing that ledger exists to prevent:
+#: `harvest.py` records what its absence cost — "Measured on acme/acme2, which had no ledger: 17 of 22
+#: concepts arrived stamped confidence C."
+#:
+#: AN `agent.` ID IS CACHE-ONLY, BY CONSTRUCTION. There is no endpoint behind it, so a cache MISS is an
+#: error and never a network call: it means the agent's completion is absent, and the honest response is
+#: to fail loud rather than silently substitute a different model's answer for it. `make_invoker`
+#: enforces that.
+_AGENT_PREFIXES = ("agent.",)
+ALLOWED_PREFIXES = _CONVERSE_PREFIXES + _OPENAI_PREFIXES + _AGENT_PREFIXES
+
+
+def is_agent_model(model: str) -> bool:
+    """True when ``model`` names the in-session authoring agent rather than a remote endpoint.
+
+    Such an id has NO client: its completions are supplied by the agent and served from the
+    content-addressed cache. A miss cannot be satisfied by calling anything.
+    """
+    return isinstance(model, str) and any(model.startswith(p) for p in _AGENT_PREFIXES)
 
 
 def is_openai_model(model: str) -> bool:
@@ -57,8 +81,10 @@ def validate_model_id(model: str) -> str:
     if not any(model.startswith(p) for p in ALLOWED_PREFIXES):
         raise ValueError(
             f"unknown/malformed harvest model id {model!r}: expected a provider prefix, one of "
-            f"{ALLOWED_PREFIXES} — Bedrock Converse (eu./us./global.anthropic.*) or Mantle GPT "
-            f"(openai.*/gpt-*). Set MAC_HARVEST_MODEL / harvest.yaml / --model to a valid id."
+            f"{ALLOWED_PREFIXES} — Bedrock Converse (eu./us./global.anthropic.*), Mantle GPT "
+            f"(openai.*/gpt-*), or the in-session authoring agent (agent.*, cache-only: no endpoint, "
+            f"so a miss is an error and never a call). Set MAC_HARVEST_MODEL / harvest.yaml / --model "
+            f"to a valid id."
         )
     return model
 
@@ -142,6 +168,17 @@ def make_invoker(
     """
 
     def _invoke(system: str, user: str) -> str:
+        # AN `agent.` ID HAS NO ENDPOINT. Reaching here means the cache missed, which means the
+        # agent's completion for this exact (system, user) is absent — and the only honest response is
+        # to say so. Falling through to a remote model would put a different author's answer under this
+        # id, which is precisely the false-provenance record the `agent.` prefix exists to prevent.
+        if is_agent_model(model):
+            raise RuntimeError(
+                f"CACHE MISS on agent model {model!r}, which has no endpoint to call. The agent's "
+                f"completion for this prompt is missing: expected it in the bundle's .harvest_cache/ "
+                f"under the content key for (model, effort, thinking_budget, system, user). Nothing "
+                f"else may answer in its place — a completion authored by one model and recorded under "
+                f"another is the defect the reproducibility ledger exists to make impossible.")
         from langchain_core.messages import HumanMessage, SystemMessage
 
         m = build_harvest_model(
