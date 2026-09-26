@@ -61,7 +61,18 @@ DELIVERABLES: list[dict] = [
     {"id": "D2", "what": "all data assets", "glob": "data/datasets/*.yaml"},
     {"id": "D9", "what": "measurement plane (profiles)", "glob": "data/profiles/*.yaml"},
     {"id": "D10", "what": "referential structure", "glob": "data/references*/*.yaml"},
-    {"id": "D11", "what": "sample per concept", "glob": "data/samples/concepts/*.csv"},
+    # D11 PROBED AN ABANDONED HOME. The glob was `data/samples/concepts/*.csv`; `mac_sample` moved
+    # the concept sample OUT of the data plane on purpose (CONCEPT_SAMPLE_DIR = "samples", relative to
+    # the ontology plane) because a concept sample is an ontology artifact — its population comes from
+    # the concept's discriminator and its columns from the concept's declarations, so nothing in
+    # `data/` can say what it is. This consumer kept reading the old path: a LATENT defect, masked
+    # only because the no-concepts-yet cause fires first. The moment --accept authors a concept, D11
+    # would have reported absent with no cause at all.
+    {"id": "D11", "what": "sample per concept", "glob": "ontology/samples/*.sample.csv"},
+    # RELATION PREVIEWS ARE THEIR OWN DELIVERABLE, and conflating them with D11 let the `samples`
+    # stage claim a deliverable it structurally CANNOT satisfy: it previews relations, which exist on
+    # a first run, while a concept sample needs a concept.
+    {"id": "D11b", "what": "relation previews", "glob": "data/samples/*.sample.csv"},
     {"id": "D12", "what": "value registers", "glob": "data/lookups/*.csv"},
     {"id": "D12b", "what": "closure monitor executed",
      "glob": "acceptance/register_membership_runs.json"},
@@ -143,8 +154,14 @@ def _stages(root: pathlib.Path) -> list[dict]:
     )
     return [
         # ---- the data plane, MEASURED (free) -------------------------------------------------
-        {"name": "descriptors", "produces": "data/datasets/*.yaml", "d": "D1 D2",
-         "cmd": [_tool("mac_descriptors.py"), str(root)]},
+        # BOTH PLANES, DECLARED. `produces` named only `data/datasets/*.yaml` while the stage writes
+        # the sources plane too (its own `d` says D1 D2) — so with the sources plane deleted and the
+        # datasets plane intact, resume saw its output and SKIPPED, leaving D1 permanently missing.
+        # That is the same masking bug already fixed for the two reference planes, and it is the bug
+        # a wipe-and-rerun exists to catch: `produces` must name EVERYTHING the stage writes, or
+        # resume answers about a subset.
+        {"name": "descriptors", "produces": ["data/sources/*.yaml", "data/datasets/*.yaml"],
+         "d": "D1 D2", "cmd": [_tool("mac_descriptors.py"), str(root)]},
         # `mac_profile` takes ONE relation, so this stage is one call per descriptor — the tool's
         # own signature, not a loop invented here.
         # PER-ITEM RESUME, and the stage-level kind was a measured bug of this file: one profile
@@ -155,7 +172,11 @@ def _stages(root: pathlib.Path) -> list[dict]:
          "each": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()],
          "missing": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()
                              if not (root / "data" / "profiles" / f"{rel}.yaml").is_file()]},
-        {"name": "samples", "produces": "data/samples/*.csv", "d": "D11",
+        # `--plane all` cuts the relation previews AND, where concepts exist, the concept samples —
+        # so it is credited with D11b, which it can always deliver, and D11 only when there is a
+        # concept to sample. Crediting it with D11 alone made a stage look like it had satisfied a
+        # deliverable that no first run can produce.
+        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b D11",
          "cmd": [_tool("mac_sample.py"), str(root), "--plane", "all"]},
         # TWO STAGES, NOT ONE, because the two planes have different INPUTS and only one of them
         # can be automated. Lumped together, the sources half's refusal masked the served half's
@@ -275,7 +296,8 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
             total = len(stage["each"]())
             return (name, "RESUME", f"all {total} item(s) present", 0.0)
     elif produced and not stage.get("always") and not a.refresh and _present(root, produced):
-        return (name, "RESUME", f"{produced} present", 0.0)
+        seen = ", ".join(produced) if isinstance(produced, (list, tuple)) else produced
+        return (name, "RESUME", f"{seen} present", 0.0)
     if stage.get("billed") and not a.accept:
         return (name, "SKIP", "billed — re-run with --accept", 0.0)
 
@@ -576,7 +598,13 @@ def _matches(root: pathlib.Path, pattern: str) -> list[pathlib.Path]:
     return [p for p in root.glob(pattern) if p.is_file()]
 
 
-def _present(root: pathlib.Path, pattern: str) -> bool:
+def _present(root: pathlib.Path, pattern: str | list[str]) -> bool:
+    """Is a stage's output there? A STAGE THAT WRITES SEVERAL PLANES IS PRESENT ONLY WHEN ALL OF THEM
+    ARE — `all`, never `any`. With `any`, a stage whose sources plane was deleted and whose datasets
+    plane survived reported RESUME and left D1 missing for the rest of the run: resume answered about
+    a subset and said nothing about it. This is the same shape as the reference-plane masking bug."""
+    if isinstance(pattern, (list, tuple)):
+        return all(_present(root, one) for one in pattern)
     if any(ch in pattern for ch in "*?"):
         return bool(_matches(root, pattern))
     p = root / pattern
