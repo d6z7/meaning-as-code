@@ -742,6 +742,14 @@ def read_plane(root: Path, plane: str = DEFAULT_PLANE):
             # preferred when a human has run the test, with the measured key as the fallback that
             # makes a first run possible at all.
             "key": _parent_key(spec, stem, declared_keys, doc),
+            # THE RAW INPUT TO THE FALLBACK, so the artifact can record WHICH key it actually used.
+            # Not a second copy of the decision — `_parent_key` still makes it; this is the fact it
+            # decides on. Without it `key_source` wrote "#identity_evidence.key" on every sources
+            # artifact of every first run, while the key had in fact come from the descriptor's
+            # measured key, because `mac_admit_identity --measure` had never been run. Seven false
+            # provenance claims per bundle, and `check_references` was reporting all seven as
+            # unresolved pointers while nobody read it.
+            "admitted_identity": bool((doc.get("identity_evidence") or {}).get("key")),
             "file": f"data/profiles/{Path(p).name}",
         }
     return relations, profiles, findings
@@ -764,11 +772,26 @@ def _parent_key(spec: dict, stem: str, declared_keys: dict, profile_doc: dict) -
 
 
 def key_source(plane: str, stem: str, profiles: dict) -> str:
-    """Where THIS plane's parent key came from, as the artifact records it. One home for the string."""
+    """Where THIS plane's parent key came from, as the artifact records it. One home for the string.
+
+    AND IT MUST NAME THE BRANCH ACTUALLY TAKEN. `_parent_key` prefers the profile's ADMITTED identity
+    and falls back to the descriptor's MEASURED key — "without that fallback a first run draws no
+    sources references at all". This function had no matching fallback and recorded
+    `#identity_evidence.key` unconditionally, so on every first run all seven sources artifacts
+    claimed a provenance that did not exist: no `mac_admit_identity --measure` had run, the profiles
+    carried no `identity_evidence` section at all, and the pointer dangled. A false provenance is
+    worse than a missing one — it survives review because it looks answered.
+    """
     if PLANES[plane]["key_from"] == "descriptor_role":
         return (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role in "
                 f"{list(DECLARED_KEY_ROLES)} — DECLARED by the promotion step, not re-derived here")
-    return f"{profiles[stem]['file']}#identity_evidence.key"
+    prof = profiles.get(stem) or {}
+    where = prof.get("file") or f"data/profiles/{stem}.yaml"
+    if prof.get("admitted_identity"):
+        return f"{where}#identity_evidence.key — ADMITTED identity (mac_admit_identity has run)"
+    return (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role — the descriptor's MEASURED "
+            f"key, because {where} carries no #identity_evidence.key. Run "
+            f"`mac_admit_identity --measure` for the stricter claim")
 
 
 def read_catalog(conn, sources, profiles, plane: str = DEFAULT_PLANE):
@@ -808,9 +831,9 @@ def read_catalog(conn, sources, profiles, plane: str = DEFAULT_PLANE):
             # both would tell a reader the served plane measured something it read.
             declared = PLANES[plane]["key_from"] == "descriptor_role"
             kind = "declared key" if declared else "measured key"
-            where = (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role in "
-                     f"{list(DECLARED_KEY_ROLES)}" if declared
-                     else f"data/profiles/{stem}.yaml#identity_evidence.key")
+            # ONE HOME, AS `key_source` ALREADY CLAIMED TO BE. This branch kept its own copy of the
+            # same string and so did not learn about the admitted/measured fallback either.
+            where = key_source(plane, stem, profiles)
             # EXIT 3, NOT 1. Everything about this relation WAS measured; what is missing is a
             # DECLARATION only a person can make. The composite-key case makes this concrete: a
             # relation identified by two columns together cannot have its key inferred by
@@ -894,10 +917,55 @@ def _broken(r) -> dict:
         "evidence": _evidence(r),
         "name_match": r["name_match"],
         "finding": r["because"],
-        "ruling_needed": (
-            "Is the orphan set expected (a late-arriving or retired parent) or a defect? Until this "
-            "is ruled, NO line is drawn: the ER model does not show a reference the data does not "
-            "obey, and the data-quality register carries it as open."),
+        # A PREPARED RULING, to CORE.md §6, and the first version of this field failed that contract.
+        # It asked "is the orphan set expected or a defect?" — an open question with no permitted
+        # answers, no consequence per answer and no recommendation. §6 is explicit about why that is
+        # a defect and not a style preference: "The scarcest resource is the operator's attention, and
+        # the commonest waste is a question that starts a conversation instead of ending one ... If
+        # the human must ask a clarifying question, the ruling was not prepared."
+        "ruling": _ruling(r),
+    }
+
+
+def _ruling(r) -> dict:
+    """The five parts CORE.md §6 requires, so the cheapest reply is agreement."""
+    ev = _evidence(r)
+    child = f"{r['from']['relation']}.{r['from']['column']}"
+    parent = f"{r['to']['relation']}.{r['to']['column']}"
+    n, d = ev.get("orphan_rows"), ev.get("orphan_distinct")
+    return {
+        "question": f"{n} row(s) of {child} carry a value no row of {parent} carries. Are those rows "
+                    f"EXPECTED, a DEFECT, or is this not a reference at all?",
+        "answers": ["expected", "defect", "not_a_reference"],
+        "established": (
+            f"inclusion {ev.get('inclusion')} over {ev.get('child_nonnull')} non-null child row(s); "
+            f"{n} orphan row(s) over {d} orphan value(s); parent_coverage "
+            f"{ev.get('parent_coverage')}, so the child DOES use the parent's real key values, and "
+            f"span_ratio {ev.get('span_ratio')} rules out a numeric interval falling inside the key "
+            f"by arithmetic. Type classes match. This is a relationship, measured."),
+        "for_the_human": (
+            "Whether an absent parent is ALLOWED is not in the data. A late-arriving dimension, a "
+            "retired code kept for history, and a genuine integrity break are indistinguishable by "
+            "measurement — they differ only in what the business intends."),
+        "consequences": {
+            "expected": (f"the reference is drawn WITH a recorded exception, and every answer that "
+                         f"traverses it must disclose that {n} row(s) are excluded — silence would "
+                         f"make a total quietly smaller than the truth"),
+            "defect": (f"the reference stays UNDRAWN and the {n} row(s) are corrected upstream; once "
+                       f"inclusion reaches 1.0 the reference is drawn and gains a referential case in "
+                       f"the generated suite, so the break cannot come back unnoticed"),
+            "not_a_reference": (f"the candidate is recorded as rejected, {r['from']['column']} stays "
+                                f"an attribute, and no line is ever drawn — questions cannot traverse "
+                                f"from {r['from']['relation']} to {r['to']['relation']} this way"),
+        },
+        "recommendation": "defect",
+        "because": (
+            f"the parent's key domain is exercised at parent_coverage {ev.get('parent_coverage')}, "
+            f"which means the warehouse INTENDS this relationship for the other "
+            f"{(ev.get('child_nonnull') or 0) - (n or 0)} row(s). An intended relationship that "
+            f"{n} row(s) disobey is a defect until someone can name the reason those rows are "
+            f"allowed — and if that reason exists, answering `expected` records it where the next "
+            f"reader will find it."),
     }
 
 

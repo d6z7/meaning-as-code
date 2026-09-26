@@ -99,15 +99,119 @@ DELIVERABLES: list[dict] = [
 ]
 
 
+def _self_test() -> int:
+    """One mutant per reject class plus a clean fixture (CORE.md §2).
+
+    THIS TOOL HAD NO SELF-TEST, in violation of the framework's own law 12, and it is the tool where
+    that mattered most: it is the one an operator runs, and eight of the thirteen defects found in one
+    session were in its reporting — a deliverable probing a path its producer had abandoned, a stage
+    declaring one of the two planes it writes, a complete measurement rendered FAIL, a refusal rendered
+    NEEDS YOU. None of those needed a warehouse to catch. Every case below runs without a connector, a
+    bundle, or a clock.
+    """
+    import tempfile
+    bad: list[str] = []
+
+    def case(label: str, ok: bool, detail: str = "") -> None:
+        if not ok:
+            bad.append(f"  FAIL  {label}" + (f"\n        {detail}" if detail else ""))
+
+    # ── the verdict precedence, which was wrong twice in one hour ──────────────────────────────────
+    refusals = ("could not run", "--project-anyway", "REFUSED:", "SKIP:", "NOTHING TO MEASURE")
+    case("CLEAN a zero exit is ok",
+         classify(0, "PASS: wrote 6 of 6\n", refusals)[0] == "ok")
+    case("MUTANT a stated refusal OUTRANKS exit 3",
+         classify(3, "could not run: the suite declares 0 cases\n", refusals)[0] == "refused",
+         "getting this order wrong asked the operator to rule on something no ruling can change")
+    case("MUTANT exit 3 with no refusal is a RULING, not a failure",
+         classify(3, "NEEDS RULING: mac_references — wrote 5 of 5\n", refusals)[0] == "needs_ruling",
+         "a complete measurement carrying a finding was rendered FAIL on a healthy first run")
+    case("MUTANT exit 1 is a failure",
+         classify(1, "Traceback (most recent call last)\n", refusals)[0] == "failed")
+    case("MUTANT a refusal at exit 1 is still a refusal",
+         classify(1, "REFUSED: no yaml module\n", refusals)[0] == "refused")
+    case("a needs_ruling line is the NEEDS RULING line, not merely the last line",
+         classify(3, "NEEDS RULING: the real sentence\ntrailing noise\n",
+                  refusals)[1].startswith("NEEDS RULING"),
+         "the operator must be shown the sentence that explains the verdict")
+
+    # ── `produces` over several planes is ALL, never ANY ───────────────────────────────────────────
+    with tempfile.TemporaryDirectory() as td:
+        r = pathlib.Path(td)
+        (r / "data" / "datasets").mkdir(parents=True)
+        (r / "data" / "datasets" / "x.yaml").write_text("a: 1", encoding="utf-8")
+        both = ["data/sources/*.yaml", "data/datasets/*.yaml"]
+        case("MUTANT a stage writing two planes is NOT present when one is missing",
+             _present(r, both) is False,
+             "with ANY, the descriptors stage resumed on a bundle whose sources plane was deleted "
+             "and left D1 missing for the whole run")
+        (r / "data" / "sources").mkdir(parents=True)
+        (r / "data" / "sources" / "y.yaml").write_text("a: 1", encoding="utf-8")
+        case("CLEAN both planes present is present", _present(r, both) is True)
+        case("MUTANT an empty directory is not presence",
+             _present(r, "data/empty") is False)
+
+    # ── the deliverables table's own integrity ─────────────────────────────────────────────────────
+    ids = [d["id"] for d in DELIVERABLES]
+    case("MUTANT no duplicate deliverable id", len(ids) == len(set(ids)),
+         f"duplicates: {[i for i in ids if ids.count(i) > 1]}")
+    case("every deliverable declares a probe or a glob, never neither",
+         all(("probe" in d) != ("glob" in d) for d in DELIVERABLES),
+         str([d["id"] for d in DELIVERABLES if ("probe" in d) == ("glob" in d)]))
+    case("every deliverable declares what it IS, for the operator's report",
+         all(d.get("what") for d in DELIVERABLES))
+
+    # ── EVERY ABSENCE MUST NAME ITS CAUSE. This is the promise the report makes in its own words:
+    #    "so none of them has to be asked for". On an empty bundle every deliverable is absent, so
+    #    every cause branch is exercised at once.
+    with tempfile.TemporaryDirectory() as td:
+        r = pathlib.Path(td)
+        args = argparse.Namespace(accept=False, refresh=False, report=True, root=str(r))
+        causeless = [d["id"] for d in DELIVERABLES if not (_why(r, d, args) or "").strip()]
+        case("MUTANT every absent deliverable states a CAUSE on an empty bundle",
+             not causeless,
+             f"{len(causeless)} deliverable(s) would be reported absent with no reason: "
+             f"{', '.join(causeless)} — the report's whole promise is that none has to be asked for")
+
+    # ── every stage credits deliverables that exist ────────────────────────────────────────────────
+    with tempfile.TemporaryDirectory() as td:
+        r = pathlib.Path(td)
+        undefined = sorted({d for st in _stages(r) for d in str(st.get("d", "")).split()
+                            if d and d not in set(ids)})
+        case("MUTANT no stage credits a deliverable id the table does not define",
+             not undefined,
+             f"stages credit undefined id(s): {', '.join(undefined)} — the inverse of D11 reading a "
+             f"path its producer had abandoned")
+
+    for line in bad:
+        print(line)
+    total = 14
+    if bad:
+        print(f"\nFAIL: mac_import self-test — {len(bad)} of {total} case(s) failed")
+        return 1
+    print(f"PASS: mac_import self-test — {total}/{total} case(s): 9 mutant(s), one per reject class "
+          f"(a refusal outranked by an exit code, a complete measurement called a failure, a real "
+          f"failure, a refusal at exit 1, a two-plane stage resuming on one plane, an empty directory "
+          f"counted as output, a duplicate deliverable id, an absence with no stated cause, a stage "
+          f"crediting an undefined deliverable) plus clean fixtures that must pass")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("root")
+    # `root` IS OPTIONAL ONLY SO THAT --self-test NEEDS NOTHING. A self-test that requires a bundle
+    # is a self-test nobody runs in CI, and this one deliberately touches no warehouse.
+    ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--accept", action="store_true",
                     help="run the BILLED authoring stages too (concepts)")
     ap.add_argument("--report", action="store_true", help="produce nothing; print the state")
+    ap.add_argument("--self-test", action="store_true",
+                    help="seed a mutant per reject class; needs no bundle and no warehouse")
     ap.add_argument("--refresh", action="store_true", help="re-run stages whose output exists")
     ap.add_argument("--stop-on-fail", action="store_true")
     a = ap.parse_args(argv)
+    if a.self_test:
+        return _self_test()
 
     root = pathlib.Path(a.root).resolve()
     if not root.is_dir():
@@ -238,9 +342,10 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # fixed. The two suites need only the profiles, so they move up as well, which removes the
         # circularity (findings read the run record) without needing a second pass.
         # ---- the two suites: GENERATED, then EXECUTED. Generating is not testing. -------------
-        {"name": "dq-suite", "produces": "acceptance/data_sanity_generated.yaml", "d": "D7",
+        {"name": "dq-suite", "produces": "acceptance/data_sanity_generated.yaml", "d": "D7a",
          "cmd": [_tool("mac_generate_sanity.py"), str(root)]},
-        {"name": "dq-run", "produces": "acceptance/data_sanity_generated_runs.json", "d": "D7",
+        {"name": "dq-run", "produces": "acceptance/data_sanity_generated_runs.json",
+         "d": "D7b D7c",
          "suite": "acceptance/data_sanity_generated.yaml"},
         # THE DQ FINDINGS REGISTER, and it must run BEFORE `project`: the console's data-quality
         # board reads `data/quality/dq_dashboard.json`, which the projection builds FROM the register.
@@ -270,11 +375,43 @@ def _stages(root: pathlib.Path) -> list[dict]:
          "cmd": [_tool("mac_lineage.py"), str(root)]},
         {"name": "resources", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},
-        {"name": "ontology-suite", "produces": "acceptance/ontology_generated.yaml", "d": "D8",
+        {"name": "ontology-suite", "produces": "acceptance/ontology_generated.yaml", "d": "D8a",
          "cmd": [_tool("mac_generate_ontology_tests.py"), str(root)]},
-        {"name": "ontology-run", "produces": "acceptance/ontology_generated_runs.json", "d": "D8",
+        {"name": "ontology-run", "produces": "acceptance/ontology_generated_runs.json",
+         "d": "D8b",
          "suite": "acceptance/ontology_generated.yaml"},
     ]
+
+
+def classify(returncode: int, out: str, refusals: tuple[str, ...]) -> tuple[str, str]:
+    """(kind, line) for ONE call. PURE, and extracted because this precedence is the thing that was
+    got wrong twice in one hour.
+
+    First a complete measurement carrying a finding was rendered FAIL — `mac_references` wrote 5 of 5
+    files, drew 2 references and reported one relation whose composite key no measurement can declare,
+    and the operator's first-run report said FAIL. Then, fixing that, the exit-3 test was placed ahead
+    of the refusal test, and `ontology-run`'s "could not run" came back as NEEDS YOU: asking for a
+    ruling no decision can give, because the suite declares 0 cases.
+
+    THE PRECEDENCE, and each step earns its place:
+      refused       a STATED refusal outranks any exit code — the tool said, in words, what it could
+                    not do, and that sentence is better than an integer
+      needs_ruling  exit 3: measured completely, and something needs the operator
+      failed        anything else non-zero: the tool could not do its job
+      ok            zero
+    Inline, none of this was reachable from a self-test; every branch here now is.
+    """
+    tail = [ln for ln in out.splitlines() if ln.strip()]
+    lastline = tail[-1][:88] if tail else ""
+    if returncode == 0:
+        return "ok", lastline
+    if any(mark in out for mark in refusals):
+        return "refused", next((ln.strip() for ln in reversed(out.splitlines())
+                                if any(m in ln for m in refusals)), lastline)[:88]
+    if returncode == 3:
+        return "needs_ruling", next((ln.strip() for ln in reversed(out.splitlines())
+                                     if ln.startswith("NEEDS RULING")), lastline)[:88]
+    return "failed", lastline
 
 
 def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
@@ -348,27 +485,13 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
                            capture_output=True, text=True, timeout=1800,
                            cwd=str(cwd) if cwd else None)
         out = (r.stdout or "") + (r.stderr or "")
-        tail = [ln for ln in out.splitlines() if ln.strip()]
-        lastline = tail[-1][:88] if tail else ""
-        if r.returncode != 0:
-            if any(mark in out for mark in refusals):
-                # A STATED REFUSAL OUTRANKS A GENERIC EXIT CODE, and getting this precedence wrong
-                # was measured: with the exit-3 test first, `ontology-run`'s "could not run" reported
-                # as NEEDS YOU — asking the operator for a ruling they cannot give, because the suite
-                # declares 0 cases and no decision changes that.
-                refused += 1
-                lastline = next((ln.strip() for ln in reversed(out.splitlines())
-                                 if any(m in ln for m in refusals)), lastline)[:88]
-            elif r.returncode == 3:
-                # EXIT 3 IS "MEASURED COMPLETELY, AND SOMETHING NEEDS YOU". Rendering it as FAIL was
-                # measured on a healthy first run: mac_references wrote 5 of 5 files, drew 2
-                # references, raised 1 finding, and the operator's report said FAIL. A report that
-                # calls a complete measurement a failure teaches the operator to ignore the report.
-                needs_ruling += 1
-                lastline = next((ln.strip() for ln in reversed(out.splitlines())
-                                 if ln.startswith("NEEDS RULING")), lastline)[:88]
-            else:
-                fails += 1
+        kind, lastline = classify(r.returncode, out, refusals)
+        if kind == "refused":
+            refused += 1
+        elif kind == "needs_ruling":
+            needs_ruling += 1
+        elif kind == "failed":
+            fails += 1
     secs = time.time() - t0
     if fails:
         return (name, "FAIL", f"{fails} of {len(cmds)} call(s) failed — {lastline}", secs)

@@ -188,13 +188,25 @@ def _broken_references(root: pathlib.Path, yaml) -> list[dict]:
                         f"{ev.get('orphan_distinct')} value(s) that no row of {parent} carries, while "
                         f"parent_coverage {ev.get('parent_coverage')} shows the key's domain IS "
                         f"exercised — so this is a relationship, not an arithmetic coincidence"),
-                    "needs": (
-                        "a ruling: is the orphan set EXPECTED (a late-arriving parent, a retired "
-                        "code, a deliberate sentinel) or a DEFECT? Until it is ruled, no reference "
-                        "is drawn, so the ER model does not show this relationship at all and any "
-                        "question that would have traversed it cannot be answered."),
+                    # THE REGISTER CARRIES THE PREPARED RULING THE MEASURER PRODUCED, rather than a
+                    # weaker paraphrase of it. Two homes for one question is how the two drift, and
+                    # the register is the home an operator actually opens. CORE.md §6: a ruling
+                    # arrives with its permitted answers, the consequence of each, and a
+                    # recommendation, "so the cheapest reply is agreement".
+                    "needs": _needs(r.get("ruling")),
+                    "ruling": r.get("ruling") or None,
                 })
     return out
+
+
+def _needs(ruling: dict | None) -> str:
+    """The one-line form of a prepared ruling, for a reader skimming the register."""
+    if not ruling:
+        return ("a ruling on whether the orphan rows are expected or a defect (the measurer recorded "
+                "no prepared ruling, which is itself a defect against CORE.md §6)")
+    answers = " | ".join(ruling.get("answers") or [])
+    return (f"{ruling.get('question')}  ANSWER ONE OF: {answers}.  RECOMMENDED: "
+            f"{ruling.get('recommendation')} — {ruling.get('because')}")
 
 
 def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
@@ -292,6 +304,12 @@ def _merge(fresh: list[dict], existing: dict[str, dict]) -> list[dict]:
             "reason": prev.get("reason"),
             "measurement": f["measurement"],
             "needs": f["needs"],
+            # THE STRUCTURED RULING SURVIVES THE MERGE. This rebuild is a fixed key list by design —
+            # it is what stops a re-measurement from resurrecting a closed finding — and a field not
+            # named here is silently dropped. `ruling` was dropped on its first run: the register
+            # carried the one-line form and lost the permitted answers and the per-answer
+            # consequences, which is the half a console needs to offer buttons instead of a text box.
+            **({"ruling": f["ruling"]} if f.get("ruling") else {}),
             "raised_by": GENERATOR,
         })
     # A finding that is no longer measured is KEPT when it was ruled on, because deleting a ruling is
