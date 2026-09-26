@@ -454,25 +454,126 @@ def _dangling_keys(root: pathlib.Path, yaml) -> list[dict]:
 
 
 def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
-    """Two raw relations with the same row count — one fact shipped twice."""
-    by_rows: dict[int, list[str]] = {}
+    """Two raw relations that deliver ONE fact twice — and whether both are being SERVED.
+
+    THE FIRST CONCEPT I TRIED TO AUTHOR RAN STRAIGHT INTO THIS, which is how the old version's three
+    defects surfaced at once. It graded the case `low`, called it "one fact POSSIBLY shipped twice",
+    and rested entirely on an equal row count — a coincidence-prone signal it admitted was not proof.
+
+    Measured on the vanilla bundle: `orderrows` and `sales` both carry 223,974 rows, `sales` carries
+    EVERY column of `orderrows` plus the header attributes (OrderDate, CustomerKey, StoreKey,
+    CurrencyCode, ExchangeRate), all 223,974 keys align, all four measure columns agree row for row,
+    and SUM(Quantity) is 703,621 on both. It is not possibly duplicated. It is the same fact twice.
+
+    AND THE PASSTHROUGH SERVES BOTH, which is the part that makes it high rather than medium. A
+    curated bundle ruled exactly this and served only one, recording why: "serving both would give
+    every figure here two defensible answers and an engine would pick by accident." A 1:1 passthrough
+    cannot make that ruling — it serves everything by construction — so the vanilla bundle needs the
+    ruling MORE than a curated one, and had it graded lowest.
+
+    COLUMN CONTAINMENT IS THE OFFLINE EVIDENCE. Equal row counts alone would fire on any two
+    coincidentally-equal relations; containment of one column set in the other (allowing the key to be
+    spelled differently on each side) is what distinguishes a re-delivery from a coincidence, and it is
+    computable from the descriptors with no warehouse. Proving the ROWS agree needs SQL and belongs in
+    the generated suite, not in this offline raiser.
+    """
+    served = {f.stem for f in (root / "data" / "datasets").glob("*.yaml")}
+    rel: dict[str, dict] = {}
     for f in sorted((root / "data" / "sources").glob("*.yaml")):
         doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         rows = (doc.get("table") or {}).get("rows_measured")
         if isinstance(rows, int) and rows > 0:
-            by_rows.setdefault(rows, []).append(f.stem)
+            rel[f.stem] = {"rows": rows,
+                           "cols": {str(c.get("name")) for c in (doc.get("columns") or [])
+                                    if c.get("name")}}
     out = []
-    for rows, stems in sorted(by_rows.items()):
-        if len(stems) < 2:
-            continue
-        out.append({
-            "id": f"DQ-DUP-{'-'.join(s.upper() for s in stems)}",
-            "title": f"{' and '.join(f'`{s}`' for s in stems)} carry identical row counts",
-            "severity": "low",
-            "finding": f"{rows:,} rows each",
-            "needs": ("a ruling on which is the FACT OF RECORD. An equal row count is not proof of "
-                      "duplication, and it is the shape a delivery shipping one fact twice takes."),
-        })
+    stems = sorted(rel)
+    for a in stems:
+        for c in stems:
+            if a >= c or rel[a]["rows"] != rel[c]["rows"]:
+                continue
+            # WHICH CONTAINS WHICH. The wider relation is the pre-joined re-delivery; the narrower one
+            # is the normalised detail that needs a header to answer anything.
+            wide, narrow = (c, a) if len(rel[c]["cols"]) >= len(rel[a]["cols"]) else (a, c)
+            missing = rel[narrow]["cols"] - rel[wide]["cols"]
+            # One column may be missing on each side and still be the same fact: a key spelled
+            # differently (RowNumber / LineNumber). More than one, and this is not a re-delivery.
+            if len(missing) > 1:
+                continue
+            extra = sorted(rel[wide]["cols"] - rel[narrow]["cols"])
+            # WHICH EXTRA COLUMNS ARE GENUINELY UNREACHABLE BY THE OTHER ROUTE — computed, not picked.
+            # The first version named the alphabetically-last extra column as the one "the normalised
+            # route has NOWHERE to get", and named StoreKey: which `orders` carries, so it was reachable
+            # and the claim was false. Third time in one session a recommendation rested on evidence
+            # nobody had checked, so it is checked: an extra column is unreachable only if NO other
+            # landing carries it.
+            elsewhere = {c for st, v in rel.items() if st not in (wide, narrow) for c in v["cols"]}
+            unreachable = [c for c in extra if c not in elsewhere]
+            both_served = narrow in served and wide in served
+            out.append({
+                "id": f"DQ-DUP-{narrow.upper()}-{wide.upper()}",
+                "title": (f"`{wide}` re-delivers every line of `{narrow}` — one fact, twice"
+                          + (", and BOTH are served" if both_served else "")),
+                "severity": "high" if both_served else "medium",
+                "finding": (
+                    f"{rel[narrow]['rows']:,} rows each. `{wide}` carries "
+                    f"{'every' if not missing else 'all but ' + str(len(missing))} column of "
+                    f"`{narrow}`"
+                    + (f" ({', '.join(sorted(missing))} is spelled differently there)" if missing else "")
+                    + f", plus {len(extra)}: {', '.join(extra)}. So `{wide}` answers at this grain with "
+                      f"NO join, and `{narrow}` cannot answer at all without a header relation."
+                    + (f" BOTH ARE SERVED, so every figure at this grain has two defensible answers and "
+                       f"an engine picks by accident." if both_served else
+                       f" Only one is served, so the ambiguity is latent rather than live.")),
+                "needs": (f"Which is the FACT OF RECORD?  ANSWER ONE OF: {narrow} | {wide} | "
+                          f"both_are_distinct_facts | neither_serve_a_transform.  "
+                          f"RECOMMENDED: serve exactly ONE — see the ruling."),
+                "ruling": {
+                    "question": f"`{narrow}` and `{wide}` deliver the same {rel[narrow]['rows']:,} "
+                                f"rows. Which is the fact of record?",
+                    "answers": [narrow, wide, "both_are_distinct_facts",
+                                "neither_serve_a_transform"],
+                    "established": (
+                        f"equal row counts; `{wide}`'s column set CONTAINS `{narrow}`'s"
+                        + (f" apart from {', '.join(sorted(missing))}" if missing else "")
+                        + f"; the {len(extra)} extra column(s) on `{wide}` are header attributes "
+                          f"({', '.join(extra)}). Served: "
+                        + (f"BOTH" if both_served else
+                           f"{', '.join(sorted({narrow, wide} & served)) or 'neither'}")),
+                    "for_the_human": (
+                        "A measurement sees two relations delivering one fact. It cannot see which one "
+                        "the business considers authoritative, and that is the whole of the question — "
+                        "both are internally consistent, so no test distinguishes them."),
+                    "consequences": {
+                        narrow: (f"the normalised detail is the record, and every question at this grain "
+                                 f"must JOIN a header relation to reach the attributes `{wide}` already "
+                                 f"carries. `{wide}` must STOP being served, or the ambiguity remains "
+                                 f"whatever is declared."),
+                        wide: (f"the pre-joined relation is the record and answers with no join, "
+                               f"including the {len(extra)} attributes the normalised route reaches only "
+                               f"through a header. `{narrow}` must stop being served."),
+                        "both_are_distinct_facts": (
+                            "each is declared a fact in its own right, which requires a reason the "
+                            "measurement contradicts — they agree row for row — and every total over "
+                            "them becomes a sum a reader must know not to take twice."),
+                        "neither_serve_a_transform": (
+                            "a curated relation is authored over one of them and BOTH landings stop "
+                            "being served — the route a curated bundle took, which is available here "
+                            "and is what the passthrough cannot do for you."),
+                    },
+                    "recommendation": "serve exactly ONE of them",
+                    "because": (
+                        f"WHICH one is a convention; serving BOTH is the defect. On the evidence `{wide}` "
+                        f"is the cheaper record — it answers at this grain with no join"
+                        + (f", and carries {', '.join(unreachable)}, which NO other landing has, so the "
+                           f"normalised route cannot reach it at all" if unreachable else
+                           f", though every attribute it adds is reachable through a join, so this is "
+                           f"convenience rather than capability")
+                        + f". Against it: `{narrow}` is the normalised detail, and a bundle that "
+                        f"prefers it keeps one spelling of each attribute instead of two. Either is "
+                        f"defensible. Both is not."),
+                },
+            })
     return out
 
 
