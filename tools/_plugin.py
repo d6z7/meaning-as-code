@@ -48,6 +48,7 @@ import importlib
 import importlib.util
 import os
 import sys
+from pathlib import Path as _Path
 
 #: The module name a bundle uses to declare its resolver / connection.
 PLUGIN_MODULE = "run_properties"
@@ -135,14 +136,49 @@ def optional(root: object, symbol: str, fallback):
 
 
 def required(root: object, symbol: str):
-    """The declared plugin's `symbol`. Raises when the bundle declares none — there is no default."""
+    """The declared plugin's `symbol`, or the framework's DuckDB seam when the bundle declares none.
+
+    THE RULE ABOVE IS UNCHANGED, and this is the case it already allowed for: "a bundle that declares
+    NO plugin gets the documented fallback, because there is nothing broken to hide". What changed is
+    that a fallback now EXISTS for a warehouse connection, where before there was none.
+
+    WHY IT HAD TO. Defect B1 of DELIVERABLES-2026-09-26_first-run-state.md: a brand-new bundle could
+    not be MEASURED at all — `mac_profile.py` answered "this check needs
+    tools/run_properties.py to supply 'Athena', and the bundle declares none" — and the way past it
+    was to hand-copy a 157-line shim out of another bundle. The measurement plane is what the
+    data-quality suite, the referential structure and therefore the ER model are all built from, so
+    that one missing file stopped four deliverables.
+
+    IT CANNOT ANSWER FOR A WAREHOUSE IT IS NOT LOOKING AT. The fallback engages only when the
+    bundle's own manifest declares a DuckDB connector AND its connection names a database; for any
+    other engine `connection_of` returns None and this raises exactly as it did before. A bundle that
+    DECLARES a plugin and cannot supply it is still UNRUNNABLE — that path is untouched.
+    """
     mod = _load(root)
     if mod is None:
+        fallback = _framework_seam(root, symbol)
+        if fallback is not None:
+            return fallback
         raise PluginUnavailable(
             f"this check needs {os.path.join('tools', PLUGIN_MODULE + '.py')} to supply "
-            f"{symbol!r}, and the bundle declares none"
+            f"{symbol!r}, the bundle declares none, and it is not a DuckDB bundle the "
+            f"framework's own seam can answer for"
         )
     return _symbol(mod, root, symbol)
+
+
+def _framework_seam(root: object, symbol: str):
+    """The framework's DuckDB seam's `symbol`, when this bundle is a DuckDB bundle. Else None."""
+    try:
+        import duckdb_seam  # same directory as this module, which is already importable
+    except Exception:  # noqa: BLE001 - no duckdb driver here is simply no fallback
+        return None
+    try:
+        if duckdb_seam.connection_of(_Path(str(root))) is None:
+            return None
+    except Exception:  # noqa: BLE001 - an unreadable manifest is not a DuckDB bundle
+        return None
+    return getattr(duckdb_seam, symbol, None)
 
 
 # ---------------------------------------------------------------------------------------------

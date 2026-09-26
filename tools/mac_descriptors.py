@@ -1,0 +1,250 @@
+#!/usr/bin/env python3
+"""mac_descriptors.py — write a bundle's data-plane descriptors BY MEASURING THE WAREHOUSE.
+
+D1 + D2 of DELIVERABLES-2026-09-26_first-run-state.md, produced by MEASUREMENT rather than by a
+model. `harvest --mode data` authors the same two planes through Bedrock+Athena and is BILLED; the
+columns, their types, the row counts and which columns identify a row are not opinions, so nothing
+needs to be asked of a model to know them.
+
+WHY IT IS A FRAMEWORK TOOL AND NOT A BUNDLE SCRIPT. It was written inside one bundle first, which is
+exactly the mistake this estate keeps paying for: the next bundle needs it, copies it, and the two
+drift. A descriptor's shape is the framework's (`mac.schema.json`), so its producer is too.
+
+WHAT IT MEASURES, per relation, and nothing else:
+  * the columns and their types, from information_schema, in ordinal order
+  * the row count
+  * `role: primary_key` where ONE column is unique and non-null over every row
+  * `role: composite_key_part` where a declared key TUPLE is unique and no single member is
+  * `role: foreign_key` where the column is the measured primary key of another relation in scope
+  * `role: value` otherwise — the neutral physical role, which is not a ruling about meaning
+
+WHAT IT DOES NOT DO. It states no default reading, no grain ruling, no "what one store is". Those are
+ONTOLOGY decisions and they live in ontology/concepts/, where a person argues for them. A descriptor
+that decided them would put the argument in the one file nobody reviews.
+
+THE KEY IS MEASURED, NOT GUESSED — and that matters downstream: `mac_references.py` READS the
+declared key and will not re-derive one, so a relation whose descriptor marks no key is not a parent
+endpoint, and the ER model comes back with 0 entities. Measured 2026-09-26: that is exactly how an
+empty ER diagram happens.
+
+    python3 mac_descriptors.py <bundle-root> [--schema S] [--raw-schema S] [--check]
+"""
+
+from __future__ import annotations
+
+import argparse
+import pathlib
+import sys
+from datetime import UTC, datetime
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _plugin  # noqa: E402  - same directory; the seam that owns the connection
+
+GENERATOR = "mac_descriptors.py/1"
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("root", nargs="?", default=".")
+    ap.add_argument("--schema", help="the SERVED schema (default: connection.yaml#view_schema)")
+    ap.add_argument("--raw-schema", default="main", help="the landing schema (default: main)")
+    ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    a = ap.parse_args(argv)
+
+    root = pathlib.Path(a.root).resolve()
+    try:
+        import yaml
+    except ImportError as exc:
+        print(f"REFUSED: {exc}")
+        return 2
+    try:
+        athena = _plugin.required(str(root), "Athena")
+    except Exception as exc:  # noqa: BLE001 - could-not-run is the honest answer, never a finding
+        print(f"COULD NOT RUN: {exc}")
+        return 2
+
+    served = a.schema or _view_schema(root, yaml)
+    con = athena(root=str(root))
+    observed = datetime.now(UTC).date().isoformat()
+
+    # ---- measure EVERY relation once, so the foreign-key pass can see the others -------------
+    measured: dict[tuple[str, str], dict] = {}
+    for schema in (served, a.raw_schema):
+        if not schema:
+            continue
+        for table in _tables(con, schema):
+            m = _measure(con, schema, table)
+            if m:
+                measured[(schema, table)] = m
+    if not measured:
+        print(f"NOTHING TO MEASURE: no relation in {served!r} or {a.raw_schema!r}")
+        return 1
+
+    singles = {k: m["single_key"] for k, m in measured.items() if m.get("single_key")}
+    drift, wrote = [], 0
+    for (schema, table), m in sorted(measured.items()):
+        is_served = schema == served
+        body = _render(m, schema, table, is_served, singles, observed)
+        out = root / "data" / ("datasets" if is_served else "sources") / f"{table}.yaml"
+        if a.check:
+            now = out.read_text(encoding="utf-8") if out.is_file() else ""
+            if _without_date(now) != _without_date(body):
+                drift.append(str(out.relative_to(root)))
+        else:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            out.write_text(body, encoding="utf-8")
+            wrote += 1
+            key = m["single_key"] or ", ".join(m["composite_key"]) or "NO KEY MEASURED"
+            print(f"  {out.relative_to(root)}  {m['rows']:,} rows · "
+                  f"{len(m['columns'])} columns · key: {key}")
+    con.close()
+
+    keyless = [t for (s, t), m in measured.items()
+               if not m.get("single_key") and not m.get("composite_key")]
+    if a.check:
+        if drift:
+            print(f"DRIFT — {len(drift)} descriptor(s) no longer match the warehouse:")
+            for d in drift:
+                print(f"  {d}")
+            return 1
+        print(f"OK — {len(measured)} descriptors match the warehouse.")
+        return 0
+    if keyless:
+        print(f"\n  {len(keyless)} relation(s) carry NO measured key: {', '.join(sorted(keyless))}")
+        print("  mac_references.py READS the key and will not derive one, so these are not parent "
+              "endpoints and the ER model will not draw them.")
+    print(f"\nwrote {wrote} descriptors, measured {observed}")
+    return 0
+
+
+def _view_schema(root: pathlib.Path, yaml) -> str:
+    conn = root / "connection.yaml"
+    if not conn.is_file():
+        return "main"
+    doc = yaml.safe_load(conn.read_text(encoding="utf-8")) or {}
+    return str(doc.get("view_schema") or "main")
+
+
+def _tables(con, schema: str) -> list[str]:
+    rows, _ = con.query(
+        "select table_name as d0 from information_schema.tables "
+        f"where table_schema = '{schema}' order by 1"
+    )
+    return [r["d0"] for r in rows]
+
+
+def _measure(con, schema: str, table: str) -> dict | None:
+    rows, _ = con.query(
+        "select column_name as d0, data_type as d1 from information_schema.columns "
+        f"where table_schema = '{schema}' and table_name = '{table}' order by ordinal_position"
+    )
+    if not rows:
+        return None
+    cols = [(r["d0"], r["d1"]) for r in rows]
+    n, _ = con.query(f'select count(*) as d0 from "{schema}"."{table}"')
+    total = int(n[0]["d0"]) if n else 0
+
+    single = next(
+        (c for c, _ in cols if _is_unique(con, schema, table, [c], total)), None
+    )
+    composite: list[str] = []
+    if not single:
+        # THE SMALLEST TUPLE THAT IS UNIQUE, tried left to right over the first few columns. A key
+        # is measured here because `mac_references.py` will not derive one, and a relation with no
+        # declared key is invisible to the ER model.
+        head = [c for c, _ in cols[:4]]
+        for size in (2, 3, 4):
+            for i in range(len(head) - size + 1):
+                cand = head[i:i + size]
+                if _is_unique(con, schema, table, cand, total):
+                    composite = cand
+                    break
+            if composite:
+                break
+    return {"columns": cols, "rows": total, "single_key": single, "composite_key": composite}
+
+
+def _is_unique(con, schema: str, table: str, cols: list[str], rows: int) -> bool:
+    """Unique AND non-null over every row — a key that is null somewhere identifies nothing."""
+    if not rows:
+        return False
+    quoted = ", ".join(f'"{c}"' for c in cols)
+    nulls = " or ".join(f'"{c}" is null' for c in cols)
+    try:
+        nn, _ = con.query(f'select count(*) as d0 from "{schema}"."{table}" where {nulls}')
+        if int(nn[0]["d0"]):
+            return False
+        d, _ = con.query(
+            f'select count(*) as d0 from (select {quoted} from "{schema}"."{table}" '
+            f"group by {quoted})"
+        )
+    except Exception:  # noqa: BLE001 - a column that cannot group is not a key
+        return False
+    return int(d[0]["d0"]) == rows
+
+
+def _render(m: dict, schema: str, table: str, served: bool, singles: dict, observed: str) -> str:
+    fks = {c: t for (s, t), c in singles.items() if t != table}
+    lines = [
+        f"# GENERATED by {GENERATOR} from the warehouse — do not edit; re-run the generator.",
+        "#",
+        "# A descriptor states what the relation CONTAINS. What it MEANS is in ontology/concepts/,",
+        "# where a person argues for it: no default reading, no grain ruling, no 'what one X is'.",
+        "",
+        "metadata:",
+        f"  table: {table}",
+        "  schema_version: 0.1.14",
+        "  status: draft",
+        f"  kind: {'served_dataset' if served else 'raw_source'}",
+    ]
+    if not served:
+        lines.append("  external: true")
+    lines += [
+        f"  observed: '{observed}'",
+        "  confidence: I",
+        f"  generated_by: {GENERATOR}",
+        "",
+        "table:",
+        f"  name: {table}",
+        f"  schema: {schema}",
+        f"  type: {'view' if served else 'table'}",
+        f"  rows_measured: {m['rows']}",
+        "  confidence: I",
+        "",
+        "columns:",
+    ]
+    for col, typ in m["columns"]:
+        if col == m["single_key"]:
+            role = "primary_key"
+        elif col in m["composite_key"]:
+            role = "composite_key_part"
+        elif col in fks:
+            role = "foreign_key"
+        else:
+            role = "value"
+        lines += [f"- name: {col}", f"  type: {_simple(typ)}", f"  role: {role}"]
+        if role == "foreign_key":
+            lines.append(f"  references: {fks[col]}")
+        lines.append("  confidence: I")
+    return "\n".join(lines) + "\n"
+
+
+def _simple(sql_type: str) -> str:
+    t = str(sql_type).upper()
+    for frag, out in (
+        ("CHAR", "string"), ("TEXT", "string"), ("INT", "integer"), ("DECIMAL", "decimal"),
+        ("NUMERIC", "decimal"), ("DOUBLE", "double"), ("REAL", "double"),
+        ("TIMESTAMP", "timestamp"), ("DATE", "date"), ("BOOL", "boolean"),
+    ):
+        if frag in t:
+            return out
+    return str(sql_type).lower()
+
+
+def _without_date(text: str) -> str:
+    """Drift means the SHAPE changed, not that today is a different day."""
+    return "\n".join(ln for ln in text.splitlines() if not ln.strip().startswith("observed:"))
+
+
+if __name__ == "__main__":
+    sys.exit(main())

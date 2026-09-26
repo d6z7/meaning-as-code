@@ -207,9 +207,17 @@ def main() -> int:
     except _plugin.PluginUnavailable as exc:
         print(f"could not run: {root} {exc}", file=sys.stderr)
         return 2
-    eng = (yaml.safe_load((root / "acceptance" / "properties.yaml").read_text(encoding="utf-8"))
-           or {}).get("engine") or {}
-    ath = Athena(eng["profile"], eng["region"], eng["workgroup"], eng["database"])
+    # THE FOUR ENGINE KEYS ARE LABELS, and a first run has no `acceptance/properties.yaml` yet.
+    # This used to read the file unguarded and die with a bare `FileNotFoundError` traceback on a
+    # fresh bundle — measured 2026-09-26. They are RECORDED in the evidence and decide nothing:
+    # which warehouse is opened is `connection.yaml`'s job, which is the one overridable home for a
+    # bundle's connection. So an absent file means unlabelled, not unrunnable.
+    props = root / "acceptance" / "properties.yaml"
+    eng = {}
+    if props.is_file():
+        eng = (yaml.safe_load(props.read_text(encoding="utf-8")) or {}).get("engine") or {}
+    ath = Athena(eng.get("profile"), eng.get("region"), eng.get("workgroup"),
+                 eng.get("database"), root=str(root))
 
     rows, meta = ath.query(sql)
 
