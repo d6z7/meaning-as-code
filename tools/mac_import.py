@@ -46,9 +46,19 @@ import time
 
 HERE = pathlib.Path(__file__).resolve().parent
 #: The billed authoring lives in the SDK and keeps its one home; this file calls it, never reimplements.
+#: WHERE THE BILLED AUTHORING STAGE IS LOOKED FOR, LIVE REPOSITORY FIRST.
+#:
+#: It used to look in `archive-mac-wiki` FIRST, and that repository is FROZEN — its own
+#: pre-commit hook refuses writes: "this repository is REFERENCE ONLY ... all 391 files migrated to
+#: mac-platform. It is kept to see how something was made and to scavenge an idea from."
+#:
+#: So the one stage that spends money routed to a dead checkout, and preferred it over the live one.
+#: That is also WHY the two copies of harvest.py drifted 415 lines apart: the frozen one stopped at
+#: migration and the live one kept moving. Reordering is the fix; `_sdk_root` also SKIPS a root whose
+#: hook declares it frozen, so restoring the old order by accident cannot silently re-point the stage.
 SDK_ROOTS = [
-    pathlib.Path("/Users/<operator>/dev/archive-mac-wiki"),
     pathlib.Path("/Users/<operator>/dev/meaning-as-code"),
+    pathlib.Path("/Users/<operator>/dev/archive-mac-wiki"),
 ]
 
 
@@ -811,7 +821,32 @@ def _tool(name: str) -> str:
 
 
 def _sdk_root() -> pathlib.Path | None:
-    return next((p for p in SDK_ROOTS if (p / "sdk" / "cli" / "harvest.py").is_file()), None)
+    """The first LIVE checkout carrying the authoring CLI. A frozen repository is never chosen.
+
+    A frozen repo is one whose own pre-commit hook refuses writes, which is how this estate marks a
+    checkout as reference-only after migrating its contents away. Running a billed stage out of one
+    means running code nobody can fix, and the drift it caused is measurable: 415 lines between the
+    two copies of harvest.py.
+    """
+    for p in SDK_ROOTS:
+        if not (p / "sdk" / "cli" / "harvest.py").is_file():
+            continue
+        if _frozen(p):
+            print(f"  ! SKIPPING {p.name}: its pre-commit hook declares it REFERENCE ONLY, so the "
+                  f"code there is code nobody can fix. Looking for a live checkout instead.")
+            continue
+        return p
+    return None
+
+
+def _frozen(repo: pathlib.Path) -> bool:
+    hook = repo / ".git" / "hooks" / "pre-commit"
+    if not hook.is_file():
+        return False
+    try:
+        return "REFERENCE ONLY" in hook.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
 
 
 def _matches(root: pathlib.Path, pattern: str) -> list[pathlib.Path]:
