@@ -333,7 +333,7 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.15'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.16'`**.
 - **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
   `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
   there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept
@@ -365,6 +365,22 @@ bundle must reach the start before anything is allowed to run.
     reported MAC002 as NOT COMPUTED. `validate_schema` is now wrapped as a real owner, and a code is
     UNKNOWN only when **no** owner answered — a false absorption is worse than an admitted hole,
     because a hole gets a TODO and an absorption gets a green tick.
+- **`0.1.16`** — **the column standard becomes writable.** `grounding.sources[].columns` now accepts
+  EITHER the flat array of names OR a MAP keyed by column name whose values are that column's flags
+  (`role`, `identity`, `measure` — and only those three, `additionalProperties: false`, so a
+  misspelled flag is a load error).
+  - **IT WAS UNWRITABLE BEFORE, AND THAT IS THE WHOLE STORY.** `mac-runtime`'s parser has accepted the
+    map form and PROJECTED it into `field_roles` / `canonical_key` / `semantics.*` since it was built,
+    but this slot was `type: array` only — so the standard was a **conformance error in the core**.
+    `ColumnSpec`'s own docstring records the consequence as a measurement, "21 concepts, 0 using the
+    standard", and reads it as adoption lag. It was not lag. The schema refused it. A second bundle
+    then added 19 more concepts the old way, and the operator asked the question that found it: "to me
+    it actually looks as if you have completely ignored new standard from mac."
+  - The flat array stays legal, deliberately: `check_column_spec` reports the concepts still on it, and
+    a load error would have made the standard un-adoptable a second way — which, as ColumnSpec puts it,
+    "is how a standard stays in a manual."
+  - Nothing else moves. The projection is the only new reader; the planner, the resolver and the gates
+    go on reading `field_roles`, so a column's role has one authored home and no internal duplicate.
 - A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
   the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.

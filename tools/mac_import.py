@@ -207,6 +207,16 @@ def _self_test() -> int:
         r = pathlib.Path(td)
         undefined = sorted({d for st in _stages(r) for d in str(st.get("d", "")).split()
                             if d and d not in set(ids)})
+        # D11 IS THE CONCEPT DRAW, SO ITS PRODUCER MUST FOLLOW THE CONCEPTS STAGE. Stated as an
+        # invariant because the old order made D11 unreachable and no test noticed: a deliverable whose
+        # input is produced later in the same run can only ever be reported absent.
+        names = [st["name"] for st in _stages(r)]
+        credits = {st["name"]: str(st.get("d", "")).split() for st in _stages(r)}
+        d11 = [n for n, cs in credits.items() if "D11" in cs]
+        case("MUTANT every D11 producer runs AFTER the concepts stage",
+             all(names.index(n) > names.index("concepts") for n in d11),
+             f"D11 is credited to {d11}; concepts is stage {names.index('concepts') + 1} and a "
+             f"producer before it cannot see a concept, so D11 would be unreachable in one pass")
         case("MUTANT no stage credits a deliverable id the table does not define",
              not undefined,
              f"stages credit undefined id(s): {', '.join(undefined)} — the inverse of D11 reading a "
@@ -214,7 +224,7 @@ def _self_test() -> int:
 
     for line in bad:
         print(line)
-    total = 18
+    total = 19
     if bad:
         print(f"\nFAIL: mac_import self-test — {len(bad)} of {total} case(s) failed")
         return 1
@@ -223,7 +233,7 @@ def _self_test() -> int:
           f"failure, a refusal at exit 1, a two-plane stage resuming on one plane, an empty directory "
           f"counted as output, a duplicate deliverable id, an absence with no stated cause, a stage "
           f"crediting an undefined deliverable, a missing dependency called a failure, a generated read-view counted as the "
-          f"deliverable it sits beside) plus clean fixtures that must pass")
+          f"deliverable it sits beside, a D11 producer running before the concepts exist) plus clean fixtures that must pass")
     return 0
 
 
@@ -362,8 +372,8 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # so it is credited with D11b, which it can always deliver, and D11 only when there is a
         # concept to sample. Crediting it with D11 alone made a stage look like it had satisfied a
         # deliverable that no first run can produce.
-        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b D11",
-         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "all"]},
+        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b",
+         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "both"]},
         # `--accept` ON THE LOOKUP CUTTER IS NOT A BILLING DECISION. harvest's help says
         # "materialize/lookups create the own-schema views + name->code registers (DRY-RUN by
         # default, --accept to run the DDL/profiling live)" — the flag means RUN THE PROFILING, and
@@ -419,6 +429,26 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # lines of the same screen.
         {"name": "concepts", "produces": "ontology/concepts/**/*.yaml", "d": "D4", "billed": True,
          "sdk": ["--mode", "concepts"]},
+        # THE CONCEPT DRAW IS ITS OWN STAGE, AND IT RUNS HERE — after the concepts exist.
+        #
+        # It used to be folded into `samples` at stage 6 as `--plane all`, six stages BEFORE `concepts`,
+        # so a concept sample could never be cut in one pass: D11 was structurally unreachable and
+        # reported absent on every run with the honest-but-incomplete cause "there are no concepts yet".
+        # Found by the operator on a bundle that HAD 19 concepts and no samples: "i have noticed that in
+        # the previous version you did not deliver samples".
+        #
+        # AND IT IS THE DNA'S STEP ZERO, which is what makes the ordering a real defect rather than a
+        # tidiness point. PART 4 opens: "Cut a sample per concept BEFORE reviewing a single declaration
+        # (P9) ... it is the only artifact that shows what a concept CONTAINS, and on 2026-09-26 it would
+        # have caught three wrong declarations that re-reading the YAML did not. Step zero because every
+        # step below is a claim about values, and this is the step that shows the values." A pipeline that
+        # cannot reach its own step zero in one pass cannot perform the review it prescribes — and the
+        # 19 concepts written without it carried 141 inert tokens that reading the YAML did not reveal.
+        #
+        # It precedes `project` deliberately: the ER model (step 0b) is read AFTER the values are on the
+        # table, not before.
+        {"name": "concept-samples", "produces": "ontology/samples/*.sample.csv", "d": "D11",
+         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "concepts"]},
         # ---- the projection: objects.json, ER, lineage, vocabulary, ontology_quality ----------
         # `--project-anyway` WITH A STATED REASON, because on a first run the ontology plane is
         # empty BY DESIGN and the projection's gate is written to refuse a bundle that does not

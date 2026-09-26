@@ -569,18 +569,40 @@ def check_instruction_compliance(obj: dict) -> tuple[list, list]:
                 f"stating the same law."
             )
 
+    # A ROLE MUST EXIST FOR EVERY MEANINGFUL COLUMN — AND THE MAP FORM IS WHERE IT NOW LIVES.
+    #
+    # This demanded a `field_roles` block unconditionally, and iterating the MAP form yields its KEYS,
+    # so a correctly-authored concept looked like 13 bare column names with no roles and was refused as
+    # noncompliant. That made this the THIRD place the superseded standard was enforced — after the
+    # schema (`columns` was `type: array`, so the map was a conformance error) and the prompt (which
+    # taught the flat list). Three enforcements of the old form is the full explanation of ColumnSpec's
+    # "21 concepts, 0 using the standard": the standard could not be written, taught, or accepted.
     gr = obj.get("grounding")
     if isinstance(gr, dict):
-        cols = []
-        for s in gr.get("sources") or []:
-            if isinstance(s, dict):
-                cols += [c for c in (s.get("columns") or []) if isinstance(c, str)]
+        flat, mapped, unroled = [], 0, []
+        for src in gr.get("sources") or []:
+            if not isinstance(src, dict):
+                continue
+            cols = src.get("columns")
+            if isinstance(cols, dict):
+                mapped += len(cols)
+                unroled += [n for n, body in cols.items()
+                            if isinstance(body, dict) and not body.get("role")]
+            else:
+                flat += [c for c in (cols or []) if isinstance(c, str)]
         roles = gr.get("field_roles")
-        if cols and not (isinstance(roles, dict) and roles):
+        if mapped and isinstance(roles, dict) and roles:
             failures.append(
-                f"grounding.field_roles is empty while the concept grounds on {len(cols)} column(s). "
-                f"SYS_PROMPT requires a role for every meaningful column; without it nothing binds a "
-                f"rule's columns to an analytical role."
+                f"grounding declares columns as a MAP ({mapped} column(s)) AND a `field_roles` block. "
+                f"That is one fact with two homes: the roles are PROJECTED from the map, so the two can "
+                f"drift and the projection keeps whichever the file declared explicitly. Delete "
+                f"`field_roles`."
+            )
+        if flat and not (isinstance(roles, dict) and roles):
+            failures.append(
+                f"grounding.sources[].columns is a flat list of {len(flat)} name(s) and there is no "
+                f"`field_roles` block, so nothing says what any column IS. Prefer the MAP form — "
+                f"`columns: {{<name>: {{role: ...}}}}` — which puts each column's facts on the column."
             )
     return corrections, failures
 

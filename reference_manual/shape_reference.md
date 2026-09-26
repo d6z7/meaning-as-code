@@ -253,7 +253,7 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
     - <item>
       relation: <…>  # REQUIRED · string · the table OR view name to query (agnostic — the AI does not care which)
       key: <…>  # string|array · primary / join key column(s)
-      columns: [ ... ]  # the columns this concept uses
+      columns:  # one of: array | object · THE COLUMN MAP — everything about one column, ON the column  # open: extra keys allowed
   table: <…>  # string · LEGACY, and still accepted: the single relation this concept queries
   tables: [ ... ]
   primary_tables: [ ... ]

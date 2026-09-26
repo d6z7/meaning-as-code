@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "title": "Meaning-as-Code (MAC) — formal schema v0.1.18-develop",
   "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
@@ -877,8 +877,58 @@
                 "description": "primary / join key column(s)"
               },
               "columns": {
-                "type": "array",
-                "description": "the columns this concept uses"
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "THE FLAT LIST — which columns a concept serves, and nothing about what each one IS. 21 concepts were written this way and `check_column_spec` reports them; kept legal so a bundle converts one concept at a time rather than in one unshippable change."
+                  },
+                  {
+                    "type": "object",
+                    "description": "THE COLUMN MAP — everything about one column, ON the column. Keyed by column name; each value is that column's flags. Added v0.1.16, and until then THE STANDARD WAS UNWRITABLE: this slot was `type: array` only, so the map form that mac-runtime's parser accepts and PROJECTS was a conformance error in the core. That is the whole explanation of the measurement in ColumnSpec's own docstring — '21 concepts, 0 using the standard'. A standard the schema refuses cannot be adopted; 19 more were then written the old way before anyone asked why.",
+                    "additionalProperties": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "description": "A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.",
+                      "additionalProperties": false,
+                      "properties": {
+                        "role": {
+                          "type": "string",
+                          "description": "projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here."
+                        },
+                        "identity": {
+                          "type": "string",
+                          "enum": [
+                            "canonical",
+                            "part",
+                            "reference"
+                          ],
+                          "description": "`canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree."
+                        },
+                        "measure": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "The measure facts -> concept.semantics.measure_type / unit / additivity. Only ONE column per concept may carry it: semantics.unit is singular, and taking the first of several would make an answer's unit depend on YAML key order.",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "unit": {
+                              "type": "string"
+                            },
+                            "additivity": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
               }
             },
             "additionalProperties": true
