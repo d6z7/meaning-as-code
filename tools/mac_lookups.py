@@ -34,6 +34,25 @@ most rows is worse than no label.
 ONE REGISTER PER DIMENSION (DNA premise P4): a column already covered by a register is skipped rather
 than cut twice under a second name.
 
+AND THE MEMBERS MOVE — THE DESCRIPTOR KEEPS THE COUNT AND A POINTER. The operator: "are you sure that
+it makes sense to include all possible incarnations of states into data source or dataset?!?! these
+values could be in lookup if necessary?!?!"
+
+Measured on one bundle: 1 186 of 1 595 descriptor lines — 74 % — were member lists, and
+`dim_contoso_customer.yaml` was 656 lines at 89 % values. Worse, 563 of them were `State` members that
+this cutter itself REFUSES as "data, not a register", so they were carried by the descriptor and used
+by nothing.
+
+So after a register is cut, its column's `values:` list is replaced by
+
+    distinct: 8                                  the MEASUREMENT, which is a fact worth keeping
+    register: data/lookups/contoso_country.lookup.csv    where the members live, once
+
+A bounded column with NO register keeps `distinct:` and gets no pointer — which is the honest record:
+measured, enumerable, and not resolvable offline. A descriptor states the SHAPE of a relation; the
+members are a different fact with a different home, and two homes for one fact is what this estate
+keeps paying for.
+
     python3 mac_lookups.py <bundle-root> [--max-members N] [--check]
 """
 
@@ -81,6 +100,7 @@ def main(argv: list[str] | None = None) -> int:
 
     marker = _marker(root, yaml)
     wrote, skipped, drift = 0, [], []
+    repointed: dict[pathlib.Path, dict[str, str]] = {}
     seen_columns: set[tuple[str, str]] = set()
     for desc in sorted((root / "data" / "datasets").glob("*.yaml")):
         doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
@@ -124,10 +144,18 @@ def main(argv: list[str] | None = None) -> int:
                 out.parent.mkdir(parents=True, exist_ok=True)
                 out.write_text(body, encoding="utf-8")
                 wrote += 1
+                repointed.setdefault(desc, {})[name] = str(out.relative_to(root))
                 lab = f" label<-{label_col}" if label_col else " (code is its own label)"
                 print(f"  {out.name:44} {len(members):>4} member(s){lab}")
     if con is not None:
         con.close()
+
+    if not a.check:
+        slimmed = _slim_descriptors(root, repointed, yaml)
+        if slimmed:
+            print(f"\n  the members MOVED: {slimmed} descriptor line(s) of member list replaced by "
+                  f"`distinct:` + `register:` — one home for the members, the count kept where it "
+                  f"was measured")
 
     if a.check:
         if drift:
@@ -142,6 +170,45 @@ def main(argv: list[str] | None = None) -> int:
               "is cut from a domain `mac_profile` captured; if none was, there is none to project.")
     print(f"\nwrote {wrote} register(s) from domains already measured on the descriptors")
     return 0
+
+
+def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml) -> int:
+    """Replace every captured `values:` list with `distinct:` + `register:` where one was cut.
+
+    EVERY bounded column is slimmed, not only the ones that got a register: a column refused as "data,
+    not a register" was the worst case — 563 members carried by the descriptor and read by nothing.
+    It keeps `distinct:` and no pointer, which says exactly that.
+
+    Rewritten through yaml rather than by editing text, so the file stays the shape the framework's
+    own schema defines and a partially-matched regex cannot leave a half-stripped list behind.
+    """
+    saved = 0
+    # BOTH PLANES. Slimming only `datasets` left the eight SOURCE descriptors carrying their member
+    # lists, which is the same duplication one directory over — and measurably so: the generated
+    # sanity suite still built 30 `enumeration` cases from them after the served copies were gone.
+    descs = sorted((root / "data" / "datasets").glob("*.yaml")) + \
+        sorted((root / "data" / "sources").glob("*.yaml"))
+    for desc in descs:
+        doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
+        cols = doc.get("columns") or []
+        touched = False
+        for c in cols:
+            members = c.pop("values", None)
+            if members is None:
+                continue
+            saved += len(members)
+            touched = True
+            c["distinct"] = len(members)
+            reg = (repointed.get(desc) or {}).get(c.get("name"))
+            if reg:
+                c["register"] = reg
+        if not touched:
+            continue
+        head = "\n".join(ln for ln in desc.read_text(encoding="utf-8").splitlines()
+                          if ln.startswith("#"))
+        desc.write_text(head + "\n" + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True,
+                                                      width=100), encoding="utf-8")
+    return saved
 
 
 def _values_of(columns: list, name: str) -> list:

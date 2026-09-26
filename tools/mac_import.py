@@ -63,6 +63,8 @@ DELIVERABLES: list[dict] = [
     {"id": "D10", "what": "referential structure", "glob": "data/references*/*.yaml"},
     {"id": "D11", "what": "sample per concept", "glob": "data/samples/concepts/*.csv"},
     {"id": "D12", "what": "value registers", "glob": "data/lookups/*.csv"},
+    {"id": "D12b", "what": "closure monitor executed",
+     "glob": "acceptance/register_membership_runs.json"},
     {"id": "D4", "what": "all concepts", "glob": "ontology/concepts/**/*.yaml"},
     {"id": "D4b", "what": "edges", "glob": "ontology/edges.yaml"},
     {"id": "D3", "what": "ER model (actual state)", "probe": "er"},
@@ -198,6 +200,16 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # works for any engine the seam answers for.
         {"name": "lookups", "produces": "data/lookups/*.csv", "d": "D12",
          "cmd": [_tool("mac_lookups.py"), str(root)]},
+        # THE CLOSURE MONITOR, and it is OWED — DNA PART 1.8 "closed sets get a register; registers
+        # get a monitor", PART 4 step 6 "`warranty: monitored` becomes provable". It is also a
+        # REPLACEMENT: moving the member lists off the descriptors and into the registers (operator,
+        # 2026-09-26: "these values could be in lookup if necessary?!?!") cut the descriptor plane by
+        # 73 % and was right — but the generated suite built its `enumeration` family FROM those
+        # lists, so 30 of 86 cases went with them. This reads the register instead, which is where
+        # the members now live, and it re-measures against the warehouse, which a static case list
+        # never could.
+        {"name": "register-monitor", "produces": "acceptance/register_membership_runs.json",
+         "d": "D12b", "cmd": [_tool("check_register_membership.py"), str(root)]},
         # ---- the DQ plane, ALL OF IT BEFORE THE PROJECTION ----------------------------------
         # A measured ORDERING BUG of this file: `dq-findings` was documented as needing to run before
         # `project` and was placed after it, so the projection built the dashboard from a register

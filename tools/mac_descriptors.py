@@ -284,9 +284,36 @@ def _simple(sql_type: str) -> str:
     return str(sql_type).lower()
 
 
-def _without_date(text: str) -> str:
-    """Drift means the SHAPE changed, not that today is a different day."""
-    return "\n".join(ln for ln in text.splitlines() if not ln.strip().startswith("observed:"))
+#: Keys LATER STAGES add to a column. `mac_profile` captures a value domain; `mac_lookups` replaces it
+#: with `distinct:` + `register:` when the members move to their register. None of them is this
+#: generator's output, and comparing against them made `--check` report drift on all 14 descriptors of
+#: a bundle nothing had changed — a check that always fails is a check nobody can use (DNA law 12).
+_ENRICHED_BY_LATER_STAGES = ("values", "distinct", "register", "domain")
+
+
+def _comparable(text: str) -> object:
+    """The descriptor's SHAPE, structurally, with the date and every downstream enrichment removed.
+
+    STRUCTURAL AND NOT TEXTUAL, because a value domain is a LIST and a text filter cannot drop a
+    list's items without knowing where the list ends — a half-stripped domain then reads as a
+    difference. Parsing makes "what did this generator claim" answerable exactly.
+    """
+    import yaml as _y
+    try:
+        doc = _y.safe_load(text) or {}
+    except Exception:  # noqa: BLE001 - an unparseable file IS a difference
+        return text
+    if isinstance(doc, dict):
+        (doc.get("metadata") or {}).pop("observed", None)
+        for c in doc.get("columns") or []:
+            for k in _ENRICHED_BY_LATER_STAGES:
+                c.pop(k, None)
+    return doc
+
+
+def _without_date(text: str) -> object:
+    """Kept as the name the call sites use; the comparison is structural — see `_comparable`."""
+    return _comparable(text)
 
 
 if __name__ == "__main__":
