@@ -1180,22 +1180,35 @@ def onboard(
     else:
         print("  reconcile: no DQ register yet — nothing to reconcile")
 
-    # 4) CONCEPTS — DELIBERATELY NOT RUN HERE. Onboarding stops at the data plane.
+    # 4) CONCEPTS — RUN, because the first run must hand the operator an ontology to tune.
     #
-    # It used to run automatically on a NEW source: the stage was skipped only when
-    # ontology/concepts/ was ALREADY populated, so on the one occasion it mattered — a fresh bundle —
-    # it fired. `--accept` is exactly what an operator passes to onboard a source, which made the most
-    # convenient command the one that produced the failure mode: concepts authored from the table list
-    # before a single business document had been read.
+    # THE OPERATOR, 2026-09-26, deleting the instruction that used to stand here: "datasets DO NEVER
+    # MATCH CONCEPTS 1:1 — concepts must SEARCH for business LOGIC in data and create it independent
+    # of physical layer objects."
     #
-    # The concept stage is not merely billed, it is a JUDGEMENT: which business notions this source
-    # exposes, at what confidence, and which relations back no notion at all. Chaining it behind a
-    # mechanical data harvest hides that decision inside a convenience flag. Run it explicitly:
+    # WHAT THE DELETED INSTRUCTION SAID, and why it was wrong. It withheld this stage from the one
+    # run an operator actually performs, and justified that with an outcome: a bundle came out at
+    # exactly 20 concepts from 20 datasets. That number IS a defect — but it is a defect of
+    # per-table authoring, not evidence that authoring must be withheld. The old loop called the
+    # model ONCE PER DATASET, which made 1:1 true by construction: a caller that asks "what is the
+    # concept for THIS table" can only ever be answered with one concept per table. Withholding the
+    # stage left that implementation unfixed and moved the cost onto the operator, who then has to
+    # ask for concepts — the exact pattern this pipeline exists to end.
     #
-    #     python -m sdk.cli.harvest --content-root <root> --mode concepts
+    # WHAT REPLACED IT is already in this file: `harvest_concepts` PASS 1 plans over the WHOLE
+    # inventory in one call, so the unit of decision is the SOURCE and not the table. Concept:relation
+    # is M:N by the 2026-08-18 ruling — one notion may span several relations, a relation may back
+    # several notions, and a relation may back NONE (a bridge, a staging table, a technical log).
     #
-    # (Removed 2026-08-18. one measured bundle is exactly 20 concepts from 20 datasets — what the chained stage
-    #  produces when nobody is looking.)
+    # IT IS STILL A JUDGEMENT, and that is handled by MARKING rather than by absence: what this stage
+    # writes is `status: draft`, and the operator tunes it. An unmarked guess and a withheld stage are
+    # both worse than a labelled draft — one hides that a decision was made, the other hides that it
+    # is needed.
+    #
+    # ENFORCED, not merely intended: `check_concepts_not_per_table.py` FAILS a bundle whose concept
+    # count equals its dataset count with each concept on its own relation, which is the shape the
+    # per-table loop produced.
+    #
     if _stage_present(cr, "ontology/concepts"):
         print("  concepts: present — untouched (onboarding never authors concepts)")
     else:
