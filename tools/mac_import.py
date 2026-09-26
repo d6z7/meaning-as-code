@@ -321,12 +321,7 @@ def _stages(root: pathlib.Path) -> list[dict]:
          "each": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()],
          "missing": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()
                              if not (root / "data" / "profiles" / f"{rel}.yaml").is_file()]},
-        # `--plane all` cuts the relation previews AND, where concepts exist, the concept samples —
-        # so it is credited with D11b, which it can always deliver, and D11 only when there is a
-        # concept to sample. Crediting it with D11 alone made a stage look like it had satisfied a
-        # deliverable that no first run can produce.
-        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b D11",
-         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "all"]},
+
         # TWO STAGES, NOT ONE, because the two planes have different INPUTS and only one of them
         # can be automated. Lumped together, the sources half's refusal masked the served half's
         # success — measured: the report said CANNOT while 19 references over 14 relations had just
@@ -354,6 +349,21 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # was simply "i did not get lineage".
         {"name": "transforms", "produces": "data/transforms/*.yaml", "d": "D15 D6",
          "cmd": [_tool("mac_transforms.py"), str(root)]},
+        # AFTER `transforms`, NOT BEFORE IT — moved 2026-09-26, found by deleting a bundle and
+        # re-ingesting it from its 12 inputs. `mac_sample` names the TRANSFORM that produces a relation,
+        # and as stage 3 (with transforms at stage 6) there were no transform descriptors to read yet, so
+        # a FIRST run recorded "no transform descriptor; relation read from table.*" for every relation
+        # while a --refresh over the same bundle resolved them all. The first run produced the WORSE
+        # artifact, and only a from-scratch rebuild could show it: every bundle in the estate had been
+        # refreshed at least once, so every samples.run.json on disk was the good version.
+        #
+        # Nothing depends on samples running early: it needs the descriptors, which precede it either
+        # way, and concept samples need concepts, which come later regardless.        # `--plane all` cuts the relation previews AND, where concepts exist, the concept samples —
+        # so it is credited with D11b, which it can always deliver, and D11 only when there is a
+        # concept to sample. Crediting it with D11 alone made a stage look like it had satisfied a
+        # deliverable that no first run can produce.
+        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b D11",
+         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "all"]},
         # `--accept` ON THE LOOKUP CUTTER IS NOT A BILLING DECISION. harvest's help says
         # "materialize/lookups create the own-schema views + name->code registers (DRY-RUN by
         # default, --accept to run the DDL/profiling live)" — the flag means RUN THE PROFILING, and
