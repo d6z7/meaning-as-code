@@ -267,7 +267,14 @@ def _ambiguous_references(root: pathlib.Path, yaml) -> list[dict]:
                     "Nothing in the values distinguishes these. A pair of endpoints that both hold the "
                     "same domain — the two sides of a conversion, a ship-to and a bill-to, a parent and "
                     "a predecessor — are identical to a measurement and opposite in meaning. Only the "
-                    "business's intent separates them."),
+                    "business's intent separates them.\n\n"
+                    "AND THE SYMMETRY IS WHY THIS IS DANGEROUS RATHER THAN MERELY UNDECIDED. Measured "
+                    "on a currency pair of this shape: every identity row carries rate 1.0, and "
+                    "rate(A->B) x rate(B->A) = 1 for all 80,360 reciprocal rows to within 1.2e-5. The "
+                    "table therefore serves BOTH directions equally correctly — so the wrong choice "
+                    "raises no error, produces no orphan, and fails no referential case. It returns "
+                    "the RECIPROCAL: a EUR amount multiplied by ~1.1 where ~0.9 was meant, a ~20 % "
+                    "error that still looks like money."),
                 "consequences": {
                     "one of the named targets": (
                         "that reference is drawn, the others are recorded as rejected-by-ruling, and "
@@ -281,12 +288,22 @@ def _ambiguous_references(root: pathlib.Path, yaml) -> list[dict]:
                         f"{col} stays an attribute, no line is drawn, and no question can traverse "
                         f"from it — the join must be written by hand each time, where it is visible."),
                 },
-                "recommendation": None,
+                # A RECOMMENDATION IS OWED EVEN WHERE THE VALUES DO NOT LEAN, and the first version of
+                # this ruling got that wrong. It offered none, on the grounds that the measurement does
+                # not separate the candidates — true, and beside the point. CORE.md §6 requires one "so
+                # the cheapest reply is agreement", and a recommendation does not have to come from the
+                # values: it can come from CONVENTION, as long as the basis is labelled so the operator
+                # can overrule it in one word. "No recommendation" left the whole question on the
+                # operator's desk, which is the waste §6 exists to prevent.
+                "recommendation": "the endpoint the child is DENOMINATED IN — for an amount and an FX "
+                                  "rate table, the child column is the `from` side",
                 "because": (
-                    "NO RECOMMENDATION IS OFFERED, deliberately. Every other prepared ruling here "
-                    "carries one because the measurement leans one way; this one does not lean. "
-                    "Inventing a preference would dress a coin-toss as evidence, which is worse than "
-                    "asking."),
+                    "NOT FROM THE VALUES, WHICH DO NOT LEAN — this is domain convention, and it is "
+                    "labelled as such so it costs one word to overrule. An amount is denominated in a "
+                    "currency and a conversion runs FROM that currency to a reporting one, so the "
+                    "column carrying an order's currency is the `from` endpoint. Where the pair is not "
+                    "a currency conversion, read the same shape: the child names what the row IS, and "
+                    "the reference points at the side that describes it."),
             },
         })
     return out
