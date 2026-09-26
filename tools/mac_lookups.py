@@ -166,9 +166,33 @@ def main(argv: list[str] | None = None) -> int:
     for s in skipped:
         print(f"  NOT A REGISTER  {s}")
     if not wrote:
-        print("  no column is both bounded and enumerable — nothing to resolve offline. A register "
-              "is cut from a domain `mac_profile` captured; if none was, there is none to project.")
-    print(f"\nwrote {wrote} register(s) from domains already measured on the descriptors")
+        # ALREADY CUT IS NOT "NOTHING TO CUT", and saying the second when the first is true was a
+        # FALSE STATEMENT ABOUT THE DATA. This tool consumes its input by design: it replaces each
+        # captured `values:` list with `distinct:` + `register:` so the descriptor plane stays lean
+        # (1,186 of 1,595 lines were member lists). A second run therefore finds no `values:` — and
+        # said "no column is both bounded and enumerable" while 17 registers sat on disk with 22
+        # columns pointing at them. An operator reading that would conclude the bundle has no closed
+        # domains, which is the opposite of what was measured.
+        already = len(list((root / "lookups").glob("*.lookup.csv"))) if (root / "lookups").is_dir() \
+            else len(list((root / "data" / "lookups").glob("*.lookup.csv")))
+        if already:
+            print(f"  ALREADY CUT — {already} register(s) are present and the descriptors point at "
+                  f"them; there is no `values:` list left to project because this tool moved them. "
+                  f"Nothing to do.\n  To RE-MEASURE the domains (a warehouse may have gained a "
+                  f"value), re-run `mac_profile`, which is what captures them; to check the "
+                  f"registers against the warehouse as they stand, run "
+                  f"`check_register_membership.py`.")
+        else:
+            print("  no column is both bounded and enumerable — nothing to resolve offline. A "
+                  "register is cut from a domain `mac_profile` captured; if none was, there is none "
+                  "to project.")
+    # THE COUNT MUST MATCH WHAT IS ON DISK. "wrote 22 register(s)" beside 17 files is a report an
+    # operator has to reconcile by hand: 22 is the number of COLUMN DOMAINS cut, and several columns
+    # legitimately share one register (a code carried by both a raw landing and the view over it, or
+    # port_code appearing as depart_ and arrive_). Both numbers are facts; only one was said.
+    files = len({reg for cols in repointed.values() for reg in cols.values()})
+    print(f"\ncut {wrote} column domain(s) into {files} register file(s), from domains already "
+          f"measured on the descriptors")
     return 0
 
 

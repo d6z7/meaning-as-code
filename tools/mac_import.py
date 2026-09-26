@@ -341,6 +341,7 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     #: Calling any of them FAIL would teach an operator to ignore the word.
     refusals = ("could not run", "--project-anyway", "REFUSED:", "SKIP:", "NOTHING TO MEASURE")
     fails, refused, lastline = 0, 0, ""
+    needs_ruling = 0
     for cmd in cmds:
         cwd = _sdk_root() if "sdk" in stage else None
         r = subprocess.run([sys.executable, *cmd] if cmd[0].endswith(".py") else cmd,
@@ -351,14 +352,28 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
         lastline = tail[-1][:88] if tail else ""
         if r.returncode != 0:
             if any(mark in out for mark in refusals):
+                # A STATED REFUSAL OUTRANKS A GENERIC EXIT CODE, and getting this precedence wrong
+                # was measured: with the exit-3 test first, `ontology-run`'s "could not run" reported
+                # as NEEDS YOU — asking the operator for a ruling they cannot give, because the suite
+                # declares 0 cases and no decision changes that.
                 refused += 1
                 lastline = next((ln.strip() for ln in reversed(out.splitlines())
                                  if any(m in ln for m in refusals)), lastline)[:88]
+            elif r.returncode == 3:
+                # EXIT 3 IS "MEASURED COMPLETELY, AND SOMETHING NEEDS YOU". Rendering it as FAIL was
+                # measured on a healthy first run: mac_references wrote 5 of 5 files, drew 2
+                # references, raised 1 finding, and the operator's report said FAIL. A report that
+                # calls a complete measurement a failure teaches the operator to ignore the report.
+                needs_ruling += 1
+                lastline = next((ln.strip() for ln in reversed(out.splitlines())
+                                 if ln.startswith("NEEDS RULING")), lastline)[:88]
             else:
                 fails += 1
     secs = time.time() - t0
     if fails:
         return (name, "FAIL", f"{fails} of {len(cmds)} call(s) failed — {lastline}", secs)
+    if needs_ruling:
+        return (name, "NEEDS YOU", lastline, secs)
     if refused:
         return (name, "NEEDS YOU" if stage.get("needs_human") else "CANNOT",
                 stage.get("needs_human") or lastline, secs)

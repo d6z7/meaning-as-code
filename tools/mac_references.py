@@ -80,10 +80,18 @@ that function is already documented as THE seam (manifest `runtime.connector` ->
 for the one fact about how a bundle is opened. `harvest.py` is NOT used and cannot be: it is
 hardwired to one cloud catalog and cannot reach a local-file bundle at all.
 
-EXIT CODES. 0 every in-scope relation was measured · 1 a finding about the bundle (a relation whose
-profile carries no key, a descriptor whose relation the catalog does not have, a `--verify` that
-differs) · 2 could not run (no connector, unresolvable, driver absent, an EMPTY POPULATION). Every
-verdict line carries its DENOMINATOR.
+EXIT CODES. 0 every in-scope relation was measured and nothing is owed · 3 measured completely, and
+N finding(s) NEED AN OPERATOR RULING (a relation whose profile carries no key, a broken reference) ·
+1 the tool could not do its job (a `--verify` that differs, a descriptor whose relation the catalog
+does not have) · 2 could not run (no connector, unresolvable, driver absent, an EMPTY POPULATION).
+Every verdict line carries its DENOMINATOR.
+
+WHY 3 EXISTS, and it is not a cosmetic split. This tool used to exit 1 for a finding, which is the
+documented meaning of "a finding about the bundle" — and `mac_import` renders a non-zero exit as
+FAIL. Measured on a healthy first run of a new bundle: one relation carried a composite key that no
+descriptor can declare, the tool wrote 5 of 5 files and drew 2 references, and the operator's report
+said `FAIL references-served`. A first run that delivered everything it could looked broken. "Something
+needs you" and "this failed" are different facts and now have different codes.
 """
 
 from __future__ import annotations
@@ -179,8 +187,23 @@ DECLARED_KEY_ROLES = ("primary_key", "composite_key_part")
 ADMISSION = {
     "inclusion_required": 1.0,
     "near_miss_floor": 0.995,
+    # A BROKEN FOREIGN KEY IS A THIRD THING, and its absence was measured on a bundle built to look
+    # for it: 22 of 500 voyage legs arrived at a port the warehouse does not carry (inclusion
+    # 0.956). With only two bands that fell BELOW near_miss_floor and came back "rejected" — the
+    # single most common real data defect classified as "not a relationship", and the generated DQ
+    # suite passed 31 of 31 beside it. Between this floor and near_miss_floor a column is far too
+    # aligned with a key to be coincidence and far too broken to draw: it is a FINDING.
+    # The anti-coincidence test still gates it, so a dense column that merely falls inside a wider
+    # dense key cannot reach this band.
+    "broken_reference_floor": 0.90,
     "domain_exercise_floor": 0.50,
     "distinct_tolerance": 0.05,
+    # HOW FAR PAST THE PARENT'S CARDINALITY IS STILL WORTH MEASURING. The distinct prune below is
+    # arithmetically sound and was, on its own, BLIND BY CONSTRUCTION: orphan values ADD distinct
+    # values to the child, so the very defect being looked for is what triggers the prune. Bounded
+    # rather than removed — 55 distinct against a 40-key (1.4x) is a broken FK worth measuring;
+    # 8 000 against 40 (200x) is a different column and stays pruned.
+    "orphan_probe_factor": 2.0,
     "min_child_distinct": 2,
 }
 
@@ -324,10 +347,18 @@ def generate(catalog, profiles):
                            f"{ADMISSION['min_child_distinct']}: a column with one value includes "
                            f"into anything and is not evidence")
                 elif cs.get("distinct") and ps.get("distinct") and \
-                        cs["distinct"] > ps["distinct"] * (1 + ADMISSION["distinct_tolerance"]):
+                        cs["distinct"] > ps["distinct"] * ADMISSION["orphan_probe_factor"]:
+                    # "MORE VALUES THAN THE KEY HAS CANNOT ALL BE IN IT" IS TRUE, and the conclusion
+                    # once drawn from it was false: it does not mean "not a reference", it means "a
+                    # reference WITH ORPHANS". Measured on a planted case — arrive_port_code, 55
+                    # distinct against a 40-value key — the pair was pruned before a statement ran,
+                    # so a 4.4 % referential break was invisible to every downstream consumer. The
+                    # prune now fires only past `orphan_probe_factor`, and everything inside that
+                    # band goes to the measurement, where `verdict()` separates a broken key from a
+                    # coincidence using evidence instead of arithmetic on cardinality alone.
                     why = (f"child distinct {cs['distinct']} > parent distinct {ps['distinct']} "
-                           f"+{ADMISSION['distinct_tolerance']:.0%} tolerance: more values than the "
-                           f"key has cannot all be in it")
+                           f"x{ADMISSION['orphan_probe_factor']} orphan_probe_factor: too many "
+                           f"values to be that key even allowing for orphans")
                 if why:
                     pruned.append({**row, "pruned_because": why})
                 else:
@@ -376,11 +407,47 @@ def verdict(ev: dict, span: float | None) -> tuple:
         return "no_denominator", ("the child column has no non-null rows, so there is no "
                                   "denominator to judge inclusion on")
     exercises = (span is not None and span >= floor) or (cov is not None and cov >= floor)
-    if inc < ADMISSION["near_miss_floor"]:
+    # WHAT COUNTS AS CORROBORATION FOR A **BROKEN** REFERENCE IS NARROWER, and the first version of
+    # this band got it wrong in the most instructive way: it reused `exercises`, and on a warehouse of
+    # dense integer keys it raised SIX findings, every one absurd —
+    #   date.WorkingDayNumber -> product.ProductKey   (incl 0.912, span 1.000)
+    #   store.SquareMeters    -> product.ProductKey   (incl 0.945, span 0.903)
+    #   store.StoreKey        -> product.ProductKey   (incl 0.987, span 0.996)
+    # against ONE true positive, arrive_port_code -> port_code (incl 0.956, span None). Six false
+    # findings is not a noisy monitor, it is a monitor an operator learns to close unread.
+    #
+    # THE ASYMMETRY IS THE POINT. For a reference at inclusion 1.0, span_ratio and parent_coverage are
+    # both fair evidence — either shows the key's domain is genuinely engaged. For a BROKEN one the
+    # inclusion evidence is already compromised, and a dense numeric child lying inside a wider dense
+    # numeric key produces high inclusion AND high span by ARITHMETIC. So interval overlap is not
+    # weaker evidence here, it is the signature of the thing being excluded, and it must be tested
+    # FOR and rejected. What remains admissible is parent_coverage: the child actually uses the
+    # parent's real key values, which an interval cannot fake.
+    interval_overlap = span is not None and span >= floor
+    corroborated = (cov is not None and cov >= floor) and not interval_overlap
+    if inc < ADMISSION["broken_reference_floor"] or (
+            inc < ADMISSION["near_miss_floor"] and not corroborated):
         return "rejected", (
-            f"inclusion {inc:.6f} < near_miss_floor {ADMISSION['near_miss_floor']} — "
-            f"{ev['orphan_rows']} of {ev['child_nonnull']} non-null child rows carry a value "
-            f"({ev['orphan_distinct']} distinct) that no parent row carries")
+            f"inclusion {inc:.6f} < near_miss_floor {ADMISSION['near_miss_floor']}"
+            + ("" if inc < ADMISSION["broken_reference_floor"] else
+               (f" and NOT raised as a broken reference: span_ratio {span} >= {floor} means the "
+                f"child is a numeric interval lying inside the key's interval, which produces this "
+                f"inclusion by ARITHMETIC" if interval_overlap else
+                f" and NOT raised as a broken reference: parent_coverage {cov} < {floor}, so the "
+                f"child does not use the parent's real key values"))
+            + f" — {ev['orphan_rows']} of {ev['child_nonnull']} non-null child rows carry a value "
+              f"({ev['orphan_distinct']} distinct) that no parent row carries")
+    if inc < ADMISSION["near_miss_floor"]:
+        return "broken_reference", (
+            f"inclusion {inc:.6f} is between broken_reference_floor "
+            f"{ADMISSION['broken_reference_floor']} and near_miss_floor "
+            f"{ADMISSION['near_miss_floor']}, the child USES the parent's real key values "
+            f"(parent_coverage {cov} >= {floor}), and the overlap is NOT interval arithmetic "
+            f"(span_ratio {span}). This is not a coincidence and it "
+            f"is not a reference: it is a REFERENCE THAT IS BROKEN — {ev['orphan_rows']} of "
+            f"{ev['child_nonnull']} non-null child row(s) carry {ev['orphan_distinct']} value(s) no "
+            f"parent row carries. NOT DRAWN, RAISED: the ER model must not show a line that 4 % of "
+            f"the rows do not obey, and the data-quality register must not stay silent about it")
     if inc < ADMISSION["inclusion_required"]:
         return "near_miss", (
             f"inclusion {inc:.6f} >= near_miss_floor {ADMISSION['near_miss_floor']} but < "
@@ -497,6 +564,12 @@ def find_dangling(catalog, profiles, results, conv):
     drawn = {(r["from"]["relation"], r["from"]["column"])
              for r in results if r.get("direction") in ("drawn", "superseded_by_identity",
                                                         "superseded_by_reverse")}
+    # A BROKEN REFERENCE IS NOT A DANGLING COLUMN, and reporting it as both was a contradiction the
+    # operator would have had to resolve alone: the dangling line says "no relation in scope carries
+    # it as a key" while the BROKEN line names dim_port.port_code as its parent and counts the 22
+    # rows that break it. The second statement is strictly stronger, so the weaker one is withdrawn.
+    drawn |= {(r["from"]["relation"], r["from"]["column"])
+              for r in results if r.get("verdict") == "broken_reference"}
     is_key = {(rel, c) for rel, p in profiles.items() for c in p["key"]}
     measured_against = defaultdict(int)
     admitted = defaultdict(int)
@@ -738,7 +811,12 @@ def read_catalog(conn, sources, profiles, plane: str = DEFAULT_PLANE):
             where = (f"{PLANES[plane]['descriptors']}/{stem}.yaml#columns[].role in "
                      f"{list(DECLARED_KEY_ROLES)}" if declared
                      else f"data/profiles/{stem}.yaml#identity_evidence.key")
-            findings.append({"relation": stem, "exit": 1,
+            # EXIT 3, NOT 1. Everything about this relation WAS measured; what is missing is a
+            # DECLARATION only a person can make. The composite-key case makes this concrete: a
+            # relation identified by two columns together cannot have its key inferred by
+            # measurement, so a healthy first run on such a bundle reported FAIL while having
+            # written every file it promised.
+            findings.append({"relation": stem, "exit": 3,
                              "detail": f"{stem} has no {kind} ({where}); this tool READS the key "
                                        f"and will not re-derive one, so {stem} is not a parent "
                                        f"endpoint"})
@@ -803,6 +881,26 @@ def _rejected(r) -> dict:
     }
 
 
+def _broken(r) -> dict:
+    """A REFERENCE THAT IS BROKEN gets its own entry, and the field is `finding`, not
+    `rejected_because`. Filed among the rejected candidates it read as one more arithmetic near-miss
+    in a list of 69; it is the opposite — the strongest statement this tool can make short of drawing
+    a line. A consumer looking for data defects must not have to scan every reject to find it."""
+    return {
+        "id": _ref_id(r),
+        "from": dict(r["from"]), "to": dict(r["to"]),
+        "parent_key_role": r["parent_key_role"],
+        "verdict": r["verdict"],
+        "evidence": _evidence(r),
+        "name_match": r["name_match"],
+        "finding": r["because"],
+        "ruling_needed": (
+            "Is the orphan set expected (a late-arriving or retired parent) or a defect? Until this "
+            "is ruled, NO line is drawn: the ER model does not show a reference the data does not "
+            "obey, and the data-quality register carries it as open."),
+    }
+
+
 def _dangling_entry(carrier, others, conv, keycols, corroboration) -> dict:
     return {
         "id": f"{carrier['relation']}.{carrier['column']}__?",
@@ -834,7 +932,7 @@ def _dangling_entry(carrier, others, conv, keycols, corroboration) -> dict:
 
 
 def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, scope,
-                         plane: str = DEFAULT_PLANE) -> bytes:
+                         plane: str = DEFAULT_PLANE, broken=()) -> bytes:
     """One relation's artifact -> its exact bytes. PURE and CLOCKLESS, so a re-run is byte-identical.
 
     `admission:` is repeated in EVERY file on purpose. A reader opens one file, and an entry whose
@@ -868,6 +966,9 @@ def render_relation_file(stem, catalog, profiles, entries, rejected, dangling, s
         "admission": dict(ADMISSION),
         "references": entries,
         "references_dangling": dangling,
+        # BROKEN REFERENCES ARE THEIR OWN PLANE OF THE ARTIFACT, between drawn and rejected, because
+        # that is exactly what they are: too aligned with a key to be coincidence, too broken to draw.
+        "references_broken": broken,
         "candidates_rejected": rejected,
     }
     text = yaml.safe_dump(doc, sort_keys=False, default_flow_style=False, allow_unicode=True,
@@ -932,10 +1033,13 @@ def compose(rec) -> dict:
     scope = {"relations_in_scope": len(catalog), "parent_endpoints": len(rec["parents"])}
     by_child_entries = defaultdict(list)
     by_child_rejected = defaultdict(list)
+    by_child_broken = defaultdict(list)
     for r in rec["results"]:
         stem = r["from"]["relation"]
         if r["verdict"] == "real":
             by_child_entries[stem].append(_entry(r))
+        elif r["verdict"] == "broken_reference":
+            by_child_broken[stem].append(_broken(r))
         else:
             by_child_rejected[stem].append(_rejected(r))
     conv, keycols = rec["convention"], rec["keycols"]
@@ -960,7 +1064,8 @@ def compose(rec) -> dict:
             sorted(by_child_entries[stem], key=lambda e: e["id"]),
             sorted(by_child_rejected[stem], key=lambda e: e["id"]),
             sorted(by_child_dangling[stem], key=lambda e: e["id"]),
-            scope, rec.get("plane", DEFAULT_PLANE))
+            scope, rec.get("plane", DEFAULT_PLANE),
+            sorted(by_child_broken[stem], key=lambda e: e["id"]))
     return out
 
 
@@ -1053,6 +1158,14 @@ def _report(rec, files, *, engine, verify, wrote, differs):
             f"({r['participation']['parent_unreferenced']} of {r['parent_distinct']} unreferenced) "
             f"inclusion={r['inclusion']} name_match={r['name_match']}"
             + (f"  AMBIGUOUS_WITH {r['ambiguous_with']}" if r.get("ambiguous_with") else ""))
+    # PRINTED BEFORE THE DANGLING LINES BECAUSE IT OUTRANKS THEM: a broken reference names both
+    # endpoints and the exact rows that break it, where a dangling column names only an absence.
+    for r in sorted((x for x in rec["results"] if x.get("verdict") == "broken_reference"),
+                    key=_ref_id):
+        lines.append(
+            f"  [BROKEN   ] {_ref_id(r)}  inclusion={r['inclusion']} — "
+            f"{r['orphan_rows']} of {r['child_nonnull']} row(s) over {r['orphan_distinct']} "
+            f"value(s) have NO parent. NOT DRAWN, RAISED: needs a ruling")
     for col, carriers in sorted(rec["dangling"].items()):
         lines.append(f"  [dangling ] {col}: no relation in scope carries it as a key; carried by "
                      + ", ".join(f"{c['relation']}({c['distinct']} distinct)" for c in carriers))
@@ -1162,16 +1275,22 @@ def main(argv=None) -> int:                                                     
     else:
         for ln in lines:
             print(ln)
-    codes = [f.get("exit", 1) for f in rec["findings"]] + [1] * len(differs)
-    code = 1 if 1 in codes else (2 if 2 in codes else 0)
-    head = "PASS" if code == 0 else ("FAIL" if code == 1 else "INCOMPLETE")
+    # A --verify MISMATCH is a failure of this tool's own claim and stays 1. A finding about the
+    # BUNDLE is 3: the measurement is complete and an operator must rule. 2 still wins over both,
+    # because "could not run" outranks anything measured.
+    n_broken = sum(1 for r in rec["results"] if r.get("verdict") == "broken_reference")
+    codes = [f.get("exit", 3) for f in rec["findings"]] + [1] * len(differs) + [3] * n_broken
+    code = 2 if 2 in codes else (1 if 1 in codes else (3 if 3 in codes else 0))
+    head = {0: "PASS", 1: "FAIL", 2: "INCOMPLETE", 3: "NEEDS RULING"}[code]
     verb = "verified" if a.verify else "wrote"
     n_dang = sum(len(v) for v in rec["dangling"].values())
     print(f"{head}: {NAME} [plane {rec.get('plane', DEFAULT_PLANE)}] — {verb} {len(wrote)} of "
           f"{len(files)} relation file(s) over "
           f"{len(rec['catalog'])} relation(s) in scope; {len(drawn)} reference(s) drawn of "
           f"{len(rec['results'])} candidate(s) measured ({len(amb)} ambiguous, needing a ruling); "
-          f"{n_dang} dangling reference(s) reported; engine {conn.id}"
+          f"{n_dang} dangling reference(s) reported"
+          + (f"; {n_broken} BROKEN reference(s) needing a ruling" if n_broken else "")
+          + f"; engine {conn.id}"
           + (f"; {len(differs)} file(s) DIFFER from disk" if differs else "")
           + (f"; {len(rec['findings'])} finding(s)" if rec["findings"] else ""))
     return code
@@ -1399,6 +1518,47 @@ def _self_test() -> int:                                                        
     case("MUTANT no non-null child rows has no denominator",
          verdict({**ev, "inclusion": None}, 1.0)[0] == "no_denominator",
          "an empty denominator is an outage, never a clean result")
+    # ── THE BROKEN-REFERENCE BAND, and every case here is a REAL MEASUREMENT from a real bundle.
+    #
+    # This band exists because 22 of 500 rows referenced a port that did not exist and the suite
+    # reported 31 of 31 PASS. Its FIRST version then raised six absurd findings on a warehouse of
+    # dense integer keys — square metres referencing a product key — because it accepted span_ratio
+    # as corroboration. Both halves of that history are frozen here: the one shape that must be
+    # raised, and the four measured shapes that must not.
+    br = {"child_nonnull": 500, "orphan_rows": 22, "orphan_distinct": 15}
+    case("BROKEN a covered, non-interval near-miss IS raised (arrive_port_code -> port_code)",
+         verdict({**br, "inclusion": 0.956, "parent_coverage": 1.0}, None)[0] == "broken_reference",
+         "22 of 500 rows orphaned, every one of the 40 parent keys used, no numeric span to explain "
+         "it away — the defect this band exists for")
+    case("MUTANT a dense interval inside a dense key is NOT broken (WorkingDayNumber -> ProductKey)",
+         verdict({"child_nonnull": 2761, "orphan_rows": 244, "orphan_distinct": 244,
+                  "inclusion": 0.911648, "parent_coverage": 1.0}, 1.0)[0] == "rejected",
+         "span_ratio 1.0: a working-day number spanning a product key's whole interval is arithmetic")
+    case("MUTANT a near-perfect dense overlap is NOT broken (StoreKey -> ProductKey)",
+         verdict({"child_nonnull": 74, "orphan_rows": 1, "orphan_distinct": 1,
+                  "inclusion": 0.986486, "parent_coverage": 0.029003}, 0.996423)[0] == "rejected",
+         "inclusion 0.986 is the most seductive false positive of all: one orphan row, and the key "
+         "is a different key")
+    case("MUTANT a measure is NOT a foreign key (SquareMeters -> ProductKey)",
+         verdict({"child_nonnull": 39, "orphan_rows": 3, "orphan_distinct": 3,
+                  "inclusion": 0.945205, "parent_coverage": 0.014303}, 0.903021)[0] == "rejected",
+         "square metres do not reference products; span 0.903 and coverage 0.014 both say so")
+    case("MUTANT a capacity is NOT a foreign key (teu_capacity -> move_id)",
+         verdict({"child_nonnull": 60, "orphan_rows": 4, "orphan_distinct": 4,
+                  "inclusion": 0.933333, "parent_coverage": 0.0028}, 0.940047)[0] == "rejected",
+         "0.28 % of the parent's keys used: an interval, not a relationship")
+    case("BROKEN the raised sentence names coverage AND excludes interval arithmetic",
+         all(k in verdict({**br, "inclusion": 0.956, "parent_coverage": 1.0}, None)[1]
+             for k in ("parent_coverage", "span_ratio", "NOT DRAWN")),
+         "a verdict an operator must rule on has to carry the arithmetic that produced it")
+    case("a rejected near-miss SAYS WHICH test excluded it",
+         "interval" in verdict({"child_nonnull": 74, "orphan_rows": 1, "orphan_distinct": 1,
+                                "inclusion": 0.986486, "parent_coverage": 0.9}, 0.996423)[1]
+         and "real key values" in verdict({"child_nonnull": 39, "orphan_rows": 3,
+                                           "orphan_distinct": 3, "inclusion": 0.945205,
+                                           "parent_coverage": 0.014303}, None)[1],
+         "'not raised' is only useful if it names the test that excluded it")
+
     case("the admitted sentence restates its own arithmetic",
          "inclusion_required" in verdict(ev, 1.0)[1] and "PARTICIPATION" in verdict(ev, 1.0)[1],
          "an entry must not be readable without the numbers that judged it")
@@ -1523,9 +1683,14 @@ def _self_test() -> int:                                                        
         # ── THE PRUNES, one mutant each ──────────────────────────────────────────────────────────
         pr_cols = {
             "gamma": {"GammaRef": [1, 2, 3, 4], "Word": ["a", "b", "c", "d"]},
-            "alpha": {"AlphaRef": [1, 2, 3, 4, 5, 6],       # more distinct than the parent key
-                      "Flat": [1, 1, 1, 1, 1, 1],           # one value: includes into anything
-                      "Text": ["a", "b", "c", "d", "e", "f"]},
+            # 9 rows. AlphaRef carries 9 distinct against a 4-value key — past orphan_probe_factor
+            # (2.0), so it is a different column and stays pruned. NearRef carries 6 against the same
+            # key: INSIDE the factor, so it must reach the measurement, because that is exactly the
+            # shape of a broken foreign key.
+            "alpha": {"AlphaRef": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+                      "NearRef": [1, 2, 3, 4, 5, 6, 1, 2, 3],
+                      "Flat": [1, 1, 1, 1, 1, 1, 1, 1, 1],   # one value: includes into anything
+                      "Text": ["a", "b", "c", "d", "e", "f", "g", "h", "i"]},
         }
         root5, cls5 = _bundle(base / "prunes", "prunes", pr_cols,
                               {"gamma": ["GammaRef"], "alpha": ["AlphaRef"]})
@@ -1537,9 +1702,18 @@ def _self_test() -> int:                                                        
         case("MUTANT a one-value child column is pruned and says so",
              "min_child_distinct" in why.get(("Flat", "GammaRef"), ""),
              str(why.get(("Flat", "GammaRef"))))
-        case("MUTANT more distinct values than the key has is pruned and says so",
-             "tolerance" in why.get(("AlphaRef", "GammaRef"), ""),
+        case("MUTANT far more distinct values than the key has is pruned and says so",
+             "orphan_probe_factor" in why.get(("AlphaRef", "GammaRef"), ""),
              str(why.get(("AlphaRef", "GammaRef"))))
+        # THE REGRESSION GUARD FOR THE BLINDNESS THIS PRUNE USED TO HAVE. Orphan values ADD distinct
+        # values to a child column, so a prune on "more distinct than the key" hides the very defect
+        # it is looking at. Measured on a bundle built to check: 22 of 500 rows referenced a port that
+        # did not exist, the pair was pruned before a statement ran, and 31 of 31 DQ cases passed. A
+        # modest excess must reach the measurement and be judged on evidence.
+        case("a MODEST distinct excess is NOT pruned — it reaches the measurement",
+             ("NearRef", "GammaRef") not in why,
+             f"pruned_because = {why.get(('NearRef', 'GammaRef'))!r}, but a 6-distinct child against "
+             f"a 4-value key is a candidate BROKEN reference and must be measured")
 
         # ── the bundle-level reject classes, driven through main() ───────────────────────────────
         rc, out = _run(base / "worked", cls=cls)

@@ -68,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     findings += _duplicate_landings(root, yaml)
     findings += _all_null_columns(root, yaml)
     findings += _failing_cases(root)
+    findings += _broken_references(root, yaml)
 
     existing = _existing(root, yaml)
     merged = _merge(findings, existing)
@@ -151,6 +152,48 @@ def _keyless(root: pathlib.Path, yaml) -> list[dict]:
                           "is not a parent endpoint, so no reference points at it and the ER model "
                           "does not draw it."),
             })
+    return out
+
+
+def _broken_references(root: pathlib.Path, yaml) -> list[dict]:
+    """A column that is far too aligned with a key to be coincidence and far too broken to draw.
+
+    THE REGISTER WAS SILENT ABOUT THE MOST COMMON DATA DEFECT THERE IS. Measured on a bundle built to
+    look for it: 22 of 500 voyage legs referenced a port the warehouse does not carry, and the run
+    came back with 31 of 31 DQ cases passing and three findings, none of them this one. Two things had
+    to change — `mac_references` had to stop pruning the pair before measuring it, and this file had
+    to READ the verdict it produces. A measurement no consumer reads is the same as no measurement.
+
+    Severity is HIGH and it is not a judgement call: every answer that groups by the child column
+    silently drops or mis-buckets those rows, and nothing in the ontology can notice.
+    """
+    out = []
+    for plane in ("references_served", "references"):
+        for f in sorted((root / "data" / plane).glob("*.yaml")):
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            for r in (doc.get("references_broken") or []):
+                frm, to = r.get("from") or {}, r.get("to") or {}
+                ev = r.get("evidence") or {}
+                child = f"{frm.get('relation')}.{frm.get('column')}"
+                parent = f"{to.get('relation')}.{to.get('column')}"
+                out.append({
+                    "id": f"DQ-BROKENREF-{str(frm.get('relation','')).upper()}-"
+                          f"{str(frm.get('column','')).upper()}",
+                    "title": f"`{child}` references `{parent}`, and {ev.get('orphan_rows')} row(s) "
+                             f"break it",
+                    "severity": "high",
+                    "measurement": (
+                        f"inclusion {ev.get('inclusion')} over {ev.get('child_nonnull')} non-null "
+                        f"child row(s): {ev.get('orphan_rows')} row(s) carry "
+                        f"{ev.get('orphan_distinct')} value(s) that no row of {parent} carries, while "
+                        f"parent_coverage {ev.get('parent_coverage')} shows the key's domain IS "
+                        f"exercised — so this is a relationship, not an arithmetic coincidence"),
+                    "needs": (
+                        "a ruling: is the orphan set EXPECTED (a late-arriving parent, a retired "
+                        "code, a deliberate sentinel) or a DEFECT? Until it is ruled, no reference "
+                        "is drawn, so the ER model does not show this relationship at all and any "
+                        "question that would have traversed it cannot be answered."),
+                })
     return out
 
 
