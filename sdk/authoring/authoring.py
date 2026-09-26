@@ -10,6 +10,23 @@ packaged for reuse by console_api's MAC harvest mode.
 
 from __future__ import annotations
 
+# ── THE SCHEMA GENERATION HAS ONE HOME, AND IT IS THE SCHEMA ────────────────────────────────────
+# `schema_version: '0.1.13'` was a LITERAL in this file's prompt, in edges.py and twice in
+# data_plane.py — so every concept, edge and descriptor this SDK authored claimed a generation TWO
+# behind the core. Nothing tied the literal to CONFORMANCE.md §6 or to validate_schema, so a bump
+# left it silently stale, and the operator found it in the authored output: "how on earth are you
+# coming with the schema version schema_version: 0.1.13 ?!?!".
+def schema_generation() -> str:
+    """The generation `mac.schema.json` declares, read at call time so a bump cannot leave a copy."""
+    import json as _json, pathlib as _p
+    here = _p.Path(__file__).resolve()
+    for parent in here.parents:
+        cand = parent / "mac.schema.json"
+        if cand.is_file():
+            return str(_json.loads(cand.read_text(encoding="utf-8")).get("version") or "0.1.15")
+    return "0.1.15"
+
+
 import re
 from pathlib import Path
 
@@ -53,9 +70,28 @@ A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and re
 - A notion may exist with NO backing table of its own (a perspective, a plan stage, a rollup) — ground it on the relation that carries its discriminating column.
 
 Shape of a concept file:
-- metadata: {concept, source, version, schema_version: '0.1.13', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
+- metadata: {concept, source, version, schema_version: '{SCHEMA_GENERATION}', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
 - concept: {name, label, class, identity?, definition}   # class is EXACTLY one of: entity | event | measure | enumeration | reference | grouping ; identity.kind ∈ iso|code|namespace_code|fk_name|composite|resolved_axis|sme_pending
-- grounding: {sources: [{relation, key, columns: [...]}], field_roles: {<col>: <source>.field_role.key|dimension|attribute|measure}, grain: "one row per ..."}
+- grounding: {sources: [{relation, key, columns: {<col>: {role, identity?, measure?}}}], grain: "one row per ..."}
+  EVERYTHING ABOUT A COLUMN GOES ON THE COLUMN. `columns` is a MAP keyed by column name, not a list of
+  names, and it is the ONLY place a column's facts are declared:
+      columns:
+        OrderKey:    {role: key, identity: part}
+        LineNumber:  {role: key, identity: part}
+        CustomerKey: {role: key, identity: reference}
+        OrderDate:   {role: dimension}
+        Quantity:    {role: measure, measure: {type: mac.MeasureType.Flow, unit: units}}
+        Surname:     {role: attribute}
+        Status:                      # a bare name serves the column and says nothing more
+  TODAY'S FLAGS ARE role, identity, measure — and ONLY those three, because a flag ships with the code
+  that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a flag and a
+  sentence. `identity: canonical` becomes the concept's canonical_key; `part` marks one column of a
+  composite key; `reference` marks a foreign key. Only ONE column per concept may carry `measure:`.
+  DO NOT WRITE A `field_roles:` BLOCK. It is PROJECTED from these roles — writing both gives one fact
+  two homes that can drift, and `check_column_spec` reports a concept that declares both. Do not write
+  the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
+  DO NOT WRITE `identity.canonical_key` under `concept:` when a column carries `identity: canonical` —
+  same reason: the key is a column fact, and declared twice the two can disagree.
 - contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.rule_kind.resolution|guarantee|exclusion|ambiguity, confidence, scope: ACME, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
@@ -138,6 +174,11 @@ Authoring rules:
 # So the model sees the WHOLE relation inventory ONCE and proposes the notions. Only then is each
 # notion authored, with every relation it named. Declining a relation is a first-class outcome and
 # must carry a reason, so "no concept here" is a recorded judgement rather than an omission.
+# SUBSTITUTED AT IMPORT, because SYS_PROMPT is a plain literal passed straight to the model: a
+# `{SCHEMA_GENERATION}` placeholder left in it would reach the author verbatim, which is worse than the
+# stale `0.1.13` it replaced.
+SYS_PROMPT = SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
+
 PLAN_PROMPT = """You are a MAC ontology architect. You are given EVERY produced relation of one data source, plus SME context. Propose the BUSINESS NOTIONS this source should expose as MAC concepts.
 
 A concept is a business notion, NOT a table. The mapping is M:N:

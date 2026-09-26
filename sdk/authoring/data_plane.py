@@ -16,6 +16,8 @@ not just names.
 
 from __future__ import annotations
 
+from sdk.authoring.authoring import schema_generation
+
 import os
 import re
 import sys
@@ -68,10 +70,10 @@ _ORDERABLE = (
 # byte-identical to the prior hardcoded prompt.
 _DP_SYS_TEMPLATE = """You are a MAC data-engineer. Given ONE raw Glue table (its schema, LIVE column profile, and SME context), author the MAC DATA PLANE for it: the observed source, the data-quality issues, the proposed cleansing transform, the produced clean dataset, and the full realizing view SQL. Emit ONE YAML document with exactly these five top-level keys: `source`, `dq_issues`, `transform`, `dataset`, `transform_sql`.
 
-Every file carries metadata.schema_version: '0.1.13'.
+Every file carries metadata.schema_version read from mac.schema.json#version (one home).
 
 `source`  (the raw schema-of-record — validated as a TableFile):
-  metadata: {table: <bare_name>, source: {{SOURCE_LABEL}}, kind: raw_source, external: true, observed: <date>, provenance: "Glue + Athena profile", schema_version: '0.1.13', status: observed, owner: data-platform-team}
+  metadata: {table: <bare_name>, source: {{SOURCE_LABEL}}, kind: raw_source, external: true, observed: <date>, provenance: "Glue + Athena profile", schema_version: '{SCHEMA_GENERATION}', status: observed, owner: data-platform-team}
   table: {name: <bare_name>, schema: <catalog>.<db>, description: "...", confidence: C}
   columns:                       # EVERY column; role is ALWAYS 'value' for a raw source ("observed, no claim")
     - {name: <col>, type: <verbatim glue type>, role: value, description: <business meaning if known, else "">, confidence: C|I|Q}
@@ -87,7 +89,7 @@ Every file carries metadata.schema_version: '0.1.13'.
       sme_owner: "<role> — <what they must ratify>"
 
 `transform`  (proposed cleansing — validated as a TransformFile):
-  metadata: {schema_version: '0.1.13', pipeline: <bare_name>, source: {{SOURCE_LABEL}}, layer: data-transformation, status: draft, owner: data-platform-team}
+  metadata: {schema_version: '{SCHEMA_GENERATION}', pipeline: <bare_name>, source: {{SOURCE_LABEL}}, layer: data-transformation, status: draft, owner: data-platform-team}
   produces:
     relation: {{VIEW_SCHEMA}}.<bare_name>   # OWN-schema serving view; name == the raw table's BASE name, NO _clean affix
     grain: "one row per (...)"
@@ -106,7 +108,7 @@ Every file carries metadata.schema_version: '0.1.13'.
     - {id: <kebab-id>, impurity_class: <taxon>, raw_defect: "...", proposed_rule: "...", status: PROPOSED}
 
 `dataset`  (the produced clean shape — validated as a TableFile):
-  metadata: {table: <bare_name>, source: {{SOURCE_LABEL}}, schema_version: '0.1.13', status: authored, date: <date>, owner: data-platform-team}
+  metadata: {table: <bare_name>, source: {{SOURCE_LABEL}}, schema_version: '{SCHEMA_GENERATION}', status: authored, date: <date>, owner: data-platform-team}
   table: {name: <bare_name>, schema: {{VIEW_SCHEMA}}, type: view, confidence: C}
   columns:                       # the POST-cleansing columns + types + roles
     - {name: <col>, description: "...", type: <post-cast type>, role: primary_key|foreign_key|value|discriminator|composite_key_part|audit, confidence: C}
@@ -129,6 +131,11 @@ RULES:
 - CANONICAL NAME (the cross-reference rule): the produced serving relation carries the raw table's BASE name in ALL of — the dataset file stem, dataset.table.name, transform.metadata.pipeline, the produces.relation tail, and any lookup — with NO `clean_`/`_clean` prefix or suffix. The own view-schema ({{VIEW_SCHEMA}}) already separates serving from raw, so a _clean affix is exactly the cross-reference bug. Use <bare_name> everywhere; the writer additionally FORCES this.
 - SQL LIVES IN A SIBLING FILE: emit the full materializable view body ONCE, in the top-level `transform_sql`; the transform YAML carries only a `produces.sql_file` pointer + prose (impurity_class/rule/guarantee). NEVER a multi-line inline `sql:` scalar in the YAML.
 - Output ONLY the YAML document (the five keys), no prose, no fences."""
+
+# SUBSTITUTED AT IMPORT. The generation has ONE home — mac.schema.json#version — and three
+# literals in this file claimed 0.1.13 while the core was at 0.1.15, so every descriptor,
+# transform and dataset this prompt produced named a generation two behind.
+_DP_SYS_TEMPLATE = _DP_SYS_TEMPLATE.replace("{SCHEMA_GENERATION}", schema_generation())
 
 
 def dp_sys_prompt(source_label: str, view_schema: str) -> str:

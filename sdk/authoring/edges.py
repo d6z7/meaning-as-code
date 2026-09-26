@@ -28,6 +28,8 @@ skipping them.
 
 from __future__ import annotations
 
+from sdk.authoring.authoring import schema_generation
+
 from pathlib import Path
 
 from jsonschema import validators as jsv
@@ -122,7 +124,7 @@ def make_edges_file(edges: list, *, source: str) -> dict:
     obj = {
         "metadata": {
             "source": source,
-            "schema_version": "0.1.13",
+            "schema_version": schema_generation(),  # one home: mac.schema.json#version
             "status": "draft",
             "generated_by": "sdk.authoring.edges (physical foreign_key edges from the data layer)",
         },
