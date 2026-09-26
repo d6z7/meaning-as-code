@@ -988,10 +988,23 @@ def _report(rec, files, *, engine, verify, wrote, differs):
     lines.append(
         f"  seam {engine} · {d['relations_in_scope']} relation(s) in scope · "
         f"{d['relations_with_a_measured_key']} of {d['relations_in_scope']} carry a key")
+    # NOTHING CONSIDERED IS A FINDING, NOT A CRASH. With zero candidate pairs this line raised
+    # `ZeroDivisionError` and the whole run died with a traceback — measured 2026-09-26 on a fresh
+    # bundle whose descriptors declare no parent key yet. A tool that crashes where it should say
+    # "0 pairs considered" hides the one thing its reader needs: that there was nothing to measure,
+    # and why.
+    pruned_pct = (
+        f"{d['pairs_pruned'] / d['pairs_considered']:.1%}" if d["pairs_considered"] else "n/a"
+    )
     lines.append(
         f"  {d['parent_endpoints']} parent endpoint(s) · {d['pairs_considered']} pair(s) considered "
-        f"· {d['pairs_pruned']} pruned "
-        f"({d['pairs_pruned'] / d['pairs_considered']:.1%}) · {d['pairs_measured']} measured")
+        f"· {d['pairs_pruned']} pruned ({pruned_pct}) · {d['pairs_measured']} measured")
+    if not d["pairs_considered"]:
+        lines.append(
+            f"  NOTHING TO MEASURE: {d['relations_with_a_measured_key']} of "
+            f"{d['relations_in_scope']} relation(s) carry a key, so there are no parent endpoints "
+            f"to point AT. A reference needs a parent whose key is declared in "
+            f"{PLANES[plane]['key_from']} — check that first.")
     lines.append(
         f"  name matching alone would propose {d['name_matching_would_propose']} of "
         f"{d['pairs_measured']} measured candidate(s)")
