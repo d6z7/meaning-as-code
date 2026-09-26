@@ -253,6 +253,21 @@ def _stages(root: pathlib.Path) -> list[dict]:
     # the PROFILE (`key_from: profile`), not from the descriptor. `mac_references --plane sources`
     # then reported "wrote 0 of 0 relation file(s) over 8 relation(s) in scope", which reads like a
     # missing key and was a missing profile.
+    # AND A STEM IS NOT A RELATION WHEN BOTH PLANES CARRY IT. `mac_profile` is addressed by bare
+    # stem and resolves it by searching data/datasets BEFORE data/sources, so when a served relation
+    # has the same name as its landing the SOURCES one is never profiled — it profiles the served
+    # relation twice, to the same file, silently.
+    #
+    # Invisible on every bundle until a VANILLA one existed: a curated serving layer renames
+    # (dim_contoso_store <- store) and collides with nothing, so 14 descriptors gave 14 profiles. A
+    # 1:1 passthrough shares every name, and 16 descriptors gave 8 profiles. Benign there — the two
+    # relations are byte-identical by construction — and LATENTLY WRONG the moment anybody curates
+    # one, because the sources reference plane takes its parent key from the profile.
+    #
+    # NOT FIXED HERE, and deliberately not: the fix is an interface change to `mac_profile` plus a
+    # naming scheme, and six consumers read `data/profiles/<stem>.yaml` — a `.src` suffix breaks stem
+    # matching in `mac_references`. Guessing at it while shipping would be the defect class this
+    # estate keeps paying for. So it is made LOUD, which is what a first run can honestly do about it.
     relations = lambda: sorted(  # noqa: E731
         p.stem for plane in ("datasets", "sources") for p in (root / "data" / plane).glob("*.yaml")
     )
@@ -508,6 +523,7 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 def _report(root: pathlib.Path, a) -> int:
     print("\nSTATE — what an operator can continue tuning from\n")
+    _warn_plane_collision(root)
     absent = []
     for d in DELIVERABLES:
         if "probe" in d:
@@ -528,6 +544,29 @@ def _report(root: pathlib.Path, a) -> int:
     for d in absent:
         print(f"    {d['id']:4} {d['what']}\n         {_why(root, d, a)}")
     return 1
+
+
+def _warn_plane_collision(root: pathlib.Path) -> None:
+    """Say it out loud when a stem names a relation on BOTH planes.
+
+    `mac_profile` resolves a bare stem by searching data/datasets before data/sources, so a collision
+    means the SOURCES relation is never profiled and D9 silently reports half the descriptors' worth.
+    Measured on the first vanilla bundle: 16 descriptors, 8 profiles. A wrong number an operator cannot
+    see is worse than a missing one.
+    """
+    served = {p.stem for p in (root / "data" / "datasets").glob("*.yaml")}
+    sources = {p.stem for p in (root / "data" / "sources").glob("*.yaml")}
+    both = sorted(served & sources)
+    if not both:
+        return
+    prof = {p.stem for p in (root / "data" / "profiles").glob("*.yaml")}
+    print(f"  ! PLANE NAME COLLISION — {len(both)} stem(s) name a relation on BOTH planes: "
+          f"{', '.join(both[:6])}{' …' if len(both) > 6 else ''}\n"
+          f"    `mac_profile` is addressed by bare stem and searches data/datasets first, so for each "
+          f"of these the SOURCES relation is NOT profiled: "
+          f"{len(served) + len(sources)} descriptor(s) -> {len(prof)} profile(s).\n"
+          f"    Harmless where the two are a 1:1 passthrough (identical by construction); WRONG the "
+          f"moment one is curated, because the sources reference plane reads its key from the profile.\n")
 
 
 def _why(root: pathlib.Path, d: dict, a) -> str:
