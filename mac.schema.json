@@ -898,7 +898,14 @@
                       "properties": {
                         "role": {
                           "type": "string",
-                          "description": "projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here."
+                          "description": "projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.",
+                          "enum": [
+                            "key",
+                            "dimension",
+                            "measure",
+                            "attribute"
+                          ],
+                          "$comment": "CLOSED 2026-09-27. It was `type: string` with NO enum while `identity` beside it was closed to three values, so `role: dimensio` passed validate_schema in SILENCE — the same silence the 141 inert CONTOSO4.field_role.* tokens had, reached by a different mechanism. THE FOUR MEMBERS ARE NOT INVENTED: they are the four in use across contoso4's 142 column declarations (dimension 57, attribute 45, key 37, measure 3 = 142), so closing the set invalidates no delivered file. DELIBERATELY NOT VERSION-BUMPED: nothing delivered becomes invalid, a bump re-keys every cached completion (which is backlog item 1's own complaint), and `version.py --check` is RED on this tree with four disagreeing current-version claims while exiting 0 — tightening a rule into that state is how the version line got into it."
                         },
                         "identity": {
                           "type": "string",

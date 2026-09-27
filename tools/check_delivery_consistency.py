@@ -306,36 +306,92 @@ def inv_concept_relation(st: dict) -> list[dict]:
     return out
 
 
-def inv_role_vocab(st: dict) -> list[dict]:
-    """Every namespaced field_role resolves in a vocabulary this bundle DECLARES.
+#: THE CONCEPT COLUMN MAP'S CLOSED ROLE SET, mirroring mac.schema.json's enum for the same slot. Two
+#: homes for one vocabulary is a risk, and the alternative is worse: this module would have to load and
+#: walk the JSON schema to check a four-member set. The SELF-TEST pins them together instead, so a change
+#: to either side that is not made to both goes red rather than silent.
+COLUMN_ROLES = ("key", "dimension", "measure", "attribute")
 
-    THE DEFECT THIS CATCHES, MEASURED: 141 `CONTOSO4.field_role.*` tokens in 19 concepts, resolving to
-    nothing, because no vocabulary.yaml declared the namespace — and the resolver only checks DECLARED
+_ROLE_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
+_NS_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.[A-Za-z0-9_.]+$")
+
+
+def _ns_ok(ns: str, st: dict) -> bool:
+    """`mac` is the projection's own namespace and always resolves; anything else must be DECLARED."""
+    return ns.lower() == "mac" or ns.lower() in st["vocab_ns"]
+
+
+def inv_role_vocab(st: dict) -> list[dict]:
+    """Every role declaration resolves — a namespaced token in a DECLARED vocabulary, a bare role in the
+    closed set.
+
+    THE DEFECT THIS WAS BUILT FOR, MEASURED: 141 `CONTOSO4.field_role.*` tokens in 19 concepts resolving
+    to nothing, because no vocabulary.yaml declared the namespace — and the resolver only checks DECLARED
     namespaces, so `check_references` reported 0 errors and `validate_schema` 80 of 80 files clean. An
     undeclared namespace must be an ERROR, never silence.
+
+    AND THE DEFECT IT ITSELF HAD, found 2026-09-27 the moment the verdict line stopped overstating: it
+    read ONLY `grounding.field_roles`, which **0 of 19** concepts write on the current standard, while 19
+    carry the column map with **142** `role:` declarations. So the invariant built to catch that class of
+    silence had gone permanently vacuous — a consumer reading a shape no producer writes, which is the
+    same defect as the `foreign_keys:` block the operator ruled on the same day, inside the checker.
+
+    IT READS BOTH SHAPES NOW. `field_roles` is still enumerated, because a legacy bundle must stay
+    checked rather than silently skipped — that is how coverage collapses behind a perfect fraction.
     """
-    pat = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
     out = []
-    for name, d in st["concepts"].items():
-        for col, role in ((d.get("grounding") or {}).get("field_roles") or {}).items():
-            subject = f"{name}.{col}"
-            m = pat.match(str(role))
+    for name, d in sorted(st["concepts"].items()):
+        g = d.get("grounding") or {}
+        # ── the LEGACY shape: a projected, namespaced token ──────────────────────────────────────
+        for col, role in (g.get("field_roles") or {}).items():
+            subject = f"{name}.{col} field_role"
+            m = _ROLE_TOKEN.match(str(role))
             if not m:
                 out.append(_i(subject, NA,
-                              f"concept {name!r} column {col!r} carries role {role!r}, which names no "
-                              f"namespace, so there is no vocabulary for it to resolve in"))
-                continue
-            ns = m.group(1).lower()
-            if ns == "mac":
-                out.append(_i(subject, OK, f"{subject} carries {role!r} in the projection's own "
-                                           f"`mac` namespace, which always resolves"))
-            elif ns in st["vocab_ns"]:
-                out.append(_i(subject, OK, f"{subject} carries {role!r} and namespace {ns!r} is declared"))
+                              f"concept {name!r} column {col!r} carries field_role {role!r}, which names "
+                              f"no namespace, so there is no vocabulary for it to resolve in"))
+            elif _ns_ok(m.group(1), st):
+                out.append(_i(subject, OK, f"{subject} carries {role!r} in a declared namespace"))
             else:
                 out.append(_i(subject, VIOLATION,
                               f"concept {name!r} column {col!r} carries role {role!r}, and namespace "
-                              f"{ns!r} is declared by no vocabulary.yaml — the token resolves to nothing "
-                              f"and no resolver will say so"))
+                              f"{m.group(1).lower()!r} is declared by no vocabulary.yaml — the token "
+                              f"resolves to nothing and no resolver will say so"))
+        # ── the CURRENT shape: the column map ───────────────────────────────────────────────────
+        for src in g.get("sources") or []:
+            cols = src.get("columns")
+            if not isinstance(cols, dict):
+                continue      # the array form carries no flags; MEMBER-GRAIN and FK-EDGE cover it
+            rel = str(src.get("relation") or "?").split(".")[-1]
+            for col, body in cols.items():
+                if not isinstance(body, dict):
+                    continue  # `null` means "serve it and say nothing more" — a declaration of silence
+                subject = f"{name}.{rel}.{col} role"
+                role = body.get("role")
+                if role is None:
+                    out.append(_i(subject, NA,
+                                  f"concept {name!r} column {col!r} on {rel!r} declares flags but no "
+                                  f"`role`, so there is no role token to resolve"))
+                    continue
+                token = str(role)
+                if "." in token:
+                    m = _NS_TOKEN.match(token)
+                    if m and _ns_ok(m.group(1), st):
+                        out.append(_i(subject, OK, f"{subject} carries {token!r} in a declared namespace"))
+                    else:
+                        ns = m.group(1).lower() if m else token
+                        out.append(_i(subject, VIOLATION,
+                                      f"concept {name!r} column {col!r} on {rel!r} carries role {token!r} "
+                                      f"and namespace {ns!r} is declared by no vocabulary.yaml — the "
+                                      f"token resolves to nothing and no resolver will say so"))
+                elif token in COLUMN_ROLES:
+                    out.append(_i(subject, OK, f"{subject} is {token!r}, a member of the closed set"))
+                else:
+                    out.append(_i(subject, VIOLATION,
+                                  f"concept {name!r} column {col!r} on {rel!r} carries role {token!r}, "
+                                  f"which is in neither the closed column-role set "
+                                  f"({', '.join(COLUMN_ROLES)}) nor any declared namespace. A role "
+                                  f"nothing recognises places no predicate and no resolver will say so"))
     return out
 
 
@@ -479,7 +535,10 @@ INVARIANTS = (
     ("FK-EDGE", "a measured foreign key between modelled concepts is an edge", inv_fk_edge),
     ("CONCEPT-RELATION", "a concept grounds on a described relation; a served relation is decided about",
      inv_concept_relation),
-    ("ROLE-VOCAB", "a namespaced field_role resolves in a declared vocabulary", inv_role_vocab),
+    # The wording widened with the invariant: it read only `field_roles` and now reads the column map
+    # too, where most roles are BARE words checked against a closed set rather than namespaced tokens.
+    # A row that describes less than it checks is how a reader comes to trust the wrong denominator.
+    ("ROLE-VOCAB", "every column role resolves: closed set, or a declared namespace", inv_role_vocab),
     ("MEMBER-GRAIN", "a concept whose extension is a set names a canonical key", inv_member_grain),
     ("REGISTER-MONITOR", "a register has a monitor; a register pointer resolves", inv_register_monitor),
     ("PLANE-COUNTS", "a described relation is a measured relation", inv_plane_counts),
@@ -752,6 +811,67 @@ def _self_test() -> int:
     e, h, f, na_ = counts(inv_fk_edge(st))
     check("ENUMERATION an all-n/a row enumerates its subjects and checks none of them",
           e == 1 and h == 0 and f == 0 and na_ == 1)
+
+    # ── ROLE-VOCAB READS THE SHAPE THAT IS ACTUALLY WRITTEN (backlog item 10) ───────────────────
+    # It read only `field_roles` and had gone PERMANENTLY VACUOUS: 0 of 19 concepts write that, 19
+    # write the column map with 142 role declarations. A consumer reading a shape no producer writes
+    # — inside the checker whose job is to find exactly that.
+    st = base()
+    st["concepts"]["line"]["grounding"]["field_roles"] = {}
+    rv = inv_role_vocab(st)
+    check("ROLE-VOCAB enumerates the COLUMN MAP, not only field_roles",
+          counts(rv)[0] == 1 and counts(rv)[1] == 1)
+    check("ROLE-VOCAB accepts a bare role from the closed set",
+          all(i["verdict"] == "ok" for i in rv))
+
+    st = base()
+    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["role"] = "dimensio"
+    check("MUTANT a misspelled column role is a VIOLATION, not silence",
+          [c for c, _w, fn in INVARIANTS if violations(fn(st))] == ["ROLE-VOCAB"])
+
+    st = base()
+    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["role"] = "CONTOSO4.field_role.key"
+    check("MUTANT an undeclared namespace on a COLUMN role is a violation",
+          [c for c, _w, fn in INVARIANTS if violations(fn(st))] == ["ROLE-VOCAB"])
+
+    st = base()
+    st["vocab_ns"] = {"contoso4"}
+    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["role"] = "CONTOSO4.field_role.key"
+    check("CLEAN a namespaced column role RESOLVES once the vocabulary declares it",
+          not violations(inv_role_vocab(st)))
+
+    st = base()
+    st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
+    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = None
+    check("a column declared `null` says nothing and is not graded",
+          counts(inv_role_vocab(st))[0] == 0)
+
+    st = base()
+    st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
+    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = {"identity": "part"}
+    check("a column with flags but no role is n/a, and SAYS SO rather than passing",
+          [i["verdict"] for i in inv_role_vocab(st)] == ["n/a"])
+
+    # BOTH SHAPES AT ONCE, which is the state a bundle mid-migration is in: the legacy token and the
+    # column map must BOTH be enumerated, or migrating silently halves the coverage.
+    st = base()
+    check("a concept carrying BOTH shapes has both enumerated",
+          counts(inv_role_vocab(st))[0] == 2)
+
+    # THE TWO HOMES ARE PINNED TOGETHER. COLUMN_ROLES mirrors mac.schema.json's enum for the same slot;
+    # a change to one and not the other is exactly the drift this estate keeps paying for, so it goes
+    # RED here instead of going quiet. Skipped, not failed, when the schema is not beside us — a
+    # self-test must not depend on a file layout.
+    try:
+        import json as _json
+        _sp = pathlib.Path(__file__).resolve().parent.parent / "mac.schema.json"
+        _e = (_json.loads(_sp.read_text(encoding="utf-8"))["$defs"]["grounding"]["properties"]["sources"]
+              ["items"]["properties"]["columns"]["oneOf"][1]["additionalProperties"]["properties"]
+              ["role"].get("enum"))
+        check("COLUMN_ROLES agrees with mac.schema.json's enum for the same slot",
+              _e is not None and tuple(_e) == COLUMN_ROLES)
+    except (OSError, KeyError, IndexError, ValueError):
+        pass
 
     # ── THE VERDICT LINE (operator ruling, backlog item 8) ──────────────────────────────────────
     # A sentence, tested, because the defect WAS the sentence: `PASS: 7 invariant(s) hold` on a bundle
