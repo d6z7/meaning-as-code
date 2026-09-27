@@ -157,15 +157,19 @@ relation.column.role:
   kind: vocabulary
   closed: true
   description: The physical shape of a column in its relation, independent of its analytical role.
+  # `composite_key_part` RETIRED 2026-09-27 by operator ruling. It carried key MEMBERSHIP and no
+  # ORDER, so the order of a composite key lived only in the concept plane's `key: [...]` list — a
+  # second home for a fact that belongs to the RELATION. And splitting the key across two terms meant
+  # a consumer asking "what is this relation's key" had to remember both: mac_to_graph.py and
+  # mac_to_shacl.py tested `role == 'primary_key'` and found NO key for the reference bundle's fact
+  # table, whose two key columns both carried the other term. Every key column is now `primary_key`,
+  # and the order travels as the integer `key_position` on the column.
   terms:
     primary_key: >
       The relation's own identity: one row per distinct value, measured rather than assumed.
     foreign_key: >
       A reference to another relation's identity. Whether every value is PRESENT in the parent is a
       separate measurement — a declared key says the relationship is intended, not that it holds.
-    composite_key_part: >
-      One column of a multi-column identity. ALONE IT IDENTIFIES NOTHING, and using it as though it
-      did is the defect this term exists to make visible.
     value: >
       A payload column: it carries data, not identity and not a choice of row kind.
     discriminator: >

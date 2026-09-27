@@ -46,7 +46,8 @@ SLOTS = (
     ("column_map", "The column map — everything about one column, on the column",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties"],
-     {"role": "concept.column.role", "identity": "concept.column.identity"},
+     {"role": "concept.column.role", "identity": "concept.column.identity",
+      "rulings.register": "name_register"},
      "Keyed by column name; each value is that column's flags, or `null` to serve the column and say "
      "nothing more. This is the CONCEPT plane's view of a column — what a query may do with it. The "
      "relation's own physical shape is a different slot (see the data plane) and the two routinely "
@@ -90,17 +91,34 @@ def render(slot, schema: dict, vocab: dict) -> str:
     L += ["", textwrap.fill(prose, 98), "", "## SYNOPSIS", "", "```yaml"]
     L.append("columns:")
     L.append("  <column-name>:")
-    for k in sorted(props):
-        v = props[k] or {}
-        block = governs.get(k)
+
+    def _val(k, v, block):
         if block:
             ts = terms_of(vocab, block)
-            val = " | ".join(ts) if ts else f"<mac.{block}.*>"
-        elif (v.get("type") or "") == "object":
-            val = "{ … }"
-        else:
-            val = f"<{v.get('type') or 'any'}>"
-        L.append(f"    {k + ':':14}{val}" + ("      # REQUIRED" if k in required else ""))
+            return " | ".join(ts) if ts else f"<mac.{block}.*>"
+        if v.get("enum"):
+            return " | ".join(str(x) for x in v["enum"])
+        return f"<{v.get('type') or 'any'}>"
+
+    def _emit(props, required, indent, governs):
+        """EXPAND ONE LEVEL OF NESTING. Collapsing a nested block to `{ … }` hides exactly what a reader
+        came for — the first version of this page rendered `rulings: { … }`, which is less informative
+        than the hand-written synopsis it replaced."""
+        for k in sorted(props):
+            v = props[k] or {}
+            sub = v.get("properties")
+            if (v.get("type") == "object") and isinstance(sub, dict) and sub:
+                L.append(f"{indent}{k}:")
+                _emit(sub, set(v.get("required") or []), indent + "  ",
+                      {kk: governs.get(f"{k}.{kk}") for kk in sub})
+                dep = v.get("dependentRequired") or {}
+                for trig, needs in dep.items():
+                    L.append(f"{indent}  # `{trig}` REQUIRES {', '.join('`' + n + '`' for n in needs)}")
+                continue
+            L.append(f"{indent}{k + ':':14}{_val(k, v, governs.get(k))}"
+                     + ("      # REQUIRED" if k in required else ""))
+
+    _emit(props, required, "    ", governs)
     L += ["```", ""]
     L.append(f"**{len(props)} key(s)**, and the map is "
              + ("**CLOSED** — any other key is a conformance error (MAC012)." if closed

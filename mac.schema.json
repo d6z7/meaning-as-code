@@ -933,6 +933,49 @@
                               "type": "object"
                             }
                           }
+                        },
+                        "rulings": {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "description": "AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED, deliberately, and that is the whole point of the block: `role`, `identity` and `measure` beside it are DERIVED from the data, these are RULED by a human, and mac_vocabulary.yaml is explicit that they must not share a slot — \"a slot that accepts both silts up, and `attribute` is what that looks like after two years\". Keeping them in their own block makes the difference visible in the file rather than only in a vocabulary.\n\nADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.column.ruling declared four terms, closed, since v0.5; the column map admitted exactly role/identity/measure with additionalProperties: false; and reference_manual/column_rulings.md documented this very block with a man-page SYNOPSIS. So the vocabulary closed a set, the manual specified the shape, and the schema refused all of it — which is why the reference bundle showed 0 of 20 concepts declaring a ruling and I reported that as missing WORK. It was missing GRAMMAR. Every one of the four had a live case waiting: Manufacturer is a `label_of` Brand, SubCategoryName is `finer_than` CategoryName, State is `scoped_by` Country (40 of 565 codes collide across countries, so GROUP BY State silently merges three regions), and ZipCode is `never_axis` (29 193 of 104 990 values identify exactly one customer).",
+                          "properties": {
+                            "label_of": {
+                              "type": "string",
+                              "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have."
+                            },
+                            "register": {
+                              "type": "string",
+                              "enum": [
+                                "common",
+                                "legal",
+                                "long",
+                                "short",
+                                "code"
+                              ],
+                              "description": "WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'Contoso' is the common register, 'Contoso AG' the legal one."
+                            },
+                            "finer_than": {
+                              "type": "string",
+                              "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`."
+                            },
+                            "scoped_by": {
+                              "type": "string",
+                              "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent."
+                            },
+                            "never_axis": {
+                              "type": "string",
+                              "description": "THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)"
+                            },
+                            "evidence": {
+                              "type": "string",
+                              "description": "The measurement a ruling rests on — a data-quality issue id, or a relation.column and the figure. REQUIRED with `never_axis`, and good practice with any ruling made from a number."
+                            }
+                          },
+                          "dependentRequired": {
+                            "never_axis": [
+                              "evidence"
+                            ]
+                          }
                         }
                       }
                     }
@@ -2253,7 +2296,6 @@
                   "value",
                   "discriminator",
                   "audit",
-                  "composite_key_part",
                   "delivery_axis",
                   "unknown"
                 ],
@@ -2291,6 +2333,11 @@
               "references": {
                 "type": "string",
                 "description": "The parent this foreign_key column points at, as `relation.column`. Written by mac_descriptors for a column whose role is `foreign_key` and consumed as the FK declaration — undeclared in the core until v0.1.15, so additionalProperties was rejecting it in silence."
+              },
+              "key_position": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "THIS COLUMN'S PLACE IN A COMPOSITE PRIMARY KEY — 1 for the first part, 2 for the second. Present only on a key column of a multi-column key; absent on a single-column key.\n\nIT REPLACES THE ROLE `composite_key_part`, by operator ruling 2026-09-27. That term carried MEMBERSHIP and no ORDER, so the order of a composite key lived only in the concept plane's `key: [...]` list — a second home for a fact that belongs to the RELATION. Worse, splitting the key across two role terms meant a consumer asking 'what is this relation's key' had to remember both, and two did not: mac_to_graph.py:35 and mac_to_shacl.py:129 test `role == 'primary_key'` and therefore found NO key at all for the reference bundle's fact table, whose two key columns both carried `composite_key_part`.\n\nWHY A NUMBER AND NOT `primary_key_1` / `primary_key_2`, which the operator proposed and then accepted the argument against: an ordinal inside a categorical token has to be parsed out by every consumer that wants to sort by it — the same shape as StoreCode = StoreKey // 10, a value encoded in an identifier. As an integer it compares and sums; as a suffix it is string surgery in N places. Checked by the KEY-POSITION invariant: the positions on one relation are exactly 1..n, no gaps, no repeats, and none on a column that is not a key."
               }
             },
             "additionalProperties": false,

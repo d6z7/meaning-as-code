@@ -145,7 +145,7 @@ RUN_RECORD = "references.run.json"
 #   sources   the profile's MEASURED key (`identity_evidence.key`). A source descriptor's own note
 #             calls `role: value` "the NEUTRAL physical role and not a ruling", so a role there is
 #             not evidence of identity and this tool will not read one.
-#   served    the descriptor's DECLARED key roles (`primary_key` / `composite_key_part`). On a served
+#   served    the descriptor's DECLARED key roles (`primary_key` (+ `key_position`)). On a served
 #             relation the role IS the authored contract — it is what the promotion step decided and
 #             what `sdk/project/er_model.py#KEY_ROLES` already reads — so reading it here is reading
 #             the plane's own statement of identity, not inferring one. It is a DECLARATION and the
@@ -170,7 +170,7 @@ PLANES = {pl: {**dirs, **_PLANE_EXTRA[pl]} for pl, dirs in _PLANE_DIRS.items()}
 #: deliberately NOT here: a declared foreign key is a CLAIM about a target, and this tool measures
 #: those rather than believing them — admitting it as a parent endpoint would let an author's
 #: assumption enter the candidate set as evidence.
-DECLARED_KEY_ROLES = ("primary_key", "composite_key_part")
+DECLARED_KEY_ROLES = ("primary_key",)
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1253,7 +1253,7 @@ def main(argv=None) -> int:                                                     
                           "data/references, parent key from the profile's measured "
                           "identity_evidence.key) or `served` (data/datasets -> "
                           "data/references_served, parent key from the descriptor's declared "
-                          "primary_key/composite_key_part roles). Both are physical; neither reads "
+                          "primary_key roles). Both are physical; neither reads "
                           "ontology/edges.yaml. Default: sources"))
     ap.add_argument("--dry-run", action="store_true",
                     help="print the statement each candidate WOULD run; reads and writes nothing")
@@ -1817,7 +1817,7 @@ def _self_test() -> int:                                                        
         # ── THE SERVED PLANE reads its key from the DESCRIPTOR'S DECLARED ROLES, and the two planes
         #    do not see each other. Three separate claims, because each is a way to be wrong:
         #      · the served population comes from data/datasets, not data/sources;
-        #      · the parent key comes from role primary_key/composite_key_part, NOT from the
+        #      · the parent key comes from role primary_key, NOT from the
         #        profile's identity_evidence — the mutant below gives the profile a DIFFERENT key,
         #        so a tool still reading the profile would report that one and fail here;
         #      · `foreign_key` is NOT admitted as a parent key: a declared FK is a claim about a

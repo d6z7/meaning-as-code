@@ -47,7 +47,7 @@ WHERE EACH RENDERED FACT COMES FROM, so nothing on the page is unattributable:
                     read and never re-derived, and OVERLAID rather than written back into the
                     descriptor (whose own note calls `role: value` "the NEUTRAL physical role and
                     not a ruling"; a source file should not claim a role a measurement established).
-                    SERVED: the descriptor's declared `primary_key`/`composite_key_part`, read as
+                    SERVED: the descriptor's declared `primary_key`, read as
                     written — there the role is the authored contract, not a neutral placeholder.
   FK badge          any column named on the `from` side of a measured reference. Same overlay.
   crow's foot       CARDINALITY + PARTICIPATION, measured. The terminal AT a box says how many rows
@@ -86,7 +86,7 @@ CARDINALITY = {
     "0..N": {"min": "zero", "max": "many", "label": "0..N"},
     "N": {"min": "zero", "max": "many", "label": "N"},
 }
-KEY_ROLES = ("primary_key", "composite_key_part", "foreign_key")
+KEY_ROLES = ("primary_key", "foreign_key")
 
 PROVED, DISPROVED, UNPROVED, UNRESOLVED, DEFERRED = (
     "proved", "disproved", "unproved", "unresolved", "deferred")
@@ -194,7 +194,7 @@ def _entities(root: Path, refs: dict, fk_columns: dict, plane: str = DEFAULT_PLA
       sources   `data/profiles/<stem>.yaml#identity_evidence.key` — the MEASURED key. A source
                 descriptor's own note calls `role: value` "the NEUTRAL physical role and not a
                 ruling", so a role there is not evidence of identity and is not read as one.
-      served    the descriptor's DECLARED `primary_key` / `composite_key_part` roles. On a served
+      served    the descriptor's DECLARED `primary_key` role (+ `key_position`). On a served
                 relation the role IS the authored contract — it is what the promotion step decided —
                 so it is read as written rather than overlaid from a profile that carries no
                 identity_evidence for this plane at all.
@@ -207,7 +207,7 @@ def _entities(root: Path, refs: dict, fk_columns: dict, plane: str = DEFAULT_PLA
         prof = _load(root / "data" / "profiles" / f"{stem}.yaml")
         if declared_plane:
             key = [c["name"] for c in (src.get("columns") or [])
-                   if c.get("name") and c.get("role") in ("primary_key", "composite_key_part")]
+                   if c.get("name") and c.get("role") in ("primary_key",)]
         else:
             key = list(((prof.get("identity_evidence") or {}).get("key")) or [])
         keyset = set(key)
@@ -222,12 +222,17 @@ def _entities(root: Path, refs: dict, fk_columns: dict, plane: str = DEFAULT_PLA
             # role the descriptor already declares — which is what makes the two planes render
             # identically without the projector needing two code paths.
             if name in keyset:
-                role = "primary_key" if len(key) == 1 else "composite_key_part"
+                # ONE TERM FOR A KEY COLUMN (ruling 2026-09-27); the ORDER travels as key_position, so a
+                # consumer testing `role == "primary_key"` now finds every part of a composite key
+                # instead of none — which is what mac_to_graph and mac_to_shacl were silently missing.
+                role = "primary_key"
             elif name in fks:
                 role = "foreign_key"
             else:
                 role = c.get("role") or "value"
+            kp = (list(key).index(name) + 1) if (name in keyset and len(key) > 1) else None
             cols.append({"name": name, "type": c.get("type"), "role": role,
+                         **({"key_position": kp} if kp else {}),
                          "key": role in KEY_ROLES, "description": c.get("description")})
         out.append({
             "id": stem,

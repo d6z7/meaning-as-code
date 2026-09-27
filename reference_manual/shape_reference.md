@@ -463,7 +463,7 @@ columns:  # REQUIRED
   - <item>
     name: <…>  # REQUIRED · string
     type: <…>  # string
-    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | composite_key_part | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
+    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     description: <…>  # string
     nullable: <…>  # boolean
     notes: <…>  # string
@@ -472,6 +472,7 @@ columns:  # REQUIRED
     distinct: <…>  # integer · MEASURED distinct value count
     register: <…>  # string · Path to the register that holds this column's members, relative to the…
     references: <…>  # string · The parent this foreign_key column points at, as `relation.column`
+    key_position: <…>  # integer · THIS COLUMN'S PLACE IN A COMPOSITE PRIMARY KEY — 1 for the first part,…
 
 foreign_keys:
   - <item>

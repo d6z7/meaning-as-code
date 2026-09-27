@@ -510,6 +510,100 @@ def inv_retired_shape(st: dict) -> list[dict]:
     return out
 
 
+def inv_key_position(st: dict) -> list[dict]:
+    """A relation's composite key positions are exactly 1..n — no gaps, no repeats, none off a key.
+
+    THE GUARD THE RETIRED TERM DID NOT NEED AND THE NUMBER DOES. `composite_key_part` was
+    self-consistent by construction: membership was the term, and a set of terms cannot have a gap. An
+    ORDINAL can — two columns both `key_position: 1`, or a 2 with no 1 — so the ruling that moved the
+    order onto the column (operator, 2026-09-27) owes this check. Stated when the ruling was accepted
+    and built here.
+
+    IT ALSO CATCHES THE INVERSE: a `key_position` on a column that is not a key at all, which is a
+    number claiming an order in a sequence it does not belong to.
+    """
+    out = []
+    for plane, table in (("served", st["served"]), ("raw", st["sources"])):
+        for stem in sorted(table):
+            cols = [c for c in (table[stem].get("columns") or []) if isinstance(c, dict)]
+            pos = {str(c.get("name")): c["key_position"] for c in cols if c.get("key_position") is not None}
+            keys = {str(c.get("name")) for c in cols if str(c.get("role")) == "primary_key"}
+            subject = f"{plane}:{stem}"
+            off = sorted(n for n in pos if n not in keys)
+            if off:
+                out.append(_i(subject, VIOLATION,
+                              f"{stem}: {', '.join(off)} carr{'ies' if len(off) == 1 else 'y'} a "
+                              f"key_position but {'is' if len(off) == 1 else 'are'} not `role: "
+                              f"primary_key` — an order in a sequence it does not belong to"))
+                continue
+            if not pos:
+                out.append(_i(subject, NA,
+                              f"{stem} declares no key_position — a single-column key ({len(keys)} key "
+                              f"column) needs none" if len(keys) <= 1 else
+                              f"{stem} has {len(keys)} key columns and NO key_position on any of them, "
+                              f"so the composite key has no declared order"))
+                continue
+            want = list(range(1, len(pos) + 1))
+            got = sorted(pos.values())
+            if got != want:
+                out.append(_i(subject, VIOLATION,
+                              f"{stem} key positions are {got} over {len(pos)} column(s); they must be "
+                              f"exactly {want} — no gaps, no repeats. Declared: "
+                              f"{', '.join(f'{n}={v}' for n, v in sorted(pos.items(), key=lambda x: x[1]))}"))
+            elif len(pos) != len(keys):
+                out.append(_i(subject, VIOLATION,
+                              f"{stem} has {len(keys)} key column(s) and {len(pos)} position(s) — every "
+                              f"part of a composite key carries one, or the order is incomplete"))
+            else:
+                out.append(_i(subject, OK,
+                              f"{stem} composite key is ordered 1..{len(pos)}: " +
+                              " + ".join(n for n, _v in sorted(pos.items(), key=lambda x: x[1]))))
+    return out
+
+
+def inv_key_backed(st: dict) -> list[dict]:
+    """A concept's `key:` list and its column map agree about which columns are the identity.
+
+    FOUND BY MEASUREMENT 2026-09-28, and it was already drifting: `Currency` on `currencyexchange`
+    declares `key: [FromCurrency]` and marks NO column `identity`, and `Region` on `customer` does the
+    same with `key: [State]`. Two of sixteen concept/relation pairings already disagree WITH THEMSELVES,
+    and all ten prior invariants passed — ONE-HOME compares concept-to-column and MEMBER-GRAIN only
+    fires on set-extension concepts, so nothing looked here.
+
+    `key:` is a second home for membership, which is §2.1's defect one slot over. This does not retire
+    it — that is the operator's call — it makes the two agree, which is the weaker claim a gate can hold
+    without pre-empting a ruling.
+    """
+    out = []
+    for name, d in sorted(st["concepts"].items()):
+        for src in ((d.get("grounding") or {}).get("sources") or []):
+            rel = str(src.get("relation") or "?").split(".")[-1]
+            listed = [str(x) for x in (src.get("key") or [])]
+            cm = src.get("columns")
+            marked = sorted(cn for cn, b in (cm or {}).items()
+                            if isinstance(b, dict) and b.get("identity") in ("canonical", "part")) \
+                if isinstance(cm, dict) else []
+            subject = f"{name} on {rel}"
+            if not listed and not marked:
+                out.append(_i(subject, NA, f"{subject} declares no key either way"))
+            elif not listed:
+                # THE COLUMN MAP ALONE IS CORRECT AND IS THE POINT. Requiring a `key:` list would
+                # enforce the second home §2.1 exists to remove — the first version of this invariant
+                # did exactly that and failed the clean fixture, which is the gate teaching the defect.
+                out.append(_i(subject, OK,
+                              f"{subject}: the key is declared on the column map only "
+                              f"({', '.join(marked)}), which is its home"))
+            elif sorted(listed) == marked:
+                out.append(_i(subject, OK, f"{subject}: `key:` and the column map agree on "
+                                           f"{', '.join(marked)}"))
+            else:
+                out.append(_i(subject, VIOLATION,
+                              f"{subject}: `key: {listed or '[]'}` and the column map's identity "
+                              f"columns {marked or '[]'} disagree — one fact, two homes, already "
+                              f"drifted. The column is where a key is declared"))
+    return out
+
+
 def inv_one_home(st: dict) -> list[dict]:
     """The canonical key is declared ONCE — on the column, not also on the concept.
 
@@ -711,6 +805,8 @@ INVARIANTS = (
     # A row that describes less than it checks is how a reader comes to trust the wrong denominator.
     ("ROLE-VOCAB", "every column role resolves: closed set, or a declared namespace", inv_role_vocab),
     ("ONE-HOME", "the canonical key is declared on the column, not also on the concept", inv_one_home),
+    ("KEY-POSITION", "a composite key's positions are exactly 1..n on its key columns", inv_key_position),
+    ("KEY-BACKED", "a concept's `key:` list and its column map agree", inv_key_backed),
     ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
     ("MEMBER-GRAIN", "a concept whose extension is a set names a canonical key", inv_member_grain),
     ("MEASURE-UNIT", "a composed measure states its own unit; a single one projects it", inv_measure_unit),
@@ -937,6 +1033,24 @@ def _self_test() -> int:
     case("MUTANT an undeclared vocabulary namespace",
          lambda st: st["concepts"]["line"]["grounding"]["field_roles"].__setitem__(
              "CK", "CONTOSO4.field_role.key"), "ROLE-VOCAB")
+    # ── KEY-POSITION / KEY-BACKED: the guards the ordinal and the second home need ─────────────────
+    def _ck(st, a=1, b=2):
+        """ADD a composite key rather than repurposing the fixture's FK column. A mutator that changes a
+        column another invariant depends on trips several at once, and a case that fails four gates
+        proves nothing about the one it names — measured: the first version of this broke 20 of 53."""
+        st["served"]["v_s"]["columns"] += [
+            {"name": "K1", "role": "primary_key", "key_position": a},
+            {"name": "K2", "role": "primary_key", "key_position": b}]
+    case("CLEAN a composite key ordered 1,2", lambda st: _ck(st, 1, 2), None)
+    case("MUTANT a repeated key position", lambda st: _ck(st, 1, 1), "KEY-POSITION")
+    case("MUTANT a gap in the key positions", lambda st: _ck(st, 1, 3), "KEY-POSITION")
+    case("MUTANT a key_position on a column that is not a key",
+         lambda st: st["served"]["v_c"]["columns"].append(
+             {"name": "Z", "role": "value", "key_position": 1}), "KEY-POSITION")
+    case("MUTANT a `key:` list no column backs",
+         lambda st: st["concepts"]["cust"]["grounding"]["sources"][0].__setitem__("key", ["NOPE"]),
+         "KEY-BACKED")
+
     # ── RETIRED-SHAPE: the ruled-away `foreign_keys:` block coming back ───────────────────────────
     case("MUTANT a descriptor still carrying the retired `foreign_keys:` block",
          lambda st: st["served"]["v_s"].__setitem__(

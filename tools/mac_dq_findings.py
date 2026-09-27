@@ -144,7 +144,7 @@ def _keyless(root: pathlib.Path, yaml) -> list[dict]:
         for f in sorted((root / "data" / plane).glob("*.yaml")):
             doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
             roles = {c.get("role") for c in (doc.get("columns") or [])}
-            if roles & {"primary_key", "composite_key_part"}:
+            if roles & {"primary_key"}:
                 continue
             out.append({
                 "id": f"DQ-NOKEY-{f.stem.upper()}",

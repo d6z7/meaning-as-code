@@ -396,7 +396,12 @@ def test_a_composite_key_badges_EVERY_part(tmp_path):
         keys={"alpha": ["AlphaRef", "DeltaRef"], "gamma": ["GammaRef"]}))
     alpha = next(e for e in m["entities"] if e["id"] == "alpha")
     roles = {c["name"]: c["role"] for c in alpha["columns"]}
-    assert roles["AlphaRef"] == roles["DeltaRef"] == "composite_key_part"
+    pos = {c["name"]: c.get("key_position") for c in alpha["columns"]}
+    # BOTH PARTS ARE `primary_key` NOW (ruling 2026-09-27) and the ORDER is a number beside them. The
+    # old assertion expected `composite_key_part`, which is exactly why `role == "primary_key"` found no
+    # key at all for a composite-keyed relation in mac_to_graph and mac_to_shacl.
+    assert roles["AlphaRef"] == roles["DeltaRef"] == "primary_key"
+    assert (pos["AlphaRef"], pos["DeltaRef"]) == (1, 2), pos
 
 
 def test_a_relation_with_no_reference_still_gets_a_BOX(tmp_path):

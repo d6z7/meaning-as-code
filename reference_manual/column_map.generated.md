@@ -15,11 +15,22 @@ host's row key.
 columns:
   <column-name>:
     identity:     canonical | part | reference
-    measure:      { … }
+    measure:
+      additivity:   <object>
+      type:         <string>
+      unit:         <string>
     role:         key | dimension | measure | period | housekeeping
+    rulings:
+      evidence:     <string>
+      finer_than:   <string>
+      label_of:     <string>
+      never_axis:   <string>
+      register:     common | legal | long | short | code
+      scoped_by:    <string>
+      # `never_axis` REQUIRES `evidence`
 ```
 
-**3 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
+**4 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
 
 ## PARAMETERS
 
@@ -28,6 +39,7 @@ columns:
 | `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; … |
 | `measure` | object | no | — | The measure facts -> concept.semantics.measure_type / unit / additivity. SEVERAL COLUMNS MA… |
 | `role` | string | no | `key`<br>`dimension`<br>`measure`<br>`period`<br>`housekeeping`<br>*from* `mac.concept.column.role` | projects to grounding.field_roles[<column>], which the planner reads to place a predicate. … |
+| `rulings` | object | no | — | AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot estab… |
 
 ## TERM MEANINGS
 
@@ -48,3 +60,13 @@ columns:
 - **`measure`** — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
 - **`period`** — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
 - **`housekeeping`** — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when…
+
+### `rulings.register` — `mac.name_register`  ·  CLOSED
+
+> Which register a name belongs to, when one thing carries several names.
+
+- **`common`** — The name people use. 'Contoso', 'Germany', 'Monday'.
+- **`legal`** — The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'.
+- **`long`** — The unabbreviated form of a coded name. 'United Kingdom' for GB.
+- **`short`** — The abbreviated form. 'Mon' for Monday, 'Jan' for January.
+- **`code`** — A machine identifier standing for the name. 'GB', 'DE', a numeric key.

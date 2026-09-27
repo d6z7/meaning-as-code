@@ -48,7 +48,7 @@ actually carry it.
 
 All of that is already authored and was simply never projected:
 
-  * dataset columns carry ``role`` — primary_key / foreign_key / composite_key_part / discriminator
+  * dataset columns carry ``role`` — primary_key / foreign_key / discriminator
   * ``ontology/edges.yaml`` physical edges carry ``cardinality`` on BOTH endpoints ("1", "0..N") and a
     ``join_rule`` naming the columns: ``v_acme_kpi.acme_scoped_market_code_id = dim_scoped_market_code.…``
 
@@ -93,7 +93,7 @@ from pathlib import Path
 # vocabulary is the drift this split exists to remove, and a diverging copy would let the two
 # diagrams disagree about what "0..N" draws.
 from sdk.project.er_model import CARDINALITY, _components  # noqa: E402
-KEY_ROLES = ("primary_key", "composite_key_part", "foreign_key")
+KEY_ROLES = ("primary_key", "foreign_key")
 
 # ---- PROOF STATE, READ AND NOT RE-DERIVED --------------------------------------------------------
 # An endpoint cardinality is a CLAIM about the warehouse and `verified_by` is the evidence that
@@ -436,7 +436,7 @@ def build(
                 "title": tbl.get("name") or stem,
                 "columns": cols,
                 "keys": [
-                    c["name"] for c in cols if c["role"] in ("primary_key", "composite_key_part")
+                    c["name"] for c in cols if c["role"] in ("primary_key",)
                 ],
             }
         )

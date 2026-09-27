@@ -43,6 +43,10 @@ PAIRS = (
     ("concept column `identity`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "identity"], "concept.column.identity"),
+    ("column ruling `register`",
+     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "register"],
+     "name_register"),
     ("TableFile column `role`",
      ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "relation.column.role"),
 )

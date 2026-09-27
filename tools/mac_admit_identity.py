@@ -314,7 +314,7 @@ def main() -> int:
     # the gap must be visible. SURFACED, never rewritten: a role is a design fact.
     for c in sorted(drop):
         r = doc_role(doc, c)
-        if r in ("primary_key", "composite_key_part"):
+        if r == "primary_key":
             print(f"  SURFACED — {c} declares role: {r}, but it was held OUT of the key search on a")
             print(f"     hypothesis. The measurement neither supports nor refutes it. Not rewritten.\n")
 
@@ -390,10 +390,10 @@ def main() -> int:
             n = str(col["name"])
             v = verdict.get(n)
             if n in ruled:
-                col["role"] = "composite_key_part" if ruled[n] == "identity" else "delivery_axis"
+                col["role"] = "primary_key" if ruled[n] == "identity" else "delivery_axis"
                 print(f"  RULED — {n}: {ruled[n]} → role: {col['role']}")
             elif v == "IDENTITY":
-                col["role"] = "composite_key_part"
+                col["role"] = "primary_key"
             # COLLAPSIBLE is deliberately NOT written. It is the residue, and a residue the machine
             # settles is not a residue. The column keeps whatever role it has — 'unknown' is already
             # forbidden in production files, so the existing gate holds the line until a human rules.

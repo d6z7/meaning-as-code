@@ -14,7 +14,7 @@ WHAT IT MEASURES, per relation, and nothing else:
   * the columns and their types, from information_schema, in ordinal order
   * the row count
   * `role: primary_key` where ONE column is unique and non-null over every row
-  * `role: composite_key_part` where a declared key TUPLE is unique and no single member is
+  * `role: primary_key` + `key_position: n` where a declared key TUPLE is unique and no single member is
   * `role: foreign_key` where the column is the measured primary key of another relation in scope
   * `role: value` otherwise — the neutral physical role, which is not a ruling about meaning
 
@@ -277,16 +277,24 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         "",
         "columns:",
     ]
+    # ONE ROLE FOR A KEY COLUMN, AND THE ORDER AS A NUMBER. `composite_key_part` was retired by
+    # operator ruling 2026-09-27: it carried membership and no order, so a consumer asking "what is this
+    # relation's key" had to remember two terms — and two did not, leaving the fact table with NO key in
+    # the graph and SHACL projections. `key_position` is the order, on the column, comparable.
+    ckey = list(m["composite_key"] or [])
     for col, typ in m["columns"]:
+        pos = None
         if col == m["single_key"]:
             role = "primary_key"
-        elif col in m["composite_key"]:
-            role = "composite_key_part"
+        elif col in ckey:
+            role, pos = "primary_key", ckey.index(col) + 1
         elif col in fks:
             role = "foreign_key"
         else:
             role = "value"
         lines += [f"- name: {col}", f"  type: {_simple(typ)}", f"  role: {role}"]
+        if pos is not None:
+            lines.append(f"  key_position: {pos}")
         if role == "foreign_key":
             lines.append(f"  references: {fks[col]}")
         # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key

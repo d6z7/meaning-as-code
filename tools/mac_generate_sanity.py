@@ -231,7 +231,7 @@ def for_relation(path: pathlib.Path, root: pathlib.Path) -> list[dict]:
     # ONLY A DECLARED KEY IS CHECKED. Promoting a column that merely LOOKS unique today would be
     # inventing a standard instead of recording one — the same rule the never-null check follows.
     keycols = [str(c["name"]) for c in (doc.get("columns") or [])
-               if c.get("role") in ("primary_key", "composite_key_part")]
+               if c.get("role") in ("primary_key",)]
     if keycols:
         klist = ", ".join(f'"{k}"' for k in keycols)
         kind = "composite key" if len(keycols) > 1 else "key"

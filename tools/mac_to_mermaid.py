@@ -193,7 +193,7 @@ def build_er(name, concepts, datasets, grounded, edges):
             if not (isinstance(c, dict) and c.get("name")):
                 continue
             role = c.get("role")
-            key = " PK" if role in ("primary_key", "composite_key_part") else (" FK" if role == "foreign_key" else "")
+            key = " PK" if role in ("primary_key",) else (" FK" if role == "foreign_key" else "")
             out.append(f"    {er_type(c.get('type'))} {c['name']}{key}")
         out.append("  }")
     return "\n".join(out) + "\n", len(nodes), n_r
@@ -207,7 +207,7 @@ def build_physical_er(name, datasets):
     pk_owner = {}
     for tname, doc in datasets.items():
         for c in (doc.get("columns") or []):
-            if isinstance(c, dict) and c.get("role") in ("primary_key", "composite_key_part"):
+            if isinstance(c, dict) and c.get("role") in ("primary_key",):
                 pk_owner.setdefault(c["name"], tname)
     out = [f"---\ntitle: {name} — physical ER · one box per produced table\n---", "erDiagram"]
     seen, rels = set(), []
@@ -227,7 +227,7 @@ def build_physical_er(name, datasets):
             if not (isinstance(c, dict) and c.get("name")):
                 continue
             role = c.get("role")
-            key = " PK" if role in ("primary_key", "composite_key_part") else (" FK" if role == "foreign_key" else "")
+            key = " PK" if role in ("primary_key",) else (" FK" if role == "foreign_key" else "")
             out.append(f"    {er_type(c.get('type'))} {c['name']}{key}")
         out.append("  }")
     return "\n".join(out) + "\n", len(datasets), len(rels)

@@ -44,7 +44,7 @@ def datasets(root):
             "name": t["name"],
             "source": f"{t['schema']}.{t['name']}" if t.get("schema") else t["name"],
         }
-        pk = [c["name"] for c in cols if c.get("role") in ("primary_key", "composite_key_part")]
+        pk = [c["name"] for c in cols if c.get("role") in ("primary_key",)]
         if pk:
             ds["primary_key"] = pk
         fields = []

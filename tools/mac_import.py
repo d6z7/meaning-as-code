@@ -337,7 +337,7 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # success — measured: the report said CANNOT while 19 references over 14 relations had just
         # been drawn.
         #
-        #   SERVED  key from the DESCRIPTOR (`columns[].role in primary_key|composite_key_part`),
+        #   SERVED  key from the DESCRIPTOR (`columns[].role == primary_key`),
         #           which `mac_descriptors` measures. Automatable, and it is the plane the ER model
         #           is built from.
         #   SOURCES key from the PROFILE's `identity_evidence`, which only `mac_admit_identity`
