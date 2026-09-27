@@ -194,6 +194,49 @@ def _read_yaml(p: Path) -> dict:
         return {}
 
 
+def _fks_from_columns(cols: list, data_dir) -> list:
+    """PROJECT `columns[].references` into the `foreign_keys` shape the edge lift reads.
+
+    THE CONSUMER READ A KEY NO PRODUCER WROTE, which is the mirror of declared-but-unread and failed
+    the same silent way. `physical_edges` resolves a FK through `{from_column, to_table, to_column}` on a
+    top-level `foreign_keys:` block; `mac_descriptors` has only ever written `references:` ON THE COLUMN.
+    Measured on a bundle with 12 measured foreign keys across 8 served descriptors: 0 of them carried a
+    `foreign_keys` block, so the lift wrote 0 physical edges over 19 concepts and said so in one line
+    nobody read as a defect.
+    It was invisible because the ER DIAGRAM was right the whole time — it is projected from the data
+    plane's measured keys (10 primary, 14 composite parts, 12 foreign), so an operator could see PKs and
+    FKs drawn correctly while the ontology had no edges at all. The operator asked exactly that: "how did
+    you generate ER diagrams without PK and FK. they are all visible on the diagram."
+
+    PROJECTED, NOT DUPLICATED. The column keeps the single authored home — the ColumnSpec principle,
+    everything about a column ON the column — and this derives the consumer's shape from it, the same
+    way `_project_columns` derives `field_roles`. `to_column` is resolved from the TARGET descriptor's
+    own primary key, because a column-level `references:` names the relation and the key is that
+    relation's fact to state, not this one's.
+    """
+    import glob as _glob
+    from pathlib import Path as _P
+    key_of: dict[str, str] = {}
+    for plane in ("datasets", "sources"):
+        for f in _glob.glob(str(data_dir / plane / "*.yaml")):
+            doc = _read_yaml(_P(f)) or {}
+            for c in doc.get("columns") or []:
+                if c.get("role") == "primary_key" and c.get("name"):
+                    key_of[_P(f).stem] = str(c["name"])
+                    break
+    out = []
+    for c in cols:
+        target = str(c.get("references") or "").strip()
+        if not target or c.get("role") != "foreign_key":
+            continue
+        bare = target.split(".")[-1]
+        to_col = key_of.get(bare)
+        if not to_col:
+            continue                      # the target declares no single primary key; do not guess one
+        out.append({"from_column": str(c.get("name")), "to_table": bare, "to_column": to_col})
+    return out
+
+
 def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
     """Assemble ONE concept's authoring input from the DATA TRANSFORMATION LAYER (not raw Glue):
     the clean serving relation's schema + roles + declared FKs, the transform SQL that builds it,
@@ -207,6 +250,8 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
     relation = f"{schema}.{name}" if schema else name
     cols = d.get("columns", []) or []
     fks = d.get("foreign_keys", []) or []
+    if not fks:
+        fks = _fks_from_columns(cols, data_dir)
     # the transform that produces this dataset (derived_from.pipeline, else stem match)
     pipe = (d.get("derived_from") or {}).get("pipeline")
     tr = _read_yaml(cr / pipe) if pipe else {}

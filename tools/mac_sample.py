@@ -934,6 +934,24 @@ def concept_docs(root: Path, ontology: Path):
     return docs, bad
 
 
+def _canonical_from_columns(grounding: dict) -> str:
+    """The canonical key as declared ON a column — `identity: canonical` in the v0.1.16 column map.
+
+    Returns "" when no column claims it, so a concept still written in the flat-list form keeps the
+    caller's ROW-grain fallback.
+    """
+    for src in (grounding or {}).get("sources") or []:
+        if not isinstance(src, dict):
+            continue
+        cols = src.get("columns")
+        if not isinstance(cols, dict):
+            continue                      # a flat list of names says nothing about identity
+        for name, body in cols.items():
+            if isinstance(body, dict) and str(body.get("identity") or "").strip() == "canonical":
+                return str(name).strip()
+    return ""
+
+
 def plan_concept_samples(root: Path, ontology: Path, dataset_targets, *, stems=None):
     """(blocks, findings). PURE: reads the bundle's YAML. Nothing is opened and nothing is written.
 
@@ -999,6 +1017,20 @@ def plan_concept_samples(root: Path, ontology: Path, dataset_targets, *, stems=N
             if rb and rb not in rel_order:
                 rel_order.append(rb)
         ident = str((c.get("identity") or {}).get("canonical_key") or "").strip()
+        if not ident:
+            # THE KEY MAY BE DECLARED ON THE COLUMN, and since v0.1.16 that is the STANDARD shape.
+            #
+            # `ColumnSpec` puts everything about a column on the column: `identity: canonical` is the
+            # concept's canonical key, and mac-runtime's parser PROJECTS it onto
+            # `concept.identity.canonical_key` for the six consumers that already read that. This tool
+            # reads the FILE, not the parsed model, so it saw no key and fell back to ROW grain.
+            #
+            # MEASURED, AND THE COST IS THE WHOLE POINT OF THIS TOOL: on 19 concepts authored in the map
+            # form, 11 of them fell through to ROW grain, and `brand.sample.csv` came out as 40 PRODUCT
+            # rows with brands repeated instead of Brand's 11 members. The DNA calls this artifact "the
+            # only artifact that shows what a concept CONTAINS" — a sample of host rows shows what it
+            # sits ON. Same projection rule as the runtime, applied here.
+            ident = _canonical_from_columns(g)
         # AN ONTOLOGY DECLARES MEMBERSHIP TWO WAYS AND THIS READ ONLY ONE OF THEM.
         #
         # A `members:` block is how a GROUPING says what it is a grouping OF — `over` the parent,
