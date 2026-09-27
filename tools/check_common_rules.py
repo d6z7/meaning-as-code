@@ -324,17 +324,17 @@ concept: {name: alpha, class: measure}
 contract:
   rules:
     - id: alpha.resolve.abstraction_level
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when: "a question asks at a coarser grain than the stored cell"
       then: "read at the level the question names, not the level the table happens to store"
       never: "inventing an intermediate level the grain declaration does not support"
     - id: alpha.resolve.reference_window
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when: "a rate is asked without a window"
       then: "take the window the concept declares"
       never: "widening the window to make the rate look steadier"
     - id: alpha.aggregate.rollup
-      kind: mac.rule_kind.aggregation
+      kind: mac.concept.rule.aggregation
       when: "cells are folded over the declared hierarchy"
       then: "fold along the declared parent edge only"
 """
@@ -343,7 +343,7 @@ concept: {name: beta, class: measure}
 contract:
   rules:
     - id: beta.exclusion.no_evidence
-      kind: mac.rule_kind.exclusion
+      kind: mac.concept.rule.exclusion
       when: "the resolved scope has no row"
       then: "REFUSE with an evidence-boundary answer"
       never: "returning an empty result framed as a real zero"
@@ -354,7 +354,7 @@ concept: {name: gamma, class: measure}
 contract:
   rules:
     - id: gamma.exclusion.nothing_there
-      kind: mac.rule_kind.exclusion
+      kind: mac.concept.rule.exclusion
       when: "the resolved period holds no row for what was asked"
       then: "REFUSE and say what was missing — never guess or estimate one, and never substitute a
              different figure"
@@ -365,7 +365,7 @@ concept: {name: delta, class: measure}
 contract:
   rules:
     - id: delta.exclusion.no_evidence
-      kind: mac.rule_kind.exclusion
+      kind: mac.concept.rule.exclusion
       when: "the resolved scope has no row"
       then: "REFUSE with an evidence-boundary answer"
       never: "returning an empty result framed as a real zero"
@@ -378,7 +378,7 @@ concept: {name: epsilon, class: measure}
 contract:
   rules:
     - id: epsilon.exclusion.no_evidence_with_branch
-      kind: mac.rule_kind.exclusion
+      kind: mac.concept.rule.exclusion
       when: "the resolved period holds no row, or holds one whose value is null"
       then: "REFUSE and say what was missing — never guess or estimate, never substitute a different
              figure; but a resolved row whose value is null is an ANSWER, report it as such"
@@ -389,7 +389,7 @@ concept: {name: eta, class: reference}
 contract:
   rules:
     - id: eta.guarantee.resolution_flag
-      kind: mac.rule_kind.guarantee
+      kind: mac.concept.rule.guarantee
       when: "a member is displayed whose resolution flag is false"
       then: "show the code — the flag says the catalogue holds no readable name, so the name column is
              null and the source column says unresolved"
@@ -400,15 +400,15 @@ concept: {name: zeta, class: measure}
 contract:
   rules:
     - id: zeta.resolve.one
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when: "a bare period is named"
       then: "read the period as the declared type dictates"
     - id: zeta.resolve.two
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when: "a relative period is named"
       then: "anchor it to the latest stored cell"
     - id: zeta.resolve.three
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when: "two grains are named at once"
       then: "take the finer of the two"
 """

@@ -213,7 +213,7 @@ def test_generated_trees_are_not_counted_twice(tmp_path):
         # silently reduced the closed-vocabulary population from 11 pairings to 2.
         ("PROVENANCE", "provenance"),
         ("STATUSES", "status"),
-        ("RULE_KINDS", "rule_kind"),
+        ("RULE_KINDS", "concept.rule"),
     ],
 )
 def test_a_declaration_name_folds_across_casing_conventions(declared, folded):

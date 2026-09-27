@@ -3,7 +3,7 @@ type: Rule
 title: lineitem.state.received_iff_receiptdate
 description: resolution rule · binds l_receiptdate, l_linestatus
 tags:
-- mac.rule_kind.resolution
+- mac.concept.rule.resolution
 applies_to: ../lineitem.md
 ---
 

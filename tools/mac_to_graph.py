@@ -49,7 +49,7 @@ def nodes(root):
         ident = c.get("identity") or {}
         key = g.get("key_column") or pk or ident.get("canonical_key")
         out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "props": cols, "class": c["class"],
-                          "identity_kind": ident.get("kind")}
+                          "concept.identity": ident.get("kind")}
     return out
 
 
@@ -81,12 +81,12 @@ def main():
         if src: name = str(src).lower(); break
 
     # --- self-consistency check (the rigor analog of OSI schema-validation) ---
-    # keyless-by-design kinds (mac.identity_kind) legitimately have no single-column key — a fact grain,
+    # keyless-by-design kinds (mac.concept.identity) legitimately have no single-column key — a fact grain,
     # a pinned/resolved axis, or an unresolved SME identity — so they are NOT flagged.
     KEYLESS_KINDS = {"composite", "resolved_axis", "sme_pending"}
     problems = []
     for n in N.values():
-        if not n["key"] and n.get("identity_kind") not in KEYLESS_KINDS:
+        if not n["key"] and n.get("concept.identity") not in KEYLESS_KINDS:
             problems.append(f'node :{n["label"]} has no key (no grounding key_column / table PK / identity.canonical_key)')
         elif n["key"] and n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')

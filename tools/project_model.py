@@ -4,7 +4,7 @@
 The ontology is the source of truth; this is a PROJECTION of it — a generated view of every measure
 (KPI) and dimension the applied model defines, plus the additivity law each measure obeys. Nothing here
 is authored by hand: it is read from the concept files, the derived-measure rules, and the framework's
-mac.column.measure_type additivity matrix. Regenerate it any time the ontology changes; never edit the output.
+mac.concept.column.measure_type additivity matrix. Regenerate it any time the ontology changes; never edit the output.
 
 Reads (all under <source_root>):
   ontology/concepts/**/*.yaml   — concepts: `concept.{name,class,...}`, `grounding`, closed `values`/`enumerations`
@@ -38,15 +38,15 @@ _LABEL = {
 
 
 def _effects() -> dict:
-    """{mac.aggregation_effect.<term>: label} built FROM the vocabulary, never beside it."""
+    """{mac.concept.aggregation_effect.<term>: label} built FROM the vocabulary, never beside it."""
     try:
         from pathlib import Path as _P
         import yaml as _y
         terms = (_y.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
-                              .read_text(encoding="utf-8")) or {}).get("aggregation_effect", {}).get("terms", {})
+                              .read_text(encoding="utf-8")) or {}).get("concept.aggregation_effect", {}).get("terms", {})
     except Exception:                                                      # noqa: BLE001
         terms = {}
-    return {f"mac.aggregation_effect.{k}": _LABEL.get(k, k) for k in terms}
+    return {f"mac.concept.aggregation_effect.{k}": _LABEL.get(k, k) for k in terms}
 
 
 EFFECT = _effects()
@@ -60,9 +60,9 @@ def load(p: Path):
 
 
 def measure_law() -> dict:
-    """The additivity matrix from mac.column.measure_type: {flow: {time,categorical}, stock:…, target:…}."""
+    """The additivity matrix from mac.concept.column.measure_type: {flow: {time,categorical}, stock:…, target:…}."""
     doc = load(MAC_VOCAB)
-    mt = (doc.get("column.measure_type") or {}).get("terms") or {}
+    mt = (doc.get("concept.column.measure_type") or {}).get("terms") or {}
     out = {}
     for name, spec in mt.items():
         add = (spec or {}).get("additivity") or {}
@@ -166,7 +166,7 @@ def to_markdown(root: Path, model: dict) -> str:
              "Do not edit; regenerate._\n")
 
     L.append("## Measures (KPIs)\n")
-    L.append("The measure **type** fixes how it may be aggregated (mac.column.measure_type):\n")
+    L.append("The measure **type** fixes how it may be aggregated (mac.concept.column.measure_type):\n")
     L.append("| Type | over time | over geography/model |")
     L.append("|---|---|---|")
     for t, spec in law.items():
@@ -213,7 +213,7 @@ def to_markdown(root: Path, model: dict) -> str:
         ik = (d.get("identity") or {}).get("kind") or "—"
         L.append(f"| **{d['name']}** | {d['class']} | {ik} | {key} | {rel} | {n} | {vlist} |")
     L.append("\n_`*` = closed enumeration (exactly these values; anything else is `__unmapped__`)._")
-    L.append("_Identity = `mac.identity_kind`: iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending._")
+    L.append("_Identity = `mac.concept.identity`: iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending._")
     return "\n".join(L) + "\n"
 
 
@@ -334,7 +334,7 @@ def _definition_for_stem(doc: dict, stem):
 
 
 def _additivity_from_type(law: dict, measure_type):
-    """Resolve (type_key, {time, categorical}) from a mac.column.measure_type token via the framework law.
+    """Resolve (type_key, {time, categorical}) from a mac.concept.column.measure_type token via the framework law.
     (None, None) when no type is declared; (type_key, None) when the law lacks that member."""
     if not measure_type:
         return None, None
@@ -357,7 +357,7 @@ def measures_of(root: Path, model: dict | None = None) -> list[dict]:
     """A0 §1.1 measures[] — one record per measure stem the source declares, unioning three
     provenance kinds: register (enum_from_register), inline_enum (typed inline values), and
     concept_only (additivity on the concept). Additivity is RESOLVED by joining each measure's
-    mac.column.measure_type through the framework law. Generic + tolerant; never mutates `model`."""
+    mac.concept.column.measure_type through the framework law. Generic + tolerant; never mutates `model`."""
     law = measure_law()
     out: list[dict] = []
 
@@ -1011,15 +1011,15 @@ def kpi_variants_of(root: Path, model: dict | None = None) -> dict:
 # §1.6  rules — flat catalog[] + decision_policy + kinds + index
 # ---------------------------------------------------------------------------
 def _kind_term(kind):
-    """'mac.rule_kind.resolution' -> 'resolution'; tolerant of missing/odd values."""
+    """'mac.concept.rule.resolution' -> 'resolution'; tolerant of missing/odd values."""
     if not isinstance(kind, str) or not kind:
         return None
     return kind.rsplit(".", 1)[-1]
 
 
 def _rule_kinds(mac_vocab: Path) -> list[dict]:
-    """The closed rule-type taxonomy, read from the framework vocab (mac.rule_kind)."""
-    rk = load(mac_vocab).get("rule_kind") or {}
+    """The closed rule-type taxonomy, read from the framework vocab (mac.concept.rule)."""
+    rk = load(mac_vocab).get("concept.rule") or {}
     closed = bool(rk.get("closed"))
     return [{"term": t, "governs": g, "closed": closed}
             for t, g in (rk.get("terms") or {}).items()]

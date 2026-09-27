@@ -70,7 +70,7 @@ def t_dimensions(d):
     for dim in d.get("dimensions", []):
         ident = dim.get("identity") or {}
         yield {"dimension": dim.get("dimension"), "concept": dim.get("concept"),
-               "grain": dim.get("grain"), "identity_kind": ident.get("kind"),
+               "grain": dim.get("grain"), "concept.identity": ident.get("kind"),
                "canonical_key": ident.get("canonical_key"), "realized_from": dim.get("realized_from"),
                "cardinality": _j(dim.get("cardinality"))}
 
@@ -334,7 +334,7 @@ _META_CONCEPTS = {
    "relations": [("meta_dimensions", ["dimension"]), ("meta_brand_members", ["cluster_code", "brand"])],
    "roles": {
      "dimension": "dimension", "concept": "dimension", "cluster_code": "dimension", "brand": "dimension",
-     "identity_kind": "attribute", "grain": "attribute", "canonical_key": "attribute",
+     "concept.identity": "attribute", "grain": "attribute", "canonical_key": "attribute",
      "realized_from": "attribute", "cardinality": "measure",
      "multi_brand": "attribute", "in_fact_data": "attribute", "confidence": "attribute"},
    "definition": (

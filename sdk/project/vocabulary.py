@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """sdk.project.vocabulary — the ONE place that says what the ontology's controlled-vocabulary terms
-MEAN. The authored MAC carries namespaced tokens (<source>.field_role.dimension, mac.rule_kind.guarantee,
+MEAN. The authored MAC carries namespaced tokens (<source>.field_role.dimension, mac.concept.rule.guarantee,
 confidence C/I/Q, class enumeration, …) all over the concepts; their meaning lived only in the grammar
 + the author prompt. This projects a single glossary (vocabulary.json), grouped by namespace, with a
 plain-language meaning per term AND how many times each is actually used in this source's ontology.
@@ -37,7 +37,7 @@ VOCAB = [
     ),
     (
         "Rule kinds",
-        "mac.rule_kind.*",
+        "mac.concept.rule.*",
         "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
         [
             (

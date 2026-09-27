@@ -3,7 +3,7 @@ type: Rule
 title: lineitem.revenue.net_of_discount
 description: aggregation rule · binds l_extendedprice, l_discount
 tags:
-- mac.rule_kind.aggregation
+- mac.concept.rule.aggregation
 applies_to: ../lineitem.md
 ---
 

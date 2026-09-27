@@ -3,7 +3,7 @@ type: Rule
 title: order.state.from_timestamps
 description: resolution rule · binds paid_at, shipped_at, delivered_at
 tags:
-- mac.rule_kind.resolution
+- mac.concept.rule.resolution
 applies_to: ../order.md
 ---
 

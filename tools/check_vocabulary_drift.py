@@ -3,7 +3,7 @@
 
 WHY THIS EXISTS, measured 2026-08-18
 ------------------------------------
-`mac_vocabulary.yaml#aggregation_effect` is declared `closed: true`, and its four members were
+`mac_vocabulary.yaml#concept.aggregation_effect` is declared `closed: true`, and its four members were
 hand-copied into three separate Python files. One of those copies had drifted:
 
     vocabulary  : additive · point_in_time · averageable · non_aggregable

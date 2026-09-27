@@ -58,14 +58,14 @@ contract:
     fulfilment state is read from the dates/flags — no warehouse probe is needed.
   rules:
     - id: lineitem.revenue.net_of_discount
-      kind: mac.rule_kind.aggregation
+      kind: mac.concept.rule.aggregation
       when:  "computing revenue from order lines"
       then:  "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0 (full extended price)"
       never: "summing l_extendedprice alone — that is gross, not revenue"
       why:   "extended price is gross (price × quantity); revenue is net of the line discount"
       binds: [l_extendedprice, l_discount]
     - id: lineitem.state.received_iff_receiptdate
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when:  "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)"
       then:  "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment"
       why:   "the lifecycle state is read from which dates are present, not a free-text column"

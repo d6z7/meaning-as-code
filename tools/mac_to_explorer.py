@@ -49,12 +49,12 @@ REGISTER_PREVIEW_CAP = 200
 
 # ASK / COMMIT / REFUSE : the decision lane derived from a rule's kind (the closed MAC rule-kind vocabulary)
 DECISION = {
-    "mac.rule_kind.ambiguity":   "ASK",
-    "mac.rule_kind.resolution":  "COMMIT",
-    "mac.rule_kind.aggregation": "COMMIT",
-    "mac.rule_kind.default":     "COMMIT",
-    "mac.rule_kind.exclusion":   "REFUSE",
-    "mac.rule_kind.guarantee":   "INVARIANT",
+    "mac.concept.rule.ambiguity":   "ASK",
+    "mac.concept.rule.resolution":  "COMMIT",
+    "mac.concept.rule.aggregation": "COMMIT",
+    "mac.concept.rule.default":     "COMMIT",
+    "mac.concept.rule.exclusion":   "REFUSE",
+    "mac.concept.rule.guarantee":   "INVARIANT",
     # bare (non-namespaced) kinds — some sources' query_rules[] use these; same lanes.
     "ambiguity": "ASK", "resolution": "COMMIT", "aggregation": "COMMIT",
     "default": "COMMIT", "exclusion": "REFUSE", "guarantee": "INVARIANT",

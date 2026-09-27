@@ -3,7 +3,7 @@ type: Rule
 title: order.revenue.paid_only
 description: exclusion rule · binds paid_at
 tags:
-- mac.rule_kind.exclusion
+- mac.concept.rule.exclusion
 applies_to: ../order.md
 ---
 

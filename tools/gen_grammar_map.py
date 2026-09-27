@@ -243,7 +243,7 @@ def verify_permissions(perms: dict, measured: dict) -> dict:
 def load_vocabulary() -> dict:
     raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
     out: dict[str, dict] = {}
-    for ns in ("outcome_class", "diagnostic_code", "column.ruling", "column.measure_type", "aggregation_effect"):
+    for ns in ("outcome_class", "diagnostic_code", "concept.column.ruling", "concept.column.measure_type", "concept.aggregation_effect"):
         spec = raw.get(ns) or {}
         body = spec.get("terms") or spec.get("members") or {}
         out[ns] = {}
@@ -527,7 +527,7 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
               "scoped_by": "placement.scoped_by", "never_axis": "rulings.never_axis"}
 
     cases = {}
-    for term, spec in vocab["column.ruling"].items():
+    for term, spec in vocab["concept.column.ruling"].items():
         k = keys.get(key_of[term], {})
         test, cant = tests[term]
         needs_evidence = term == "never_axis"
@@ -597,7 +597,7 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
                                   "meta": "mechanical", "sub": "narrows four words to a candidate"},
                                  {"id": "mid:person", "label": "A PERSON RULES", "meta": "not mechanical",
                                   "sub": "cardinality cannot tell you which you have"},
-                                 {"id": "mid:ruling", "label": "the ruling", "meta": "mac.column.ruling",
+                                 {"id": "mid:ruling", "label": "the ruling", "meta": "mac.concept.column.ruling",
                                   "sub": "4 closed words"}]},
             "right": {"label": "the outcome",
                       "nodes": [{"id": "out:" + k, "label": k, "meta": _outcome_hint(k)}
@@ -607,12 +607,12 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
                                   {"id": "out:GATE", "label": "CHECK · red",
                                    "meta": "the ruling claims what the data denies", "plane_outcome": True}]},
         },
-        "selector_label": "four words · mac.column.ruling",
+        "selector_label": "four words · mac.concept.column.ruling",
         "cases": {"law": cases},
-        "counts": {"words": len(vocab["column.ruling"]),
-                   "enforced": sum(1 for t in vocab["column.ruling"]
+        "counts": {"words": len(vocab["concept.column.ruling"]),
+                   "enforced": sum(1 for t in vocab["concept.column.ruling"]
                                    if (keys.get(key_of[t], {}).get("status")) == "enforced"),
-                   "designed": sum(1 for t in vocab["column.ruling"]
+                   "designed": sum(1 for t in vocab["concept.column.ruling"]
                                    if (keys.get(key_of[t], {}).get("status")) == "designed")},
     }
 

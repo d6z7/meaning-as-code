@@ -4,9 +4,9 @@
 THE LAW
 -------
 How a measure aggregates is defined ONCE, in this framework's closed value domain
-``mac_vocabulary.yaml#column.measure_type``: each member (Flow / Stock / Intensive / Target) carries an
+``mac_vocabulary.yaml#concept.column.measure_type``: each member (Flow / Stock / Intensive / Target) carries an
 ``additivity`` map over the two axes (``time``, ``categorical``) whose values are
-``mac.aggregation_effect.*`` terms.
+``mac.concept.aggregation_effect.*`` terms.
 
 A source may MATERIALIZE that law into its measure registry (a lookup CSV carrying ``measure_type`` +
 ``additivity_time`` + ``additivity_categorical``) so consumers can read SUM-vs-point-in-time without
@@ -55,7 +55,7 @@ class LawUnavailable(RuntimeError):
 
 
 def measure_type_law(vocab_path: Path) -> dict:
-    """{member_name: {"time": ..., "categorical": ...}} from mac_vocabulary.yaml#column.measure_type.
+    """{member_name: {"time": ..., "categorical": ...}} from mac_vocabulary.yaml#concept.column.measure_type.
 
     Takes the vocabulary PATH as a parameter, rather than reaching for the framework's own file
     directly, so a self-test can prove the refusal fires without touching the real vocabulary --
@@ -67,7 +67,7 @@ def measure_type_law(vocab_path: Path) -> dict:
         doc = yaml.safe_load(vocab_path.read_text(encoding="utf-8")) or {}
     except Exception as exc:  # noqa: BLE001
         raise LawUnavailable(f"{vocab_path} did not parse: {exc}") from None
-    members = (doc.get("column.measure_type") or {}).get("terms") or {}
+    members = (doc.get("concept.column.measure_type") or {}).get("terms") or {}
     if not members:
         raise LawUnavailable(f"{vocab_path}#measure_type declares no members")
     return members
@@ -148,7 +148,7 @@ def main() -> int:
 # ---------------------------------------------------------------------------------------------
 # self-test: one mutant per reject class, plus a clean fixture that must pass and the liveness
 # check that a real drift still fires. Rows are derived from the framework's OWN vocabulary
-# (mac_vocabulary.yaml#column.measure_type, public and generic) rather than typed, so the fixture cannot
+# (mac_vocabulary.yaml#concept.column.measure_type, public and generic) rather than typed, so the fixture cannot
 # drift from the law it exercises.
 # ---------------------------------------------------------------------------------------------
 
@@ -166,7 +166,7 @@ def _row(name: str, law: dict, *, mutate_axis: str | None = None) -> dict:
         time_v = time_v + "-MUTATED"
     elif mutate_axis == "categorical":
         cat_v = cat_v + "-MUTATED"
-    return {"code": name.upper(), "measure_type": f"mac.column.measure_type.{name}",
+    return {"code": name.upper(), "measure_type": f"mac.concept.column.measure_type.{name}",
             "additivity_time": time_v, "additivity_categorical": cat_v}
 
 
@@ -194,7 +194,7 @@ def _self_test() -> int:
     names = sorted(n for n in members if (members[n].get("additivity") or {}).get("time")
                     and (members[n].get("additivity") or {}).get("categorical"))
     if len(names) < 1:
-        print("could not run: mac_vocabulary.yaml#column.measure_type has no fully-specified member to "
+        print("could not run: mac_vocabulary.yaml#concept.column.measure_type has no fully-specified member to "
               "derive a fixture from", file=sys.stderr)
         return 2
     clean_name = names[0]

@@ -127,7 +127,7 @@ concept:  # REQUIRED
   grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
   related_axis: <…>  # string
   identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above
-    kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | resolved_axis | sme_pending · mac.identity_kind.<term> — how the canonical identity is established.
+    kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | resolved_axis | sme_pending · mac.concept.identity.<term> — how the canonical identity is established.
     canonical_key: <…>  # string · the column/expression that IS the identity (omit for resolved_axis /…
     note: <…>  # string
     counts_as: <…>  # string · The column one INSTANCE of this concept is counted by, when that is not…
@@ -141,7 +141,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
   rules:  # v0.1.6: typed behavioural rules (promoted from an applied pilot,…
     - <item>
       id: <…>  # REQUIRED · string · stable dotted id, e.g
-      kind: <…>  # REQUIRED · string · a mac.rule_kind.* reference…
+      kind: <…>  # REQUIRED · string · a mac.concept.rule.* reference…
       scope: <…>  # string · general | <SOURCE> (general = framework default; else a source fact)
       when: <…>  # string · trigger — the situation the rule applies to
       then: <…>  # string · directive — what to do

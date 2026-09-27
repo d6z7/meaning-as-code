@@ -95,7 +95,7 @@ def load_vocabulary() -> dict:
             "description": " ".join(str(spec.get("description") or "").split()),
             "terms": terms,
         }
-    if not out.get("column.measure_type", {}).get("terms"):
+    if not out.get("concept.column.measure_type", {}).get("terms"):
         raise Fail("measure_type rendered empty — the value_domain `members:` shape was not read")
     return out
 
@@ -249,8 +249,8 @@ def check_parity(effects: dict, table: dict[str, dict], vocab: dict) -> list[str
 def two_plane_census(bundle: pathlib.Path) -> dict:
     """The operator's two-plane map, populated from this bundle — every column placed in BOTH planes.
 
-    THE JOIN IS THE POINT. The data plane measures a column's PHYSICAL shape (mac.storage_role); the
-    concept plane authors its ANALYTICAL role (mac.column.role). The two vocabularies share no term,
+    THE JOIN IS THE POINT. The data plane measures a column's PHYSICAL shape (mac.relation.column.role); the
+    concept plane authors its ANALYTICAL role (mac.concept.column.role). The two vocabularies share no term,
     so crossing them is a 5x5 space in which some pairs are ordinary, some are the reference
     manual's own warnings, and a term from the wrong side is a breach visible only once the planes
     are named. tools/check_column_planes.py is the gate; this is the same reading, rendered.
@@ -275,8 +275,8 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
         per_origin[name] = {"total": len(pop), "unbound": sum(1 for k in pop if k not in bound)}
 
     return {
-        "terms": {k: terms[k] for k in ("storage_role", "column.role", "column.identity",
-                                        "identity_kind", "column.measure_type", "column.ruling",
+        "terms": {k: terms[k] for k in ("relation.column.role", "concept.column.role", "concept.column.identity",
+                                        "concept.identity", "concept.column.measure_type", "concept.column.ruling",
                                         "name_register")},
         "storage_total": len(storage),
         "relations": len({r for r, _ in storage}),
@@ -287,7 +287,7 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
                   for slot, key in (("role", "role"), ("identity", "identity"),
                                     ("measure.type", "mtype"), ("rulings", "rulings"))},
         "identity_kinds": {str(k): v for k, v in kinds.most_common()},
-        "identity_kinds_unused": [x for x in terms["identity_kind"] if x not in kinds],
+        "identity_kinds_unused": [x for x in terms["concept.identity"] if x not in kinds],
         "crosstab": xt,
         "suspicious": {f"{a}|{b}": why for (a, b), why in G.SUSPICIOUS.items()},
         "per_origin": per_origin,
@@ -386,7 +386,7 @@ def main() -> int:
     out.write_text(html, encoding="utf-8")
     c = data["census"]
     print(f"  two-plane census: {c['storage_total']} measured columns / {c['bindings']} bindings, "
-          f"{len(c['crosstab'])} of {len(c['terms']['storage_role']) * len(c['terms']['column.role'])} "
+          f"{len(c['crosstab'])} of {len(c['terms']['relation.column.role']) * len(c['terms']['concept.column.role'])} "
           f"pairs occur, {len(c['findings'])} finding(s)")
     print(f"gen_column_bench: wrote {out} — {len(data['keys'])} keys "
           f"({data['counts']['enforced']} enforced / {data['counts']['designed']} designed / "

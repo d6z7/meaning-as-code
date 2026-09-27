@@ -24,14 +24,14 @@ concept:
       The headline financial measure — sliced by part, customer, supplier, geography and time; the
       numerator of TPC-H's revenue and market-share queries.
     unit: currency (account currency)
-    measure_type: mac.column.measure_type.flow
+    measure_type: mac.concept.column.measure_type.flow
     additivity: { time: additive, geography: additive, part: additive, customer: additive, supplier: additive }
     axis_kinds:
-      time:      mac.axis_kind.time
-      geography: mac.axis_kind.categorical
-      part:      mac.axis_kind.categorical
-      customer:  mac.axis_kind.categorical
-      supplier:  mac.axis_kind.categorical
+      time:      mac.concept.axis_kind.time
+      geography: mac.concept.axis_kind.categorical
+      part:      mac.concept.axis_kind.categorical
+      customer:  mac.concept.axis_kind.categorical
+      supplier:  mac.concept.axis_kind.categorical
     null_semantics: >
       A line with NULL discount contributes its full extended price (no discount = zero discount), not missing data.
 

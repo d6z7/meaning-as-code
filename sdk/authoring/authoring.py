@@ -80,7 +80,7 @@ Shape of a concept file:
         LineNumber:  {role: key, identity: part}
         CustomerKey: {role: key, identity: reference}
         OrderDate:   {role: dimension}
-        Quantity:    {role: measure, measure: {type: mac.column.measure_type.flow, unit: units}}
+        Quantity:    {role: measure, measure: {type: mac.concept.column.measure_type.flow, unit: units}}
         Surname:     {role: attribute}
         Status:                      # a bare name serves the column and says nothing more
   TODAY'S FLAGS ARE role, identity, measure — and ONLY those three, because a flag ships with the code
@@ -92,7 +92,7 @@ Shape of a concept file:
   the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
   DO NOT WRITE `identity.canonical_key` under `concept:` when a column carries `identity: canonical` —
   same reason: the key is a column fact, and declared twice the two can disagree.
-- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.rule_kind.resolution|guarantee|exclusion|ambiguity, confidence, scope: ACME, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
+- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.concept.rule.resolution|guarantee|exclusion|ambiguity, confidence, scope: ACME, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
 CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and schema-enforced:
@@ -105,8 +105,8 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 - a FACT / KPI / measure table (numeric values you aggregate) → class: measure, and you MUST add a `concept.semantics:` block:
       semantics:
         purpose: <one line>
-        measure_type: mac.column.measure_type.<flow|stock|intensive|precomputed|target>
-        axis_kinds: {<axis>: mac.axis_kind.<time|categorical>, ...}   # one entry per aggregation axis
+        measure_type: mac.concept.column.measure_type.<flow|stock|intensive|precomputed|target>
+        axis_kinds: {<axis>: mac.concept.axis_kind.<time|categorical>, ...}   # one entry per aggregation axis
   DO NOT WRITE AN `additivity:` BLOCK. How the measure folds along each axis is DERIVED from
   (measure_type x axis_kind) by the law in mac_vocabulary.yaml. Writing it out would state the same
   fact twice — and because you would be authoring both the premise and the conclusion, the two can

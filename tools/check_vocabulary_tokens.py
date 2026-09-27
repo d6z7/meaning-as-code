@@ -15,7 +15,7 @@ is the one home and this gate is its one reader.
 
 IT ENFORCES THREE THINGS, all of them already true of 18 of the 19 vocabularies:
   1. A NAMESPACE MUST EXIST.        `mac.nosuch.thing` fails.
-  2. A CLOSED VOCABULARY IS CLOSED. `mac.column.measure_type.level` fails; `mac.canon.*` (closed: false)
+  2. A CLOSED VOCABULARY IS CLOSED. `mac.concept.column.measure_type.level` fails; `mac.canon.*` (closed: false)
                                     admits anything, because the vocabulary says it may.
   3. A NAMESPACE IS snake_case.     Measured 2026-09-27: `MeasureType` was the ONLY CamelCase name of
                                     twenty, and the only one using `members:` where 18 said `terms:`.
@@ -38,12 +38,12 @@ import sys
 #: The one home. Nothing here carries a copy of any vocabulary's members.
 VOCAB_REL = "mac_vocabulary.yaml"
 
-#: A complete token: `mac.` then a DOTTED PATH. The term must be non-empty — `mac.rule_kind.` appears in
+#: A complete token: `mac.` then a DOTTED PATH. The term must be non-empty — `mac.concept.rule.` appears in
 #: prose mid-sentence and is a reference to the vocabulary, not a use of a term.
 #:
 #: THE NAMESPACE MAY ITSELF CONTAIN DOTS, which is new. Operator ruling 2026-09-27: the column-scoped
-#: vocabularies were renamed into a hierarchy — `mac.column.role`, `mac.column.identity`,
-#: `mac.column.measure_type`, `mac.column.ruling` — "so that i know (not only you know) where is
+#: vocabularies were renamed into a hierarchy — `mac.concept.column.role`, `mac.concept.column.identity`,
+#: `mac.concept.column.measure_type`, `mac.concept.column.ruling` — "so that i know (not only you know) where is
 #: something belonging". Before that every one of 124 token uses in the estate was exactly three
 #: segments, so a fixed `mac.<ns>.<term>` pattern was enough; now the split between namespace and term
 #: cannot be found by counting dots and is resolved against the DECLARED namespaces instead. That is
@@ -54,7 +54,7 @@ TOKEN = re.compile(r"\bmac\.([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)+
 def split(path: str, vocab: dict) -> tuple:
     """(namespace, term) — the LONGEST declared namespace that prefixes `path`, and the rest.
 
-    Longest-first, so `mac.column.measure_type.flow` resolves to the namespace `column.measure_type`
+    Longest-first, so `mac.concept.column.measure_type.flow` resolves to the namespace `column.measure_type`
     even if a `column` namespace also existed. With nothing declared matching, the first segment is
     reported as the namespace so an unknown one is still NAMED rather than swallowed."""
     for ns in sorted(vocab, key=len, reverse=True):
@@ -236,8 +236,8 @@ def main(argv: list[str] | None = None) -> int:
 
 def _self_test() -> int:
     """A mutant per reject class (CORE.md §2), the real regression among them."""
-    V = {"column.measure_type": (True, frozenset({"flow", "stock", "intensive", "precomputed", "target"})),
-         "rule_kind": (True, frozenset({"guarantee", "exclusion"})),
+    V = {"concept.column.measure_type": (True, frozenset({"flow", "stock", "intensive", "precomputed", "target"})),
+         "concept.rule": (True, frozenset({"guarantee", "exclusion"})),
          "canon": (False, frozenset({"refuse"}))}
     def one(tok):
         return verdicts([(tok, tok[len("mac."):], "f.yaml")], V)[0]
@@ -246,30 +246,30 @@ def _self_test() -> int:
         cases.append((label, bool(cond)))
 
     case("a declared term of a closed vocabulary passes",
-         one("mac.column.measure_type.flow")[1] == "ok")
+         one("mac.concept.column.measure_type.flow")[1] == "ok")
     # THE REAL REGRESSION: `Level` was never a member, I authored it, and validate_schema said clean.
     case("MUTANT an undeclared term of a CLOSED vocabulary fails",
-         one("mac.column.measure_type.level")[1] == "not_a_term")
+         one("mac.concept.column.measure_type.level")[1] == "not_a_term")
     case("the failure NAMES the admissible terms",
-         "flow" in one("mac.column.measure_type.level")[2] and "stock" in one("mac.column.measure_type.level")[2])
+         "flow" in one("mac.concept.column.measure_type.level")[2] and "stock" in one("mac.concept.column.measure_type.level")[2])
     # THE CASE REGRESSION: the exact token that shipped. It must fail as a CASE error, not as an
     # unknown namespace, or the message sends a reader looking for a vocabulary that does exist.
     case("MUTANT a CamelCase namespace fails, and is diagnosed as a case error",
-         one("mac.column.MeasureType.Flow")[1] == "not_snake_case"
-         and "CASE" in one("mac.column.MeasureType.Flow")[2])
+         one("mac.concept.column.MeasureType.flow")[1] == "not_snake_case"
+         and "CASE" in one("mac.concept.column.MeasureType.flow")[2])
     # THE DOTTED NAMESPACE, which is the grammar change itself: the split comes from the DECLARATIONS
     # and not from counting dots, so a 4-segment token resolves where 3 segments used to be the shape.
     case("GRAMMAR a dotted namespace resolves against the declarations",
-         one("mac.column.measure_type.flow")[1] == "ok")
+         one("mac.concept.column.measure_type.flow")[1] == "ok")
     case("GRAMMAR the regex matches a 4-segment token",
-         TOKEN.findall("type: mac.column.measure_type.flow,") == ["column.measure_type.flow"])
+         TOKEN.findall("type: mac.concept.column.measure_type.flow,") == ["concept.column.measure_type.flow"])
     case("GRAMMAR the LONGEST declared namespace wins",
-         split("column.measure_type.flow", {"column": (True, frozenset()),
-                                            "column.measure_type": (True, frozenset())})
-         == ("column.measure_type", "flow"))
+         split("concept.column.measure_type.flow", {"column": (True, frozenset()),
+                                            "concept.column.measure_type": (True, frozenset())})
+         == ("concept.column.measure_type", "flow"))
     r = one("mac.measure_type.flow")
     case("GRAMMAR a namespace that MOVED under a parent says where it went",
-         r[1] == "unknown_namespace" and "column.measure_type" in r[2] and "MOVED" in r[2])
+         r[1] == "unknown_namespace" and "concept.column.measure_type" in r[2] and "MOVED" in r[2])
     case("MUTANT an unknown namespace fails",
          one("mac.nosuch.thing")[1] == "unknown_namespace")
     case("an OPEN vocabulary admits a term it does not list",
@@ -277,14 +277,19 @@ def _self_test() -> int:
     case("a registry namespace is neither passed nor failed",
          one("mac.sample.concept")[1] == "registry")
     # DISTINCT, not per occurrence: 141 inert tokens must read as one finding, not 141.
-    many = verdicts([("mac.column.measure_type.level", "column.measure_type.level", f"c{i}.yaml")
+    many = verdicts([("mac.concept.column.measure_type.level", "concept.column.measure_type.level", f"c{i}.yaml")
                      for i in range(9)], V)
     case("one defective token in nine files is ONE finding carrying nine files",
          len(many) == 1 and len(many[0][3]) == 9)
-    # An empty term is a prose reference, not a use; the scanner must not manufacture a finding.
-    case("`mac.rule_kind.` in prose is not a token", not TOKEN.findall("see mac.rule_kind. for more"))
+    # A PROSE REFERENCE TO A NAMESPACE, with no term. Before the hierarchy this could not match at all
+    # — `mac.rule_kind` was a single segment and the regex needs two — so the old case asserted it was
+    # not a token. With a DOTTED namespace it does match, and the right behaviour is not to ignore it
+    # but to grade it as what it is: a namespace named, no term used. Neither a pass about a term nor a
+    # finding. The case now asserts the behaviour rather than the old accident.
+    case("a namespace named in prose with NO term is graded as a mention, not a defect",
+         one("mac.concept.rule")[1] == "ok" and "no term" in one("mac.concept.rule")[2])
     case("a real token IS matched next to punctuation",
-         TOKEN.findall("type: mac.column.measure_type.flow, unit: x") == ["column.measure_type.flow"])
+         TOKEN.findall("type: mac.concept.column.measure_type.flow, unit: x") == ["concept.column.measure_type.flow"])
 
     bad = [l for l, ok in cases if not ok]
     for l in bad:

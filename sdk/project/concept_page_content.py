@@ -254,7 +254,7 @@ def _fold_law() -> dict:
     except Exception:  # noqa: BLE001 — a state to report as a dash, not to raise
         return {}
     out: dict = {}
-    for term, body in ((doc.get("column.measure_type") or {}).get("terms") or {}).items():
+    for term, body in ((doc.get("concept.column.measure_type") or {}).get("terms") or {}).items():
         add = (body or {}).get("additivity") or {}
         if isinstance(add, dict):
             out[str(term)] = {str(k): str(v) for k, v in add.items()}

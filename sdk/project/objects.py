@@ -1048,7 +1048,7 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
                     "title": r.get("subject") or r.get("id") or rid,
                     "relation": None,
                     "parent": cstem,
-                    "rule_kind": str(r.get("kind") or "").split(".")[-1],
+                    "concept.rule": str(r.get("kind") or "").split(".")[-1],
                     "views": ["doc"],
                     "paths": {"doc": f"ontology/concepts/rules/{rid}.md"},
                     "lineage": False,

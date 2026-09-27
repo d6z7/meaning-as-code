@@ -1297,7 +1297,7 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "rule_kind": "exclusion",
+      "concept.rule": "exclusion",
       "title": "order.revenue.paid_only",
       "views": [
         "doc"
@@ -1315,7 +1315,7 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "rule_kind": "resolution",
+      "concept.rule": "resolution",
       "title": "order.state.from_timestamps",
       "views": [
         "doc"
@@ -1333,7 +1333,7 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "rule_kind": "aggregation",
+      "concept.rule": "aggregation",
       "title": "revenue.net_of_refunds",
       "views": [
         "doc"

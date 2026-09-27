@@ -3,7 +3,7 @@ type: Rule
 title: revenue.net_of_refunds
 description: aggregation rule · binds gross_amount
 tags:
-- mac.rule_kind.aggregation
+- mac.concept.rule.aggregation
 applies_to: ../revenue.md
 ---
 

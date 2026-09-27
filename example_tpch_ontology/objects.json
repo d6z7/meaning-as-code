@@ -2432,7 +2432,7 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "rule_kind": "aggregation",
+      "concept.rule": "aggregation",
       "title": "lineitem.revenue.net_of_discount",
       "views": [
         "doc"
@@ -2450,7 +2450,7 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "rule_kind": "resolution",
+      "concept.rule": "resolution",
       "title": "lineitem.state.received_iff_receiptdate",
       "views": [
         "doc"

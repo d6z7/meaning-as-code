@@ -8,7 +8,7 @@ neither is marked as the copy.
 
 THE DEFECT THIS REPAIRS, MEASURED 2026-09-27, and I caused half of it. Closing the concept column
 map's `role` that morning, I derived the enum from contoso4's 142 delivered declarations —
-`[key, dimension, measure, attribute]` — without checking that `mac_vocabulary.yaml#column.role`
+`[key, dimension, measure, attribute]` — without checking that `mac_vocabulary.yaml#concept.column.role`
 had declared the same slot for months, closed, as
 `[key, dimension, measure, period, housekeeping]`. So the framework then said two different things
 about one word, and nothing could report it. The estate's own law covers it: check for an unread
@@ -39,12 +39,26 @@ import sys
 PAIRS = (
     ("concept column `role`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "role"], "column.role"),
+      "oneOf", 1, "additionalProperties", "properties", "role"], "concept.column.role"),
     ("concept column `identity`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "identity"], "column.identity"),
+      "oneOf", 1, "additionalProperties", "properties", "identity"], "concept.column.identity"),
     ("TableFile column `role`",
-     ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "storage_role"),
+     ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "relation.column.role"),
+)
+
+#: SLOTS CONSTRAINED BY A REGEX INSTEAD OF AN ENUM. A `pattern` that names a namespace is a THIRD home
+#: for the vocabulary — after the vocabulary itself and any enum — and until 2026-09-27 nothing read
+#: them. That cost a real failure: renaming `measure_type` to `column.measure_type` passed all four
+#: self-tests and only surfaced when contoso4 dropped to 79 of 81, because
+#: `^mac\.measure_type\.[A-Za-z_]…` still spelled the old name. Declared here so a rename cannot be
+#: "finished" while a pattern still disagrees.
+PATTERNS = (
+    ("semantics.measure_type token", ["$defs", "semantics", "properties", "measure_type"],
+     "concept.column.measure_type"),
+    ("semantics.axis_kinds token",
+     ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis_kind"),
+    ("additivity axis token", ["$defs", "additivityAxis", "oneOf", 1], "concept.aggregation_effect"),
 )
 
 ACCEPTED_SHAPE = """\
@@ -103,6 +117,48 @@ def compare(schema: dict, vocab: dict, pairs=PAIRS) -> list:
     return out
 
 
+def compare_patterns(schema: dict, vocab: dict, pats=PATTERNS) -> list:
+    """One row per pattern-constrained slot: (label, block, state, detail).
+
+    IT CHECKS TWO THINGS, and the second is the one that bit: the pattern must NAME the vocabulary's
+    namespace, and where it also ENUMERATES the terms inline — `(additive|average|none)` — those terms
+    must be the vocabulary's. A regex alternation is an enum wearing a disguise.
+    """
+    import re as _re
+    out = []
+    for label, path, block in pats:
+        try:
+            slot = dig(schema, path)
+        except KeyError as exc:
+            out.append((label, block, "missing_slot", str(exc)))
+            continue
+        pat = slot.get("pattern")
+        if not isinstance(pat, str):
+            out.append((label, block, "no_pattern", "the slot carries no `pattern` to check"))
+            continue
+        want = "mac\\." + block.replace(".", "\\.") + "\\."
+        if want not in pat:
+            out.append((label, block, "wrong_namespace",
+                        f"the pattern does not name {block!r} — it reads {pat!r}, so a token spelled "
+                        f"for the CURRENT vocabulary is refused and the old spelling is accepted"))
+            continue
+        # an inline alternation is an enum in disguise; its members must be the vocabulary's
+        alts = _re.search(r"\(([A-Za-z_|]+)\)", pat)
+        if alts:
+            inline = {a for a in alts.group(1).split("|") if a}
+            body = vocab.get(block) or {}
+            t = body.get("terms") if body.get("terms") is not None else body.get("members")
+            vt = {str(x) for x in (t or {})}
+            if inline != vt:
+                out.append((label, block, "disagree",
+                            f"the pattern enumerates {sorted(inline)} inline and the vocabulary "
+                            f"declares {sorted(vt)}"))
+                continue
+        out.append((label, block, "ok", f"names {block!r}" +
+                    (" and its terms match the vocabulary" if alts else "")))
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--self-test", action="store_true")
@@ -121,22 +177,27 @@ def main(argv: list[str] | None = None) -> int:
             print(f"COULD NOT RUN: {f.name} is not in this checkout, so parity cannot be read. A gate "
                   f"missing one of its two sources must refuse, not pass.\n\n{ACCEPTED_SHAPE}")
             return 2
-    rows = compare(json.loads(sp.read_text(encoding="utf-8")),
-                   yaml.safe_load(vp.read_text(encoding="utf-8")) or {})
-    bad = [r for r in rows if r[4] != "ok"]
-    print(f"  VOCABULARY PARITY — {len(rows)} governed slot(s) declared in this gate\n")
+    schema = json.loads(sp.read_text(encoding="utf-8"))
+    voc = yaml.safe_load(vp.read_text(encoding="utf-8")) or {}
+    rows = compare(schema, voc)
+    prows = compare_patterns(schema, voc)
+    bad = [r for r in rows if r[4] != "ok"] + [r for r in prows if r[2] != "ok"]
+    print(f"  VOCABULARY PARITY — {len(rows)} enum slot(s) + {len(prows)} pattern slot(s)\n")
     for label, block, se, vt, state, detail in rows:
         print(f"  [{'ok  ' if state == 'ok' else 'FAIL'}] {label:26} vs mac_vocabulary.yaml#{block}")
         print(f"           {detail}")
         if state == "disagree":
             print(f"           schema     ({len(se)}): {', '.join(sorted(se))}")
             print(f"           vocabulary ({len(vt)}): {', '.join(sorted(vt))}")
+    for label, block, state, detail in prows:
+        print(f"  [{'ok  ' if state == 'ok' else 'FAIL'}] {label:26} vs mac_vocabulary.yaml#{block}")
+        print(f"           {detail}")
     if bad:
-        print(f"\nFAIL: check_vocabulary_parity — {len(bad)} of {len(rows)} governed slot(s) disagree "
+        print(f"\nFAIL: check_vocabulary_parity — {len(bad)} of {len(rows) + len(prows)} governed slot(s) disagree "
               f"with the vocabulary that declares them. One fact, two homes: the framework "
               f"contradicts itself about a CLOSED vocabulary, and no bundle can be conformant to both")
         return 1
-    print(f"\nPASS: check_vocabulary_parity — {len(rows)} of {len(rows)} governed slot(s) carry exactly "
+    print(f"\nPASS: check_vocabulary_parity — {len(rows) + len(prows)} of {len(rows) + len(prows)} governed slot(s) carry exactly "
           f"the terms their vocabulary declares")
     return 0
 
@@ -144,9 +205,9 @@ def main(argv: list[str] | None = None) -> int:
 def _self_test() -> int:
     """A mutant per reject class, the two real disagreements among them."""
     SCH = {"$defs": {"x": {"properties": {"role": {"enum": ["key", "dimension"]}}}}}
-    VOC = {"column.role": {"kind": "vocabulary", "closed": True,
+    VOC = {"concept.column.role": {"kind": "vocabulary", "closed": True,
                            "terms": {"key": {}, "dimension": {}}}}
-    P = [("slot", ["$defs", "x", "properties", "role"], "column.role")]
+    P = [("slot", ["$defs", "x", "properties", "role"], "concept.column.role")]
     cases = []
     def case(label, cond):
         cases.append((label, bool(cond)))
@@ -156,7 +217,7 @@ def _self_test() -> int:
     # THE REAL REGRESSION: I added `attribute` to the schema while the vocabulary said
     # period/housekeeping. Both directions must be reported, not just the schema's extras.
     s2 = {"$defs": {"x": {"properties": {"role": {"enum": ["key", "dimension", "attribute"]}}}}}
-    v2 = {"column.role": {"kind": "vocabulary", "closed": True,
+    v2 = {"concept.column.role": {"kind": "vocabulary", "closed": True,
                           "terms": {"key": {}, "dimension": {}, "period": {}, "housekeeping": {}}}}
     r = compare(s2, v2, P)[0]
     case("MUTANT a schema-only term fails", r[4] == "disagree" and "attribute" in r[5])
@@ -176,9 +237,35 @@ def _self_test() -> int:
 
     # `members:` must read the same as `terms:`, so an older framework checkout reports the same
     # findings instead of refusing — a gate that cannot read yesterday's tree teaches nothing.
-    r = compare(SCH, {"column.role": {"kind": "value_domain", "closed": True,
+    r = compare(SCH, {"concept.column.role": {"kind": "value_domain", "closed": True,
                                       "members": {"key": {}, "dimension": {}}}}, P)[0]
     case("a `members:` block is read the same as a `terms:` block", r[4] == "ok")
+
+    # ── THE PATTERN HALF (added after a rename passed every self-test and broke a bundle) ─────────
+    SP = [("slot", ["$defs", "x", "properties", "mt"], "concept.column.measure_type")]
+    SCHP = lambda pat: {"$defs": {"x": {"properties": {"mt": ({"pattern": pat} if pat else {"type": "string"})}}}}
+    VP = {"concept.column.measure_type": {"kind": "value_domain", "closed": True,
+                                  "terms": {"flow": {}, "stock": {}}}}
+    cp = lambda pat: compare_patterns(SCHP(pat), VP, SP)[0]
+
+    case("a pattern naming the current namespace passes",
+         cp(r"^mac\.concept\.column\.measure_type\.[A-Za-z_]+$")[2] == "ok")
+    # THE EXACT REGRESSION: the pattern kept the OLD spelling, so a correctly-spelled token is
+    # REFUSED and the stale one is accepted -- the worst way round.
+    case("MUTANT a pattern naming the OLD namespace fails",
+         cp(r"^mac\.measure_type\.[A-Za-z_]+$")[2] == "wrong_namespace")
+    case("the failure says a current token would be REFUSED",
+         "refused" in cp(r"^mac\.measure_type\.[A-Za-z_]+$")[3])
+    case("MUTANT no pattern at all is reported, not passed", cp(None)[2] == "no_pattern")
+    # AN INLINE ALTERNATION IS AN ENUM IN DISGUISE and must match the vocabulary's terms.
+    case("an inline alternation matching the vocabulary passes",
+         cp(r"^mac\.concept\.column\.measure_type\.(flow|stock)$")[2] == "ok")
+    case("MUTANT an inline alternation that DRIFTS from the vocabulary fails",
+         cp(r"^mac\.concept\.column\.measure_type\.(flow|stock|level)$")[2] == "disagree")
+    case("the drift names both sides",
+         "level" in cp(r"^mac\.concept\.column\.measure_type\.(flow|stock|level)$")[3])
+    case("MUTANT a pattern slot that does not exist fails and names the step",
+         compare_patterns({"$defs": {}}, VP, SP)[0][2] == "missing_slot")
 
     bad = [l for l, ok in cases if not ok]
     for l in bad:
@@ -189,7 +276,9 @@ def _self_test() -> int:
         return 1
     print(f"PASS: check_vocabulary_parity self-test — {n}/{n} case(s): a disagreement is reported in "
           f"BOTH directions, an unconstrained slot beside a closed vocabulary fails, a missing block "
-          f"or a missing schema path fails and names what was missing, and `members:` reads as `terms:`")
+          f"or a missing schema path fails and names what was missing, `members:` reads as `terms:`, "
+          f"and a PATTERN must name the current namespace with any inline alternation matching the "
+          f"vocabulary's terms")
     return 0
 
 

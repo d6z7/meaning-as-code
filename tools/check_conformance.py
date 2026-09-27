@@ -862,7 +862,7 @@ def probe_alternatives(cap: Capability, b: Bundle, fw: Framework) -> list:
         # A vocabulary is RESTATED when a model document writes one of its terms as a bare VALUE where
         # the `mac.<ns>.<term>` reference belongs. Deliberately narrow: term-as-a-value inside the L1
         # corpus only. The first cut matched the term anywhere in any file's text and reported that
-        # this bundle "restates mac.aggregation_effect in 158 files" — the word `additive` occurring in
+        # this bundle "restates mac.concept.aggregation_effect in 158 files" — the word `additive` occurring in
         # prose. A probe that counts English is not evidence.
         name = k.split()[0][4:]
         terms = set((fw.vocab.get(name) or {}).get("terms") or

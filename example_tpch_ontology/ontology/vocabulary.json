@@ -29,7 +29,7 @@
     },
     {
       "group": "Rule kinds",
-      "namespace": "mac.rule_kind.*",
+      "namespace": "mac.concept.rule.*",
       "note": "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
       "terms": [
         {

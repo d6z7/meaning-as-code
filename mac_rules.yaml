@@ -49,7 +49,7 @@ metadata:
 rules:
   - id: mac.aggregate.unit_algebra
     subject: "What may be combined is decided by the UNIT — never declared per pair"
-    kind: mac.rule_kind.aggregation
+    kind: mac.concept.rule.aggregation
     scope: { concept.class: measure }
     confidence: C
     when:  "two measures are combined — compared, differenced, summed together, or divided"
@@ -75,7 +75,7 @@ rules:
 
   - id: mac.resolve.period_reading
     subject: "How a bare period is read — determined by the measure's type, never restated per concept"
-    kind: mac.rule_kind.resolution
+    kind: mac.concept.rule.resolution
     scope: { concept.class: measure }
     confidence: C
     when:  "a measure is asked for a bare period (a year, a quarter, a range) with no leaf grain named"
@@ -102,7 +102,7 @@ rules:
   # ── the key law: an identifier is for matching, a label is for reading ───────────────────────────
   - id: mac.resolve.join_on_declared_key
     subject: "Join and filter on the DECLARED key — a label column is for display, never for matching"
-    kind: mac.rule_kind.resolution
+    kind: mac.concept.rule.resolution
     scope: { concept.class: "*" }
     confidence: C
     when:  "a relation carries an entity as BOTH an identifier column and a human-readable label or
@@ -135,7 +135,7 @@ rules:
   # ── the mirror of never_guess: a value you HAVE is not an absence ────────────────────────────────
   - id: mac.guarantee.catalogued_member_is_real
     subject: "A catalogued member is a real value — never drop it as missing, whatever it is called"
-    kind: mac.rule_kind.guarantee
+    kind: mac.concept.rule.guarantee
     scope: { concept.class: reference }
     confidence: C
     when:  "a value set carries a member whose label reads like an absence — Unassigned, Unknown,
@@ -165,7 +165,7 @@ rules:
   # ── how a rule NAMES the model it governs ────────────────────────────────────────────────────────
   - id: mac.authoring.reference_markup
     subject: "A model identifier in a rule's prose is a REFERENCE — write it `{name}`, never bare"
-    kind: mac.rule_kind.resolution
+    kind: mac.concept.rule.resolution
     scope: { concept.class: "*" }
     confidence: C
     when:  "a rule's when/then/never/subject names a column, a relation, or a concept of the model"
@@ -194,7 +194,7 @@ rules:
       collide with the `{{ rules.<name>.template }}` injection MAC has carried since check_references.py
       grew RULE_INJECT_RE.
 
-      A DECLARED STRETCH, surfaced rather than papered over: `mac.rule_kind` is a CLOSED six-term
+      A DECLARED STRETCH, surfaced rather than papered over: `mac.concept.rule` is a CLOSED six-term
       vocabulary and every term describes answering behaviour — resolution, aggregation, default,
       ambiguity, exclusion, guarantee. This rule governs AUTHORING. `resolution` is the closest legal
       term and is used here on the reading that a marker is what makes an identifier resolvable at all;
@@ -204,7 +204,7 @@ rules:
   # ── where a period's boundary comes from, as opposed to how it folds ─────────────────────────────
   - id: mac.resolve.relative_period_anchor
     subject: "\"Latest\", \"last month\", \"YTD\" anchor to the DATA, never to the clock"
-    kind: mac.rule_kind.resolution
+    kind: mac.concept.rule.resolution
     scope: { concept.class: measure }
     confidence: C
     when:  "a question names a period RELATIVE to now — latest, current, last month, last quarter,
@@ -237,7 +237,7 @@ rules:
 
   - id: mac.guarantee.never_guess
     subject: "Never guess — an answer that cannot be established from the data is a refusal"
-    kind: mac.rule_kind.guarantee
+    kind: mac.concept.rule.guarantee
     scope: { concept.class: "*" }
     confidence: C
     when:  "any question whose answer cannot be established from the grounded data"
@@ -258,7 +258,7 @@ rules:
 
   - id: mac.exclusion.no_evidence.measure
     subject: "Refuse a measure with no row for the resolved scope — never guess, estimate or zero-fill"
-    kind: mac.rule_kind.exclusion
+    kind: mac.concept.rule.exclusion
     scope: { concept.class: measure }
     confidence: C
     when:  "the resolved scope has no row for the requested measure, variant and period"
@@ -274,7 +274,7 @@ rules:
 
   - id: mac.exclusion.no_evidence.name
     subject: "Refuse a name that does not resolve to a code — never fuzzy-substitute a near miss"
-    kind: mac.rule_kind.exclusion
+    kind: mac.concept.rule.exclusion
     scope: { concept.class: reference }
     confidence: C
     when:  "a named entity does not resolve to any code"

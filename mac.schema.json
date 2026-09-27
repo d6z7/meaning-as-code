@@ -3,7 +3,7 @@
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
   "version": "0.1.16",
   "title": "Meaning-as-Code (MAC) — formal schema v0.1.18-develop",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.identity_kind, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.concept.identity, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
     {
@@ -607,7 +607,7 @@
       "additionalProperties": false
     },
     "additivityAxis": {
-      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.column.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
+      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.concept.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.concept.column.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
       "oneOf": [
         {
           "enum": [
@@ -618,7 +618,7 @@
         },
         {
           "type": "string",
-          "pattern": "^mac\\.aggregation_effect\\.(additive|average|none)$"
+          "pattern": "^mac\\.concept\\.aggregation_effect\\.(additive|average|none)$"
         }
       ]
     },
@@ -677,14 +677,14 @@
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
           },
-          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#column.measure_type"
+          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#concept.column.measure_type"
         },
         "axis_kinds": {
           "type": "object",
-          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
+          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
+            "pattern": "^mac\\.concept\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
           }
         },
         "unit": {
@@ -699,9 +699,9 @@
         },
         "measure_type": {
           "type": "string",
-          "description": "v0.6: the measure's additivity class — a reference to a mac.column.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
-          "pattern": "^mac\\.column\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$",
-          "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and check_vocabulary_parity does not yet read patterns, so this one had to be found by a bundle failing. Extending the parity gate to patterns is owed."
+          "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "pattern": "^mac\\.concept\\.column\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$",
+          "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.concept.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and check_vocabulary_parity does not yet read patterns, so this one had to be found by a bundle failing. Extending the parity gate to patterns is owed."
         }
       },
       "additionalProperties": false
@@ -762,7 +762,7 @@
               },
               "kind": {
                 "type": "string",
-                "description": "a mac.rule_kind.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)"
+                "description": "a mac.concept.rule.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)"
               },
               "scope": {
                 "type": "string",
@@ -1489,7 +1489,7 @@
             },
             "identity": {
               "type": "object",
-              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.identity_kind) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / resolved_axis / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one.",
+              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / resolved_axis / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one.",
               "properties": {
                 "kind": {
                   "enum": [
@@ -1501,7 +1501,7 @@
                     "resolved_axis",
                     "sme_pending"
                   ],
-                  "description": "mac.identity_kind.<term> — how the canonical identity is established."
+                  "description": "mac.concept.identity.<term> — how the canonical identity is established."
                 },
                 "canonical_key": {
                   "type": "string",
@@ -1660,7 +1660,7 @@
             }
           },
           "then": {
-            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#column.measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#concept.column.measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [

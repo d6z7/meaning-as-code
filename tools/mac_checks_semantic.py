@@ -96,7 +96,7 @@ def _line(b, file: str, path: str, known: int | None = None) -> int | None:
 
 
 def _last(value) -> str:
-    """The final segment of a namespaced term: `mac.aggregation_effect.additive` -> `additive`."""
+    """The final segment of a namespaced term: `mac.concept.aggregation_effect.additive` -> `additive`."""
     return str(value or "").strip().split(".")[-1].strip()
 
 
@@ -299,7 +299,7 @@ def check_dead_guards(b) -> list:
 
     A LEGITIMATE CASE THAT MUST NOT FIRE: a rule citing the same register and pinning a term that is a
     lawful member of the framework vocabulary the column uses but which no row carries today. On <dataset>
-    that is `mac.aggregation_effect.average` — a real term of the closed domain, 0 rows. A guard
+    that is `mac.concept.aggregation_effect.average` — a real term of the closed domain, 0 rows. A guard
     on it is waiting for a row, not dead, and the widening in `_legal_domain` is what keeps it silent.
 
     MEASURED on <dataset> (83 rules, 22 concepts): 8 hits, all one shape — `additivity_time = non_additive`

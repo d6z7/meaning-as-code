@@ -213,7 +213,7 @@ def rule_to_md(rule: dict, parent_name: str, parent_title: str) -> str:
     _conf = {"C": "confirmed", "P": "proposed", "R": "rejected"}.get(
         rule.get("confidence"), rule.get("confidence")
     )
-    # FULL detail, labelled, with the raw namespaces stripped (mac.rule_kind.* -> the bare kind).
+    # FULL detail, labelled, with the raw namespaces stripped (mac.concept.rule.* -> the bare kind).
     # No body H1 / subject blockquote — the read-view already renders the frontmatter title.
     details = [f"- **Kind** — `{_kind}`"]
     if rule.get("confidence"):

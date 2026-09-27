@@ -38,7 +38,7 @@
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
           "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
-          "value": "mac.aggregation_effect.additive"
+          "value": "mac.concept.aggregation_effect.additive"
         },
         {
           "file": "ontology/concepts/finance/revenue.yaml",
@@ -64,7 +64,7 @@
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
           "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
-          "value": "mac.aggregation_effect.additive"
+          "value": "mac.concept.aggregation_effect.additive"
         },
         {
           "file": "ontology/concepts/finance/revenue.yaml",
@@ -90,7 +90,7 @@
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
           "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
-          "value": "mac.aggregation_effect.additive"
+          "value": "mac.concept.aggregation_effect.additive"
         },
         {
           "file": "ontology/concepts/finance/revenue.yaml",
@@ -116,7 +116,7 @@
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
           "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
-          "value": "mac.aggregation_effect.additive"
+          "value": "mac.concept.aggregation_effect.additive"
         },
         {
           "file": "ontology/concepts/finance/revenue.yaml",
@@ -142,7 +142,7 @@
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
           "path": "measure_type.members.Flow.additivity.time",
           "line": 92,
-          "value": "mac.aggregation_effect.additive"
+          "value": "mac.concept.aggregation_effect.additive"
         },
         {
           "file": "ontology/concepts/finance/revenue.yaml",

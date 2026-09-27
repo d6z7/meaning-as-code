@@ -36,14 +36,14 @@ NOTHING IS HARDCODED — the register is DERIVED, five ways, at run time
 
 FIVE GUARDS, EACH MEASURED BEFORE IT WAS TRUSTED. The naive version of this check fires on all five:
 
-  G1 SCHEMA-ENUMERATED VOCABULARIES.   `mac.identity_kind` is referenced 1× in the whole model, so a
+  G1 SCHEMA-ENUMERATED VOCABULARIES.   `mac.concept.identity` is referenced 1× in the whole model, so a
      reference-counting probe reports it unadopted. It is not: the schema spells the seven terms as a
      bare `enum` at `concept.identity.kind`, so `kind: code` IS the legal form and 22 of 22 concepts
      adopt it. A vocabulary whose terms the schema enumerates at its own slot is measured BY THE SLOT.
      Same for `additivity: additive`. Without G1: 2 false findings.
   G2 NON-BUNDLE-FACING VOCABULARIES.   `mac.binding_mode` says in its own definition that it is a
-     per-question runtime classification and NOT a property a concept declares; `mac.aggregation_effect`
-     is referenced only from inside `mac.column.measure_type`'s own cells. Neither is named by any schema
+     per-question runtime classification and NOT a property a concept declares; `mac.concept.aggregation_effect`
+     is referenced only from inside `mac.concept.column.measure_type`'s own cells. Neither is named by any schema
      description. A bundle cannot adopt them and must not be charged for them. Without G2: 2 false
      findings, one of which a sibling tool currently reports as "PROVEN usable by the reference".
   G3 APPLICABILITY.   An offer is only chargeable where its PARENT OBJECT exists. `edges[].aliases` on
@@ -335,7 +335,7 @@ def _shape_offers(fw: Framework, since: dict, known: set) -> list:
 def _vocab_offers(fw: Framework, since: dict) -> list:
     """G2 — a vocabulary is BUNDLE-FACING only if a schema description names it. `mac.binding_mode`
     documents itself as a per-question runtime classification, not a declared property, and
-    `mac.aggregation_effect` is referenced only from inside `mac.column.measure_type`'s own additivity cells.
+    `mac.concept.aggregation_effect` is referenced only from inside `mac.concept.column.measure_type`'s own additivity cells.
     Neither is named by any schema property, so neither is a slot a bundle could fill; charging a
     bundle for not referencing them is the check inventing a requirement."""
     schema_text = json.dumps(fw.schema)
