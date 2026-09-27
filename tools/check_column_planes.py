@@ -19,7 +19,7 @@ WHY THE SPLIT IS WHAT MAKES THE GATE POSSIBLE. Both planes spell the slot `role:
 `mac.storage_role`, the other `mac.column.role`, and the two sets SHARE NO TERM — so a term from
 the wrong side is detectable, and is detectable ONLY once the planes are named. Measured on contoso
 the day this gate was written: `dim_contoso_store.Channel` declares `role: dimension` in the DATA
-plane, which is a column_role term in a storage_role slot. Read as one undifferentiated "role", it
+plane, which is a column.role term in a storage_role slot. Read as one undifferentiated "role", it
 looks correct.
 
 WHAT IT REDS ON
@@ -30,7 +30,7 @@ WHAT IT REDS ON
       nothing profiled
 
 WHAT IT REPORTS BUT DOES NOT RED ON
-  the cross-tab of storage_role x column_role, the four column-map slots' coverage, and the pairs
+  the cross-tab of storage_role x column.role, the four column-map slots' coverage, and the pairs
   the reference manual warns about (a foreign_key used as a dimension: "that is a pointer, not a
   category, even though its cardinality looks dimension-sized"). A warning is not a breach — the
   pair can be correct, and a gate that failed on it would be ruling rather than checking.
@@ -183,7 +183,7 @@ def census(storage: dict, rows: list[dict], kinds: collections.Counter,
     for r in rows:
         s = storage.get((r["rel"], r["col"]))
         xt[(s, r["role"])] += 1
-    print(f"\n── storage_role x column_role, the two planes crossed "
+    print(f"\n── storage_role x column.role, the two planes crossed "
           f"({len(xt)} of {len(terms['storage_role']) * len(terms['column.role'])} possible pairs occur) ──")
     for (s, c), n in sorted(xt.items(), key=lambda x: -x[1]):
         flag = ""

@@ -466,7 +466,12 @@ class Law:
         cell = _as_dict(member.get("additivity")).get(ak)
         if cell is None:
             return None
-        path = f"measure_type.members.{mt}.additivity.{ak}"
+        # BOTH SEGMENTS MOVED ON 2026-09-27: the block `measure_type` -> `column.measure_type`
+        # (operator's namespace hierarchy) and the structural key `members` -> `terms` (the
+        # standardisation earlier the same day). This path had been silently resolving to None
+        # since the second change, because a missing line is not an error anywhere — only
+        # tests/test_mac_model.py asserts it, and it is a sys.exit module pytest cannot import.
+        path = f"column.measure_type.terms.{mt}.additivity.{ak}"
         return Stated(cell, Site(self.doc.relpath, path, self.doc.line_of(path)), "authored")
 
 

@@ -31,7 +31,7 @@ WHAT IS READ, AND FROM WHERE. Nothing here is retyped:
   reference_manual/column_effects.yaml  the rulings plane, already the home of what each ruling
                                 does and whether anything reads it.
   mac_vocabulary.yaml           every closed term list: outcome_class, diagnostic_code,
-                                column_ruling, MeasureType, aggregation_effect.
+                                column.ruling, column.measure_type, aggregation_effect.
 
 Usage:
   python3 tools/gen_grammar_map.py [--runtime <path to mac_runtime>]
@@ -243,13 +243,13 @@ def verify_permissions(perms: dict, measured: dict) -> dict:
 def load_vocabulary() -> dict:
     raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
     out: dict[str, dict] = {}
-    for ns in ("outcome_class", "diagnostic_code", "column.ruling", "measure_type", "aggregation_effect"):
+    for ns in ("outcome_class", "diagnostic_code", "column.ruling", "column.measure_type", "aggregation_effect"):
         spec = raw.get(ns) or {}
         body = spec.get("terms") or spec.get("members") or {}
         out[ns] = {}
         for name, v in body.items():
             # TWO SHAPES, and reading only one is how a generator renders an empty list: a term is
-            # either a map (outcome_class, MeasureType) or a bare string (column_ruling,
+            # either a map (outcome_class, column.measure_type) or a bare string (column.ruling,
             # aggregation_effect). mac_vocabulary.yaml uses both, deliberately.
             if isinstance(v, dict):
                 d = v.get("description") or v.get("definition") or ""

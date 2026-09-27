@@ -16,7 +16,7 @@ metadata:
   version: '0.1.13'
   status: active
   defines: [aggregation_effect, axis_kind, binding_mode, column.measure_type, rule_kind, canon, identity_kind,
-            column.role, column.identity, storage_role, column_ruling, name_register]
+            column.role, column.identity, storage_role, column.ruling, name_register]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -60,7 +60,7 @@ axis_kind:
     categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
 
 # ===========================================================================
-# mac.column_role — WHAT A COLUMN IS, analytically: where a query may use it and the guardrail that
+# mac.column.role — WHAT A COLUMN IS, analytically: where a query may use it and the guardrail that
 # follows. ONE role per column, and it is DERIVABLE — cardinality, type and reference structure give
 # it, which is why a generator can assign it unaided over a thousand columns without a human.
 #
@@ -75,7 +75,7 @@ axis_kind:
 # `attribute` IS DELIBERATELY ABSENT. It was never a role: it was four different JUDGEMENTS filed in
 # the slot where types live — another name for the same thing, a different level of the same thing,
 # too identifying to be an axis, and not business content at all. Judgements are authored and cannot
-# be derived, which is exactly why no generator ever assigned it. They live in `mac.column_ruling`.
+# be derived, which is exactly why no generator ever assigned it. They live in `mac.column.ruling`.
 # ===========================================================================
 column.role:
   kind: vocabulary
@@ -111,7 +111,7 @@ column.role:
       for the system that writes them: a load stamp is housekeeping whoever keeps the house.
 
 # ===========================================================================
-# mac.identity_role — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
+# mac.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
 # narrower than `mac.identity_kind`, which is per CONCEPT and says how identity is ESTABLISHED
 # (iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending). The two answer
 # different questions and both are needed: the concept says identity is a composite; these say
@@ -145,7 +145,7 @@ column.identity:
 
 # ===========================================================================
 # mac.storage_role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
-# question may do with it. A column carries BOTH a storage_role and a column_role and they answer
+# question may do with it. A column carries BOTH a storage_role and a column.role and they answer
 # different questions: `CountryCode` is storage `value` and analytically a `dimension`; `StoreKey`
 # is storage `primary_key` and analytically a `key`.
 #
@@ -173,10 +173,10 @@ storage_role:
       type is read from.
 
 # ===========================================================================
-# mac.column_ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
+# mac.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
 # here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
 # a postcode identifies people, that one geography level is finer than another. This is why they must
-# not share a slot with `column_role`, which is derived — a slot that accepts both silts up, and
+# not share a slot with `column.role`, which is derived — a slot that accepts both silts up, and
 # `attribute` is what that looks like after two years.
 #
 # A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
