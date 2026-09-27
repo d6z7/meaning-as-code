@@ -963,7 +963,7 @@ def harvest_concepts(
     out_dir.mkdir(parents=True, exist_ok=True)
     ds_paths = sorted((data / "datasets").glob("*.yaml"))[: limit or None]
     written = refused = 0
-    concept_of: dict = {}  # bare relation/table -> authored concept name (for edge endpoints)
+    authored: list = []  # every authored ConceptFile, for edges.concept_index (endpoint resolution)
     ds_info = []
     inputs: dict = {}  # per-input sha256 for the reproducibility ledger
     # ── PASS 1: PLAN. One call over the WHOLE inventory decides what the NOTIONS are. ───────────
@@ -1037,17 +1037,25 @@ def harvest_concepts(
         written += pw["written"]
         refused += not pw["written"]
         if pw["written"]:
-            cn = ((res.get("obj") or {}).get("concept") or {}).get("name") or name
-            for r in rels:  # M:N — every relation maps to this notion
-                concept_of[by_stem[r]["relation_bare"]] = cn
-                concept_of[r] = cn
+            # KEEP THE WHOLE CONCEPT, not a name per relation. What stood here was
+            # `concept_of[rel] = cn` under a comment reading "M:N — every relation maps to this
+            # notion", which named the defect and then committed it: four concepts ground on
+            # contoso4's sales relation and the last one written won, so all three delivered edges
+            # came out `Currency -> Region`. The endpoint has to be chosen from the COLUMN, and that
+            # needs the concept's column map — see edges.concept_index.
+            authored.append(res.get("obj") or {})
         print(
             f"  {res.get('status', '?'):<12} {stem} <- [{', '.join(rels)}] -> "
             f"{'written' if pw['written'] else 'REFUSED: ' + str(pw.get('reason'))}"
             + (f" ({res.get('rules', 0)} rules)" if pw["written"] else "")
         )
     # EDGES: lift the data layer's foreign_keys into physical edges between the authored concepts.
-    phys = edges.physical_edges(ds_info, concept_of)
+    phys, unedged = edges.physical_edges(ds_info, edges.concept_index(authored))
+    # A SKIPPED EDGE IS REPORTED, NEVER SWALLOWED. Each carries the reason it could not be resolved —
+    # no concept on the relation, or two concepts claiming one column — because the alternative is the
+    # silence that let three nonsense endpoints ship.
+    for sk in unedged:
+        print(f"    no edge: {sk['edge_id']} — {sk['why']}")
     ef = edges.make_edges_file(phys, source=ident.label)  # de-ACME: label from the manifest
     pe = operations.persist_edges(cr / "ontology", ef)
     print(

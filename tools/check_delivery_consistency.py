@@ -45,6 +45,16 @@ from datetime import UTC, datetime
 #: reads here, and a scheduled job looks here. Three copies of a filename is three chances to drift.
 RUNS_REL = "acceptance/delivery_consistency_runs.json"
 
+# ONE RESOLVER, NOT TWO. FK-EDGE must know which concept claims which column, and so must the edge
+# PRODUCER. Two implementations of that would drift — which is the defect class this whole checklist
+# exists to find, and which produced three edges reading `Currency -> Region` — so the gate imports the
+# producer's own function. Unavailable, it REFUSES (exit 2); a gate that cannot resolve must not pass.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+try:
+    from sdk.authoring.edges import concept_index as _concept_index
+except ImportError:  # pragma: no cover - reported by main(), never guessed around
+    _concept_index = None
+
 ACCEPTED_SHAPE = """\
 This gate reads a bundle's DELIVERED artifacts and compares them with each other:
 
@@ -209,66 +219,93 @@ def counts(items: list[dict]) -> tuple[int, int, int, int]:
 
 
 def inv_fk_edge(st: dict) -> list[dict]:
-    """Every measured foreign key is an edge between concepts, or is enumerated as not owing one.
+    """Every measured foreign key that a modelled concept references through is an edge.
 
     THE DEFECT THIS CATCHES, MEASURED: 12 foreign keys on the descriptors, 0 edges in the ontology, and
     an ER diagram drawing all 12 because it reads the DATA plane. Both deliverables present, both
     internally correct, contradicting each other about whether the relations are related.
 
-    IT ENUMERATES ALL TWELVE. An FK whose ends are not both modelled owes no edge — but it is LISTED,
-    with the end that is unmodelled named, because "9 of these 12 were not checked, and here is which"
-    is a fact about ontology coverage and the previous version of this function hid it behind `continue`.
+    AND THE DEFECT THIS INVARIANT ITSELF HAD, found 2026-09-27. It matched a token built from the
+    RELATION and COLUMN (`sales__CustomerKey__to__customer`) against the edge ids, and so it passed on
+    three edges whose endpoint CONCEPTS were `Currency -> Region`, `Currency -> Region` and
+    `Currency -> ProductColor` — nonsense produced by a lift that kept one concept per relation while
+    four ground on the sales relation. A structural match on a name is not a check on a claim: the
+    edges were present, grammar-clean, and said nothing true. It now resolves the CONCEPTS on both
+    ends and requires an edge between THOSE.
+
+    IT ENUMERATES PER (CONCEPT, FOREIGN KEY) PAIR, not per foreign key, because one FK legitimately
+    fans out: OrderLine, Order and SalesAmount all reference Customer through sales.CustomerKey and all
+    three are true. An FK whose relation backs no concept is listed as STRUCTURAL rather than dropped —
+    "9 of these were not checked, and here is why" is a fact about ontology coverage.
     """
     if not st["fks"]:
         return []
+    idx = st.get("concept_index") or {}
     if not st["concepts"]:
         return [_i(f"{rel}.{col} -> {tgt}", NA,
                    f"{rel}.{col} -> {tgt} is measured, and this bundle has no ontology plane yet, so no "
                    f"edge can be owed. Authoring concepts is what makes this checkable")
                 for rel, col, tgt in st["fks"]]
-    ground = {}
-    for name, d in st["concepts"].items():
-        for src in (d.get("grounding") or {}).get("sources") or []:
-            r = str(src.get("relation") or "").split(".")[-1]
-            if r:
-                ground.setdefault(r, set()).add(name)
-    edged = set()
+    # An edge is identified by the PAIR OF CONCEPTS it joins, never by its id — the id is a convenience
+    # and the previous version's whole failure was trusting it.
+    joined = set()
     for e in st["edges"]:
         eps = e.get("endpoints") or {}
-        edged.add((str(eps.get("from") or e.get("from") or ""), str(eps.get("to") or e.get("to") or "")))
-        edged.add(str(e.get("edge_id") or ""))
+        f = str((eps.get("from") or {}).get("concept") or e.get("from") or "")
+        t = str((eps.get("to") or {}).get("concept") or e.get("to") or "")
+        if f and t:
+            joined.add((f, t))
     ruled = st.get("ruled_unclaimed") or set()
     out = []
     for rel, col, tgt in st["fks"]:
         subject = f"{rel}.{col} -> {tgt}"
-        loose = [r for r in (rel, tgt) if r not in ground]
-        if loose:
-            # WHY IT DOES NOT APPLY, PER END — and the three reasons are NOT the same fact. Measured on
-            # contoso4, where 9 of 12 came back n/a: 6 were raw-plane keys (structural — concepts ground
-            # on the served plane, so a raw key can never be an edge between concepts) and 3 were on
-            # relations the operator RULED `backs_no_notion`. A single reason made nine decisions read as
-            # nine gaps. Only the third reason below is a coverage gap, and CONCEPT-RELATION fails on it.
+        here, there = idx.get(rel) or [], idx.get(tgt) or []
+        if not here or not there:
+            loose = [r for r, c in ((rel, here), (tgt, there)) if not c]
             why = []
             for r in loose:
                 if r in st["sources"] and r not in st["served"]:
-                    why.append(f"{r!r} is a RAW landing, and concepts ground on the served plane, so a "
+                    why.append(f"{r!r} is a RAW landing and concepts ground on the served plane, so a "
                                f"raw foreign key can never be an edge between concepts (structural)")
                 elif r.lower() in ruled:
-                    why.append(f"{r!r} is claimed by no concept and DECLINED BY A RULING — a decision on "
+                    why.append(f"{r!r} backs no concept and is DECLINED BY A RULING — a decision on "
                                f"the record, so no edge is owed")
                 else:
-                    why.append(f"{r!r} is claimed by no concept AND declined by nothing — a coverage gap, "
+                    why.append(f"{r!r} backs no concept AND is declined by nothing — a coverage gap, "
                                f"which invariant CONCEPT-RELATION reports as a violation")
             out.append(_i(subject, NA, f"{subject} owes no edge: " + "; ".join(why)))
             continue
-        token = f"{rel}__{col}__to__{tgt}"
-        if token in edged or any(token in str(x) for x in edged):
-            out.append(_i(subject, OK, f"{subject} is joined by an edge in ontology/edges.yaml"))
+        claimants = sorted(c["name"] for c in here if col in c["references"])
+        # THE REFERENCED COLUMN IS THE REFERRING COLUMN'S NAME — this warehouse's convention, and what
+        # `mac_references` measured. A concept on the target keyed on that name is the destination.
+        targets = sorted(c["name"] for c in there if c["canonical_key"] == col)
+        if not claimants:
+            out.append(_i(subject, NA,
+                          f"{subject} is measured and no concept on {rel!r} declares {col!r} with "
+                          f"`identity: reference`, so no notion references through it and no edge is "
+                          f"owed. The concepts on {rel!r} are "
+                          f"{', '.join(sorted(c['name'] for c in here))}"))
             continue
-        out.append(_i(subject, VIOLATION,
-                      f"{subject} is a MEASURED foreign key between two modelled concepts "
-                      f"({'/'.join(sorted(ground[rel]))} -> {'/'.join(sorted(ground[tgt]))}) and no edge "
-                      f"in ontology/edges.yaml joins them"))
+        if len(targets) != 1:
+            out.append(_i(subject, VIOLATION,
+                          f"{subject} is referenced by {', '.join(claimants)}, and the target relation "
+                          f"{tgt!r} has {len(targets)} concept(s) taking the referenced column as a "
+                          f"canonical key ({', '.join(targets) or 'none'}) — so the edge has no single "
+                          f"destination and the reference resolves to nothing"))
+            continue
+        to = targets[0]
+        for frm in claimants:
+            pair = f"{frm} -> {to}"
+            if frm == to:
+                continue
+            if (frm, to) in joined:
+                out.append(_i(pair, OK, f"{pair} is joined by an edge in ontology/edges.yaml "
+                                        f"(measured through {rel}.{col})"))
+            else:
+                out.append(_i(pair, VIOLATION,
+                              f"{frm!r} references {to!r} through the MEASURED foreign key "
+                              f"{rel}.{col} and no edge in ontology/edges.yaml joins those two "
+                              f"concepts"))
     return out
 
 
@@ -532,7 +569,9 @@ def inv_register_orphan(st: dict) -> list[dict]:
 
 
 INVARIANTS = (
-    ("FK-EDGE", "a measured foreign key between modelled concepts is an edge", inv_fk_edge),
+    # The wording follows the invariant: it checks a (CONCEPT, foreign key) pair, not a foreign key,
+    # because one FK fans out to every concept that references through it.
+    ("FK-EDGE", "a concept referencing through a measured FK has an edge to its target", inv_fk_edge),
     ("CONCEPT-RELATION", "a concept grounds on a described relation; a served relation is decided about",
      inv_concept_relation),
     # The wording widened with the invariant: it read only `field_roles` and now reads the column map
@@ -639,7 +678,12 @@ def main(argv: list[str] | None = None) -> int:
               f"about. This is not a pass.\n\n{ACCEPTED_SHAPE}")
         return 2
 
+    if _concept_index is None:
+        print(f"COULD NOT RUN: sdk.authoring.edges is unavailable, so FK-EDGE cannot resolve a concept "
+              f"endpoint. A gate that cannot resolve must refuse, not pass.\n\n{ACCEPTED_SHAPE}")
+        return 2
     st = load(root, yaml)
+    st["concept_index"] = _concept_index(list(st["concepts"].values()))
     print(f"  DELIVERY CONSISTENCY — {root.name}\n"
           f"  presence is not consistency: {len(st['served'])} served + {len(st['sources'])} raw "
           f"descriptor(s), {len(st['profiles'])} profile(s), {len(st['concepts'])} concept(s), "
@@ -698,7 +742,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _self_test() -> int:
     """One mutant per invariant plus a clean fixture (CORE.md §2), every case a pure dict."""
-    def base() -> dict:
+    def _base() -> dict:
         return {
             "served": {"v_s": {"columns": [{"name": "CK", "role": "foreign_key",
                                             "references": "v_c"}]},
@@ -707,17 +751,35 @@ def _self_test() -> int:
                                              "register": "data/lookups/b_x.lookup.csv"}]}},
             "sources": {},
             "profiles": {"v_s": {}, "v_c": {}},
+            # THE CONCEPTS CARRY THEIR NAME AND THEIR IDENTITY FLAGS, because FK-EDGE now resolves an
+            # endpoint through `concept.name` and `identity: reference` / `identity: canonical`. The
+            # fixture used to carry neither and its edge carried no `endpoints` — which is precisely how
+            # it certified an invariant that matched an id STRING while three real edges said
+            # `Currency -> Region`. A fixture thinner than the artifact proves nothing about it.
             "concepts": {
-                "line": {"grounding": {"sources": [{"relation": "v_s", "columns": {"CK": {"role": "key"}}}],
+                "line": {"concept": {"name": "Line"},
+                         "grounding": {"sources": [{"relation": "v_s", "columns": {
+                             "CK": {"role": "key", "identity": "reference"}}}],
                                        "field_roles": {"CK": "mac.field_role.key"}}},
-                "cust": {"grounding": {"sources": [{"relation": "v_c"}]}},
+                "cust": {"concept": {"name": "Cust"},
+                         "grounding": {"sources": [{"relation": "v_c", "columns": {
+                             "CK": {"role": "key", "identity": "canonical"}}}]}},
             },
-            "refs": {}, "edges": [{"edge_id": "v_s__CK__to__v_c"}],
+            "refs": {},
+            "edges": [{"edge_id": "Line__CK__to__Cust",
+                       "endpoints": {"from": {"concept": "Line"}, "to": {"concept": "Cust"}}}],
             "fks": [("v_s", "CK", "v_c")],
             "registers": ["b_x.lookup.csv"], "monitor": True,
             "concept_samples": ["line"], "sample_run": True, "vocab_ns": set(),
             "ruled_unclaimed": set(),
         }
+
+    def base() -> dict:
+        """The fixture, WITH its concept index built by the same resolver the gate uses — so a fixture
+        can never be checkable in a way a real bundle is not."""
+        st = _base()
+        st["concept_index"] = _concept_index(list(st["concepts"].values())) if _concept_index else {}
+        return st
     cases = []
 
     def case(label, mutate, expect_code):
@@ -741,7 +803,7 @@ def _self_test() -> int:
          lambda st: st["concepts"]["line"]["grounding"]["field_roles"].__setitem__(
              "CK", "CONTOSO4.field_role.key"), "ROLE-VOCAB")
     case("MUTANT a set-extension concept with no canonical key",
-         lambda st: st["concepts"]["cust"].update(values={"closure": "closed", "items": []}),
+         lambda st: st["concepts"]["line"].update(values={"closure": "closed", "items": []}),
          "MEMBER-GRAIN")
     case("MUTANT registers with no monitor result", lambda st: st.update(monitor=False),
          "REGISTER-MONITOR")
@@ -819,8 +881,10 @@ def _self_test() -> int:
     st = base()
     st["concepts"]["line"]["grounding"]["field_roles"] = {}
     rv = inv_role_vocab(st)
+    # TWO column declarations in the fixture (line.CK and cust.CK) and zero field_roles: the point is
+    # that the count comes from the COLUMN MAP at all, which it did not before.
     check("ROLE-VOCAB enumerates the COLUMN MAP, not only field_roles",
-          counts(rv)[0] == 1 and counts(rv)[1] == 1)
+          counts(rv)[0] == 2 and counts(rv)[1] == 2)
     check("ROLE-VOCAB accepts a bare role from the closed set",
           all(i["verdict"] == "ok" for i in rv))
 
@@ -843,20 +907,30 @@ def _self_test() -> int:
     st = base()
     st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
     st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = None
+    # `null` means "serve it and say nothing more" -- a declaration of silence, so NO item for that
+    # column. The fixture's other concept still contributes its own, which is why this asserts the
+    # absence of the null column rather than an empty list.
     check("a column declared `null` says nothing and is not graded",
-          counts(inv_role_vocab(st))[0] == 0)
+          not any(i["subject"].startswith("line.") for i in inv_role_vocab(st)))
 
     st = base()
     st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
     st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = {"identity": "part"}
+    # EXACTLY ONE n/a, not a list equality: the fixture's other concept contributes a real role, and a
+    # test that pins the whole list breaks whenever the fixture grows a column — which is a test
+    # measuring the fixture rather than the behaviour.
     check("a column with flags but no role is n/a, and SAYS SO rather than passing",
-          [i["verdict"] for i in inv_role_vocab(st)] == ["n/a"])
+          [i["verdict"] for i in inv_role_vocab(st)].count("n/a") == 1)
 
     # BOTH SHAPES AT ONCE, which is the state a bundle mid-migration is in: the legacy token and the
     # column map must BOTH be enumerated, or migrating silently halves the coverage.
     st = base()
+    # line carries a field_role AND a column role; cust carries a column role. Three declarations, and
+    # the legacy shape must still be among them or migrating a bundle halves its coverage in silence.
+    rv = inv_role_vocab(st)
     check("a concept carrying BOTH shapes has both enumerated",
-          counts(inv_role_vocab(st))[0] == 2)
+          counts(rv)[0] == 3 and any("field_role" in i["subject"] for i in rv)
+          and any(i["subject"].endswith(" role") for i in rv))
 
     # THE TWO HOMES ARE PINNED TOGETHER. COLUMN_ROLES mirrors mac.schema.json's enum for the same slot;
     # a change to one and not the other is exactly the drift this estate keeps paying for, so it goes

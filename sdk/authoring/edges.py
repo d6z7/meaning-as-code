@@ -70,49 +70,158 @@ def _valid_edge(edge: dict) -> bool:
     return not _edge_errors({"edges": [edge]})
 
 
-def physical_edges(datasets_info: list, concept_of: dict) -> list:
+def concept_index(concepts: list) -> dict:
+    """bare relation -> [{name, canonical_key, references}] for every concept grounding on it.
+
+    WHY A LIST AND NOT A NAME, which is the whole defect this repairs. `physical_edges` used to take
+    `concept_of: dict[str, str]` — ONE concept per relation — and harvest.py built it with
+    `concept_of[rel] = cn` inside a loop over concepts, its own comment reading "M:N — every relation
+    maps to this notion" while the assignment kept only the last. MEASURED ON contoso4: four concepts
+    ground on `v_contoso4_sales` (OrderLine, Order, SalesAmount, Currency), five on the customer
+    relation and six on the product one, so all three delivered edges came out as
+
+        Currency -> Region,  Currency -> Region,  Currency -> ProductColor
+
+    with join_rules that were correct and endpoints that were nonsense. Both artifacts present, the
+    file grammar-clean, and the checker's FK-EDGE invariant PASSED because it matched the edge_id
+    string and never looked at the concepts.
+
+    A relation genuinely backs many notions. The endpoint therefore cannot be chosen from the
+    relation — it has to be chosen from the COLUMN, which is what the column map now makes possible.
+    """
+    out: dict = {}
+    for d in concepts or []:
+        c = (d or {}).get("concept") or {}
+        name = str(c.get("name") or "").strip()
+        if not name:
+            continue
+        declared = str(((c.get("identity") or {}).get("canonical_key") or "")).strip()
+        for src in ((d.get("grounding") or {}).get("sources") or []):
+            rel = _bare(src.get("relation"))
+            if not rel:
+                continue
+            cols = src.get("columns")
+            refs, canon = set(), declared
+            if isinstance(cols, dict):
+                for cn, body in cols.items():
+                    if not isinstance(body, dict):
+                        continue
+                    ident = str(body.get("identity") or "")
+                    if ident == "reference":
+                        refs.add(str(cn))
+                    elif ident == "canonical" and not canon:
+                        canon = str(cn)
+            out.setdefault(rel, []).append({"name": name, "canonical_key": canon, "references": refs})
+    return out
+
+
+def _claimants(cands: list, col: str) -> list:
+    """EVERY concept on this relation that declares `col` as a reference. All of them are edges.
+
+    THIS IS NOT AMBIGUITY AND MUST NOT BE REFUSED — the first version of this fix got that wrong.
+    Measured on contoso4: OrderLine, Order and SalesAmount all ground on the sales relation and all
+    three declare `CustomerKey: identity: reference`. An order has a customer, an order line has a
+    customer, and an attributable amount has a customer: three true statements, so three edges. The
+    FK is a property of the RELATION; the edge is a property of the CONCEPT, and one FK legitimately
+    fans out to as many edges as there are notions that reference through it.
+    """
+    return sorted(c["name"] for c in cands if col in c["references"])
+
+
+def _target(cands: list, col: str) -> tuple:
+    """(concept_name, reason). The ONE concept whose canonical key is `col`, or nothing and why.
+
+    THE TO-SIDE IS GENUINELY SINGULAR, unlike the from-side: a key resolves to the notion it
+    identifies, and two notions claiming one canonical key would mean the key identifies two things —
+    which is a defect in the concepts, not a fan-out. So this refuses, and the refusal names the
+    claimants rather than choosing by iteration order (which is how `Currency -> Region` shipped).
+    """
+    hit = sorted(c["name"] for c in cands if c["canonical_key"] == col)
+    if len(hit) == 1:
+        return hit[0], ""
+    if not hit:
+        return None, (f"no concept on this relation takes {col!r} as its canonical key "
+                      f"(candidates: {', '.join(sorted(c['name'] for c in cands)) or 'none'})")
+    return None, (f"{len(hit)} concepts claim {col!r} as their canonical key — {', '.join(hit)} — so "
+                  f"the key would identify two notions; a person must say which owns it")
+
+
+def physical_edges(datasets_info: list, index: dict) -> tuple:
     """Lift declared foreign_keys into PHYSICAL foreign_key edges between concepts.
 
     datasets_info: [{relation_bare, produces_relation, foreign_keys:[{from_column,to_table,to_column}]}]
-    concept_of:    bare relation/table name -> concept name (only authored concepts resolve)
-    Endpoints reference the CONCEPTS; the physical join lives in join_rule. Unresolved endpoints
-    (a FK to a table with no authored concept) are skipped. Deduped + individually validated.
+    index:         `concept_index(...)` — bare relation -> [{name, canonical_key, references}]
+
+    Returns (edges, skipped). Endpoints reference the CONCEPTS; the physical join lives in join_rule.
+
+    HOW AN ENDPOINT IS CHOSEN, and it is chosen from the COLUMN because a relation backs many notions:
+      from — the concept on this relation that declares the FK column with `identity: reference`
+      to   — the concept on the target relation whose CANONICAL KEY is the target column
+    Exactly one candidate each, or the edge is SKIPPED WITH A REASON. See `concept_index` for the
+    three nonsense edges this replaces.
     """
-    edges, seen = [], set()
+    edges, seen, skipped = [], set(), []
     for di in datasets_info:
-        frm = concept_of.get(di["relation_bare"])
-        if not frm:
-            continue
+        rel = di["relation_bare"]
+        cands_from = index.get(rel) or []
         roles = di.get("roles") or {}
         for fk in di.get("foreign_keys", []) or []:
-            # Orient fact -> dimension: emit only when the from-column is a genuine FK on THIS relation,
-            # not the relation's OWN primary key. Dimensions sometimes declare a back-reference FK on
-            # their PK to a fact — that reverse edge is the dimension's identity, not a reference; skip it
-            # (the fact's real FK edge captures the same relationship in the correct direction).
-            if roles.get(fk.get("from_column")) == "primary_key":
+            col, to_tab, to_col = fk.get("from_column"), _bare(fk.get("to_table")), fk.get("to_column")
+            eid = f"{rel}__{col}__to__{to_tab}"
+            # Orient fact -> dimension: a dimension sometimes declares a back-reference FK on its own
+            # PK; that reverse edge is identity, not reference, and the fact's FK says it correctly.
+            if roles.get(col) == "primary_key":
                 continue
-            to = concept_of.get(_bare(fk.get("to_table")))
-            if not to or to == frm:
+            # STRUCTURAL, NOT A GAP: a relation no concept grounds on cannot carry an edge BETWEEN
+            # concepts. On contoso4 that is the 6 raw-plane keys (concepts ground on the served plane)
+            # and the 3 on relations the operator ruled `backs_no_notion`. Reported, and marked, so it
+            # is not read as work.
+            if not cands_from:
+                skipped.append({"edge_id": eid, "kind": "structural",
+                                "why": f"no authored concept grounds on {rel!r}"})
                 continue
-            eid = f"{di['relation_bare']}__{fk.get('from_column')}__to__{_bare(fk.get('to_table'))}"
-            if eid in seen:
+            froms = _claimants(cands_from, col)
+            if not froms:
+                skipped.append({"edge_id": eid, "kind": "unclaimed",
+                                "why": f"no concept on {rel!r} declares {col!r} with "
+                                       f"`identity: reference`, so no notion references through it"})
                 continue
-            edge = {
-                "edge_id": eid,
-                "level": "physical",
-                "type": "foreign_key",
-                # `0..N` BOTH ENDS, deliberately: the weakest true claim. Nothing here has measured
-                # containment or fan-out, and the grammar requires a value — so it gets the one that
-                # promises nothing and that no measurement can contradict. See the module docstring.
-                "endpoints": {"from": {"concept": frm, "cardinality": UNMEASURED_CARDINALITY},
-                              "to": {"concept": to, "cardinality": UNMEASURED_CARDINALITY}},
-                "join_rule": f"{di['produces_relation']}.{fk.get('from_column')} = "
-                f"{fk.get('to_table')}.{fk.get('to_column')}",
-            }
-            if _valid_edge(edge):
-                seen.add(eid)
-                edges.append(edge)
-    return edges
+            cands_to = index.get(to_tab) or []
+            if not cands_to:
+                skipped.append({"edge_id": eid, "kind": "structural",
+                                "why": f"no authored concept grounds on {to_tab!r}"})
+                continue
+            to, why = _target(cands_to, to_col)
+            if not to:
+                skipped.append({"edge_id": eid, "kind": "needs_ruling", "why": f"to-endpoint: {why}"})
+                continue
+            # ONE EDGE PER CLAIMANT. The edge_id carries the concept, because three edges over one FK
+            # would otherwise collide on the relation-and-column name and two of the three would be
+            # silently deduped away — which is the same class of loss as the endpoint bug.
+            for frm in froms:
+                if to == frm:
+                    continue
+                e_id = f"{frm}__{col}__to__{to}"
+                if e_id in seen:
+                    continue
+                edge = {
+                    "edge_id": e_id,
+                    "level": "physical",
+                    "type": "foreign_key",
+                    # `0..N` BOTH ENDS, deliberately: the weakest true claim. Nothing here has measured
+                    # containment or fan-out, and the grammar requires a value — so it gets the one
+                    # that promises nothing and no measurement can contradict. See the docstring.
+                    "endpoints": {"from": {"concept": frm, "cardinality": UNMEASURED_CARDINALITY},
+                                  "to": {"concept": to, "cardinality": UNMEASURED_CARDINALITY}},
+                    "join_rule": f"{di['produces_relation']}.{col} = {fk.get('to_table')}.{to_col}",
+                }
+                if _valid_edge(edge):
+                    seen.add(e_id)
+                    edges.append(edge)
+                else:
+                    skipped.append({"edge_id": e_id, "kind": "invalid",
+                                    "why": "the assembled edge is not grammar-clean"})
+    return edges, skipped
 
 
 def make_edges_file(edges: list, *, source: str) -> dict:
