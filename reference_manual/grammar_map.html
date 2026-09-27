@@ -1,0 +1,5335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAC · three grammars, one shape</title>
+<script>
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+</script>
+<style>
+
+/* The estate's palette — the same four outcome colours the console's route column uses, so an
+   outcome reads the same here as there. Used only as STATUS colour: every chip carries its word. */
+:root{
+  --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
+  --ink:#1a2030; --muted:#5a6576; --faint:#8b95a5;
+  --accent:#3563c9; --accent-soft:#e6ecfb;
+  --ask:#b9770a; --ask-bg:#fbf1dd; --commit:#2f8a4e; --commit-bg:#e4f4ea;
+  --refuse:#c0392b; --refuse-bg:#fbe6e3; --invariant:#6b4fbb; --invariant-bg:#eee8fb;
+  --other:#5a6576; --other-bg:#eceff3;
+  --mono:'SF Mono','JetBrains Mono',Menlo,Consolas,ui-monospace,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --radius:9px; --shadow:0 1px 2px rgba(20,30,55,.05),0 3px 12px rgba(20,30,55,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686; --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}}
+:root[data-theme="dark"]{
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686; --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;
+  line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:21px;margin:0;letter-spacing:-.015em}
+h2,h3,h4{margin:0}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.macbar{position:sticky;top:0;z-index:60;height:44px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--border)}
+.mb-left{display:flex;align-items:center;gap:18px;min-width:0}
+.mb-right{display:flex;align-items:center;gap:10px}
+.mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;font-size:13.5px;white-space:nowrap}
+.mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.mb-tabs{display:inline-flex;gap:3px;flex-wrap:wrap}
+.mb-tab{padding:4px 11px;border-radius:7px;color:var(--faint);font-weight:650;font-size:13px;
+  line-height:1.6;border:0;background:none;white-space:nowrap}
+.mb-tab:hover{background:var(--ground);color:var(--ink)}
+.mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);
+  border-radius:6px;width:30px;height:28px;font-size:14px}
+.modesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.modesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 11px;letter-spacing:.02em}
+.modesw button.on{background:var(--ink);color:var(--surface)}
+.modesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+
+.view{display:none} .view.on{display:block}
+.pad{padding:22px 24px 72px;max-width:1340px;margin:0 auto}
+.lede{color:var(--muted);max-width:80ch;margin:7px 0 0}
+.sec{margin:28px 0 12px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);font-weight:750}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow)}
+.card-h{padding:12px 15px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;
+  justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.card-b{padding:15px}
+
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+  font-size:11px;font-weight:750;letter-spacing:.04em;border:1px solid transparent;white-space:nowrap}
+.c-COMMIT{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+.c-ASK{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.c-REFUSE{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.c-BLOCK{color:var(--invariant);background:var(--invariant-bg);border-color:var(--invariant)}
+.pl{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:5px;padding:1px 6px;letter-spacing:.04em;white-space:nowrap}
+.pl.warn{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.pl.bad{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.pl.good{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+
+/* ---- operation selector ---- */
+.ops{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 4px}
+.ops button{border:1px solid var(--border);background:var(--surface);border-radius:8px;
+  padding:7px 12px;font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--muted);
+  display:inline-flex;align-items:center;gap:7px}
+.ops button:hover{border-color:var(--accent);color:var(--ink)}
+.ops button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ops button .b{font-size:9.5px;letter-spacing:.06em;padding:1px 5px;border-radius:4px;
+  background:var(--surface-2);color:var(--faint)}
+.ops button.on .b{background:rgba(255,255,255,.22);color:#fff}
+.ops button.drift{border-color:var(--refuse)}
+
+/* ---- the wiring diagram ---- */
+.wirebox{position:relative;margin-top:14px}
+#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.lanes{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:56px}
+@media (max-width:1000px){.lanes{grid-template-columns:1fr;gap:20px} #wires{display:none}}
+.lane-h{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  font-weight:750;margin-bottom:9px}
+.node{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
+  margin-bottom:7px;font-family:var(--mono);font-size:12.5px;font-weight:650;
+  display:flex;align-items:center;justify-content:space-between;gap:9px;transition:.12s}
+.node .rd{font-size:10px;color:var(--faint);font-weight:650;letter-spacing:.03em}
+.node.lit{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.node.on{border-color:var(--muted);color:var(--ink)}
+.node.opnode{border-width:2px;border-color:var(--accent);background:var(--accent-soft);
+  color:var(--accent);flex-direction:column;align-items:flex-start;gap:3px;padding:10px 12px}
+.node.opnode.noedge{border-style:dashed;border-color:var(--ask);background:var(--ask-bg);color:var(--ask)}
+.node.opnode .sub{font-family:var(--sans);font-size:11px;font-weight:600;line-height:1.35}
+.node.dim{opacity:.34}
+.node.unread{border-style:dashed;color:var(--faint)}
+.node.slot{justify-content:flex-start;font-weight:750}
+.node.out{border-width:1px}
+.node.out.lit-COMMIT{border-color:var(--commit);background:var(--commit-bg);color:var(--commit)}
+.node.out.lit-ASK{border-color:var(--ask);background:var(--ask-bg);color:var(--ask)}
+.node.out.lit-REFUSE{border-color:var(--refuse);background:var(--refuse-bg);color:var(--refuse)}
+.node.out.lit-BLOCK{border-color:var(--invariant);background:var(--invariant-bg);color:var(--invariant)}
+.node .sub{font-family:var(--sans);font-size:11px;font-weight:450;color:var(--faint)}
+
+/* ---- op detail ---- */
+.detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:13px;margin-top:20px}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:13px 15px;box-shadow:var(--shadow)}
+.dcard .t{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);
+  font-weight:750;margin-bottom:6px}
+.dcard .v{font-size:13.5px}
+.dcard .v code{display:block;margin-top:3px}
+.callout{margin-top:16px;padding:13px 16px;border-radius:0 var(--radius) var(--radius) 0;
+  border:1px solid var(--border);border-left:3px solid var(--ask);background:var(--surface);
+  font-size:13.5px;box-shadow:var(--shadow)}
+.callout.bad{border-left-color:var(--refuse)}
+.callout .h{font-weight:750;margin-bottom:5px}
+.callout p{margin:0;color:var(--muted)}
+.callout p+p{margin-top:7px}
+
+/* ---- tables ---- */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
+
+/* ---- the gap chart: one series, single hue, direct labels, no legend ---- */
+.bars{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow)}
+.bar{display:grid;grid-template-columns:190px 1fr 70px;gap:12px;align-items:center;margin-bottom:9px}
+.bar .nm{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right;overflow-wrap:anywhere}
+.bar .tr{background:var(--surface-2);border-radius:4px;height:22px;position:relative;overflow:hidden}
+.bar .fl{height:100%;background:var(--accent);border-radius:0 4px 4px 0;
+  box-shadow:0 0 0 2px var(--surface)}
+.bar.stale .fl{background:repeating-linear-gradient(135deg,var(--other) 0 5px,transparent 5px 10px);
+  border:1px solid var(--other)}
+.bar .vl{font-family:var(--mono);font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+.bar .nm s{color:var(--faint)}
+.reach{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;padding-top:16px;
+  border-top:1px solid var(--border)}
+.reach div{min-width:120px}
+.reach .n{font-size:27px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.reach .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;margin-top:5px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:20px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:15px;box-shadow:var(--shadow)}
+.tile .n{font-size:29px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.tile .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;margin-top:6px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:7px}
+.tile.bad .n{color:var(--refuse)} .tile.warn .n{color:var(--ask)} .tile.ok .n{color:var(--commit)}
+.skel{font-family:var(--mono);font-size:13px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 13px;margin-top:14px;overflow-x:auto;white-space:pre-wrap}
+.prov{color:var(--faint);font-size:11px;font-family:var(--mono);margin-top:20px}
+/* ---- added for the three-plane page ---- */
+.planesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.planesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 12px;letter-spacing:.02em;border-right:1px solid var(--border)}
+.planesw button:last-child{border-right:0}
+.planesw button.on{background:var(--accent);color:#fff}
+.planesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+.thesis{margin:16px 0 0;padding:14px 17px;border-radius:0 var(--radius) var(--radius) 0;
+  border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--surface);
+  box-shadow:var(--shadow)}
+.thesis b{color:var(--accent)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:15px;margin-top:18px}
+.cmp .p{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden}
+.cmp .ph{padding:14px 16px;border-bottom:1px solid var(--border)}
+.cmp .ph h3{font-size:16px;letter-spacing:-.01em}
+.cmp .ph .s{color:var(--muted);font-size:12.5px;margin-top:3px}
+.cmp .pb{padding:14px 16px}
+.cmp .tri{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px}
+.cmp .tri .box{border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:11.5px;
+  font-family:var(--mono);text-align:center;background:var(--surface-2)}
+.cmp .tri .box.mid{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+  font-weight:750}
+.cmp .tri .ar{color:var(--faint);font-size:13px}
+.cmp .th{font-size:12.5px;color:var(--muted)}
+.cmp .mt{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px}
+.grid5{overflow-x:auto}
+.grid5 table{border-collapse:separate;border-spacing:4px;width:auto}
+.grid5 td,.grid5 th{border:0;padding:0}
+.grid5 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);
+  font-weight:750;padding:0 6px 4px;text-align:center;position:static}
+.grid5 th.rh{text-align:right;padding-right:9px}
+.grid5 button{width:100%;min-width:104px;border:1px solid var(--border);background:var(--surface);
+  border-radius:7px;padding:8px 7px;font-family:var(--mono);font-size:11px;font-weight:700;
+  color:var(--muted);line-height:1.3}
+.grid5 button:hover{border-color:var(--accent);color:var(--ink)}
+.grid5 button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.grid5 button.refuse{color:var(--refuse);border-color:var(--refuse-bg);background:var(--refuse-bg)}
+.grid5 button.refuse.on{background:var(--refuse);border-color:var(--refuse);color:#fff}
+.node .sub2{font-family:var(--sans);font-size:10.5px;font-weight:450;color:var(--faint);
+  display:block;margin-top:2px;line-height:1.3}
+.node.person{border-width:2px;border-color:var(--invariant);background:var(--invariant-bg);
+  color:var(--invariant)}
+.node.person.lit{border-color:var(--invariant);background:var(--invariant-bg);color:var(--invariant)}
+.node.stack{flex-direction:column;align-items:flex-start;gap:0}
+.node.planeout{border-style:dashed}
+</style>
+</head>
+<body>
+
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span>MAC · three grammars</span>
+    <nav class="mb-tabs" id="tabs"></nav>
+  </div>
+  <div class="mb-right">
+    <div class="planesw" id="planesw"></div>
+    <div class="modesw" id="modesw"></div>
+    <button class="mb-theme" id="themebtn" title="theme">🌙</button>
+  </div>
+</div>
+
+<section class="view on" id="v-planes"><div class="pad">
+  <h1>Is folding a grammar? Is a ruling?</h1>
+  <p class="lede">Folding is one by the estate's own naming — <code>FOLD_GRAMMAR.md</code>, which
+  <code>QUERY_GRAMMAR.md</code> calls "the orthogonal axis". A ruling is not called one anywhere, and
+  it has the same three parts as one: a closed vocabulary of words, a composition that says what each
+  word contributes, and an outcome. So all three are drawn in the same three lanes below — and what
+  differs is <b>the middle lane</b>.</p>
+  <div class="cmp" id="cmp"></div>
+  <div id="planes-notes"></div>
+</div></section>
+
+<section class="view" id="v-wire"><div class="pad">
+  <h1 id="wire-title"></h1>
+  <p class="lede" id="wire-lede"></p>
+  <div class="thesis" id="wire-thesis"></div>
+  <div class="skel" id="skel"></div>
+  <div id="selector"></div>
+  <div class="wirebox">
+    <svg id="wires"></svg>
+    <div class="lanes">
+      <div>
+        <div class="lane-h" id="lh-sel"></div><div id="lane-self"></div>
+        <div class="lane-h" style="margin-top:15px" id="lh-left"></div><div id="lane-left"></div>
+      </div>
+      <div><div class="lane-h" id="lh-mid"></div><div id="lane-mid"></div></div>
+      <div><div class="lane-h" id="lh-right"></div><div id="lane-right"></div></div>
+    </div>
+  </div>
+  <div class="detail" id="detail"></div>
+  <div id="wire-callouts"></div>
+</div></section>
+
+<section class="view" id="v-fold"><div class="pad">
+  <h1>The fold law — 25 cells, and what preempts them</h1>
+  <p class="lede" id="fold-lede"></p>
+  <div class="grid5" id="fold-grid" style="margin-top:18px"></div>
+  <div class="sec">the five guards — they override the table, and never re-tabulate it</div>
+  <div id="fold-guards"></div>
+  <div class="sec">the ten operators, over four stages</div>
+  <div id="fold-ops"></div>
+  <div class="sec">what this law replaced</div>
+  <div id="fold-bridge"></div>
+</div></section>
+
+<section class="view" id="v-query"><div class="pad">
+  <h1>The query grammar's second axis, and its ledger</h1>
+  <p class="lede">The operation names what was asked. The declaration state decides whether it can be
+  answered at all, and which SQL comes out — which is why an operation-by-shape matrix cannot
+  describe this grammar, and why every row below is a refusal a bundle can fix.</p>
+  <div id="gates"></div>
+  <div class="sec">the refusal vocabulary · mac.diagnostic_code</div>
+  <div id="codes"></div>
+  <div class="sec">what the grammar cannot say</div>
+  <p class="lede" id="gaps-lede"></p>
+  <div id="gaps"></div>
+</div></section>
+
+<section class="view" id="v-law"><div class="pad">
+  <h1>Each law against the runtime</h1>
+  <p class="lede">Three laws, three relationships to the code that is supposed to honour them. None of
+  the three is simply "the runtime reads it".</p>
+  <div id="law"></div>
+</div></section>
+
+<script>
+const DATA = {
+ "generated_by": "tools/gen_grammar_map.py",
+ "metadata": {
+  "schema": "mac.query_grammar/1",
+  "status": "PROPOSED",
+  "measured_against": "mac-platform @ packages/mac-runtime/src/mac_runtime/planner",
+  "measured_on": "2026-09-23"
+ },
+ "planes": [
+  {
+   "id": "query",
+   "title": "The query grammar",
+   "subtitle": "how a question becomes SQL",
+   "middle": "one SELECT skeleton",
+   "thesis": "The middle lane is a SKELETON. Every operation contributes to the same SELECT and contributes nothing else, so the word is mostly not what decides the SQL.",
+   "skeleton": "SELECT … FROM <anchor> JOIN … WHERE … GROUP BY … ORDER BY … LIMIT …",
+   "sources": {
+    "law": "what grammar/query_grammar.yaml claims",
+    "runtime": "what check_query_grammar.py measures in the planner"
+   },
+   "lanes": {
+    "left": {
+     "label": "the intent · the grammar's classes",
+     "nodes": [
+      {
+       "id": "field:subject",
+       "label": "subject",
+       "meta": "9 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:operation",
+       "label": "operation",
+       "meta": "7 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:slices",
+       "label": "slices",
+       "meta": "3 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:filters",
+       "label": "filters",
+       "meta": "6 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:join_filters",
+       "label": "join_filters",
+       "meta": "1 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:any_of",
+       "label": "any_of",
+       "meta": "1 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:all_of",
+       "label": "all_of",
+       "meta": "1 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:having",
+       "label": "having",
+       "meta": "4 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:period",
+       "label": "period",
+       "meta": "18 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:ordering",
+       "label": "ordering",
+       "meta": "4 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:limit",
+       "label": "limit",
+       "meta": "2 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:denominator",
+       "label": "denominator",
+       "meta": "5 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:denominator_scope",
+       "label": "denominator_scope",
+       "meta": "5 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:stage",
+       "label": "stage",
+       "meta": "not grammar",
+       "faint": true
+      },
+      {
+       "id": "field:confidence",
+       "label": "confidence",
+       "meta": "not grammar",
+       "faint": true
+      }
+     ]
+    },
+    "middle": {
+     "label": "the skeleton · seven slots",
+     "nodes": [
+      {
+       "id": "slot:SELECT",
+       "label": "SELECT"
+      },
+      {
+       "id": "slot:FROM",
+       "label": "FROM"
+      },
+      {
+       "id": "slot:JOIN",
+       "label": "JOIN"
+      },
+      {
+       "id": "slot:WHERE",
+       "label": "WHERE"
+      },
+      {
+       "id": "slot:GROUP BY",
+       "label": "GROUP BY"
+      },
+      {
+       "id": "slot:ORDER BY",
+       "label": "ORDER BY"
+      },
+      {
+       "id": "slot:LIMIT",
+       "label": "LIMIT"
+      }
+     ]
+    },
+    "right": {
+     "label": "the outcome · mac.outcome_class",
+     "nodes": [
+      {
+       "id": "out:COMMIT",
+       "label": "COMMIT",
+       "meta": "every declaration it rests on resolved"
+      },
+      {
+       "id": "out:ASK",
+       "label": "ASK",
+       "meta": "a required dimension was underspecified"
+      },
+      {
+       "id": "out:REFUSE",
+       "label": "REFUSE",
+       "meta": "the evidence is absent, and it can say what"
+      },
+      {
+       "id": "out:BLOCK",
+       "label": "BLOCK",
+       "meta": "outside what the ontology governs"
+      }
+     ]
+    }
+   },
+   "selector_label": "nine words",
+   "cases": {
+    "law": {
+     "count": {
+      "id": "count",
+      "label": "count",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:count",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "how many distinct instances"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>identity.canonical_key</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: COUNT(DISTINCT <canonical_key>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the subject declares no canonical_key and no rule"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "The key does the work, not the word. The worked bundle's decisions/0005 proved the route by giving each concept `COUNT(DISTINCT <the key it already declares>)` and planning it unchanged."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: count",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "sum": {
+      "id": "sum",
+      "label": "sum",
+      "badge": "EMERGES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "field:subject",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the total of a number"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>semantics.measure_type</code> <code>a measure column or a derivation rule</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: SUM(<measure expression>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "nothing declares a number the subject carries"
+       },
+       {
+        "t": "emerges from",
+        "v": "the fold law over the subject's declared measure — edges drawn from <code>subject</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to RUNTIME to see the other wiring."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: sum",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "average": {
+      "id": "average",
+      "label": "average",
+      "badge": "EMERGES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "field:subject",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the mean of a number"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>semantics.measure_type</code> <code>a measure column or a derivation rule</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: AVG(<measure expression>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "the fold law over the subject's declared measure — edges drawn from <code>subject</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to RUNTIME to see the other wiring."
+        ]
+       },
+       {
+        "kind": "note",
+        "h": "Open question, marked in the YAML.",
+        "p": [
+         "A plain mean does not COMPOSE — a breakdown and a grand total disagree. The fold grammar says so and names `weighted_mean` as the operator that does. This grammar does not yet say which one `average` selects, and the answer belongs in the fold plane, not here."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: average",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "list": {
+      "id": "list",
+      "label": "list",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:list",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "which members exist"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column to list — canonical_key</code> <code>or a named slice column</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: SELECT DISTINCT <column></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code> <code>select_distinct</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: list",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "rank": {
+      "id": "rank",
+      "label": "rank",
+      "badge": "EMERGES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "field:ordering",
+        "to": "slot:ORDER BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:ordering",
+        "to": "slot:LIMIT",
+        "kind": "via"
+       },
+       {
+        "from": "field:limit",
+        "to": "slot:ORDER BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:limit",
+        "to": "slot:LIMIT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the top or bottom N"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>an aggregate to order by</code> <code>or a declared column named in `ordering.by`</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>order_by: <aggregate|column> <direction></code> <code>limit: <limit></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "Intent.ordering and Intent.limit being populated — edges drawn from <code>ordering</code>, <code>limit</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "`rank` is a NAME for a shape the skeleton already had. Setting ordering+limit produces the same SQL whatever the operation says, which is why the word is not branched on."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: rank",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "compare": {
+      "id": "compare",
+      "label": "compare",
+      "badge": "EMERGES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:WHERE",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "two or more members side by side"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a dimension both members share</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>group_by: <axis></code> <code>where: <axis> IN (<members>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "slices plus an IN filter — it desugars, and nothing reads the word — edges drawn from <code>slices</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Open question, marked in the YAML.",
+        "p": [
+         "DESUGARING IS NOT OBVIOUSLY RIGHT AND IS RECORDED AS UNSETTLED. \"Germany versus France\" becomes one grouped result with two rows. A reader asking to COMPARE may mean a difference, a ratio, or two columns side by side, and none of those is what this produces. Measured on the corpus, compare questions plan — that says the SQL is valid, not that it answers."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: compare",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "ratio": {
+      "id": "ratio",
+      "label": "ratio",
+      "badge": "EMERGES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "field:denominator",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "a share, a percentage, or one figure per another"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>Intent.denominator naming a second subject</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: (<numerator>) / NULLIF(<denominator aggregate>, 0)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "Intent.denominator being populated — edges drawn from <code>denominator</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to RUNTIME to see the other wiring."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Declared and read by nothing, until it was not.",
+        "p": [
+         "DECLARED AND READ BY NOTHING for as long as it existed. The field was on the model, the prompt asked the model to fill it, the model filled it — and no step of the planner mentioned it, so a ratio question planned its NUMERATOR ALONE. Measured on a 70-question corpus: \"revenue per customer by country\" and \"average order value by country\" compiled to the SAME SQL as each other and as a plain total. It refused for a day, which was honest and not an answer. Verified on build: average order value now returns 2 341.01, matching an INDEPENDENT computation (the mean of per-order totals) exactly, where dividing by the line count gives 976.96 — 2.40x out, and plausible."
+        ]
+       },
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: ratio",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "define": {
+      "id": "define",
+      "label": "define",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:define",
+        "to": "slot:FROM",
+        "kind": "own"
+       },
+       {
+        "from": "sel:define",
+        "to": "slot:WHERE",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "what a declaration says"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>the meaning plane — the generated system concepts</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>from: <meta_ relation></code> <code>where: <identifier> = <name></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "Not a special route. The meaning plane is a bundle like any other, generated rather than authored, and `define` reads it with the same skeleton — which is the whole claim."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: define",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "exists": {
+      "id": "exists",
+      "label": "exists",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:exists",
+        "to": "slot:WHERE",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "whether any instance is absent, or present"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>identity.canonical_key</code> <code>an event concept carrying it</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>where: <key> NOT IN (SELECT <key> FROM <event> WHERE …)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code> <code>anti_join</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: exists",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     }
+    },
+    "runtime": {
+     "count": {
+      "id": "count",
+      "label": "count",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:count",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "how many distinct instances"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>identity.canonical_key</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: COUNT(DISTINCT <canonical_key>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the subject declares no canonical_key and no rule"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "The key does the work, not the word. The worked bundle's decisions/0005 proved the route by giving each concept `COUNT(DISTINCT <the key it already declares>)` and planning it unchanged."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: count",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "sum": {
+      "id": "sum",
+      "label": "sum",
+      "badge": "BRANCHES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "sel:sum",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the total of a number"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>semantics.measure_type</code> <code>a measure column or a derivation rule</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: SUM(<measure expression>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "nothing declares a number the subject carries"
+       },
+       {
+        "t": "emerges from",
+        "v": "the fold law over the subject's declared measure — edges drawn from <code>subject</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to LAW to see the other wiring."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: sum",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "average": {
+      "id": "average",
+      "label": "average",
+      "badge": "BRANCHES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "sel:average",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the mean of a number"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>semantics.measure_type</code> <code>a measure column or a derivation rule</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: AVG(<measure expression>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "the fold law over the subject's declared measure — edges drawn from <code>subject</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to LAW to see the other wiring."
+        ]
+       },
+       {
+        "kind": "note",
+        "h": "Open question, marked in the YAML.",
+        "p": [
+         "A plain mean does not COMPOSE — a breakdown and a grand total disagree. The fold grammar says so and names `weighted_mean` as the operator that does. This grammar does not yet say which one `average` selects, and the answer belongs in the fold plane, not here."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: average",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "list": {
+      "id": "list",
+      "label": "list",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:list",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "which members exist"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column to list — canonical_key</code> <code>or a named slice column</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: SELECT DISTINCT <column></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code> <code>select_distinct</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: list",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "rank": {
+      "id": "rank",
+      "label": "rank",
+      "badge": "EMERGES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "field:ordering",
+        "to": "slot:ORDER BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:ordering",
+        "to": "slot:LIMIT",
+        "kind": "via"
+       },
+       {
+        "from": "field:limit",
+        "to": "slot:ORDER BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:limit",
+        "to": "slot:LIMIT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the top or bottom N"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>an aggregate to order by</code> <code>or a declared column named in `ordering.by`</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>order_by: <aggregate|column> <direction></code> <code>limit: <limit></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "Intent.ordering and Intent.limit being populated — edges drawn from <code>ordering</code>, <code>limit</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "`rank` is a NAME for a shape the skeleton already had. Setting ordering+limit produces the same SQL whatever the operation says, which is why the word is not branched on."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: rank",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "compare": {
+      "id": "compare",
+      "label": "compare",
+      "badge": "EMERGES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "via"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:WHERE",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "two or more members side by side"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a dimension both members share</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>group_by: <axis></code> <code>where: <axis> IN (<members>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "slices plus an IN filter — it desugars, and nothing reads the word — edges drawn from <code>slices</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Open question, marked in the YAML.",
+        "p": [
+         "DESUGARING IS NOT OBVIOUSLY RIGHT AND IS RECORDED AS UNSETTLED. \"Germany versus France\" becomes one grouped result with two rows. A reader asking to COMPARE may mean a difference, a ratio, or two columns side by side, and none of those is what this produces. Measured on the corpus, compare questions plan — that says the SQL is valid, not that it answers."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: compare",
+       "sub": "contributes no edge of its own — the skeleton already had this shape, and the edges start at the fields below",
+       "empty": true
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "ratio": {
+      "id": "ratio",
+      "label": "ratio",
+      "badge": "BRANCHES",
+      "drift": true,
+      "edges": [
+       {
+        "from": "sel:ratio",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:denominator",
+        "to": "slot:SELECT",
+        "kind": "via"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "a share, a percentage, or one figure per another"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>Intent.denominator naming a second subject</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: (<numerator>) / NULLIF(<denominator aggregate>, 0)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "emerges from",
+        "v": "Intent.denominator being populated — edges drawn from <code>denominator</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "bad",
+        "h": "This word is a live drift.",
+        "p": [
+         "The law claims <code>branches_in_runtime: false</code>. The planner does test for it by name, and <code>check_query_grammar.py</code> reds on it (R2). Switch the source to LAW to see the other wiring."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Declared and read by nothing, until it was not.",
+        "p": [
+         "DECLARED AND READ BY NOTHING for as long as it existed. The field was on the model, the prompt asked the model to fill it, the model filled it — and no step of the planner mentioned it, so a ratio question planned its NUMERATOR ALONE. Measured on a 70-question corpus: \"revenue per customer by country\" and \"average order value by country\" compiled to the SAME SQL as each other and as a plain total. It refused for a day, which was honest and not an answer. Verified on build: average order value now returns 2 341.01, matching an INDEPENDENT computation (the mean of per-order totals) exactly, where dividing by the line count gives 976.96 — 2.40x out, and plausible."
+        ]
+       },
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: ratio",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "define": {
+      "id": "define",
+      "label": "define",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:define",
+        "to": "slot:FROM",
+        "kind": "own"
+       },
+       {
+        "from": "sel:define",
+        "to": "slot:WHERE",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "what a declaration says"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>the meaning plane — the generated system concepts</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>from: <meta_ relation></code> <code>where: <identifier> = <name></code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "Not a special route. The meaning plane is a bundle like any other, generated rather than authored, and `define` reads it with the same skeleton — which is the whole claim."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: define",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "exists": {
+      "id": "exists",
+      "label": "exists",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:exists",
+        "to": "slot:WHERE",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "whether any instance is absent, or present"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>identity.canonical_key</code> <code>an event concept carrying it</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>where: <key> NOT IN (SELECT <key> FROM <event> WHERE …)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the grammar states no refusal for this word"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code> <code>anti_join</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: exists",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     }
+    }
+   },
+   "counts": {
+    "operations": 9,
+    "branch_claimed": 4,
+    "branch_measured": 7,
+    "fields": 13,
+    "filter_ops": 8,
+    "slots": 7
+   }
+  },
+  {
+   "id": "fold",
+   "title": "The fold grammar",
+   "subtitle": "what a number means, and which fold is legal",
+   "middle": "a 25-cell law + 5 guards",
+   "thesis": "The middle lane is a LAW. Nobody authors it: it ships with the runtime as 25 cells, and five guards can preempt the table but never re-tabulate it.",
+   "skeleton": "FOLDED = every axis of the fact  −  (the ones grouped by  +  the ones pinned by a filter)",
+   "sources": null,
+   "lanes": {
+    "left": {
+     "label": "the declarations · four levels",
+     "nodes": [
+      {
+       "id": "decl:quantity_kind",
+       "label": "quantity_kind",
+       "meta": "column",
+       "sub": "what kind of number this is — one word from five"
+      },
+      {
+       "id": "decl:grain_semantics",
+       "label": "grain_semantics",
+       "meta": "relation",
+       "sub": "how its rows came to exist — one word from five"
+      },
+      {
+       "id": "decl:per",
+       "label": "per",
+       "meta": "column",
+       "sub": "what an intensive quantity is per"
+      },
+      {
+       "id": "decl:denominated_by",
+       "label": "denominated_by",
+       "meta": "column",
+       "sub": "the column naming the unit, when rows differ"
+      },
+      {
+       "id": "decl:counts_as",
+       "label": "counts_as",
+       "meta": "concept",
+       "sub": "what one of these IS — SME only; the law refuses to pick"
+      },
+      {
+       "id": "decl:modality",
+       "label": "modality",
+       "meta": "concept",
+       "sub": "observed, or planned"
+      },
+      {
+       "id": "decl:sentinel",
+       "label": "sentinel",
+       "meta": "axis",
+       "sub": "one member that is not a value"
+      }
+     ]
+    },
+    "middle": {
+     "label": "the law · 25 cells, 10 operators, 4 stages",
+     "nodes": [
+      {
+       "id": "mid:guard:G1",
+       "label": "G1 quantity"
+      },
+      {
+       "id": "mid:guard:G2",
+       "label": "G2 type"
+      },
+      {
+       "id": "mid:guard:G3",
+       "label": "G3 grain-match"
+      },
+      {
+       "id": "mid:guard:G4",
+       "label": "G4 unit"
+      },
+      {
+       "id": "mid:guard:G5",
+       "label": "G5 mixed kinds"
+      },
+      {
+       "id": "mid:law",
+       "label": "LAW[grain × kind] — 25 cells"
+      },
+      {
+       "id": "mid:op:collapse_to_identity",
+       "label": "collapse_to_identity",
+       "meta": "stage 0"
+      },
+      {
+       "id": "mid:op:resolve_last",
+       "label": "resolve_last",
+       "meta": "stage 1"
+      },
+      {
+       "id": "mid:op:resolve_match",
+       "label": "resolve_match",
+       "meta": "stage 1"
+      },
+      {
+       "id": "mid:op:grain_expression",
+       "label": "grain_expression",
+       "meta": "stage 2"
+      },
+      {
+       "id": "mid:op:sum",
+       "label": "sum",
+       "meta": "stage 3"
+      },
+      {
+       "id": "mid:op:weighted_mean",
+       "label": "weighted_mean",
+       "meta": "stage 3"
+      },
+      {
+       "id": "mid:op:mean",
+       "label": "mean",
+       "meta": "stage 3 · no compose"
+      },
+      {
+       "id": "mid:op:count_filtered",
+       "label": "count_filtered",
+       "meta": "stage 3"
+      },
+      {
+       "id": "mid:op:count_distinct",
+       "label": "count_distinct",
+       "meta": "stage 3"
+      },
+      {
+       "id": "mid:op:refuse",
+       "label": "refuse",
+       "meta": "stage 3"
+      }
+     ]
+    },
+    "right": {
+     "label": "the outcome · mac.outcome_class",
+     "nodes": [
+      {
+       "id": "out:COMMIT",
+       "label": "COMMIT",
+       "meta": "every declaration it rests on resolved"
+      },
+      {
+       "id": "out:ASK",
+       "label": "ASK",
+       "meta": "a required dimension was underspecified"
+      },
+      {
+       "id": "out:REFUSE",
+       "label": "REFUSE",
+       "meta": "the evidence is absent, and it can say what"
+      },
+      {
+       "id": "out:BLOCK",
+       "label": "BLOCK",
+       "meta": "outside what the ontology governs"
+      }
+     ]
+    }
+   },
+   "selector_label": "25 cells — the law's own shape",
+   "grid": {
+    "rows": [
+     "event",
+     "observation",
+     "plan",
+     "precomputed",
+     "UNKNOWN"
+    ],
+    "cols": [
+     "extensive",
+     "intensive",
+     "indicator",
+     "ordinal",
+     "identifier"
+    ],
+    "cells": {
+     "event|extensive": "sum",
+     "event|intensive": "weighted_mean",
+     "event|indicator": "count_filtered",
+     "event|ordinal": "refuse",
+     "event|identifier": "refuse",
+     "observation|extensive": "sum",
+     "observation|intensive": "weighted_mean",
+     "observation|indicator": "count_filtered",
+     "observation|ordinal": "refuse",
+     "observation|identifier": "refuse",
+     "plan|extensive": "sum",
+     "plan|intensive": "weighted_mean",
+     "plan|indicator": "count_filtered",
+     "plan|ordinal": "refuse",
+     "plan|identifier": "refuse",
+     "precomputed|extensive": "resolve_match",
+     "precomputed|intensive": "resolve_match",
+     "precomputed|indicator": "resolve_match",
+     "precomputed|ordinal": "resolve_match",
+     "precomputed|identifier": "resolve_match",
+     "UNKNOWN|extensive": "refuse",
+     "UNKNOWN|intensive": "refuse",
+     "UNKNOWN|indicator": "refuse",
+     "UNKNOWN|ordinal": "refuse",
+     "UNKNOWN|identifier": "refuse"
+    }
+   },
+   "cases": {
+    "law": {
+     "event|extensive": {
+      "id": "event|extensive",
+      "label": "event × extensive",
+      "badge": "SUM",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:sum",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:sum",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(event, extensive)]</code> → <code>sum</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       },
+       {
+        "t": "this cell replaces",
+        "v": "<code>mac.MeasureType.Flow</code> — the old member is this (relation fact, column fact) PAIR, which is the split the new law argues for"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: event × extensive",
+       "sub": "the law licenses <code>sum</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "event|intensive": {
+      "id": "event|intensive",
+      "label": "event × intensive",
+      "badge": "WEIGHTED_MEAN",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:weighted_mean",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:weighted_mean",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:per",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:denominated_by",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(event, intensive)]</code> → <code>weighted_mean</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>w</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       },
+       {
+        "t": "this cell replaces",
+        "v": "<code>mac.MeasureType.Intensive</code> — the old member is this (relation fact, column fact) PAIR, which is the split the new law argues for"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: event × intensive",
+       "sub": "the law licenses <code>weighted_mean</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "event|indicator": {
+      "id": "event|indicator",
+      "label": "event × indicator",
+      "badge": "COUNT_FILTERED",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:count_filtered",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:count_filtered",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(event, indicator)]</code> → <code>count_filtered</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>pred</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: event × indicator",
+       "sub": "the law licenses <code>count_filtered</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "event|ordinal": {
+      "id": "event|ordinal",
+      "label": "event × ordinal",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(event, ordinal)]</code> → <code>refuse · no_order_stat</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: event × ordinal",
+       "sub": "the law refuses — <code>no_order_stat</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "event|identifier": {
+      "id": "event|identifier",
+      "label": "event × identifier",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(event, identifier)]</code> → <code>refuse · type_error</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: event × identifier",
+       "sub": "the law refuses — <code>type_error</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "observation|extensive": {
+      "id": "observation|extensive",
+      "label": "observation × extensive",
+      "badge": "SUM",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:sum",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:sum",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(observation, extensive)]</code> → <code>sum</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       },
+       {
+        "t": "this cell replaces",
+        "v": "<code>mac.MeasureType.Stock</code> — the old member is this (relation fact, column fact) PAIR, which is the split the new law argues for"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: observation × extensive",
+       "sub": "the law licenses <code>sum</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "observation|intensive": {
+      "id": "observation|intensive",
+      "label": "observation × intensive",
+      "badge": "WEIGHTED_MEAN",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:weighted_mean",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:weighted_mean",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:per",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:denominated_by",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(observation, intensive)]</code> → <code>weighted_mean</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>w</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: observation × intensive",
+       "sub": "the law licenses <code>weighted_mean</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "observation|indicator": {
+      "id": "observation|indicator",
+      "label": "observation × indicator",
+      "badge": "COUNT_FILTERED",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:count_filtered",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:count_filtered",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(observation, indicator)]</code> → <code>count_filtered</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>pred</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: observation × indicator",
+       "sub": "the law licenses <code>count_filtered</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "observation|ordinal": {
+      "id": "observation|ordinal",
+      "label": "observation × ordinal",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(observation, ordinal)]</code> → <code>refuse · no_order_stat</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: observation × ordinal",
+       "sub": "the law refuses — <code>no_order_stat</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "observation|identifier": {
+      "id": "observation|identifier",
+      "label": "observation × identifier",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(observation, identifier)]</code> → <code>refuse · type_error</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: observation × identifier",
+       "sub": "the law refuses — <code>type_error</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "plan|extensive": {
+      "id": "plan|extensive",
+      "label": "plan × extensive",
+      "badge": "SUM",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:sum",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:sum",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:modality",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(plan, extensive)]</code> → <code>sum</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       },
+       {
+        "t": "this cell replaces",
+        "v": "<code>mac.MeasureType.Target</code> — the old member is this (relation fact, column fact) PAIR, which is the split the new law argues for"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: plan × extensive",
+       "sub": "the law licenses <code>sum</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "plan|intensive": {
+      "id": "plan|intensive",
+      "label": "plan × intensive",
+      "badge": "WEIGHTED_MEAN",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:weighted_mean",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:weighted_mean",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:per",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:denominated_by",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:modality",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(plan, intensive)]</code> → <code>weighted_mean</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>w</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: plan × intensive",
+       "sub": "the law licenses <code>weighted_mean</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "plan|indicator": {
+      "id": "plan|indicator",
+      "label": "plan × indicator",
+      "badge": "COUNT_FILTERED",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:count_filtered",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:count_filtered",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:modality",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(plan, indicator)]</code> → <code>count_filtered</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>x</code> <code>pred</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "cell: plan × indicator",
+       "sub": "the law licenses <code>count_filtered</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "plan|ordinal": {
+      "id": "plan|ordinal",
+      "label": "plan × ordinal",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       },
+       {
+        "from": "decl:modality",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(plan, ordinal)]</code> → <code>refuse · no_order_stat</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: plan × ordinal",
+       "sub": "the law refuses — <code>no_order_stat</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "plan|identifier": {
+      "id": "plan|identifier",
+      "label": "plan × identifier",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       },
+       {
+        "from": "decl:modality",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(plan, identifier)]</code> → <code>refuse · type_error</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: plan × identifier",
+       "sub": "the law refuses — <code>type_error</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "precomputed|extensive": {
+      "id": "precomputed|extensive",
+      "label": "precomputed × extensive",
+      "badge": "RESOLVE_MATCH",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G3",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:resolve_match",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:resolve_match",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(precomputed, extensive)]</code> → <code>resolve_match</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 1 (resolve) · operands <code>x</code> <code>on</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       },
+       {
+        "t": "this cell replaces",
+        "v": "<code>mac.MeasureType.Precomputed</code> — the old member is this (relation fact, column fact) PAIR, which is the split the new law argues for"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G3 GRAIN-MATCH preempts the table here.",
+        "p": [
+         "A precomputed value exists only at the grain it was computed for.\n    # This is `exchange_rate.pair.never_half_a_pair` mechanised: the joint constraint IS\n    # the relation's declared cell key, so it needs no axis-naming trick (COLUMN-GRAIN\n    # FOLD's catch -- three prior agents recorded `currency_pair` as content no derivation\n    # reproduces, and it is a cell key).\n    stored_grain: tuple[str, ...] = ()\n    if rp.grain_semantics is GrainSemantics.PRECOMPUTED:\n        stored_grain = rp.cell_key\n    else:\n        # A relation may carry ONE precomputed column beside ordinary ones: `stored_at`\n        # is the per-column override, the same escape the observation grain needs.\n        for col in operands:\n            stored_grain = stored_grain or tuple(planes_for[col].stored_at)\n    if stored_grain:\n        loose = [c for c in stored_grain if c not in partitioned and c not in pinned]\n        if loose:\n            return _refuse(\n                \"grain_not_stored\",\n                f\"{measure_concept.name} is stored only at the grain \"\n                f\"({', '.join(stored_grain)}) and this question leaves {', '.join(loose)} \"\n                f\"unpinned, so there is no stored cell to read and no fold that would be \"\n                f\"valid. Pin or group every key column, or ask at the grain it is stored at.\",\n                [f\"{relation}.{c}\" for c in loose],\n            )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: precomputed × extensive",
+       "sub": "the law licenses <code>resolve_match</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "precomputed|intensive": {
+      "id": "precomputed|intensive",
+      "label": "precomputed × intensive",
+      "badge": "RESOLVE_MATCH",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G3",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:resolve_match",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:resolve_match",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "decl:per",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:denominated_by",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(precomputed, intensive)]</code> → <code>resolve_match</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 1 (resolve) · operands <code>x</code> <code>on</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G3 GRAIN-MATCH preempts the table here.",
+        "p": [
+         "A precomputed value exists only at the grain it was computed for.\n    # This is `exchange_rate.pair.never_half_a_pair` mechanised: the joint constraint IS\n    # the relation's declared cell key, so it needs no axis-naming trick (COLUMN-GRAIN\n    # FOLD's catch -- three prior agents recorded `currency_pair` as content no derivation\n    # reproduces, and it is a cell key).\n    stored_grain: tuple[str, ...] = ()\n    if rp.grain_semantics is GrainSemantics.PRECOMPUTED:\n        stored_grain = rp.cell_key\n    else:\n        # A relation may carry ONE precomputed column beside ordinary ones: `stored_at`\n        # is the per-column override, the same escape the observation grain needs.\n        for col in operands:\n            stored_grain = stored_grain or tuple(planes_for[col].stored_at)\n    if stored_grain:\n        loose = [c for c in stored_grain if c not in partitioned and c not in pinned]\n        if loose:\n            return _refuse(\n                \"grain_not_stored\",\n                f\"{measure_concept.name} is stored only at the grain \"\n                f\"({', '.join(stored_grain)}) and this question leaves {', '.join(loose)} \"\n                f\"unpinned, so there is no stored cell to read and no fold that would be \"\n                f\"valid. Pin or group every key column, or ask at the grain it is stored at.\",\n                [f\"{relation}.{c}\" for c in loose],\n            )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: precomputed × intensive",
+       "sub": "the law licenses <code>resolve_match</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "precomputed|indicator": {
+      "id": "precomputed|indicator",
+      "label": "precomputed × indicator",
+      "badge": "RESOLVE_MATCH",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G3",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:resolve_match",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:resolve_match",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(precomputed, indicator)]</code> → <code>resolve_match</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 1 (resolve) · operands <code>x</code> <code>on</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G3 GRAIN-MATCH preempts the table here.",
+        "p": [
+         "A precomputed value exists only at the grain it was computed for.\n    # This is `exchange_rate.pair.never_half_a_pair` mechanised: the joint constraint IS\n    # the relation's declared cell key, so it needs no axis-naming trick (COLUMN-GRAIN\n    # FOLD's catch -- three prior agents recorded `currency_pair` as content no derivation\n    # reproduces, and it is a cell key).\n    stored_grain: tuple[str, ...] = ()\n    if rp.grain_semantics is GrainSemantics.PRECOMPUTED:\n        stored_grain = rp.cell_key\n    else:\n        # A relation may carry ONE precomputed column beside ordinary ones: `stored_at`\n        # is the per-column override, the same escape the observation grain needs.\n        for col in operands:\n            stored_grain = stored_grain or tuple(planes_for[col].stored_at)\n    if stored_grain:\n        loose = [c for c in stored_grain if c not in partitioned and c not in pinned]\n        if loose:\n            return _refuse(\n                \"grain_not_stored\",\n                f\"{measure_concept.name} is stored only at the grain \"\n                f\"({', '.join(stored_grain)}) and this question leaves {', '.join(loose)} \"\n                f\"unpinned, so there is no stored cell to read and no fold that would be \"\n                f\"valid. Pin or group every key column, or ask at the grain it is stored at.\",\n                [f\"{relation}.{c}\" for c in loose],\n            )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: precomputed × indicator",
+       "sub": "the law licenses <code>resolve_match</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "precomputed|ordinal": {
+      "id": "precomputed|ordinal",
+      "label": "precomputed × ordinal",
+      "badge": "RESOLVE_MATCH",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:resolve_match",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:resolve_match",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(precomputed, ordinal)]</code> → <code>resolve_match</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 1 (resolve) · operands <code>x</code> <code>on</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: precomputed × ordinal",
+       "sub": "the law licenses <code>resolve_match</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "precomputed|identifier": {
+      "id": "precomputed|identifier",
+      "label": "precomputed × identifier",
+      "badge": "RESOLVE_MATCH",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:resolve_match",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:resolve_match",
+        "to": "out:COMMIT",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(precomputed, identifier)]</code> → <code>resolve_match</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 1 (resolve) · operands <code>x</code> <code>on</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: precomputed × identifier",
+       "sub": "the law licenses <code>resolve_match</code> on every folded axis",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "UNKNOWN|extensive": {
+      "id": "UNKNOWN|extensive",
+      "label": "UNKNOWN × extensive",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G1",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(UNKNOWN, extensive)]</code> → <code>refuse · undeclared_grain</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G1 QUANTITY preempts the table here.",
+        "p": [
+         "Absence is a term: no declaration, no arithmetic licensed.\n    planes_for: dict[str, ColumnPlane] = {}\n    for col in operands:\n        colplane = rp.columns.get(col)\n        if colplane is None or colplane.quantity_kind is None:\n            return _refuse(\n                \"no_fold_law\",\n                f\"{relation}.{col} declares no `quantity_kind`, so nothing says what folding it \"\n                f\"means. A fold with no declared law is refused rather than emitted as a SUM.\",\n                [f\"{relation}.{col}.quantity_kind\"],\n            )\n        planes_for[col] = colplane\n        tiers.append(colplane.tier)",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: UNKNOWN × extensive",
+       "sub": "the law refuses — <code>undeclared_grain</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "UNKNOWN|intensive": {
+      "id": "UNKNOWN|intensive",
+      "label": "UNKNOWN × intensive",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G1",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       },
+       {
+        "from": "decl:per",
+        "to": "mid:law",
+        "kind": "base"
+       },
+       {
+        "from": "decl:denominated_by",
+        "to": "mid:law",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(UNKNOWN, intensive)]</code> → <code>refuse · undeclared_grain</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G1 QUANTITY preempts the table here.",
+        "p": [
+         "Absence is a term: no declaration, no arithmetic licensed.\n    planes_for: dict[str, ColumnPlane] = {}\n    for col in operands:\n        colplane = rp.columns.get(col)\n        if colplane is None or colplane.quantity_kind is None:\n            return _refuse(\n                \"no_fold_law\",\n                f\"{relation}.{col} declares no `quantity_kind`, so nothing says what folding it \"\n                f\"means. A fold with no declared law is refused rather than emitted as a SUM.\",\n                [f\"{relation}.{col}.quantity_kind\"],\n            )\n        planes_for[col] = colplane\n        tiers.append(colplane.tier)",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: UNKNOWN × intensive",
+       "sub": "the law refuses — <code>undeclared_grain</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "UNKNOWN|indicator": {
+      "id": "UNKNOWN|indicator",
+      "label": "UNKNOWN × indicator",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G1",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(UNKNOWN, indicator)]</code> → <code>refuse · undeclared_grain</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G1 QUANTITY preempts the table here.",
+        "p": [
+         "Absence is a term: no declaration, no arithmetic licensed.\n    planes_for: dict[str, ColumnPlane] = {}\n    for col in operands:\n        colplane = rp.columns.get(col)\n        if colplane is None or colplane.quantity_kind is None:\n            return _refuse(\n                \"no_fold_law\",\n                f\"{relation}.{col} declares no `quantity_kind`, so nothing says what folding it \"\n                f\"means. A fold with no declared law is refused rather than emitted as a SUM.\",\n                [f\"{relation}.{col}.quantity_kind\"],\n            )\n        planes_for[col] = colplane\n        tiers.append(colplane.tier)",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: UNKNOWN × indicator",
+       "sub": "the law refuses — <code>undeclared_grain</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "UNKNOWN|ordinal": {
+      "id": "UNKNOWN|ordinal",
+      "label": "UNKNOWN × ordinal",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(UNKNOWN, ordinal)]</code> → <code>refuse · undeclared_grain</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: UNKNOWN × ordinal",
+       "sub": "the law refuses — <code>undeclared_grain</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     },
+     "UNKNOWN|identifier": {
+      "id": "UNKNOWN|identifier",
+      "label": "UNKNOWN × identifier",
+      "badge": "REFUSE",
+      "drift": false,
+      "edges": [
+       {
+        "from": "decl:quantity_kind",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "decl:grain_semantics",
+        "to": "mid:law",
+        "kind": "own"
+       },
+       {
+        "from": "mid:guard:G2",
+        "to": "mid:law",
+        "kind": "via"
+       },
+       {
+        "from": "mid:law",
+        "to": "mid:op:refuse",
+        "kind": "own"
+       },
+       {
+        "from": "mid:op:refuse",
+        "to": "out:REFUSE",
+        "kind": "own"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the cell",
+        "v": "<code>LAW[(UNKNOWN, identifier)]</code> → <code>refuse · undeclared_grain</code>"
+       },
+       {
+        "t": "the operator",
+        "v": "stage 3 (aggregate) · operands <code>code</code> · <b>composes</b>"
+       },
+       {
+        "t": "consulted on",
+        "v": "the axes the question did NOT name — <code>FOLDED = every axis − (grouped + pinned)</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "G2 TYPE preempts the table here.",
+        "p": [
+         "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )",
+         "A guard OVERRIDES the law, never re-tabulates it — which is why the law has no axis dimension."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "cell: UNKNOWN × identifier",
+       "sub": "the law refuses — <code>undeclared_grain</code>",
+       "empty": true
+      },
+      "outcome": "REFUSE",
+      "alt_outcome": null
+     }
+    }
+   },
+   "counts": {
+    "cells": 25,
+    "kinds": 5,
+    "grains": 5,
+    "ops": 10,
+    "guards": 5,
+    "tiers": 3
+   },
+   "bridge": {
+    "Flow": "event × extensive",
+    "Stock": "observation × extensive",
+    "Intensive": "event × intensive",
+    "Precomputed": "precomputed × extensive",
+    "Target": "plan × extensive"
+   }
+  },
+  {
+   "id": "rulings",
+   "title": "The rulings",
+   "subtitle": "what a person decided about an axis",
+   "middle": "a person",
+   "thesis": "The middle lane is A PERSON — which is why this one is not called a grammar, and why it is the only plane that demands evidence. The measurement narrows four closed words to a candidate; it cannot pick one.",
+   "skeleton": "SELECT count(DISTINCT a), count(DISTINCT b), count(DISTINCT (a,b)) FROM <relation>",
+   "sources": null,
+   "lanes": {
+    "left": {
+     "label": "the measurement · the profile plane",
+     "nodes": [
+      {
+       "id": "m:a_distinct",
+       "label": "count(DISTINCT a)",
+       "meta": "measured"
+      },
+      {
+       "id": "m:b_distinct",
+       "label": "count(DISTINCT b)",
+       "meta": "measured"
+      },
+      {
+       "id": "m:pairs",
+       "label": "count(DISTINCT (a,b))",
+       "meta": "measured"
+      },
+      {
+       "id": "m:rows",
+       "label": "rows in the relation",
+       "meta": "measured"
+      },
+      {
+       "id": "m:dq",
+       "label": "a DQ register id",
+       "meta": "authored",
+       "sub": "the only input a person supplies"
+      }
+     ]
+    },
+    "middle": {
+     "label": "the judgement · not a law",
+     "nodes": [
+      {
+       "id": "mid:constellation",
+       "label": "the constellation",
+       "meta": "mechanical",
+       "sub": "narrows four words to a candidate"
+      },
+      {
+       "id": "mid:person",
+       "label": "A PERSON RULES",
+       "meta": "not mechanical",
+       "sub": "cardinality cannot tell you which you have"
+      },
+      {
+       "id": "mid:ruling",
+       "label": "the ruling",
+       "meta": "mac.column_ruling",
+       "sub": "4 closed words"
+      }
+     ]
+    },
+    "right": {
+     "label": "the outcome",
+     "nodes": [
+      {
+       "id": "out:COMMIT",
+       "label": "COMMIT",
+       "meta": "every declaration it rests on resolved"
+      },
+      {
+       "id": "out:ASK",
+       "label": "ASK",
+       "meta": "a required dimension was underspecified"
+      },
+      {
+       "id": "out:REFUSE",
+       "label": "REFUSE",
+       "meta": "the evidence is absent, and it can say what"
+      },
+      {
+       "id": "out:BLOCK",
+       "label": "BLOCK",
+       "meta": "outside what the ontology governs"
+      },
+      {
+       "id": "out:LOAD",
+       "label": "LOAD · refused",
+       "meta": "never_axis without evidence",
+       "plane_outcome": true
+      },
+      {
+       "id": "out:GATE",
+       "label": "CHECK · red",
+       "meta": "the ruling claims what the data denies",
+       "plane_outcome": true
+      }
+     ]
+    }
+   },
+   "selector_label": "four words · mac.column_ruling",
+   "cases": {
+    "law": {
+     "label_of": {
+      "id": "label_of",
+      "label": "label_of",
+      "badge": "COMMIT",
+      "drift": false,
+      "edges": [
+       {
+        "from": "m:a_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:b_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:pairs",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "mid:constellation",
+        "to": "mid:person",
+        "kind": "own"
+       },
+       {
+        "from": "mid:person",
+        "to": "mid:ruling",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:GATE",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the constellation that makes it a candidate",
+        "v": "<code>a = b = pairs</code>"
+       },
+       {
+        "t": "what the ruling does",
+        "v": "Two names for one thing, not two things. The named column stays canonical and this one supplies the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different labels with nothing relating them — and GROUP BY both yields 11 rows where a reader expects 121."
+       },
+       {
+        "t": "declared as",
+        "v": "<code>rulings.label_of</code> · status <b>designed</b> · reader none"
+       },
+       {
+        "t": "evidence",
+        "v": "not required — the constellation is the evidence"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "What measurement cannot tell you.",
+        "p": [
+         "whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Frontier.",
+        "p": [
+         "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso AG are one company in two registers. Northwind AG and Contoso are two companies."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "ruling: label_of",
+       "sub": "a judgement a person makes on top of a measurement — the constellation narrows it to a candidate and stops there",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
+     "finer_than": {
+      "id": "finer_than",
+      "label": "finer_than",
+      "badge": "ASK",
+      "drift": false,
+      "edges": [
+       {
+        "from": "m:a_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:b_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:pairs",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "mid:constellation",
+        "to": "mid:person",
+        "kind": "own"
+       },
+       {
+        "from": "mid:person",
+        "to": "mid:ruling",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:ASK",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:GATE",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the constellation that makes it a candidate",
+        "v": "<code>pairs = a, and a > b</code>"
+       },
+       {
+        "t": "what the ruling does",
+        "v": "Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a child has two parents and the roll-up double-counts."
+       },
+       {
+        "t": "declared as",
+        "v": "<code>rulings.finer_than</code> · status <b>designed</b> · reader none"
+       },
+       {
+        "t": "evidence",
+        "v": "not required — the constellation is the evidence"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "This one the data can settle.",
+        "p": [
+         "Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Frontier.",
+        "p": [
+         "Mistaking `scoped_by` for this one is the expensive error: it merges unrelated members and nothing in the result betrays it."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "ruling: finer_than",
+       "sub": "a judgement a person makes on top of a measurement — the constellation narrows it to a candidate and stops there",
+       "empty": false
+      },
+      "outcome": "ASK",
+      "alt_outcome": null
+     },
+     "scoped_by": {
+      "id": "scoped_by",
+      "label": "scoped_by",
+      "badge": "ASK",
+      "drift": false,
+      "edges": [
+       {
+        "from": "m:a_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:b_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:pairs",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "mid:constellation",
+        "to": "mid:person",
+        "kind": "own"
+       },
+       {
+        "from": "mid:person",
+        "to": "mid:ruling",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:ASK",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:REFUSE",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:GATE",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the constellation that makes it a candidate",
+        "v": "<code>pairs > a AND pairs > b</code>"
+       },
+       {
+        "t": "what the ruling does",
+        "v": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated regions into one plausible-looking row."
+       },
+       {
+        "t": "declared as",
+        "v": "<code>placement.scoped_by</code> · status <b>designed</b> · reader none"
+       },
+       {
+        "t": "evidence",
+        "v": "not required — the constellation is the evidence"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "This one the data can settle.",
+        "p": [
+         "Also safe, once collisions WITHIN versus ACROSS the parent are checked. Zero within and many across is the signature."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Frontier.",
+        "p": [
+         "Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by` under `placement`, column_rulings.md documents it as §3 of `rulings`. One key, two spellings, which is the shape of every drift this standard exists to end."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "ruling: scoped_by",
+       "sub": "a judgement a person makes on top of a measurement — the constellation narrows it to a candidate and stops there",
+       "empty": false
+      },
+      "outcome": "ASK",
+      "alt_outcome": null
+     },
+     "never_axis": {
+      "id": "never_axis",
+      "label": "never_axis",
+      "badge": "BLOCK",
+      "drift": false,
+      "edges": [
+       {
+        "from": "m:a_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:rows",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "mid:constellation",
+        "to": "mid:person",
+        "kind": "own"
+       },
+       {
+        "from": "mid:person",
+        "to": "mid:ruling",
+        "kind": "own"
+       },
+       {
+        "from": "m:dq",
+        "to": "mid:person",
+        "kind": "via"
+       },
+       {
+        "from": "mid:person",
+        "to": "out:LOAD",
+        "kind": "via"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:BLOCK",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:GATE",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the constellation that makes it a candidate",
+        "v": "<code>cardinality approaches the row count</code>"
+       },
+       {
+        "t": "what the ruling does",
+        "v": "A legitimate dimension that must not be an axis, for a reason outside the data. The refusal cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each describe one person."
+       },
+       {
+        "t": "declared as",
+        "v": "<code>rulings.never_axis</code> · status <b>designed</b> · reader none under this name — see frontier_note"
+       },
+       {
+        "t": "evidence",
+        "v": "<b>required</b> — a DQ register id. A prohibition without a measurement is a preference."
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "What measurement cannot tell you.",
+        "p": [
+         "whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the ruling must carry the DQ id that measured it."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Frontier.",
+        "p": [
+         "column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on `field_roles[col] == \"attribute\"`, the role spelling `housekeeping` replaced, not on this ruling. `rulings.never_axis` has 0 readers in platform src and is a load error if authored. The ruling is enforced under a name its own vocabulary no longer defines."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "ruling: never_axis",
+       "sub": "a judgement a person makes on top of a measurement — the constellation narrows it to a candidate and stops there",
+       "empty": false
+      },
+      "outcome": "BLOCK",
+      "alt_outcome": null
+     }
+    }
+   },
+   "counts": {
+    "words": 4,
+    "enforced": 0,
+    "designed": 4
+   }
+  }
+ ],
+ "declaration_states": [
+  {
+   "state": "subject declares a measure column or a rule",
+   "effect": "foldable — sum and average are available"
+  },
+  {
+   "state": "subject declares identity.canonical_key",
+   "effect": "countable — COUNT(DISTINCT key), no rule needed"
+  },
+  {
+   "state": "subject declares neither",
+   "effect": "refuse unsupported_intent — nothing declares a number it carries"
+  },
+  {
+   "state": "an edge joins the subject to every named term",
+   "effect": "plannable"
+  },
+  {
+   "state": "no edge path exists between subject and a named term",
+   "effect": "refuse no_join_path — the hop is undeclared, not absent from the data"
+  },
+  {
+   "state": "a filtered term declares a register or an inline value domain",
+   "effect": "the name resolves to a code offline"
+  },
+  {
+   "state": "a filtered term declares neither",
+   "effect": "refuse ontology_gap — no register, so a name cannot become a code"
+  },
+  {
+   "state": "the subject's relation declares a period column",
+   "effect": "a period filter binds"
+  },
+  {
+   "state": "it does not",
+   "effect": "refuse ontology_gap — a period that bound to nothing would label a total it did not take"
+  }
+ ],
+ "projection": {
+  "how": "One `slices` entry per column: {term: <concept>, column: <column>}. Any column the concept declares — dimension or attribute. A column named in `ordering.by` is pulled into the SELECT too, which is how \"top 5 by price, shown by name\" needs no new grammar.",
+  "on_list": "the slices ARE the projection — SELECT DISTINCT <columns>",
+  "on_aggregate": "the slices are the projection AND the GROUP BY. Naming the key beside the display column (ProductKey, ProductName) is the correct form: the key decides the grain and the name rides along, functionally dependent on it. Naming the display column ALONE merges any two members that share one.",
+  "gaps": [
+   {
+    "id": "no_display_only_column",
+    "what": "a column shown but NOT grouped by",
+    "why": "every slice joins the GROUP BY, so on an aggregate \"show this\" and \"group by this\" cannot be said apart. Harmless where the column is functionally dependent on the key, and not expressible where it is not."
+   },
+   {
+    "id": "identity_column_not_suppressible",
+    "what": "asking for one column still returns the concept's identity column beside it",
+    "example": "a slice on ProductName yields \"ProductName, ProductCode AS product\"",
+    "why": "the identity is appended by the assembler and no field withholds it"
+   },
+   {
+    "id": "identity_column_duplicated",
+    "what": "naming the identity column as a slice emits it TWICE",
+    "example": "SELECT DISTINCT ProductName, ProductCode, ProductCode AS product",
+    "why": "the assembler appends the identity without checking whether a slice already named it",
+    "note": "a defect, not a design — unlike the two above, this one is fixable without new grammar"
+   }
+  ]
+ },
+ "gaps": [
+  {
+   "id": "having",
+   "what": "a predicate on an AGGREGATE rather than on a row",
+   "example": "countries where the average order value exceeds 500",
+   "why": "every filter the Intent can carry lands in WHERE; there is no HAVING",
+   "measured": "the one corpus question of 70 that no hand-written intent could encode",
+   "sole": null,
+   "stale": {
+    "gap": "having",
+    "field": "having",
+    "reads": 4
+   }
+  },
+  {
+   "id": "correlated_subquery_filter",
+   "what": "a filter INSIDE the subquery an anti-join builds",
+   "example": "stores in Italy with no sales",
+   "why": "exists contributes one subquery and the Intent cannot qualify it",
+   "sole": null,
+   "stale": null
+  },
+  {
+   "id": "null_test",
+   "what": "a filter testing whether a column IS NULL or IS NOT NULL",
+   "example": "how many stores are still open",
+   "why": "FilterOp is a closed set of eight comparison operators and none of them is a null test. A value literal cannot stand in: 'NULL' is the four-character string.",
+   "measured": "2026-09-24, contoso. The bundle RULES that operating stores are read from CloseDate IS NULL (\"because no status code says so\") and the planner refuses the question unresolved_term. The declaration is correct, machine-readable, and unreachable — the estate's signature defect in its purest form, and the first instance found where the unread declaration is a RULE the bundle wrote specifically to stop a wrong answer.",
+   "sole": null,
+   "stale": null
+  },
+  {
+   "id": "negation_over_nullable",
+   "what": "a negated filter (ne / not_in) that should keep rows where the column is NULL",
+   "example": "how many stores are not closed",
+   "why": "NE renders <> and NOT_IN renders NOT IN. Both are SQL three-valued logic, so every NULL row is discarded silently. The Intent can SAY \"not closed\"; it cannot say whether the unstatused rows are meant, and they almost always are — an absence is normally the complement being asked for.",
+   "measured": "2026-09-24, contoso. \"How many stores are not closed\" — the planner emits `Status <> 'Closed'` and returns 6. The answer is 59. The 59 stores carrying no status are exactly the ones the question is about, and `<>` drops all of them. NOT A REFUSAL AND NOT AN ERROR: a plausible small number, from valid SQL, with nothing in the result to say so.",
+   "severity": "the worst class in this file — the other gaps refuse, this one answers",
+   "sole": null,
+   "stale": null
+  },
+  {
+   "id": "set_operation",
+   "what": "INTERSECT or UNION — two independent row-sets combined on a key",
+   "example": "countries where a singer over 40 AND a singer under 30 are from",
+   "why": "one Intent describes one row-set. EXCEPT is NOT in this gap — it is the anti-join the `exists` operation already covers.",
+   "measured": "353 questions, the second largest single gap",
+   "sole": 353,
+   "stale": {
+    "gap": "set_operation",
+    "field": "all_of",
+    "reads": 1
+   }
+  },
+  {
+   "id": "disjunctive_filter",
+   "what": "OR between predicates in WHERE",
+   "example": "staff in Georgia or Utah",
+   "why": "Intent.filters is a conjunction; there is no way to express alternation",
+   "measured": "244 questions. Small to fix and there is no design question in it",
+   "sole": 244,
+   "stale": {
+    "gap": "disjunctive_filter",
+    "field": "any_of",
+    "reads": 1
+   }
+  },
+  {
+   "id": "multiple_measures",
+   "what": "two different aggregates in one answer",
+   "example": "the count of orders AND their total value, side by side",
+   "why": "Intent carries ONE subject; `denominator` is a second only to divide by",
+   "measured": "208 questions",
+   "sole": 208,
+   "stale": null
+  },
+  {
+   "id": "string_match",
+   "what": "LIKE / prefix / substring matching",
+   "example": "districts whose name starts with 'Riverside'",
+   "why": "FilterOp has eight comparison operators and none matches a pattern",
+   "measured": "205 questions. Note this is resolution's job in MAC — a register resolves a name to a code offline — so some of these are a REGISTER gap in the bundle rather than a grammar gap",
+   "sole": 205,
+   "stale": null
+  },
+  {
+   "id": "multi_key_ordering",
+   "what": "ORDER BY more than one key",
+   "example": "rank by score descending, then by name",
+   "why": "OrderingSpec carries a single `by`",
+   "measured": "60 questions. The cheapest entry in this list to close",
+   "sole": 60,
+   "stale": null
+  },
+  {
+   "id": "derived_table",
+   "what": "a CTE or a subquery in FROM",
+   "example": "any two-step computation gold SQL writes as WITH",
+   "why": "the planner composes one FROM from the anchor and its join path",
+   "measured": "41 sole, but 714 questions mention a subquery SOMEWHERE and only 7 are blocked by that alone — subqueries almost always co-occur with another gap, so this is NOT where to start. Recorded because the raw count is the misleading one.",
+   "sole": 41,
+   "stale": null
+  }
+ ],
+ "stale_gaps": [
+  {
+   "gap": "having",
+   "field": "having",
+   "reads": 4
+  },
+  {
+   "gap": "set_operation",
+   "field": "all_of",
+   "reads": 1
+  },
+  {
+   "gap": "disjunctive_filter",
+   "field": "any_of",
+   "reads": 1
+  }
+ ],
+ "reachability": {
+  "today": "74.0",
+  "after_five": "89.4",
+  "corpus_questions": "9 568",
+  "corpus_databases": "171"
+ },
+ "vocabulary": {
+  "outcome_class": {
+   "COMMIT": {
+    "description": "THE ENGINE ANSWERED. A value was produced, and every declaration it rests on resolved — the scope was pinned, the measure was legal at that grain, the names resolved to codes.",
+    "status": "canonical"
+   },
+   "ASK": {
+    "description": "A REQUIRED dimension was underspecified, so the engine asked instead of guessing. The question is answerable; it is not yet fully stated. Never a silent default.",
+    "status": "canonical"
+   },
+   "REFUSE": {
+    "description": "THE EVIDENCE IS ABSENT. The question is legal and the engine can state precisely what was missing — the scope with no row, the name that did not resolve — and says so rather than returning a zero a reader takes for a measurement.",
+    "status": "canonical"
+   },
+   "BLOCK": {
+    "description": "OUTSIDE WHAT THE ONTOLOGY GOVERNS. Not a gap in the data but a question this model does not undertake to answer, so answering it would be fabrication rather than retrieval.",
+    "status": "canonical"
+   },
+   "DECLINE": {
+    "description": "",
+    "status": "deprecated",
+    "use": "REFUSE",
+    "why": "A pure synonym of REFUSE with no distinct meaning anyone has been able to state. It is the measured cost of leaving this axis ungoverned, and it is the larger of the two spellings: 1.049 declarations across 68 files at the moment of closure, against REFUSE's 1.347, so a reader searching either word sees well under half the population. NOT MIGRATED HERE — the bundle that carries it has no remote, and rewriting a thousand declarations in an unrecoverable tree is a separate, human-authorised act. Declared so the debt is countable.\n",
+    "measured_at_close": 1049,
+    "files_at_close": 68
+   },
+   "COMMIT_PENDING": {
+    "description": "A COMMIT whose validation precondition has not yet passed — the answer is composed but not yet cleared to be reported as one. Genuinely distinct from all four canonical terms, which is why it is `provisional` rather than `deprecated`: collapsing it into COMMIT would report an unvalidated answer as a validated one.",
+    "status": "provisional",
+    "measured_at_close": 247
+   },
+   "ENUMERATE": {
+    "description": "A dimension-member LIST — a metadata answer with no measure in it. A route stage, not a judgement about an answer's correctness, so it does not belong on the grading axis even though it is declared on the same keys.",
+    "status": "non_grading",
+    "measured_at_close": 119
+   },
+   "MODEL_PROPERTY": {
+    "description": "Routed to a property OF THE MODEL rather than to the warehouse — answered from declarations alone. Like ENUMERATE, a route target rather than a grade.",
+    "status": "non_grading",
+    "measured_at_close": 74
+   },
+   "DEFER": {
+    "description": "The composer declined to compose — it could not build a statement it was willing to stand behind, and said so instead of emitting SQL that would fabricate a shape.",
+    "status": "non_grading",
+    "measured_at_close": 59
+   },
+   "ENGINE_ERR": {
+    "description": "The engine raised. An OUTAGE, not a semantic outcome: nothing was judged, so it must never be counted as a refusal the model chose to make.",
+    "status": "non_grading",
+    "measured_at_close": 3
+   }
+  },
+  "diagnostic_code": {
+   "MAC001": {
+    "description": "present in the bundle, carries no MAC definition, not declared out of scope",
+    "kind": "undefined-artifact",
+    "severity": "error",
+    "group": "what is not defined"
+   },
+   "MAC002": {
+    "description": "has a MAC definition and does not satisfy it",
+    "kind": "invalid-artifact",
+    "severity": "error",
+    "group": "what is not defined"
+   },
+   "MAC009": {
+    "description": "an x- key with no profile entry — CONFORMANCE.md §2: undeclared debt, not license",
+    "kind": "undeclared-extension",
+    "severity": "error",
+    "group": "what is not defined"
+   },
+   "MAC003": {
+    "description": "one fact stated in more than one home; nothing keeps the copies in step",
+    "kind": "fact-restated",
+    "severity": "warning",
+    "group": "what is defined redundantly"
+   },
+   "MAC004": {
+    "description": "statements of one fact disagree — something downstream is reading the wrong one",
+    "kind": "fact-contradicted",
+    "severity": "error",
+    "group": "what is defined redundantly"
+   },
+   "MAC005": {
+    "description": "MAC offers a mechanism for this and the bundle does not use it",
+    "kind": "capability-unadopted",
+    "severity": "warning",
+    "group": "what is offered and not taken"
+   },
+   "MAC006": {
+    "description": "a conformance level or confidence asserted with no evidence behind it",
+    "kind": "claim-unearned",
+    "severity": "warning",
+    "group": "what is claimed without warrant"
+   },
+   "MAC010": {
+    "description": "an authored or tuned object with no entry in the change record",
+    "kind": "change-unprotocolled",
+    "severity": "warning",
+    "group": "what is claimed without warrant"
+   },
+   "MAC007": {
+    "description": "a rule or guard testing a value that cannot occur — it can never fire",
+    "kind": "guard-dead",
+    "severity": "error",
+    "group": "what points at nothing"
+   },
+   "MAC008": {
+    "description": "a reference that resolves to nothing",
+    "kind": "reference-unresolved",
+    "severity": "error",
+    "group": "what points at nothing"
+   },
+   "MAC011": {
+    "description": "a required completeness the bundle does not reach",
+    "kind": "coverage-missing",
+    "severity": "error",
+    "group": "what is not covered"
+   },
+   "MAC012": {
+    "description": "an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO of four declared cell keys were false — the main fact view claimed 0 multi-row against millions, and a second fact view claimed 0 against nearly all of its cells. The two that HELD are the two that a view enforces: a view that withholds ambiguous cells, and a current-snapshot view whose collapse makes the key true by construction (its declared cell count reproduced to within a hundred-odd cells). That is the shape of the defect: the declaration is false exactly where nothing makes it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case — same subject, same value shape, same closed domain with non-empty overlap. Where there is NO core equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC, rather than declaring beside it. Enforced by tools/check_extension_keys.py, which exits non-zero, because a check that does not block is not enforcement.",
+    "kind": "extension-duplicates-core",
+    "severity": "error",
+    "group": "what is not covered"
+   }
+  },
+  "column_ruling": {
+   "label_of": {
+    "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso AG\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have."
+   },
+   "finer_than": {
+    "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName` carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a colliding code space instead — see `scoped_by`, and measure before you rule."
+   },
+   "scoped_by": {
+    "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect."
+   },
+   "never_axis": {
+    "description": "THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row."
+   }
+  },
+  "MeasureType": {},
+  "aggregation_effect": {
+   "additive": {
+    "description": "SUM is correct across this axis."
+   },
+   "average": {
+    "description": "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+   },
+   "none": {
+    "description": "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
+   }
+  }
+ },
+ "fold": {
+  "kinds": [
+   "extensive",
+   "intensive",
+   "indicator",
+   "ordinal",
+   "identifier"
+  ],
+  "grains": [
+   "event",
+   "observation",
+   "plan",
+   "precomputed",
+   "UNKNOWN"
+  ],
+  "cells": {
+   "event|extensive": {
+    "op": "sum",
+    "sub": ""
+   },
+   "event|intensive": {
+    "op": "weighted_mean",
+    "sub": ""
+   },
+   "event|indicator": {
+    "op": "count_filtered",
+    "sub": ""
+   },
+   "event|ordinal": {
+    "op": "refuse",
+    "sub": "no_order_stat"
+   },
+   "event|identifier": {
+    "op": "refuse",
+    "sub": "type_error"
+   },
+   "observation|extensive": {
+    "op": "sum",
+    "sub": ""
+   },
+   "observation|intensive": {
+    "op": "weighted_mean",
+    "sub": ""
+   },
+   "observation|indicator": {
+    "op": "count_filtered",
+    "sub": ""
+   },
+   "observation|ordinal": {
+    "op": "refuse",
+    "sub": "no_order_stat"
+   },
+   "observation|identifier": {
+    "op": "refuse",
+    "sub": "type_error"
+   },
+   "plan|extensive": {
+    "op": "sum",
+    "sub": ""
+   },
+   "plan|intensive": {
+    "op": "weighted_mean",
+    "sub": ""
+   },
+   "plan|indicator": {
+    "op": "count_filtered",
+    "sub": ""
+   },
+   "plan|ordinal": {
+    "op": "refuse",
+    "sub": "no_order_stat"
+   },
+   "plan|identifier": {
+    "op": "refuse",
+    "sub": "type_error"
+   },
+   "precomputed|extensive": {
+    "op": "resolve_match",
+    "sub": ""
+   },
+   "precomputed|intensive": {
+    "op": "resolve_match",
+    "sub": ""
+   },
+   "precomputed|indicator": {
+    "op": "resolve_match",
+    "sub": ""
+   },
+   "precomputed|ordinal": {
+    "op": "resolve_match",
+    "sub": ""
+   },
+   "precomputed|identifier": {
+    "op": "resolve_match",
+    "sub": ""
+   },
+   "UNKNOWN|extensive": {
+    "op": "refuse",
+    "sub": "undeclared_grain"
+   },
+   "UNKNOWN|intensive": {
+    "op": "refuse",
+    "sub": "undeclared_grain"
+   },
+   "UNKNOWN|indicator": {
+    "op": "refuse",
+    "sub": "undeclared_grain"
+   },
+   "UNKNOWN|ordinal": {
+    "op": "refuse",
+    "sub": "undeclared_grain"
+   },
+   "UNKNOWN|identifier": {
+    "op": "refuse",
+    "sub": "undeclared_grain"
+   }
+  },
+  "ops": {
+   "collapse_to_identity": {
+    "stage": 0,
+    "composes": true,
+    "operands": [
+     "subject_key",
+     "observed_at"
+    ]
+   },
+   "resolve_last": {
+    "stage": 1,
+    "composes": true,
+    "operands": [
+     "x",
+     "order_by",
+     "partition"
+    ]
+   },
+   "resolve_match": {
+    "stage": 1,
+    "composes": true,
+    "operands": [
+     "x",
+     "on"
+    ]
+   },
+   "grain_expression": {
+    "stage": 2,
+    "composes": true,
+    "operands": [
+     "template"
+    ]
+   },
+   "sum": {
+    "stage": 3,
+    "composes": true,
+    "operands": [
+     "x"
+    ]
+   },
+   "weighted_mean": {
+    "stage": 3,
+    "composes": true,
+    "operands": [
+     "x",
+     "w"
+    ]
+   },
+   "mean": {
+    "stage": 3,
+    "composes": false,
+    "operands": [
+     "x"
+    ]
+   },
+   "count_filtered": {
+    "stage": 3,
+    "composes": true,
+    "operands": [
+     "x",
+     "pred"
+    ]
+   },
+   "count_distinct": {
+    "stage": 3,
+    "composes": true,
+    "operands": [
+     "c"
+    ]
+   },
+   "refuse": {
+    "stage": 3,
+    "composes": true,
+    "operands": [
+     "code"
+    ]
+   }
+  },
+  "stages": {
+   "0": "collapse",
+   "1": "resolve",
+   "2": "grain expression",
+   "3": "aggregate"
+  },
+  "tiers": [
+   "derived",
+   "inferred",
+   "confirmed"
+  ],
+  "guards": [
+   {
+    "id": "G1",
+    "title": "QUANTITY",
+    "why": "Absence is a term: no declaration, no arithmetic licensed.\n    planes_for: dict[str, ColumnPlane] = {}\n    for col in operands:\n        colplane = rp.columns.get(col)\n        if colplane is None or colplane.quantity_kind is None:\n            return _refuse(\n                \"no_fold_law\",\n                f\"{relation}.{col} declares no `quantity_kind`, so nothing says what folding it \"\n                f\"means. A fold with no declared law is refused rather than emitted as a SUM.\",\n                [f\"{relation}.{col}.quantity_kind\"],\n            )\n        planes_for[col] = colplane\n        tiers.append(colplane.tier)"
+   },
+   {
+    "id": "G2",
+    "title": "TYPE",
+    "why": "An identifier or an ordinal is not a quantity.\n    if count_target is None:\n        for col in operands:\n            kind = planes_for[col].quantity_kind\n            if kind is QuantityKind.IDENTIFIER:\n                return _refuse(\n                    \"type_error\",\n                    f\"{relation}.{col} is declared an identifier, not a quantity: folding it \"\n                    f\"produces a number with no referent. Nothing was executed.\",\n                    [f\"{relation}.{col}\"],\n                )\n            if kind is QuantityKind.ORDINAL:\n                return _refuse(\n                    \"no_order_stat\",\n                    f\"{relation}.{col} is declared an ordinal, not a quantity: it has an order \"\n                    f\"and no arithmetic. Neither a SUM nor a mean of it is a number.\",\n                    [f\"{relation}.{col}\"],\n                )"
+   },
+   {
+    "id": "G3",
+    "title": "GRAIN-MATCH",
+    "why": "A precomputed value exists only at the grain it was computed for.\n    # This is `exchange_rate.pair.never_half_a_pair` mechanised: the joint constraint IS\n    # the relation's declared cell key, so it needs no axis-naming trick (COLUMN-GRAIN\n    # FOLD's catch -- three prior agents recorded `currency_pair` as content no derivation\n    # reproduces, and it is a cell key).\n    stored_grain: tuple[str, ...] = ()\n    if rp.grain_semantics is GrainSemantics.PRECOMPUTED:\n        stored_grain = rp.cell_key\n    else:\n        # A relation may carry ONE precomputed column beside ordinary ones: `stored_at`\n        # is the per-column override, the same escape the observation grain needs.\n        for col in operands:\n            stored_grain = stored_grain or tuple(planes_for[col].stored_at)\n    if stored_grain:\n        loose = [c for c in stored_grain if c not in partitioned and c not in pinned]\n        if loose:\n            return _refuse(\n                \"grain_not_stored\",\n                f\"{measure_concept.name} is stored only at the grain \"\n                f\"({', '.join(stored_grain)}) and this question leaves {', '.join(loose)} \"\n                f\"unpinned, so there is no stored cell to read and no fold that would be \"\n                f\"valid. Pin or group every key column, or ask at the grain it is stored at.\",\n                [f\"{relation}.{c}\" for c in loose],\n            )"
+   },
+   {
+    "id": "G4",
+    "title": "UNIT",
+    "why": "A cross-denomination fold is not a quantity of anything.\n    for col in operands:\n        colplane = planes_for[col]\n        unit = colplane.denominated_by\n        distinct = colplane.denominator_distinct or 0\n        if unit and unit in folded and distinct > 1:\n            return _refuse(\n                \"incommensurable\",\n                f\"{relation}.{col} is denominated by {unit}, {unit} is folded by this question \"\n                f\"and carries {distinct} members in scope, so the result would add amounts in \"\n                f\"different units as if they shared one. Three declared repairs, all of them in \"\n                f\"the bundle already: pin one {unit}, group by {unit}, or convert through the \"\n                f\"declared conversion derivation.\",\n                [f\"{relation}.{unit}\"],\n            )"
+   },
+   {
+    "id": "G5",
+    "title": "MIXED KINDS",
+    "why": "Two operands of different kinds need a grain expression to consume\n    # them at row grain; without one the concept has said two contradictory things.\n    kinds = {k for k in (planes_for[c].quantity_kind for c in operands) if k is not None}\n    if len(kinds) > 1 and rule is None:\n        return _refuse(\n            \"mixed_quantity_kinds\",\n            f\"{measure_concept.name} reads columns of different quantity kinds \"\n            f\"({', '.join(sorted(k.value for k in kinds))}) and names no derivation that \"\n            f\"consumes them at row grain, so there is no single fold for it.\",\n            [f\"{relation}.{c}\" for c in operands],\n        )"
+   }
+  ],
+  "cell_count": 25
+ },
+ "runtime": {
+  "operations": [
+   "count",
+   "sum",
+   "average",
+   "list",
+   "rank",
+   "compare",
+   "ratio",
+   "define",
+   "exists"
+  ],
+  "filter_ops": [
+   "eq",
+   "ne",
+   "gt",
+   "gte",
+   "lt",
+   "lte",
+   "in",
+   "not_in"
+  ],
+  "branched_by_name": [
+   "average",
+   "count",
+   "define",
+   "exists",
+   "list",
+   "ratio",
+   "sum"
+  ],
+  "non_fold_ops": [
+   "count",
+   "define",
+   "exists",
+   "list"
+  ],
+  "root": "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src/mac_runtime"
+ },
+ "drifts": [
+  "R2 'sum' claims branches_in_runtime=False and the planner disagrees",
+  "R2 'average' claims branches_in_runtime=False and the planner disagrees",
+  "R2 'ratio' claims branches_in_runtime=False and the planner disagrees"
+ ],
+ "counts": {
+  "planes": 3,
+  "gaps": 10,
+  "projection_gaps": 3,
+  "stale": 3,
+  "cases": 47
+ }
+};
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const n=document.createElement(t); if(c) n.className=c; if(h!==undefined) n.innerHTML=h; return n; };
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num = n => Number(n).toLocaleString('en-GB').replace(/,/g,' ');
+const chip = o => `<span class="chip c-${o}">${esc(o)}</span>`;
+const PLANES = Object.fromEntries(DATA.planes.map(p=>[p.id,p]));
+
+let PLANE='query', SRC='law', SEL={};
+DATA.planes.forEach(p=>{ SEL[p.id]=Object.keys(Object.values(p.cases)[0])[0]; });
+
+const plane = () => PLANES[PLANE];
+const cases = () => plane().cases[plane().sources ? SRC : 'law'];
+const kase  = () => cases()[SEL[PLANE]];
+
+/* ---------------------------------------------------------------- comparison */
+function renderCmp(){
+  const host=$('#cmp'); host.innerHTML='';
+  DATA.planes.forEach(p=>{
+    const c=el('div','p');
+    const n=Object.keys(Object.values(p.cases)[0]).length;
+    c.innerHTML=`<div class="ph"><h3>${esc(p.title)}</h3><div class="s">${esc(p.subtitle)}</div></div>
+      <div class="pb">
+        <div class="tri">
+          <div class="box">${esc(p.lanes.left.label.split('·')[0].trim())}</div>
+          <div class="ar">→</div>
+          <div class="box mid">${esc(p.middle)}</div>
+        </div>
+        <div class="tri">
+          <div class="box mid">${esc(p.middle)}</div>
+          <div class="ar">→</div>
+          <div class="box">${esc(p.lanes.right.label.split('·')[0].trim())}</div>
+        </div>
+        <div class="th">${esc(p.thesis)}</div>
+        <div class="mt">${Object.entries(p.counts).map(([k,v])=>
+          `<span class="pl">${esc(k.replace(/_/g,' '))}: ${esc(v)}</span>`).join('')}
+          <span class="pl">${n} cases</span></div>
+      </div>`;
+    const b=el('button','mb-tab',`open the ${p.id} wiring →`);
+    b.style.margin='0 16px 14px'; b.onclick=()=>{PLANE=p.id; go('wire'); renderShell(); renderWire();};
+    c.appendChild(b);
+    host.appendChild(c);
+  });
+
+  $('#planes-notes').innerHTML='';
+  [['note','Why the middle lane is the whole answer.',
+    ['A skeleton is a SHAPE: it is the same for every word, so the word cannot be what decides. '+
+     'A law is a LOOKUP nobody authors: it ships with the runtime and a drift test recomputes it. '+
+     'A person is neither — which is exactly why <code>rulings.evidence</code> is required and the '+
+     'fold law needs no evidence at all. A prohibition a person made without a measurement is a '+
+     'preference; a 25-cell lookup is not.']],
+   ['note','A third sense of the word, for completeness.',
+    ['<code>check_grammar_home.py</code> uses "grammar" for a third thing: <code>mac.schema.json</code>, '+
+     'the STRUCTURAL grammar that says which keys a declaration may carry and where they nest. It '+
+     'governs whether <code>rulings:</code> may appear on a column at all — so it sits underneath all '+
+     'three planes rather than beside them, and it is not drawn here.']]
+  ].forEach(([k,h,ps])=>$('#planes-notes').appendChild(el('div','callout',
+    `<div class="h">${h}</div>${ps.map(x=>`<p>${x}</p>`).join('')}`)));
+}
+
+/* ------------------------------------------------------------------- wiring */
+function laneNode(n, lit){
+  const cls=['node', n.faint?'unread':'', n.id==='mid:person'?'person':'',
+             n.plane_outcome?'planeout':'', n.sub?'stack':'',
+             lit==='own'?'lit':lit==='base'?'on':'dim'].filter(Boolean).join(' ');
+  const d=el('div',cls, n.sub
+    ? `<span>${esc(n.label)}${n.meta?` <span class="rd">${esc(n.meta)}</span>`:''}</span><span class="sub2">${esc(n.sub)}</span>`
+    : `<span>${esc(n.label)}</span>${n.meta?`<span class="rd">${esc(n.meta)}</span>`:''}`);
+  d.dataset.id=n.id; return d;
+}
+
+function renderSelector(){
+  const p=plane(), host=$('#selector'); host.innerHTML='';
+  if(p.grid){
+    const t=el('table');
+    let h='<thead><tr><th></th>'+p.grid.cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>';
+    p.grid.rows.forEach(r=>{
+      h+=`<tr><th class="rh">${esc(r)}</th>`;
+      p.grid.cols.forEach(c=>{
+        const k=`${r}|${c}`, op=p.grid.cells[k];
+        h+=`<td><button data-k="${esc(k)}" class="${op==='refuse'?'refuse ':''}${SEL[PLANE]===k?'on':''}">${esc(op)}</button></td>`;
+      });
+      h+='</tr>';
+    });
+    t.innerHTML=h+'</tbody>';
+    const wrap=el('div','grid5'); wrap.appendChild(t); host.appendChild(wrap);
+    host.querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>{SEL[PLANE]=b.dataset.k; renderWire();});
+  } else {
+    const box=el('div','ops');
+    Object.values(cases()).forEach(c=>{
+      const b=el('button',(SEL[PLANE]===c.id?'on ':'')+(c.drift?'drift':''),
+        `${esc(c.label)}<span class="b">${esc(c.badge)}</span>`);
+      b.onclick=()=>{SEL[PLANE]=c.id; renderWire();};
+      box.appendChild(b);
+    });
+    host.appendChild(box);
+  }
+}
+
+function renderLanes(){
+  const p=plane(), k=kase();
+  const own=new Set(k.edges.filter(e=>e.kind!=='base').flatMap(e=>[e.from,e.to]));
+  const base=new Set(k.edges.filter(e=>e.kind==='base').flatMap(e=>[e.from,e.to]));
+  const lit = id => own.has(id)?'own':base.has(id)?'base':null;
+
+  $('#lh-sel').textContent=p.selector_label;
+  const ls=$('#lane-self'); ls.innerHTML='';
+  const sn=el('div','node opnode'+(k.self_node.empty?' noedge':''),
+    `<span>${esc(k.self_node.label)}</span><span class="sub">${k.self_node.sub}</span>`);
+  sn.dataset.id='sel:'+k.id; ls.appendChild(sn);
+
+  [['left','#lh-left','#lane-left'],['middle','#lh-mid','#lane-mid'],['right','#lh-right','#lane-right']]
+  .forEach(([key,lh,ln])=>{
+    $(lh).textContent=p.lanes[key].label;
+    const host=$(ln); host.innerHTML='';
+    p.lanes[key].nodes.forEach(n=>{
+      let l=lit(n.id);
+      if(key==='right'){
+        const on = n.id==='out:'+k.outcome || n.id==='out:'+k.alt_outcome || own.has(n.id);
+        host.appendChild(laneNode(n, on?'own':null));
+        if(on) host.lastChild.classList.add('out','lit-'+n.label.split(' ')[0]);
+        return;
+      }
+      host.appendChild(laneNode(n,l));
+    });
+  });
+}
+
+function drawWires(){
+  const svg=$('#wires'), box=svg.parentElement, br=box.getBoundingClientRect();
+  svg.setAttribute('width',br.width); svg.setAttribute('height',br.height); svg.innerHTML='';
+  if(br.width<1000) return;
+  const pos=id=>{
+    const n=box.querySelector(`[data-id="${CSS.escape(id)}"]`); if(!n) return null;
+    const r=n.getBoundingClientRect();
+    return {l:{x:r.left-br.left,y:r.top-br.top+r.height/2},
+            r:{x:r.right-br.left,y:r.top-br.top+r.height/2}};
+  };
+  const draw=(a,b,kind)=>{
+    if(!a||!b) return;
+    const dx=Math.max(30,Math.abs(b.l.x-a.r.x)*0.42);
+    const pth=document.createElementNS('http://www.w3.org/2000/svg','path');
+    pth.setAttribute('d',`M ${a.r.x} ${a.r.y} C ${a.r.x+dx} ${a.r.y}, ${b.l.x-dx} ${b.l.y}, ${b.l.x} ${b.l.y}`);
+    pth.setAttribute('fill','none');
+    pth.setAttribute('stroke',kind==='base'?'var(--border)':'var(--accent)');
+    pth.setAttribute('stroke-width',kind==='base'?1.5:2);
+    if(kind==='via') pth.setAttribute('stroke-dasharray','5 4');
+    svg.appendChild(pth);
+  };
+  const k=kase();
+  k.edges.forEach(e=>draw(pos(e.from),pos(e.to),e.kind));
+  /* the selected word reaches its outcome through whatever the middle lane did */
+  if(PLANE==='query'){
+    const t=k.alt_outcome?'out:REFUSE':'out:COMMIT';
+    (plane().lanes.middle.nodes||[]).forEach(n=>{
+      if(k.edges.some(e=>e.to===n.id)) { draw(pos(n.id),pos(t),'own');
+        if(k.alt_outcome) draw(pos(n.id),pos('out:COMMIT'),'base'); }
+    });
+  }
+}
+
+function renderDetail(){
+  const k=kase(), d=$('#detail'); d.innerHTML='';
+  k.detail.forEach(x=>{ if(x.v) d.appendChild(el('div','dcard',
+    `<div class="t">${esc(x.t)}</div><div class="v">${x.v}</div>`)); });
+  const co=$('#wire-callouts'); co.innerHTML='';
+  k.callouts.forEach(c=>co.appendChild(el('div','callout'+(c.kind==='bad'?' bad':''),
+    `<div class="h">${c.h}</div>${c.p.map(x=>`<p>${x}</p>`).join('')}`)));
+}
+
+function renderWire(){
+  const p=plane();
+  $('#wire-title').textContent=p.title+' — '+p.subtitle;
+  $('#wire-thesis').innerHTML=p.thesis;
+  $('#skel').textContent=p.skeleton||'';
+  if(p.id==='query'){
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`The law says <b>${c.branch_claimed} of ${c.operations}</b> operations
+      branch in the runtime; the gate measures <b>${c.branch_measured} of ${c.operations}</b>. An
+      operation whose edges come from an <code>Intent</code> field rather than from itself is one the
+      skeleton already had. ${c.fields} grammar fields · ${c.filter_ops} filter operators · ${c.slots} slots.`;
+  } else if(p.id==='fold'){
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`${c.grains} grain terms × ${c.kinds} quantity kinds = <b>${c.cells} cells</b>,
+      all filled, asserted by the law's own test. ${c.ops} operators over four stages, ${c.guards} guards,
+      ${c.tiers} provenance tiers. Pick a cell from the law's own grid.`;
+  } else {
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`${c.words} closed words. <b>${c.designed} of ${c.words}</b> are designed
+      and unread — authoring one is a load error today. The measurement narrows the choice to a
+      candidate and then stops.`;
+  }
+  renderSelector(); renderLanes(); renderDetail();
+  requestAnimationFrame(drawWires);
+}
+
+/* --------------------------------------------------------------- fold detail */
+function renderFold(){
+  const f=DATA.fold, p=PLANES.fold;
+  $('#fold-lede').innerHTML=`Indexed by two vocabularies, so a matrix is the RIGHT form here — the
+    query grammar's own file rules a matrix out for itself, because the operation is not an index of
+    anything. Every cell is filled and <code>assert len(LAW) == 25</code> holds it that way. A cell
+    reading <code>refuse</code> is a law, not a gap.`;
+  const t=el('table');
+  let h='<thead><tr><th></th>'+f.kinds.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>';
+  f.grains.forEach(r=>{
+    h+=`<tr><th class="rh">${esc(r)}</th>`;
+    f.kinds.forEach(c=>{
+      const cell=f.cells[`${r}|${c}`];
+      h+=`<td><button class="${cell.op==='refuse'?'refuse':''}">${esc(cell.op)}${
+        cell.sub?`<br><span style="font-size:9.5px;opacity:.85">${esc(cell.sub)}</span>`:''}</button></td>`;
+    });
+    h+='</tr>';
+  });
+  t.innerHTML=h+'</tbody>';
+  $('#fold-grid').innerHTML=''; $('#fold-grid').appendChild(t);
+
+  $('#fold-guards').innerHTML='';
+  f.guards.forEach(g=>$('#fold-guards').appendChild(el('div','callout',
+    `<div class="h"><code>${esc(g.id)}</code> ${esc(g.title)}</div><p>${esc(g.why)}</p>`)));
+
+  let o='<table><thead><tr><th>operator</th><th>stage</th><th>composes</th><th>operands</th></tr></thead><tbody>';
+  Object.entries(f.ops).sort((a,b)=>a[1].stage-b[1].stage).forEach(([n,s])=>{
+    o+=`<tr><td class="k">${esc(n)}</td><td>${s.stage} · ${esc(f.stages[s.stage]||'')}</td>
+      <td>${s.composes?'<span class="pl good">composes</span>':'<span class="pl bad">DOES NOT COMPOSE</span>'}</td>
+      <td>${s.operands.map(x=>`<code>${esc(x)}</code>`).join(' ')}</td></tr>`;
+  });
+  $('#fold-ops').innerHTML='<div class="scroll">'+o+'</tbody></table></div>';
+
+  let b='<table><thead><tr><th>mac.MeasureType member</th><th>= this law\'s cell</th></tr></thead><tbody>';
+  Object.entries(p.bridge).forEach(([m,c])=>{
+    b+=`<tr><td class="k">${esc(m)}</td><td class="k">${esc(c)}</td></tr>`;
+  });
+  $('#fold-bridge').innerHTML='<div class="scroll">'+b+'</tbody></table></div>'
+    +`<div class="callout"><div class="h">Not two vocabularies. One law at two grains.</div>
+      <p>Each member of the older five-term vocabulary is a PAIR here — a relation fact and a column
+      fact — which is the split this law argues for. <code>Stock</code> is the one that proves it: it
+      is not a kind at all, it is an <b>extensive</b> quantity on an <b>observation</b> relation, and
+      reading it as a kind is what made the old matrix need an axis dimension that four of its five
+      members ignored.</p>
+      <p>Checked by <code>tests/test_foldplane_law.py</code>, which recomputes the framework matrix
+      against this mirror and fails on any divergence not declared with its ruling. It SKIPS when the
+      framework checkout is absent — stated in its own docstring as a real weakness, since a runner
+      that clones one repo cannot catch a divergence.</p></div>`;
+}
+
+/* ------------------------------------------------------- query states + gaps */
+function renderQuery(){
+  let h='<table><thead><tr><th>the ontology declares</th><th>effect</th><th>outcome</th></tr></thead><tbody>';
+  DATA.declaration_states.forEach(s=>{
+    const eff=String(s.effect||''), refuse=/refuse/.test(eff), code=(eff.match(/refuse (\w+)/)||[])[1];
+    h+=`<tr><td>${esc(s.state)}</td><td>${esc(eff)}</td><td>${refuse
+      ? chip('REFUSE')+(code?` <span class="pl bad">${esc(code)}</span>`:'') : chip('COMMIT')}</td></tr>`;
+  });
+  $('#gates').innerHTML='<div class="scroll">'+h+'</tbody></table></div>';
+
+  let c='<table><thead><tr><th>code</th><th>what it means</th></tr></thead><tbody>';
+  Object.entries(DATA.vocabulary.diagnostic_code).forEach(([k,v])=>{
+    c+=`<tr><td class="k">${esc(k)}</td><td>${esc(v.description)}</td></tr>`;});
+  $('#codes').innerHTML='<div class="scroll">'+c+'</tbody></table></div>';
+
+  const R=DATA.reachability, cc=DATA.counts;
+  const withCount=DATA.gaps.filter(g=>g.sole!=null).length;
+  $('#gaps-lede').innerHTML=`${cc.gaps} recorded gaps, plus ${cc.projection_gaps} in the projection
+    plane. ${withCount} carry a corpus count, measured against ${esc(R.corpus_questions)} third-party
+    questions over ${esc(R.corpus_databases)} databases, counted as <b>sole</b> — questions the
+    feature ALONE costs. <b>${cc.stale} are stale</b>: the <code>Intent</code> has since gained the
+    field and the planner reads it, which no gate checks.`;
+
+  const host=$('#gaps'); host.innerHTML='';
+  const measured=DATA.gaps.filter(g=>g.sole!=null).sort((a,b)=>b.sole-a.sole);
+  const max=Math.max(...measured.map(g=>g.sole));
+  const bars=el('div','bars');
+  bars.appendChild(el('div',null,'<div class="lane-h">questions each gap alone costs</div>'));
+  measured.forEach(g=>{
+    const b=el('div','bar'+(g.stale?' stale':''));
+    b.innerHTML=`<div class="nm">${g.stale?`<s>${esc(g.id)}</s>`:esc(g.id)}</div>
+      <div class="tr"><div class="fl" style="width:${(g.sole/max*100).toFixed(1)}%"></div></div>
+      <div class="vl">${num(g.sole)}</div>`;
+    bars.appendChild(b);
+    if(g.stale) bars.appendChild(el('div',null,
+      `<div style="margin:-4px 0 10px 202px;font-size:12px;color:var(--muted)">
+        <span class="pl good">CLOSED?</span> <code>Intent.${esc(g.stale.field)}</code> exists and the
+        planner reads it ${g.stale.reads}× — this gap may no longer be one.</div>`));
+  });
+  bars.appendChild(el('div','reach',
+    `<div><div class="n">${esc(R.today)}%</div><div class="l">reachable today</div></div>
+     <div><div class="n">${esc(R.after_five)}%</div><div class="l">after the first five</div></div>
+     <div><div class="n tnum">${num(measured.reduce((a,g)=>a+g.sole,0))}</div><div class="l">questions in this ledger</div></div>`));
+  bars.appendChild(el('div','callout bad',
+    `<div class="h">Both percentages are computed from this ledger.</div>
+     <p>If ${cc.stale} of its entries are closed, the roadmap and the reachability figure are both out
+     of date — and the ledger is the thing the roadmap is read from.</p>`));
+  host.appendChild(bars);
+
+  DATA.gaps.filter(g=>g.sole==null).forEach(g=>{
+    const bad=/worst class/i.test(String(g.severity||''));
+    host.appendChild(el('div','callout'+(bad?' bad':''),
+      `<div class="h"><code>${esc(g.id)}</code> · ${esc(g.what)}
+        ${g.stale?`<span class="pl good">CLOSED? Intent.${esc(g.stale.field)} now read</span>`:''}
+        ${bad?'<span class="pl bad">answers instead of refusing</span>':''}</div>
+       <p>${esc(g.why)}</p>${g.example?`<p><b>Example.</b> ${esc(g.example)}</p>`:''}
+       ${g.measured?`<p><b>Measured.</b> ${esc(g.measured)}</p>`:''}`));
+  });
+}
+
+/* --------------------------------------------------------------------- law */
+function renderLaw(){
+  const host=$('#law'); host.innerHTML='';
+  const r=DATA.runtime;
+  const rows=[
+    ['the query grammar','grammar/query_grammar.yaml','PROPOSED · the runtime does not read it',
+     'checked AGAINST the runtime by check_query_grammar.py (R1 vocabularies agree, R2 branch claims true, R3 fold-gate set agrees)',
+     DATA.drifts.length+' live drift(s) today'],
+    ['the fold law','mac_runtime/foldplane/vocabulary.py','MIRRORED into the runtime · implemented',
+     'tests/test_foldplane_law.py recomputes the framework matrix against the mirror, divergences declared with their ruling',
+     'passes — and SKIPS where the framework checkout is absent'],
+    ['the rulings','reference_manual/column_effects.yaml + the manual','DESIGNED · '+PLANES.rulings.counts.designed+' of '+PLANES.rulings.counts.words+' unread',
+     'ColumnSpec forbids the keys, so authoring one is a LOAD ERROR rather than a silent no-op',
+     'one is enforced under a retired name — see the column bench'],
+  ];
+  let h='<table><thead><tr><th>law</th><th>home</th><th>status</th><th>how it is held to the code</th><th>today</th></tr></thead><tbody>';
+  rows.forEach(x=>{h+='<tr>'+x.map((c,i)=>i===0||i===1?`<td class="k">${esc(c)}</td>`:`<td>${esc(c)}</td>`).join('')+'</tr>';});
+  host.innerHTML='<div class="scroll">'+h+'</tbody></table></div>';
+
+  if(DATA.drifts.length){
+    host.appendChild(el('div','sec','the query grammar\'s live drifts'));
+    DATA.drifts.forEach(d=>host.appendChild(el('div','callout bad',`<p>${esc(d)}</p>`)));
+    host.appendChild(el('div','callout',
+      `<div class="h">Read this the right way round.</div>
+       <p>The code is not wrong. The planner gained a branch for <code>sum</code>,
+       <code>average</code> and <code>ratio</code>; the law still says those three emerge. The gate is
+       doing its job — the law needs the edit, and the grammar's headline claim that "four of the nine
+       change anything at all" is now <b>${r.branched_by_name.length}</b>.</p>`));
+  }
+
+  host.appendChild(el('div','sec','R4 — the rule no gate has'));
+  host.appendChild(el('div','callout bad',
+    `<div class="h">No <code>not_expressible</code> entry may name something the Intent has since gained.</div>
+     <p>R1–R3 all look at the operation vocabulary; nothing looks at the gap ledger, so a gap stays
+     recorded after the field that closes it lands.</p>
+     ${DATA.stale_gaps.map(s=>`<p><code>${esc(s.gap)}</code> is declared not expressible, while
+       <code>Intent.${esc(s.field)}</code> exists and the planner reads it ${s.reads}×.</p>`).join('')}
+     <p>A fourth rule worth writing, and cheap: the mapping from a gap id to the field that closes it
+     is a dozen lines.</p>`));
+
+  host.appendChild(el('div','sec','not drawn here'));
+  host.appendChild(el('div','card',`<div class="card-b" style="color:var(--muted)">
+    <p style="margin:0 0 8px"><b>mac.schema.json</b> — the STRUCTURAL grammar, 37 <code>$defs</code>,
+    exactly one copy in-tree enforced by <code>check_grammar_home.py</code>. It decides which keys may
+    appear at all, so it sits underneath all three planes rather than beside them.</p>
+    <p style="margin:0 0 8px"><b>The 19 vocabularies and 19 canons</b> — the rest of what a bundle can
+    declare, and the honest denominator for "what is unread".</p>
+    <p style="margin:0"><b>The interpreter</b> — how an utterance becomes an Intent. Every plane here
+    starts after that.</p></div>`));
+
+  host.appendChild(el('div','prov',
+    `generated by ${esc(DATA.generated_by)} · query law from grammar/query_grammar.yaml
+     (${esc(DATA.metadata.status||'')}) · fold law loaded in isolation from the runtime mirror ·
+     rulings from reference_manual/column_effects.yaml · terms from mac_vocabulary.yaml ·
+     runtime read as text from ${esc(r.root)}`));
+}
+
+/* ------------------------------------------------------------------- shell */
+const VIEWS=[['planes','Three planes'],['wire','The wiring'],['fold','The fold law'],
+             ['query','Query · states & gaps'],['law','Law vs runtime']];
+let CUR='planes';
+function go(id){
+  CUR=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  $('#v-'+id).classList.add('on');
+  document.querySelectorAll('.mb-tab[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===id));
+  $('#planesw').style.display = id==='wire' ? '' : 'none';
+  $('#modesw').style.display = (id==='wire' && plane().sources) ? '' : 'none';
+  if(id==='wire') requestAnimationFrame(drawWires);
+}
+function renderShell(){
+  const t=$('#tabs'); t.innerHTML='';
+  VIEWS.forEach(([id,lab])=>{
+    const b=el('button','mb-tab'+(CUR===id?' active':''),lab);
+    b.dataset.v=id; b.onclick=()=>go(id); t.appendChild(b);
+  });
+  const ps=$('#planesw'); ps.innerHTML='';
+  DATA.planes.forEach(p=>{
+    const b=el('button',PLANE===p.id?'on':'',p.id.toUpperCase());
+    b.title=p.title+' — middle lane: '+p.middle;
+    b.onclick=()=>{PLANE=p.id; renderShell(); renderWire(); go('wire');};
+    ps.appendChild(b);
+  });
+  const m=$('#modesw'); m.innerHTML='';
+  if(plane().sources) Object.entries(plane().sources).forEach(([id,why])=>{
+    const b=el('button',SRC===id?'on':'',id.toUpperCase());
+    b.title=why; b.onclick=()=>{SRC=id; renderShell(); renderWire();};
+    m.appendChild(b);
+  });
+  $('#planesw').style.display = CUR==='wire' ? '' : 'none';
+  $('#modesw').style.display = (CUR==='wire' && plane().sources) ? '' : 'none';
+}
+$('#themebtn').onclick=()=>{
+  const c=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=c; localStorage.setItem('mac_theme',c);
+  $('#themebtn').textContent=c==='dark'?'☀':'🌙'; requestAnimationFrame(drawWires);
+};
+$('#themebtn').textContent=document.documentElement.dataset.theme==='dark'?'☀':'🌙';
+addEventListener('resize',()=>requestAnimationFrame(drawWires));
+renderShell(); renderCmp(); renderWire(); renderFold(); renderQuery(); renderLaw(); go('planes');
+</script>
+</body>
+</html>

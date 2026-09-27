@@ -15,7 +15,7 @@ metadata:
   namespace: mac
   version: '0.1.13'
   status: active
-  defines: [aggregation_effect, axis_kind, binding_mode, MeasureType, rule_kind, canon, identity_kind,
+  defines: [aggregation_effect, axis_kind, binding_mode, measure_type, rule_kind, canon, identity_kind,
             column_role, identity_role, storage_role, column_ruling, name_register]
 
 # ===========================================================================
@@ -93,7 +93,7 @@ column_role:
       resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
       `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
     measure: >
-      A NUMERIC PAYLOAD. Folded only as its mac.MeasureType and the axis allow — the law is stated
+      A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
       once there and never restated per concept. Never filtered on directly: a threshold on a
       measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
     period: >
@@ -235,7 +235,7 @@ name_register:
 # mac.binding_mode — HOW a question binds a dimension: the ROLE a referenced dimension plays in the query.
 # This is the categorial answer to "GROUP BY or not". It is a PER-QUESTION classification the interpreter
 # assigns to every dimension token (not an intrinsic property a concept declares — its neighbours axis_kind
-# and MeasureType are intrinsic; this one types a runtime decision). The grain LAW is stated ONCE over these
+# and measure_type are intrinsic; this one types a runtime decision). The grain LAW is stated ONCE over these
 # two modes (measure.grain_mandatory), so it is universal: a rule rules over the MODE, never over the
 # instance (a specific member, or a specific way a member-set is spelled). Set cardinality is irrelevant —
 # a scope resolving to many members is still one restrict binding, not a partition.
@@ -249,39 +249,39 @@ binding_mode:
     partition: "The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter."
 
 # ===========================================================================
-# mac.MeasureType — the additivity class of a measure (the classic additive / semi-additive /
+# mac.measure_type — the additivity class of a measure (the classic additive / semi-additive /
 # non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
 # over axis_kind (5 types × 2 kinds = 10 universal cells). Each cell references a mac.aggregation_effect term.
 # The count was written as "4 types × 2 kinds = 8" and the table below has listed FIVE members since
 # v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
 # An applied ontology's measures reference these members; they never re-encode the matrix.
 # ===========================================================================
-MeasureType:
+measure_type:
   kind: value_domain
   closed: true
   description: How a measure aggregates — defined once, over axis_kind.
-  members:
-    Flow:
+  terms:
+    flow:
       definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."
       additivity:
         time:        mac.aggregation_effect.additive
         categorical: mac.aggregation_effect.additive
-    Stock:
+    stock:
       definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
       additivity:
         time:        mac.aggregation_effect.none         # a year IS the end-of-period row — resolved, not folded
         categorical: mac.aggregation_effect.additive
-    Intensive:
+    intensive:
       definition: "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM."
       additivity:
         time:        mac.aggregation_effect.average
         categorical: mac.aggregation_effect.average
-    Precomputed:
-      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact."
+    precomputed:
+      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a measure_type fact; whether you may fold is an axis fact."
       additivity:
         time:        mac.aggregation_effect.none
         categorical: mac.aggregation_effect.none
-    Target:
+    target:
       definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
       additivity:
         time:        mac.aggregation_effect.none
@@ -802,7 +802,7 @@ canon:
   kind: value_domain
   closed: false                    # extends as patterns surface new deterministic needs (A5)
   description: The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
-  members:
+  terms:
     composite_key_guard:   { serves: context_dependent_meaning, needs_sqlglot: true,  doc: "reject a parent-scoped code used without its scope columns" }
     # ADDED 2026-09-25. Both had a full canon page -- signature, reference implementation, plug-in,
     # limits -- and a pattern citing them back, and were absent from this list. A concept naming

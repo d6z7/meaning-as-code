@@ -607,7 +607,7 @@
       "additionalProperties": false
     },
     "additivityAxis": {
-      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.MeasureType where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
+      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
       "oneOf": [
         {
           "enum": [
@@ -677,11 +677,11 @@
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
           },
-          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#MeasureType"
+          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#measure_type"
         },
         "axis_kinds": {
           "type": "object",
-          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (MeasureType × axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
+          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.axis_kind.*` references.",
           "additionalProperties": {
             "type": "string",
             "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
@@ -689,8 +689,8 @@
         },
         "measure_type": {
           "type": "string",
-          "description": "v0.6: the measure's additivity class — a reference to a mac.MeasureType member (Flow/Stock/Target). The (type × axis_kind) additivity law lives once on mac.MeasureType; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
-          "pattern": "^mac\\.MeasureType\\.[A-Za-z_][A-Za-z0-9_]*$"
+          "description": "v0.6: the measure's additivity class — a reference to a mac.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "pattern": "^mac\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$"
         },
         "unit": {
           "type": "string"
@@ -1659,7 +1659,7 @@
             }
           },
           "then": {
-            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#MeasureType and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [

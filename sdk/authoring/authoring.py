@@ -80,7 +80,7 @@ Shape of a concept file:
         LineNumber:  {role: key, identity: part}
         CustomerKey: {role: key, identity: reference}
         OrderDate:   {role: dimension}
-        Quantity:    {role: measure, measure: {type: mac.MeasureType.Flow, unit: units}}
+        Quantity:    {role: measure, measure: {type: mac.measure_type.flow, unit: units}}
         Surname:     {role: attribute}
         Status:                      # a bare name serves the column and says nothing more
   TODAY'S FLAGS ARE role, identity, measure — and ONLY those three, because a flag ships with the code
@@ -105,7 +105,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 - a FACT / KPI / measure table (numeric values you aggregate) → class: measure, and you MUST add a `concept.semantics:` block:
       semantics:
         purpose: <one line>
-        measure_type: mac.MeasureType.<Flow|Stock|Intensive|Precomputed|Target>
+        measure_type: mac.measure_type.<flow|stock|intensive|precomputed|target>
         axis_kinds: {<axis>: mac.axis_kind.<time|categorical>, ...}   # one entry per aggregation axis
   DO NOT WRITE AN `additivity:` BLOCK. How the measure folds along each axis is DERIVED from
   (measure_type x axis_kind) by the law in mac_vocabulary.yaml. Writing it out would state the same

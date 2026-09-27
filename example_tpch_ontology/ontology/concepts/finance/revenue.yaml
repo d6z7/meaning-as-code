@@ -24,7 +24,7 @@ concept:
       The headline financial measure — sliced by part, customer, supplier, geography and time; the
       numerator of TPC-H's revenue and market-share queries.
     unit: currency (account currency)
-    measure_type: mac.MeasureType.Flow
+    measure_type: mac.measure_type.flow
     additivity: { time: additive, geography: additive, part: additive, customer: additive, supplier: additive }
     axis_kinds:
       time:      mac.axis_kind.time

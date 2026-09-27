@@ -23,7 +23,7 @@ benchmark — public, precisely specified, not real data). It complements `examp
 - **LineItem** (`event`) — the central fact (composite key order + line), with a fulfilment **lifecycle**
   (shipped → received → returned); `part_of` an order and `supplied_via` a PartSupp (composite join).
 - **Revenue** (`measure`, derived) — net revenue `SUM(l_extendedprice × (1 − l_discount))`, a `Flow`
-  referencing `mac.MeasureType.Flow`; computed by the rule, never stored.
+  referencing `mac.measure_type.flow`; computed by the rule, never stored.
 - **OrderStatus, LineStatus, ReturnFlag, MarketSegment** (`enumeration`) — the four closed code-sets the
   discriminator columns carry (O/P/F · O/F · R/A/N · the five segments). Under **Option B** their meaning
   lives here in the ontology, not as prose in the data-plane descriptors — and each projects to a SHACL

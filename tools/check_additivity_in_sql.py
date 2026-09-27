@@ -16,7 +16,7 @@ a generator that expects to emit a property finds nothing to emit and skips it, 
 The right instrument was never a property. It is a GATE over the SQL the bundle already has.
 
 ── THE LAW IS READ, NOT RETYPED ────────────────────────────────────────────────────────────────
-`mac_vocabulary.yaml#MeasureType` holds the additivity of each measure type over each axis kind —
+`mac_vocabulary.yaml#measure_type` holds the additivity of each measure type over each axis kind —
 Flow accrues and adds over time, Stock is a level and does not, Target is neither. The concept
 declares its `measure_type` and its `axis_kinds`. Both are read here; nothing about additivity is
 written in this file, so changing the law in the vocabulary changes what this gate rejects.
@@ -48,7 +48,7 @@ import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
 
 def law(fw: pathlib.Path) -> dict:
     v = yaml.safe_load((fw / "mac_vocabulary.yaml").read_text(encoding="utf-8"))
-    return {k: (m.get("additivity") or {}) for k, m in (v["MeasureType"]["members"]).items()}
+    return {k: (m.get("additivity") or {}) for k, m in (v["measure_type"]["terms"]).items()}
 
 
 def measures(root: pathlib.Path, law_: dict) -> list[dict]:
@@ -228,7 +228,7 @@ def main() -> int:
         print(f"          {x['msg']}")
     if seen:
         print(f"\n✗ {len(seen)} SUM(s) cross an axis the ontology forbids, over {checked} propert(ies).")
-        print("  The law is read from mac_vocabulary.yaml#MeasureType and the concept's axis_kinds —")
+        print("  The law is read from mac_vocabulary.yaml#measure_type and the concept's axis_kinds —")
         print("  nothing about additivity is written in this gate.")
         return 1
     print(f"✓ OK — no property sums a measure across a forbidden axis ({checked} checked)")

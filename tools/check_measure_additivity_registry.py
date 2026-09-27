@@ -4,7 +4,7 @@
 THE LAW
 -------
 How a measure aggregates is defined ONCE, in this framework's closed value domain
-``mac_vocabulary.yaml#MeasureType``: each member (Flow / Stock / Intensive / Target) carries an
+``mac_vocabulary.yaml#measure_type``: each member (Flow / Stock / Intensive / Target) carries an
 ``additivity`` map over the two axes (``time``, ``categorical``) whose values are
 ``mac.aggregation_effect.*`` terms.
 
@@ -51,11 +51,11 @@ NAME = "check_measure_additivity_registry"
 
 
 class LawUnavailable(RuntimeError):
-    """The framework's own MeasureType law could not be read — a setup failure, not a bundle defect."""
+    """The framework's own measure_type law could not be read — a setup failure, not a bundle defect."""
 
 
 def measure_type_law(vocab_path: Path) -> dict:
-    """{member_name: {"time": ..., "categorical": ...}} from mac_vocabulary.yaml#MeasureType.
+    """{member_name: {"time": ..., "categorical": ...}} from mac_vocabulary.yaml#measure_type.
 
     Takes the vocabulary PATH as a parameter, rather than reaching for the framework's own file
     directly, so a self-test can prove the refusal fires without touching the real vocabulary --
@@ -67,9 +67,9 @@ def measure_type_law(vocab_path: Path) -> dict:
         doc = yaml.safe_load(vocab_path.read_text(encoding="utf-8")) or {}
     except Exception as exc:  # noqa: BLE001
         raise LawUnavailable(f"{vocab_path} did not parse: {exc}") from None
-    members = (doc.get("MeasureType") or {}).get("members") or {}
+    members = (doc.get("measure_type") or {}).get("terms") or {}
     if not members:
-        raise LawUnavailable(f"{vocab_path}#MeasureType declares no members")
+        raise LawUnavailable(f"{vocab_path}#measure_type declares no members")
     return members
 
 
@@ -116,7 +116,7 @@ def main() -> int:
 
     root = Path(a.root).resolve()
     vocab = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
-    print(f"── measure-additivity-registry gate ── the law lives in {vocab.name}#MeasureType ── {root} ──\n")
+    print(f"── measure-additivity-registry gate ── the law lives in {vocab.name}#measure_type ── {root} ──\n")
 
     if not root.is_dir():
         print(f"could not run: {root} is not a directory", file=sys.stderr)
@@ -148,7 +148,7 @@ def main() -> int:
 # ---------------------------------------------------------------------------------------------
 # self-test: one mutant per reject class, plus a clean fixture that must pass and the liveness
 # check that a real drift still fires. Rows are derived from the framework's OWN vocabulary
-# (mac_vocabulary.yaml#MeasureType, public and generic) rather than typed, so the fixture cannot
+# (mac_vocabulary.yaml#measure_type, public and generic) rather than typed, so the fixture cannot
 # drift from the law it exercises.
 # ---------------------------------------------------------------------------------------------
 
@@ -166,7 +166,7 @@ def _row(name: str, law: dict, *, mutate_axis: str | None = None) -> dict:
         time_v = time_v + "-MUTATED"
     elif mutate_axis == "categorical":
         cat_v = cat_v + "-MUTATED"
-    return {"code": name.upper(), "measure_type": f"mac.MeasureType.{name}",
+    return {"code": name.upper(), "measure_type": f"mac.measure_type.{name}",
             "additivity_time": time_v, "additivity_categorical": cat_v}
 
 
@@ -194,7 +194,7 @@ def _self_test() -> int:
     names = sorted(n for n in members if (members[n].get("additivity") or {}).get("time")
                     and (members[n].get("additivity") or {}).get("categorical"))
     if len(names) < 1:
-        print("could not run: mac_vocabulary.yaml#MeasureType has no fully-specified member to "
+        print("could not run: mac_vocabulary.yaml#measure_type has no fully-specified member to "
               "derive a fixture from", file=sys.stderr)
         return 2
     clean_name = names[0]

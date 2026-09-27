@@ -59,7 +59,7 @@ def render(notion: str, spec: dict) -> str:
 
     THREE SHAPES, and this used to read only the first:
       * `kind: vocabulary`  + `terms:`   -- name -> a sentence            (17 notions)
-      * `kind: value_domain` + `members:` -- name -> a RECORD of fields    (MeasureType, canon)
+      * `kind: value_domain` + `terms:` -- name -> a RECORD of fields    (measure_type, canon)
       * `kind: registry`    + neither     -- nothing term-shaped           (connector)
 
     The second shape is not merely spelled differently: a member carries structured fields, and

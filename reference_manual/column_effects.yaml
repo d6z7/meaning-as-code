@@ -1,0 +1,975 @@
+# column_effects.yaml — WHAT EACH KEY OF THE COLUMN BLOCK ACTUALLY DOES, machine-readably.
+#
+# The column standard is documented across three pages — column_specification.md (the shape),
+# column_roles.md (the derived roles), column_rulings.md (the authored judgements) — and each states
+# a key's EFFECT in prose: "refuses", "reds", "load refuses", "CLARIFY", "zero, disclosed". Prose is
+# exactly where this estate has lost declarations before: `grounding.note` carried ruling language in
+# 12 of 21 concepts while the runtime happily planned GROUP BY ZipCode.
+#
+# So the effect is declared here, on three axes a machine can read:
+#
+#   plane    WHEN the effect happens — `load` (the declaration is accepted or refused), `check`
+#            (a gate reds against measured data), `answer` (a question gets a different outcome).
+#   outcomes WHICH mac.outcome_class terms the key can produce. Membership is the framework
+#            vocabulary's; this file never restates what a term means.
+#   status   whether anything READS it: `enforced` (projected by ColumnSpec into a home the runtime
+#            reads), `designed` (in the manual, and a LOAD ERROR if authored — see the ColumnSpec
+#            docstring: 19 such flags failed the declared-but-unread gate, so the standard grows one
+#            flag at a time, each arriving with its consumer), `measured` (never authored at all).
+#
+# `reader` carries the evidence for `status`, and "none" is a legitimate value — the whole point is
+# that it be countable. A key whose status is `enforced` with reader "none" is a defect this file
+# makes visible rather than a claim it makes quietly.
+#
+# CONSUMED BY tools/gen_column_bench.py, which renders column_bench.html from it. --check gates
+# that every key in column_specification.md's "Every key" table appears here and vice versa, and
+# that every `outcomes` term is a declared mac.outcome_class member.
+
+metadata:
+  of: the column specification
+  schema_version: 0.1.15
+  companions: [column_specification.md, column_roles.md, column_rulings.md, ../mac_vocabulary.yaml]
+  measured_at: '2026-09-27'
+  # The enforced set was read off mac-platform's ColumnSpec model fields, not asserted:
+  # name, role, identity, measure{type,unit,additivity}. Everything else is extra="forbid".
+  enforced_evidence: mac-platform/packages/mac-runtime/src/mac_runtime/ontology/models.py::ColumnSpec
+
+# ===========================================================================
+# The two modes the bench renders, and why there are two.
+#
+# A picture of the designed standard would be a brochure: 23 of its 28 keys refuse to load today.
+# A picture of only what is enforced would answer a question nobody asked — the operator asked for
+# ALL configuration possibilities and their effects. So both, switchable, and the switch is the
+# frontier: the same toggle in TODAY produces a load error where in DESIGNED it changes an answer.
+# ===========================================================================
+modes:
+  today:
+    label: As the runtime is today
+    blurb: >-
+      A designed-but-unread flag is a LOAD ERROR, by design. ColumnSpec forbids unknown keys, so
+      authoring one fails the bundle rather than doing nothing — which is the only way a reader can
+      tell the difference. What the answer plane then shows is what really happens: usually a clean,
+      valid, meaningless success.
+  designed:
+    label: As the standard is designed
+    blurb: >-
+      Every key honoured as the reference manual specifies it. This is the target, not the state.
+      Each flag reaches it by arriving with its consumer and its test, one at a time.
+
+# ===========================================================================
+# THE KEYS. Order follows column_specification.md's eight sections.
+# `legal` names a mac.* namespace where one governs the value; it never restates the terms.
+# ===========================================================================
+keys:
+
+  - key: role
+    block: root
+    plane: [load, answer]
+    outcomes: [COMMIT, BLOCK]
+    status: enforced
+    reader: "grounding.field_roles[name] — the planner reads it to place a predicate"
+    effect: >-
+      The one required key, and the only one a generator can assign unattended. `dimension` and
+      `period` make a column an axis; `measure` makes it a payload that is folded, never filtered;
+      `key` makes it a target a name resolves TO; `housekeeping` takes it out of the business
+      vocabulary entirely, so its absence from an answer is correct rather than a gap.
+    frontier_note: >-
+      The refusal that exists today fires on the spelling `attribute`, which `housekeeping`
+      replaced — plan.py reads `field_roles[col] == "attribute"`, and `housekeeping` occurs 0 times
+      in platform src. The guardrail is real and is wired to a retired name.
+
+  - key: identity
+    block: root
+    plane: [load, answer]
+    outcomes: [COMMIT, REFUSE]
+    status: enforced
+    reader: "concept.identity.canonical_key — 22 runtime read sites; `part` derives a composite key"
+    effect: >-
+      `canonical` names what COUNT(DISTINCT) counts and what an answer discloses that it counted.
+      `part` marks one column of a composite identity, which identifies NOTHING alone — a filter on
+      one part returns a set where a row was expected and looks like an answer.
+    frontier_note: >-
+      A canonical column whose concept declares no identity kind is refused at load, not guessed.
+
+  - key: references
+    block: root
+    plane: [load]
+    outcomes: []
+    status: designed
+    reader: none
+    effect: >-
+      Names the concept this column's values point at. Whether every value is PRESENT over there is
+      a separate measurement — a declared reference says the relationship is intended, not that it
+      holds, and a reference with no parent relation in the delivery is recorded AS dangling.
+    frontier_note: >-
+      `identity: reference` loads; `references:` next to it does not. ColumnSpec has no such field,
+      so the pointer's target cannot yet be declared on the column that carries it.
+
+  - key: domain.closure
+    block: domain
+    plane: [answer]
+    outcomes: [COMMIT, ASK, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      `closed` says the register states every member, so a word outside it is answerable without
+      touching the warehouse. `open` sends an unrecognised word down the resolution ladder. It never
+      restates the list — that lives in the register.
+    frontier_note: >-
+      Unstated means OPEN. Defaulting to closed would refuse real values on the strength of a
+      list nobody promised was complete.
+
+  - key: domain.complete_for
+    block: domain
+    plane: [answer]
+    outcomes: [COMMIT, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      The single bit that separates "complete for this delivery" from "complete for the world".
+      `data`: the members are the ones DELIVERED, so 'sales in Japan' answers zero, disclosed.
+      `world`: the members ARE the kind, so a third gender is not a member and refuses.
+    frontier_note: >-
+      Without it, 'sales in Asia' and 'gender Q' get the same answer, and only one of them
+      deserves it. Country and Gender have the SAME closure and opposite answers.
+
+  - key: domain.warranty
+    block: domain
+    plane: [load, check]
+    outcomes: []
+    status: designed
+    reader: none
+    effect: >-
+      `derived`: a rule makes the members, so a new load CANNOT add one. `monitored`: they were
+      observed, so a scheduled check reconciles them. There is no third value — a closed set nobody
+      watches is a refusal backed by a stale sample.
+    frontier_note: >-
+      age_band_5y is `derived` (a CASE expression in the transform); Country is `monitored`
+      (observed from the served plane). Same closure, different warranty, different watchdog.
+
+  - key: domain.register
+    block: domain
+    plane: [load]
+    outcomes: []
+    status: designed
+    reader: none
+    effect: The register file whose rows ARE the members. One register per dimension.
+
+  - key: domain.members
+    block: domain
+    plane: [load]
+    outcomes: []
+    status: designed
+    reader: none
+    effect: >-
+      The inline form, for a domain small enough that a file would be ceremony — fifteen age bands,
+      not five hundred countries.
+
+  - key: resolution.search
+    block: resolution
+    plane: [answer]
+    outcomes: [COMMIT, ASK]
+    status: designed
+    reader: none
+    effect: The columns of the register a typed word is compared to, in order.
+
+  - key: resolution.display
+    block: resolution
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      A person asked for 'Germany' and must be shown 'Germany', not DE. The answer groups on the
+      code and prints the label.
+
+  - key: resolution.strategy
+    block: resolution
+    plane: [answer]
+    outcomes: [COMMIT, ASK]
+    status: designed
+    reader: none
+    effect: >-
+      The ladder, in order: exact, then normalized, then prefix, then fuzzy, then ask. Narrowed only
+      where a column needs it — dropping `fuzzy` on a code column stops a near-miss being answered
+      as a hit.
+
+  - key: resolution.fuzzy_floor
+    block: resolution
+    plane: [answer]
+    outcomes: [ASK, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      The similarity below which a candidate is not worth showing. Too low and the engine offers
+      noise as a suggestion; too high and it refuses a typo it could have caught.
+
+  - key: resolution.on_miss
+    block: resolution
+    plane: [answer]
+    outcomes: [COMMIT, ASK, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      DERIVED, not set. open -> ask with candidates; closed + data -> zero, disclosed; closed +
+      world -> refuse. Authoring it directly is how a closure and its consequence drift apart.
+
+  - key: resolution.candidates
+    block: resolution
+    plane: [answer]
+    outcomes: [ASK]
+    status: designed
+    reader: none
+    effect: >-
+      An ASK with no candidates is a dead end; `suppress` is for a column where listing members
+      would itself leak something.
+
+  - key: placement.fact_join
+    block: placement
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      The fact carries this identity itself, so a predicate lands on the fact and the dimension is
+      never joined. A plan difference, not an answer difference — until the join it skips is the one
+      that fans the grain out.
+
+  - key: placement.scoped_by
+    block: placement
+    plane: [answer, check]
+    outcomes: [COMMIT, ASK, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      This column's values are unique only WITHIN the named one, so it may not be grouped or
+      filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated
+      regions into one plausible-looking row.
+    frontier_note: >-
+      Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by`
+      under `placement`, column_rulings.md documents it as §3 of `rulings`. One key, two spellings,
+      which is the shape of every drift this standard exists to end.
+
+  - key: absence.nulls
+    block: absence
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      Per column, because that is where nulls happen. 'no status event recorded — NOT operating' is
+      a different fact from 'not applicable', and an answer that treats them alike is wrong in a
+      way no count betrays.
+
+  - key: absence.sentinels
+    block: absence
+    plane: [answer, check]
+    outcomes: [COMMIT, REFUSE]
+    status: designed
+    reader: none
+    effect: >-
+      The '--' that is not a country. Declared per column and per source: it appears on the store
+      side's CountryCode and not on the customer side's Country, which a flat block could not say.
+
+  - key: rulings.label_of
+    block: rulings
+    plane: [answer, check]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      Two names for one thing, not two things. The named column stays canonical and this one supplies
+      the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different
+      labels with nothing relating them — and GROUP BY both yields 11 rows where a reader expects 121.
+    frontier_note: >-
+      1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and
+      Contoso AG are one company in two registers. Northwind AG and Contoso are two companies.
+
+  - key: rulings.register
+    block: rulings
+    plane: [load, answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      Which naming register the label belongs to, so an answer can say WHICH name it showed —
+      'Contoso' the common name, 'Contoso AG' the legal one, 'GB' the code.
+
+  - key: rulings.finer_than
+    block: rulings
+    plane: [answer, check]
+    outcomes: [COMMIT, ASK]
+    status: designed
+    reader: none
+    effect: >-
+      Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets
+      an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a
+      child has two parents and the roll-up double-counts.
+    frontier_note: >-
+      Mistaking `scoped_by` for this one is the expensive error: it merges unrelated members and
+      nothing in the result betrays it.
+
+  - key: rulings.never_axis
+    block: rulings
+    plane: [load, answer]
+    outcomes: [BLOCK]
+    status: designed
+    reader: "none under this name — see frontier_note"
+    effect: >-
+      A legitimate dimension that must not be an axis, for a reason outside the data. The refusal
+      cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each
+      describe one person.
+    frontier_note: >-
+      column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on
+      `field_roles[col] == "attribute"`, the role spelling `housekeeping` replaced, not on this
+      ruling. `rulings.never_axis` has 0 readers in platform src and is a load error if authored.
+      The ruling is enforced under a name its own vocabulary no longer defines.
+
+  - key: rulings.evidence
+    block: rulings
+    plane: [load, check]
+    outcomes: []
+    status: designed
+    reader: none
+    effect: >-
+      Required with never_axis, and the reason the key is worth having: a prohibition without a
+      measurement is a preference. It is what the refusal quotes back.
+    frontier_note: >-
+      never_axis without evidence is a LOAD refusal in the designed standard — the one place the
+      standard refuses an AUTHOR rather than a question.
+
+  - key: measure.type
+    block: measure
+    plane: [load, answer]
+    outcomes: [COMMIT, BLOCK]
+    status: enforced
+    reader: "concept.semantics.measure_type — 3 runtime read sites"
+    effect: >-
+      The additivity class. An illegal fold is not a wrong number to be caught later — it is
+      refused, because a semi-additive measure summed across time is a number nobody asked for.
+    frontier_note: >-
+      The spike found a shape this cannot express: SystemC holds 70 KPIs of six measure types in ONE
+      column, the type carried per ROW. `measure.type` declares one type per column. SystemC's cope is
+      a blanket non-additive over all six — safe and lossy, refusing the Stock measure that IS
+      additive alongside the duration that is not.
+
+  - key: measure.unit
+    block: measure
+    plane: [load, answer]
+    outcomes: [COMMIT]
+    status: enforced
+    reader: "concept.semantics.unit — 3 runtime read sites; two carriers is a load refusal"
+    effect: >-
+      USD, seconds, each. Singular by construction: two measure columns on one concept is refused
+      rather than silently taking the first.
+
+  - key: measure.additivity
+    block: measure
+    plane: [answer]
+    outcomes: [COMMIT, BLOCK]
+    status: enforced
+    reader: "concept.semantics.additivity — 8 runtime read sites"
+    effect: >-
+      The per-axis exception: a balance that sums across products and not across time. The law is
+      stated once over the MeasureType and named here only where one axis departs from it.
+
+  - key: disclose
+    block: root
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      The ONLY free-text key in the block, and it earns its place because it reaches the reader of
+      an ANSWER, which prose in a YAML file never does.
+    frontier_note: >-
+      There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling
+      language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's
+      1 044-character note stated a measured privacy ruling in a field nothing reads, while the
+      runtime planned GROUP BY ZipCode. A block designed to end that must not ship a slot that
+      restarts it.
+
+  - key: discriminates
+    block: root
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: designed
+    reader: none
+    effect: >-
+      Marks the column a perspective, status or measure type is read from — the column that says
+      WHICH KIND of row this is on a tall relation.
+
+  - key: storage_role
+    block: measured
+    required: never
+    default: null
+    legal: mac.storage_role
+    decides: the physical shape of the column in its relation
+    plane: [check]
+    outcomes: []
+    status: measured
+    reader: "data/datasets/<relation>.yaml — written by the profile and reference planes"
+    effect: >-
+      The OTHER role every column carries. `column_role` says what a QUERY may do; `storage_role`
+      says what SHAPE it is. You never author this one: the profile plane counts distincts and
+      nulls, the reference plane measures inclusion against candidate parents.
+    frontier_note: >-
+      If you are hand-writing a storage_role, something upstream failed.
+
+# ===========================================================================
+# THE BENCH — real columns, real measured cardinalities, and the outcome each configuration
+# produces for a real question.
+#
+# NUMBERS ARE NEVER TYPED HERE. `{ZipCode.distinct}` and `{rows}` are substituted by
+# gen_column_bench.py from the bundle's own profile plane (data/profiles/<relation>.yaml), so a
+# number in the rendered page is a measurement with a timestamp, not a remembered figure. A
+# placeholder naming a column the profile does not carry is a generator error, not a blank.
+#
+# A `measured:` block carries the facts the profile does NOT hold — a pair count, a collision count —
+# each with the `source` that recorded it, because a claim like "40 of 563 codes collide" is evidence
+# and must say where it came from.
+#
+# CASE SEMANTICS, which the page implements and does not embellish:
+#   * `when` is a map of key -> value; null means unset. A case matches when every entry matches.
+#   * first matching case wins, so order the specific before the general.
+#   * `mode: designed` limits a case to the designed plane.
+#   * IN `today` MODE the page derives the outcome instead of reading a case: setting any key whose
+#     status is `designed` is a LOAD ERROR, because ColumnSpec forbids it. Nothing declares that per
+#     column — it follows from `keys[].status`, which is the point of keeping status machine-readable.
+# ===========================================================================
+bench:
+  - concept: Customer
+    relation: dim_contoso_customer
+    identity_kind: fk_name
+    columns:
+
+      - column: ZipCode
+        role: dimension
+        headline: A legitimate dimension that names individuals
+        reads: >-
+          {ZipCode.distinct} distinct values over {rows} rows. Nothing in that ratio is illegal, and
+          nothing in it is safe.
+        measured:
+          - claim: "29 193 of {ZipCode.distinct} postcodes are held by exactly one customer"
+            source: DQ-CUSTOMER-02
+        toggles:
+          - key: rulings.never_axis
+            values: [null, privacy, grain, derived]
+          - key: rulings.evidence
+            values: [null, DQ-CUSTOMER-02]
+        questions:
+          - ask: customers by postcode
+            cases:
+              - when: {rulings.never_axis: null}
+                outcome: COMMIT
+                plan: GROUP BY c.ZipCode
+                result: "{ZipCode.distinct} rows"
+                note: >-
+                  Plans, executes, returns. 29 193 of those rows describe one person each. The
+                  ontology's own measurement forbids this and nothing connected the two.
+              - when: {rulings.never_axis: privacy, rulings.evidence: null}
+                mode: designed
+                outcome: LOAD_ERROR
+                note: >-
+                  never_axis without evidence is refused at load. A prohibition without a
+                  measurement is a preference, and the refusal would have nothing to cite.
+              - when: {rulings.evidence: null}
+                mode: designed
+                outcome: LOAD_ERROR
+                note: never_axis without evidence is refused at load, whatever the reason code.
+              - when: {rulings.never_axis: privacy}
+                mode: designed
+                outcome: BLOCK
+                reason_code: POLICY_DENIED
+                result: >-
+                  Customer.ZipCode is declared never_axis: privacy — DQ-CUSTOMER-02 measured that
+                  29 193 of {ZipCode.distinct} postcodes are held by exactly one customer, so
+                  grouping on it names individuals. Customer can be grouped by: Continent, Country,
+                  Gender, State, age_band_5y.
+                note: The refusal cites the measurement. That is the whole difference.
+              - when: {rulings.never_axis: grain}
+                mode: designed
+                outcome: BLOCK
+                reason_code: POLICY_DENIED
+                result: >-
+                  Grouping here would report at a grain the relation does not hold — the reason code
+                  changes, the refusal is the same shape, and it still cites its evidence.
+              - when: {rulings.never_axis: derived}
+                mode: designed
+                outcome: BLOCK
+                reason_code: POLICY_DENIED
+                result: >-
+                  The column is a derived convenience, not a fact to partition by. Same shape,
+                  different reason a reader can act on.
+          - ask: customers in 98052
+            cases:
+              - when: {}
+                outcome: COMMIT
+                plan: WHERE c.ZipCode = '98052'
+                note: >-
+                  never_axis forbids the AXIS, not the filter. A postcode is a legitimate thing to
+                  ask about; it is grouping BY one that hands out a list of people.
+
+      - column: CountryFull
+        role: dimension
+        headline: Two names for one thing — or two things
+        reads: >-
+          {CountryFull.distinct} distinct, beside Country's {Country.distinct}. Equal counts get you
+          to the door and no further.
+        measured:
+          - claim: "{Country.distinct} distinct Country, {CountryFull.distinct} distinct CountryFull, and the same number of distinct pairs — 1:1"
+            source: column_rulings.md §1, measured over dim_contoso_customer
+        toggles:
+          - key: rulings.label_of
+            values: [null, Country]
+          - key: rulings.register
+            values: [common, legal, long, short, code]
+        questions:
+          - ask: customers by country name
+            cases:
+              - when: {rulings.label_of: null}
+                outcome: COMMIT
+                plan: GROUP BY c.CountryFull
+                result: "{CountryFull.distinct} rows"
+                note: >-
+                  The same cut as 'by country', under different labels, with nothing saying they are
+                  the same cut. Two answers to one question.
+              - when: {rulings.label_of: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY c.Country
+                result: "{Country.distinct} rows, labelled from CountryFull"
+                disclose: grouped by Country, shown as CountryFull
+                note: >-
+                  Grouped on the canonical column, displayed in the words the question used. The
+                  register says WHICH name that is.
+          - ask: revenue by country and country name
+            cases:
+              - when: {rulings.label_of: null}
+                outcome: COMMIT
+                plan: GROUP BY c.Country, c.CountryFull
+                result: "{Country.distinct} rows"
+                note: >-
+                  A reader expecting a cross product expects {Country.distinct} squared. Getting
+                  {Country.distinct} reads as a data bug, and it is not one.
+              - when: {rulings.label_of: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY c.Country
+                result: "{Country.distinct} rows"
+                disclose: one axis — CountryFull names Country rather than crossing it
+          - ask: customers in Germany
+            cases:
+              - when: {rulings.label_of: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: WHERE c.Country = 'DE'
+                note: The label resolves to the canonical value; the predicate lands on the code.
+              - when: {}
+                outcome: COMMIT
+                plan: WHERE c.CountryFull = 'Germany'
+                note: >-
+                  Works — on this column. The same question phrased 'in DE' lands on a different
+                  column with nothing relating the two.
+
+      - column: State
+        role: dimension
+        headline: A code that is only unique inside its parent
+        reads: >-
+          {State.distinct} distinct codes over {rows} rows — bigger than Country, smaller than City.
+          Cardinality alone cannot tell this from a hierarchy.
+        measured:
+          - claim: "40 of {State.distinct} state codes are carried by more than one country; 0 collide within a country"
+            source: column_rulings.md §3, measured over dim_contoso_customer
+          - claim: "'CO' is Corse (FR, 37), Como (IT, 64) and Colorado (US, 709)"
+            source: column_rulings.md §3
+        toggles:
+          - key: placement.scoped_by
+            values: [null, Country]
+        questions:
+          - ask: customers by state
+            cases:
+              - when: {placement.scoped_by: null}
+                outcome: COMMIT
+                plan: GROUP BY c.State
+                result: "{State.distinct} rows"
+                note: >-
+                  One row labelled CO totalling 810 customers, merging Corse, Como and Colorado. The
+                  query succeeds, the row count is plausible, the number is meaningless.
+              - when: {placement.scoped_by: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY c.Country, c.State
+                result: 603 rows
+                disclose: Country added — State is scoped by it
+          - ask: customers in CO
+            cases:
+              - when: {placement.scoped_by: null}
+                outcome: COMMIT
+                plan: WHERE c.State = 'CO'
+                result: 810 customers
+                note: French, Italian and American customers in one number nobody asked for.
+              - when: {placement.scoped_by: Country}
+                mode: designed
+                outcome: ASK
+                result: >-
+                  'CO' is carried by 3 countries — Corse (FR), Como (IT), Colorado (US). Which did
+                  you mean?
+                note: The scope is missing, so the engine asks instead of picking one.
+          - ask: customers in Colorado
+            cases:
+              - when: {placement.scoped_by: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: WHERE c.Country = 'US' AND c.State = 'CO'
+                result: 709
+                note: The scope is inferred from the label. Asking in words the ladder can resolve needs no clarification.
+              - when: {}
+                outcome: COMMIT
+                plan: WHERE c.StateFull = 'Colorado'
+                result: 709
+                note: Right answer, different column, and nothing says the two columns are one axis.
+
+      - column: Gender
+        role: dimension
+        headline: A closed set whose members ARE the kind
+        reads: "{Gender.distinct} distinct, {Gender.nulls} nulls."
+        toggles:
+          - key: domain.closure
+            values: [open, closed]
+          - key: domain.complete_for
+            values: [data, world]
+          - key: domain.warranty
+            values: [null, derived, monitored]
+        questions:
+          - ask: customers with gender Q
+            cases:
+              - when: {domain.closure: open}
+                outcome: ASK
+                result: "No match for 'Q'. Did you mean: female, male?"
+                note: >-
+                  The default. An unstated domain must not be treated as complete, so the ladder runs
+                  and the engine asks rather than refusing a value that might be real.
+              - when: {domain.closure: closed, domain.complete_for: world, domain.warranty: null}
+                mode: designed
+                outcome: LOAD_ERROR
+                note: >-
+                  A closed domain must say how the closure is kept true. There is no third value: a
+                  closed set nobody watches is a refusal backed by a stale sample.
+              - when: {domain.closure: closed, domain.complete_for: world}
+                mode: designed
+                outcome: REFUSE
+                result: "'Q' is not a member of Gender. The members are the kind: female, male."
+                note: Answered from the register alone — no probe, no warehouse.
+              - when: {domain.closure: closed, domain.complete_for: data, domain.warranty: null}
+                mode: designed
+                outcome: LOAD_ERROR
+                note: A closed domain must declare its warranty — derived or monitored.
+              - when: {domain.closure: closed, domain.complete_for: data}
+                mode: designed
+                outcome: COMMIT
+                result: "0, disclosed"
+                disclose: "'Q' is not among the genders in this delivery — zero rows, not zero customers"
+                note: >-
+                  The same closure as `world` and the opposite answer. That single bit is the whole
+                  reason complete_for exists.
+          - ask: customers by gender
+            cases:
+              - when: {}
+                outcome: COMMIT
+                plan: GROUP BY c.Gender
+                result: "{Gender.distinct} rows"
+                note: Legal under every configuration. Closure decides what happens to a word that MISSES, not whether the axis is allowed.
+
+      - column: Country
+        role: dimension
+        headline: A closed set that is complete for the DELIVERY, not the world
+        reads: "{Country.distinct} distinct, {Country.nulls} nulls — the eight countries delivered."
+        toggles:
+          - key: domain.closure
+            values: [open, closed]
+          - key: domain.complete_for
+            values: [data, world]
+          - key: resolution.display
+            values: [null, label]
+          - key: placement.fact_join
+            values: [null, Country]
+        questions:
+          - ask: sales in Japan
+            cases:
+              - when: {domain.closure: closed, domain.complete_for: world}
+                mode: designed
+                outcome: REFUSE
+                result: "'Japan' is not a member of Country."
+                note: >-
+                  WRONG, and instructively so. Japan is a country; it is not in this delivery. Declaring
+                  `world` here refuses a real word and tells the reader their question was invalid.
+              - when: {domain.closure: closed, domain.complete_for: data}
+                mode: designed
+                outcome: COMMIT
+                result: "0, disclosed"
+                disclose: Japan is a country; it is not in this delivery. Zero rows, not zero sales.
+                note: Right. The eight are the ones delivered, and the answer says so.
+              - when: {domain.closure: open}
+                outcome: ASK
+                result: "No match for 'Japan'. Did you mean: Australia, Canada, France, Germany, Italy?"
+                note: >-
+                  The default, and it costs a probe plus a clarification for a word the register could
+                  have settled without either.
+          - ask: sales by country
+            cases:
+              - when: {resolution.display: label, placement.fact_join: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY f.Country
+                result: "{Country.distinct} rows, shown as Germany / France / …"
+                disclose: filtered on the fact — no customer join walked
+                note: "Both keys at once: the label the reader asked in, and the join the plan did not need."
+              - when: {placement.fact_join: Country}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY f.Country
+                result: "{Country.distinct} rows, shown as DE / FR / …"
+                note: The fact carries the identity, so the dimension is never joined. Same numbers, one less join.
+              - when: {resolution.display: label}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY c.Country
+                result: "{Country.distinct} rows, shown as Germany / France / …"
+                note: A person asked for Germany and is shown Germany, not DE.
+              - when: {}
+                outcome: COMMIT
+                plan: JOIN dim_contoso_customer c USING (CustomerKey) GROUP BY c.Country
+                result: "{Country.distinct} rows, shown as DE / FR / …"
+                note: Correct, joined, and printed in codes.
+
+      - column: age_band_5y
+        role: dimension
+        headline: A derived column that must announce itself
+        reads: "{age_band_5y.distinct} distinct — fifteen bands a transform made."
+        toggles:
+          - key: domain.warranty
+            values: [null, derived, monitored]
+          - key: disclose
+            values: [null, "banded to 5 years, as of 2025-12-31"]
+        questions:
+          - ask: customers by age band
+            cases:
+              - when: {disclose: null}
+                outcome: COMMIT
+                plan: GROUP BY c.age_band_5y
+                result: "{age_band_5y.distinct} rows"
+                note: >-
+                  A reader sees a band labelled 40 and does not learn it is a five-year bucket fixed
+                  at a date. Nothing is wrong and nothing is stated.
+              - when: {}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY c.age_band_5y
+                result: "{age_band_5y.distinct} rows"
+                disclose: banded to 5 years, as of 2025-12-31
+                note: >-
+                  One line, quoted into every answer that touches the column. The only free-text key
+                  in the block, and it earns its place by reaching the reader.
+          - ask: can a sixteenth band appear
+            cases:
+              - when: {domain.warranty: derived}
+                mode: designed
+                outcome: COMMIT
+                result: "No — a CASE expression in the transform makes the members, so a new load cannot add one."
+                note: No watchdog needed. The rule that makes the members is the warranty.
+              - when: {domain.warranty: monitored}
+                mode: designed
+                outcome: COMMIT
+                result: "Only if a scheduled check says so — the members were observed, so they decay."
+                note: Correct for an observed set; wrong here, and it buys a reconciliation nobody needs.
+              - when: {}
+                outcome: COMMIT
+                result: Unanswerable from declarations. The closure is unstated, so nothing promises anything.
+
+      - column: StartDT
+        role: housekeeping
+        headline: A perfect-looking date axis that means nothing to the business
+        reads: >-
+          {StartDT.distinct} distinct dates from {StartDT.min} to {StartDT.max}. Shaped exactly like
+          a date dimension. It is when the ROW was written.
+        toggles:
+          - key: role
+            values: [dimension, housekeeping]
+        questions:
+          - ask: sales by start date
+            cases:
+              - when: {role: housekeeping}
+                outcome: BLOCK
+                reason_code: POLICY_DENIED
+                result: >-
+                  Customer.StartDT is pipeline bookkeeping, not business vocabulary — an SCD-2
+                  validity window. Customer can be grouped by: Continent, Country, Gender, State,
+                  age_band_5y.
+                note: >-
+                  The one guardrail in this whole block that fires today — and it fires on the role
+                  spelling `attribute`, which `housekeeping` replaced. `housekeeping` occurs 0 times
+                  in platform src.
+              - when: {role: dimension}
+                outcome: COMMIT
+                plan: GROUP BY c.StartDT
+                result: "{StartDT.distinct} rows"
+                note: >-
+                  Sales grouped by when a customer record was loaded. Valid SQL, a plausible row
+                  count, and a meaningless question answered as though it were a good one.
+
+      - column: CustomerKey
+        role: key
+        headline: The column COUNT(DISTINCT) counts
+        reads: >-
+          {CustomerKey.distinct} distinct over {rows} rows — distinct EQUALS the row count, which is
+          what makes it the identity rather than a very selective dimension.
+        toggles:
+          - key: identity
+            values: [null, canonical, part, reference]
+        questions:
+          - ask: how many customers
+            cases:
+              - when: {identity: canonical}
+                outcome: COMMIT
+                plan: SELECT count(DISTINCT c.CustomerKey)
+                result: "{CustomerKey.distinct}"
+                disclose: counted distinct CustomerKey
+                note: >-
+                  ENFORCED TODAY. `identity: canonical` on the column projects to
+                  concept.identity.canonical_key, which 22 runtime sites read.
+              - when: {identity: part}
+                outcome: REFUSE
+                result: >-
+                  CustomerKey is one column of a composite identity and identifies nothing alone.
+                  Counting it would return a set where a row was expected.
+              - when: {identity: reference}
+                outcome: REFUSE
+                result: "Customer declares no canonical identity — CustomerKey points at another concept."
+                note: The default when identity is unstated on a key column, which is why stating it matters.
+              - when: {identity: null}
+                outcome: LOAD_ERROR
+                note: >-
+                  A canonical column whose concept declares no identity kind is refused at load, not
+                  guessed. Enforced today.
+
+  - concept: Product
+    relation: dim_contoso_product
+    identity_kind: fk_name
+    columns:
+
+      - column: SubCategoryName
+        role: dimension
+        headline: A level, not a collision — and telling them apart is the expensive part
+        reads: >-
+          {SubCategoryName.distinct} distinct, rolling up into CategoryName's
+          {CategoryName.distinct}.
+        measured:
+          - claim: "{SubCategoryName.distinct} distinct pairs over {SubCategoryName.distinct} subcategories — every subcategory has exactly ONE parent"
+            source: column_rulings.md §2, measured over dim_contoso_product
+        toggles:
+          - key: rulings.finer_than
+            values: [null, CategoryName]
+        questions:
+          - ask: sales by subcategory
+            cases:
+              - when: {rulings.finer_than: CategoryName}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY p.SubCategoryName
+                result: "{SubCategoryName.distinct} rows"
+                disclose: "the finer of two levels; rolls up into {CategoryName.distinct} categories"
+              - when: {}
+                outcome: COMMIT
+                plan: GROUP BY p.SubCategoryName
+                result: "{SubCategoryName.distinct} rows"
+                note: >-
+                  Correct, and a reader cannot tell whether these {SubCategoryName.distinct} sum to
+                  the {CategoryName.distinct} they would get by category.
+          - ask: sales by product line
+            cases:
+              - when: {rulings.finer_than: CategoryName}
+                mode: designed
+                outcome: ASK
+                result: "Which level — category ({CategoryName.distinct}) or subcategory ({SubCategoryName.distinct})?"
+                note: The ruling is what lets the engine know there are two levels to offer.
+              - when: {}
+                outcome: ASK
+                result: "No axis named 'product line'."
+                note: An ASK either way — but one of them names the choice and the other names the failure.
+
+      - column: Manufacturer
+        role: dimension
+        headline: The 1:1 that only a person can rule on
+        reads: "{Manufacturer.distinct} distinct, beside Brand's {Brand.distinct}."
+        measured:
+          - claim: "{Brand.distinct} distinct Brand, {Manufacturer.distinct} distinct Manufacturer, {Manufacturer.distinct} distinct pairs"
+            source: column_rulings.md §1, measured over dim_contoso_product
+        toggles:
+          - key: rulings.label_of
+            values: [null, Brand]
+          - key: rulings.register
+            values: [common, legal, long, short, code]
+        questions:
+          - ask: revenue by manufacturer
+            cases:
+              - when: {rulings.label_of: Brand, rulings.register: legal}
+                mode: designed
+                outcome: COMMIT
+                plan: SELECT p.Brand AS "Manufacturer", SUM(l.NetPrice) GROUP BY p.Brand
+                result: "{Brand.distinct} rows — Contoso, Ltd · Fabrikam, Inc. · …"
+                disclose: grouped by Brand, shown as Manufacturer (legal register)
+                note: >-
+                  A question asked in these words is answered in them, never refused. 'Contoso' is what
+                  the world calls it; 'Contoso AG' is what the register calls it.
+              - when: {rulings.label_of: Brand}
+                mode: designed
+                outcome: COMMIT
+                plan: GROUP BY p.Brand
+                result: "{Brand.distinct} rows"
+                disclose: grouped by Brand, shown as Manufacturer (common register)
+                note: >-
+                  The register is wrong here — these ARE the legal names. Nothing breaks; the answer
+                  just claims the wrong thing about which name it showed.
+              - when: {}
+                outcome: COMMIT
+                plan: GROUP BY p.Manufacturer
+                result: "{Manufacturer.distinct} rows"
+                note: >-
+                  Identical numbers to 'by brand', different labels, nothing relating them. And
+                  GROUP BY both gives {Brand.distinct} where a reader expects
+                  {Brand.distinct} squared.
+
+  - concept: OrderLine
+    relation: orderrows
+    identity_kind: composite
+    columns:
+
+      - column: NetPrice
+        role: measure
+        headline: One column, five declarable types, ten universal folds
+        reads: "{NetPrice.distinct} distinct values over {rows} rows — a numeric payload, never an axis."
+        derives: measure_matrix
+        derives_note: >-
+          This panel computes nothing of its own. The legal fold per axis comes from
+          mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five
+          types × two kinds = ten universal cells, each naming a mac.aggregation_effect term. An
+          applied ontology references those members; it never re-encodes the matrix, and neither
+          does this page.
+        toggles:
+          - key: measure.type
+            values: [Flow, Stock, Intensive, Precomputed, Target]
+          - key: measure.unit
+            values: [null, USD]
+          - key: measure.additivity
+            values: [null, "time: additive", "time: average", "time: none"]
+        questions:
+          - ask: total NetPrice for 2024
+            axis: time
+            fold: SUM
+          - ask: NetPrice by category
+            axis: categorical
+            fold: SUM
+          - ask: average NetPrice per line
+            axis: categorical
+            fold: AVG

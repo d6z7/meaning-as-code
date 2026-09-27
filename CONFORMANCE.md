@@ -139,6 +139,79 @@ ways under no namespace**, and v0.5 resolved that by *promoting it into core*. T
 fix; the eight private spellings were the defect. **Never sprinkle a bare key into the core, and never
 reach for a namespace instead.**
 
+### 2.1 ONE HOME PER FACT — the schema REFERENCES a vocabulary, it never copies one
+
+`mac_vocabulary.yaml` declares what the terms of a vocabulary **are**. Where `mac.schema.json`
+constrains a slot that a vocabulary governs, its `enum` **must be that vocabulary's terms** — not a
+hand-typed list standing beside them. Two lists of one fact drift, and neither is marked as the copy.
+
+Enforced by `tools/check_vocabulary_parity.py`, which declares the governed slots and fails on any
+disagreement **in either direction**. Measured on its first run:
+
+| slot | schema | `mac_vocabulary.yaml` |
+|---|---|---|
+| concept column `role` | `attribute` | `period`, `housekeeping` |
+| concept column `identity` | — agree — | `canonical · part · reference` |
+| `TableFile` column `role` | `audit`, `delivery_axis`, `unknown` | — none of them — |
+
+**Half of that was written on 2026-09-27 and by me.** Closing the concept column map's `role` that
+morning, I derived the enum from the 142 declarations a delivered bundle carried and never checked
+that `column_role` had declared the same slot, closed, for months. So the framework said two different
+things about one word and nothing could report it. Which side is right is a human's call — the bundles
+use `attribute` 45 times and `period`/`housekeeping` zero — but *"the framework contradicts itself
+about a closed vocabulary"* is a fact, not a judgement, and it fails.
+
+**The same law covers a PROJECTED field.** `concept.identity.canonical_key` is what the column map's
+`identity: canonical` projects **into**; authoring both gives one fact two homes, and the schema's own
+`identity` description has said so all along: *"the key is a COLUMN fact, so declaring it here AND
+under concept.identity gives it two homes that can disagree."* Measured: 15 of 19 concepts in the
+reference bundle carry it only on the column. A composite key settles it outright — `canonical_key` is
+one string, while `identity: part` marks as many columns as the key has.
+
+### 2.2 EVERY VOCABULARY IS `snake_case`, AND CLOSED MEANS CLOSED
+
+Two rules, one gate — `tools/check_vocabulary_tokens.py`, whose only source is the vocabulary itself:
+
+1. **A namespace is `snake_case`, and its terms are lowercase.** Measured 2026-09-27: of twenty
+   declared vocabularies, `MeasureType` was the **only** CamelCase name, the only one whose terms were
+   CamelCase, and the only one (with `canon`) using `members:` where eighteen said `terms:`. The
+   inconsistency had already cost a silent bug — `gen_column_bench.py` read `MeasureType.terms`, a key
+   that did not exist, and got nothing. All three are standardised: `measure_type`, `terms:`,
+   lowercase terms.
+2. **A vocabulary declared `closed: true` is closed.** `measure_type` said `closed: true` with five
+   terms and **nothing read it**, so `mac.MeasureType.Level` — a member that has never existed in any
+   version — was authored into a concept and `validate_schema` reported 80 of 80 files clean. The
+   declaration was there; the reader was not. A block declared `kind: registry` with no terms is a
+   registered NAMESPACE and stays open, because that is what it says it is.
+
+**Why a gate and not an enum in the schema.** An enum would be §2.1's defect one level over: the
+vocabulary would be declared twice. The vocabulary is the one home and the gate is its one reader.
+
+### 2.3 AN EDGE IS A PROPERTY OF THE CONCEPT, NOT OF A FOREIGN KEY
+
+A foreign key belongs to a **relation**; an edge belongs to a **concept**. The two are not one-to-one
+in either direction, and treating them as one produced both halves of a measured defect:
+
+- **One relation backs many concepts.** A lift keyed on the relation kept one concept per relation and
+  shipped three edges reading `Currency → Region`, `Currency → Region`, `Currency → ProductColor`, with
+  correct join rules and nonsense endpoints. `validate_schema` passed them (a wrong endpoint is not a
+  shape error), and so did the endpoint checker — `Currency` and `Region` **are** declared concepts. **A
+  resolvable endpoint is not a correct one.**
+- **One foreign key fans out to many edges.** Where OrderLine, Order and SalesAmount all declare
+  `CustomerKey: identity: reference`, all three reference Customer and all three are edges. Refusing
+  that as "ambiguous" took a reference bundle from 3 wrong edges to 0.
+
+So: the **from** endpoint is every concept on the relation declaring that column `identity: reference`;
+the **to** endpoint is the one concept on the target whose canonical key **is** the referenced column —
+singular, because two notions claiming one canonical key means the key identifies two things, which is
+a defect and earns a ruling rather than a coin toss. An endpoint that cannot be resolved is **skipped
+with its reason recorded**, never guessed.
+
+**And a shared relation carries no foreign key at all.** An inline dimension — `Brand` on the product
+row, `Location` on the store row — relates to its host with nothing to lift, which is why a reference
+bundle with 19 concepts carried 8 edges and owed 12 more. A producer that lifts only foreign keys
+cannot see the commonest relationship in a denormalised warehouse.
+
 ## 3. What changed in v0.5 (the formalization delta from 0.4)
 
 Driven by an applied-instance drift audit (promote / profile / drop verdicts, ratified 2026-06-14):

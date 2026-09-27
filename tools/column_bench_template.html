@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAC · the column bench</title>
+<script>
+  /* Same mechanism as ask.html and estate.explorer.html (global localStorage 'mac_theme'), so the
+     theme choice carries across every MAC surface. Set before first paint — no flash. */
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+</script>
+<style>
+/* ---------------------------------------------------------------------------
+   PALETTE — the estate's, not a new one. --commit/--ask/--refuse/--invariant are
+   the four colours the console's route column and the estate explorer already use for
+   COMMIT/ASK/REFUSE/BLOCK, so one outcome reads the same on every MAC surface.
+   As a CATEGORICAL SERIES palette this set fails a CVD check (amber↔green ΔE 4.8
+   protan). It is used only as a STATUS palette: every chip carries its word, and
+   every matrix cell carries its initial, so nothing here is colour-alone.
+   --------------------------------------------------------------------------- */
+:root{
+  --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
+  --ink:#1a2030; --muted:#5a6576; --faint:#8b95a5;
+  --accent:#3563c9; --accent-soft:#e6ecfb;
+  --ask:#b9770a; --ask-bg:#fbf1dd; --commit:#2f8a4e; --commit-bg:#e4f4ea;
+  --refuse:#c0392b; --refuse-bg:#fbe6e3; --invariant:#6b4fbb; --invariant-bg:#eee8fb;
+  --other:#5a6576; --other-bg:#eceff3;
+  --mono:'SF Mono','JetBrains Mono',Menlo,Consolas,ui-monospace,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --radius:9px; --shadow:0 1px 2px rgba(20,30,55,.05),0 3px 12px rgba(20,30,55,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686;
+  --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}}
+:root[data-theme="dark"]{
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686;
+  --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;
+  line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;letter-spacing:-.01em}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---- bar ---- */
+.macbar{position:sticky;top:0;z-index:50;height:44px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--border)}
+.mb-left{display:flex;align-items:center;gap:18px;min-width:0}
+.mb-right{display:flex;align-items:center;gap:10px}
+.mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;font-size:13.5px;white-space:nowrap}
+.mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.mb-tabs{display:inline-flex;gap:3px;flex-wrap:wrap}
+.mb-tab{padding:4px 11px;border-radius:7px;color:var(--faint);font-weight:650;font-size:13px;
+  line-height:1.6;border:0;background:none;white-space:nowrap}
+.mb-tab:hover{background:var(--ground);color:var(--ink)}
+.mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);
+  border-radius:6px;width:30px;height:28px;font-size:14px}
+
+/* the mode switch — the frontier, made into a control */
+.modesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.modesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 11px;letter-spacing:.02em}
+.modesw button.on{background:var(--ink);color:var(--surface)}
+.modesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+
+/* ---- layout ---- */
+.view{display:none}
+.view.on{display:block}
+.pad{padding:22px 24px 64px;max-width:1280px;margin:0 auto}
+.lede{color:var(--muted);max-width:76ch;margin:6px 0 0}
+.modeline{margin:14px 0 0;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface);color:var(--muted);font-size:13.5px;max-width:92ch}
+.modeline b{color:var(--ink)}
+
+.bench{display:grid;grid-template-columns:250px minmax(0,1fr) minmax(0,1.05fr);gap:18px;
+  padding:18px 22px 64px;align-items:start}
+@media (max-width:1180px){.bench{grid-template-columns:1fr}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow)}
+.card-h{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;
+  justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.card-b{padding:15px}
+
+/* column picker */
+.pick{width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);background:none;
+  padding:10px 14px;display:block;color:var(--ink)}
+.pick:last-child{border-bottom:0}
+.pick:hover{background:var(--ground)}
+.pick.on{background:var(--accent-soft)}
+.pick .cn{font-weight:700;font-size:13.5px;font-family:var(--mono)}
+.pick .cm{color:var(--faint);font-size:11.5px;margin-top:2px}
+.grp{padding:9px 14px 5px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--faint);font-weight:750;background:var(--surface-2);border-bottom:1px solid var(--border)}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+  font-size:11px;font-weight:750;letter-spacing:.04em;border:1px solid transparent;white-space:nowrap}
+.c-COMMIT{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+.c-ASK{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.c-REFUSE{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.c-BLOCK{color:var(--invariant);background:var(--invariant-bg);border-color:var(--invariant)}
+/* NOT gradings of an answer — a dashed edge says "a different plane", so plane never relies on hue */
+.c-LOAD_ERROR,.c-GATE_RED{color:var(--ink);background:var(--other-bg);border:1px dashed var(--ink)}
+.st{display:inline-flex;gap:5px;align-items:center;font-size:10.5px;font-weight:750;padding:2px 7px;
+  border-radius:5px;letter-spacing:.05em;text-transform:uppercase}
+.st-enforced{color:var(--commit);background:var(--commit-bg)}
+.st-designed{color:var(--ask);background:var(--ask-bg)}
+.st-measured{color:var(--other);background:var(--other-bg)}
+.pl{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:5px;padding:1px 6px;letter-spacing:.04em}
+
+/* toggles */
+.tog{padding:12px 15px;border-bottom:1px solid var(--border)}
+.tog:last-child{border-bottom:0}
+.tog-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.tog-k{font-family:var(--mono);font-size:12.5px;font-weight:700}
+.seg{display:flex;flex-wrap:wrap;gap:5px}
+.seg button{border:1px solid var(--border);background:var(--ground);color:var(--muted);
+  border-radius:7px;padding:4px 10px;font-size:12px;font-family:var(--mono);font-weight:650}
+.seg button:hover{border-color:var(--accent);color:var(--ink)}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tog-d{color:var(--faint);font-size:11.5px;margin-top:6px}
+
+/* yaml */
+pre.yaml{margin:0;padding:14px 15px;background:var(--surface-2);border-radius:var(--radius);
+  font-family:var(--mono);font-size:12.5px;line-height:1.62;overflow-x:auto;
+  border:1px solid var(--border)}
+.y-k{color:var(--accent)}
+.y-v{color:var(--ink);font-weight:650}
+.y-c{color:var(--faint)}
+.y-dead{color:var(--refuse);text-decoration:underline wavy var(--refuse) 1px;text-underline-offset:3px}
+
+/* question cards */
+.q{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);
+  margin-bottom:13px;overflow:hidden}
+.q-h{padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.q-ask{font-weight:700;font-size:14px}
+.q-ask::before{content:"> ";color:var(--faint);font-family:var(--mono)}
+.q-b{padding:13px 14px}
+.row{display:flex;gap:9px;margin-bottom:9px;font-size:13px}
+.row:last-child{margin-bottom:0}
+.row .lab{flex:none;width:74px;color:var(--faint);font-size:10.5px;font-weight:750;
+  text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+.row .val{min-width:0;flex:1}
+.plan{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:7px;padding:8px 10px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.disc{border-left:3px solid var(--accent);background:var(--accent-soft);padding:7px 11px;
+  border-radius:0 7px 7px 0;font-size:13px;font-style:italic}
+.note{color:var(--muted);font-size:13px}
+.reason{font-family:var(--mono);font-size:11px;font-weight:750;color:var(--refuse);letter-spacing:.04em}
+
+/* measured evidence */
+.ev{margin:0;padding:0;list-style:none}
+.ev li{font-size:12.5px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--border)}
+.ev li:last-child{border-bottom:0}
+.ev .src{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:2px}
+.prov{color:var(--faint);font-size:11px;font-family:var(--mono);margin-top:10px}
+
+/* tables & matrix */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;
+  position:sticky;top:44px;background:var(--surface);z-index:2}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
+td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font-weight:750}
+.dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  border-radius:6px;border:1px solid var(--border);color:var(--faint);background:var(--ground)}
+.dot.f-COMMIT{background:var(--commit-bg);color:var(--commit);border-color:var(--commit)}
+.dot.f-ASK{background:var(--ask-bg);color:var(--ask);border-color:var(--ask)}
+.dot.f-REFUSE{background:var(--refuse-bg);color:var(--refuse);border-color:var(--refuse)}
+.dot.f-BLOCK{background:var(--invariant-bg);color:var(--invariant);border-color:var(--invariant)}
+.dot.f-plane{background:var(--other-bg);color:var(--ink);border:1px dashed var(--ink)}
+.dot.off{opacity:.22}
+
+/* keys */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;box-shadow:var(--shadow)}
+.kc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.kc-k{font-family:var(--mono);font-weight:750;font-size:13.5px}
+.kc-d{font-size:13px;margin-bottom:9px}
+.kc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.kc-e{font-size:12.5px;color:var(--muted)}
+.kc-f{margin-top:9px;padding:9px 11px;border-left:3px solid var(--ask);background:var(--ask-bg);
+  border-radius:0 7px 7px 0;font-size:12.5px;color:var(--ink)}
+.kc-r{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+.sec{margin:26px 0 12px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);font-weight:750}
+
+/* constellation */
+.con{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px}
+@media (max-width:920px){.con{grid-template-columns:1fr}}
+.dial{padding:12px 15px;border-bottom:1px solid var(--border)}
+.dial:last-child{border-bottom:0}
+.dial label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px}
+.dial label span{color:var(--faint);font-family:var(--mono);font-weight:650}
+.dial input[type=range]{width:100%;accent-color:var(--accent)}
+.verdict{padding:15px}
+.verdict .big{font-family:var(--mono);font-size:19px;font-weight:750;margin-bottom:4px}
+.branch{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;
+  background:var(--surface)}
+.branch.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow)}
+.branch .bh{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:5px;flex-wrap:wrap}
+.branch .bn{font-family:var(--mono);font-weight:750;font-size:13.5px}
+.branch .bt{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.branch .bc{font-size:12.5px;color:var(--muted)}
+.branch.on .bc{color:var(--ink)}
+.cant{margin-top:7px;font-size:12px;padding:7px 10px;border-left:3px solid var(--invariant);
+  background:var(--invariant-bg);border-radius:0 6px 6px 0}
+.presets{display:flex;flex-wrap:wrap;gap:6px;padding:12px 15px;border-bottom:1px solid var(--border)}
+.presets button{border:1px solid var(--border);background:var(--ground);border-radius:7px;
+  padding:4px 10px;font-size:11.5px;font-family:var(--mono);color:var(--muted);font-weight:650}
+.presets button:hover{border-color:var(--accent);color:var(--ink)}
+
+/* frontier */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:22px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:15px;box-shadow:var(--shadow)}
+.tile .n{font-size:30px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.tile .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);
+  font-weight:750;margin-top:6px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:7px}
+.tile.enforced .n{color:var(--commit)} .tile.designed .n{color:var(--ask)}
+.tile.measured .n{color:var(--other)}
+.find{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--refuse);
+  border-radius:0 var(--radius) var(--radius) 0;padding:14px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
+.find h4{margin:0 0 6px;font-size:14px}
+.find p{margin:0;color:var(--muted);font-size:13px}
+.find p+p{margin-top:7px}
+.quote{border-left:3px solid var(--border);padding:2px 0 2px 14px;color:var(--muted);
+  font-size:13px;margin:12px 0}
+</style>
+</head>
+<body>
+
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span>MAC · column bench</span>
+    <nav class="mb-tabs" id="tabs"></nav>
+  </div>
+  <div class="mb-right">
+    <div class="modesw" id="modesw"></div>
+    <button class="mb-theme" id="themebtn" title="theme">🌙</button>
+  </div>
+</div>
+
+<section class="view on" id="v-bench">
+  <div class="bench">
+    <div class="card" id="picker"></div>
+    <div id="configside"></div>
+    <div id="answerside"></div>
+  </div>
+</section>
+
+<section class="view" id="v-keys"><div class="pad">
+  <h1 style="font-size:21px">Every key of the column block</h1>
+  <p class="lede">Required, default and legal values are read from <code>column_specification.md</code>'s
+  own key table. Plane, outcome classes, status and reader come from <code>column_effects.yaml</code>.
+  Neither file restates the other, and a key in one and not the other fails the gate.</p>
+  <div id="keys"></div>
+</div></section>
+
+<section class="view" id="v-matrix"><div class="pad">
+  <h1 style="font-size:21px">The consequence matrix</h1>
+  <p class="lede">Every key against every effect it can have. The two dashed columns are not gradings
+  of an answer — a load refusal and a red gate happen before a question exists. The other four are
+  <code>mac.outcome_class</code>, the axis the whole estate already grades in. Read a column to learn
+  what can possibly refuse; read a row to learn what one key can do.</p>
+  <div id="matrix"></div>
+</div></section>
+
+<section class="view" id="v-con"><div class="pad">
+  <h1 style="font-size:21px">Which ruling, and what the measurement cannot tell you</h1>
+  <p class="lede">Three counts decide which ruling a column pair is a candidate for — and on two of
+  the four branches the measurement gets you to the door and no further. Drag the dials, or load a
+  constellation measured on contoso.</p>
+  <div class="con" style="margin-top:18px">
+    <div class="card">
+      <div class="card-h"><h3>the probe</h3></div>
+      <div class="presets" id="presets"></div>
+      <div id="dials"></div>
+      <div style="padding:12px 15px;border-top:1px solid var(--border)">
+        <pre class="yaml" id="probe-sql"></pre>
+      </div>
+    </div>
+    <div><div id="branches"></div></div>
+  </div>
+</div></section>
+
+<section class="view" id="v-frontier"><div class="pad">
+  <h1 style="font-size:21px">The frontier</h1>
+  <p class="lede">The column standard is not a settled shape with a picture to draw. It is a designed
+  shape with a deliberate edge, and the edge is the most useful thing on this page.</p>
+  <div id="frontier"></div>
+</div></section>
+
+<script>
+const DATA = /*__DATA__*/;
+
+/* ------------------------------------------------------------------ helpers */
+const $ = s => document.querySelector(s);
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h !== undefined) n.innerHTML = h; return n; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEYS = Object.fromEntries(DATA.keys.map(k => [k.key, k]));
+const ANSWER_OUTCOMES = ['COMMIT','ASK','REFUSE','BLOCK'];
+const PLANE_OUTCOMES = {LOAD_ERROR:'LOAD · refused', GATE_RED:'CHECK · red'};
+const outLabel = o => PLANE_OUTCOMES[o] || o;
+const chip = o => `<span class="chip c-${o}">${esc(outLabel(o))}</span>`;
+const stChip = s => `<span class="st st-${s}">${s}</span>`;
+
+let MODE = 'today';
+let SEL = 0;                       /* index into the flat column list */
+const STATE = {};                  /* "Concept.Column" -> {key: value} */
+
+const FLAT = [];
+DATA.bench.forEach(c => c.columns.forEach(col => FLAT.push({concept: c, col})));
+
+function stateFor(i) {
+  const {concept, col} = FLAT[i];
+  const id = concept.concept + '.' + col.column;
+  if (!STATE[id]) {
+    const s = {};
+    (col.toggles || []).forEach(t => { s[t.key] = t.values[0]; });
+    STATE[id] = s;
+  }
+  return STATE[id];
+}
+
+/** A toggle sits at its DEFAULT (or null) => the author has not declared the key.
+    Read from the manual's own default column, so nothing here decides it twice. */
+function authored(key, val) {
+  if (val === null || val === undefined) return false;
+  const def = (KEYS[key] || {}).default || '';
+  return String(val) !== String(def).replace(/`/g, '');
+}
+
+/** In TODAY mode, authoring a designed key is a LOAD ERROR — derived from keys[].status,
+    never written per column. This one function is the whole frontier. */
+function deadKeys(col, st) {
+  return (col.toggles || []).filter(t =>
+    KEYS[t.key] && KEYS[t.key].status === 'designed' && authored(t.key, st[t.key]));
+}
+
+function matches(when, st) {
+  return Object.entries(when || {}).every(([k, v]) => {
+    const cur = st[k];
+    if (v === null) return cur === null || cur === undefined || !authored(k, cur);
+    return String(cur) === String(v);
+  });
+}
+
+/* ------------------------------------------------------- the measure matrix */
+/* Outcomes for role: measure come from mac_vocabulary.yaml#MeasureType, where additivity is
+   stated ONCE over axis_kind. This function reads that matrix; it encodes no fold rule. */
+const EFFECT_FOLD = {additive: ['SUM','AVG'], average: ['AVG'], none: []};
+function measureOutcome(col, st, q) {
+  const type = st['measure.type'];
+  const ov = st['measure.additivity'];
+  const mt = ((DATA.vocabulary.MeasureType || {}).terms || {})[type] || {};
+  let cell = ((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
+  let overridden = false;
+  if (ov && ov.startsWith(q.axis + ':')) { cell = ov.split(':')[1].trim(); overridden = true; }
+  const legal = EFFECT_FOLD[cell] || [];
+  const ok = legal.includes(q.fold);
+  const unit = st['measure.unit'];
+  const eff = ((DATA.vocabulary.aggregation_effect || {}).terms || {})[cell] || {};
+  return {
+    outcome: ok ? 'COMMIT' : 'BLOCK',
+    reason_code: ok ? null : 'ADDITIVITY_VIOLATION',
+    plan: ok ? `SELECT ${q.fold}(l.${col.column}) … GROUP BY <${q.axis} axis>` : null,
+    result: ok
+      ? `${q.fold} is legal on the ${q.axis} axis` + (unit ? ` — reported in ${unit}` : ' — with no unit declared, the number is bare')
+      : (legal.length
+          ? `${q.fold} is not a legal fold of a ${type} measure on the ${q.axis} axis. The correct fold is ${legal.join(' or ')}.`
+          : `A ${type} measure folds on no axis at all — its value exists only at the grains it was computed for.`),
+    disclose: ok && !unit ? null : (ok ? `${type} · ${q.axis} · ${cell}` : null),
+    note: `mac.MeasureType.${type} · ${q.axis} → mac.aggregation_effect.${cell}`
+      + (overridden ? ' (overridden on this column by measure.additivity)' : '')
+      + (eff.description ? ' — ' + eff.description : '')
+  };
+}
+
+/* ---------------------------------------------------------------- resolution */
+function resolve(col, st, q) {
+  const dead = deadKeys(col, st);
+  if (MODE === 'today' && dead.length) {
+    return {outcome: 'LOAD_ERROR', note:
+      `ColumnSpec forbids unknown keys, so the bundle does not load: `
+      + dead.map(d => '<code>' + esc(d.key) + '</code>').join(', ')
+      + (dead.length > 1 ? ' are' : ' is')
+      + ` designed but unread. A flag no code reads is prose with a colon after it — shipping it would`
+      + ` rebuild the pile one layer up, in the platform instead of the bundle.`};
+  }
+  if (col.derives === 'measure_matrix') return measureOutcome(col, st, q);
+  for (const c of (q.cases || [])) {
+    if (c.mode && c.mode !== MODE) continue;
+    if (matches(c.when, st)) return c;
+  }
+  return {outcome: 'COMMIT', note: 'No case declared for this combination.'};
+}
+
+/* --------------------------------------------------------------- the picker */
+function renderPicker() {
+  const box = $('#picker'); box.innerHTML = '';
+  box.appendChild(el('div', 'card-h', '<h3>columns</h3>'));
+  let last = null, i = 0;
+  FLAT.forEach((f, idx) => {
+    if (f.concept.concept !== last) {
+      last = f.concept.concept;
+      box.appendChild(el('div', 'grp', esc(last) + ' <span style="opacity:.6">· ' + esc(f.concept.relation) + '</span>'));
+    }
+    const b = el('button', 'pick' + (idx === SEL ? ' on' : ''),
+      `<div class="cn">${esc(f.col.column)}</div><div class="cm">${esc(f.col.role)} · ${esc(f.col.headline)}</div>`);
+    b.onclick = () => { SEL = idx; renderBench(); };
+    box.appendChild(b);
+  });
+}
+
+/* ------------------------------------------------------------- the config side */
+function yamlBlock(col, st) {
+  /* The wavy underline says 'this line does not load'. That is only true in TODAY mode —
+     in DESIGNED mode the same line is the standard working as specified. */
+  const dead = new Set(MODE === 'today' ? deadKeys(col, st).map(d => d.key) : []);
+  const tree = {};
+  (col.toggles || []).forEach(t => {
+    const v = st[t.key];
+    if (!authored(t.key, v)) return;
+    const parts = t.key.split('.');
+    if (parts.length === 1) tree[parts[0]] = {__v: v, __dead: dead.has(t.key)};
+    else { (tree[parts[0]] = tree[parts[0]] || {})[parts[1]] = {__v: v, __dead: dead.has(t.key)}; }
+  });
+  let out = `<span class="y-k">${esc(col.column)}</span>:\n`;
+  if (!(col.toggles || []).some(t => t.key === 'role'))
+    out += `  <span class="y-k">role</span>: <span class="y-v">${esc(col.role)}</span>\n`;
+  const emit = (node, ind) => {
+    Object.entries(node).forEach(([k, v]) => {
+      if (v && v.__v !== undefined) {
+        const cls = v.__dead ? 'y-dead' : 'y-v';
+        out += `${ind}<span class="y-k">${esc(k)}</span>: <span class="${cls}">${esc(v.__v)}</span>`
+             + (v.__dead ? ' <span class="y-c">← load error today</span>' : '') + '\n';
+      } else {
+        out += `${ind}<span class="y-k">${esc(k)}</span>:\n`;
+        emit(v, ind + '  ');
+      }
+    });
+  };
+  emit(tree, '  ');
+  if (!Object.keys(tree).length) out += `  <span class="y-c"># nothing else declared — the five defaults apply</span>\n`;
+  return out;
+}
+
+function renderConfig() {
+  const {concept, col} = FLAT[SEL], st = stateFor(SEL);
+  const side = $('#configside'); side.innerHTML = '';
+
+  const head = el('div', 'card');
+  head.appendChild(el('div', 'card-h',
+    `<h3>${esc(concept.concept)}.${esc(col.column)}</h3><span class="pl">role: ${esc(col.role)}</span>`));
+  const hb = el('div', 'card-b');
+  hb.appendChild(el('p', null, `<b>${esc(col.headline)}</b>`)).style.margin = '0 0 8px';
+  hb.appendChild(el('p', 'note', esc(col.reads))).style.margin = '0';
+  if (col.measured) {
+    const ul = el('ul', 'ev');
+    col.measured.forEach(m => ul.appendChild(el('li',
+      null, esc(m.claim) + `<span class="src">evidence · ${esc(m.source)}</span>`)));
+    hb.appendChild(ul);
+  }
+  hb.appendChild(el('div', 'prov',
+    `profile ${esc(concept.profile.relation)} · ${Number(concept.profile.rows).toLocaleString('en-GB').replace(/,/g,' ')} rows · measured ${esc(concept.profile.measured_at)} · ${esc(concept.profile.engine)}`));
+  head.appendChild(hb);
+  side.appendChild(head);
+
+  const cfg = el('card' === 'x' ? 'div' : 'div', 'card');
+  cfg.style.marginTop = '16px';
+  cfg.appendChild(el('div', 'card-h', '<h3>the column block</h3>'));
+  const pre = el('pre', 'yaml');
+  pre.innerHTML = yamlBlock(col, st);
+  const pb = el('div', 'card-b'); pb.appendChild(pre);
+  cfg.appendChild(pb);
+  side.appendChild(cfg);
+
+  const tg = el('div', 'card'); tg.style.marginTop = '16px';
+  tg.appendChild(el('div', 'card-h', '<h3>configuration</h3>'));
+  (col.toggles || []).forEach(t => {
+    const k = KEYS[t.key] || {};
+    const d = el('div', 'tog');
+    d.appendChild(el('div', 'tog-h',
+      `<span class="tog-k">${esc(t.key)}</span>${stChip(k.status || '?')}`));
+    const seg = el('div', 'seg');
+    t.values.forEach(v => {
+      const b = el('button', String(st[t.key]) === String(v) ? 'on' : '', v === null ? 'unset' : esc(v));
+      b.onclick = () => { st[t.key] = v; renderBench(); };
+      seg.appendChild(b);
+    });
+    d.appendChild(seg);
+    d.appendChild(el('div', 'tog-d',
+      esc(k.decides || '') + (k.default ? ` · default <code>${esc(k.default)}</code>` : '')));
+    tg.appendChild(d);
+  });
+  if (col.derives_note) {
+    const d = el('div', 'tog');
+    d.appendChild(el('div', 'tog-d', esc(col.derives_note)));
+    tg.appendChild(d);
+  }
+  side.appendChild(tg);
+}
+
+/* ------------------------------------------------------------- the answer side */
+function renderAnswers() {
+  const {col} = FLAT[SEL], st = stateFor(SEL);
+  const side = $('#answerside'); side.innerHTML = '';
+  side.appendChild(el('div', 'card-h', '<h3>what a question gets</h3>')).style.padding = '0 0 12px';
+
+  (col.questions || []).forEach(q => {
+    const r = resolve(col, st, q);
+    const card = el('div', 'q');
+    card.appendChild(el('div', 'q-h',
+      `<span class="q-ask">${esc(q.ask)}</span>${chip(r.outcome)}`));
+    const b = el('div', 'q-b');
+    const add = (lab, html, cls) => {
+      if (!html) return;
+      b.appendChild(el('div', 'row',
+        `<span class="lab">${lab}</span><div class="val"><div class="${cls || ''}">${html}</div></div>`));
+    };
+    if (r.reason_code) add('code', `<span class="reason">${esc(r.reason_code)}</span>`);
+    add('plan', esc(r.plan), 'plan');
+    add('result', esc(r.result));
+    add('disclose', esc(r.disclose), 'disc');
+    add('why', r.note && r.note.includes('<code>') ? r.note : esc(r.note), 'note');
+    card.appendChild(b);
+    side.appendChild(card);
+  });
+}
+
+function renderBench() { renderPicker(); renderConfig(); renderAnswers(); }
+
+/* --------------------------------------------------------------------- keys */
+function renderKeys() {
+  const host = $('#keys'); host.innerHTML = '';
+  const blocks = [...new Set(DATA.keys.map(k => k.block))];
+  blocks.forEach(bl => {
+    host.appendChild(el('div', 'sec', bl === 'root' ? 'on the column itself'
+      : bl === 'measured' ? 'measured — never authored' : bl + ':'));
+    const g = el('div', 'kgrid');
+    DATA.keys.filter(k => k.block === bl).forEach(k => {
+      const c = el('div', 'kc');
+      c.appendChild(el('div', 'kc-h', `<span class="kc-k">${esc(k.key)}</span>${stChip(k.status)}`));
+      c.appendChild(el('div', 'kc-d', esc(k.decides || '')));
+      const meta = el('div', 'kc-meta');
+      meta.innerHTML =
+        `<span class="pl">required: ${esc(k.required || 'no')}</span>` +
+        `<span class="pl">default: ${esc(k.default || '—')}</span>` +
+        `<span class="pl">legal: ${esc(k.legal || '—')}</span>` +
+        (k.plane || []).map(p => `<span class="pl">${p}</span>`).join('') +
+        (k.outcomes || []).map(o => chip(o)).join('');
+      c.appendChild(meta);
+      c.appendChild(el('div', 'kc-e', esc(k.effect || '')));
+      if (k.frontier_note) c.appendChild(el('div', 'kc-f', esc(k.frontier_note)));
+      c.appendChild(el('div', 'kc-r', 'reader · ' + esc(k.reader || 'none')));
+      g.appendChild(c);
+    });
+    host.appendChild(g);
+  });
+}
+
+/* ------------------------------------------------------------------- matrix */
+function renderMatrix() {
+  const cols = [['LOAD_ERROR', 'load'], ['GATE_RED', 'check'], ...ANSWER_OUTCOMES.map(o => [o, null])];
+  let h = '<table><thead><tr><th>key</th><th>status</th>'
+    + cols.map(([o]) => `<th style="text-align:center">${esc(outLabel(o))}</th>`).join('')
+    + '<th>reader</th></tr></thead><tbody>';
+  DATA.keys.forEach(k => {
+    h += `<tr><td class="k">${esc(k.key)}</td><td>${stChip(k.status)}</td>`;
+    cols.forEach(([o, plane]) => {
+      const on = plane ? (k.plane || []).includes(plane) : (k.outcomes || []).includes(o);
+      const cls = plane ? 'f-plane' : 'f-' + o;
+      h += `<td class="cell"><span class="dot ${on ? cls : 'off'}">${on ? esc(outLabel(o)[0]) : '·'}</span></td>`;
+    });
+    h += `<td style="font-family:var(--mono);font-size:11px;color:var(--faint)">${esc(k.reader || 'none')}</td></tr>`;
+  });
+  h += '</tbody></table>';
+  $('#matrix').innerHTML = '<div class="scroll">' + h + '</div>';
+}
+
+/* ------------------------------------------------------------ constellation */
+const PRESETS = [
+  {n: 'Brand ↔ Manufacturer', a: 11, b: 11, p: 11, rows: 2517, an: 'Manufacturer', bn: 'Brand'},
+  {n: 'SubCategory ↔ Category', a: 32, b: 8, p: 32, rows: 2517, an: 'SubCategoryName', bn: 'CategoryName'},
+  {n: 'State ↔ Country', a: 563, b: 8, p: 603, rows: 104990, an: 'State', bn: 'Country'},
+  {n: 'ZipCode (alone)', a: 40639, b: 8, p: 40639, rows: 104990, an: 'ZipCode', bn: 'Country'}
+];
+let PROBE = {...PRESETS[0]};
+
+const BRANCHES = [
+  {key: 'rulings.label_of', test: p => p.a === p.b && p.p === p.a,
+   test_t: 'a = b = pairs',
+   cant: 'Whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent, not a label.'},
+  {key: 'rulings.finer_than', test: p => p.p === p.a && p.a > p.b,
+   test_t: 'pairs = a, and a > b',
+   cant: null, safe: 'Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count.'},
+  {key: 'placement.scoped_by', test: p => p.p > p.a && p.p > p.b,
+   test_t: 'pairs > a AND pairs > b',
+   cant: null, safe: 'Also safe, once you check collisions WITHIN versus ACROSS the parent. Zero within and many across is the signature.'},
+  {key: 'rulings.never_axis', test: p => p.a / p.rows >= 0.25,
+   test_t: 'cardinality approaches the row count',
+   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the ruling must carry the DQ id that measured it.'}
+];
+
+function renderCon() {
+  const pr = $('#presets'); pr.innerHTML = '';
+  PRESETS.forEach(p => {
+    const b = el('button', null, esc(p.n));
+    b.onclick = () => { PROBE = {...p}; renderCon(); };
+    pr.appendChild(b);
+  });
+  const dl = $('#dials'); dl.innerHTML = '';
+  [['a', 'distinct a (the finer / the candidate)'], ['b', 'distinct b (the coarser / the scope)'],
+   ['p', 'distinct pairs'], ['rows', 'rows in the relation']].forEach(([k, lab]) => {
+    const d = el('div', 'dial');
+    const max = k === 'rows' ? 250000 : 60000;
+    d.innerHTML = `<label>${esc(lab)}<span class="tnum">${PROBE[k].toLocaleString('en-GB').replace(/,/g,' ')}</span></label>
+      <input type="range" min="1" max="${max}" value="${PROBE[k]}">`;
+    d.querySelector('input').oninput = e => { PROBE[k] = +e.target.value; renderCon(); };
+    dl.appendChild(d);
+  });
+  $('#probe-sql').innerHTML =
+`<span class="y-c">-- run this before ruling; the manual's own probe</span>
+<span class="y-k">SELECT</span> count(<span class="y-k">DISTINCT</span> ${esc(PROBE.an)})            <span class="y-k">AS</span> a_distinct,   <span class="y-c">-- ${PROBE.a}</span>
+       count(<span class="y-k">DISTINCT</span> ${esc(PROBE.bn)})            <span class="y-k">AS</span> b_distinct,   <span class="y-c">-- ${PROBE.b}</span>
+       count(<span class="y-k">DISTINCT</span> (${esc(PROBE.an)}, ${esc(PROBE.bn)})) <span class="y-k">AS</span> pairs        <span class="y-c">-- ${PROBE.p}</span>
+<span class="y-k">FROM</span>   &lt;relation&gt;`;
+
+  const host = $('#branches'); host.innerHTML = '';
+  const hit = BRANCHES.filter(b => b.test(PROBE));
+  const head = el('div', 'verdict card');
+  head.style.marginBottom = '14px';
+  head.innerHTML = hit.length
+    ? `<div class="big">${hit.map(b => esc(b.key)).join(' + ')}</div>
+       <div class="note">${hit.length > 1
+         ? 'Two branches fire at once. Both are candidates, and the pair must be measured further before either is authored.'
+         : 'One branch fires. The constellation is a candidate for this ruling — never a proof of it.'}</div>`
+    : `<div class="big" style="color:var(--muted)">no ruling</div>
+       <div class="note">These counts match no constellation. Both columns are ordinary independent axes — or the measurement is wrong.</div>`;
+  host.appendChild(head);
+
+  BRANCHES.forEach(b => {
+    const on = b.test(PROBE), k = KEYS[b.key] || {};
+    const d = el('div', 'branch' + (on ? ' on' : ''));
+    d.innerHTML = `<div class="bh"><span class="bn">${esc(b.key)}</span><span class="bt">${esc(b.test_t)}</span></div>
+      <div class="bc">${esc(k.effect || '')}</div>`
+      + (b.cant ? `<div class="cant"><b>What measurement cannot tell you.</b> ${esc(b.cant)}</div>`
+                : `<div class="bc" style="margin-top:7px;color:var(--commit)">${esc(b.safe)}</div>`);
+    host.appendChild(d);
+  });
+  host.appendChild(el('div', 'find', `<h4>scoped_by mistaken for finer_than is the expensive error</h4>
+    <p>The two branches sit next to each other in this space, and only one of them is a hierarchy.
+    Mistaking a reused code space for a level merges unrelated members into one plausible row —
+    and nothing in the result betrays it.</p>`));
+}
+
+/* ----------------------------------------------------------------- frontier */
+function renderFrontier() {
+  const c = DATA.counts;
+  const host = $('#frontier'); host.innerHTML = '';
+  const tiles = el('div', 'tiles');
+  [['enforced', c.enforced, 'projected by ColumnSpec into a home the runtime reads'],
+   ['designed', c.designed, 'in the reference manual — and a LOAD ERROR if authored'],
+   ['measured', c.measured, 'written by the profile and reference planes; never authored'],
+   ['total', c.total, 'keys the standard describes, across eight sections']].forEach(([l, n, d]) => {
+    tiles.appendChild(el('div', 'tile ' + l,
+      `<div class="n tnum">${n}</div><div class="l">${l}</div><div class="d">${esc(d)}</div>`));
+  });
+  host.appendChild(tiles);
+
+  host.appendChild(el('div', 'quote', `“A flag no code reads is prose with a colon after it, and shipping
+    19 of them would have rebuilt the pile one layer up, in the platform instead of the bundle. So the
+    standard grows ONE FLAG AT A TIME, each arriving with its consumer and its test.”
+    <span style="display:block;margin-top:6px;font-family:var(--mono);font-size:11px">ColumnSpec, mac-runtime/ontology/models.py</span>`));
+
+  host.appendChild(el('div', 'sec', 'what this page found while being built'));
+  DATA.keys.filter(k => k.frontier_note && /0 |two homes|no such field|retired|no longer/i.test(k.frontier_note))
+    .forEach(k => host.appendChild(el('div', 'find',
+      `<h4><code>${esc(k.key)}</code> · ${esc(k.status)}</h4><p>${esc(k.frontier_note)}</p>`)));
+
+  host.appendChild(el('div', 'sec', 'how to read the two modes'));
+  Object.entries(DATA.modes).forEach(([id, m]) => {
+    host.appendChild(el('div', 'card',
+      `<div class="card-h"><h3>${esc(id)}</h3><span class="pl">${esc(m.label)}</span></div>
+       <div class="card-b note" style="margin:0">${esc(m.blurb)}</div>`)).style.marginBottom = '13px';
+  });
+
+  host.appendChild(el('div', 'prov',
+    `generated by ${esc(DATA.generated_by)} · keys from column_specification.md + column_effects.yaml · `
+    + `terms from mac_vocabulary.yaml · measurements from the ${esc(DATA.bundle)} bundle`));
+}
+
+/* --------------------------------------------------------------------- shell */
+const VIEWS = [['bench', 'Bench'], ['keys', 'Every key'], ['matrix', 'Matrix'],
+               ['con', 'Constellations'], ['frontier', 'Frontier']];
+function renderShell() {
+  const t = $('#tabs'); t.innerHTML = '';
+  VIEWS.forEach(([id, lab], i) => {
+    const b = el('button', 'mb-tab' + (i === 0 ? ' active' : ''), lab);
+    b.onclick = () => {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+      document.querySelectorAll('.mb-tab').forEach(x => x.classList.remove('active'));
+      $('#v-' + id).classList.add('on'); b.classList.add('active');
+    };
+    t.appendChild(b);
+  });
+  const m = $('#modesw'); m.innerHTML = '';
+  Object.entries(DATA.modes).forEach(([id, mo]) => {
+    const b = el('button', MODE === id ? 'on' : '', id === 'today' ? 'TODAY' : 'DESIGNED');
+    b.title = mo.label;
+    b.onclick = () => { MODE = id; renderShell(); renderBench(); };
+    m.appendChild(b);
+  });
+}
+
+$('#themebtn').onclick = () => {
+  const c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = c;
+  localStorage.setItem('mac_theme', c);
+  $('#themebtn').textContent = c === 'dark' ? '☀' : '🌙';
+};
+$('#themebtn').textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙';
+
+renderShell(); renderBench(); renderKeys(); renderMatrix(); renderCon(); renderFrontier();
+</script>
+</body>
+</html>

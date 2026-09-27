@@ -138,10 +138,10 @@ edges:
 # constant down the file, so it distinguishes nothing and is NOT a discriminator.
 MEASURE_REGISTER = """\
 metric_code,family,flavour,unit,measure_type,additivity_time,additivity_categorical
-count_actual,count,actual,widgets,mac.MeasureType.Flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
-count_plan,count,plan,widgets,mac.MeasureType.Flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
-level_actual,level,actual,widgets,mac.MeasureType.Stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
-level_plan,level,plan,widgets,mac.MeasureType.Stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
+count_actual,count,actual,widgets,mac.measure_type.flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
+count_plan,count,plan,widgets,mac.measure_type.flow,mac.aggregation_effect.additive,mac.aggregation_effect.additive
+level_actual,level,actual,widgets,mac.measure_type.stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
+level_plan,level,plan,widgets,mac.measure_type.stock,mac.aggregation_effect.precomputed,mac.aggregation_effect.additive
 """
 
 
@@ -171,14 +171,14 @@ def build_bundle(root: Path, *, foldered: bool, data="data", ontology="ontology"
         additivity=block({"period": "additive", "place": "additive", "flavour": "non-additive"}),
         axis_kinds=block({"period": "mac.axis_kind.time", "place": "mac.axis_kind.categorical",
                           "flavour": "mac.axis_kind.categorical"}),
-        measure_type="    measure_type: mac.MeasureType.Flow"))
+        measure_type="    measure_type: mac.measure_type.flow"))
 
     # a Target measure claiming a categorical axis is additive — the law says a Target is not
     write(sub("WidgetTarget"), MEASURE_CONCEPT.format(
         name="WidgetTarget", provenance="tuned", relation="fact_widget",
         additivity=block({"place": "additive"}),
         axis_kinds=block({"place": "mac.axis_kind.categorical"}),
-        measure_type="    measure_type: mac.MeasureType.Target"))
+        measure_type="    measure_type: mac.measure_type.target"))
 
     if extras:
         # NO measure_type: two categorical axes stating DIFFERENT, both legitimate, values. A fact
@@ -194,7 +194,7 @@ def build_bundle(root: Path, *, foldered: bool, data="data", ontology="ontology"
             name="WidgetRate", provenance="authored", relation="fact_widget",
             additivity=block({"place": "averageable"}),
             axis_kinds=block({"place": "mac.axis_kind.categorical"}),
-            measure_type="    measure_type: mac.MeasureType.Flow"))
+            measure_type="    measure_type: mac.measure_type.flow"))
         write(sub("WidgetKind"), ENUM_CONCEPT.format(register="widget_kind.lookup"))
         write(cdir / "unnamed.yaml", "metadata:\n  provenance: authored\nnote: no concept block\n")
         write(root / ontology / "edges.yaml", EDGES.format(left="WidgetCount", right="NoSuchConcept"))
@@ -334,7 +334,7 @@ try:
     eq(dcol.site.path, "columns[1]", "a descriptor column carries its own Site")
     eq(Bf.relation("fact_widget").doc.kind, "dataset", "a descriptor's doc kind comes from LOCATION")
 
-    law_stated = Bf.law.additivity("mac.MeasureType.Target", "mac.axis_kind.categorical")
+    law_stated = Bf.law.additivity("mac.measure_type.target", "mac.axis_kind.categorical")
     eq(law_stated.value, "mac.aggregation_effect.none", "the law is read as a Stated")
     check(law_stated.site.file.startswith(M.FRAMEWORK),
           f"the law's Site names the framework, not a bundle ({law_stated.site.file})")

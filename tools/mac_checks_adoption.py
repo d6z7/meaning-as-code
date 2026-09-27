@@ -43,7 +43,7 @@ FIVE GUARDS, EACH MEASURED BEFORE IT WAS TRUSTED. The naive version of this chec
      Same for `additivity: additive`. Without G1: 2 false findings.
   G2 NON-BUNDLE-FACING VOCABULARIES.   `mac.binding_mode` says in its own definition that it is a
      per-question runtime classification and NOT a property a concept declares; `mac.aggregation_effect`
-     is referenced only from inside `mac.MeasureType`'s own cells. Neither is named by any schema
+     is referenced only from inside `mac.measure_type`'s own cells. Neither is named by any schema
      description. A bundle cannot adopt them and must not be charged for them. Without G2: 2 false
      findings, one of which a sibling tool currently reports as "PROVEN usable by the reference".
   G3 APPLICABILITY.   An offer is only chargeable where its PARENT OBJECT exists. `edges[].aliases` on
@@ -335,7 +335,7 @@ def _shape_offers(fw: Framework, since: dict, known: set) -> list:
 def _vocab_offers(fw: Framework, since: dict) -> list:
     """G2 — a vocabulary is BUNDLE-FACING only if a schema description names it. `mac.binding_mode`
     documents itself as a per-question runtime classification, not a declared property, and
-    `mac.aggregation_effect` is referenced only from inside `mac.MeasureType`'s own additivity cells.
+    `mac.aggregation_effect` is referenced only from inside `mac.measure_type`'s own additivity cells.
     Neither is named by any schema property, so neither is a slot a bundle could fill; charging a
     bundle for not referencing them is the check inventing a requirement."""
     schema_text = json.dumps(fw.schema)

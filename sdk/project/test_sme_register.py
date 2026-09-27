@@ -185,13 +185,13 @@ def test_an_unreadable_concept_file_is_a_finding(tmp_path):
 
 
 def test_a_measure_with_a_declared_measure_type_is_not_asked_how_it_aggregates(tmp_path):
-    concepts = {"net_sales": _concept("net_sales", "measure", semantics={"measure_type": "mac.MeasureType.Flow"})}
+    concepts = {"net_sales": _concept("net_sales", "measure", semantics={"measure_type": "mac.measure_type.Flow"})}
     out = _build(_bundle(tmp_path, concepts), concepts)
     assert out["sme_questions"] == []
     assert not [f for f in out["findings"] if f["id"] == "noagg.net_sales"]  # the finding twin agrees
 
 
-@pytest.mark.parametrize("semantics", [{}, {"measure_type": "mac.MeasureType.NoSuchType"}, {"measure_type": "Flow"}])
+@pytest.mark.parametrize("semantics", [{}, {"measure_type": "mac.measure_type.NoSuchType"}, {"measure_type": "Flow"}])
 def test_a_measure_without_a_resolvable_measure_type_is_asked(tmp_path, semantics):
     concepts = {"net_sales": _concept("net_sales", "measure", semantics=semantics)}
     out = _build(_bundle(tmp_path, concepts), concepts)

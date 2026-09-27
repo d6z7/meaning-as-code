@@ -36,7 +36,7 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "MeasureType.members.Flow.additivity.categorical",
+          "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
           "value": "mac.aggregation_effect.additive"
         },
@@ -62,7 +62,7 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "MeasureType.members.Flow.additivity.categorical",
+          "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
           "value": "mac.aggregation_effect.additive"
         },
@@ -88,7 +88,7 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "MeasureType.members.Flow.additivity.categorical",
+          "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
           "value": "mac.aggregation_effect.additive"
         },
@@ -114,7 +114,7 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "MeasureType.members.Flow.additivity.categorical",
+          "path": "measure_type.members.Flow.additivity.categorical",
           "line": 93,
           "value": "mac.aggregation_effect.additive"
         },
@@ -140,7 +140,7 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "MeasureType.members.Flow.additivity.time",
+          "path": "measure_type.members.Flow.additivity.time",
           "line": 92,
           "value": "mac.aggregation_effect.additive"
         },

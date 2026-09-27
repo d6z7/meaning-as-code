@@ -13,7 +13,7 @@ defects that got through on 2026-08-16/17 are all of the form **"two files say t
 disagree"**:
 
   * `ontology/concepts/<target_measure>.yaml` says a Target measure is `additive` on its geography and
-    model axes; `mac_vocabulary.yaml#MeasureType.Target` says `non_aggregable` on the categorical
+    model axes; `mac_vocabulary.yaml#measure_type.Target` says `non_aggregable` on the categorical
     axis, and the bundle's own measure register agrees with the law. Measured across 9 measures:
     8 agree, 1 contradicts. No gate could see it — the two statements live in different files.
   * two deltas added a pointer and left the superseded field behind.
@@ -451,13 +451,13 @@ class Register:
 class Law:
     """mac_vocabulary.yaml — the framework canon, parsed once per process, provenance-carrying."""
     doc: Doc
-    measure_types: dict          # MeasureType.members
+    measure_types: dict          # measure_type.members
     aggregation_effects: frozenset
     axis_kinds: frozenset
     namespaces: frozenset
 
     def additivity(self, measure_type, axis_kind) -> Stated | None:
-        """The law's aggregation_effect for one (MeasureType member, axis_kind), as a Stated."""
+        """The law's aggregation_effect for one (measure_type member, axis_kind), as a Stated."""
         mt = str(measure_type or "").split(".")[-1].strip()
         ak = str(axis_kind or "").split(".")[-1].strip()
         member = self.measure_types.get(mt)
@@ -466,7 +466,7 @@ class Law:
         cell = _as_dict(member.get("additivity")).get(ak)
         if cell is None:
             return None
-        path = f"MeasureType.members.{mt}.additivity.{ak}"
+        path = f"measure_type.members.{mt}.additivity.{ak}"
         return Stated(cell, Site(self.doc.relpath, path, self.doc.line_of(path)), "authored")
 
 
@@ -720,7 +720,7 @@ def _law() -> Law:
               kind="vocabulary", data=data, parse_error=err, anchors=collect_anchors(data))
     law = Law(
         doc=doc,
-        measure_types=_as_dict(_as_dict(data.get("MeasureType")).get("members")),
+        measure_types=_as_dict(_as_dict(data.get("measure_type")).get("terms")),
         aggregation_effects=frozenset(_as_dict(_as_dict(data.get("aggregation_effect")).get("terms"))),
         axis_kinds=frozenset(_as_dict(_as_dict(data.get("axis_kind")).get("terms"))),
         namespaces=frozenset(k for k, v in data.items() if isinstance(v, dict) and v.get("kind")),
@@ -994,7 +994,7 @@ def _derived_additivity(axis: str, axis_kinds: dict, measure_type, selectors: fr
     law forbids; a value anchor summed it across products on the strength of it and stood for weeks.
     You cannot contradict a value you do not write.
 
-    NOTHING IS REIMPLEMENTED HERE. `Law.additivity()` already resolves (MeasureType x axis_kind) and
+    NOTHING IS REIMPLEMENTED HERE. `Law.additivity()` already resolves (measure_type x axis_kind) and
     stamps the result with its Site in «framework»/mac_vocabulary.yaml, so a consumer can always see
     WHERE a value came from — concept or law — without caring which.
 
@@ -1297,7 +1297,7 @@ def _family_measure_additivity(b: Bundle) -> tuple:
     Statement 1, authored: the concept's own `semantics.additivity.<axis>`.
     Statement 2, projected: the law, aimed at THAT axis through the concept's OWN bridge — it is
     admitted only when the concept itself declares both `semantics.measure_type` (a member of the
-    closed MeasureType domain) and `semantics.axis_kinds.<axis>` (a member of the closed axis_kind
+    closed measure_type domain) and `semantics.axis_kinds.<axis>` (a member of the closed axis_kind
     domain). That declared bridge is what makes the two statements the same subject; a name
     resemblance never would.
 

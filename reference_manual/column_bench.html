@@ -1,0 +1,2890 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAC · the column bench</title>
+<script>
+  /* Same mechanism as ask.html and estate.explorer.html (global localStorage 'mac_theme'), so the
+     theme choice carries across every MAC surface. Set before first paint — no flash. */
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+</script>
+<style>
+/* ---------------------------------------------------------------------------
+   PALETTE — the estate's, not a new one. --commit/--ask/--refuse/--invariant are
+   the four colours the console's route column and the estate explorer already use for
+   COMMIT/ASK/REFUSE/BLOCK, so one outcome reads the same on every MAC surface.
+   As a CATEGORICAL SERIES palette this set fails a CVD check (amber↔green ΔE 4.8
+   protan). It is used only as a STATUS palette: every chip carries its word, and
+   every matrix cell carries its initial, so nothing here is colour-alone.
+   --------------------------------------------------------------------------- */
+:root{
+  --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
+  --ink:#1a2030; --muted:#5a6576; --faint:#8b95a5;
+  --accent:#3563c9; --accent-soft:#e6ecfb;
+  --ask:#b9770a; --ask-bg:#fbf1dd; --commit:#2f8a4e; --commit-bg:#e4f4ea;
+  --refuse:#c0392b; --refuse-bg:#fbe6e3; --invariant:#6b4fbb; --invariant-bg:#eee8fb;
+  --other:#5a6576; --other-bg:#eceff3;
+  --mono:'SF Mono','JetBrains Mono',Menlo,Consolas,ui-monospace,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --radius:9px; --shadow:0 1px 2px rgba(20,30,55,.05),0 3px 12px rgba(20,30,55,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686;
+  --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}}
+:root[data-theme="dark"]{
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686;
+  --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;
+  line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;letter-spacing:-.01em}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ---- bar ---- */
+.macbar{position:sticky;top:0;z-index:50;height:44px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--border)}
+.mb-left{display:flex;align-items:center;gap:18px;min-width:0}
+.mb-right{display:flex;align-items:center;gap:10px}
+.mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;font-size:13.5px;white-space:nowrap}
+.mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.mb-tabs{display:inline-flex;gap:3px;flex-wrap:wrap}
+.mb-tab{padding:4px 11px;border-radius:7px;color:var(--faint);font-weight:650;font-size:13px;
+  line-height:1.6;border:0;background:none;white-space:nowrap}
+.mb-tab:hover{background:var(--ground);color:var(--ink)}
+.mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);
+  border-radius:6px;width:30px;height:28px;font-size:14px}
+
+/* the mode switch — the frontier, made into a control */
+.modesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.modesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 11px;letter-spacing:.02em}
+.modesw button.on{background:var(--ink);color:var(--surface)}
+.modesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+
+/* ---- layout ---- */
+.view{display:none}
+.view.on{display:block}
+.pad{padding:22px 24px 64px;max-width:1280px;margin:0 auto}
+.lede{color:var(--muted);max-width:76ch;margin:6px 0 0}
+.modeline{margin:14px 0 0;padding:11px 14px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface);color:var(--muted);font-size:13.5px;max-width:92ch}
+.modeline b{color:var(--ink)}
+
+.bench{display:grid;grid-template-columns:250px minmax(0,1fr) minmax(0,1.05fr);gap:18px;
+  padding:18px 22px 64px;align-items:start}
+@media (max-width:1180px){.bench{grid-template-columns:1fr}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow)}
+.card-h{padding:13px 15px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;
+  justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.card-b{padding:15px}
+
+/* column picker */
+.pick{width:100%;text-align:left;border:0;border-bottom:1px solid var(--border);background:none;
+  padding:10px 14px;display:block;color:var(--ink)}
+.pick:last-child{border-bottom:0}
+.pick:hover{background:var(--ground)}
+.pick.on{background:var(--accent-soft)}
+.pick .cn{font-weight:700;font-size:13.5px;font-family:var(--mono)}
+.pick .cm{color:var(--faint);font-size:11.5px;margin-top:2px}
+.grp{padding:9px 14px 5px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--faint);font-weight:750;background:var(--surface-2);border-bottom:1px solid var(--border)}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+  font-size:11px;font-weight:750;letter-spacing:.04em;border:1px solid transparent;white-space:nowrap}
+.c-COMMIT{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+.c-ASK{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.c-REFUSE{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.c-BLOCK{color:var(--invariant);background:var(--invariant-bg);border-color:var(--invariant)}
+/* NOT gradings of an answer — a dashed edge says "a different plane", so plane never relies on hue */
+.c-LOAD_ERROR,.c-GATE_RED{color:var(--ink);background:var(--other-bg);border:1px dashed var(--ink)}
+.st{display:inline-flex;gap:5px;align-items:center;font-size:10.5px;font-weight:750;padding:2px 7px;
+  border-radius:5px;letter-spacing:.05em;text-transform:uppercase}
+.st-enforced{color:var(--commit);background:var(--commit-bg)}
+.st-designed{color:var(--ask);background:var(--ask-bg)}
+.st-measured{color:var(--other);background:var(--other-bg)}
+.pl{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:5px;padding:1px 6px;letter-spacing:.04em}
+
+/* toggles */
+.tog{padding:12px 15px;border-bottom:1px solid var(--border)}
+.tog:last-child{border-bottom:0}
+.tog-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.tog-k{font-family:var(--mono);font-size:12.5px;font-weight:700}
+.seg{display:flex;flex-wrap:wrap;gap:5px}
+.seg button{border:1px solid var(--border);background:var(--ground);color:var(--muted);
+  border-radius:7px;padding:4px 10px;font-size:12px;font-family:var(--mono);font-weight:650}
+.seg button:hover{border-color:var(--accent);color:var(--ink)}
+.seg button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.tog-d{color:var(--faint);font-size:11.5px;margin-top:6px}
+
+/* yaml */
+pre.yaml{margin:0;padding:14px 15px;background:var(--surface-2);border-radius:var(--radius);
+  font-family:var(--mono);font-size:12.5px;line-height:1.62;overflow-x:auto;
+  border:1px solid var(--border)}
+.y-k{color:var(--accent)}
+.y-v{color:var(--ink);font-weight:650}
+.y-c{color:var(--faint)}
+.y-dead{color:var(--refuse);text-decoration:underline wavy var(--refuse) 1px;text-underline-offset:3px}
+
+/* question cards */
+.q{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);
+  margin-bottom:13px;overflow:hidden}
+.q-h{padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.q-ask{font-weight:700;font-size:14px}
+.q-ask::before{content:"> ";color:var(--faint);font-family:var(--mono)}
+.q-b{padding:13px 14px}
+.row{display:flex;gap:9px;margin-bottom:9px;font-size:13px}
+.row:last-child{margin-bottom:0}
+.row .lab{flex:none;width:74px;color:var(--faint);font-size:10.5px;font-weight:750;
+  text-transform:uppercase;letter-spacing:.05em;padding-top:3px}
+.row .val{min-width:0;flex:1}
+.plan{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:7px;padding:8px 10px;overflow-x:auto;white-space:pre-wrap;word-break:break-word}
+.disc{border-left:3px solid var(--accent);background:var(--accent-soft);padding:7px 11px;
+  border-radius:0 7px 7px 0;font-size:13px;font-style:italic}
+.note{color:var(--muted);font-size:13px}
+.reason{font-family:var(--mono);font-size:11px;font-weight:750;color:var(--refuse);letter-spacing:.04em}
+
+/* measured evidence */
+.ev{margin:0;padding:0;list-style:none}
+.ev li{font-size:12.5px;color:var(--muted);padding:6px 0;border-bottom:1px dashed var(--border)}
+.ev li:last-child{border-bottom:0}
+.ev .src{font-family:var(--mono);font-size:10.5px;color:var(--faint);display:block;margin-top:2px}
+.prov{color:var(--faint);font-size:11px;font-family:var(--mono);margin-top:10px}
+
+/* tables & matrix */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;
+  position:sticky;top:44px;background:var(--surface);z-index:2}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
+td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font-weight:750}
+.dot{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  border-radius:6px;border:1px solid var(--border);color:var(--faint);background:var(--ground)}
+.dot.f-COMMIT{background:var(--commit-bg);color:var(--commit);border-color:var(--commit)}
+.dot.f-ASK{background:var(--ask-bg);color:var(--ask);border-color:var(--ask)}
+.dot.f-REFUSE{background:var(--refuse-bg);color:var(--refuse);border-color:var(--refuse)}
+.dot.f-BLOCK{background:var(--invariant-bg);color:var(--invariant);border-color:var(--invariant)}
+.dot.f-plane{background:var(--other-bg);color:var(--ink);border:1px dashed var(--ink)}
+.dot.off{opacity:.22}
+
+/* keys */
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px;box-shadow:var(--shadow)}
+.kc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.kc-k{font-family:var(--mono);font-weight:750;font-size:13.5px}
+.kc-d{font-size:13px;margin-bottom:9px}
+.kc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.kc-e{font-size:12.5px;color:var(--muted)}
+.kc-f{margin-top:9px;padding:9px 11px;border-left:3px solid var(--ask);background:var(--ask-bg);
+  border-radius:0 7px 7px 0;font-size:12.5px;color:var(--ink)}
+.kc-r{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:8px}
+.sec{margin:26px 0 12px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);font-weight:750}
+
+/* constellation */
+.con{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:18px}
+@media (max-width:920px){.con{grid-template-columns:1fr}}
+.dial{padding:12px 15px;border-bottom:1px solid var(--border)}
+.dial:last-child{border-bottom:0}
+.dial label{display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:6px}
+.dial label span{color:var(--faint);font-family:var(--mono);font-weight:650}
+.dial input[type=range]{width:100%;accent-color:var(--accent)}
+.verdict{padding:15px}
+.verdict .big{font-family:var(--mono);font-size:19px;font-weight:750;margin-bottom:4px}
+.branch{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;
+  background:var(--surface)}
+.branch.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:var(--shadow)}
+.branch .bh{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:5px;flex-wrap:wrap}
+.branch .bn{font-family:var(--mono);font-weight:750;font-size:13.5px}
+.branch .bt{font-family:var(--mono);font-size:11px;color:var(--faint)}
+.branch .bc{font-size:12.5px;color:var(--muted)}
+.branch.on .bc{color:var(--ink)}
+.cant{margin-top:7px;font-size:12px;padding:7px 10px;border-left:3px solid var(--invariant);
+  background:var(--invariant-bg);border-radius:0 6px 6px 0}
+.presets{display:flex;flex-wrap:wrap;gap:6px;padding:12px 15px;border-bottom:1px solid var(--border)}
+.presets button{border:1px solid var(--border);background:var(--ground);border-radius:7px;
+  padding:4px 10px;font-size:11.5px;font-family:var(--mono);color:var(--muted);font-weight:650}
+.presets button:hover{border-color:var(--accent);color:var(--ink)}
+
+/* frontier */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:13px;margin-bottom:22px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:15px;box-shadow:var(--shadow)}
+.tile .n{font-size:30px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.tile .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);
+  font-weight:750;margin-top:6px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:7px}
+.tile.enforced .n{color:var(--commit)} .tile.designed .n{color:var(--ask)}
+.tile.measured .n{color:var(--other)}
+.find{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--refuse);
+  border-radius:0 var(--radius) var(--radius) 0;padding:14px 16px;margin-bottom:13px;box-shadow:var(--shadow)}
+.find h4{margin:0 0 6px;font-size:14px}
+.find p{margin:0;color:var(--muted);font-size:13px}
+.find p+p{margin-top:7px}
+.quote{border-left:3px solid var(--border);padding:2px 0 2px 14px;color:var(--muted);
+  font-size:13px;margin:12px 0}
+</style>
+</head>
+<body>
+
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span>MAC · column bench</span>
+    <nav class="mb-tabs" id="tabs"></nav>
+  </div>
+  <div class="mb-right">
+    <div class="modesw" id="modesw"></div>
+    <button class="mb-theme" id="themebtn" title="theme">🌙</button>
+  </div>
+</div>
+
+<section class="view on" id="v-bench">
+  <div class="bench">
+    <div class="card" id="picker"></div>
+    <div id="configside"></div>
+    <div id="answerside"></div>
+  </div>
+</section>
+
+<section class="view" id="v-keys"><div class="pad">
+  <h1 style="font-size:21px">Every key of the column block</h1>
+  <p class="lede">Required, default and legal values are read from <code>column_specification.md</code>'s
+  own key table. Plane, outcome classes, status and reader come from <code>column_effects.yaml</code>.
+  Neither file restates the other, and a key in one and not the other fails the gate.</p>
+  <div id="keys"></div>
+</div></section>
+
+<section class="view" id="v-matrix"><div class="pad">
+  <h1 style="font-size:21px">The consequence matrix</h1>
+  <p class="lede">Every key against every effect it can have. The two dashed columns are not gradings
+  of an answer — a load refusal and a red gate happen before a question exists. The other four are
+  <code>mac.outcome_class</code>, the axis the whole estate already grades in. Read a column to learn
+  what can possibly refuse; read a row to learn what one key can do.</p>
+  <div id="matrix"></div>
+</div></section>
+
+<section class="view" id="v-con"><div class="pad">
+  <h1 style="font-size:21px">Which ruling, and what the measurement cannot tell you</h1>
+  <p class="lede">Three counts decide which ruling a column pair is a candidate for — and on two of
+  the four branches the measurement gets you to the door and no further. Drag the dials, or load a
+  constellation measured on contoso.</p>
+  <div class="con" style="margin-top:18px">
+    <div class="card">
+      <div class="card-h"><h3>the probe</h3></div>
+      <div class="presets" id="presets"></div>
+      <div id="dials"></div>
+      <div style="padding:12px 15px;border-top:1px solid var(--border)">
+        <pre class="yaml" id="probe-sql"></pre>
+      </div>
+    </div>
+    <div><div id="branches"></div></div>
+  </div>
+</div></section>
+
+<section class="view" id="v-frontier"><div class="pad">
+  <h1 style="font-size:21px">The frontier</h1>
+  <p class="lede">The column standard is not a settled shape with a picture to draw. It is a designed
+  shape with a deliberate edge, and the edge is the most useful thing on this page.</p>
+  <div id="frontier"></div>
+</div></section>
+
+<script>
+const DATA = {
+ "generated_by": "tools/gen_column_bench.py",
+ "metadata": {
+  "of": "the column specification",
+  "schema_version": "0.1.15",
+  "companions": [
+   "column_specification.md",
+   "column_roles.md",
+   "column_rulings.md",
+   "../mac_vocabulary.yaml"
+  ],
+  "measured_at": "2026-09-27",
+  "enforced_evidence": "mac-platform/packages/mac-runtime/src/mac_runtime/ontology/models.py::ColumnSpec"
+ },
+ "modes": {
+  "today": {
+   "label": "As the runtime is today",
+   "blurb": "A designed-but-unread flag is a LOAD ERROR, by design. ColumnSpec forbids unknown keys, so authoring one fails the bundle rather than doing nothing — which is the only way a reader can tell the difference. What the answer plane then shows is what really happens: usually a clean, valid, meaningless success."
+  },
+  "designed": {
+   "label": "As the standard is designed",
+   "blurb": "Every key honoured as the reference manual specifies it. This is the target, not the state. Each flag reaches it by arriving with its consumer and its test, one at a time."
+  }
+ },
+ "keys": [
+  {
+   "required": "yes",
+   "default": "—",
+   "legal": "mac.column_role.*",
+   "decides": "where a query may use the column at all",
+   "key": "role",
+   "block": "root",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "BLOCK"
+   ],
+   "status": "enforced",
+   "reader": "grounding.field_roles[name] — the planner reads it to place a predicate",
+   "effect": "The one required key, and the only one a generator can assign unattended. `dimension` and `period` make a column an axis; `measure` makes it a payload that is folded, never filtered; `key` makes it a target a name resolves TO; `housekeeping` takes it out of the business vocabulary entirely, so its absence from an answer is correct rather than a gap.",
+   "frontier_note": "The refusal that exists today fires on the spelling `attribute`, which `housekeeping` replaced — plan.py reads `field_roles[col] == \"attribute\"`, and `housekeeping` occurs 0 times in platform src. The guardrail is real and is wired to a retired name."
+  },
+  {
+   "required": "role: key",
+   "default": "reference",
+   "legal": "mac.identity_role.*",
+   "decides": "what part this column plays in the concept's identity — see mac.identity_role for the three meanings, and concept.identity.kind (mac.identity_kind.*) for how identity is established",
+   "key": "identity",
+   "block": "root",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "REFUSE"
+   ],
+   "status": "enforced",
+   "reader": "concept.identity.canonical_key — 22 runtime read sites; `part` derives a composite key",
+   "effect": "`canonical` names what COUNT(DISTINCT) counts and what an answer discloses that it counted. `part` marks one column of a composite identity, which identifies NOTHING alone — a filter on one part returns a set where a row was expected and looks like an answer.",
+   "frontier_note": "A canonical column whose concept declares no identity kind is refused at load, not guessed."
+  },
+  {
+   "required": "identity: reference",
+   "default": "—",
+   "legal": "a concept name",
+   "decides": "what the pointer points at",
+   "key": "references",
+   "block": "root",
+   "plane": [
+    "load"
+   ],
+   "outcomes": [],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Names the concept this column's values point at. Whether every value is PRESENT over there is a separate measurement — a declared reference says the relationship is intended, not that it holds, and a reference with no parent relation in the delivery is recorded AS dangling.",
+   "frontier_note": "`identity: reference` loads; `references:` next to it does not. ColumnSpec has no such field, so the pointer's target cannot yet be declared on the column that carries it."
+  },
+  {
+   "required": "no",
+   "default": "open",
+   "legal": "closed · open",
+   "decides": "whether a non-member is answerable from the list, with no probe",
+   "key": "domain.closure",
+   "block": "domain",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "`closed` says the register states every member, so a word outside it is answerable without touching the warehouse. `open` sends an unrecognised word down the resolution ladder. It never restates the list — that lives in the register.",
+   "frontier_note": "Unstated means OPEN. Defaulting to closed would refuse real values on the strength of a list nobody promised was complete."
+  },
+  {
+   "required": "closure: closed",
+   "default": "data",
+   "legal": "data · world",
+   "decides": "a recognised word outside the list → zero, disclosed (data) or refuse (world)",
+   "key": "domain.complete_for",
+   "block": "domain",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The single bit that separates \"complete for this delivery\" from \"complete for the world\". `data`: the members are the ones DELIVERED, so 'sales in Japan' answers zero, disclosed. `world`: the members ARE the kind, so a third gender is not a member and refuses.",
+   "frontier_note": "Without it, 'sales in Asia' and 'gender Q' get the same answer, and only one of them deserves it. Country and Gender have the SAME closure and opposite answers."
+  },
+  {
+   "required": "closure: closed",
+   "default": "—",
+   "legal": "derived · monitored",
+   "decides": "a rule produces the members, or a scheduled check reconciles them. No third option.",
+   "key": "domain.warranty",
+   "block": "domain",
+   "plane": [
+    "load",
+    "check"
+   ],
+   "outcomes": [],
+   "status": "designed",
+   "reader": "none",
+   "effect": "`derived`: a rule makes the members, so a new load CANNOT add one. `monitored`: they were observed, so a scheduled check reconciles them. There is no third value — a closed set nobody watches is a refusal backed by a stale sample.",
+   "frontier_note": "age_band_5y is `derived` (a CASE expression in the transform); Country is `monitored` (observed from the served plane). Same closure, different warranty, different watchdog."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a path",
+   "decides": "where the members live",
+   "key": "domain.register",
+   "block": "domain",
+   "plane": [
+    "load"
+   ],
+   "outcomes": [],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The register file whose rows ARE the members. One register per dimension."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a list",
+   "decides": "inline members, for a handful",
+   "key": "domain.members",
+   "block": "domain",
+   "plane": [
+    "load"
+   ],
+   "outcomes": [],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The inline form, for a domain small enough that a file would be ceremony — fifteen age bands, not five hundred countries."
+  },
+  {
+   "required": "no",
+   "default": "the register's key column",
+   "legal": "register column names",
+   "decides": "what a typed word is matched against",
+   "key": "resolution.search",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The columns of the register a typed word is compared to, in order."
+  },
+  {
+   "required": "no",
+   "default": "the code",
+   "legal": "a register column",
+   "decides": "what is shown back to the reader",
+   "key": "resolution.display",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "A person asked for 'Germany' and must be shown 'Germany', not DE. The answer groups on the code and prints the label."
+  },
+  {
+   "required": "no",
+   "default": "[exact, normalized, prefix, fuzzy]",
+   "legal": "an ordered subset",
+   "decides": "which rungs of the ladder run",
+   "key": "resolution.strategy",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The ladder, in order: exact, then normalized, then prefix, then fuzzy, then ask. Narrowed only where a column needs it — dropping `fuzzy` on a code column stops a near-miss being answered as a hit."
+  },
+  {
+   "required": "no",
+   "default": "0.80",
+   "legal": "0.0–1.0",
+   "decides": "below this, no candidate is offered at all",
+   "key": "resolution.fuzzy_floor",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "ASK",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The similarity below which a candidate is not worth showing. Too low and the engine offers noise as a suggestion; too high and it refuses a typo it could have caught."
+  },
+  {
+   "required": "no",
+   "default": "derived from closure+complete_for",
+   "legal": "refuse · zero_disclosed · ask",
+   "decides": "what a word that resolves to nothing produces",
+   "key": "resolution.on_miss",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "DERIVED, not set. open -> ask with candidates; closed + data -> zero, disclosed; closed + world -> refuse. Authoring it directly is how a closure and its consequence drift apart."
+  },
+  {
+   "required": "no",
+   "default": "5",
+   "legal": "integer · suppress",
+   "decides": "how many \"did you mean\" options",
+   "key": "resolution.candidates",
+   "block": "resolution",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "ASK"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "An ASK with no candidates is a dead end; `suppress` is for a column where listing members would itself leak something."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column",
+   "decides": "the fact filters here; no dimension join is walked",
+   "key": "placement.fact_join",
+   "block": "placement",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The fact carries this identity itself, so a predicate lands on the fact and the dimension is never joined. A plan difference, not an answer difference — until the join it skips is the one that fans the grain out."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column",
+   "decides": "the scope column must travel with this code",
+   "key": "placement.scoped_by",
+   "block": "placement",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated regions into one plausible-looking row.",
+   "frontier_note": "Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by` under `placement`, column_rulings.md documents it as §3 of `rulings`. One key, two spellings, which is the shape of every drift this standard exists to end."
+  },
+  {
+   "required": "no",
+   "default": "unknown",
+   "legal": "none · unknown · not_applicable · free text",
+   "decides": "what NULL in this column means",
+   "key": "absence.nulls",
+   "block": "absence",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Per column, because that is where nulls happen. 'no status event recorded — NOT operating' is a different fact from 'not applicable', and an answer that treats them alike is wrong in a way no count betrays."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "values",
+   "decides": "non-null values that are not members",
+   "key": "absence.sentinels",
+   "block": "absence",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "REFUSE"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The '--' that is not a country. Declared per column and per source: it appears on the store side's CountryCode and not on the customer side's Country, which a flat block could not say."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column",
+   "decides": "this column NAMES that one; group there, display here",
+   "key": "rulings.label_of",
+   "block": "rulings",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Two names for one thing, not two things. The named column stays canonical and this one supplies the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different labels with nothing relating them — and GROUP BY both yields 11 rows where a reader expects 121.",
+   "frontier_note": "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso AG are one company in two registers. Northwind AG and Contoso are two companies."
+  },
+  {
+   "required": "with label_of",
+   "default": "common",
+   "legal": "mac.name_register.*",
+   "decides": "which of the thing's names this is",
+   "key": "rulings.register",
+   "block": "rulings",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Which naming register the label belongs to, so an answer can say WHICH name it showed — 'Contoso' the common name, 'Contoso AG' the legal one, 'GB' the code."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column",
+   "decides": "this column rolls up into that one",
+   "key": "rulings.finer_than",
+   "block": "rulings",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a child has two parents and the roll-up double-counts.",
+   "frontier_note": "Mistaking `scoped_by` for this one is the expensive error: it merges unrelated members and nothing in the result betrays it."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "privacy · grain · derived",
+   "decides": "may not be grouped on",
+   "key": "rulings.never_axis",
+   "block": "rulings",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "BLOCK"
+   ],
+   "status": "designed",
+   "reader": "none under this name — see frontier_note",
+   "effect": "A legitimate dimension that must not be an axis, for a reason outside the data. The refusal cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each describe one person.",
+   "frontier_note": "column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on `field_roles[col] == \"attribute\"`, the role spelling `housekeeping` replaced, not on this ruling. `rulings.never_axis` has 0 readers in platform src and is a load error if authored. The ruling is enforced under a name its own vocabulary no longer defines."
+  },
+  {
+   "required": "with never_axis",
+   "default": "—",
+   "legal": "a DQ id",
+   "decides": "the measurement. Without it, a prohibition is a preference.",
+   "key": "rulings.evidence",
+   "block": "rulings",
+   "plane": [
+    "load",
+    "check"
+   ],
+   "outcomes": [],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Required with never_axis, and the reason the key is worth having: a prohibition without a measurement is a preference. It is what the refusal quotes back.",
+   "frontier_note": "never_axis without evidence is a LOAD refusal in the designed standard — the one place the standard refuses an AUTHOR rather than a question."
+  },
+  {
+   "required": "role: measure",
+   "default": "—",
+   "legal": "mac.MeasureType.*",
+   "decides": "which folds are legal",
+   "key": "measure.type",
+   "block": "measure",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "BLOCK"
+   ],
+   "status": "enforced",
+   "reader": "concept.semantics.measure_type — 3 runtime read sites",
+   "effect": "The additivity class. An illegal fold is not a wrong number to be caught later — it is refused, because a semi-additive measure summed across time is a number nobody asked for.",
+   "frontier_note": "The spike found a shape this cannot express: SystemC holds 70 KPIs of six measure types in ONE column, the type carried per ROW. `measure.type` declares one type per column. SystemC's cope is a blanket non-additive over all six — safe and lossy, refusing the Stock measure that IS additive alongside the duration that is not."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "free text",
+   "decides": "what the number is in",
+   "key": "measure.unit",
+   "block": "measure",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "enforced",
+   "reader": "concept.semantics.unit — 3 runtime read sites; two carriers is a load refusal",
+   "effect": "USD, seconds, each. Singular by construction: two measure columns on one concept is refused rather than silently taking the first."
+  },
+  {
+   "required": "no",
+   "default": "from measure.type",
+   "legal": "per-axis",
+   "decides": "overrides the type for a named axis",
+   "key": "measure.additivity",
+   "block": "measure",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "BLOCK"
+   ],
+   "status": "enforced",
+   "reader": "concept.semantics.additivity — 8 runtime read sites",
+   "effect": "The per-axis exception: a balance that sums across products and not across time. The law is stated once over the MeasureType and named here only where one axis departs from it."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "one line",
+   "decides": "text quoted into any answer that touches this column",
+   "key": "disclose",
+   "block": "root",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "The ONLY free-text key in the block, and it earns its place because it reaches the reader of an ANSWER, which prose in a YAML file never does.",
+   "frontier_note": "There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's 1 044-character note stated a measured privacy ruling in a field nothing reads, while the runtime planned GROUP BY ZipCode. A block designed to end that must not ship a slot that restarts it."
+  },
+  {
+   "required": "no",
+   "default": "false",
+   "legal": "boolean",
+   "decides": "this column selects which kind of row",
+   "key": "discriminates",
+   "block": "root",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "designed",
+   "reader": "none",
+   "effect": "Marks the column a perspective, status or measure type is read from — the column that says WHICH KIND of row this is on a tall relation."
+  },
+  {
+   "key": "storage_role",
+   "block": "measured",
+   "required": "never",
+   "default": null,
+   "legal": "mac.storage_role",
+   "decides": "the physical shape of the column in its relation",
+   "plane": [
+    "check"
+   ],
+   "outcomes": [],
+   "status": "measured",
+   "reader": "data/datasets/<relation>.yaml — written by the profile and reference planes",
+   "effect": "The OTHER role every column carries. `column_role` says what a QUERY may do; `storage_role` says what SHAPE it is. You never author this one: the profile plane counts distincts and nulls, the reference plane measures inclusion against candidate parents.",
+   "frontier_note": "If you are hand-writing a storage_role, something upstream failed."
+  }
+ ],
+ "bench": [
+  {
+   "concept": "Customer",
+   "relation": "dim_contoso_customer",
+   "identity_kind": "fk_name",
+   "profile": {
+    "relation": "contoso_served.dim_contoso_customer",
+    "rows": 104990,
+    "measured_at": "2026-09-19T14:11:05+02:00",
+    "engine": "contoso@duckdb-local",
+    "method": "mac_profile.py/5"
+   },
+   "columns": [
+    {
+     "column": "ZipCode",
+     "role": "dimension",
+     "headline": "A legitimate dimension that names individuals",
+     "reads": "40 639 distinct values over 104 990 rows. Nothing in that ratio is illegal, and nothing in it is safe.",
+     "measured": [
+      {
+       "claim": "29 193 of 40 639 postcodes are held by exactly one customer",
+       "source": "DQ-CUSTOMER-02"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.never_axis",
+       "values": [
+        null,
+        "privacy",
+        "grain",
+        "derived"
+       ]
+      },
+      {
+       "key": "rulings.evidence",
+       "values": [
+        null,
+        "DQ-CUSTOMER-02"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers by postcode",
+       "cases": [
+        {
+         "when": {
+          "rulings.never_axis": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.ZipCode",
+         "result": "40 639 rows",
+         "note": "Plans, executes, returns. 29 193 of those rows describe one person each. The ontology's own measurement forbids this and nothing connected the two."
+        },
+        {
+         "when": {
+          "rulings.never_axis": "privacy",
+          "rulings.evidence": null
+         },
+         "mode": "designed",
+         "outcome": "LOAD_ERROR",
+         "note": "never_axis without evidence is refused at load. A prohibition without a measurement is a preference, and the refusal would have nothing to cite."
+        },
+        {
+         "when": {
+          "rulings.evidence": null
+         },
+         "mode": "designed",
+         "outcome": "LOAD_ERROR",
+         "note": "never_axis without evidence is refused at load, whatever the reason code."
+        },
+        {
+         "when": {
+          "rulings.never_axis": "privacy"
+         },
+         "mode": "designed",
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "Customer.ZipCode is declared never_axis: privacy — DQ-CUSTOMER-02 measured that 29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names individuals. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.",
+         "note": "The refusal cites the measurement. That is the whole difference."
+        },
+        {
+         "when": {
+          "rulings.never_axis": "grain"
+         },
+         "mode": "designed",
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "Grouping here would report at a grain the relation does not hold — the reason code changes, the refusal is the same shape, and it still cites its evidence."
+        },
+        {
+         "when": {
+          "rulings.never_axis": "derived"
+         },
+         "mode": "designed",
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "The column is a derived convenience, not a fact to partition by. Same shape, different reason a reader can act on."
+        }
+       ]
+      },
+      {
+       "ask": "customers in 98052",
+       "cases": [
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "WHERE c.ZipCode = '98052'",
+         "note": "never_axis forbids the AXIS, not the filter. A postcode is a legitimate thing to ask about; it is grouping BY one that hands out a list of people."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "CountryFull",
+     "role": "dimension",
+     "headline": "Two names for one thing — or two things",
+     "reads": "8 distinct, beside Country's 8. Equal counts get you to the door and no further.",
+     "measured": [
+      {
+       "claim": "8 distinct Country, 8 distinct CountryFull, and the same number of distinct pairs — 1:1",
+       "source": "column_rulings.md §1, measured over dim_contoso_customer"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.label_of",
+       "values": [
+        null,
+        "Country"
+       ]
+      },
+      {
+       "key": "rulings.register",
+       "values": [
+        "common",
+        "legal",
+        "long",
+        "short",
+        "code"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers by country name",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.CountryFull",
+         "result": "8 rows",
+         "note": "The same cut as 'by country', under different labels, with nothing saying they are the same cut. Two answers to one question."
+        },
+        {
+         "when": {
+          "rulings.label_of": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Country",
+         "result": "8 rows, labelled from CountryFull",
+         "disclose": "grouped by Country, shown as CountryFull",
+         "note": "Grouped on the canonical column, displayed in the words the question used. The register says WHICH name that is."
+        }
+       ]
+      },
+      {
+       "ask": "revenue by country and country name",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Country, c.CountryFull",
+         "result": "8 rows",
+         "note": "A reader expecting a cross product expects 8 squared. Getting 8 reads as a data bug, and it is not one."
+        },
+        {
+         "when": {
+          "rulings.label_of": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Country",
+         "result": "8 rows",
+         "disclose": "one axis — CountryFull names Country rather than crossing it"
+        }
+       ]
+      },
+      {
+       "ask": "customers in Germany",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "WHERE c.Country = 'DE'",
+         "note": "The label resolves to the canonical value; the predicate lands on the code."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "WHERE c.CountryFull = 'Germany'",
+         "note": "Works — on this column. The same question phrased 'in DE' lands on a different column with nothing relating the two."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "State",
+     "role": "dimension",
+     "headline": "A code that is only unique inside its parent",
+     "reads": "563 distinct codes over 104 990 rows — bigger than Country, smaller than City. Cardinality alone cannot tell this from a hierarchy.",
+     "measured": [
+      {
+       "claim": "40 of 563 state codes are carried by more than one country; 0 collide within a country",
+       "source": "column_rulings.md §3, measured over dim_contoso_customer"
+      },
+      {
+       "claim": "'CO' is Corse (FR, 37), Como (IT, 64) and Colorado (US, 709)",
+       "source": "column_rulings.md §3"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "placement.scoped_by",
+       "values": [
+        null,
+        "Country"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers by state",
+       "cases": [
+        {
+         "when": {
+          "placement.scoped_by": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.State",
+         "result": "563 rows",
+         "note": "One row labelled CO totalling 810 customers, merging Corse, Como and Colorado. The query succeeds, the row count is plausible, the number is meaningless."
+        },
+        {
+         "when": {
+          "placement.scoped_by": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Country, c.State",
+         "result": "603 rows",
+         "disclose": "Country added — State is scoped by it"
+        }
+       ]
+      },
+      {
+       "ask": "customers in CO",
+       "cases": [
+        {
+         "when": {
+          "placement.scoped_by": null
+         },
+         "outcome": "COMMIT",
+         "plan": "WHERE c.State = 'CO'",
+         "result": "810 customers",
+         "note": "French, Italian and American customers in one number nobody asked for."
+        },
+        {
+         "when": {
+          "placement.scoped_by": "Country"
+         },
+         "mode": "designed",
+         "outcome": "ASK",
+         "result": "'CO' is carried by 3 countries — Corse (FR), Como (IT), Colorado (US). Which did you mean?",
+         "note": "The scope is missing, so the engine asks instead of picking one."
+        }
+       ]
+      },
+      {
+       "ask": "customers in Colorado",
+       "cases": [
+        {
+         "when": {
+          "placement.scoped_by": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "WHERE c.Country = 'US' AND c.State = 'CO'",
+         "result": 709,
+         "note": "The scope is inferred from the label. Asking in words the ladder can resolve needs no clarification."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "WHERE c.StateFull = 'Colorado'",
+         "result": 709,
+         "note": "Right answer, different column, and nothing says the two columns are one axis."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "Gender",
+     "role": "dimension",
+     "headline": "A closed set whose members ARE the kind",
+     "reads": "2 distinct, 0 nulls.",
+     "toggles": [
+      {
+       "key": "domain.closure",
+       "values": [
+        "open",
+        "closed"
+       ]
+      },
+      {
+       "key": "domain.complete_for",
+       "values": [
+        "data",
+        "world"
+       ]
+      },
+      {
+       "key": "domain.warranty",
+       "values": [
+        null,
+        "derived",
+        "monitored"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers with gender Q",
+       "cases": [
+        {
+         "when": {
+          "domain.closure": "open"
+         },
+         "outcome": "ASK",
+         "result": "No match for 'Q'. Did you mean: female, male?",
+         "note": "The default. An unstated domain must not be treated as complete, so the ladder runs and the engine asks rather than refusing a value that might be real."
+        },
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "world",
+          "domain.warranty": null
+         },
+         "mode": "designed",
+         "outcome": "LOAD_ERROR",
+         "note": "A closed domain must say how the closure is kept true. There is no third value: a closed set nobody watches is a refusal backed by a stale sample."
+        },
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "world"
+         },
+         "mode": "designed",
+         "outcome": "REFUSE",
+         "result": "'Q' is not a member of Gender. The members are the kind: female, male.",
+         "note": "Answered from the register alone — no probe, no warehouse."
+        },
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "data",
+          "domain.warranty": null
+         },
+         "mode": "designed",
+         "outcome": "LOAD_ERROR",
+         "note": "A closed domain must declare its warranty — derived or monitored."
+        },
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "data"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "result": "0, disclosed",
+         "disclose": "'Q' is not among the genders in this delivery — zero rows, not zero customers",
+         "note": "The same closure as `world` and the opposite answer. That single bit is the whole reason complete_for exists."
+        }
+       ]
+      },
+      {
+       "ask": "customers by gender",
+       "cases": [
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Gender",
+         "result": "2 rows",
+         "note": "Legal under every configuration. Closure decides what happens to a word that MISSES, not whether the axis is allowed."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "Country",
+     "role": "dimension",
+     "headline": "A closed set that is complete for the DELIVERY, not the world",
+     "reads": "8 distinct, 0 nulls — the eight countries delivered.",
+     "toggles": [
+      {
+       "key": "domain.closure",
+       "values": [
+        "open",
+        "closed"
+       ]
+      },
+      {
+       "key": "domain.complete_for",
+       "values": [
+        "data",
+        "world"
+       ]
+      },
+      {
+       "key": "resolution.display",
+       "values": [
+        null,
+        "label"
+       ]
+      },
+      {
+       "key": "placement.fact_join",
+       "values": [
+        null,
+        "Country"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "sales in Japan",
+       "cases": [
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "world"
+         },
+         "mode": "designed",
+         "outcome": "REFUSE",
+         "result": "'Japan' is not a member of Country.",
+         "note": "WRONG, and instructively so. Japan is a country; it is not in this delivery. Declaring `world` here refuses a real word and tells the reader their question was invalid."
+        },
+        {
+         "when": {
+          "domain.closure": "closed",
+          "domain.complete_for": "data"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "result": "0, disclosed",
+         "disclose": "Japan is a country; it is not in this delivery. Zero rows, not zero sales.",
+         "note": "Right. The eight are the ones delivered, and the answer says so."
+        },
+        {
+         "when": {
+          "domain.closure": "open"
+         },
+         "outcome": "ASK",
+         "result": "No match for 'Japan'. Did you mean: Australia, Canada, France, Germany, Italy?",
+         "note": "The default, and it costs a probe plus a clarification for a word the register could have settled without either."
+        }
+       ]
+      },
+      {
+       "ask": "sales by country",
+       "cases": [
+        {
+         "when": {
+          "resolution.display": "label",
+          "placement.fact_join": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY f.Country",
+         "result": "8 rows, shown as Germany / France / …",
+         "disclose": "filtered on the fact — no customer join walked",
+         "note": "Both keys at once: the label the reader asked in, and the join the plan did not need."
+        },
+        {
+         "when": {
+          "placement.fact_join": "Country"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY f.Country",
+         "result": "8 rows, shown as DE / FR / …",
+         "note": "The fact carries the identity, so the dimension is never joined. Same numbers, one less join."
+        },
+        {
+         "when": {
+          "resolution.display": "label"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.Country",
+         "result": "8 rows, shown as Germany / France / …",
+         "note": "A person asked for Germany and is shown Germany, not DE."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "JOIN dim_contoso_customer c USING (CustomerKey) GROUP BY c.Country",
+         "result": "8 rows, shown as DE / FR / …",
+         "note": "Correct, joined, and printed in codes."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "age_band_5y",
+     "role": "dimension",
+     "headline": "A derived column that must announce itself",
+     "reads": "15 distinct — fifteen bands a transform made.",
+     "toggles": [
+      {
+       "key": "domain.warranty",
+       "values": [
+        null,
+        "derived",
+        "monitored"
+       ]
+      },
+      {
+       "key": "disclose",
+       "values": [
+        null,
+        "banded to 5 years, as of 2025-12-31"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers by age band",
+       "cases": [
+        {
+         "when": {
+          "disclose": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.age_band_5y",
+         "result": "15 rows",
+         "note": "A reader sees a band labelled 40 and does not learn it is a five-year bucket fixed at a date. Nothing is wrong and nothing is stated."
+        },
+        {
+         "when": {},
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.age_band_5y",
+         "result": "15 rows",
+         "disclose": "banded to 5 years, as of 2025-12-31",
+         "note": "One line, quoted into every answer that touches the column. The only free-text key in the block, and it earns its place by reaching the reader."
+        }
+       ]
+      },
+      {
+       "ask": "can a sixteenth band appear",
+       "cases": [
+        {
+         "when": {
+          "domain.warranty": "derived"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "result": "No — a CASE expression in the transform makes the members, so a new load cannot add one.",
+         "note": "No watchdog needed. The rule that makes the members is the warranty."
+        },
+        {
+         "when": {
+          "domain.warranty": "monitored"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "result": "Only if a scheduled check says so — the members were observed, so they decay.",
+         "note": "Correct for an observed set; wrong here, and it buys a reconciliation nobody needs."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "result": "Unanswerable from declarations. The closure is unstated, so nothing promises anything."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "StartDT",
+     "role": "housekeeping",
+     "headline": "A perfect-looking date axis that means nothing to the business",
+     "reads": "11 305 distinct dates from 1980-01-01 to 2010-12-30. Shaped exactly like a date dimension. It is when the ROW was written.",
+     "toggles": [
+      {
+       "key": "role",
+       "values": [
+        "dimension",
+        "housekeeping"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "sales by start date",
+       "cases": [
+        {
+         "when": {
+          "role": "housekeeping"
+         },
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "Customer.StartDT is pipeline bookkeeping, not business vocabulary — an SCD-2 validity window. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.",
+         "note": "The one guardrail in this whole block that fires today — and it fires on the role spelling `attribute`, which `housekeeping` replaced. `housekeeping` occurs 0 times in platform src."
+        },
+        {
+         "when": {
+          "role": "dimension"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.StartDT",
+         "result": "11 305 rows",
+         "note": "Sales grouped by when a customer record was loaded. Valid SQL, a plausible row count, and a meaningless question answered as though it were a good one."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "CustomerKey",
+     "role": "key",
+     "headline": "The column COUNT(DISTINCT) counts",
+     "reads": "104 990 distinct over 104 990 rows — distinct EQUALS the row count, which is what makes it the identity rather than a very selective dimension.",
+     "toggles": [
+      {
+       "key": "identity",
+       "values": [
+        null,
+        "canonical",
+        "part",
+        "reference"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "how many customers",
+       "cases": [
+        {
+         "when": {
+          "identity": "canonical"
+         },
+         "outcome": "COMMIT",
+         "plan": "SELECT count(DISTINCT c.CustomerKey)",
+         "result": "104 990",
+         "disclose": "counted distinct CustomerKey",
+         "note": "ENFORCED TODAY. `identity: canonical` on the column projects to concept.identity.canonical_key, which 22 runtime sites read."
+        },
+        {
+         "when": {
+          "identity": "part"
+         },
+         "outcome": "REFUSE",
+         "result": "CustomerKey is one column of a composite identity and identifies nothing alone. Counting it would return a set where a row was expected."
+        },
+        {
+         "when": {
+          "identity": "reference"
+         },
+         "outcome": "REFUSE",
+         "result": "Customer declares no canonical identity — CustomerKey points at another concept.",
+         "note": "The default when identity is unstated on a key column, which is why stating it matters."
+        },
+        {
+         "when": {
+          "identity": null
+         },
+         "outcome": "LOAD_ERROR",
+         "note": "A canonical column whose concept declares no identity kind is refused at load, not guessed. Enforced today."
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "concept": "Product",
+   "relation": "dim_contoso_product",
+   "identity_kind": "fk_name",
+   "profile": {
+    "relation": "contoso_served.dim_contoso_product",
+    "rows": 2517,
+    "measured_at": "2026-09-18T15:53:14+02:00",
+    "engine": "contoso@duckdb-local",
+    "method": "mac_profile.py/5"
+   },
+   "columns": [
+    {
+     "column": "SubCategoryName",
+     "role": "dimension",
+     "headline": "A level, not a collision — and telling them apart is the expensive part",
+     "reads": "32 distinct, rolling up into CategoryName's 8.",
+     "measured": [
+      {
+       "claim": "32 distinct pairs over 32 subcategories — every subcategory has exactly ONE parent",
+       "source": "column_rulings.md §2, measured over dim_contoso_product"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.finer_than",
+       "values": [
+        null,
+        "CategoryName"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "sales by subcategory",
+       "cases": [
+        {
+         "when": {
+          "rulings.finer_than": "CategoryName"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY p.SubCategoryName",
+         "result": "32 rows",
+         "disclose": "the finer of two levels; rolls up into 8 categories"
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "GROUP BY p.SubCategoryName",
+         "result": "32 rows",
+         "note": "Correct, and a reader cannot tell whether these 32 sum to the 8 they would get by category."
+        }
+       ]
+      },
+      {
+       "ask": "sales by product line",
+       "cases": [
+        {
+         "when": {
+          "rulings.finer_than": "CategoryName"
+         },
+         "mode": "designed",
+         "outcome": "ASK",
+         "result": "Which level — category (8) or subcategory (32)?",
+         "note": "The ruling is what lets the engine know there are two levels to offer."
+        },
+        {
+         "when": {},
+         "outcome": "ASK",
+         "result": "No axis named 'product line'.",
+         "note": "An ASK either way — but one of them names the choice and the other names the failure."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "Manufacturer",
+     "role": "dimension",
+     "headline": "The 1:1 that only a person can rule on",
+     "reads": "11 distinct, beside Brand's 11.",
+     "measured": [
+      {
+       "claim": "11 distinct Brand, 11 distinct Manufacturer, 11 distinct pairs",
+       "source": "column_rulings.md §1, measured over dim_contoso_product"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.label_of",
+       "values": [
+        null,
+        "Brand"
+       ]
+      },
+      {
+       "key": "rulings.register",
+       "values": [
+        "common",
+        "legal",
+        "long",
+        "short",
+        "code"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "revenue by manufacturer",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": "Brand",
+          "rulings.register": "legal"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "SELECT p.Brand AS \"Manufacturer\", SUM(l.NetPrice) GROUP BY p.Brand",
+         "result": "11 rows — Contoso, Ltd · Fabrikam, Inc. · …",
+         "disclose": "grouped by Brand, shown as Manufacturer (legal register)",
+         "note": "A question asked in these words is answered in them, never refused. 'Contoso' is what the world calls it; 'Contoso AG' is what the register calls it."
+        },
+        {
+         "when": {
+          "rulings.label_of": "Brand"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY p.Brand",
+         "result": "11 rows",
+         "disclose": "grouped by Brand, shown as Manufacturer (common register)",
+         "note": "The register is wrong here — these ARE the legal names. Nothing breaks; the answer just claims the wrong thing about which name it showed."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "GROUP BY p.Manufacturer",
+         "result": "11 rows",
+         "note": "Identical numbers to 'by brand', different labels, nothing relating them. And GROUP BY both gives 11 where a reader expects 11 squared."
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "concept": "OrderLine",
+   "relation": "orderrows",
+   "identity_kind": "composite",
+   "profile": {
+    "relation": "main.orderrows",
+    "rows": 223974,
+    "measured_at": "2026-09-18T08:02:46+02:00",
+    "engine": "contoso@duckdb-local",
+    "method": "mac_profile.py/5"
+   },
+   "columns": [
+    {
+     "column": "NetPrice",
+     "role": "measure",
+     "headline": "One column, five declarable types, ten universal folds",
+     "reads": "18 407 distinct values over 223 974 rows — a numeric payload, never an axis.",
+     "derives": "measure_matrix",
+     "derives_note": "This panel computes nothing of its own. The legal fold per axis comes from mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five types × two kinds = ten universal cells, each naming a mac.aggregation_effect term. An applied ontology references those members; it never re-encodes the matrix, and neither does this page.",
+     "toggles": [
+      {
+       "key": "measure.type",
+       "values": [
+        "Flow",
+        "Stock",
+        "Intensive",
+        "Precomputed",
+        "Target"
+       ]
+      },
+      {
+       "key": "measure.unit",
+       "values": [
+        null,
+        "USD"
+       ]
+      },
+      {
+       "key": "measure.additivity",
+       "values": [
+        null,
+        "time: additive",
+        "time: average",
+        "time: none"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "total NetPrice for 2024",
+       "axis": "time",
+       "fold": "SUM"
+      },
+      {
+       "ask": "NetPrice by category",
+       "axis": "categorical",
+       "fold": "SUM"
+      },
+      {
+       "ask": "average NetPrice per line",
+       "axis": "categorical",
+       "fold": "AVG"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "vocabulary": {
+  "aggregation_effect": {
+   "closed": true,
+   "description": "THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set answers one question in one grammar: \"how do I fold this measure along this axis?\" v0.1.15 REPLACED THE PREVIOUS FOUR. They answered the same question in three different grammars — `additive` named a property, `averageable` named a capability, `non_aggregable` named a negated capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules fell into exactly that gap and guarded on a value no register could hold. `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: an inventory measure says \"READ the level at the END of the period\" and a reach measure says \"READ as stored ... resolve to the matching pre-computed abstraction level instead of folding\". Both READ a stored row and refuse to fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each concept's `resolve.*` rules, never in the fold vocabulary.",
+   "terms": {
+    "additive": {
+     "description": "SUM is correct across this axis."
+    },
+    "average": {
+     "description": "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+    },
+    "none": {
+     "description": "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
+    }
+   }
+  },
+  "axis_kind": {
+   "closed": true,
+   "description": "The additivity-relevant classification of an aggregation axis.",
+   "terms": {
+    "time": {
+     "description": "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
+    },
+    "categorical": {
+     "description": "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+    }
+   }
+  },
+  "column_role": {
+   "closed": true,
+   "description": "The analytical role of a column — where a query may use it, and the default guardrail.",
+   "terms": {
+    "key": {
+     "description": "IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and what the fact joins on."
+    },
+    "dimension": {
+     "description": "A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate."
+    },
+    "measure": {
+     "description": "A NUMERIC PAYLOAD. Folded only as its mac.MeasureType and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`."
+    },
+    "period": {
+     "description": "THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so \"sales in March\" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`."
+    },
+    "housekeeping": {
+     "description": "PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when anything happened. Grouping sales by it is meaningless, and until this term existed it was spelled `attribute`, which reads as \"a dimension you may not use\" rather than \"not part of the business at all\". NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than for the system that writes them: a load stamp is housekeeping whoever keeps the house."
+    }
+   }
+  },
+  "identity_role": {
+   "closed": true,
+   "description": "What part a column plays in its concept's identity (per column; see mac.identity_kind for the concept).",
+   "terms": {
+    "canonical": {
+     "description": "THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.identity_kind.composite` or `resolved_axis` rather than nominating a column that does not identify."
+    },
+    "part": {
+     "description": "ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.identity_kind.composite` alongside."
+    },
+    "reference": {
+     "description": "A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented."
+    }
+   }
+  },
+  "storage_role": {
+   "closed": true,
+   "description": "The physical shape of a column in its relation, independent of its analytical role.",
+   "terms": {
+    "primary_key": {
+     "description": "The relation's own identity: one row per distinct value, measured rather than assumed."
+    },
+    "foreign_key": {
+     "description": "A reference to another relation's identity. Whether every value is PRESENT in the parent is a separate measurement — a declared key says the relationship is intended, not that it holds."
+    },
+    "composite_key_part": {
+     "description": "One column of a multi-column identity. ALONE IT IDENTIFIES NOTHING, and using it as though it did is the defect this term exists to make visible."
+    },
+    "value": {
+     "description": "A payload column: it carries data, not identity and not a choice of row kind."
+    },
+    "discriminator": {
+     "description": "A column whose value selects WHICH KIND of row this is — the column a perspective, status or type is read from."
+    }
+   }
+  },
+  "column_ruling": {
+   "closed": true,
+   "description": "An authored judgement about a column, beyond what measurement can establish.",
+   "terms": {
+    "label_of": {
+     "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso AG\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have."
+    },
+    "finer_than": {
+     "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName` carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a colliding code space instead — see `scoped_by`, and measure before you rule."
+    },
+    "scoped_by": {
+     "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect."
+    },
+    "never_axis": {
+     "description": "THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row."
+    }
+   }
+  },
+  "name_register": {
+   "closed": true,
+   "description": "Which register a name belongs to, when one thing carries several names.",
+   "terms": {
+    "common": {
+     "description": "The name people use. 'Contoso', 'Germany', 'Monday'."
+    },
+    "legal": {
+     "description": "The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'."
+    },
+    "long": {
+     "description": "The unabbreviated form of a coded name. 'United Kingdom' for GB."
+    },
+    "short": {
+     "description": "The abbreviated form. 'Mon' for Monday, 'Jan' for January."
+    },
+    "code": {
+     "description": "A machine identifier standing for the name. 'GB', 'DE', a numeric key."
+    }
+   }
+  },
+  "binding_mode": {
+   "closed": true,
+   "description": "The role a question binds a dimension with — restrict (a member-set scope) vs partition (a per-member breakdown axis).",
+   "terms": {
+    "restrict": {
+     "description": "A member or member-SET is named as a SCOPE (one value or many, however the set is derived or expanded). It constrains WHERE and does NOT enter GROUP BY; its folded members are disclosed under ASSUMPTIONS, never spread into result rows. Cardinality-agnostic: a set of many members is still one filter."
+    },
+    "partition": {
+     "description": "The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter."
+    }
+   }
+  },
+  "MeasureType": {
+   "closed": true,
+   "description": "How a measure aggregates — defined once, over axis_kind.",
+   "terms": {
+    "Flow": {
+     "description": "A quantity that accrues per period and accumulates over time (e.g. units sold in a period).",
+     "additivity": {
+      "time": "mac.aggregation_effect.additive",
+      "categorical": "mac.aggregation_effect.additive"
+     }
+    },
+    "Stock": {
+     "description": "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand).",
+     "additivity": {
+      "time": "mac.aggregation_effect.none",
+      "categorical": "mac.aggregation_effect.additive"
+     }
+    },
+    "Intensive": {
+     "description": "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM.",
+     "additivity": {
+      "time": "mac.aggregation_effect.average",
+      "categorical": "mac.aggregation_effect.average"
+     }
+    },
+    "Precomputed": {
+     "description": "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact.",
+     "additivity": {
+      "time": "mac.aggregation_effect.none",
+      "categorical": "mac.aggregation_effect.none"
+     }
+    },
+    "Target": {
+     "description": "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis.",
+     "additivity": {
+      "time": "mac.aggregation_effect.none",
+      "categorical": "mac.aggregation_effect.none"
+     }
+    }
+   }
+  },
+  "identity_kind": {
+   "closed": true,
+   "description": "How a concept's canonical identity is established (declared once per concept).",
+   "terms": {
+    "iso": {
+     "description": "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
+    },
+    "code": {
+     "description": "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
+    },
+    "namespace_code": {
+     "description": "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
+    },
+    "fk_name": {
+     "description": "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
+    },
+    "composite": {
+     "description": "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
+    },
+    "resolved_axis": {
+     "description": "An axis the serving view PINS or collapses (e.g. reporting role, firmness). Keyless-by-design: not exposed as a filterable key on the default view (grounding columns: [])."
+    },
+    "sme_pending": {
+     "description": "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
+    }
+   }
+  },
+  "rule_kind": {
+   "closed": true,
+   "description": "What a behavioural rule governs — the rule's type.",
+   "terms": {
+    "resolution": {
+     "description": "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
+    },
+    "aggregation": {
+     "description": "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
+    },
+    "default": {
+     "description": "What to assume when an axis is unspecified but a safe default exists."
+    },
+    "ambiguity": {
+     "description": "An underspecified REQUIRED dimension — ASK, never guess."
+    },
+    "exclusion": {
+     "description": "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
+    },
+    "guarantee": {
+     "description": "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
+    }
+   }
+  },
+  "test_kind": {
+   "closed": true,
+   "description": "Which question a property answers. The two kinds have OPPOSITE rules about where their numbers come from, and a property that tries to be both can be trusted for neither.",
+   "terms": {
+    "conformance": {
+     "description": "DOES THE MODEL DO WHAT IT SAYS? Every value it asserts is READ from a declaration at run time and never typed. A typed literal IS the defect here: a later author types a different one and the test passes while checking something else. Render the key, the enumeration, the codes — and REFUSE if they cannot be resolved, rather than substituting nothing into a PARTITION BY."
+    },
+    "ground_truth": {
+     "description": "IS WHAT IT SAYS TRUE? Measures the world and compares it against the declaration, so it must NOT be generated from the declaration's own claims — its entire purpose is to DISAGREE with the descriptor when the descriptor has gone stale. It still READS the declaration, to know what to test, but never inherits its assertions; a measured literal is acceptable where it is dated and re-checkable. EXAMPLE — a grain property reads the relation's measured key to learn which columns identify one figure, then asks the warehouse whether that still holds. It is the property that caught v_<source>_kpi.yaml claiming \"VERIFIED 2026-08-16 ... 0 multi-row\" against a warehouse that had reached millions of multi-row cells. A conformance test rendered from that same declaration would have confirmed the claim rather than contradicted it — which is the entire distinction between the two test kinds."
+    }
+   }
+  },
+  "test_status": {
+   "closed": true,
+   "description": "The disposition of ONE property run — what the INSTRUMENT did about the claim, never what the data turned out to be. Written BARE on a run record's `results[].status` (like its siblings `severity` and `family`), referenced as `mac.test_status.<term>`. Every term carries `gradeable`: true where the run produced a verdict about the data, false where it did not, so a surface can separate \"the data is dirty\" from \"the test is broken\" without hard-coding a list of names. THREE OF SEVEN ARE NOT GRADEABLE, and a board that paints them like FAIL reports a broken instrument as a data finding — measured at 9 of 18 on the suite this block was written against. `ACCEPTED` and `VACUOUS` carry a `requires`, for the same reason `dq_status.accepted` does: they are the terms that would otherwise be the cheapest way off a red board, so each must carry the evidence that it was earned.",
+   "terms": {
+    "PASS": {
+     "description": "THE INSTRUMENT RAN OVER A NON-EMPTY POPULATION AND THE CLAIM HELD. The population part is not decoration: a PASS over zero subjects is the vacuous green this vocabulary's seventh term exists to make unsayable.",
+     "gradeable": true,
+     "requires": []
+    },
+    "FAIL": {
+     "description": "THE INSTRUMENT RAN AND THE CLAIM DID NOT HOLD — a statement ABOUT THE DATA, which is what makes it the one red a reader may act on directly. Today it is also the dumping ground for every run that produced no verdict at all, and that is the defect `VACUOUS` removes.",
+     "gradeable": true,
+     "requires": []
+    },
+    "ACCEPTED": {
+     "description": "THE CLAIM DID NOT HOLD AND A NAMED RULING TOLERATES IT. Green because the defect is tolerated, which is not the same claim as correct — the same distinction `dq_status.accepted` draws one plane over. `run_suite.py` stamps the suite's `accepted:` block onto the result, so the ruling travels WITH the verdict rather than being looked up beside it.",
+     "gradeable": true,
+     "requires": [
+      "accepted"
+     ]
+    },
+    "FROZEN": {
+     "description": "THE CLAIM DID NOT HOLD AND THE FAILURE IS DELIBERATELY PARKED — neither repaired nor ruled acceptable. Distinct from ACCEPTED, which asserts someone judged the finding; FROZEN asserts only that someone decided not to today. NOTE, MEASURED: the `frozen:` block lives on the SUITE and is not copied onto the result, so a FROZEN row carries no on-record evidence of who froze it or when — the asymmetry with ACCEPTED is real, and is recorded here rather than papered over with a `requires` no writer satisfies.",
+     "gradeable": true,
+     "requires": []
+    },
+    "ERROR": {
+     "description": "THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection refused, a timeout. Nothing was judged, so it must never be counted as a finding about the data — `tools/_plugin.py`'s founding rule (\"could not run is the one honest answer available, and it is never a finding\") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis. Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned nothing, which is evidence, and `null` means nothing was examined.",
+     "gradeable": false,
+     "requires": [
+      "notes"
+     ]
+    },
+    "NOT_RUN": {
+     "description": "DECLARED, NEVER ATTEMPTED. The honest default for an id the suite declares and the run did not reach, written by `carry_forward` so that a declared property with no result is NOT_RUN rather than ABSENT — absence reads as nothing-to-report, which is the state this term was invented to end. Excluded from `examined` and counted as `skipped`.",
+     "gradeable": false,
+     "requires": []
+    },
+    "VACUOUS": {
+     "description": "THE INSTRUMENT RAN CLEANLY AND HAD NOTHING TO JUDGE. The query compiled, reached the source and returned — and the population it examined was ZERO, so the claim was neither satisfied nor violated. A property over zero subjects cannot be satisfied vacuously AND CANNOT BE VIOLATED VACUOUSLY EITHER; the runner already says the first half in its own note and then returns FAIL, which asserts the second. DISTINCT FROM `ERROR` (which raised, and has no evidence) and from `NOT_RUN` (which was never attempted): a VACUOUS run has a query, a byte count and a measured zero, and every one of those is actionable — it means the scope, the filter or the fixture is wrong, and the property is currently testing nothing. NOT AN ESCAPE HATCH: `requires` makes the zero NAMEABLE and CHECKABLE rather than asserted, because a status that could be written without evidence would be the cheapest way off a red board — the `corpus: none` failure mode, one plane over. `examined` names the population column the instrument itself reported — the live spellings are all of the form `<subject>_examined` or a bare count of the subject — and its value, which MUST be 0. A non-zero `examined` with a null verdict column is a DIFFERENT instrument defect and is NOT this term (measured live: one property, a non-empty base examined, derived columns null).",
+     "gradeable": false,
+     "requires": [
+      "examined",
+      "notes"
+     ]
+    }
+   }
+  },
+  "outcome_class": {
+   "closed": true,
+   "description": "What the engine DID about a question — the disposition, never the channel it used. The four `canonical` terms are the grading axis; every other term is a spelling measured in live use and declared so the set can be closed without reddening a working bundle. A term's `status` says which: `canonical` (one of the four), `deprecated` (a synonym whose canonical form is named in `use`), `provisional` (a genuinely distinct intermediate state, not one of the four), and `non_grading` (a real declared disposition that is NOT a judgement about the answer — a metadata route, a composer decision, an outage). WHERE these are declared is the gate's business, not this block's: tools/check_outcome_class_closure.py carries the outcome-carrying key list, because the same key name carries a DIFFERENT axis in different bundles (`oracle_class` holds this vocabulary in one bundle's run records and a question-FAMILY code in another's dashboard), so membership cannot be judged by key name alone.",
+   "terms": {
+    "COMMIT": {
+     "description": "THE ENGINE ANSWERED. A value was produced, and every declaration it rests on resolved — the scope was pinned, the measure was legal at that grain, the names resolved to codes.",
+     "status": "canonical"
+    },
+    "ASK": {
+     "description": "A REQUIRED dimension was underspecified, so the engine asked instead of guessing. The question is answerable; it is not yet fully stated. Never a silent default.",
+     "status": "canonical"
+    },
+    "REFUSE": {
+     "description": "THE EVIDENCE IS ABSENT. The question is legal and the engine can state precisely what was missing — the scope with no row, the name that did not resolve — and says so rather than returning a zero a reader takes for a measurement.",
+     "status": "canonical"
+    },
+    "BLOCK": {
+     "description": "OUTSIDE WHAT THE ONTOLOGY GOVERNS. Not a gap in the data but a question this model does not undertake to answer, so answering it would be fabrication rather than retrieval.",
+     "status": "canonical"
+    },
+    "DECLINE": {
+     "description": "",
+     "status": "deprecated",
+     "use": "REFUSE",
+     "why": "A pure synonym of REFUSE with no distinct meaning anyone has been able to state. It is the measured cost of leaving this axis ungoverned, and it is the larger of the two spellings: 1.049 declarations across 68 files at the moment of closure, against REFUSE's 1.347, so a reader searching either word sees well under half the population. NOT MIGRATED HERE — the bundle that carries it has no remote, and rewriting a thousand declarations in an unrecoverable tree is a separate, human-authorised act. Declared so the debt is countable.\n",
+     "measured_at_close": 1049,
+     "files_at_close": 68
+    },
+    "COMMIT_PENDING": {
+     "description": "A COMMIT whose validation precondition has not yet passed — the answer is composed but not yet cleared to be reported as one. Genuinely distinct from all four canonical terms, which is why it is `provisional` rather than `deprecated`: collapsing it into COMMIT would report an unvalidated answer as a validated one.",
+     "status": "provisional",
+     "measured_at_close": 247
+    },
+    "ENUMERATE": {
+     "description": "A dimension-member LIST — a metadata answer with no measure in it. A route stage, not a judgement about an answer's correctness, so it does not belong on the grading axis even though it is declared on the same keys.",
+     "status": "non_grading",
+     "measured_at_close": 119
+    },
+    "MODEL_PROPERTY": {
+     "description": "Routed to a property OF THE MODEL rather than to the warehouse — answered from declarations alone. Like ENUMERATE, a route target rather than a grade.",
+     "status": "non_grading",
+     "measured_at_close": 74
+    },
+    "DEFER": {
+     "description": "The composer declined to compose — it could not build a statement it was willing to stand behind, and said so instead of emitting SQL that would fabricate a shape.",
+     "status": "non_grading",
+     "measured_at_close": 59
+    },
+    "ENGINE_ERR": {
+     "description": "The engine raised. An OUTAGE, not a semantic outcome: nothing was judged, so it must never be counted as a refusal the model chose to make.",
+     "status": "non_grading",
+     "measured_at_close": 3
+    }
+   }
+  },
+  "dq_status": {
+   "closed": true,
+   "description": "The disposition of ONE registered data-quality issue — what a human decided about it, not what a pipeline did to it. Written BARE on `issues[].status` (like its siblings `severity` and `confidence`), referenced as `mac.dq_status.<term>`. `accepted` and `wont_fix` REQUIRE `ruled_by` (the named person or role who ruled — never \"the team\", never a tool) and `reason` (why the defect is real, and why it is being lived with rather than fixed), because those are the two terms that CLAIM a human acted. The set is closed so that absence of a status is a FINDING rather than a fourth, unnamed meaning.",
+   "terms": {
+    "open": {
+     "description": "NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without evidence — it asserts nothing except that the defect is recorded and undispositioned. This is the state that absence was silently standing in for, and naming it is the entire point: an issue is `open` because someone wrote `open`, not because a join missed.",
+     "requires": []
+    },
+    "accepted": {
+     "description": "A NAMED HUMAN EXAMINED IT AND CHOSE TO LIVE WITH IT. The defect is real, it is not being fixed, and that is a decision on the record rather than an omission. This is the term that makes a FITNESS green legible: a property whose recorded expectation overlaps an accepted issue is GREEN BECAUSE THE DEFECT IS TOLERATED, which is not the same claim as correct.",
+     "requires": [
+      "ruled_by",
+      "reason"
+     ]
+    },
+    "resolved": {
+     "description": "THE DEFECT IS GONE, dissolved by a transform that says so. Evidenced by the cross-link in impurity_resolution_map.yaml rather than by a ruling, which is why it requires no `ruled_by`: the evidence is structural and already gate-checked. A `resolved` issue still named by an acceptance-plane `accepted:` block is a REPORTED drift — the test is being excused for a defect that no longer exists.",
+     "requires": []
+    },
+    "wont_fix": {
+     "description": "A NAMED HUMAN RULED THAT IT WILL NEVER BE FIXED. Distinct from `accepted`, which tolerates a defect that could still be repaired: `wont_fix` closes the question. Carries the same evidence burden for the same reason — it asserts a ruling, so it must name who ruled.",
+     "requires": [
+      "ruled_by",
+      "reason"
+     ]
+    }
+   }
+  },
+  "credential_mode": {
+   "closed": true,
+   "description": "The way a connector OBTAINS its credential, as a closed and BRAND-FREE set. Referenced by mac.schema.json#/$defs/credentialMode, which is the schema-side restatement of this set (the same idiom $defs/confidence and $defs/status already use); this file is the single home. WHY BRAND-FREE: the measured set in sdk/authoring/connection.py:48-68 is `aws-chain | profile | secretsmanager | ssm` — four AWS product names doing the work of three ideas, which is one cloud's credential chain promoted into the framework's grammar. A connector may keep its own spellings as ALIASES and report them MAC003 (fact-restated); the framework does not learn them. WHY SIX AND NOT FOUR: one resolution mode plus one opaque handle fits password-shaped auth and fails exactly where THE MECHANISM IS THE AUTH and there is no secret to fetch — interactive or browser SSO, mTLS client certificates, Kerberos/GSSAPI. None of those is ambient, named_profile, secret_manager or none, and a set that cannot spell them forces the connector to lie about which mode it is in. A NEW MEMBER HERE IS A FRAMEWORK RELEASE, not a bundle's choice. That is the price of `closed`, and it is the point: the alternative is a per-connector credentials schema, and the moment a connector may declare its own credential fields, one of them will be a password field and the structural guarantee that there is nowhere to put a secret is gone.",
+   "terms": {
+    "ambient": {
+     "description": "The host environment already carries the identity — an instance/task role, an ambient session, an environment chain. Nothing to fetch and nothing to name, so `ref` must be null or absent."
+    },
+    "named_profile": {
+     "description": "A named local profile selects the identity. `ref` is the profile name — a handle, never a secret."
+    },
+    "secret_manager": {
+     "description": "The credential is fetched at call time from the deployment's secret manager. `ref` is the path/id in that manager; MAC never resolves it and never sees the value."
+    },
+    "interactive": {
+     "description": "The human authenticates at connect time — browser SSO, a device code, an MFA prompt. There is no secret to fetch, so `ref` must be null or absent. Unattended answering cannot use this mode, and a host that needs one will fail loudly rather than hang on a prompt nobody can see."
+    },
+    "client_certificate": {
+     "description": "A client certificate (mTLS) is the credential. `ref` locates the certificate material in the deployment's own store; the certificate itself never enters the bundle."
+    },
+    "none": {
+     "description": "No credential is required — the engine is local or open. Distinct from the block being ABSENT only in that it says so out loud; both are legal, and absent is the honest spelling when a connector has no credential concept at all."
+    }
+   }
+  },
+  "canon": {
+   "closed": false,
+   "description": "The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.",
+   "terms": {
+    "composite_key_guard": {
+     "description": "",
+     "serves": "context_dependent_meaning",
+     "needs_sqlglot": true,
+     "doc": "reject a parent-scoped code used without its scope columns"
+    },
+    "array_membership_guard": {
+     "description": "",
+     "serves": "multivalued_bridge",
+     "needs_sqlglot": true,
+     "doc": "reject equality on a MANY-valued column; membership is the only correct test"
+    },
+    "opaque_code_guard": {
+     "description": "",
+     "serves": "contaminated_code",
+     "needs_sqlglot": true,
+     "doc": "reject reading meaning out of an opaque code's embedded structure; resolve by name instead"
+    },
+    "refuse_measure_no_row": {
+     "description": "",
+     "serves": "exclusion_no_evidence",
+     "needs_sqlglot": false,
+     "doc": "RENDER canon — a measure has no row for the resolved scope; emit the refusal clauses",
+     "params_from": {
+      "label": "concept.label",
+      "null_is_real": "concept.semantics.null_semantics"
+     }
+    },
+    "resolve_by_register": {
+     "description": "",
+     "serves": "contaminated_code",
+     "needs_sqlglot": false,
+     "doc": "RENDER canon — resolve a NAME to a CODE through a declared register, never through the display label. MEASURED on <domain>/<dataset>: four rules said this with different nouns, and each existed because the register carries a human-readable column that LOOKS like an identity (market_label_raw = HOME for the home country; a product's display name where the search key is name_key). params: thing, code, register, search, display_label, scope, fact_join, served_view."
+    },
+    "refuse_unresolvable_name": {
+     "description": "",
+     "serves": "exclusion_no_evidence",
+     "needs_sqlglot": false,
+     "doc": "RENDER canon — a name does not resolve to a code; emit the refusal clauses",
+     "params_from": {
+      "thing": "concept.label",
+      "code": "concept.identity.canonical_key"
+     }
+    },
+    "additivity_guard": {
+     "description": "",
+     "serves": "semi_additive_balance",
+     "needs_sqlglot": true,
+     "doc": "reject SUM of a measure across a non-additive axis"
+    },
+    "axis_default": {
+     "description": "",
+     "serves": "tracking_vintage",
+     "needs_sqlglot": true,
+     "doc": "inject a safe default for an unconstrained orthogonal axis"
+    },
+    "exclusion_filter": {
+     "description": "",
+     "serves": "impurity_disposition",
+     "needs_sqlglot": true,
+     "doc": "inject an exclusion predicate for reliably-identifiable junk (bake)"
+    },
+    "snapshot_collapse": {
+     "description": "",
+     "serves": "scd_type_2",
+     "needs_sqlglot": false,
+     "doc": "collapse a versioned relation to current / as-of one row per key; the partition is a COMPOSITE column list and the order accepts a tie-break (vintage, then written-at)",
+     "params_from": {
+      "natural_key": "profile#identity_evidence.key"
+     }
+    },
+    "closure_anomaly_check": {
+     "description": "",
+     "serves": "explicit_closure",
+     "needs_sqlglot": false,
+     "doc": "for a closed value set, the query that finds out-of-set values (else None)"
+    },
+    "scoped_latest": {
+     "description": "",
+     "serves": "tracking_vintage",
+     "needs_sqlglot": false,
+     "doc": "MAX(date) over a scoped subset, not the whole table"
+    },
+    "hierarchy_rollup": {
+     "description": "",
+     "serves": "recursive_hierarchy",
+     "needs_sqlglot": false,
+     "doc": "recursive-CTE subtree: a node and all its descendants"
+    },
+    "densify": {
+     "description": "",
+     "serves": "absence_semantics",
+     "needs_sqlglot": false,
+     "doc": "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)"
+    },
+    "ambiguity_gate": {
+     "description": "",
+     "serves": "competing_definitions",
+     "needs_sqlglot": false,
+     "doc": "resolve a single/pinned candidate, else ASK (⊥) — never guess"
+    },
+    "alias_resolve": {
+     "description": "",
+     "serves": "competing_definitions",
+     "needs_sqlglot": false,
+     "doc": "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop"
+    },
+    "relation_alias_resolve": {
+     "description": "",
+     "serves": "competing_definitions",
+     "needs_sqlglot": false,
+     "doc": "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)"
+    },
+    "enum_from_register": {
+     "description": "",
+     "serves": "explicit_closure",
+     "needs_sqlglot": false,
+     "doc": "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration."
+    },
+    "grouping_from_register": {
+     "description": "",
+     "serves": "explicit_closure",
+     "needs_sqlglot": false,
+     "doc": "realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping."
+    }
+   }
+  },
+  "diagnostic_code": {
+   "closed": true,
+   "description": "The closed taxonomy of findings the MAC compiler can report.",
+   "terms": {
+    "MAC001": {
+     "description": "present in the bundle, carries no MAC definition, not declared out of scope",
+     "kind": "undefined-artifact",
+     "severity": "error",
+     "group": "what is not defined"
+    },
+    "MAC002": {
+     "description": "has a MAC definition and does not satisfy it",
+     "kind": "invalid-artifact",
+     "severity": "error",
+     "group": "what is not defined"
+    },
+    "MAC009": {
+     "description": "an x- key with no profile entry — CONFORMANCE.md §2: undeclared debt, not license",
+     "kind": "undeclared-extension",
+     "severity": "error",
+     "group": "what is not defined"
+    },
+    "MAC003": {
+     "description": "one fact stated in more than one home; nothing keeps the copies in step",
+     "kind": "fact-restated",
+     "severity": "warning",
+     "group": "what is defined redundantly"
+    },
+    "MAC004": {
+     "description": "statements of one fact disagree — something downstream is reading the wrong one",
+     "kind": "fact-contradicted",
+     "severity": "error",
+     "group": "what is defined redundantly"
+    },
+    "MAC005": {
+     "description": "MAC offers a mechanism for this and the bundle does not use it",
+     "kind": "capability-unadopted",
+     "severity": "warning",
+     "group": "what is offered and not taken"
+    },
+    "MAC006": {
+     "description": "a conformance level or confidence asserted with no evidence behind it",
+     "kind": "claim-unearned",
+     "severity": "warning",
+     "group": "what is claimed without warrant"
+    },
+    "MAC010": {
+     "description": "an authored or tuned object with no entry in the change record",
+     "kind": "change-unprotocolled",
+     "severity": "warning",
+     "group": "what is claimed without warrant"
+    },
+    "MAC007": {
+     "description": "a rule or guard testing a value that cannot occur — it can never fire",
+     "kind": "guard-dead",
+     "severity": "error",
+     "group": "what points at nothing"
+    },
+    "MAC008": {
+     "description": "a reference that resolves to nothing",
+     "kind": "reference-unresolved",
+     "severity": "error",
+     "group": "what points at nothing"
+    },
+    "MAC011": {
+     "description": "a required completeness the bundle does not reach",
+     "kind": "coverage-missing",
+     "severity": "error",
+     "group": "what is not covered"
+    },
+    "MAC012": {
+     "description": "an `x-` extension key. Prohibited outright, because it sits BY CONSTRUCTION outside every gate MAC has, so nothing can check what it holds. Measured the day x-grain was retired, TWO of four declared cell keys were false — the main fact view claimed 0 multi-row against millions, and a second fact view claimed 0 against nearly all of its cells. The two that HELD are the two that a view enforces: a view that withholds ambiguous cells, and a current-snapshot view whose collapse makes the key true by construction (its declared cell count reproduced to within a hundred-odd cells). That is the shape of the defect: the declaration is false exactly where nothing makes it true, and a field no gate can reach costs nothing to be wrong in. Three mechanical predicates identify the duplicate case — same subject, same value shape, same closed domain with non-empty overlap. Where there is NO core equivalent the finding is a MAC gap, not a shortcut: say what the wall is and change MAC, rather than declaring beside it. Enforced by tools/check_extension_keys.py, which exits non-zero, because a check that does not block is not enforcement.",
+     "kind": "extension-duplicates-core",
+     "severity": "error",
+     "group": "what is not covered"
+    }
+   }
+  },
+  "data_plane_gate": {
+   "closed": true,
+   "description": "The reject classes of the DATA→ONTOLOGY handoff, as a closed set. A bundle may declare TWO pipelines (mac.schema.json#ProjectFile.reproduction.pipelines): a DATA pipeline whose declared exit is ITS OWN REGISTER, FULLY DISPOSITIONED — every registered issue carrying a terminal `mac.dq_status` term with that term's own evidence — and an ONTOLOGY pipeline that may not start until that exit is reached. Three consumers read the same verdict — the PreToolUse guard that refuses a write, the CLI that refuses to start the ontology pipeline, and the console page that tells the operator what is blocking — so the code set lives HERE and not three times. TWO MEMBERS ARE NOT BLOCKS. `not_declared`: a bundle that declares one pipeline is governed by the operator's unlock marker alone, exactly as before. `approval_missing`: RETIRED 2026-09-18, when the exit collapsed from a separate sign-off file onto the register it described — read its own entry for the reason and for what the collapse costs (PREVENTION drops to ATTRIBUTION). Every other `approval_*` member is still a block, because a sign-off file that IS present is honoured rather than ignored. WHY A CODE AND NOT JUST A SENTENCE. The sentence is rendered to a human and will be reworded; the code is joined on. A page grouping by sentence re-groups every time the wording improves. WHAT THIS SET DELIBERATELY DOES NOT CONTAIN: a member for \"too many issues\", for \"severity too high\", or for any count a bundle or a framework could declare as a threshold. The gate reads no grading field. `severity` is machine-authored (capped at `confidence: I` by CORE.md §4), so a gate reading it would grade the machine against its own opinion — and a non-defect parked at `high` would block an ontology forever on bookkeeping rather than on data. Measured 2026-09-18: a live register's entry was edited from `severity: high` to `severity: low` the same day a severity-reading gate was proposed, its own inline comment naming the coming gate as the reason. Goodhart arrived within hours. The threshold here is per-issue HUMAN COVERAGE, and the only way to move it is for a person to name the specific thing.",
+   "terms": {
+    "not_declared": {
+     "description": "The bundle declares no `reproduction.pipelines`, so the two-pipeline gate does not apply. EXIT 0, and not a block — the legacy affordance (the operator's `.ontology-unlocked` marker) governs its ontology plane unchanged. The one member that is a PASS.",
+     "blocks": false
+    },
+    "approval_missing": {
+     "description": "RETIRED 2026-09-18, and kept as a member rather than deleted so a joined-on code does not vanish from a closed set and so the reason survives where the code did. It used to mean: two pipelines are declared and no sign-off file exists at the path the manifest names. WHY IT IS NO LONGER A BLOCK. The separate sign-off file was the BUILD'S design choice, not the operator's requirement. The operator's requirement, verbatim, was \"we cannot automatically proceed with creating ontology as long as we did not approve the configuration of datasets in full amount. this means we did not reduce the # of issues to the acceptable minimum\" — and that reduction is recorded in the REGISTER, one argued disposition at a time, which the separate file then duplicated in a LESS informative form: one date and one name against N individually-argued dispositions. So the exit collapsed onto the register (`issue_undispositioned` is the blocker that carries it) and the operator stopped being asked to sign a second artifact saying what the first one already said. WHAT THE COLLAPSE COSTS, because it is not nothing: the sign-off was the one artifact an agent provably cannot write — the guard denies that path unconditionally, marker or not — and the register IS agent-writable. The guarantee therefore drops from PREVENTION to ATTRIBUTION: git blame, the `ruled_by` name and the reason text, not a token no agent can reach. That is the ceiling this estate had already reached and recorded in its own words, DETECTED-AND-BLOCKED, AUTHORIZED OUT-OF-BAND, and a ceremony that buys nothing the operator wants is worse than an honest ceiling. See PIPELINES.md §8 gap 11. AN APPROVAL FILE THAT IS PRESENT IS STILL HONOURED — every `approval_*` member below stays a block — so a bundle that carries one does not silently lose it.",
+     "blocks": false,
+     "retired": "2026-09-18"
+    },
+    "approval_unreadable": {
+     "description": "The sign-off exists and cannot be parsed. Counts as NO approval (deny — the safe direction), and the refusal prints the offending line number so the operator can fix their own typo. A file no agent may write is a file only the operator can un-break; that cost is disclosed rather than eliminated.",
+     "blocks": true
+    },
+    "approval_unratified": {
+     "description": "The sign-off exists but does not ratify: its `status` is not `applied`, its `verdict` is not `confirmed`, or its `outcome` is not `ratified`. A draft is not an approval.",
+     "blocks": true
+    },
+    "approval_agent_stamped": {
+     "description": "The sign-off's write stamp names an agent (`submitted_via: agent`) or an identity nobody verified or declared (`identity_basis: imported`). An agent may write a DESCRIPTION; only a human may write a DISPOSITION. Rejecting the honestly-stamped case is what makes the dishonest one a lie rather than a shortcut.",
+     "blocks": true
+    },
+    "issue_uncovered": {
+     "description": "A registered issue id the sign-off does not name. This is the threshold, and it is why no number is invented: the count of uncovered ids must be 0, and it cannot move unless a human names the specific thing. No wildcard is permitted — if per-issue naming is too many ids, the fix is a coarser REGISTER, never a coarser gate.",
+     "blocks": true
+    },
+    "issue_undispositioned": {
+     "description": "ANY registered issue carrying no terminal `mac.dq_status` term, or one whose term's own `requires:` list is unmet. The law is READ from `mac.dq_status`, never restated here. THIS IS THE DATA PIPELINE'S EXIT CONDITION since 2026-09-18, and it widened that day from graded defects (`DQ-`) to EVERY id. Before, an `NS-` non-promotion needed only to be NAMED in a separate sign-off, because acknowledging a disclosure is a different act from dispositioning a defect — and the sign-off was where the acknowledgement lived. With the sign-off retired (see `approval_missing`) there is nowhere else for an `NS-` entry's acknowledgement to be recorded, so it is recorded in the register like everything else: a terminal disposition with a namer and a reason. An `open` issue closes the pipeline and is named with its id and the denominator.",
+     "blocks": true
+    },
+    "resolved_on_non_defect": {
+     "description": "A CATEGORY ERROR, and the one reject class that exists because a disposition can be written by a machine. `mac.dq_status.resolved` requires NOTHING — its evidence is structural, the cross-link in impurity_resolution_map.yaml — and both the register and that map are agent-writable, so a gate reading \"status is not open\" is satisfiable with no human name anywhere. `resolved` means A TRANSFORM DISSOLVED A DEFECT. An `NS-` entry is a relation MEASURED AND DELIBERATELY NOT SERVED: it was never a defect and no transform dissolved it, so `resolved` cannot be true of it and is refused. The honest disposition of a non-promotion is `accepted` or `wont_fix`, both of which name a ruler. DISCLOSED GAP, not fixed here: `mac.dq_status` has no term meaning \"measured, and it is not a defect\". Non-promotions are therefore dispositioned with defect-shaped words. Adding a term to a closed vocabulary is a framework change with its own gate consequences; this member refuses the one spelling that lets a machine clear the register, and names the gap.",
+     "blocks": true
+    },
+    "coverage_dangling": {
+     "description": "The sign-off names an id the register no longer holds. Distinct from `issue_uncovered` and reported separately, because they are opposite failures — a human approved something that has since been renamed or deleted, versus something they never saw.",
+     "blocks": true
+    },
+    "plane_moved": {
+     "description": "The sign-off's digest no longer matches the data plane as it stands. The ontology already authored is NOT deleted and NOT invalidated — doing that would be the blanket lock's mistake in a new costume. Further ontology authoring stops, the plane reads STALE with the date of the sign-off it invalidates, and the moved files are named so the diff is the review.",
+     "blocks": true
+    },
+    "register_unrun": {
+     "description": "Datasets are served and the register holds zero issues. That is a step that did not run, not a clean bill of health, so the data plane cannot be approved from it. A gate that passes having measured nothing is worse than none (CORE.md §2).",
+     "blocks": true
+    },
+    "no_datasets": {
+     "description": "Nothing is served, so there is nothing for an ontology to bind to. Vacuity, refused in the other direction.",
+     "blocks": true
+    },
+    "stage_unassigned": {
+     "description": "`pipelines` is declared and a `reproduction.stages[]` entry carries no `pipeline`, so a half-migrated manifest cannot read as complete.",
+     "blocks": true
+    },
+    "gate_unreachable": {
+     "description": "An input could not be read — the manifest, the register, the vocabulary, or the framework itself is absent beside the bundle. UNKNOWN => DENY, per the estate's own compile-gate rule: unreachable means unknown means refuse. A gate that could not run must never read as an open door. On the console this is the one state that is neither green nor red: it says the gate could not judge.",
+     "blocks": true
+    }
+   }
+  }
+ },
+ "counts": {
+  "enforced": 5,
+  "designed": 23,
+  "measured": 1,
+  "total": 29
+ },
+ "bundle": "mac-ontology-contoso"
+};
+
+/* ------------------------------------------------------------------ helpers */
+const $ = s => document.querySelector(s);
+const el = (t, c, h) => { const n = document.createElement(t); if (c) n.className = c; if (h !== undefined) n.innerHTML = h; return n; };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEYS = Object.fromEntries(DATA.keys.map(k => [k.key, k]));
+const ANSWER_OUTCOMES = ['COMMIT','ASK','REFUSE','BLOCK'];
+const PLANE_OUTCOMES = {LOAD_ERROR:'LOAD · refused', GATE_RED:'CHECK · red'};
+const outLabel = o => PLANE_OUTCOMES[o] || o;
+const chip = o => `<span class="chip c-${o}">${esc(outLabel(o))}</span>`;
+const stChip = s => `<span class="st st-${s}">${s}</span>`;
+
+let MODE = 'today';
+let SEL = 0;                       /* index into the flat column list */
+const STATE = {};                  /* "Concept.Column" -> {key: value} */
+
+const FLAT = [];
+DATA.bench.forEach(c => c.columns.forEach(col => FLAT.push({concept: c, col})));
+
+function stateFor(i) {
+  const {concept, col} = FLAT[i];
+  const id = concept.concept + '.' + col.column;
+  if (!STATE[id]) {
+    const s = {};
+    (col.toggles || []).forEach(t => { s[t.key] = t.values[0]; });
+    STATE[id] = s;
+  }
+  return STATE[id];
+}
+
+/** A toggle sits at its DEFAULT (or null) => the author has not declared the key.
+    Read from the manual's own default column, so nothing here decides it twice. */
+function authored(key, val) {
+  if (val === null || val === undefined) return false;
+  const def = (KEYS[key] || {}).default || '';
+  return String(val) !== String(def).replace(/`/g, '');
+}
+
+/** In TODAY mode, authoring a designed key is a LOAD ERROR — derived from keys[].status,
+    never written per column. This one function is the whole frontier. */
+function deadKeys(col, st) {
+  return (col.toggles || []).filter(t =>
+    KEYS[t.key] && KEYS[t.key].status === 'designed' && authored(t.key, st[t.key]));
+}
+
+function matches(when, st) {
+  return Object.entries(when || {}).every(([k, v]) => {
+    const cur = st[k];
+    if (v === null) return cur === null || cur === undefined || !authored(k, cur);
+    return String(cur) === String(v);
+  });
+}
+
+/* ------------------------------------------------------- the measure matrix */
+/* Outcomes for role: measure come from mac_vocabulary.yaml#MeasureType, where additivity is
+   stated ONCE over axis_kind. This function reads that matrix; it encodes no fold rule. */
+const EFFECT_FOLD = {additive: ['SUM','AVG'], average: ['AVG'], none: []};
+function measureOutcome(col, st, q) {
+  const type = st['measure.type'];
+  const ov = st['measure.additivity'];
+  const mt = ((DATA.vocabulary.MeasureType || {}).terms || {})[type] || {};
+  let cell = ((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
+  let overridden = false;
+  if (ov && ov.startsWith(q.axis + ':')) { cell = ov.split(':')[1].trim(); overridden = true; }
+  const legal = EFFECT_FOLD[cell] || [];
+  const ok = legal.includes(q.fold);
+  const unit = st['measure.unit'];
+  const eff = ((DATA.vocabulary.aggregation_effect || {}).terms || {})[cell] || {};
+  return {
+    outcome: ok ? 'COMMIT' : 'BLOCK',
+    reason_code: ok ? null : 'ADDITIVITY_VIOLATION',
+    plan: ok ? `SELECT ${q.fold}(l.${col.column}) … GROUP BY <${q.axis} axis>` : null,
+    result: ok
+      ? `${q.fold} is legal on the ${q.axis} axis` + (unit ? ` — reported in ${unit}` : ' — with no unit declared, the number is bare')
+      : (legal.length
+          ? `${q.fold} is not a legal fold of a ${type} measure on the ${q.axis} axis. The correct fold is ${legal.join(' or ')}.`
+          : `A ${type} measure folds on no axis at all — its value exists only at the grains it was computed for.`),
+    disclose: ok && !unit ? null : (ok ? `${type} · ${q.axis} · ${cell}` : null),
+    note: `mac.MeasureType.${type} · ${q.axis} → mac.aggregation_effect.${cell}`
+      + (overridden ? ' (overridden on this column by measure.additivity)' : '')
+      + (eff.description ? ' — ' + eff.description : '')
+  };
+}
+
+/* ---------------------------------------------------------------- resolution */
+function resolve(col, st, q) {
+  const dead = deadKeys(col, st);
+  if (MODE === 'today' && dead.length) {
+    return {outcome: 'LOAD_ERROR', note:
+      `ColumnSpec forbids unknown keys, so the bundle does not load: `
+      + dead.map(d => '<code>' + esc(d.key) + '</code>').join(', ')
+      + (dead.length > 1 ? ' are' : ' is')
+      + ` designed but unread. A flag no code reads is prose with a colon after it — shipping it would`
+      + ` rebuild the pile one layer up, in the platform instead of the bundle.`};
+  }
+  if (col.derives === 'measure_matrix') return measureOutcome(col, st, q);
+  for (const c of (q.cases || [])) {
+    if (c.mode && c.mode !== MODE) continue;
+    if (matches(c.when, st)) return c;
+  }
+  return {outcome: 'COMMIT', note: 'No case declared for this combination.'};
+}
+
+/* --------------------------------------------------------------- the picker */
+function renderPicker() {
+  const box = $('#picker'); box.innerHTML = '';
+  box.appendChild(el('div', 'card-h', '<h3>columns</h3>'));
+  let last = null, i = 0;
+  FLAT.forEach((f, idx) => {
+    if (f.concept.concept !== last) {
+      last = f.concept.concept;
+      box.appendChild(el('div', 'grp', esc(last) + ' <span style="opacity:.6">· ' + esc(f.concept.relation) + '</span>'));
+    }
+    const b = el('button', 'pick' + (idx === SEL ? ' on' : ''),
+      `<div class="cn">${esc(f.col.column)}</div><div class="cm">${esc(f.col.role)} · ${esc(f.col.headline)}</div>`);
+    b.onclick = () => { SEL = idx; renderBench(); };
+    box.appendChild(b);
+  });
+}
+
+/* ------------------------------------------------------------- the config side */
+function yamlBlock(col, st) {
+  /* The wavy underline says 'this line does not load'. That is only true in TODAY mode —
+     in DESIGNED mode the same line is the standard working as specified. */
+  const dead = new Set(MODE === 'today' ? deadKeys(col, st).map(d => d.key) : []);
+  const tree = {};
+  (col.toggles || []).forEach(t => {
+    const v = st[t.key];
+    if (!authored(t.key, v)) return;
+    const parts = t.key.split('.');
+    if (parts.length === 1) tree[parts[0]] = {__v: v, __dead: dead.has(t.key)};
+    else { (tree[parts[0]] = tree[parts[0]] || {})[parts[1]] = {__v: v, __dead: dead.has(t.key)}; }
+  });
+  let out = `<span class="y-k">${esc(col.column)}</span>:\n`;
+  if (!(col.toggles || []).some(t => t.key === 'role'))
+    out += `  <span class="y-k">role</span>: <span class="y-v">${esc(col.role)}</span>\n`;
+  const emit = (node, ind) => {
+    Object.entries(node).forEach(([k, v]) => {
+      if (v && v.__v !== undefined) {
+        const cls = v.__dead ? 'y-dead' : 'y-v';
+        out += `${ind}<span class="y-k">${esc(k)}</span>: <span class="${cls}">${esc(v.__v)}</span>`
+             + (v.__dead ? ' <span class="y-c">← load error today</span>' : '') + '\n';
+      } else {
+        out += `${ind}<span class="y-k">${esc(k)}</span>:\n`;
+        emit(v, ind + '  ');
+      }
+    });
+  };
+  emit(tree, '  ');
+  if (!Object.keys(tree).length) out += `  <span class="y-c"># nothing else declared — the five defaults apply</span>\n`;
+  return out;
+}
+
+function renderConfig() {
+  const {concept, col} = FLAT[SEL], st = stateFor(SEL);
+  const side = $('#configside'); side.innerHTML = '';
+
+  const head = el('div', 'card');
+  head.appendChild(el('div', 'card-h',
+    `<h3>${esc(concept.concept)}.${esc(col.column)}</h3><span class="pl">role: ${esc(col.role)}</span>`));
+  const hb = el('div', 'card-b');
+  hb.appendChild(el('p', null, `<b>${esc(col.headline)}</b>`)).style.margin = '0 0 8px';
+  hb.appendChild(el('p', 'note', esc(col.reads))).style.margin = '0';
+  if (col.measured) {
+    const ul = el('ul', 'ev');
+    col.measured.forEach(m => ul.appendChild(el('li',
+      null, esc(m.claim) + `<span class="src">evidence · ${esc(m.source)}</span>`)));
+    hb.appendChild(ul);
+  }
+  hb.appendChild(el('div', 'prov',
+    `profile ${esc(concept.profile.relation)} · ${Number(concept.profile.rows).toLocaleString('en-GB').replace(/,/g,' ')} rows · measured ${esc(concept.profile.measured_at)} · ${esc(concept.profile.engine)}`));
+  head.appendChild(hb);
+  side.appendChild(head);
+
+  const cfg = el('card' === 'x' ? 'div' : 'div', 'card');
+  cfg.style.marginTop = '16px';
+  cfg.appendChild(el('div', 'card-h', '<h3>the column block</h3>'));
+  const pre = el('pre', 'yaml');
+  pre.innerHTML = yamlBlock(col, st);
+  const pb = el('div', 'card-b'); pb.appendChild(pre);
+  cfg.appendChild(pb);
+  side.appendChild(cfg);
+
+  const tg = el('div', 'card'); tg.style.marginTop = '16px';
+  tg.appendChild(el('div', 'card-h', '<h3>configuration</h3>'));
+  (col.toggles || []).forEach(t => {
+    const k = KEYS[t.key] || {};
+    const d = el('div', 'tog');
+    d.appendChild(el('div', 'tog-h',
+      `<span class="tog-k">${esc(t.key)}</span>${stChip(k.status || '?')}`));
+    const seg = el('div', 'seg');
+    t.values.forEach(v => {
+      const b = el('button', String(st[t.key]) === String(v) ? 'on' : '', v === null ? 'unset' : esc(v));
+      b.onclick = () => { st[t.key] = v; renderBench(); };
+      seg.appendChild(b);
+    });
+    d.appendChild(seg);
+    d.appendChild(el('div', 'tog-d',
+      esc(k.decides || '') + (k.default ? ` · default <code>${esc(k.default)}</code>` : '')));
+    tg.appendChild(d);
+  });
+  if (col.derives_note) {
+    const d = el('div', 'tog');
+    d.appendChild(el('div', 'tog-d', esc(col.derives_note)));
+    tg.appendChild(d);
+  }
+  side.appendChild(tg);
+}
+
+/* ------------------------------------------------------------- the answer side */
+function renderAnswers() {
+  const {col} = FLAT[SEL], st = stateFor(SEL);
+  const side = $('#answerside'); side.innerHTML = '';
+  side.appendChild(el('div', 'card-h', '<h3>what a question gets</h3>')).style.padding = '0 0 12px';
+
+  (col.questions || []).forEach(q => {
+    const r = resolve(col, st, q);
+    const card = el('div', 'q');
+    card.appendChild(el('div', 'q-h',
+      `<span class="q-ask">${esc(q.ask)}</span>${chip(r.outcome)}`));
+    const b = el('div', 'q-b');
+    const add = (lab, html, cls) => {
+      if (!html) return;
+      b.appendChild(el('div', 'row',
+        `<span class="lab">${lab}</span><div class="val"><div class="${cls || ''}">${html}</div></div>`));
+    };
+    if (r.reason_code) add('code', `<span class="reason">${esc(r.reason_code)}</span>`);
+    add('plan', esc(r.plan), 'plan');
+    add('result', esc(r.result));
+    add('disclose', esc(r.disclose), 'disc');
+    add('why', r.note && r.note.includes('<code>') ? r.note : esc(r.note), 'note');
+    card.appendChild(b);
+    side.appendChild(card);
+  });
+}
+
+function renderBench() { renderPicker(); renderConfig(); renderAnswers(); }
+
+/* --------------------------------------------------------------------- keys */
+function renderKeys() {
+  const host = $('#keys'); host.innerHTML = '';
+  const blocks = [...new Set(DATA.keys.map(k => k.block))];
+  blocks.forEach(bl => {
+    host.appendChild(el('div', 'sec', bl === 'root' ? 'on the column itself'
+      : bl === 'measured' ? 'measured — never authored' : bl + ':'));
+    const g = el('div', 'kgrid');
+    DATA.keys.filter(k => k.block === bl).forEach(k => {
+      const c = el('div', 'kc');
+      c.appendChild(el('div', 'kc-h', `<span class="kc-k">${esc(k.key)}</span>${stChip(k.status)}`));
+      c.appendChild(el('div', 'kc-d', esc(k.decides || '')));
+      const meta = el('div', 'kc-meta');
+      meta.innerHTML =
+        `<span class="pl">required: ${esc(k.required || 'no')}</span>` +
+        `<span class="pl">default: ${esc(k.default || '—')}</span>` +
+        `<span class="pl">legal: ${esc(k.legal || '—')}</span>` +
+        (k.plane || []).map(p => `<span class="pl">${p}</span>`).join('') +
+        (k.outcomes || []).map(o => chip(o)).join('');
+      c.appendChild(meta);
+      c.appendChild(el('div', 'kc-e', esc(k.effect || '')));
+      if (k.frontier_note) c.appendChild(el('div', 'kc-f', esc(k.frontier_note)));
+      c.appendChild(el('div', 'kc-r', 'reader · ' + esc(k.reader || 'none')));
+      g.appendChild(c);
+    });
+    host.appendChild(g);
+  });
+}
+
+/* ------------------------------------------------------------------- matrix */
+function renderMatrix() {
+  const cols = [['LOAD_ERROR', 'load'], ['GATE_RED', 'check'], ...ANSWER_OUTCOMES.map(o => [o, null])];
+  let h = '<table><thead><tr><th>key</th><th>status</th>'
+    + cols.map(([o]) => `<th style="text-align:center">${esc(outLabel(o))}</th>`).join('')
+    + '<th>reader</th></tr></thead><tbody>';
+  DATA.keys.forEach(k => {
+    h += `<tr><td class="k">${esc(k.key)}</td><td>${stChip(k.status)}</td>`;
+    cols.forEach(([o, plane]) => {
+      const on = plane ? (k.plane || []).includes(plane) : (k.outcomes || []).includes(o);
+      const cls = plane ? 'f-plane' : 'f-' + o;
+      h += `<td class="cell"><span class="dot ${on ? cls : 'off'}">${on ? esc(outLabel(o)[0]) : '·'}</span></td>`;
+    });
+    h += `<td style="font-family:var(--mono);font-size:11px;color:var(--faint)">${esc(k.reader || 'none')}</td></tr>`;
+  });
+  h += '</tbody></table>';
+  $('#matrix').innerHTML = '<div class="scroll">' + h + '</div>';
+}
+
+/* ------------------------------------------------------------ constellation */
+const PRESETS = [
+  {n: 'Brand ↔ Manufacturer', a: 11, b: 11, p: 11, rows: 2517, an: 'Manufacturer', bn: 'Brand'},
+  {n: 'SubCategory ↔ Category', a: 32, b: 8, p: 32, rows: 2517, an: 'SubCategoryName', bn: 'CategoryName'},
+  {n: 'State ↔ Country', a: 563, b: 8, p: 603, rows: 104990, an: 'State', bn: 'Country'},
+  {n: 'ZipCode (alone)', a: 40639, b: 8, p: 40639, rows: 104990, an: 'ZipCode', bn: 'Country'}
+];
+let PROBE = {...PRESETS[0]};
+
+const BRANCHES = [
+  {key: 'rulings.label_of', test: p => p.a === p.b && p.p === p.a,
+   test_t: 'a = b = pairs',
+   cant: 'Whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent, not a label.'},
+  {key: 'rulings.finer_than', test: p => p.p === p.a && p.a > p.b,
+   test_t: 'pairs = a, and a > b',
+   cant: null, safe: 'Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count.'},
+  {key: 'placement.scoped_by', test: p => p.p > p.a && p.p > p.b,
+   test_t: 'pairs > a AND pairs > b',
+   cant: null, safe: 'Also safe, once you check collisions WITHIN versus ACROSS the parent. Zero within and many across is the signature.'},
+  {key: 'rulings.never_axis', test: p => p.a / p.rows >= 0.25,
+   test_t: 'cardinality approaches the row count',
+   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the ruling must carry the DQ id that measured it.'}
+];
+
+function renderCon() {
+  const pr = $('#presets'); pr.innerHTML = '';
+  PRESETS.forEach(p => {
+    const b = el('button', null, esc(p.n));
+    b.onclick = () => { PROBE = {...p}; renderCon(); };
+    pr.appendChild(b);
+  });
+  const dl = $('#dials'); dl.innerHTML = '';
+  [['a', 'distinct a (the finer / the candidate)'], ['b', 'distinct b (the coarser / the scope)'],
+   ['p', 'distinct pairs'], ['rows', 'rows in the relation']].forEach(([k, lab]) => {
+    const d = el('div', 'dial');
+    const max = k === 'rows' ? 250000 : 60000;
+    d.innerHTML = `<label>${esc(lab)}<span class="tnum">${PROBE[k].toLocaleString('en-GB').replace(/,/g,' ')}</span></label>
+      <input type="range" min="1" max="${max}" value="${PROBE[k]}">`;
+    d.querySelector('input').oninput = e => { PROBE[k] = +e.target.value; renderCon(); };
+    dl.appendChild(d);
+  });
+  $('#probe-sql').innerHTML =
+`<span class="y-c">-- run this before ruling; the manual's own probe</span>
+<span class="y-k">SELECT</span> count(<span class="y-k">DISTINCT</span> ${esc(PROBE.an)})            <span class="y-k">AS</span> a_distinct,   <span class="y-c">-- ${PROBE.a}</span>
+       count(<span class="y-k">DISTINCT</span> ${esc(PROBE.bn)})            <span class="y-k">AS</span> b_distinct,   <span class="y-c">-- ${PROBE.b}</span>
+       count(<span class="y-k">DISTINCT</span> (${esc(PROBE.an)}, ${esc(PROBE.bn)})) <span class="y-k">AS</span> pairs        <span class="y-c">-- ${PROBE.p}</span>
+<span class="y-k">FROM</span>   &lt;relation&gt;`;
+
+  const host = $('#branches'); host.innerHTML = '';
+  const hit = BRANCHES.filter(b => b.test(PROBE));
+  const head = el('div', 'verdict card');
+  head.style.marginBottom = '14px';
+  head.innerHTML = hit.length
+    ? `<div class="big">${hit.map(b => esc(b.key)).join(' + ')}</div>
+       <div class="note">${hit.length > 1
+         ? 'Two branches fire at once. Both are candidates, and the pair must be measured further before either is authored.'
+         : 'One branch fires. The constellation is a candidate for this ruling — never a proof of it.'}</div>`
+    : `<div class="big" style="color:var(--muted)">no ruling</div>
+       <div class="note">These counts match no constellation. Both columns are ordinary independent axes — or the measurement is wrong.</div>`;
+  host.appendChild(head);
+
+  BRANCHES.forEach(b => {
+    const on = b.test(PROBE), k = KEYS[b.key] || {};
+    const d = el('div', 'branch' + (on ? ' on' : ''));
+    d.innerHTML = `<div class="bh"><span class="bn">${esc(b.key)}</span><span class="bt">${esc(b.test_t)}</span></div>
+      <div class="bc">${esc(k.effect || '')}</div>`
+      + (b.cant ? `<div class="cant"><b>What measurement cannot tell you.</b> ${esc(b.cant)}</div>`
+                : `<div class="bc" style="margin-top:7px;color:var(--commit)">${esc(b.safe)}</div>`);
+    host.appendChild(d);
+  });
+  host.appendChild(el('div', 'find', `<h4>scoped_by mistaken for finer_than is the expensive error</h4>
+    <p>The two branches sit next to each other in this space, and only one of them is a hierarchy.
+    Mistaking a reused code space for a level merges unrelated members into one plausible row —
+    and nothing in the result betrays it.</p>`));
+}
+
+/* ----------------------------------------------------------------- frontier */
+function renderFrontier() {
+  const c = DATA.counts;
+  const host = $('#frontier'); host.innerHTML = '';
+  const tiles = el('div', 'tiles');
+  [['enforced', c.enforced, 'projected by ColumnSpec into a home the runtime reads'],
+   ['designed', c.designed, 'in the reference manual — and a LOAD ERROR if authored'],
+   ['measured', c.measured, 'written by the profile and reference planes; never authored'],
+   ['total', c.total, 'keys the standard describes, across eight sections']].forEach(([l, n, d]) => {
+    tiles.appendChild(el('div', 'tile ' + l,
+      `<div class="n tnum">${n}</div><div class="l">${l}</div><div class="d">${esc(d)}</div>`));
+  });
+  host.appendChild(tiles);
+
+  host.appendChild(el('div', 'quote', `“A flag no code reads is prose with a colon after it, and shipping
+    19 of them would have rebuilt the pile one layer up, in the platform instead of the bundle. So the
+    standard grows ONE FLAG AT A TIME, each arriving with its consumer and its test.”
+    <span style="display:block;margin-top:6px;font-family:var(--mono);font-size:11px">ColumnSpec, mac-runtime/ontology/models.py</span>`));
+
+  host.appendChild(el('div', 'sec', 'what this page found while being built'));
+  DATA.keys.filter(k => k.frontier_note && /0 |two homes|no such field|retired|no longer/i.test(k.frontier_note))
+    .forEach(k => host.appendChild(el('div', 'find',
+      `<h4><code>${esc(k.key)}</code> · ${esc(k.status)}</h4><p>${esc(k.frontier_note)}</p>`)));
+
+  host.appendChild(el('div', 'sec', 'how to read the two modes'));
+  Object.entries(DATA.modes).forEach(([id, m]) => {
+    host.appendChild(el('div', 'card',
+      `<div class="card-h"><h3>${esc(id)}</h3><span class="pl">${esc(m.label)}</span></div>
+       <div class="card-b note" style="margin:0">${esc(m.blurb)}</div>`)).style.marginBottom = '13px';
+  });
+
+  host.appendChild(el('div', 'prov',
+    `generated by ${esc(DATA.generated_by)} · keys from column_specification.md + column_effects.yaml · `
+    + `terms from mac_vocabulary.yaml · measurements from the ${esc(DATA.bundle)} bundle`));
+}
+
+/* --------------------------------------------------------------------- shell */
+const VIEWS = [['bench', 'Bench'], ['keys', 'Every key'], ['matrix', 'Matrix'],
+               ['con', 'Constellations'], ['frontier', 'Frontier']];
+function renderShell() {
+  const t = $('#tabs'); t.innerHTML = '';
+  VIEWS.forEach(([id, lab], i) => {
+    const b = el('button', 'mb-tab' + (i === 0 ? ' active' : ''), lab);
+    b.onclick = () => {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+      document.querySelectorAll('.mb-tab').forEach(x => x.classList.remove('active'));
+      $('#v-' + id).classList.add('on'); b.classList.add('active');
+    };
+    t.appendChild(b);
+  });
+  const m = $('#modesw'); m.innerHTML = '';
+  Object.entries(DATA.modes).forEach(([id, mo]) => {
+    const b = el('button', MODE === id ? 'on' : '', id === 'today' ? 'TODAY' : 'DESIGNED');
+    b.title = mo.label;
+    b.onclick = () => { MODE = id; renderShell(); renderBench(); };
+    m.appendChild(b);
+  });
+}
+
+$('#themebtn').onclick = () => {
+  const c = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = c;
+  localStorage.setItem('mac_theme', c);
+  $('#themebtn').textContent = c === 'dark' ? '☀' : '🌙';
+};
+$('#themebtn').textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙';
+
+renderShell(); renderBench(); renderKeys(); renderMatrix(); renderCon(); renderFrontier();
+</script>
+</body>
+</html>

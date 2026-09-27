@@ -235,8 +235,8 @@ def _relationships_panel(joins: dict, over) -> str:
 
 
 #: The fold law, read from the framework registry rather than restated here. A measure's
-#: `MeasureType` crossed with an axis's `axis_kind` yields an `aggregation_effect`, and the
-#: registry declares that crossing itself — `MeasureType.members.<Type>.additivity.<axis_kind>`.
+#: `measure_type` crossed with an axis's `axis_kind` yields an `aggregation_effect`, and the
+#: registry declares that crossing itself — `measure_type.members.<Type>.additivity.<axis_kind>`.
 #: THIS FILE MUST NOT CARRY A SECOND COPY OF IT: the whole reason the page is worth rendering is
 #: that it shows the law the runtime obeys, and a page quoting its own private table would be a
 #: second home for the one fact, free to drift from the one the planner reads.
@@ -244,7 +244,7 @@ _VOCAB_PATH = Path(__file__).resolve().parents[2] / "mac_vocabulary.yaml"
 
 
 def _fold_law() -> dict:
-    """{MeasureType term -> {axis_kind term -> aggregation_effect term}}, from the registry.
+    """{measure_type term -> {axis_kind term -> aggregation_effect term}}, from the registry.
 
     Returns {} when the registry cannot be read. An ABSENT law renders an em dash in the fold
     column — never a guessed SUM, because a wrong fold is the one error on this page that turns
@@ -254,7 +254,7 @@ def _fold_law() -> dict:
     except Exception:  # noqa: BLE001 — a state to report as a dash, not to raise
         return {}
     out: dict = {}
-    for term, body in ((doc.get("MeasureType") or {}).get("members") or {}).items():
+    for term, body in ((doc.get("measure_type") or {}).get("terms") or {}).items():
         add = (body or {}).get("additivity") or {}
         if isinstance(add, dict):
             out[str(term)] = {str(k): str(v) for k, v in add.items()}
@@ -303,7 +303,7 @@ def _axes_block(obj: dict) -> list[str]:
         out += [
             "",
             "_The fold is read from the framework registry "
-            "(`MeasureType.<type>.additivity.<axis kind>`), not declared on this concept. "
+            "(`measure_type.<type>.additivity.<axis kind>`), not declared on this concept. "
             "An em dash means the crossing is not declared there._",
             "",
         ]

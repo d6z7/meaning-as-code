@@ -71,7 +71,7 @@ def outcome_law(vocab_path: pathlib.Path) -> dict:
 
     Takes the PATH as a parameter, rather than reaching for the framework's own file directly, so a
     self-test can prove the refusal fires without touching the real vocabulary — the same principle
-    check_measure_additivity_registry uses for the MeasureType law.
+    check_measure_additivity_registry uses for the measure_type law.
     """
     if not vocab_path.is_file():
         raise LawUnavailable(f"framework vocabulary not found at {vocab_path.name}")

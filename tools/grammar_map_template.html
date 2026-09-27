@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MAC · three grammars, one shape</title>
+<script>
+  (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
+</script>
+<style>
+
+/* The estate's palette — the same four outcome colours the console's route column uses, so an
+   outcome reads the same here as there. Used only as STATUS colour: every chip carries its word. */
+:root{
+  --ground:#f4f6f9; --surface:#ffffff; --surface-2:#eef1f6; --border:#dde2ea;
+  --ink:#1a2030; --muted:#5a6576; --faint:#8b95a5;
+  --accent:#3563c9; --accent-soft:#e6ecfb;
+  --ask:#b9770a; --ask-bg:#fbf1dd; --commit:#2f8a4e; --commit-bg:#e4f4ea;
+  --refuse:#c0392b; --refuse-bg:#fbe6e3; --invariant:#6b4fbb; --invariant-bg:#eee8fb;
+  --other:#5a6576; --other-bg:#eceff3;
+  --mono:'SF Mono','JetBrains Mono',Menlo,Consolas,ui-monospace,monospace;
+  --sans:system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --radius:9px; --shadow:0 1px 2px rgba(20,30,55,.05),0 3px 12px rgba(20,30,55,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686; --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}}
+:root[data-theme="dark"]{
+  --ground:#12151c; --surface:#1a1f29; --surface-2:#222835; --border:#2c333f;
+  --ink:#e6eaf1; --muted:#9aa6b6; --faint:#6b7686; --accent:#6f93ff; --accent-soft:#1d2740;
+  --ask:#e6a94a; --ask-bg:#33280f; --commit:#54c483; --commit-bg:#123322;
+  --refuse:#ef7365; --refuse-bg:#3a1c18; --invariant:#a891f0; --invariant-bg:#241d3a;
+  --other:#9aa6b6; --other-bg:#242a35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:15px;
+  line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:21px;margin:0;letter-spacing:-.015em}
+h2,h3,h4{margin:0}
+code,.mono{font-family:var(--mono);font-size:.86em}
+.tnum{font-variant-numeric:tabular-nums}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+.macbar{position:sticky;top:0;z-index:60;height:44px;display:flex;align-items:center;
+  justify-content:space-between;gap:16px;padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--border)}
+.mb-left{display:flex;align-items:center;gap:18px;min-width:0}
+.mb-right{display:flex;align-items:center;gap:10px}
+.mb-brand{display:flex;align-items:center;gap:7px;font-weight:750;font-size:13.5px;white-space:nowrap}
+.mb-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.mb-tabs{display:inline-flex;gap:3px;flex-wrap:wrap}
+.mb-tab{padding:4px 11px;border-radius:7px;color:var(--faint);font-weight:650;font-size:13px;
+  line-height:1.6;border:0;background:none;white-space:nowrap}
+.mb-tab:hover{background:var(--ground);color:var(--ink)}
+.mb-tab.active{background:var(--accent-soft);color:var(--accent)}
+.mb-theme{border:1px solid var(--border);background:var(--ground);color:var(--ink);
+  border-radius:6px;width:30px;height:28px;font-size:14px}
+.modesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.modesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 11px;letter-spacing:.02em}
+.modesw button.on{background:var(--ink);color:var(--surface)}
+.modesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+
+.view{display:none} .view.on{display:block}
+.pad{padding:22px 24px 72px;max-width:1340px;margin:0 auto}
+.lede{color:var(--muted);max-width:80ch;margin:7px 0 0}
+.sec{margin:28px 0 12px;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--faint);font-weight:750}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow)}
+.card-h{padding:12px 15px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;
+  justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-h h3{font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.card-b{padding:15px}
+
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;
+  font-size:11px;font-weight:750;letter-spacing:.04em;border:1px solid transparent;white-space:nowrap}
+.c-COMMIT{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+.c-ASK{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.c-REFUSE{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.c-BLOCK{color:var(--invariant);background:var(--invariant-bg);border-color:var(--invariant)}
+.pl{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:5px;padding:1px 6px;letter-spacing:.04em;white-space:nowrap}
+.pl.warn{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.pl.bad{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.pl.good{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+
+/* ---- operation selector ---- */
+.ops{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 4px}
+.ops button{border:1px solid var(--border);background:var(--surface);border-radius:8px;
+  padding:7px 12px;font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--muted);
+  display:inline-flex;align-items:center;gap:7px}
+.ops button:hover{border-color:var(--accent);color:var(--ink)}
+.ops button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ops button .b{font-size:9.5px;letter-spacing:.06em;padding:1px 5px;border-radius:4px;
+  background:var(--surface-2);color:var(--faint)}
+.ops button.on .b{background:rgba(255,255,255,.22);color:#fff}
+.ops button.drift{border-color:var(--refuse)}
+
+/* ---- the wiring diagram ---- */
+.wirebox{position:relative;margin-top:14px}
+#wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;overflow:visible}
+.lanes{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:56px}
+@media (max-width:1000px){.lanes{grid-template-columns:1fr;gap:20px} #wires{display:none}}
+.lane-h{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);
+  font-weight:750;margin-bottom:9px}
+.node{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 11px;
+  margin-bottom:7px;font-family:var(--mono);font-size:12.5px;font-weight:650;
+  display:flex;align-items:center;justify-content:space-between;gap:9px;transition:.12s}
+.node .rd{font-size:10px;color:var(--faint);font-weight:650;letter-spacing:.03em}
+.node.lit{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.node.on{border-color:var(--muted);color:var(--ink)}
+.node.opnode{border-width:2px;border-color:var(--accent);background:var(--accent-soft);
+  color:var(--accent);flex-direction:column;align-items:flex-start;gap:3px;padding:10px 12px}
+.node.opnode.noedge{border-style:dashed;border-color:var(--ask);background:var(--ask-bg);color:var(--ask)}
+.node.opnode .sub{font-family:var(--sans);font-size:11px;font-weight:600;line-height:1.35}
+.node.dim{opacity:.34}
+.node.unread{border-style:dashed;color:var(--faint)}
+.node.slot{justify-content:flex-start;font-weight:750}
+.node.out{border-width:1px}
+.node.out.lit-COMMIT{border-color:var(--commit);background:var(--commit-bg);color:var(--commit)}
+.node.out.lit-ASK{border-color:var(--ask);background:var(--ask-bg);color:var(--ask)}
+.node.out.lit-REFUSE{border-color:var(--refuse);background:var(--refuse-bg);color:var(--refuse)}
+.node.out.lit-BLOCK{border-color:var(--invariant);background:var(--invariant-bg);color:var(--invariant)}
+.node .sub{font-family:var(--sans);font-size:11px;font-weight:450;color:var(--faint)}
+
+/* ---- op detail ---- */
+.detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:13px;margin-top:20px}
+.dcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:13px 15px;box-shadow:var(--shadow)}
+.dcard .t{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);
+  font-weight:750;margin-bottom:6px}
+.dcard .v{font-size:13.5px}
+.dcard .v code{display:block;margin-top:3px}
+.callout{margin-top:16px;padding:13px 16px;border-radius:0 var(--radius) var(--radius) 0;
+  border:1px solid var(--border);border-left:3px solid var(--ask);background:var(--surface);
+  font-size:13.5px;box-shadow:var(--shadow)}
+.callout.bad{border-left-color:var(--refuse)}
+.callout .h{font-weight:750;margin-bottom:5px}
+.callout p{margin:0;color:var(--muted)}
+.callout p+p{margin-top:7px}
+
+/* ---- tables ---- */
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750}
+.scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow)}
+td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
+
+/* ---- the gap chart: one series, single hue, direct labels, no legend ---- */
+.bars{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:18px 20px;box-shadow:var(--shadow)}
+.bar{display:grid;grid-template-columns:190px 1fr 70px;gap:12px;align-items:center;margin-bottom:9px}
+.bar .nm{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right;overflow-wrap:anywhere}
+.bar .tr{background:var(--surface-2);border-radius:4px;height:22px;position:relative;overflow:hidden}
+.bar .fl{height:100%;background:var(--accent);border-radius:0 4px 4px 0;
+  box-shadow:0 0 0 2px var(--surface)}
+.bar.stale .fl{background:repeating-linear-gradient(135deg,var(--other) 0 5px,transparent 5px 10px);
+  border:1px solid var(--other)}
+.bar .vl{font-family:var(--mono);font-size:12px;font-weight:750;font-variant-numeric:tabular-nums}
+.bar .nm s{color:var(--faint)}
+.reach{display:flex;gap:26px;flex-wrap:wrap;margin-top:18px;padding-top:16px;
+  border-top:1px solid var(--border)}
+.reach div{min-width:120px}
+.reach .n{font-size:27px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.reach .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;margin-top:5px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:13px;margin-bottom:20px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:15px;box-shadow:var(--shadow)}
+.tile .n{font-size:29px;font-weight:750;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+.tile .l{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:750;margin-top:6px}
+.tile .d{font-size:12px;color:var(--muted);margin-top:7px}
+.tile.bad .n{color:var(--refuse)} .tile.warn .n{color:var(--ask)} .tile.ok .n{color:var(--commit)}
+.skel{font-family:var(--mono);font-size:13px;background:var(--surface-2);border:1px solid var(--border);
+  border-radius:8px;padding:10px 13px;margin-top:14px;overflow-x:auto;white-space:pre-wrap}
+.prov{color:var(--faint);font-size:11px;font-family:var(--mono);margin-top:20px}
+/* ---- added for the three-plane page ---- */
+.planesw{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.planesw button{border:0;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;
+  padding:6px 12px;letter-spacing:.02em;border-right:1px solid var(--border)}
+.planesw button:last-child{border-right:0}
+.planesw button.on{background:var(--accent);color:#fff}
+.planesw button:not(.on):hover{background:var(--ground);color:var(--ink)}
+.thesis{margin:16px 0 0;padding:14px 17px;border-radius:0 var(--radius) var(--radius) 0;
+  border:1px solid var(--border);border-left:3px solid var(--accent);background:var(--surface);
+  box-shadow:var(--shadow)}
+.thesis b{color:var(--accent)}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:15px;margin-top:18px}
+.cmp .p{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);overflow:hidden}
+.cmp .ph{padding:14px 16px;border-bottom:1px solid var(--border)}
+.cmp .ph h3{font-size:16px;letter-spacing:-.01em}
+.cmp .ph .s{color:var(--muted);font-size:12.5px;margin-top:3px}
+.cmp .pb{padding:14px 16px}
+.cmp .tri{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:12px}
+.cmp .tri .box{border:1px solid var(--border);border-radius:7px;padding:7px 9px;font-size:11.5px;
+  font-family:var(--mono);text-align:center;background:var(--surface-2)}
+.cmp .tri .box.mid{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);
+  font-weight:750}
+.cmp .tri .ar{color:var(--faint);font-size:13px}
+.cmp .th{font-size:12.5px;color:var(--muted)}
+.cmp .mt{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px}
+.grid5{overflow-x:auto}
+.grid5 table{border-collapse:separate;border-spacing:4px;width:auto}
+.grid5 td,.grid5 th{border:0;padding:0}
+.grid5 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);
+  font-weight:750;padding:0 6px 4px;text-align:center;position:static}
+.grid5 th.rh{text-align:right;padding-right:9px}
+.grid5 button{width:100%;min-width:104px;border:1px solid var(--border);background:var(--surface);
+  border-radius:7px;padding:8px 7px;font-family:var(--mono);font-size:11px;font-weight:700;
+  color:var(--muted);line-height:1.3}
+.grid5 button:hover{border-color:var(--accent);color:var(--ink)}
+.grid5 button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.grid5 button.refuse{color:var(--refuse);border-color:var(--refuse-bg);background:var(--refuse-bg)}
+.grid5 button.refuse.on{background:var(--refuse);border-color:var(--refuse);color:#fff}
+.node .sub2{font-family:var(--sans);font-size:10.5px;font-weight:450;color:var(--faint);
+  display:block;margin-top:2px;line-height:1.3}
+.node.person{border-width:2px;border-color:var(--invariant);background:var(--invariant-bg);
+  color:var(--invariant)}
+.node.person.lit{border-color:var(--invariant);background:var(--invariant-bg);color:var(--invariant)}
+.node.stack{flex-direction:column;align-items:flex-start;gap:0}
+.node.planeout{border-style:dashed}
+</style>
+</head>
+<body>
+
+<div class="macbar">
+  <div class="mb-left">
+    <span class="mb-brand"><span class="mb-dot"></span>MAC · three grammars</span>
+    <nav class="mb-tabs" id="tabs"></nav>
+  </div>
+  <div class="mb-right">
+    <div class="planesw" id="planesw"></div>
+    <div class="modesw" id="modesw"></div>
+    <button class="mb-theme" id="themebtn" title="theme">🌙</button>
+  </div>
+</div>
+
+<section class="view on" id="v-planes"><div class="pad">
+  <h1>Is folding a grammar? Is a ruling?</h1>
+  <p class="lede">Folding is one by the estate's own naming — <code>FOLD_GRAMMAR.md</code>, which
+  <code>QUERY_GRAMMAR.md</code> calls "the orthogonal axis". A ruling is not called one anywhere, and
+  it has the same three parts as one: a closed vocabulary of words, a composition that says what each
+  word contributes, and an outcome. So all three are drawn in the same three lanes below — and what
+  differs is <b>the middle lane</b>.</p>
+  <div class="cmp" id="cmp"></div>
+  <div id="planes-notes"></div>
+</div></section>
+
+<section class="view" id="v-wire"><div class="pad">
+  <h1 id="wire-title"></h1>
+  <p class="lede" id="wire-lede"></p>
+  <div class="thesis" id="wire-thesis"></div>
+  <div class="skel" id="skel"></div>
+  <div id="selector"></div>
+  <div class="wirebox">
+    <svg id="wires"></svg>
+    <div class="lanes">
+      <div>
+        <div class="lane-h" id="lh-sel"></div><div id="lane-self"></div>
+        <div class="lane-h" style="margin-top:15px" id="lh-left"></div><div id="lane-left"></div>
+      </div>
+      <div><div class="lane-h" id="lh-mid"></div><div id="lane-mid"></div></div>
+      <div><div class="lane-h" id="lh-right"></div><div id="lane-right"></div></div>
+    </div>
+  </div>
+  <div class="detail" id="detail"></div>
+  <div id="wire-callouts"></div>
+</div></section>
+
+<section class="view" id="v-fold"><div class="pad">
+  <h1>The fold law — 25 cells, and what preempts them</h1>
+  <p class="lede" id="fold-lede"></p>
+  <div class="grid5" id="fold-grid" style="margin-top:18px"></div>
+  <div class="sec">the five guards — they override the table, and never re-tabulate it</div>
+  <div id="fold-guards"></div>
+  <div class="sec">the ten operators, over four stages</div>
+  <div id="fold-ops"></div>
+  <div class="sec">what this law replaced</div>
+  <div id="fold-bridge"></div>
+</div></section>
+
+<section class="view" id="v-query"><div class="pad">
+  <h1>The query grammar's second axis, and its ledger</h1>
+  <p class="lede">The operation names what was asked. The declaration state decides whether it can be
+  answered at all, and which SQL comes out — which is why an operation-by-shape matrix cannot
+  describe this grammar, and why every row below is a refusal a bundle can fix.</p>
+  <div id="gates"></div>
+  <div class="sec">the refusal vocabulary · mac.diagnostic_code</div>
+  <div id="codes"></div>
+  <div class="sec">what the grammar cannot say</div>
+  <p class="lede" id="gaps-lede"></p>
+  <div id="gaps"></div>
+</div></section>
+
+<section class="view" id="v-law"><div class="pad">
+  <h1>Each law against the runtime</h1>
+  <p class="lede">Three laws, three relationships to the code that is supposed to honour them. None of
+  the three is simply "the runtime reads it".</p>
+  <div id="law"></div>
+</div></section>
+
+<script>
+const DATA = /*__DATA__*/;
+const $ = s => document.querySelector(s);
+const el = (t,c,h) => { const n=document.createElement(t); if(c) n.className=c; if(h!==undefined) n.innerHTML=h; return n; };
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const num = n => Number(n).toLocaleString('en-GB').replace(/,/g,' ');
+const chip = o => `<span class="chip c-${o}">${esc(o)}</span>`;
+const PLANES = Object.fromEntries(DATA.planes.map(p=>[p.id,p]));
+
+let PLANE='query', SRC='law', SEL={};
+DATA.planes.forEach(p=>{ SEL[p.id]=Object.keys(Object.values(p.cases)[0])[0]; });
+
+const plane = () => PLANES[PLANE];
+const cases = () => plane().cases[plane().sources ? SRC : 'law'];
+const kase  = () => cases()[SEL[PLANE]];
+
+/* ---------------------------------------------------------------- comparison */
+function renderCmp(){
+  const host=$('#cmp'); host.innerHTML='';
+  DATA.planes.forEach(p=>{
+    const c=el('div','p');
+    const n=Object.keys(Object.values(p.cases)[0]).length;
+    c.innerHTML=`<div class="ph"><h3>${esc(p.title)}</h3><div class="s">${esc(p.subtitle)}</div></div>
+      <div class="pb">
+        <div class="tri">
+          <div class="box">${esc(p.lanes.left.label.split('·')[0].trim())}</div>
+          <div class="ar">→</div>
+          <div class="box mid">${esc(p.middle)}</div>
+        </div>
+        <div class="tri">
+          <div class="box mid">${esc(p.middle)}</div>
+          <div class="ar">→</div>
+          <div class="box">${esc(p.lanes.right.label.split('·')[0].trim())}</div>
+        </div>
+        <div class="th">${esc(p.thesis)}</div>
+        <div class="mt">${Object.entries(p.counts).map(([k,v])=>
+          `<span class="pl">${esc(k.replace(/_/g,' '))}: ${esc(v)}</span>`).join('')}
+          <span class="pl">${n} cases</span></div>
+      </div>`;
+    const b=el('button','mb-tab',`open the ${p.id} wiring →`);
+    b.style.margin='0 16px 14px'; b.onclick=()=>{PLANE=p.id; go('wire'); renderShell(); renderWire();};
+    c.appendChild(b);
+    host.appendChild(c);
+  });
+
+  $('#planes-notes').innerHTML='';
+  [['note','Why the middle lane is the whole answer.',
+    ['A skeleton is a SHAPE: it is the same for every word, so the word cannot be what decides. '+
+     'A law is a LOOKUP nobody authors: it ships with the runtime and a drift test recomputes it. '+
+     'A person is neither — which is exactly why <code>rulings.evidence</code> is required and the '+
+     'fold law needs no evidence at all. A prohibition a person made without a measurement is a '+
+     'preference; a 25-cell lookup is not.']],
+   ['note','A third sense of the word, for completeness.',
+    ['<code>check_grammar_home.py</code> uses "grammar" for a third thing: <code>mac.schema.json</code>, '+
+     'the STRUCTURAL grammar that says which keys a declaration may carry and where they nest. It '+
+     'governs whether <code>rulings:</code> may appear on a column at all — so it sits underneath all '+
+     'three planes rather than beside them, and it is not drawn here.']]
+  ].forEach(([k,h,ps])=>$('#planes-notes').appendChild(el('div','callout',
+    `<div class="h">${h}</div>${ps.map(x=>`<p>${x}</p>`).join('')}`)));
+}
+
+/* ------------------------------------------------------------------- wiring */
+function laneNode(n, lit){
+  const cls=['node', n.faint?'unread':'', n.id==='mid:person'?'person':'',
+             n.plane_outcome?'planeout':'', n.sub?'stack':'',
+             lit==='own'?'lit':lit==='base'?'on':'dim'].filter(Boolean).join(' ');
+  const d=el('div',cls, n.sub
+    ? `<span>${esc(n.label)}${n.meta?` <span class="rd">${esc(n.meta)}</span>`:''}</span><span class="sub2">${esc(n.sub)}</span>`
+    : `<span>${esc(n.label)}</span>${n.meta?`<span class="rd">${esc(n.meta)}</span>`:''}`);
+  d.dataset.id=n.id; return d;
+}
+
+function renderSelector(){
+  const p=plane(), host=$('#selector'); host.innerHTML='';
+  if(p.grid){
+    const t=el('table');
+    let h='<thead><tr><th></th>'+p.grid.cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>';
+    p.grid.rows.forEach(r=>{
+      h+=`<tr><th class="rh">${esc(r)}</th>`;
+      p.grid.cols.forEach(c=>{
+        const k=`${r}|${c}`, op=p.grid.cells[k];
+        h+=`<td><button data-k="${esc(k)}" class="${op==='refuse'?'refuse ':''}${SEL[PLANE]===k?'on':''}">${esc(op)}</button></td>`;
+      });
+      h+='</tr>';
+    });
+    t.innerHTML=h+'</tbody>';
+    const wrap=el('div','grid5'); wrap.appendChild(t); host.appendChild(wrap);
+    host.querySelectorAll('button[data-k]').forEach(b=>b.onclick=()=>{SEL[PLANE]=b.dataset.k; renderWire();});
+  } else {
+    const box=el('div','ops');
+    Object.values(cases()).forEach(c=>{
+      const b=el('button',(SEL[PLANE]===c.id?'on ':'')+(c.drift?'drift':''),
+        `${esc(c.label)}<span class="b">${esc(c.badge)}</span>`);
+      b.onclick=()=>{SEL[PLANE]=c.id; renderWire();};
+      box.appendChild(b);
+    });
+    host.appendChild(box);
+  }
+}
+
+function renderLanes(){
+  const p=plane(), k=kase();
+  const own=new Set(k.edges.filter(e=>e.kind!=='base').flatMap(e=>[e.from,e.to]));
+  const base=new Set(k.edges.filter(e=>e.kind==='base').flatMap(e=>[e.from,e.to]));
+  const lit = id => own.has(id)?'own':base.has(id)?'base':null;
+
+  $('#lh-sel').textContent=p.selector_label;
+  const ls=$('#lane-self'); ls.innerHTML='';
+  const sn=el('div','node opnode'+(k.self_node.empty?' noedge':''),
+    `<span>${esc(k.self_node.label)}</span><span class="sub">${k.self_node.sub}</span>`);
+  sn.dataset.id='sel:'+k.id; ls.appendChild(sn);
+
+  [['left','#lh-left','#lane-left'],['middle','#lh-mid','#lane-mid'],['right','#lh-right','#lane-right']]
+  .forEach(([key,lh,ln])=>{
+    $(lh).textContent=p.lanes[key].label;
+    const host=$(ln); host.innerHTML='';
+    p.lanes[key].nodes.forEach(n=>{
+      let l=lit(n.id);
+      if(key==='right'){
+        const on = n.id==='out:'+k.outcome || n.id==='out:'+k.alt_outcome || own.has(n.id);
+        host.appendChild(laneNode(n, on?'own':null));
+        if(on) host.lastChild.classList.add('out','lit-'+n.label.split(' ')[0]);
+        return;
+      }
+      host.appendChild(laneNode(n,l));
+    });
+  });
+}
+
+function drawWires(){
+  const svg=$('#wires'), box=svg.parentElement, br=box.getBoundingClientRect();
+  svg.setAttribute('width',br.width); svg.setAttribute('height',br.height); svg.innerHTML='';
+  if(br.width<1000) return;
+  const pos=id=>{
+    const n=box.querySelector(`[data-id="${CSS.escape(id)}"]`); if(!n) return null;
+    const r=n.getBoundingClientRect();
+    return {l:{x:r.left-br.left,y:r.top-br.top+r.height/2},
+            r:{x:r.right-br.left,y:r.top-br.top+r.height/2}};
+  };
+  const draw=(a,b,kind)=>{
+    if(!a||!b) return;
+    const dx=Math.max(30,Math.abs(b.l.x-a.r.x)*0.42);
+    const pth=document.createElementNS('http://www.w3.org/2000/svg','path');
+    pth.setAttribute('d',`M ${a.r.x} ${a.r.y} C ${a.r.x+dx} ${a.r.y}, ${b.l.x-dx} ${b.l.y}, ${b.l.x} ${b.l.y}`);
+    pth.setAttribute('fill','none');
+    pth.setAttribute('stroke',kind==='base'?'var(--border)':'var(--accent)');
+    pth.setAttribute('stroke-width',kind==='base'?1.5:2);
+    if(kind==='via') pth.setAttribute('stroke-dasharray','5 4');
+    svg.appendChild(pth);
+  };
+  const k=kase();
+  k.edges.forEach(e=>draw(pos(e.from),pos(e.to),e.kind));
+  /* the selected word reaches its outcome through whatever the middle lane did */
+  if(PLANE==='query'){
+    const t=k.alt_outcome?'out:REFUSE':'out:COMMIT';
+    (plane().lanes.middle.nodes||[]).forEach(n=>{
+      if(k.edges.some(e=>e.to===n.id)) { draw(pos(n.id),pos(t),'own');
+        if(k.alt_outcome) draw(pos(n.id),pos('out:COMMIT'),'base'); }
+    });
+  }
+}
+
+function renderDetail(){
+  const k=kase(), d=$('#detail'); d.innerHTML='';
+  k.detail.forEach(x=>{ if(x.v) d.appendChild(el('div','dcard',
+    `<div class="t">${esc(x.t)}</div><div class="v">${x.v}</div>`)); });
+  const co=$('#wire-callouts'); co.innerHTML='';
+  k.callouts.forEach(c=>co.appendChild(el('div','callout'+(c.kind==='bad'?' bad':''),
+    `<div class="h">${c.h}</div>${c.p.map(x=>`<p>${x}</p>`).join('')}`)));
+}
+
+function renderWire(){
+  const p=plane();
+  $('#wire-title').textContent=p.title+' — '+p.subtitle;
+  $('#wire-thesis').innerHTML=p.thesis;
+  $('#skel').textContent=p.skeleton||'';
+  if(p.id==='query'){
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`The law says <b>${c.branch_claimed} of ${c.operations}</b> operations
+      branch in the runtime; the gate measures <b>${c.branch_measured} of ${c.operations}</b>. An
+      operation whose edges come from an <code>Intent</code> field rather than from itself is one the
+      skeleton already had. ${c.fields} grammar fields · ${c.filter_ops} filter operators · ${c.slots} slots.`;
+  } else if(p.id==='fold'){
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`${c.grains} grain terms × ${c.kinds} quantity kinds = <b>${c.cells} cells</b>,
+      all filled, asserted by the law's own test. ${c.ops} operators over four stages, ${c.guards} guards,
+      ${c.tiers} provenance tiers. Pick a cell from the law's own grid.`;
+  } else {
+    const c=p.counts;
+    $('#wire-lede').innerHTML=`${c.words} closed words. <b>${c.designed} of ${c.words}</b> are designed
+      and unread — authoring one is a load error today. The measurement narrows the choice to a
+      candidate and then stops.`;
+  }
+  renderSelector(); renderLanes(); renderDetail();
+  requestAnimationFrame(drawWires);
+}
+
+/* --------------------------------------------------------------- fold detail */
+function renderFold(){
+  const f=DATA.fold, p=PLANES.fold;
+  $('#fold-lede').innerHTML=`Indexed by two vocabularies, so a matrix is the RIGHT form here — the
+    query grammar's own file rules a matrix out for itself, because the operation is not an index of
+    anything. Every cell is filled and <code>assert len(LAW) == 25</code> holds it that way. A cell
+    reading <code>refuse</code> is a law, not a gap.`;
+  const t=el('table');
+  let h='<thead><tr><th></th>'+f.kinds.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr></thead><tbody>';
+  f.grains.forEach(r=>{
+    h+=`<tr><th class="rh">${esc(r)}</th>`;
+    f.kinds.forEach(c=>{
+      const cell=f.cells[`${r}|${c}`];
+      h+=`<td><button class="${cell.op==='refuse'?'refuse':''}">${esc(cell.op)}${
+        cell.sub?`<br><span style="font-size:9.5px;opacity:.85">${esc(cell.sub)}</span>`:''}</button></td>`;
+    });
+    h+='</tr>';
+  });
+  t.innerHTML=h+'</tbody>';
+  $('#fold-grid').innerHTML=''; $('#fold-grid').appendChild(t);
+
+  $('#fold-guards').innerHTML='';
+  f.guards.forEach(g=>$('#fold-guards').appendChild(el('div','callout',
+    `<div class="h"><code>${esc(g.id)}</code> ${esc(g.title)}</div><p>${esc(g.why)}</p>`)));
+
+  let o='<table><thead><tr><th>operator</th><th>stage</th><th>composes</th><th>operands</th></tr></thead><tbody>';
+  Object.entries(f.ops).sort((a,b)=>a[1].stage-b[1].stage).forEach(([n,s])=>{
+    o+=`<tr><td class="k">${esc(n)}</td><td>${s.stage} · ${esc(f.stages[s.stage]||'')}</td>
+      <td>${s.composes?'<span class="pl good">composes</span>':'<span class="pl bad">DOES NOT COMPOSE</span>'}</td>
+      <td>${s.operands.map(x=>`<code>${esc(x)}</code>`).join(' ')}</td></tr>`;
+  });
+  $('#fold-ops').innerHTML='<div class="scroll">'+o+'</tbody></table></div>';
+
+  let b='<table><thead><tr><th>mac.MeasureType member</th><th>= this law\'s cell</th></tr></thead><tbody>';
+  Object.entries(p.bridge).forEach(([m,c])=>{
+    b+=`<tr><td class="k">${esc(m)}</td><td class="k">${esc(c)}</td></tr>`;
+  });
+  $('#fold-bridge').innerHTML='<div class="scroll">'+b+'</tbody></table></div>'
+    +`<div class="callout"><div class="h">Not two vocabularies. One law at two grains.</div>
+      <p>Each member of the older five-term vocabulary is a PAIR here — a relation fact and a column
+      fact — which is the split this law argues for. <code>Stock</code> is the one that proves it: it
+      is not a kind at all, it is an <b>extensive</b> quantity on an <b>observation</b> relation, and
+      reading it as a kind is what made the old matrix need an axis dimension that four of its five
+      members ignored.</p>
+      <p>Checked by <code>tests/test_foldplane_law.py</code>, which recomputes the framework matrix
+      against this mirror and fails on any divergence not declared with its ruling. It SKIPS when the
+      framework checkout is absent — stated in its own docstring as a real weakness, since a runner
+      that clones one repo cannot catch a divergence.</p></div>`;
+}
+
+/* ------------------------------------------------------- query states + gaps */
+function renderQuery(){
+  let h='<table><thead><tr><th>the ontology declares</th><th>effect</th><th>outcome</th></tr></thead><tbody>';
+  DATA.declaration_states.forEach(s=>{
+    const eff=String(s.effect||''), refuse=/refuse/.test(eff), code=(eff.match(/refuse (\w+)/)||[])[1];
+    h+=`<tr><td>${esc(s.state)}</td><td>${esc(eff)}</td><td>${refuse
+      ? chip('REFUSE')+(code?` <span class="pl bad">${esc(code)}</span>`:'') : chip('COMMIT')}</td></tr>`;
+  });
+  $('#gates').innerHTML='<div class="scroll">'+h+'</tbody></table></div>';
+
+  let c='<table><thead><tr><th>code</th><th>what it means</th></tr></thead><tbody>';
+  Object.entries(DATA.vocabulary.diagnostic_code).forEach(([k,v])=>{
+    c+=`<tr><td class="k">${esc(k)}</td><td>${esc(v.description)}</td></tr>`;});
+  $('#codes').innerHTML='<div class="scroll">'+c+'</tbody></table></div>';
+
+  const R=DATA.reachability, cc=DATA.counts;
+  const withCount=DATA.gaps.filter(g=>g.sole!=null).length;
+  $('#gaps-lede').innerHTML=`${cc.gaps} recorded gaps, plus ${cc.projection_gaps} in the projection
+    plane. ${withCount} carry a corpus count, measured against ${esc(R.corpus_questions)} third-party
+    questions over ${esc(R.corpus_databases)} databases, counted as <b>sole</b> — questions the
+    feature ALONE costs. <b>${cc.stale} are stale</b>: the <code>Intent</code> has since gained the
+    field and the planner reads it, which no gate checks.`;
+
+  const host=$('#gaps'); host.innerHTML='';
+  const measured=DATA.gaps.filter(g=>g.sole!=null).sort((a,b)=>b.sole-a.sole);
+  const max=Math.max(...measured.map(g=>g.sole));
+  const bars=el('div','bars');
+  bars.appendChild(el('div',null,'<div class="lane-h">questions each gap alone costs</div>'));
+  measured.forEach(g=>{
+    const b=el('div','bar'+(g.stale?' stale':''));
+    b.innerHTML=`<div class="nm">${g.stale?`<s>${esc(g.id)}</s>`:esc(g.id)}</div>
+      <div class="tr"><div class="fl" style="width:${(g.sole/max*100).toFixed(1)}%"></div></div>
+      <div class="vl">${num(g.sole)}</div>`;
+    bars.appendChild(b);
+    if(g.stale) bars.appendChild(el('div',null,
+      `<div style="margin:-4px 0 10px 202px;font-size:12px;color:var(--muted)">
+        <span class="pl good">CLOSED?</span> <code>Intent.${esc(g.stale.field)}</code> exists and the
+        planner reads it ${g.stale.reads}× — this gap may no longer be one.</div>`));
+  });
+  bars.appendChild(el('div','reach',
+    `<div><div class="n">${esc(R.today)}%</div><div class="l">reachable today</div></div>
+     <div><div class="n">${esc(R.after_five)}%</div><div class="l">after the first five</div></div>
+     <div><div class="n tnum">${num(measured.reduce((a,g)=>a+g.sole,0))}</div><div class="l">questions in this ledger</div></div>`));
+  bars.appendChild(el('div','callout bad',
+    `<div class="h">Both percentages are computed from this ledger.</div>
+     <p>If ${cc.stale} of its entries are closed, the roadmap and the reachability figure are both out
+     of date — and the ledger is the thing the roadmap is read from.</p>`));
+  host.appendChild(bars);
+
+  DATA.gaps.filter(g=>g.sole==null).forEach(g=>{
+    const bad=/worst class/i.test(String(g.severity||''));
+    host.appendChild(el('div','callout'+(bad?' bad':''),
+      `<div class="h"><code>${esc(g.id)}</code> · ${esc(g.what)}
+        ${g.stale?`<span class="pl good">CLOSED? Intent.${esc(g.stale.field)} now read</span>`:''}
+        ${bad?'<span class="pl bad">answers instead of refusing</span>':''}</div>
+       <p>${esc(g.why)}</p>${g.example?`<p><b>Example.</b> ${esc(g.example)}</p>`:''}
+       ${g.measured?`<p><b>Measured.</b> ${esc(g.measured)}</p>`:''}`));
+  });
+}
+
+/* --------------------------------------------------------------------- law */
+function renderLaw(){
+  const host=$('#law'); host.innerHTML='';
+  const r=DATA.runtime;
+  const rows=[
+    ['the query grammar','grammar/query_grammar.yaml','PROPOSED · the runtime does not read it',
+     'checked AGAINST the runtime by check_query_grammar.py (R1 vocabularies agree, R2 branch claims true, R3 fold-gate set agrees)',
+     DATA.drifts.length+' live drift(s) today'],
+    ['the fold law','mac_runtime/foldplane/vocabulary.py','MIRRORED into the runtime · implemented',
+     'tests/test_foldplane_law.py recomputes the framework matrix against the mirror, divergences declared with their ruling',
+     'passes — and SKIPS where the framework checkout is absent'],
+    ['the rulings','reference_manual/column_effects.yaml + the manual','DESIGNED · '+PLANES.rulings.counts.designed+' of '+PLANES.rulings.counts.words+' unread',
+     'ColumnSpec forbids the keys, so authoring one is a LOAD ERROR rather than a silent no-op',
+     'one is enforced under a retired name — see the column bench'],
+  ];
+  let h='<table><thead><tr><th>law</th><th>home</th><th>status</th><th>how it is held to the code</th><th>today</th></tr></thead><tbody>';
+  rows.forEach(x=>{h+='<tr>'+x.map((c,i)=>i===0||i===1?`<td class="k">${esc(c)}</td>`:`<td>${esc(c)}</td>`).join('')+'</tr>';});
+  host.innerHTML='<div class="scroll">'+h+'</tbody></table></div>';
+
+  if(DATA.drifts.length){
+    host.appendChild(el('div','sec','the query grammar\'s live drifts'));
+    DATA.drifts.forEach(d=>host.appendChild(el('div','callout bad',`<p>${esc(d)}</p>`)));
+    host.appendChild(el('div','callout',
+      `<div class="h">Read this the right way round.</div>
+       <p>The code is not wrong. The planner gained a branch for <code>sum</code>,
+       <code>average</code> and <code>ratio</code>; the law still says those three emerge. The gate is
+       doing its job — the law needs the edit, and the grammar's headline claim that "four of the nine
+       change anything at all" is now <b>${r.branched_by_name.length}</b>.</p>`));
+  }
+
+  host.appendChild(el('div','sec','R4 — the rule no gate has'));
+  host.appendChild(el('div','callout bad',
+    `<div class="h">No <code>not_expressible</code> entry may name something the Intent has since gained.</div>
+     <p>R1–R3 all look at the operation vocabulary; nothing looks at the gap ledger, so a gap stays
+     recorded after the field that closes it lands.</p>
+     ${DATA.stale_gaps.map(s=>`<p><code>${esc(s.gap)}</code> is declared not expressible, while
+       <code>Intent.${esc(s.field)}</code> exists and the planner reads it ${s.reads}×.</p>`).join('')}
+     <p>A fourth rule worth writing, and cheap: the mapping from a gap id to the field that closes it
+     is a dozen lines.</p>`));
+
+  host.appendChild(el('div','sec','not drawn here'));
+  host.appendChild(el('div','card',`<div class="card-b" style="color:var(--muted)">
+    <p style="margin:0 0 8px"><b>mac.schema.json</b> — the STRUCTURAL grammar, 37 <code>$defs</code>,
+    exactly one copy in-tree enforced by <code>check_grammar_home.py</code>. It decides which keys may
+    appear at all, so it sits underneath all three planes rather than beside them.</p>
+    <p style="margin:0 0 8px"><b>The 19 vocabularies and 19 canons</b> — the rest of what a bundle can
+    declare, and the honest denominator for "what is unread".</p>
+    <p style="margin:0"><b>The interpreter</b> — how an utterance becomes an Intent. Every plane here
+    starts after that.</p></div>`));
+
+  host.appendChild(el('div','prov',
+    `generated by ${esc(DATA.generated_by)} · query law from grammar/query_grammar.yaml
+     (${esc(DATA.metadata.status||'')}) · fold law loaded in isolation from the runtime mirror ·
+     rulings from reference_manual/column_effects.yaml · terms from mac_vocabulary.yaml ·
+     runtime read as text from ${esc(r.root)}`));
+}
+
+/* ------------------------------------------------------------------- shell */
+const VIEWS=[['planes','Three planes'],['wire','The wiring'],['fold','The fold law'],
+             ['query','Query · states & gaps'],['law','Law vs runtime']];
+let CUR='planes';
+function go(id){
+  CUR=id;
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  $('#v-'+id).classList.add('on');
+  document.querySelectorAll('.mb-tab[data-v]').forEach(x=>x.classList.toggle('active',x.dataset.v===id));
+  $('#planesw').style.display = id==='wire' ? '' : 'none';
+  $('#modesw').style.display = (id==='wire' && plane().sources) ? '' : 'none';
+  if(id==='wire') requestAnimationFrame(drawWires);
+}
+function renderShell(){
+  const t=$('#tabs'); t.innerHTML='';
+  VIEWS.forEach(([id,lab])=>{
+    const b=el('button','mb-tab'+(CUR===id?' active':''),lab);
+    b.dataset.v=id; b.onclick=()=>go(id); t.appendChild(b);
+  });
+  const ps=$('#planesw'); ps.innerHTML='';
+  DATA.planes.forEach(p=>{
+    const b=el('button',PLANE===p.id?'on':'',p.id.toUpperCase());
+    b.title=p.title+' — middle lane: '+p.middle;
+    b.onclick=()=>{PLANE=p.id; renderShell(); renderWire(); go('wire');};
+    ps.appendChild(b);
+  });
+  const m=$('#modesw'); m.innerHTML='';
+  if(plane().sources) Object.entries(plane().sources).forEach(([id,why])=>{
+    const b=el('button',SRC===id?'on':'',id.toUpperCase());
+    b.title=why; b.onclick=()=>{SRC=id; renderShell(); renderWire();};
+    m.appendChild(b);
+  });
+  $('#planesw').style.display = CUR==='wire' ? '' : 'none';
+  $('#modesw').style.display = (CUR==='wire' && plane().sources) ? '' : 'none';
+}
+$('#themebtn').onclick=()=>{
+  const c=document.documentElement.dataset.theme==='dark'?'light':'dark';
+  document.documentElement.dataset.theme=c; localStorage.setItem('mac_theme',c);
+  $('#themebtn').textContent=c==='dark'?'☀':'🌙'; requestAnimationFrame(drawWires);
+};
+$('#themebtn').textContent=document.documentElement.dataset.theme==='dark'?'☀':'🌙';
+addEventListener('resize',()=>requestAnimationFrame(drawWires));
+renderShell(); renderCmp(); renderWire(); renderFold(); renderQuery(); renderLaw(); go('planes');
+</script>
+</body>
+</html>

@@ -115,7 +115,7 @@ concept:  # REQUIRED
     scope: <…>  # string
     additivity:  # Per-dimension aggregation rule — the footgun-preventer  # open: extra keys allowed
     axis_kinds:  # v0.6: map each aggregation axis (the same axis names used in…  # open: extra keys allowed
-    measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a mac.MeasureType…
+    measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a…
     unit: <…>  # string
     null_semantics: <…>  # string
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above

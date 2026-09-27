@@ -68,7 +68,7 @@ def _params_from() -> dict:
         f = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
         out = {}
         for name, m in ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
-                        .get("canon", {}).get("members", {}) or {}).items():
+                        .get("canon", {}).get("terms", {}) or {}).items():
             pf = (m or {}).get("params_from")
             if pf:
                 out["mac.canon." + name] = pf
@@ -208,7 +208,7 @@ def check_canon_binding(root) -> list:
             code="MAC003", severity=D.WARNING, source="check_canon_binding",
             summary=f"{len(restated)} canon parameter(s) repeat a fact the concept already declares",
             note="Agreeing today is not a defence — nothing keeps the two in step. "
-                 "mac_vocabulary.yaml#canon.members[].params_from names where each is read from.",
+                 "mac_vocabulary.yaml#canon.terms[].params_from names where each is read from.",
             witnesses=restated))
     if drifted:
         out.append(D.Diagnostic(
