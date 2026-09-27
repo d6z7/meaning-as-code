@@ -220,8 +220,12 @@ def check_parity(effects: dict, table: dict[str, dict], vocab: dict) -> list[str
         if k.get("status") == "enforced" and not (k.get("reader") or "").strip():
             findings.append(f"{name}: status enforced with no reader named")
         legal = k.get("legal") or table.get(name, {}).get("legal") or ""
-        for ref in re.findall(r"mac\.([A-Za-z_]+)", str(legal)):
-            if ref not in vocab:
+        # A NAMESPACE MAY NOW BE DOTTED — `mac.concept.column.role`, not `mac.column_role`. A regex
+        # that captures one segment resolves `mac.relation` and reports the whole estate as undefined.
+        # Match the LONGEST declared namespace that the token starts with, which is the only reading
+        # that works for both shapes (`mac.name_register` did not move).
+        for ref in re.findall(r"mac\.((?:[A-Za-z_]+)(?:\.[A-Za-z_]+)*)", str(legal)):
+            if not any(ref == ns or ref.startswith(ns + ".") for ns in vocab):
                 findings.append(f"{name}: legal values cite mac.{ref}, which mac_vocabulary.yaml does not define")
 
     allowed = set(vocab.get("outcome_class", {}).get("terms") or {}) | NON_ANSWER_OUTCOMES

@@ -115,7 +115,7 @@ concept:  # REQUIRED
     scope: <…>  # string
     additivity:  # Per-dimension aggregation rule — the footgun-preventer  # open: extra keys allowed
     axis_kinds:  # v0.6: map each aggregation axis (the same axis names used in…  # open: extra keys allowed
-    unit: <…>  # string
+    unit: <…>  # string · The unit of the measure this concept IS — 'USD', 'units',…
     null_semantics: <…>  # string
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
@@ -262,7 +262,7 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
   code_column: <…>  # string
   value_filter: <…>  # string
   join_rule: <…>  # string
-  discriminator: <…>  # string
+  discriminator: <…>  # string · THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a…
   snapshot_rule: <…>  # string
   family_resolution: <…>  # string
   row_count: <…>  # integer|string

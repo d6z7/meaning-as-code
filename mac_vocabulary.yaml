@@ -298,13 +298,18 @@ concept.identity:
   kind: vocabulary
   closed: true
   description: How a concept's canonical identity is established (declared once per concept).
+  # `resolved_axis` RETIRED 2026-09-28 by operator ruling ("i rule against for the time being").
+  # It meant "the serving view PINS or collapses this axis, so it is not exposed as a filterable
+  # key" — a real distinction, and one a column map cannot make, since there is no column to flag.
+  # But it was used in 0 of 62 concepts across four bundles, and a term with no delivered case is a
+  # claim about a need nobody has shown. Removed rather than kept 'in case': an unused member of a
+  # CLOSED vocabulary is indistinguishable from a wrong one until someone reaches for it.
   terms:
     iso:            "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
     code:           "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
     namespace_code: "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
     fk_name:        "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
     composite:      "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
-    resolved_axis:  "An axis the serving view PINS or collapses (e.g. reporting role, firmness). Keyless-by-design: not exposed as a filterable key on the default view (grounding columns: [])."
     sme_pending:    "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
 
 # ===========================================================================

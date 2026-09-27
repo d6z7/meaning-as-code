@@ -688,7 +688,8 @@
           }
         },
         "unit": {
-          "type": "string"
+          "type": "string",
+          "description": "The unit of the measure this concept IS — 'USD', 'units', 'square_metres'. For a COMPOSED measure (several columns carrying `measure`) this is the unit of the composition and is REQUIRED, because the factor units differ and nothing may pick one: `Quantity x NetPrice` is USD though its factors are `units` and `USD`. With a single measure column it projects from that column's `measure.unit`. It is prose, deliberately: a unit carries what a reader must know to trust a number, and the one measured case where it was WRONG (an amount claimed in the order's own currency when it is stored in USD) was caught by a sentence, not by a token."
         },
         "null_semantics": {
           "type": "string"
@@ -920,7 +921,7 @@
                         "measure": {
                           "type": "object",
                           "additionalProperties": false,
-                          "description": "The measure facts -> concept.semantics.measure_type / unit / additivity. Only ONE column per concept may carry it: semantics.unit is singular, and taking the first of several would make an answer's unit depend on YAML key order.",
+                          "description": "The measure facts -> concept.semantics.measure_type / unit / additivity.\n\nSEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before.\n\nTHIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.",
                           "properties": {
                             "type": {
                               "type": "string"
@@ -968,7 +969,8 @@
           "type": "string"
         },
         "discriminator": {
-          "type": "string"
+          "type": "string",
+          "description": "THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a predicate, and no rows are excluded by it. Where one relation is column-per-measure, two concepts read the SAME rows and differ only in which column they read: GrossSalesAmount takes `UnitPrice`, NetSalesAmount takes `NetPrice`, both over all 223 974 lines. Naming it is what makes the pair distinguishable to a reader and to a router; a `value_filter` here would be a fabrication, because nothing is filtered.\n\nDocumented 2026-09-28. It has existed since v0.5 with NO description, which is how a slot becomes the next `attribute`: unread, unexplained, and then used for whatever seems to fit."
         },
         "snapshot_rule": {
           "type": "string"

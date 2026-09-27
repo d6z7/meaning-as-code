@@ -59,7 +59,15 @@ def declared_key_columns(root: str) -> dict[str, list[str]]:
     for f in sorted(glob.glob(os.path.join(root, "data", "datasets", "*.yaml"))):
         doc = yaml.safe_load(open(f, encoding="utf-8")) or {}
         rel = os.path.relpath(f, root)
-        for fk in (doc.get("foreign_keys") or []):
+        # RETIRED SHAPE (operator ruling 2026-09-27): the top-level `foreign_keys:` block is
+        # gone and `columns[].references` is the one home. Reading the old key returned an
+        # empty list on every delivered bundle, so this loop checked nothing — kept here
+        # reading BOTH only so an older bundle is still checked rather than silently skipped.
+        _fks = list(doc.get("foreign_keys") or []) + [
+            {"from_column": c.get("name"), "to_table": c.get("references")}
+            for c in (doc.get("columns") or [])
+            if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
+        for fk in _fks:
             if fk.get("from_column"):
                 add(str(fk["from_column"]), f"{rel} declares FK -> {fk.get('to_table')}")
         # the grain key is the other place a column is stated to BE an identifier

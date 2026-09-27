@@ -403,7 +403,7 @@ keys:
     block: measured
     required: never
     default: null
-    legal: mac.storage_role
+    legal: mac.relation.column.role
     decides: the physical shape of the column in its relation
     plane: [check]
     outcomes: []
@@ -953,7 +953,7 @@ bench:
         derives_note: >-
           This panel computes nothing of its own. The legal fold per axis comes from
           mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five
-          types × two kinds = ten universal cells, each naming a mac.aggregation_effect term. An
+          types × two kinds = ten universal cells, each naming a mac.concept.aggregation_effect term. An
           applied ontology references those members; it never re-encodes the matrix, and neither
           does this page.
         toggles:
@@ -979,7 +979,7 @@ bench:
 #
 # THE OPERATOR'S DECOMPOSITION, 2026-09-27, and the reason this section exists: "where a query may
 # use it" was carried as ONE permission, and the vocabulary's own words force it into THREE.
-# `mac.column_role.key` says: "A name resolves TO it through a register; a query then filters or
+# `mac.concept.column.role.key` says: "A name resolves TO it through a register; a query then filters or
 # joins on the exact value. NEVER MATCHED AGAINST A LABEL." That is not one permission granted or
 # withheld — it is `resolve: no` beside `filter: yes`, in a single sentence.
 #

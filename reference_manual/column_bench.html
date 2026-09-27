@@ -892,7 +892,7 @@ const DATA = {
    "block": "measured",
    "required": "never",
    "default": null,
-   "legal": "mac.storage_role",
+   "legal": "mac.relation.column.role",
    "decides": "the physical shape of the column in its relation",
    "plane": [
     "check"
@@ -1770,7 +1770,7 @@ const DATA = {
      "headline": "One column, five declarable types, ten universal folds",
      "reads": "18 407 distinct values over 223 974 rows — a numeric payload, never an axis.",
      "derives": "measure_matrix",
-     "derives_note": "This panel computes nothing of its own. The legal fold per axis comes from mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five types × two kinds = ten universal cells, each naming a mac.aggregation_effect term. An applied ontology references those members; it never re-encodes the matrix, and neither does this page.",
+     "derives_note": "This panel computes nothing of its own. The legal fold per axis comes from mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five types × two kinds = ten universal cells, each naming a mac.concept.aggregation_effect term. An applied ontology references those members; it never re-encodes the matrix, and neither does this page.",
      "toggles": [
       {
        "key": "measure.type",
@@ -1821,7 +1821,7 @@ const DATA = {
   }
  ],
  "vocabulary": {
-  "aggregation_effect": {
+  "concept.aggregation_effect": {
    "closed": true,
    "description": "THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set answers one question in one grammar: \"how do I fold this measure along this axis?\" v0.1.15 REPLACED THE PREVIOUS FOUR. They answered the same question in three different grammars — `additive` named a property, `averageable` named a capability, `non_aggregable` named a negated capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules fell into exactly that gap and guarded on a value no register could hold. `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: an inventory measure says \"READ the level at the END of the period\" and a reach measure says \"READ as stored ... resolve to the matching pre-computed abstraction level instead of folding\". Both READ a stored row and refuse to fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each concept's `resolve.*` rules, never in the fold vocabulary.",
    "terms": {
@@ -1836,7 +1836,7 @@ const DATA = {
     }
    }
   },
-  "axis_kind": {
+  "concept.axis_kind": {
    "closed": true,
    "description": "The additivity-relevant classification of an aggregation axis.",
    "terms": {
@@ -1848,7 +1848,7 @@ const DATA = {
     }
    }
   },
-  "column_role": {
+  "concept.column.role": {
    "closed": true,
    "description": "The analytical role of a column — where a query may use it, and the default guardrail.",
    "terms": {
@@ -1869,22 +1869,22 @@ const DATA = {
     }
    }
   },
-  "identity_role": {
+  "concept.column.identity": {
    "closed": true,
-   "description": "What part a column plays in its concept's identity (per column; see mac.identity_kind for the concept).",
+   "description": "What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).",
    "terms": {
     "canonical": {
-     "description": "THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.identity_kind.composite` or `resolved_axis` rather than nominating a column that does not identify."
+     "description": "THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` or `resolved_axis` rather than nominating a column that does not identify."
     },
     "part": {
-     "description": "ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.identity_kind.composite` alongside."
+     "description": "ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside."
     },
     "reference": {
      "description": "A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented."
     }
    }
   },
-  "storage_role": {
+  "relation.column.role": {
    "closed": true,
    "description": "The physical shape of a column in its relation, independent of its analytical role.",
    "terms": {
@@ -1905,7 +1905,7 @@ const DATA = {
     }
    }
   },
-  "column_ruling": {
+  "concept.column.ruling": {
    "closed": true,
    "description": "An authored judgement about a column, beyond what measurement can establish.",
    "terms": {
@@ -1956,48 +1956,48 @@ const DATA = {
     }
    }
   },
-  "measure_type": {
+  "concept.column.measure_type": {
    "closed": true,
    "description": "How a measure aggregates — defined once, over axis_kind.",
    "terms": {
     "flow": {
      "description": "A quantity that accrues per period and accumulates over time (e.g. units sold in a period).",
      "additivity": {
-      "time": "mac.aggregation_effect.additive",
-      "categorical": "mac.aggregation_effect.additive"
+      "time": "mac.concept.aggregation_effect.additive",
+      "categorical": "mac.concept.aggregation_effect.additive"
      }
     },
     "stock": {
      "description": "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand).",
      "additivity": {
-      "time": "mac.aggregation_effect.none",
-      "categorical": "mac.aggregation_effect.additive"
+      "time": "mac.concept.aggregation_effect.none",
+      "categorical": "mac.concept.aggregation_effect.additive"
      }
     },
     "intensive": {
      "description": "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM.",
      "additivity": {
-      "time": "mac.aggregation_effect.average",
-      "categorical": "mac.aggregation_effect.average"
+      "time": "mac.concept.aggregation_effect.average",
+      "categorical": "mac.concept.aggregation_effect.average"
      }
     },
     "precomputed": {
      "description": "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a measure_type fact; whether you may fold is an axis fact.",
      "additivity": {
-      "time": "mac.aggregation_effect.none",
-      "categorical": "mac.aggregation_effect.none"
+      "time": "mac.concept.aggregation_effect.none",
+      "categorical": "mac.concept.aggregation_effect.none"
      }
     },
     "target": {
      "description": "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis.",
      "additivity": {
-      "time": "mac.aggregation_effect.none",
-      "categorical": "mac.aggregation_effect.none"
+      "time": "mac.concept.aggregation_effect.none",
+      "categorical": "mac.concept.aggregation_effect.none"
      }
     }
    }
   },
-  "identity_kind": {
+  "concept.identity": {
    "closed": true,
    "description": "How a concept's canonical identity is established (declared once per concept).",
    "terms": {
@@ -2024,7 +2024,7 @@ const DATA = {
     }
    }
   },
-  "rule_kind": {
+  "concept.rule": {
    "closed": true,
    "description": "What a behavioural rule governs — the rule's type.",
    "terms": {
@@ -2496,26 +2496,26 @@ const DATA = {
  },
  "census": {
   "terms": {
-   "storage_role": [
+   "relation.column.role": [
     "primary_key",
     "foreign_key",
     "composite_key_part",
     "value",
     "discriminator"
    ],
-   "column_role": [
+   "concept.column.role": [
     "key",
     "dimension",
     "measure",
     "period",
     "housekeeping"
    ],
-   "identity_role": [
+   "concept.column.identity": [
     "canonical",
     "part",
     "reference"
    ],
-   "identity_kind": [
+   "concept.identity": [
     "iso",
     "code",
     "namespace_code",
@@ -2524,14 +2524,14 @@ const DATA = {
     "resolved_axis",
     "sme_pending"
    ],
-   "measure_type": [
+   "concept.column.measure_type": [
     "flow",
     "stock",
     "intensive",
     "precomputed",
     "target"
    ],
-   "column_ruling": [
+   "concept.column.ruling": [
     "label_of",
     "finer_than",
     "scoped_by",
@@ -2602,8 +2602,8 @@ const DATA = {
    }
   },
   "findings": [
-   "R1 dim_contoso_store.Channel declares data-plane role 'dimension', not a mac.storage_role term — a mac.column_role term in a mac.storage_role slot",
-   "R2 concept-plane role 'attribute' is not a mac.column_role term (20 binding(s); the closed set is ['key', 'dimension', 'measure', 'period', 'housekeeping'])"
+   "R1 dim_contoso_store.Channel declares data-plane role 'dimension', not a mac.relation.column.role term — a mac.concept.column.role term in a mac.relation.column.role slot",
+   "R2 concept-plane role 'attribute' is not a mac.concept.column.role term (20 binding(s); the closed set is ['key', 'dimension', 'measure', 'period', 'housekeeping'])"
   ]
  },
  "bundle": "mac-ontology-contoso"

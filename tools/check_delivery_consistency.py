@@ -95,17 +95,18 @@ def load(root: pathlib.Path, yaml) -> dict:
         except Exception:  # noqa: BLE001
             edges_doc = {}
 
-    # THE MEASURED FOREIGN KEYS, from the descriptors that carry them — both shapes, because the data
-    # layer currently states them two ways and this gate must not prefer one (backlog item 2).
+    # THE MEASURED FOREIGN KEYS, from `columns[].references` AND NOWHERE ELSE. Operator ruling
+    # 2026-09-27: "i think columns block is better" — so that is the one home and the top-level
+    # `foreign_keys:` block is RETIRED. This gate used to read both "because the data layer currently
+    # states them two ways", which was true before the ruling and stale after it: measured, 0 of 16
+    # descriptors carry the block, so the second loop was dead code keeping a retired shape alive.
+    # Enforced below by the RETIRED-SHAPE invariant, so it cannot come back unnoticed.
     fks = []
     for stem, d in {**served, **sources}.items():
         for c in d.get("columns") or []:
             tgt = str(c.get("references") or "").strip()
             if tgt and c.get("role") == "foreign_key":
                 fks.append((stem, str(c.get("name")), tgt.split(".")[-1]))
-        for fk in d.get("foreign_keys") or []:
-            if isinstance(fk, dict) and fk.get("to_table"):
-                fks.append((stem, str(fk.get("from_column")), str(fk["to_table"]).split(".")[-1]))
 
     return {
         "served": served, "sources": sources, "profiles": docs("data/profiles/*.yaml"),
@@ -474,6 +475,137 @@ def inv_member_grain(st: dict) -> list[dict]:
     return out
 
 
+#: SHAPES A RULING RETIRED. Each must appear in ZERO delivered artifacts; a producer still writing one
+#: keeps a dead dialect alive, and a consumer still reading it is how `physical_edges` came to lift a
+#: key nobody wrote. `field_roles` is NOT here — it is LEGACY, still read on purpose so an older bundle
+#: stays checked rather than silently skipped.
+RETIRED_SHAPES = (
+    ("foreign_keys", "data/{sources,datasets}/*.yaml",
+     "the top-level `foreign_keys:` block. Operator ruling 2026-09-27: `columns[].references` is the "
+     "one home for a foreign key. Measured that day: 0 of 8 served descriptors carried this block while "
+     "`physical_edges` read it exclusively — which is why the edge lift wrote 0 edges over 19 concepts"),
+)
+
+
+def inv_retired_shape(st: dict) -> list[dict]:
+    """A shape a ruling retired appears in NO delivered artifact.
+
+    WHY THIS IS AN INVARIANT AND NOT A NOTE. Three times in two days the framework read a shape nothing
+    wrote: `foreign_keys:` (0 of 8 descriptors, and the edge lift read only it), `grounding.field_roles`
+    (0 of 19 concepts, and ROLE-VOCAB read only it), and `measure_type.terms` (the key was `members`, so
+    a generator silently got nothing). Each cost real output and none of them errored, because reading
+    an absent key returns an empty collection and an empty collection is a valid answer everywhere.
+    """
+    out = []
+    for key, where, why in RETIRED_SHAPES:
+        carriers = sorted(stem for stem, d in {**st["served"], **st["sources"]}.items() if d.get(key))
+        total = len(st["served"]) + len(st["sources"])
+        if not carriers:
+            out.append(_i(key, OK, f"no artifact carries the retired `{key}:` ({total} descriptor(s) "
+                                   f"checked in {where})"))
+        else:
+            out.append(_i(key, VIOLATION,
+                          f"{len(carriers)} of {total} descriptor(s) still carry the RETIRED `{key}:` "
+                          f"— {', '.join(carriers[:4])}. {why}"))
+    return out
+
+
+def inv_one_home(st: dict) -> list[dict]:
+    """The canonical key is declared ONCE — on the column, not also on the concept.
+
+    CONFORMANCE §2.1 states this and until now NOTHING ENFORCED IT, which is the shape of defect this
+    whole checklist exists to find: a law written in prose beside a framework that cannot check it.
+
+    THE SCHEMA HAS SAID IT ALL ALONG, in the column map's own `identity` description: "the key is a
+    COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree."
+    Measured 2026-09-27: 15 of 19 concepts in the reference bundle carried it only on the column, and
+    the ONLY two carrying both were the two I had authored that day — while writing the law. A
+    composite key settles the argument outright: `canonical_key` is one string, and `identity: part`
+    marks as many columns as the key has.
+    """
+    out = []
+    for name, d in sorted(st["concepts"].items()):
+        declared = str((((d.get("concept") or {}).get("identity") or {}).get("canonical_key") or "")).strip()
+        cols = []
+        for src in ((d.get("grounding") or {}).get("sources") or []):
+            cm = src.get("columns")
+            if isinstance(cm, dict):
+                cols += [cn for cn, b in cm.items()
+                         if isinstance(b, dict) and b.get("identity") in ("canonical", "part")]
+        if declared and cols:
+            out.append(_i(name, VIOLATION,
+                          f"concept {name!r} declares canonical_key {declared!r} AND marks "
+                          f"{', '.join(cols)} on the column map — two homes for one fact, which can "
+                          f"disagree. The column is the home; remove the concept-level key"))
+        elif declared:
+            out.append(_i(name, VIOLATION,
+                          f"concept {name!r} declares canonical_key {declared!r} at CONCEPT level with "
+                          f"no column marked `identity: canonical` — the key is a column fact and must "
+                          f"be declared on the column"))
+        elif cols:
+            out.append(_i(name, OK, f"concept {name!r} declares its key only on the column map "
+                                    f"({', '.join(cols)})"))
+        else:
+            out.append(_i(name, NA, f"concept {name!r} marks no key column, so there is no key to "
+                                    f"have two homes for"))
+    return out
+
+
+def inv_measure_unit(st: dict) -> list[dict]:
+    """A COMPOSED measure states its own unit; a single one may project it.
+
+    THE DEFECT THIS CATCHES, AND IT IS THE HALF THAT WAS MISSING. `mac.schema.json` said "Only ONE
+    column per concept may carry `measure`" for the reason "semantics.unit is singular" — and NOTHING
+    ENFORCED IT. Not JSON Schema (it cannot count keys of a map), not any tool. So the rule forbade a
+    harmless thing in prose while the hazard it feared went unguarded: a concept could carry five
+    measure columns in five units and pass every gate.
+
+    THE COST WAS MEASURED ON 2026-09-27. Revenue on an order line is `Quantity x NetPrice` — two
+    columns, ONE amount in USD. contoso1 declared exactly that (under the retired `field_roles` shape,
+    which had no limit) for GrossSalesAmount and NetSalesAmount, and answered "the ratio of gross to
+    net revenue" as 1.063008040065774. contoso4, on the column standard, could not state gross revenue
+    at all — the new shape was LESS EXPRESSIVE than the one it replaced, and its own SalesAmount
+    concept said so: "IT IS NOT A COLUMN ... the figure must be composed."
+
+    SO THE RULE IS NOW ABOUT THE UNIT: several columns may carry `measure`; with more than one, the
+    concept MUST declare `semantics.unit`, because the projection cannot choose between two factor
+    units and taking the first would make an answer's unit depend on YAML key order. That last clause
+    is the original reason, kept — solved by requiring the author to say rather than by forbidding the
+    composition.
+    """
+    out = []
+    for name, d in sorted(st["concepts"].items()):
+        cols = []
+        for src in ((d.get("grounding") or {}).get("sources") or []):
+            cm = src.get("columns")
+            if isinstance(cm, dict):
+                for cn, b in cm.items():
+                    if isinstance(b, dict) and (b.get("role") == "measure" or b.get("measure")):
+                        cols.append((cn, ((b.get("measure") or {}).get("unit") or "")))
+        if not cols:
+            out.append(_i(name, NA, f"concept {name!r} carries no measure column, so no unit is owed"))
+            continue
+        declared = str((((d.get("concept") or {}).get("semantics") or {}).get("unit") or "")).strip()
+        units = sorted({u for _c, u in cols if u})
+        if len(cols) == 1:
+            out.append(_i(name, OK,
+                          f"concept {name!r} has ONE measure column ({cols[0][0]}), so its unit "
+                          f"projects from the column" + (f" ({units[0]})" if units else "")))
+            continue
+        shown = ", ".join(f"{c}={u or '—'}" for c, u in cols)
+        if declared:
+            out.append(_i(name, OK,
+                          f"concept {name!r} composes {len(cols)} measure column(s) ({shown}) and "
+                          f"declares the composed unit {declared!r} on the concept"))
+        else:
+            out.append(_i(name, VIOLATION,
+                          f"concept {name!r} carries {len(cols)} measure columns ({shown}) and declares "
+                          f"NO concept.semantics.unit — so the composed unit is whichever factor a "
+                          f"reader happens to take first, which is YAML key order. State the unit of "
+                          f"the composition"))
+    return out
+
+
 def inv_register_monitor(st: dict) -> list[dict]:
     """Every register has a monitor result, and every descriptor pointer names a register that exists."""
     out = []
@@ -578,7 +710,10 @@ INVARIANTS = (
     # too, where most roles are BARE words checked against a closed set rather than namespaced tokens.
     # A row that describes less than it checks is how a reader comes to trust the wrong denominator.
     ("ROLE-VOCAB", "every column role resolves: closed set, or a declared namespace", inv_role_vocab),
+    ("ONE-HOME", "the canonical key is declared on the column, not also on the concept", inv_one_home),
+    ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
     ("MEMBER-GRAIN", "a concept whose extension is a set names a canonical key", inv_member_grain),
+    ("MEASURE-UNIT", "a composed measure states its own unit; a single one projects it", inv_measure_unit),
     ("REGISTER-MONITOR", "a register has a monitor; a register pointer resolves", inv_register_monitor),
     ("PLANE-COUNTS", "a described relation is a measured relation", inv_plane_counts),
     ("REGISTER-ORPHAN", "a delivered register is pointed at by a descriptor", inv_register_orphan),
@@ -802,9 +937,34 @@ def _self_test() -> int:
     case("MUTANT an undeclared vocabulary namespace",
          lambda st: st["concepts"]["line"]["grounding"]["field_roles"].__setitem__(
              "CK", "CONTOSO4.field_role.key"), "ROLE-VOCAB")
+    # ── RETIRED-SHAPE: the ruled-away `foreign_keys:` block coming back ───────────────────────────
+    case("MUTANT a descriptor still carrying the retired `foreign_keys:` block",
+         lambda st: st["served"]["v_s"].__setitem__(
+             "foreign_keys", [{"from_column": "CK", "to_table": "v_c"}]), "RETIRED-SHAPE")
+
+    # ── ONE-HOME: CONFORMANCE §2.1, unenforced until now ──────────────────────────────────────────
+    case("MUTANT the canonical key declared on the concept AS WELL as the column",
+         lambda st: st["concepts"]["cust"].setdefault("concept", {}).setdefault(
+             "identity", {}).__setitem__("canonical_key", "CK"), "ONE-HOME")
+
     case("MUTANT a set-extension concept with no canonical key",
          lambda st: st["concepts"]["line"].update(values={"closure": "closed", "items": []}),
          "MEMBER-GRAIN")
+    # ── MEASURE-UNIT: the composed measure, which the old `only ONE column` rule forbade ──────────
+    def _compose(st, unit=None):
+        """Make `line` a composed measure: Quantity x CK, two factor units, one amount."""
+        cols = st["concepts"]["line"]["grounding"]["sources"][0]["columns"]
+        cols["CK"] = {"role": "measure", "measure": {"type": "mac.concept.column.measure_type.flow",
+                                                     "unit": "USD"}}
+        cols["Qty"] = {"role": "measure", "measure": {"type": "mac.concept.column.measure_type.flow",
+                                                      "unit": "units"}}
+        if unit:
+            st["concepts"]["line"].setdefault("concept", {}).setdefault("semantics", {})["unit"] = unit
+    case("MUTANT two measure columns and NO concept unit — the composed unit would be key order",
+         lambda st: _compose(st), "MEASURE-UNIT")
+    case("CLEAN two measure columns WITH the composed unit declared is legitimate",
+         lambda st: _compose(st, "USD"), None)
+
     case("MUTANT registers with no monitor result", lambda st: st.update(monitor=False),
          "REGISTER-MONITOR")
     case("MUTANT a register pointer that resolves to nothing",

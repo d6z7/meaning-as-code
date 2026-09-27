@@ -630,7 +630,13 @@ def parse_data_plane(root, concepts):
                      "confidence": co.get("confidence", ""), "description": (co.get("description", "") or "").strip()}
                     for co in (dd.get("columns", []) or []) if isinstance(co, dict)]
             fwd, revj = [], []
-            for fk in (dd.get("foreign_keys", []) or []):
+            # RETIRED SHAPE: `columns[].references` is the one home (ruling 2026-09-27). The
+            # old block was absent from every delivered descriptor, so this drew no edges.
+            _fks = list(dd.get("foreign_keys", []) or []) + [
+                {"from_column": c.get("name"), "to_table": c.get("references")}
+                for c in (dd.get("columns") or [])
+                if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
+            for fk in _fks:
                 if not isinstance(fk, dict):
                     continue
                 edge = {"from_column": fk.get("from_column", ""), "to_table": _rel_leaf(fk.get("to_table")),
