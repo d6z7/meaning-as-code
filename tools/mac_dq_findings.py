@@ -72,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     findings += _broken_references(root, yaml)
     findings += _ambiguous_references(root, yaml)
     findings += _dangling_keys(root, yaml)
+    findings += _unclaimed_served(root, yaml)
 
     existing = _existing(root, yaml)
     merged = _merge(findings, existing)
@@ -239,9 +240,13 @@ def _ambiguous_references(root: pathlib.Path, yaml) -> list[dict]:
                                             "carriers": set()})
                 fam["seen"] += 1
                 fam["carriers"].add(str((r.get("from") or {}).get("relation")))
-    out = []
+    out, emitted = [], set()
     for (col, targets), fam in sorted(fams.items()):
         n = fam["seen"]
+        fid = f"DQ-AMBIGREF-{col.upper()}"
+        if fid in emitted:
+            continue          # one question, asked on both planes, is still ONE finding
+        emitted.add(fid)
         out.append({
             "id": f"DQ-AMBIGREF-{col.upper()}",
             "title": f"`{col}` includes perfectly into {len(targets)} different keys — which is THE "
@@ -453,6 +458,92 @@ def _dangling_keys(root: pathlib.Path, yaml) -> list[dict]:
     return out
 
 
+def _is_served(raw_stem: str, served: set[str]) -> bool:
+    """Is this raw landing served, under its own name or under the convention's served name?
+
+    `v_<dataset>_<stem>` since v0.1.16, so an exact-name test answers False for every relation in a
+    bundle that follows the convention the framework publishes.
+    """
+    return raw_stem in served or any(
+        s == raw_stem or s.endswith(f"_{raw_stem}") for s in served)
+
+
+def _unclaimed_served(root: pathlib.Path, yaml) -> list[dict]:
+    """A served relation that no concept claims and nothing declines IN WRITING.
+
+    THE DECLINE WAS MADE AND NEVER DELIVERED. `harvest --mode concepts` asks its planner to account for
+    every relation as either a concept's grounding or an entry in `not_a_concept[]`, and it refuses a
+    plan that skips one — so the decision is always taken. It is taken in the PLAN, which is a model
+    completion in a gitignored cache, and no artifact on disk records it. Measured on contoso4: the plan
+    declined `v_contoso4_orderrows` ("the operator ruled `sales` the fact of record") and
+    `v_contoso4_orders` ("every one of its six columns is carried by `sales`"), both with reasons, and
+    the bundle shows two served relations with no concept and no explanation.
+
+    So `check_delivery_consistency`'s CONCEPT-RELATION invariant reports them, correctly and forever:
+    from the delivered artifacts they are relations nobody decided about. Raising them here gives the
+    decision the lifecycle every other ruling has — status, ruled_by, reason, carried across
+    re-measurement — instead of leaving it in a cache nobody reads.
+    """
+    served = {f.stem for f in (root / "data" / "datasets").glob("*.yaml")}
+    if not served:
+        return []
+    concepts = sorted((root / "ontology" / "concepts").glob("**/*.yaml"))
+    if not concepts:
+        return []                       # no ontology plane: nothing is owed yet
+    claimed, by_rel = set(), {}
+    for f in concepts:
+        doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        name = ((doc.get("concept") or {}).get("name")) or f.stem
+        for src in (doc.get("grounding") or {}).get("sources") or []:
+            rel = str(src.get("relation") or "").split(".")[-1]
+            if rel:
+                claimed.add(rel)
+                by_rel.setdefault(rel, []).append(name)
+    out = []
+    for rel in sorted(served - claimed):
+        out.append({
+            "id": f"DQ-UNCLAIMED-{rel.upper()}",
+            "title": f"served relation `{rel}` is claimed by no concept",
+            "severity": "medium",
+            "finding": (
+                f"{len(served)} relation(s) are served and {len(claimed)} are claimed by at least one "
+                f"of {len(concepts)} concept(s); `{rel}` is claimed by none. A served relation is one "
+                f"a question can read, so an unclaimed one is either a notion nobody modelled or a "
+                f"relation that should not be served — and the delivered artifacts do not say which."),
+            "needs": (f"Which is it?  ANSWER ONE OF: model_a_concept | stop_serving_it | "
+                      f"backs_no_notion.  A decline is a legitimate answer and the reason is the "
+                      f"deliverable — `backs_no_notion` with no reason leaves the next reader exactly "
+                      f"where this finding found them."),
+            "ruling": {
+                "question": f"`{rel}` is served and claimed by no concept. Which is it?",
+                "answers": ["model_a_concept", "stop_serving_it", "backs_no_notion"],
+                "established": (
+                    f"served: yes (data/datasets/{rel}.yaml). Claimed by: nothing. "
+                    f"{len(claimed)} of {len(served)} served relations are claimed."),
+                "for_the_human": (
+                    "A measurement sees a relation with no concept. Whether that is a gap in the "
+                    "ontology or a relation that should never have been served is a modelling "
+                    "decision, and the planner's own decline lives only in a cached completion."),
+                "consequences": {
+                    "model_a_concept": "a concept grounds on it and the relation becomes answerable",
+                    "stop_serving_it": (
+                        "it leaves the served plane — which on a 1:1 passthrough means authoring a "
+                        "transform, because a passthrough serves everything by construction"),
+                    "backs_no_notion": (
+                        "it stays served and is recorded as deliberately unmodelled, so the next "
+                        "reader finds the decision instead of the gap"),
+                },
+                "recommendation": None,
+                "because": (
+                    "NO RECOMMENDATION FROM MEASUREMENT: nothing in the data distinguishes a notion "
+                    "nobody has modelled yet from a relation that should not be served. The planner "
+                    "may already have decided — check its `not_a_concept` reason before deciding "
+                    "again."),
+            },
+        })
+    return out
+
+
 def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
     """Two raw relations that deliver ONE fact twice — and whether both are being SERVED.
 
@@ -509,7 +600,7 @@ def _duplicate_landings(root: pathlib.Path, yaml) -> list[dict]:
             # landing carries it.
             elsewhere = {c for st, v in rel.items() if st not in (wide, narrow) for c in v["cols"]}
             unreachable = [c for c in extra if c not in elsewhere]
-            both_served = narrow in served and wide in served
+            both_served = _is_served(narrow, served) and _is_served(wide, served)
             out.append({
                 "id": f"DQ-DUP-{narrow.upper()}-{wide.upper()}",
                 "title": (f"`{wide}` re-delivers every line of `{narrow}` — one fact, twice"
