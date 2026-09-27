@@ -35,9 +35,15 @@ from __future__ import annotations
 
 import argparse
 import glob
+import json
 import pathlib
 import re
 import sys
+from datetime import UTC, datetime
+
+#: THE RUN RECORD, bundle-relative. ONE HOME for this path: the gate writes here, the console route
+#: reads here, and a scheduled job looks here. Three copies of a filename is three chances to drift.
+RUNS_REL = "acceptance/delivery_consistency_runs.json"
 
 ACCEPTED_SHAPE = """\
 This gate reads a bundle's DELIVERED artifacts and compares them with each other:
@@ -156,72 +162,151 @@ def _declared_namespaces(root: pathlib.Path, yaml) -> set[str]:
 # THE INVARIANTS. Each returns (examined, violations) — the DENOMINATOR first, because a verdict
 # without one is a PASS over nothing.
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
-def inv_fk_edge(st: dict) -> tuple[int, list[str]]:
-    """Every measured foreign key is an edge between concepts, or is stated as not one.
+# --------------------------------------------------------------------------------------------- #
+# THE ENUMERATION CONTRACT. Every invariant returns a LIST OF ITEMS — one per subject it looked at —
+# and the counts are derived from that list rather than tallied beside it.
+#
+# THE DEFECT THIS REPAIRS, IN THE OPERATOR'S OWN WORDS (2026-09-27), reading the console:
+#
+#     "test if FK is over 3 ... this is not satisfying ... i expect you to enumerate all and then
+#      check if passing"
+#
+# They were right, and the row they were looking at was the proof. contoso4 carries TWELVE measured
+# foreign keys. FK-EDGE reported "over 3" and passed, because its loop did `continue` on any key whose
+# ends were not both modelled and counted only the survivors. Nine of twelve were dropped BEFORE the
+# denominator was formed, so the number on screen was a slice of the population presented as the
+# population — the same defect as a gate reporting PASS over zero files, one level in. Two more rows
+# did it too: MEMBER-GRAIN narrowed 19 concepts to 10, ROLE-VOCAB narrowed every concept to nothing.
+#
+# SO A SUBJECT MAY BE EXCLUDED, BUT NOT SILENTLY. `n/a` is a verdict, it is counted, and it carries the
+# REASON it did not apply — which means the reader can audit the exclusion instead of taking it on
+# trust. An invariant can no longer shrink its own population off-screen: the denominator IS the list.
+#
+#   ok         the subject was checked and it held
+#   violation  the subject was checked and two delivered components disagree about it
+#   n/a        the subject was enumerated and NOT checked, and `note` says why
+# --------------------------------------------------------------------------------------------- #
+
+OK, VIOLATION, NA = "ok", "violation", "n/a"
+
+
+def _i(subject: str, verdict: str, note: str = "") -> dict:
+    """One enumerated subject. `subject` is a name a human can look up in the bundle, never an index."""
+    return {"subject": subject, "verdict": verdict, "note": note}
+
+
+def violations(items: list[dict]) -> list[str]:
+    """The notes of the failing items, in enumeration order — what the CLI prints and the record carries."""
+    return [i["note"] for i in items if i["verdict"] == VIOLATION]
+
+
+def counts(items: list[dict]) -> tuple[int, int, int, int]:
+    """(enumerated, held, failed, not_applicable). `held` is the REMAINDER, so the four can never sum
+    to anything but the list's own length — the arithmetic cannot drift from the enumeration."""
+    failed = sum(1 for i in items if i["verdict"] == VIOLATION)
+    na = sum(1 for i in items if i["verdict"] == NA)
+    return len(items), len(items) - failed - na, failed, na
+
+
+def inv_fk_edge(st: dict) -> list[dict]:
+    """Every measured foreign key is an edge between concepts, or is enumerated as not owing one.
 
     THE DEFECT THIS CATCHES, MEASURED: 12 foreign keys on the descriptors, 0 edges in the ontology, and
     an ER diagram drawing all 12 because it reads the DATA plane. Both deliverables present, both
     internally correct, contradicting each other about whether the relations are related.
+
+    IT ENUMERATES ALL TWELVE. An FK whose ends are not both modelled owes no edge — but it is LISTED,
+    with the end that is unmodelled named, because "9 of these 12 were not checked, and here is which"
+    is a fact about ontology coverage and the previous version of this function hid it behind `continue`.
     """
+    if not st["fks"]:
+        return []
     if not st["concepts"]:
-        return 0, []          # no ontology plane: an edge cannot be owed yet
+        return [_i(f"{rel}.{col} -> {tgt}", NA,
+                   f"{rel}.{col} -> {tgt} is measured, and this bundle has no ontology plane yet, so no "
+                   f"edge can be owed. Authoring concepts is what makes this checkable")
+                for rel, col, tgt in st["fks"]]
     ground = {}
     for name, d in st["concepts"].items():
-        for s in (d.get("grounding") or {}).get("sources") or []:
-            r = str(s.get("relation") or "").split(".")[-1]
+        for src in (d.get("grounding") or {}).get("sources") or []:
+            r = str(src.get("relation") or "").split(".")[-1]
             if r:
                 ground.setdefault(r, set()).add(name)
     edged = set()
     for e in st["edges"]:
         eps = e.get("endpoints") or {}
-        pair = (str(eps.get("from") or e.get("from") or ""), str(eps.get("to") or e.get("to") or ""))
-        edged.add(pair)
+        edged.add((str(eps.get("from") or e.get("from") or ""), str(eps.get("to") or e.get("to") or "")))
         edged.add(str(e.get("edge_id") or ""))
-    bad = []
-    examined = 0
+    ruled = st.get("ruled_unclaimed") or set()
+    out = []
     for rel, col, tgt in st["fks"]:
-        if rel not in ground or tgt not in ground:
-            continue          # one end is not modelled; that is invariant CONCEPT-RELATION's business
-        examined += 1
+        subject = f"{rel}.{col} -> {tgt}"
+        loose = [r for r in (rel, tgt) if r not in ground]
+        if loose:
+            # WHY IT DOES NOT APPLY, PER END — and the three reasons are NOT the same fact. Measured on
+            # contoso4, where 9 of 12 came back n/a: 6 were raw-plane keys (structural — concepts ground
+            # on the served plane, so a raw key can never be an edge between concepts) and 3 were on
+            # relations the operator RULED `backs_no_notion`. A single reason made nine decisions read as
+            # nine gaps. Only the third reason below is a coverage gap, and CONCEPT-RELATION fails on it.
+            why = []
+            for r in loose:
+                if r in st["sources"] and r not in st["served"]:
+                    why.append(f"{r!r} is a RAW landing, and concepts ground on the served plane, so a "
+                               f"raw foreign key can never be an edge between concepts (structural)")
+                elif r.lower() in ruled:
+                    why.append(f"{r!r} is claimed by no concept and DECLINED BY A RULING — a decision on "
+                               f"the record, so no edge is owed")
+                else:
+                    why.append(f"{r!r} is claimed by no concept AND declined by nothing — a coverage gap, "
+                               f"which invariant CONCEPT-RELATION reports as a violation")
+            out.append(_i(subject, NA, f"{subject} owes no edge: " + "; ".join(why)))
+            continue
         token = f"{rel}__{col}__to__{tgt}"
-        if token in edged:
+        if token in edged or any(token in str(x) for x in edged):
+            out.append(_i(subject, OK, f"{subject} is joined by an edge in ontology/edges.yaml"))
             continue
-        if any(token in str(x) for x in edged):
-            continue
-        bad.append(f"{rel}.{col} -> {tgt} is a MEASURED foreign key between two modelled concepts "
-                   f"and no edge in ontology/edges.yaml joins them")
-    return examined, bad
+        out.append(_i(subject, VIOLATION,
+                      f"{subject} is a MEASURED foreign key between two modelled concepts "
+                      f"({'/'.join(sorted(ground[rel]))} -> {'/'.join(sorted(ground[tgt]))}) and no edge "
+                      f"in ontology/edges.yaml joins them"))
+    return out
 
 
-def inv_concept_relation(st: dict) -> tuple[int, list[str]]:
+def inv_concept_relation(st: dict) -> list[dict]:
     """Every concept grounds on a relation the data plane describes, and every served relation is
     either claimed by a concept or declined in writing."""
     if not st["concepts"]:
-        return 0, []
+        return []
     known = set(st["served"]) | set(st["sources"])
-    bad, examined = [], 0
-    claimed = set()
+    out, claimed = [], set()
     for name, d in st["concepts"].items():
-        for s in (d.get("grounding") or {}).get("sources") or []:
-            r = str(s.get("relation") or "").split(".")[-1]
+        for src in (d.get("grounding") or {}).get("sources") or []:
+            r = str(src.get("relation") or "").split(".")[-1]
             if not r:
                 continue
-            examined += 1
             claimed.add(r)
-            if r not in known:
-                bad.append(f"concept {name!r} grounds on {r!r}, which no descriptor in data/datasets "
-                           f"or data/sources describes")
+            subject = f"{name} grounds on {r}"
+            if r in known:
+                out.append(_i(subject, OK, f"concept {name!r} grounds on {r!r}, which a descriptor describes"))
+            else:
+                out.append(_i(subject, VIOLATION,
+                              f"concept {name!r} grounds on {r!r}, which no descriptor in data/datasets "
+                              f"or data/sources describes"))
     for r in sorted(set(st["served"]) - claimed):
-        examined += 1
+        subject = f"served relation {r}"
         if r.lower() in st.get("ruled_unclaimed", set()):
-            continue          # declined in writing, with a ruling: a decision, not a gap
-        bad.append(f"served relation {r!r} is claimed by no concept and declined by nothing — a "
-                   f"relation nobody decided about. Rule DQ-UNCLAIMED-{r.upper()} in the data-quality "
-                   f"register to record the decision, declining included")
-    return examined, bad
+            out.append(_i(subject, OK,
+                          f"served relation {r!r} is claimed by no concept and DECLINED BY A RULING — "
+                          f"a decision on the record, not a gap"))
+        else:
+            out.append(_i(subject, VIOLATION,
+                          f"served relation {r!r} is claimed by no concept and declined by nothing — a "
+                          f"relation nobody decided about. Rule DQ-UNCLAIMED-{r.upper()} in the "
+                          f"data-quality register to record the decision, declining included"))
+    return out
 
 
-def inv_role_vocab(st: dict) -> tuple[int, list[str]]:
+def inv_role_vocab(st: dict) -> list[dict]:
     """Every namespaced field_role resolves in a vocabulary this bundle DECLARES.
 
     THE DEFECT THIS CATCHES, MEASURED: 141 `CONTOSO4.field_role.*` tokens in 19 concepts, resolving to
@@ -229,42 +314,54 @@ def inv_role_vocab(st: dict) -> tuple[int, list[str]]:
     namespaces, so `check_references` reported 0 errors and `validate_schema` 80 of 80 files clean. An
     undeclared namespace must be an ERROR, never silence.
     """
-    bad, examined = [], 0
     pat = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
+    out = []
     for name, d in st["concepts"].items():
         for col, role in ((d.get("grounding") or {}).get("field_roles") or {}).items():
-            examined += 1
+            subject = f"{name}.{col}"
             m = pat.match(str(role))
             if not m:
+                out.append(_i(subject, NA,
+                              f"concept {name!r} column {col!r} carries role {role!r}, which names no "
+                              f"namespace, so there is no vocabulary for it to resolve in"))
                 continue
             ns = m.group(1).lower()
             if ns == "mac":
-                continue      # the projection's own default namespace
-            if ns not in st["vocab_ns"]:
-                bad.append(f"concept {name!r} column {col!r} carries role {role!r}, and namespace "
-                           f"{ns!r} is declared by no vocabulary.yaml — the token resolves to nothing "
-                           f"and no resolver will say so")
-    return examined, bad
+                out.append(_i(subject, OK, f"{subject} carries {role!r} in the projection's own "
+                                           f"`mac` namespace, which always resolves"))
+            elif ns in st["vocab_ns"]:
+                out.append(_i(subject, OK, f"{subject} carries {role!r} and namespace {ns!r} is declared"))
+            else:
+                out.append(_i(subject, VIOLATION,
+                              f"concept {name!r} column {col!r} carries role {role!r}, and namespace "
+                              f"{ns!r} is declared by no vocabulary.yaml — the token resolves to nothing "
+                              f"and no resolver will say so"))
+    return out
 
 
-def inv_member_grain(st: dict) -> tuple[int, list[str]]:
-    """A concept whose extension is a SET OF VALUES has a sample at member grain, not row grain.
+def inv_member_grain(st: dict) -> list[dict]:
+    """A concept whose extension is a SET OF VALUES has a canonical key, so its sample can be drawn at
+    member grain rather than row grain.
 
     THE DEFECT THIS CATCHES, MEASURED: 11 of 19 concepts declared `values:`/`members:` and drew at ROW
     grain because the canonical key was on the column and the sampler read `concept.identity`. Brand's
     sample came out as 40 product rows. The DNA calls this artifact "the only artifact that shows what a
     concept CONTAINS"; a sample of host rows shows what it sits ON.
+
+    EVERY CONCEPT IS ENUMERATED, not only the ones that declare a set — so "10 of 19 were checked" is
+    on the page instead of a bare 10, and a reader can see which nine were excluded and why.
     """
-    bad, examined = [], 0
+    out = []
     for name, d in st["concepts"].items():
-        declares = bool(d.get("values") or d.get("members"))
-        if not declares:
+        if not (d.get("values") or d.get("members")):
+            out.append(_i(name, NA,
+                          f"concept {name!r} does not declare its extension as a set (no values/members), "
+                          f"so no member-grain sample is owed and no canonical key is required here"))
             continue
-        examined += 1
         ident = str(((d.get("concept") or {}).get("identity") or {}).get("canonical_key") or "").strip()
         if not ident:
-            for s in (d.get("grounding") or {}).get("sources") or []:
-                cols = s.get("columns")
+            for src in (d.get("grounding") or {}).get("sources") or []:
+                cols = src.get("columns")
                 if isinstance(cols, dict):
                     for cn, body in cols.items():
                         if isinstance(body, dict) and str(body.get("identity") or "") == "canonical":
@@ -272,51 +369,78 @@ def inv_member_grain(st: dict) -> tuple[int, list[str]]:
                             break
                 if ident:
                     break
-        if not ident:
-            bad.append(f"concept {name!r} declares its extension as a SET (values/members) and names "
-                       f"no canonical key anywhere — neither concept.identity.canonical_key nor a "
-                       f"column with `identity: canonical` — so its sample can only be drawn at ROW "
-                       f"grain and will show its host's rows instead of its own members")
-    return examined, bad
+        if ident:
+            out.append(_i(name, OK, f"concept {name!r} declares a set extension and names {ident!r} as "
+                                    f"its canonical key, so its sample can be drawn at member grain"))
+        else:
+            out.append(_i(name, VIOLATION,
+                          f"concept {name!r} declares its extension as a SET (values/members) and names "
+                          f"no canonical key anywhere — neither concept.identity.canonical_key nor a "
+                          f"column with `identity: canonical` — so its sample can only be drawn at ROW "
+                          f"grain and will show its host's rows instead of its own members"))
+    return out
 
 
-def inv_register_monitor(st: dict) -> tuple[int, list[str]]:
+def inv_register_monitor(st: dict) -> list[dict]:
     """Every register has a monitor result, and every descriptor pointer names a register that exists."""
-    bad, examined = [], 0
+    out = []
     if st["registers"]:
-        examined += 1
-        if not st["monitor"]:
-            bad.append(f"{len(st['registers'])} register(s) are delivered and "
-                       f"acceptance/register_membership_runs.json does not exist — a closed set with no "
-                       f"monitor is a claim nothing re-measures (DNA 1.8)")
+        if st["monitor"]:
+            out.append(_i("the monitor result itself", OK,
+                          f"{len(st['registers'])} register(s) are delivered and "
+                          f"acceptance/register_membership_runs.json exists to re-measure their closure"))
+        else:
+            out.append(_i("the monitor result itself", VIOLATION,
+                          f"{len(st['registers'])} register(s) are delivered and "
+                          f"acceptance/register_membership_runs.json does not exist — a closed set with no "
+                          f"monitor is a claim nothing re-measures (DNA 1.8)"))
     have = set(st["registers"])
     for stem, d in {**st["served"], **st["sources"]}.items():
         for c in d.get("columns") or []:
             reg = str(c.get("register") or "").strip()
             if not reg:
                 continue
-            examined += 1
-            if pathlib.Path(reg).name not in have:
-                bad.append(f"{stem}.{c.get('name')} points at register {reg!r}, which is not in "
-                           f"data/lookups — the pointer resolves to nothing")
-    return examined, bad
+            subject = f"{stem}.{c.get('name')} -> {pathlib.Path(reg).name}"
+            if pathlib.Path(reg).name in have:
+                out.append(_i(subject, OK, f"{stem}.{c.get('name')} points at register {reg!r}, which is "
+                                           f"in data/lookups"))
+            else:
+                out.append(_i(subject, VIOLATION,
+                              f"{stem}.{c.get('name')} points at register {reg!r}, which is not in "
+                              f"data/lookups — the pointer resolves to nothing"))
+    return out
 
 
-def inv_plane_counts(st: dict) -> tuple[int, list[str]]:
-    """A descriptor has a profile. Measured once at 16 descriptors and 8 profiles, for hours."""
-    desc = len(st["served"]) + len(st["sources"])
-    if not desc:
-        return 0, []
-    prof = len(st["profiles"])
-    if prof == desc:
-        return desc, []
-    return desc, [f"{desc} descriptor(s) across both planes and {prof} profile(s): every described "
-                  f"relation is supposed to be measured, and {desc - prof} "
-                  f"{'is' if desc - prof == 1 else 'are'} not. A shared stem across the two planes "
-                  f"makes the profile ambiguous and the shortfall silent"]
+def inv_plane_counts(st: dict) -> list[dict]:
+    """A descriptor has a profile. Measured once at 16 descriptors and 8 profiles, for hours.
+
+    ENUMERATED PER DESCRIPTOR, and that is a straight improvement on the count comparison it replaces:
+    `16 described and 8 measured` told an operator a number was wrong without telling them WHICH, so
+    the shortfall stayed abstract. Each descriptor now names itself, and the stem shared across both
+    planes — the thing that makes one profile answer for two descriptors — is its own enumerated item
+    rather than a sentence appended to an aggregate.
+    """
+    out = []
+    prof = set(st["profiles"])
+    shared = set(st["served"]) & set(st["sources"])
+    for plane, table in (("served", st["served"]), ("raw", st["sources"])):
+        for stem in sorted(table):
+            subject = f"{plane}:{stem}"
+            if stem not in prof:
+                out.append(_i(subject, VIOLATION,
+                              f"{plane} descriptor {stem!r} describes a relation and data/profiles has no "
+                              f"profile for it: every described relation is supposed to be measured"))
+            elif stem in shared:
+                out.append(_i(subject, VIOLATION,
+                              f"stem {stem!r} is described on BOTH planes, so one profile answers for two "
+                              f"descriptors — the profile is ambiguous and any shortfall it hides is "
+                              f"silent. Rename one plane's relation so each descriptor has its own"))
+            else:
+                out.append(_i(subject, OK, f"{plane} descriptor {stem!r} has a profile in data/profiles"))
+    return out
 
 
-def inv_register_orphan(st: dict) -> tuple[int, list[str]]:
+def inv_register_orphan(st: dict) -> list[dict]:
     """Every delivered register is pointed at by at least one descriptor column.
 
     THE DEFECT THIS CATCHES, MEASURED: 23 registers on disk and 0 `register:` pointers, because
@@ -326,25 +450,29 @@ def inv_register_orphan(st: dict) -> tuple[int, list[str]]:
 
     It is the inverse of REGISTER-MONITOR's pointer check: that one catches a pointer with no file,
     this one a file with no pointer. A register nobody points at is a file, not a register.
+
+    EACH REGISTER NAMES ITSELF. The previous version printed four orphans and "… and 19 more", which is
+    the one thing a reader cannot act on: the 19 unnamed ones are exactly the work.
     """
-    if not st["registers"]:
-        return 0, []
     pointed = set()
     for d in {**st["served"], **st["sources"]}.values():
         for c in d.get("columns") or []:
             reg = str(c.get("register") or "").strip()
             if reg:
                 pointed.add(pathlib.Path(reg).name)
-    orphans = sorted(set(st["registers"]) - pointed)
-    if not orphans:
-        return len(st["registers"]), []
-    shown = ", ".join(orphans[:4]) + (f" … and {len(orphans) - 4} more" if len(orphans) > 4 else "")
-    return len(st["registers"]), [
-        f"{len(orphans)} of {len(st['registers'])} register(s) are pointed at by no descriptor column, "
-        f"so nothing can resolve a code through them: {shown}"
-        + ("  — ALL of them, which is what a descriptor regeneration looks like: it rewrites the file "
-           "and drops the register pointers a later stage had added" if len(orphans) == len(st["registers"])
-           else "")]
+    total = len(st["registers"])
+    out = []
+    for reg in sorted(st["registers"]):
+        if reg in pointed:
+            out.append(_i(reg, OK, f"register {reg!r} is pointed at by at least one descriptor column"))
+        else:
+            out.append(_i(reg, VIOLATION,
+                          f"register {reg!r} is pointed at by no descriptor column, so nothing can "
+                          f"resolve a code through it"
+                          + (f" — and NONE of the {total} registers is pointed at, which is what a "
+                             f"descriptor regeneration looks like: it rewrites the file and drops the "
+                             f"register pointers a later stage had added" if not pointed else "")))
+    return out
 
 
 INVARIANTS = (
@@ -359,10 +487,51 @@ INVARIANTS = (
 )
 
 
+def _record(root: pathlib.Path, out: str, st: dict, rows: list[dict],
+            checked: int, total_bad: int) -> None:
+    """THE RUN RECORD — the checklist AS DATA, so a surface other than a terminal can show it.
+
+    THE DEFECT THIS REPAIRS. The operator asked for two things on 2026-09-27, and only the first was
+    built: "i need quality checklist if all components of delivery ... have been delivered and if they
+    are consistent" and "this checkbox list must appear on the console". A verdict that exists only on
+    stdout cannot reach a console, and asking the console to re-run the gate would make the page a
+    SECOND producer of the same verdict — two producers of one claim is how two answers to one
+    question begin. So the gate stays the only thing that decides, and writes down what it decided.
+
+    EVERY ROW CARRIES ITS DENOMINATOR, and that is the load-bearing part of this shape. `examined` is
+    not decoration: an invariant that held over nothing has proven nothing, and a board that paints it
+    the same green as one that held over 23 teaches an operator to trust a blank check. `vacuous` says
+    so in one boolean rather than leaving a renderer to infer it from a zero it may not look at.
+
+    IT IS A SNAPSHOT, NOT A HISTORY. One run, overwritten — the same choice `check_register_membership`
+    makes, for the same reason: the question a board asks is "do the delivered components agree NOW",
+    and a bundle's git history already holds every earlier answer with the commit that caused it.
+    """
+    path = root / out
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({
+        "generated_by": "check_delivery_consistency.py/1",
+        "executed": datetime.now(UTC).isoformat(timespec="seconds"),
+        "bundle": root.name,
+        "verdict": "FAIL" if total_bad else "PASS",
+        "invariants": checked,
+        "inconsistencies": total_bad,
+        # The header line's denominators, as data. A verdict is only as good as the plane it read:
+        # "7 invariants hold" over 0 concepts is a different claim from the same words over 19.
+        "examined": {k: len(st[k]) for k in
+                     ("served", "sources", "profiles", "concepts", "edges", "fks", "registers")},
+        "rows": rows,
+    }, indent=2) + "\n", encoding="utf-8")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("bundle", nargs="?", default=".")
     ap.add_argument("--self-test", action="store_true")
+    ap.add_argument("--enumerate", dest="enumerate_all", action="store_true",
+                    help="print every enumerated subject, not only the failing ones")
+    ap.add_argument("--out", default=RUNS_REL,
+                    help="where to write the run record, bundle-relative; \"\" writes nothing")
     a = ap.parse_args(argv)
     if a.self_test:
         return _self_test()
@@ -384,18 +553,52 @@ def main(argv: list[str] | None = None) -> int:
           f"descriptor(s), {len(st['profiles'])} profile(s), {len(st['concepts'])} concept(s), "
           f"{len(st['edges'])} edge(s), {len(st['fks'])} measured FK(s), "
           f"{len(st['registers'])} register(s)\n")
-    total_bad, checked = 0, 0
+    total_bad, checked, rows = 0, 0, []
     for code, what, fn in INVARIANTS:
-        examined, bad = fn(st)
+        items = fn(st)
+        enumerated, held, failed, na = counts(items)
+        bad = violations(items)
         checked += 1
         mark = "ok  " if not bad else "FAIL"
-        over = f"over {examined}" if examined else "NOTHING TO CHECK"
-        print(f"  [{mark}] {code:17} {what:58} {over}")
+        # THE WHOLE POPULATION, THEN THE SPLIT. The operator's words on the first version, which
+        # printed only the second number: "test if FK is over 3 ... i expect you to enumerate all and
+        # then check if passing". `enumerated` is the list's own length, so it cannot be a slice of
+        # anything, and `n/a` is visible rather than subtracted off-screen.
+        over = (f"{enumerated} enumerated · {held} held · {failed} failed · {na} n/a"
+                if enumerated else "NOTHING TO ENUMERATE")
+        print(f"  [{mark}] {code:17} {what:56} {over}")
         for b in bad[:6]:
             print(f"         - {b}")
         if len(bad) > 6:
             print(f"         … and {len(bad) - 6} more")
+        # --enumerate PRINTS EVERY SUBJECT, held and n/a included. Off by default because seven full
+        # enumerations is a screenful; on, it is the audit trail — and the console shows it always,
+        # because a checklist read on a page has room the terminal does not.
+        if a.enumerate_all:
+            for it in items:
+                glyph = {"ok": "ok ", "violation": "!! ", "n/a": "-- "}[it["verdict"]]
+                print(f"         {glyph} {it['subject']}")
+                if it["verdict"] != "ok":
+                    print(f"              {it['note']}")
         total_bad += len(bad)
+        rows.append({
+            "code": code, "checks": what,
+            # `examined` IS WHAT WAS ACTUALLY CHECKED — held + failed — and `enumerated` is everything
+            # the invariant looked at. Both are carried because a reader needs the ratio, not either
+            # number alone: "3 of 12" is the honest form of what once read "over 3".
+            "enumerated": enumerated, "examined": held + failed,
+            "held": held, "failed": failed, "not_applicable": na,
+            "verdict": "FAIL" if bad else "ok",
+            # VACUOUS IS NOW "NOTHING WAS CHECKED", not "nothing was enumerated" — an invariant that
+            # listed twelve subjects and checked none of them has proved exactly as little as one that
+            # listed none, and the board must not paint either green.
+            "vacuous": (held + failed) == 0 and not bad,
+            "violations": bad,
+            "items": items,
+        })
+
+    if a.out:
+        _record(root, a.out, st, rows, checked, total_bad)
 
     if total_bad:
         print(f"\nFAIL: check_delivery_consistency — {total_bad} inconsistenc"
@@ -434,7 +637,7 @@ def _self_test() -> int:
     def case(label, mutate, expect_code):
         st = base()
         mutate(st)
-        got = {c: fn(st)[1] for c, _w, fn in INVARIANTS}
+        got = {c: violations(fn(st)) for c, _w, fn in INVARIANTS}
         failing = sorted(c for c, v in got.items() if v)
         cases.append((label, failing == ([expect_code] if expect_code else []), failing, expect_code))
 
@@ -473,10 +676,55 @@ def _self_test() -> int:
     st["edges"] = []
     st["profiles"].pop("v_c")
     st["concepts"]["line"]["grounding"]["field_roles"]["CK"] = "CONTOSO4.field_role.key"
-    failing = sorted(c for c, _w, fn in INVARIANTS if fn(st)[1])
+    failing = sorted(c for c, _w, fn in INVARIANTS if violations(fn(st)))
     cases.append(("MUTANT three disagreements are reported as THREE, not one",
                   failing == ["FK-EDGE", "PLANE-COUNTS", "ROLE-VOCAB"], failing,
                   "FK-EDGE+PLANE-COUNTS+ROLE-VOCAB"))
+
+    # ── THE ENUMERATION CONTRACT ────────────────────────────────────────────────────────────────
+    # These do not test a VERDICT; they test that the population reported is the whole population.
+    # The defect they pin was on screen and passing: FK-EDGE said "over 3" on a bundle with twelve
+    # measured foreign keys, because nine were `continue`d before the denominator was formed. A gate
+    # that narrows its own population and reports the narrowed count cannot be audited at all.
+    def check(label, cond):
+        cases.append((label, bool(cond), cond, True))
+
+    st = base()
+    # Two FKs, one of them reaching a relation no concept claims. The old code examined 1 and said so;
+    # the contract now requires BOTH to be listed, with the excluded one carrying its reason.
+    st["sources"] = {"raw_x": {"columns": []}}
+    st["fks"] = [("v_s", "CK", "v_c"), ("v_s", "XK", "raw_x")]
+    fk = inv_fk_edge(st)
+    enumerated, held, failed, na = counts(fk)
+    check("ENUMERATION FK-EDGE lists the unmodelled key instead of dropping it",
+          enumerated == 2 and held == 1 and failed == 0 and na == 1)
+    check("ENUMERATION the excluded item names WHY, and names the raw plane as structural",
+          any(i["verdict"] == "n/a" and "RAW landing" in i["note"] for i in fk))
+    check("ENUMERATION every item carries a subject a human can look up",
+          all(i["subject"] and isinstance(i["subject"], str) for i in fk))
+
+    # MEMBER-GRAIN enumerated only set-extension concepts before; the base fixture has two concepts
+    # and neither declares a set, so the honest report is "2 enumerated, 0 checked" — NOT "0".
+    mg = counts(inv_member_grain(base()))
+    check("ENUMERATION MEMBER-GRAIN lists every concept, not only the set-extension ones",
+          mg[0] == 2 and mg[1] + mg[2] == 0 and mg[3] == 2)
+
+    # THE ARITHMETIC CANNOT DRIFT FROM THE LIST. held is the remainder, so the four always partition.
+    st = base()
+    st["edges"] = []
+    for _c, _w, fn in INVARIANTS:
+        items = fn(st)
+        e, h, f, na_ = counts(items)
+        check(f"ENUMERATION counts partition the list exactly ({_c})", e == h + f + na_ == len(items))
+
+    # A ROW WHERE EVERYTHING IS n/a IS NOT A PASS. It is the "over 3" defect at its limit: twelve
+    # subjects listed, none checked, and nothing on the page may read as an all-clear.
+    st = base()
+    st["concepts"] = {}
+    st["fks"] = [("a", "K", "b")]
+    e, h, f, na_ = counts(inv_fk_edge(st))
+    check("ENUMERATION an all-n/a row enumerates its subjects and checks none of them",
+          e == 1 and h == 0 and f == 0 and na_ == 1)
 
     bad = [(lbl, got, want) for lbl, ok, got, want in cases if not ok]
     for lbl, got, want in bad:
@@ -487,7 +735,9 @@ def _self_test() -> int:
         return 1
     print(f"PASS: check_delivery_consistency self-test — {n}/{n} case(s): one mutant per invariant "
           f"({', '.join(c for c, _w, _f in INVARIANTS)}), a register pointer that resolves to nothing, "
-          f"three simultaneous disagreements reported as three, and a clean fixture that must hold")
+          f"three simultaneous disagreements reported as three, a clean fixture that must hold, and the "
+          f"ENUMERATION contract — the whole population is listed, every exclusion names its reason, the "
+          f"counts partition the list on all {len(INVARIANTS)} invariants, and an all-n/a row is not a pass")
     return 0
 
 
