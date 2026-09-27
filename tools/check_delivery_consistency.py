@@ -487,6 +487,35 @@ INVARIANTS = (
 )
 
 
+def _summary(invariants: int, vacuous: int, total_bad: int) -> str:
+    """THE LAST LINE, AND IT MAY NOT OVERSTATE. Operator ruling 2026-09-27 on backlog item 8.
+
+    THE DEFECT: `PASS: 7 invariant(s) hold` was printed on contoso2 and contoso3, where FOUR of the
+    seven had nothing to check — neither bundle has an ontology plane, so "does every concept ground on
+    a described relation" has no concepts to ask about. Nothing was broken and nothing was hidden: the
+    four genuinely had no subject. But it was the IDENTICAL SENTENCE contoso4 gets, where all seven ran
+    against 12 foreign keys, 19 concepts and 23 registers, so the verdict line could not tell a full
+    pass from a hollow one. The console already drew those rows as unchecked and never green; the CLI
+    and the record were the halves that lagged.
+
+    THE RULING WAS THE SOFTEST OF THE THREE OPTIONS, and deliberately: name it in the line, keep exit 0.
+    A bundle halfway through an ingestion legitimately has nothing to check yet, and a gate that refused
+    by default would be unusable exactly when an operator most wants to run it.
+    """
+    ran = invariants - vacuous
+    tail = (f"; {vacuous} of {invariants} had NOTHING TO CHECK and therefore proved nothing — this is "
+            f"not a full pass, and the rows say which" if vacuous else "")
+    if total_bad:
+        return (f"FAIL: check_delivery_consistency — {total_bad} inconsistenc"
+                f"{'y' if total_bad == 1 else 'ies'} across {invariants} invariant(s): deliverables "
+                f"that are PRESENT and disagree with each other{tail}")
+    if vacuous:
+        return (f"PASS: check_delivery_consistency — {ran} of {invariants} invariant(s) held over a "
+                f"population that exists{tail}")
+    return (f"PASS: check_delivery_consistency — {invariants} of {invariants} invariant(s) hold; the "
+            f"delivered components agree with one another")
+
+
 def _record(root: pathlib.Path, out: str, st: dict, rows: list[dict],
             checked: int, total_bad: int) -> None:
     """THE RUN RECORD — the checklist AS DATA, so a surface other than a terminal can show it.
@@ -515,6 +544,10 @@ def _record(root: pathlib.Path, out: str, st: dict, rows: list[dict],
         "bundle": root.name,
         "verdict": "FAIL" if total_bad else "PASS",
         "invariants": checked,
+        # BESIDE THE VERDICT, not buried in the rows: a reader (or a CI job) must be able to tell a
+        # full pass from a hollow one without walking seven rows. Operator ruling, backlog item 8.
+        "invariants_checked": checked - sum(1 for r in rows if r.get("vacuous")),
+        "invariants_vacuous": sum(1 for r in rows if r.get("vacuous")),
         "inconsistencies": total_bad,
         # The header line's denominators, as data. A verdict is only as good as the plane it read:
         # "7 invariants hold" over 0 concepts is a different claim from the same words over 19.
@@ -600,14 +633,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.out:
         _record(root, a.out, st, rows, checked, total_bad)
 
-    if total_bad:
-        print(f"\nFAIL: check_delivery_consistency — {total_bad} inconsistenc"
-              f"{'y' if total_bad == 1 else 'ies'} across {checked} invariant(s): deliverables that "
-              f"are PRESENT and disagree with each other")
-        return 1
-    print(f"\nPASS: check_delivery_consistency — {checked} invariant(s) hold; the delivered "
-          f"components agree with one another")
-    return 0
+    print("\n" + _summary(checked, sum(1 for r in rows if r["vacuous"]), total_bad))
+    return 1 if total_bad else 0
 
 
 def _self_test() -> int:
@@ -725,6 +752,21 @@ def _self_test() -> int:
     e, h, f, na_ = counts(inv_fk_edge(st))
     check("ENUMERATION an all-n/a row enumerates its subjects and checks none of them",
           e == 1 and h == 0 and f == 0 and na_ == 1)
+
+    # ── THE VERDICT LINE (operator ruling, backlog item 8) ──────────────────────────────────────
+    # A sentence, tested, because the defect WAS the sentence: `PASS: 7 invariant(s) hold` on a bundle
+    # where four of the seven had no subject to check.
+    check("SUMMARY a full pass says so and claims no more", "7 of 7 invariant(s) hold" in _summary(7, 0, 0))
+    check("SUMMARY a hollow pass NAMES the invariants that checked nothing",
+          "3 of 7 invariant(s) held" in _summary(7, 4, 0) and "NOTHING TO CHECK" in _summary(7, 4, 0))
+    check("SUMMARY a hollow pass never claims all of them held",
+          "7 of 7 invariant(s) hold" not in _summary(7, 4, 0))
+    check("SUMMARY a FAIL still carries the unchecked count",
+          _summary(7, 4, 2).startswith("FAIL") and "NOTHING TO CHECK" in _summary(7, 4, 2))
+    check("SUMMARY a clean FAIL does not invent an unchecked clause",
+          "NOTHING TO CHECK" not in _summary(7, 0, 1) and "1 inconsistency" in _summary(7, 0, 1))
+    check("SUMMARY every invariant vacuous is not reported as a pass over anything",
+          "0 of 7 invariant(s) held" in _summary(7, 7, 0))
 
     bad = [(lbl, got, want) for lbl, ok, got, want in cases if not ok]
     for lbl, got, want in bad:
