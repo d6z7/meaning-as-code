@@ -25,7 +25,7 @@ shapes:
       values: [entity, event, measure, enumeration, reference, grouping, meta]
 
   # v0.1.16: the footgun-preventer now demands the DERIVATION INPUTS, not the derived answer. A measure
-  # says what it IS and what its axes ARE; mac_vocabulary.yaml#measure_type says what that implies. The
+  # says what it IS and what its axes ARE; mac_vocabulary.yaml#column.measure_type says what that implies. The
   # old shape required the concept to write the implication out, which let it author both the premise
   # and the conclusion — and a target-inventory measure duly declared `Target` while writing `geography: additive`,
   # producing a wrong value anchor that stood for weeks. The SUM is still prevented; it is now prevented

@@ -115,7 +115,6 @@ concept:  # REQUIRED
     scope: <…>  # string
     additivity:  # Per-dimension aggregation rule — the footgun-preventer  # open: extra keys allowed
     axis_kinds:  # v0.6: map each aggregation axis (the same axis names used in…  # open: extra keys allowed
-    measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a…
     unit: <…>  # string
     null_semantics: <…>  # string
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
@@ -123,6 +122,7 @@ concept:  # REQUIRED
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
       applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
       note: <…>  # string
+    measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a…
   notes: <…>  # string
   grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
   related_axis: <…>  # string

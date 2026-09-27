@@ -973,3 +973,90 @@ bench:
           - ask: average NetPrice per line
             axis: categorical
             fold: AVG
+
+# ===========================================================================
+# THE PERMISSION LAW — what a query may DO with a column, as a closed grid.
+#
+# THE OPERATOR'S DECOMPOSITION, 2026-09-27, and the reason this section exists: "where a query may
+# use it" was carried as ONE permission, and the vocabulary's own words force it into THREE.
+# `mac.column_role.key` says: "A name resolves TO it through a register; a query then filters or
+# joins on the exact value. NEVER MATCHED AGAINST A LABEL." That is not one permission granted or
+# withheld — it is `resolve: no` beside `filter: yes`, in a single sentence.
+#
+# SO THE LAW IS 5 ROLES x 3 OPERATIONS = 15 CELLS, with the four rulings as an OVERRIDE LAYER on
+# top — 4 more rows that do not extend the table but MODIFY the row a role already gave. That is
+# structurally the same shape as the fold plane one floor down: a base table of cells, and a small
+# set of preemptions that override it and never re-tabulate it (mac_runtime/foldplane/law.py G1-G5).
+# A ruling is a guard over the role table.
+#
+# THE CELL VOCABULARY IS NOT BINARY, which the decomposition exposed. Six values, closed:
+#   yes         permitted outright
+#   no          refused
+#   redirected  permitted, but it lands on ANOTHER column (group on the target, display here)
+#   not_alone   permitted only with a companion column travelling alongside
+#   obliged     permitted, and the answer owes a disclosure or the ruling owes evidence
+#   undeclared  NOT A VALUE — a hole. Nothing in the vocabulary says, and it is recorded as a
+#               finding rather than guessed. `verified_by` may still show what the runtime does.
+#
+# `verified_by` IS MEASURED, NOT TYPED. gen_grammar_map.py extracts the role tuples the planner
+# actually branches on and checks the `group` and `filter` columns against them. The `resolve`
+# column has NO role-reader to check against: measured 2026-09-27, `resolver/` consults
+# `field_roles` twice and BOTH times for its keys (which columns exist), never for its values.
+# Resolution is gated by REGISTERS, not by role — so that whole column is law stated in prose and
+# read by nothing.
+# ===========================================================================
+permissions:
+  authored_by: operator
+  authored_on: '2026-09-27'
+  operations:
+    - id: resolve
+      asks: match a user's word to this column
+      gated_by: registers, not roles — measured, see the section header
+    - id: filter
+      asks: constrain an exact value
+      gated_by: the planner's predicate-placement role tuple
+    - id: group
+      asks: be an axis
+      gated_by: the planner's groupable role tuple
+
+  values: ['yes', 'no', redirected, not_alone, obliged, undeclared]
+
+  roles:
+    key:
+      resolve: {v: 'no', why: "never matched against a label — a name resolves TO it through a register"}
+      filter:  {v: 'yes', why: "the query filters or joins on the exact value"}
+      group:   {v: 'no', why: "it is what COUNT(DISTINCT) counts, not what you count BY"}
+    dimension:
+      resolve: {v: 'yes', why: "via the ladder — exact, normalized, prefix, fuzzy, then ask"}
+      filter:  {v: 'yes', why: "WHERE Gender = 'female' is legitimate"}
+      group:   {v: 'yes', why: "GROUP BY Gender is legitimate — this is the categorical axis"}
+    measure:
+      resolve: {v: 'no', why: "a numeric payload carries no name to match"}
+      filter:  {v: 'no', why: "a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column"}
+      group:   {v: 'no', why: "folded as its MeasureType allows; never an axis"}
+    period:
+      resolve: {v: undeclared, why: "the vocabulary says nothing about matching a word to the period column"}
+      filter:  {v: 'yes', why: "it is what a question's period binds to"}
+      group:   {v: undeclared, why: "the vocabulary says nothing — and the planner does allow it"}
+    housekeeping:
+      resolve: {v: 'no', why: "not business vocabulary, so it is not offered to a question"}
+      filter:  {v: 'no', why: "not filtered on; its absence from an answer is correct rather than a gap"}
+      group:   {v: 'no', why: "grouping sales by a load stamp is meaningless"}
+
+  rulings:
+    label_of:
+      resolve: {v: 'yes', why: "a question asked in these words is answered in them, never refused"}
+      filter:  {v: redirected, target: the named column, why: "the predicate lands on the canonical column"}
+      group:   {v: redirected, target: the named column, why: "group on the target, display here"}
+    finer_than:
+      resolve: {v: 'yes', why: "both levels stay legitimate axes"}
+      filter:  {v: 'yes'}
+      group:   {v: obliged, owes: disclosure, why: "an answer must DISCLOSE which level it used"}
+    scoped_by:
+      resolve: {v: not_alone, why: "'CO' is Corse, Como and Colorado — the word does not identify"}
+      filter:  {v: not_alone, why: "the scope column must travel with the code"}
+      group:   {v: not_alone, why: "GROUP BY State alone merges three unrelated regions into one plausible row"}
+    never_axis:
+      resolve: {v: 'yes', why: "a postcode is a legitimate thing to ask about"}
+      filter:  {v: 'yes', why: "never_axis forbids the AXIS, not the filter"}
+      group:   {v: 'no', owes: evidence, why: "grouping on it names individuals — and the refusal must cite the measurement"}

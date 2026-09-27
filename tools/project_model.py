@@ -4,7 +4,7 @@
 The ontology is the source of truth; this is a PROJECTION of it — a generated view of every measure
 (KPI) and dimension the applied model defines, plus the additivity law each measure obeys. Nothing here
 is authored by hand: it is read from the concept files, the derived-measure rules, and the framework's
-mac.measure_type additivity matrix. Regenerate it any time the ontology changes; never edit the output.
+mac.column.measure_type additivity matrix. Regenerate it any time the ontology changes; never edit the output.
 
 Reads (all under <source_root>):
   ontology/concepts/**/*.yaml   — concepts: `concept.{name,class,...}`, `grounding`, closed `values`/`enumerations`
@@ -60,9 +60,9 @@ def load(p: Path):
 
 
 def measure_law() -> dict:
-    """The additivity matrix from mac.measure_type: {flow: {time,categorical}, stock:…, target:…}."""
+    """The additivity matrix from mac.column.measure_type: {flow: {time,categorical}, stock:…, target:…}."""
     doc = load(MAC_VOCAB)
-    mt = (doc.get("measure_type") or {}).get("terms") or {}
+    mt = (doc.get("column.measure_type") or {}).get("terms") or {}
     out = {}
     for name, spec in mt.items():
         add = (spec or {}).get("additivity") or {}
@@ -166,7 +166,7 @@ def to_markdown(root: Path, model: dict) -> str:
              "Do not edit; regenerate._\n")
 
     L.append("## Measures (KPIs)\n")
-    L.append("The measure **type** fixes how it may be aggregated (mac.measure_type):\n")
+    L.append("The measure **type** fixes how it may be aggregated (mac.column.measure_type):\n")
     L.append("| Type | over time | over geography/model |")
     L.append("|---|---|---|")
     for t, spec in law.items():
@@ -334,7 +334,7 @@ def _definition_for_stem(doc: dict, stem):
 
 
 def _additivity_from_type(law: dict, measure_type):
-    """Resolve (type_key, {time, categorical}) from a mac.measure_type token via the framework law.
+    """Resolve (type_key, {time, categorical}) from a mac.column.measure_type token via the framework law.
     (None, None) when no type is declared; (type_key, None) when the law lacks that member."""
     if not measure_type:
         return None, None
@@ -357,7 +357,7 @@ def measures_of(root: Path, model: dict | None = None) -> list[dict]:
     """A0 §1.1 measures[] — one record per measure stem the source declares, unioning three
     provenance kinds: register (enum_from_register), inline_enum (typed inline values), and
     concept_only (additivity on the concept). Additivity is RESOLVED by joining each measure's
-    mac.measure_type through the framework law. Generic + tolerant; never mutates `model`."""
+    mac.column.measure_type through the framework law. Generic + tolerant; never mutates `model`."""
     law = measure_law()
     out: list[dict] = []
 

@@ -15,8 +15,8 @@ metadata:
   namespace: mac
   version: '0.1.13'
   status: active
-  defines: [aggregation_effect, axis_kind, binding_mode, measure_type, rule_kind, canon, identity_kind,
-            column_role, identity_role, storage_role, column_ruling, name_register]
+  defines: [aggregation_effect, axis_kind, binding_mode, column.measure_type, rule_kind, canon, identity_kind,
+            column.role, column.identity, storage_role, column_ruling, name_register]
 
 # ===========================================================================
 # mac.aggregation_effect — how a measure may be combined along ONE axis.
@@ -77,7 +77,7 @@ axis_kind:
 # too identifying to be an axis, and not business content at all. Judgements are authored and cannot
 # be derived, which is exactly why no generator ever assigned it. They live in `mac.column_ruling`.
 # ===========================================================================
-column_role:
+column.role:
   kind: vocabulary
   closed: true
   description: The analytical role of a column — where a query may use it, and the default guardrail.
@@ -123,7 +123,7 @@ column_role:
 # about a column's part in it, so it belongs on the concept and nowhere else. What is genuinely
 # per-column is only the three below.
 # ===========================================================================
-identity_role:
+column.identity:
   kind: vocabulary
   closed: true
   description: What part a column plays in its concept's identity (per column; see mac.identity_kind for the concept).
@@ -182,7 +182,7 @@ storage_role:
 # A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
 # `evidence` naming the measurement, so the refusal can cite it rather than assert it.
 # ===========================================================================
-column_ruling:
+column.ruling:
   kind: vocabulary
   closed: true
   description: An authored judgement about a column, beyond what measurement can establish.
@@ -256,7 +256,7 @@ binding_mode:
 # v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
 # An applied ontology's measures reference these members; they never re-encode the matrix.
 # ===========================================================================
-measure_type:
+column.measure_type:
   kind: value_domain
   closed: true
   description: How a measure aggregates — defined once, over axis_kind.

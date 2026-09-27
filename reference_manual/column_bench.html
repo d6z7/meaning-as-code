@@ -248,6 +248,35 @@ td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font
 .find p+p{margin-top:7px}
 .quote{border-left:3px solid var(--border);padding:2px 0 2px 14px;color:var(--muted);
   font-size:13px;margin:12px 0}
+
+/* ---- the two-plane census ---- */
+.tree{font-family:var(--mono);font-size:12.5px;line-height:1.75;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;overflow-x:auto;
+  box-shadow:var(--shadow);white-space:pre}
+.tree .pl2{color:var(--accent);font-weight:750}
+.tree .vo{color:var(--invariant);font-weight:700}
+.tree .ct{color:var(--faint)}
+.xt{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+.xt table{border-collapse:separate;border-spacing:4px;width:auto}
+.xt td,.xt th{border:0;padding:0}
+.xt th{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);
+  font-weight:750;padding:0 5px 5px;text-align:center;position:static}
+.xt th.rh{text-align:right;padding-right:9px;font-family:var(--mono);font-size:11.5px;
+  text-transform:none;letter-spacing:0;color:var(--ink);white-space:nowrap}
+.xc{min-width:74px;height:46px;border:1px solid var(--border);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  font-size:13px;font-weight:750;font-variant-numeric:tabular-nums;position:relative}
+.xc.z{color:var(--faint);background:var(--ground);opacity:.5}
+.xc.flag{border-color:var(--ask);border-width:2px}
+.xc.bad{border-color:var(--refuse);border-width:2px}
+.xc .cn{position:absolute;top:2px;right:4px;font-size:8.5px;font-weight:750}
+.cov{display:grid;grid-template-columns:120px 1fr 86px;gap:11px;align-items:center;margin-bottom:8px}
+.cov .cn2{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
+.cov .tr2{background:var(--surface-2);border-radius:4px;height:20px;overflow:hidden}
+.cov .fl2{height:100%;background:var(--accent);border-radius:0 4px 4px 0;box-shadow:0 0 0 2px var(--surface)}
+.cov .fl2.zero{background:var(--refuse);width:2px!important}
+.cov .vl2{font-family:var(--mono);font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -304,6 +333,18 @@ td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font
     </div>
     <div><div id="branches"></div></div>
   </div>
+</div></section>
+
+<section class="view" id="v-census"><div class="pad">
+  <h1>Every column, placed in both planes</h1>
+  <p class="lede" id="cen-lede"></p>
+  <div class="sec">the map</div>
+  <div class="tree" id="cen-tree"></div>
+  <div class="sec">the two planes crossed — what a column IS, against what a query may DO with it</div>
+  <div id="cen-xt"></div>
+  <div class="sec">the four column-map slots, and identity</div>
+  <div id="cen-cov"></div>
+  <div id="cen-notes"></div>
 </div></section>
 
 <section class="view" id="v-frontier"><div class="pad">
@@ -1818,7 +1859,7 @@ const DATA = {
      "description": "A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate."
     },
     "measure": {
-     "description": "A NUMERIC PAYLOAD. Folded only as its mac.MeasureType and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`."
+     "description": "A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`."
     },
     "period": {
      "description": "THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so \"sales in March\" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`."
@@ -1915,39 +1956,39 @@ const DATA = {
     }
    }
   },
-  "MeasureType": {
+  "measure_type": {
    "closed": true,
    "description": "How a measure aggregates — defined once, over axis_kind.",
    "terms": {
-    "Flow": {
+    "flow": {
      "description": "A quantity that accrues per period and accumulates over time (e.g. units sold in a period).",
      "additivity": {
       "time": "mac.aggregation_effect.additive",
       "categorical": "mac.aggregation_effect.additive"
      }
     },
-    "Stock": {
+    "stock": {
      "description": "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand).",
      "additivity": {
       "time": "mac.aggregation_effect.none",
       "categorical": "mac.aggregation_effect.additive"
      }
     },
-    "Intensive": {
+    "intensive": {
      "description": "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM.",
      "additivity": {
       "time": "mac.aggregation_effect.average",
       "categorical": "mac.aggregation_effect.average"
      }
     },
-    "Precomputed": {
-     "description": "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a MeasureType fact; whether you may fold is an axis fact.",
+    "precomputed": {
+     "description": "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a measure_type fact; whether you may fold is an axis fact.",
      "additivity": {
       "time": "mac.aggregation_effect.none",
       "categorical": "mac.aggregation_effect.none"
      }
     },
-    "Target": {
+    "target": {
      "description": "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis.",
      "additivity": {
       "time": "mac.aggregation_effect.none",
@@ -2453,6 +2494,118 @@ const DATA = {
   "measured": 1,
   "total": 29
  },
+ "census": {
+  "terms": {
+   "storage_role": [
+    "primary_key",
+    "foreign_key",
+    "composite_key_part",
+    "value",
+    "discriminator"
+   ],
+   "column_role": [
+    "key",
+    "dimension",
+    "measure",
+    "period",
+    "housekeeping"
+   ],
+   "identity_role": [
+    "canonical",
+    "part",
+    "reference"
+   ],
+   "identity_kind": [
+    "iso",
+    "code",
+    "namespace_code",
+    "fk_name",
+    "composite",
+    "resolved_axis",
+    "sme_pending"
+   ],
+   "measure_type": [
+    "flow",
+    "stock",
+    "intensive",
+    "precomputed",
+    "target"
+   ],
+   "column_ruling": [
+    "label_of",
+    "finer_than",
+    "scoped_by",
+    "never_axis"
+   ],
+   "name_register": [
+    "common",
+    "legal",
+    "long",
+    "short",
+    "code"
+   ]
+  },
+  "storage_total": 168,
+  "relations": 14,
+  "bindings": 143,
+  "concepts": 21,
+  "forms": {
+   "map": 0,
+   "flat": 24
+  },
+  "slots": {
+   "role": 139,
+   "identity": 0,
+   "measure.type": 0,
+   "rulings": 0
+  },
+  "identity_kinds": {
+   "fk_name": 14,
+   "code": 4,
+   "iso": 2,
+   "composite": 1
+  },
+  "identity_kinds_unused": [
+   "namespace_code",
+   "resolved_axis",
+   "sme_pending"
+  ],
+  "crosstab": {
+   "primary_key|key": 14,
+   "discriminator|dimension": 41,
+   "discriminator|attribute": 12,
+   "value|dimension": 6,
+   "value|attribute": 8,
+   "value|measure": 14,
+   "value|key": 12,
+   "composite_key_part|key": 14,
+   "foreign_key|dimension": 5,
+   "foreign_key|period": 3,
+   "foreign_key|key": 8,
+   "value|None": 3,
+   "discriminator|None": 1,
+   "dimension|dimension": 2
+  },
+  "suspicious": {
+   "foreign_key|dimension": "a pointer used as a category — 'that is a pointer, not a category, even though its cardinality looks dimension-sized' (column_roles.md §1)",
+   "value|key": "a payload column doing identity duty — the data plane measured no key shape here",
+   "primary_key|dimension": "the relation's own identity offered as an axis"
+  },
+  "per_origin": {
+   "served": {
+    "total": 72,
+    "unbound": 0
+   },
+   "landing": {
+    "total": 96,
+    "unbound": 96
+   }
+  },
+  "findings": [
+   "R1 dim_contoso_store.Channel declares data-plane role 'dimension', not a mac.storage_role term — a mac.column_role term in a mac.storage_role slot",
+   "R2 concept-plane role 'attribute' is not a mac.column_role term (20 binding(s); the closed set is ['key', 'dimension', 'measure', 'period', 'housekeeping'])"
+  ]
+ },
  "bundle": "mac-ontology-contoso"
 };
 
@@ -2855,7 +3008,7 @@ function renderFrontier() {
 
 /* --------------------------------------------------------------------- shell */
 const VIEWS = [['bench', 'Bench'], ['keys', 'Every key'], ['matrix', 'Matrix'],
-               ['con', 'Constellations'], ['frontier', 'Frontier']];
+               ['con', 'Constellations'], ['census', 'Two planes'], ['frontier', 'Frontier']];
 function renderShell() {
   const t = $('#tabs'); t.innerHTML = '';
   VIEWS.forEach(([id, lab], i) => {
@@ -2884,7 +3037,102 @@ $('#themebtn').onclick = () => {
 };
 $('#themebtn').textContent = document.documentElement.dataset.theme === 'dark' ? '☀' : '🌙';
 
-renderShell(); renderBench(); renderKeys(); renderMatrix(); renderCon(); renderFrontier();
+/* ------------------------------------------------- the two-plane census */
+function renderCensus(){
+  const C = DATA.census, T = C.terms;
+  const poss = T.storage_role.length * T.column_role.length;
+  $('#cen-lede').innerHTML =
+    `${C.storage_total} columns measured across ${C.relations} relations in the data plane;
+     ${C.bindings} column bindings across ${C.concepts} concepts in the concept plane. Crossing them
+     is a ${T.storage_role.length}×${T.column_role.length} space and
+     <b>${Object.keys(C.crosstab).length} of ${poss} pairs actually occur</b>. The two vocabularies
+     share no term, which is what makes a term from the wrong plane detectable at all —
+     <b>${C.findings.length} such breach(es)</b> below.`;
+
+  $('#cen-tree').innerHTML =
+`<span class="pl2">DATA PLANE</span> <span class="ct">— data/sources/*.yaml · data/datasets/*.yaml</span>
+└── columns[].role → <span class="vo">mac.storage_role</span>   <span class="ct">CLOSED · ${T.storage_role.length} · ${T.storage_role.join(' · ')}</span>
+        <span class="ct">"the PHYSICAL shape of a column in its relation" — measured, never authored</span>
+
+<span class="pl2">CONCEPT PLANE</span> <span class="ct">— ontology/concepts/**/*.yaml</span>
+├── concept.identity.kind → <span class="vo">mac.identity_kind</span>   <span class="ct">CLOSED · ${T.identity_kind.length}</span>
+│       <span class="ct">per CONCEPT: how identity is ESTABLISHED — ${Object.keys(C.identity_kinds).length} of ${T.identity_kind.length} terms used here</span>
+│
+└── grounding.sources[].columns[&lt;name&gt;]:   <span class="ct">← the column map, four slots on one column</span>
+    ├── role          → <span class="vo">mac.column_role</span>    <span class="ct">CLOSED · ${T.column_role.length} · ${C.slots['role']} of ${C.bindings} filled</span>
+    ├── identity      → <span class="vo">mac.identity_role</span>  <span class="ct">CLOSED · ${T.identity_role.length} · ${C.slots['identity']} of ${C.bindings} filled</span>
+    ├── measure.type  → <span class="vo">mac.measure_type</span>   <span class="ct">CLOSED · ${T.measure_type.length} · ${C.slots['measure.type']} of ${C.bindings} filled</span>
+    └── &lt;ruling&gt;      → <span class="vo">mac.column_ruling</span>  <span class="ct">CLOSED · ${T.column_ruling.length} · ${C.slots['rulings']} of ${C.bindings} filled</span>
+            <span class="ct">└── register: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${T.name_register.length}</span>`;
+
+  /* The cross-tab carries COUNTS, so this is the one place a real magnitude encoding is earned:
+     one hue, light to dark. Every cell also prints its number, so nothing is colour-alone. */
+  const vals = Object.values(C.crosstab);
+  const max = Math.max(...vals);
+  const rowTerms = [...T.storage_role, ...[...new Set(Object.keys(C.crosstab)
+    .map(k=>k.split('|')[0]))].filter(s=>!T.storage_role.includes(s) && s!=='null')];
+  const colTerms = [...T.column_role, ...[...new Set(Object.keys(C.crosstab)
+    .map(k=>k.split('|')[1]))].filter(s=>!T.column_role.includes(s) && s!=='null')];
+  let h='<table><thead><tr><th></th>'+colTerms.map(c=>
+    `<th>${esc(c)}${T.column_role.includes(c)?'':' <span style="color:var(--refuse)">!</span>'}</th>`).join('')+'</tr></thead><tbody>';
+  rowTerms.forEach(r=>{
+    h+=`<tr><th class="rh">${esc(r)}${T.storage_role.includes(r)?'':' <span style="color:var(--refuse)">!</span>'}</th>`;
+    colTerms.forEach(c=>{
+      const n=C.crosstab[`${r}|${c}`]||0;
+      const susp=C.suspicious[`${r}|${c}`];
+      const illegal=!T.storage_role.includes(r)||!T.column_role.includes(c);
+      const a=n?(0.12+0.72*(n/max)):0;
+      const cls=['xc',n?'':'z',illegal&&n?'bad':(susp&&n?'flag':'')].filter(Boolean).join(' ');
+      const style=n?`background:color-mix(in oklab, var(--accent) ${(a*100).toFixed(0)}%, var(--surface));`
+                    +`color:${a>0.45?'#fff':'var(--ink)'}`:'';
+      const tip=susp?esc(susp):(illegal?'a term from the wrong plane':'');
+      h+=`<td><div class="${cls}" style="${style}" title="${tip}">${n||'·'}`
+        +`${susp&&n?'<span class="cn" style="color:var(--ask)">⚑</span>':''}`
+        +`${illegal&&n?'<span class="cn" style="color:var(--refuse)">!</span>':''}</div></td>`;
+    });
+    h+='</tr>';
+  });
+  $('#cen-xt').innerHTML='<div class="xt">'+h+'</tbody></table>'
+    +'<div style="margin-top:12px;font-size:12px;color:var(--muted)">'
+    +'darker = more columns · <span style="color:var(--ask)">⚑</span> a pair the reference manual warns about'
+    +' · <span style="color:var(--refuse)">!</span> a term from the wrong plane</div></div>';
+
+  const cov=el('div','bars');
+  Object.entries(C.slots).forEach(([slot,n])=>{
+    const d=el('div','cov');
+    d.innerHTML=`<div class="cn2">${esc(slot)}</div>
+      <div class="tr2"><div class="fl2 ${n?'':'zero'}" style="width:${(n/C.bindings*100).toFixed(1)}%"></div></div>
+      <div class="vl2">${n} of ${C.bindings}</div>`;
+    cov.appendChild(d);
+  });
+  Object.entries(C.identity_kinds).forEach(([k,n])=>{
+    const d=el('div','cov');
+    d.innerHTML=`<div class="cn2">${esc(k)}</div>
+      <div class="tr2"><div class="fl2" style="width:${(n/C.concepts*100).toFixed(1)}%"></div></div>
+      <div class="vl2">${n} of ${C.concepts} concepts</div>`;
+    cov.appendChild(d);
+  });
+  $('#cen-cov').innerHTML=''; $('#cen-cov').appendChild(cov);
+
+  const notes=$('#cen-notes'); notes.innerHTML='';
+  C.findings.forEach(f=>notes.appendChild(el('div','find',
+    `<h4>${/^R1/.test(f)?'A term from the wrong plane':'A retired term still in use'}</h4><p>${esc(f)}</p>`)));
+  notes.appendChild(el('div','find',
+    `<h4>The column map is used ${C.forms.map} of ${C.forms.map+C.forms.flat} times</h4>
+     <p>Every source binds its columns as a FLAT LIST of names, so three of the map's four slots are
+     ${C.slots['identity']} of ${C.bindings}. The role survives only because it has a second home in
+     <code>field_roles</code>. This is the denominator for "is this bundle on the standard yet" —
+     and the answer is no, in the bundle the standard was designed against.</p>`));
+  notes.appendChild(el('div','find',
+    `<h4>Served: ${C.per_origin.served.unbound} of ${C.per_origin.served.total} columns bound by no concept</h4>
+     <p>Clean — every served column is bound. The landing is
+     ${C.per_origin.landing.unbound} of ${C.per_origin.landing.total} unbound, which is correct
+     rather than a gap: a concept binds the SERVED relation, never the raw landing. A first pass of
+     this census added the two together and reported 96 of 168 orphans, which was an artefact of one
+     denominator over two populations.</p>`));
+}
+
+renderShell(); renderBench(); renderKeys(); renderMatrix(); renderCon(); renderCensus(); renderFrontier();
 </script>
 </body>
 </html>

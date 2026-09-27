@@ -607,7 +607,7 @@
       "additionalProperties": false
     },
     "additivityAxis": {
-      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
+      "description": "v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.column.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.",
       "oneOf": [
         {
           "enum": [
@@ -677,7 +677,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis"
           },
-          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#measure_type"
+          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#column.measure_type"
         },
         "axis_kinds": {
           "type": "object",
@@ -686,11 +686,6 @@
             "type": "string",
             "pattern": "^mac\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
           }
-        },
-        "measure_type": {
-          "type": "string",
-          "description": "v0.6: the measure's additivity class — a reference to a mac.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
-          "pattern": "^mac\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$"
         },
         "unit": {
           "type": "string"
@@ -701,6 +696,12 @@
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
           "description": "v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero."
+        },
+        "measure_type": {
+          "type": "string",
+          "description": "v0.6: the measure's additivity class — a reference to a mac.column.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "pattern": "^mac\\.column\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$",
+          "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and check_vocabulary_parity does not yet read patterns, so this one had to be found by a bundle failing. Extending the parity gate to patterns is owed."
         }
       },
       "additionalProperties": false
@@ -1659,7 +1660,7 @@
             }
           },
           "then": {
-            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#column.measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
             "properties": {
               "concept": {
                 "required": [

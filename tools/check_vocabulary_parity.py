@@ -8,7 +8,7 @@ neither is marked as the copy.
 
 THE DEFECT THIS REPAIRS, MEASURED 2026-09-27, and I caused half of it. Closing the concept column
 map's `role` that morning, I derived the enum from contoso4's 142 delivered declarations —
-`[key, dimension, measure, attribute]` — without checking that `mac_vocabulary.yaml#column_role`
+`[key, dimension, measure, attribute]` — without checking that `mac_vocabulary.yaml#column.role`
 had declared the same slot for months, closed, as
 `[key, dimension, measure, period, housekeeping]`. So the framework then said two different things
 about one word, and nothing could report it. The estate's own law covers it: check for an unread
@@ -39,10 +39,10 @@ import sys
 PAIRS = (
     ("concept column `role`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "role"], "column_role"),
+      "oneOf", 1, "additionalProperties", "properties", "role"], "column.role"),
     ("concept column `identity`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "identity"], "identity_role"),
+      "oneOf", 1, "additionalProperties", "properties", "identity"], "column.identity"),
     ("TableFile column `role`",
      ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "storage_role"),
 )
@@ -144,9 +144,9 @@ def main(argv: list[str] | None = None) -> int:
 def _self_test() -> int:
     """A mutant per reject class, the two real disagreements among them."""
     SCH = {"$defs": {"x": {"properties": {"role": {"enum": ["key", "dimension"]}}}}}
-    VOC = {"column_role": {"kind": "vocabulary", "closed": True,
+    VOC = {"column.role": {"kind": "vocabulary", "closed": True,
                            "terms": {"key": {}, "dimension": {}}}}
-    P = [("slot", ["$defs", "x", "properties", "role"], "column_role")]
+    P = [("slot", ["$defs", "x", "properties", "role"], "column.role")]
     cases = []
     def case(label, cond):
         cases.append((label, bool(cond)))
@@ -156,7 +156,7 @@ def _self_test() -> int:
     # THE REAL REGRESSION: I added `attribute` to the schema while the vocabulary said
     # period/housekeeping. Both directions must be reported, not just the schema's extras.
     s2 = {"$defs": {"x": {"properties": {"role": {"enum": ["key", "dimension", "attribute"]}}}}}
-    v2 = {"column_role": {"kind": "vocabulary", "closed": True,
+    v2 = {"column.role": {"kind": "vocabulary", "closed": True,
                           "terms": {"key": {}, "dimension": {}, "period": {}, "housekeeping": {}}}}
     r = compare(s2, v2, P)[0]
     case("MUTANT a schema-only term fails", r[4] == "disagree" and "attribute" in r[5])
@@ -176,7 +176,7 @@ def _self_test() -> int:
 
     # `members:` must read the same as `terms:`, so an older framework checkout reports the same
     # findings instead of refusing — a gate that cannot read yesterday's tree teaches nothing.
-    r = compare(SCH, {"column_role": {"kind": "value_domain", "closed": True,
+    r = compare(SCH, {"column.role": {"kind": "value_domain", "closed": True,
                                       "members": {"key": {}, "dimension": {}}}}, P)[0]
     case("a `members:` block is read the same as a `terms:` block", r[4] == "ok")
 

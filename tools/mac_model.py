@@ -13,7 +13,7 @@ defects that got through on 2026-08-16/17 are all of the form **"two files say t
 disagree"**:
 
   * `ontology/concepts/<target_measure>.yaml` says a Target measure is `additive` on its geography and
-    model axes; `mac_vocabulary.yaml#measure_type.Target` says `non_aggregable` on the categorical
+    model axes; `mac_vocabulary.yaml#column.measure_type.Target` says `non_aggregable` on the categorical
     axis, and the bundle's own measure register agrees with the law. Measured across 9 measures:
     8 agree, 1 contradicts. No gate could see it — the two statements live in different files.
   * two deltas added a pointer and left the superseded field behind.
@@ -720,7 +720,7 @@ def _law() -> Law:
               kind="vocabulary", data=data, parse_error=err, anchors=collect_anchors(data))
     law = Law(
         doc=doc,
-        measure_types=_as_dict(_as_dict(data.get("measure_type")).get("terms")),
+        measure_types=_as_dict(_as_dict(data.get("column.measure_type")).get("terms")),
         aggregation_effects=frozenset(_as_dict(_as_dict(data.get("aggregation_effect")).get("terms"))),
         axis_kinds=frozenset(_as_dict(_as_dict(data.get("axis_kind")).get("terms"))),
         namespaces=frozenset(k for k, v in data.items() if isinstance(v, dict) and v.get("kind")),

@@ -95,7 +95,7 @@ def load_vocabulary() -> dict:
             "description": " ".join(str(spec.get("description") or "").split()),
             "terms": terms,
         }
-    if not out.get("measure_type", {}).get("terms"):
+    if not out.get("column.measure_type", {}).get("terms"):
         raise Fail("measure_type rendered empty — the value_domain `members:` shape was not read")
     return out
 
@@ -246,6 +246,55 @@ def check_parity(effects: dict, table: dict[str, dict], vocab: dict) -> list[str
 # --------------------------------------------------------------------------- build
 
 
+def two_plane_census(bundle: pathlib.Path) -> dict:
+    """The operator's two-plane map, populated from this bundle — every column placed in BOTH planes.
+
+    THE JOIN IS THE POINT. The data plane measures a column's PHYSICAL shape (mac.storage_role); the
+    concept plane authors its ANALYTICAL role (mac.column.role). The two vocabularies share no term,
+    so crossing them is a 5x5 space in which some pairs are ordinary, some are the reference
+    manual's own warnings, and a term from the wrong side is a breach visible only once the planes
+    are named. tools/check_column_planes.py is the gate; this is the same reading, rendered.
+    """
+    sys.path.insert(0, str(ROOT / "tools"))
+    import check_column_planes as G
+
+    terms = G.load_terms()
+    storage, rows, kinds, forms = G.read_planes(bundle)
+    findings = G.check(storage, rows, terms)
+    origin = forms.get("_origin") or {}
+
+    xt: dict[str, int] = {}
+    for r in rows:
+        s = storage.get((r["rel"], r["col"]))
+        xt[f"{s}|{r['role']}"] = xt.get(f"{s}|{r['role']}", 0) + 1
+
+    bound = {(r["rel"], r["col"]) for r in rows}
+    per_origin = {}
+    for name in ("served", "landing"):
+        pop = [k for k in storage if origin.get(k) == name]
+        per_origin[name] = {"total": len(pop), "unbound": sum(1 for k in pop if k not in bound)}
+
+    return {
+        "terms": {k: terms[k] for k in ("storage_role", "column.role", "column.identity",
+                                        "identity_kind", "column.measure_type", "column.ruling",
+                                        "name_register")},
+        "storage_total": len(storage),
+        "relations": len({r for r, _ in storage}),
+        "bindings": len(rows),
+        "concepts": len({r["concept"] for r in rows}),
+        "forms": {"map": forms["map"], "flat": forms["flat"]},
+        "slots": {slot: sum(1 for r in rows if r[key])
+                  for slot, key in (("role", "role"), ("identity", "identity"),
+                                    ("measure.type", "mtype"), ("rulings", "rulings"))},
+        "identity_kinds": {str(k): v for k, v in kinds.most_common()},
+        "identity_kinds_unused": [x for x in terms["identity_kind"] if x not in kinds],
+        "crosstab": xt,
+        "suspicious": {f"{a}|{b}": why for (a, b), why in G.SUSPICIOUS.items()},
+        "per_origin": per_origin,
+        "findings": findings,
+    }
+
+
 def build(bundle: pathlib.Path) -> tuple[dict, list[str]]:
     vocab = load_vocabulary()
     effects = yaml.safe_load(EFFECTS.read_text(encoding="utf-8")) or {}
@@ -271,6 +320,7 @@ def build(bundle: pathlib.Path) -> tuple[dict, list[str]]:
         merged.update(k)
         keys.append(merged)
 
+    census = two_plane_census(bundle)
     counts = {s: sum(1 for k in keys if k["status"] == s) for s in ("enforced", "designed", "measured")}
     data = {
         "generated_by": "tools/gen_column_bench.py",
@@ -280,6 +330,7 @@ def build(bundle: pathlib.Path) -> tuple[dict, list[str]]:
         "bench": bench,
         "vocabulary": vocab,
         "counts": {**counts, "total": len(keys)},
+        "census": census,
         "bundle": bundle.name,
     }
     return data, findings
@@ -309,6 +360,14 @@ def main() -> int:
     out = pathlib.Path(args.out)
 
     if args.check:
+        # A FINDING ABOUT THE MANUAL IS NOT A DEFECT OF THIS PAGE, and gen_vocabulary_terms.py
+        # already owns it: `--check` reds with "the manual cites 1 notion(s) the vocabulary does not
+        # define: MeasureType" and exits 1. Re-owning that here would mean the page cannot be
+        # published until a drift it merely reports is fixed. Reported, not failed.
+        external = [f for f in findings if "which mac_vocabulary.yaml does not define" in f]
+        findings = [f for f in findings if f not in external]
+        for f in external:
+            print(f"  (reported, not failed — gen_vocabulary_terms.py --check owns this) {f}")
         stale = (not out.exists()) or out.read_text(encoding="utf-8") != html
         if stale:
             findings.append(f"{out.name} is stale — regenerate with tools/gen_column_bench.py")
@@ -325,6 +384,10 @@ def main() -> int:
         for f in findings:
             print(f"  - {f}")
     out.write_text(html, encoding="utf-8")
+    c = data["census"]
+    print(f"  two-plane census: {c['storage_total']} measured columns / {c['bindings']} bindings, "
+          f"{len(c['crosstab'])} of {len(c['terms']['storage_role']) * len(c['terms']['column.role'])} "
+          f"pairs occur, {len(c['findings'])} finding(s)")
     print(f"gen_column_bench: wrote {out} — {len(data['keys'])} keys "
           f"({data['counts']['enforced']} enforced / {data['counts']['designed']} designed / "
           f"{data['counts']['measured']} measured), "

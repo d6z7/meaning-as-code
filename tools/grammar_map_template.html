@@ -227,6 +227,34 @@ td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
 .node.person.lit{border-color:var(--invariant);background:var(--invariant-bg);color:var(--invariant)}
 .node.stack{flex-direction:column;align-items:flex-start;gap:0}
 .node.planeout{border-style:dashed}
+
+/* ---- the permission law ---- */
+.pgrid{overflow-x:auto;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+.pgrid table{border-collapse:separate;border-spacing:5px;width:auto}
+.pgrid td,.pgrid th{border:0;padding:0}
+.pgrid th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);
+  font-weight:750;padding:0 6px 5px;text-align:center;position:static}
+.pgrid th.rh{text-align:right;padding-right:10px;font-family:var(--mono);font-size:11.5px;
+  text-transform:none;letter-spacing:0;color:var(--ink);white-space:nowrap}
+.pc{min-width:132px;border:1px solid var(--border);border-radius:8px;padding:9px 10px;
+  font-family:var(--mono);font-size:11.5px;font-weight:750;line-height:1.35;text-align:left}
+.pc .vv{display:block}
+.pc .wy{display:block;font-family:var(--sans);font-size:10.5px;font-weight:450;
+  color:var(--muted);margin-top:4px;line-height:1.35}
+.pc .vf{display:inline-block;font-family:var(--sans);font-size:9.5px;font-weight:750;
+  letter-spacing:.04em;margin-top:5px;padding:1px 5px;border-radius:4px}
+.pc.v-yes{color:var(--commit);background:var(--commit-bg);border-color:var(--commit)}
+.pc.v-no{color:var(--refuse);background:var(--refuse-bg);border-color:var(--refuse)}
+.pc.v-redirected{color:var(--accent);background:var(--accent-soft);border-color:var(--accent)}
+.pc.v-not_alone{color:var(--ask);background:var(--ask-bg);border-color:var(--ask)}
+.pc.v-obliged{color:var(--invariant);background:var(--invariant-bg);border-color:var(--invariant)}
+.pc.v-undeclared{color:var(--faint);background:var(--ground);border-style:dashed}
+.pc .vf.ok{background:var(--commit-bg);color:var(--commit)}
+.pc .vf.none{background:var(--other-bg);color:var(--muted)}
+.pc .vf.hole{background:var(--ask-bg);color:var(--ask)}
+.legend{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.legend .pc{min-width:0;padding:5px 9px;font-size:11px}
 </style>
 </head>
 <body>
@@ -298,6 +326,16 @@ td.k{font-family:var(--mono);font-weight:700;white-space:nowrap}
   <div class="sec">what the grammar cannot say</div>
   <p class="lede" id="gaps-lede"></p>
   <div id="gaps"></div>
+</div></section>
+
+<section class="view" id="v-perm"><div class="pad">
+  <h1>What a query may DO with a column</h1>
+  <p class="lede" id="perm-lede"></p>
+  <div class="sec">the base table · five roles × three operations</div>
+  <div id="perm-roles"></div>
+  <div class="sec">the override layer · four rulings that MODIFY the row a role already gave</div>
+  <div id="perm-rulings"></div>
+  <div id="perm-notes"></div>
 </div></section>
 
 <section class="view" id="v-law"><div class="pad">
@@ -673,7 +711,7 @@ function renderLaw(){
 
 /* ------------------------------------------------------------------- shell */
 const VIEWS=[['planes','Three planes'],['wire','The wiring'],['fold','The fold law'],
-             ['query','Query · states & gaps'],['law','Law vs runtime']];
+             ['perm','Column permissions'],['query','Query · states & gaps'],['law','Law vs runtime']];
 let CUR='planes';
 function go(id){
   CUR=id;
@@ -713,7 +751,84 @@ $('#themebtn').onclick=()=>{
 };
 $('#themebtn').textContent=document.documentElement.dataset.theme==='dark'?'☀':'🌙';
 addEventListener('resize',()=>requestAnimationFrame(drawWires));
-renderShell(); renderCmp(); renderWire(); renderFold(); renderQuery(); renderLaw(); go('planes');
+/* ------------------------------------------------- the column permission law */
+function permCell(v, why, ver){
+  const val=String(v);
+  let badge='';
+  if(ver && ver.agrees===true) badge='<span class="vf ok">✓ planner agrees</span>';
+  else if(ver && ver.agrees===false) badge='<span class="vf hole">✗ planner disagrees</span>';
+  else if(ver && ver.runtime) badge=`<span class="vf hole">runtime says ${esc(ver.runtime)}</span>`;
+  else badge='<span class="vf none">no role-reader</span>';
+  return `<div class="pc v-${esc(val)}"><span class="vv">${esc(val)}</span>`
+       + (why?`<span class="wy">${esc(why)}</span>`:'') + badge + '</div>';
+}
+function renderPerm(){
+  const P=DATA.permissions, C=DATA.counts, m=P.measured;
+  $('#perm-lede').innerHTML=`Your decomposition, checked against the code. "Where a query may use it"
+    was carried as ONE permission; the vocabulary's own words force it into <b>three</b> —
+    <code>mac.column_role.key</code> says a name resolves TO it through a register and it is
+    "never matched against a label", which is <code>resolve: no</code> beside <code>filter: yes</code>
+    in one sentence. ${C.perm_cells} cells: ${Object.keys(P.roles).length}×${P.operations.length}
+    base, ${Object.keys(P.rulings).length}×${P.operations.length} override.
+    <b>${Object.values(DATA.permissions.verified).reduce((a,o)=>a+Object.values(o).filter(c=>c.agrees===true).length,0)}
+    of the checkable cells agree with the planner and ${C.perm_disagree} disagree.</b>`;
+
+  const grid=(rows, verified) => {
+    let h='<table><thead><tr><th></th>'+P.operations.map(o=>
+      `<th>${esc(o.id)}<div style="font-weight:450;text-transform:none;letter-spacing:0;font-size:10.5px;margin-top:2px">${esc(o.asks)}</div></th>`).join('')+'</tr></thead><tbody>';
+    Object.entries(rows).forEach(([name,ops])=>{
+      h+=`<tr><th class="rh">${esc(name)}</th>`;
+      P.operations.forEach(o=>{
+        const c=ops[o.id]||{}, ver=verified?(verified[name]||{})[o.id]:null;
+        h+=`<td>${permCell(c.v, c.why || (c.target?('→ '+c.target):''), ver)}</td>`;
+      });
+      h+='</tr>';
+    });
+    return '<div class="pgrid"><table>'+h.replace('<table>','')+'</tbody></table></div>';
+  };
+  $('#perm-roles').innerHTML=grid(P.roles, P.verified);
+  $('#perm-rulings').innerHTML=grid(P.rulings, null);
+
+  const lg=el('div','legend');
+  lg.innerHTML=P.values.map(v=>`<div class="pc v-${esc(v)}">${esc(v)}</div>`).join('')
+    +`<div style="font-size:12px;color:var(--muted);align-self:center;margin-left:6px">
+       six values, not two — the decomposition's own cells force them</div>`;
+  $('#perm-roles').appendChild(lg);
+
+  const notes=$('#perm-notes'); notes.innerHTML='';
+  [['note','A ruling is a GUARD over the role table.',
+    [`The four rulings do not extend the table — they MODIFY the row a role already gave.
+      <code>label_of</code> on a dimension: the role grants <code>group: yes</code>, the ruling
+      redirects it to the target column. That is structurally the same shape as the fold plane one
+      floor down, where five guards (G1–G5) preempt a 25-cell law and never re-tabulate it.
+      Two planes, the same architecture: a base table plus a small preemption layer.`]],
+   ['bad','The <code>resolve</code> column has no role-reader at all.',
+    [`Measured: <code>resolver/</code> mentions <code>field_roles</code>
+      ${m.resolver_field_roles_mentions}×, and reads a role VALUE ${m.resolver_role_value_reads} times —
+      both mentions are for its KEYS (which columns exist). Resolution is gated by REGISTERS, not by
+      role. So a third of this law is stated in the vocabulary's prose and read by nothing, which is
+      this estate's signature defect in a place nobody had looked.`]],
+   ['bad','<code>period × group</code> was undeclared — and the runtime answers it.',
+    [`The planner's groupable tuple is <code>${esc(JSON.stringify(m.group_roles))}</code>, so a period
+      column IS an axis. That same tuple is what the POLICY_DENIED refusal prints back to a user as
+      "can be grouped by". The hole is filled in code and unstated in the vocabulary — the opposite
+      of the usual defect, and just as much a drift.`]],
+   ['note','<code>period × filter</code> is served by a different reader, not by the predicate tuple.',
+    [`The predicate tuple is <code>${esc(JSON.stringify(m.filter_roles))}</code> and excludes period.
+      A first pass of this verifier reported that as a DISAGREEMENT; it is not. The period binds
+      through its own gate — the planner looks the period column up by role and binds
+      <code>Intent.period</code> (${m.period_reads} reads). A cell can be right and still be served
+      somewhere other than where you looked.`]],
+   ['note','<code>measure × filter</code> keeps its answer and loses its reason.',
+    [`"A threshold is HAVING, not WHERE" was a statement about a clause that did not exist. It does
+      now: <code>Intent.having</code> is read by the planner, and it is one of the three stale
+      entries in the query grammar's not-expressible ledger. The cell stays <code>no</code>; its
+      justification is now a place to put it rather than the absence of one.`]]
+  ].forEach(([k,h,ps])=>notes.appendChild(el('div','callout'+(k==='bad'?' bad':''),
+    `<div class="h">${h}</div>${ps.map(x=>`<p>${x}</p>`).join('')}`)));
+}
+
+renderShell(); renderCmp(); renderWire(); renderFold(); renderPerm(); renderQuery(); renderLaw(); go('planes');
 </script>
 </body>
 </html>

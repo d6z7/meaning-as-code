@@ -247,14 +247,14 @@ def complete_sentence(text) -> bool:
 
 
 def measure_type_members(repo_root: Path | None = None):
-    """The members of mac.measure_type, read from the framework's vocabulary (their one home), or
+    """The members of mac.column.measure_type, read from the framework's vocabulary (their one home), or
     None when the vocabulary cannot be read."""
     try:
         import yaml as _yaml
 
         vocab = (repo_root or Path(__file__).resolve().parents[2]) / "mac_vocabulary.yaml"
         doc = _yaml.safe_load(vocab.read_text(encoding="utf-8")) or {}
-        members = (doc.get("measure_type") or {}).get("terms") or {}
+        members = (doc.get("column.measure_type") or {}).get("terms") or {}
         return set(members) if members else None
     except Exception:  # noqa: BLE001 — reported by the caller as sme-source-unreadable
         return None
@@ -262,13 +262,13 @@ def measure_type_members(repo_root: Path | None = None):
 
 def measure_type_declared(concept_doc: dict, members) -> bool:
     """Does a measure declare how it adds up, the way the answerability check reads it
-    (`concept.semantics.measure_type`), resolvable in mac.measure_type?
+    (`concept.semantics.measure_type`), resolvable in mac.column.measure_type?
 
     WHY THIS AND NOT "has an aggregation rule": per-concept aggregation rules were retired in
     favour of the declared type, after which the old detector asked "how does it aggregate?" of
     every measure in a bundle that had answered it for every measure."""
     mt = ((concept_doc.get("concept") or {}).get("semantics") or {}).get("measure_type")
-    if not isinstance(mt, str) or not mt.startswith("mac.measure_type."):
+    if not isinstance(mt, str) or not mt.startswith("mac.column.measure_type."):
         return False
     if members is None:
         # The vocabulary is unreadable: say so once (the caller does) instead of manufacturing a
@@ -401,7 +401,7 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
             f"concept:{key_fragment(stem)}#measure_type",
             "question",
             f"How does the measure “{title}” add up across its axes? It declares no measure type "
-            f"that mac.measure_type resolves.",
+            f"that mac.column.measure_type resolves.",
             "concept.semantics.measure_type",
         )
 
@@ -672,7 +672,7 @@ def sme_catalogue(concepts: dict, root=None, concept_paths: dict | None = None, 
     if members is _UNREAD:
         members = measure_type_members()
     if members is None and any(((c or {}).get("concept") or {}).get("class") == "measure" for c in concepts.values()):
-        findings.append(_unreadable("mac_vocabulary.yaml#measure_type", "the measure_type terms could not be read"))
+        findings.append(_unreadable("mac_vocabulary.yaml#column.measure_type", "the measure_type terms could not be read"))
 
     paths = dict(concept_paths or {})
     if root is not None and not paths:
@@ -867,7 +867,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
                     "concept": stem,
                     "concept_title": title,
                     "title": f"Measure {title} declares no measure type",
-                    "detail": "No `concept.semantics.measure_type` that mac.measure_type resolves, so "
+                    "detail": "No `concept.semantics.measure_type` that mac.column.measure_type resolves, so "
                     "how it rolls up across its axes is unspecified.",
                 }
             )

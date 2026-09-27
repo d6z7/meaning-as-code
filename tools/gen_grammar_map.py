@@ -170,10 +170,80 @@ def load_fold_law(root: pathlib.Path) -> dict:
     }
 
 
+def measure_permissions(root: pathlib.Path) -> dict:
+    """The role tuples the planner ACTUALLY branches on, so the permission law is checked, not claimed.
+
+    TWO OF THE THREE OPERATIONS ARE ROLE-GATED IN CODE and can be verified:
+      group   `plan.py` lists the roles a concept may be grouped by — and prints that same list back
+              inside the POLICY_DENIED refusal, so it is the runtime's own answer to "what is an axis".
+      filter  `sql.py` places a predicate only on these roles.
+    THE THIRD CANNOT BE. Measured 2026-09-27: `resolver/` reads `field_roles` twice and both times
+    for its KEYS (which columns exist), never for its values. Resolution is gated by registers, so
+    the `resolve` column of the law has no role-reader to check against — which is itself the
+    finding, and is reported rather than papered over with a guess.
+    """
+    planner = "\n".join(f.read_text(encoding="utf-8") for f in sorted((root / "planner").glob("*.py")))
+    resolver = "\n".join(f.read_text(encoding="utf-8") for f in sorted((root / "resolver").glob("*.py")))
+
+    def tuple_after(pattern: str) -> list[str]:
+        m = re.search(pattern, planner)
+        return sorted(re.findall(r'"(\w+)"', m.group(1))) if m else []
+
+    # The period column binds through its OWN path, never the generic predicate tuple: the planner
+    # looks a period column up BY ROLE and binds `Intent.period` to it. Measured here so the
+    # verifier does not report a spurious disagreement for a cell served by a different reader.
+    period_gate = bool(re.search(r'for role in \("period"', planner)) and \
+        len(re.findall(r"\.period\b", planner)) > 0
+
+    group_roles = tuple_after(r'declared\.rsplit\("\.", 1\)\[-1\] in \(([^)]*)\)')
+    filter_roles = tuple_after(r'anchor_fr\[col\]\.rsplit\("\.", 1\)\[-1\] in \(([^)]*)\)')
+
+    # `field_roles` touched for its KEYS vs for its VALUES — the distinction the finding rests on.
+    key_reads = len(re.findall(r"field_roles", resolver))
+    value_reads = len(re.findall(r'field_roles[^\n]*rsplit|roles\[[^\]]+\]\s*==\s*"', resolver))
+    return {
+        "group_roles": group_roles,
+        "filter_roles": filter_roles,
+        "refusal_role": "attribute" if re.search(r'!= "attribute"', planner) else None,
+        "period_gate": period_gate,
+        "period_reads": len(re.findall(r"\.period\b", planner)),
+        "resolver_field_roles_mentions": key_reads,
+        "resolver_role_value_reads": value_reads,
+        "measured_from": str(root),
+    }
+
+
+def verify_permissions(perms: dict, measured: dict) -> dict:
+    """Each `group`/`filter` cell against the planner's tuple. Disagreement is reported per cell."""
+    out: dict[str, dict] = {}
+    for role, ops in perms["roles"].items():
+        out[role] = {}
+        for op, cell in ops.items():
+            runtime, reader = None, None
+            if op == "group":
+                runtime = "yes" if role in measured["group_roles"] else "no"
+                reader = f"the planner's groupable tuple {tuple(measured['group_roles'])}"
+            elif op == "filter":
+                if role == "period" and measured["period_gate"]:
+                    # Served by the period gate, not by predicate placement — a different reader,
+                    # not a missing permission.
+                    runtime, reader = "yes", (f"the period gate — the planner looks the period column "
+                                              f"up by role and binds Intent.period "
+                                              f"({measured['period_reads']} reads)")
+                else:
+                    runtime = "yes" if role in measured["filter_roles"] else "no"
+                    reader = f"the planner's predicate tuple {tuple(measured['filter_roles'])}"
+            declared = str(cell["v"])
+            agrees = None if runtime is None or declared == "undeclared" else (declared == runtime)
+            out[role][op] = {"declared": declared, "runtime": runtime, "agrees": agrees,
+                             "reader": reader, "why": cell.get("why", "")}
+    return out
+
+
 def load_vocabulary() -> dict:
     raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
     out: dict[str, dict] = {}
-    for ns in ("outcome_class", "diagnostic_code", "column_ruling", "MeasureType", "aggregation_effect"):
+    for ns in ("outcome_class", "diagnostic_code", "column.ruling", "measure_type", "aggregation_effect"):
         spec = raw.get(ns) or {}
         body = spec.get("terms") or spec.get("members") or {}
         out[ns] = {}
@@ -457,7 +527,7 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
               "scoped_by": "placement.scoped_by", "never_axis": "rulings.never_axis"}
 
     cases = {}
-    for term, spec in vocab["column_ruling"].items():
+    for term, spec in vocab["column.ruling"].items():
         k = keys.get(key_of[term], {})
         test, cant = tests[term]
         needs_evidence = term == "never_axis"
@@ -527,7 +597,7 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
                                   "meta": "mechanical", "sub": "narrows four words to a candidate"},
                                  {"id": "mid:person", "label": "A PERSON RULES", "meta": "not mechanical",
                                   "sub": "cardinality cannot tell you which you have"},
-                                 {"id": "mid:ruling", "label": "the ruling", "meta": "mac.column_ruling",
+                                 {"id": "mid:ruling", "label": "the ruling", "meta": "mac.column.ruling",
                                   "sub": "4 closed words"}]},
             "right": {"label": "the outcome",
                       "nodes": [{"id": "out:" + k, "label": k, "meta": _outcome_hint(k)}
@@ -537,12 +607,12 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
                                   {"id": "out:GATE", "label": "CHECK · red",
                                    "meta": "the ruling claims what the data denies", "plane_outcome": True}]},
         },
-        "selector_label": "four words · mac.column_ruling",
+        "selector_label": "four words · mac.column.ruling",
         "cases": {"law": cases},
-        "counts": {"words": len(vocab["column_ruling"]),
-                   "enforced": sum(1 for t in vocab["column_ruling"]
+        "counts": {"words": len(vocab["column.ruling"]),
+                   "enforced": sum(1 for t in vocab["column.ruling"]
                                    if (keys.get(key_of[t], {}).get("status")) == "enforced"),
-                   "designed": sum(1 for t in vocab["column_ruling"]
+                   "designed": sum(1 for t in vocab["column.ruling"]
                                    if (keys.get(key_of[t], {}).get("status")) == "designed")},
     }
 
@@ -583,6 +653,10 @@ def build(rt_path: str | None) -> tuple[dict, list[str]]:
     fold = load_fold_law(root)
     vocab = load_vocabulary()
 
+    perms = effects["permissions"]
+    measured = measure_permissions(root)
+    verified = verify_permissions(perms, measured)
+
     qp, drifts = query_plane(grammar, rt, vocab)
     planes = [qp, fold_plane(fold, vocab), rulings_plane(effects, vocab)]
 
@@ -601,13 +675,20 @@ def build(rt_path: str | None) -> tuple[dict, list[str]]:
         "reachability": reachability(),
         "vocabulary": vocab,
         "fold": fold,
+        "permissions": {**perms, "measured": measured, "verified": verified},
         "runtime": {k: rt[k] for k in ("operations", "filter_ops", "branched_by_name",
                                        "non_fold_ops", "root")},
         "drifts": drifts,
         "counts": {"planes": len(planes), "gaps": len(gaps),
                    "projection_gaps": len(grammar["projection"]["gaps"]),
                    "stale": len(stale_gaps(grammar, rt)),
-                   "cases": sum(len(c) for p in planes for c in p["cases"].values())},
+                   "cases": sum(len(c) for p in planes for c in p["cases"].values()),
+                   "perm_cells": sum(len(v) for v in perms["roles"].values())
+                                 + sum(len(v) for v in perms["rulings"].values()),
+                   "perm_undeclared": sum(1 for r in perms["roles"].values()
+                                          for c in r.values() if c["v"] == "undeclared"),
+                   "perm_disagree": sum(1 for r in verified.values()
+                                        for c in r.values() if c["agrees"] is False)},
     }
     return data, drifts
 
