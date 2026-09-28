@@ -138,6 +138,16 @@ def _self_test() -> int:
          "a complete measurement carrying a finding was rendered FAIL on a healthy first run")
     case("MUTANT exit 1 is a failure",
          classify(1, "Traceback (most recent call last)\n", refusals)[0] == "failed")
+    # EXIT 2 IS A CONTRACT, NOT A PHRASE, and the cases above tested 0, 1 and 3 and never it — which
+    # is exactly the gap that bit. `mac_sample --plane concepts` on a bundle with no ontology exits 2
+    # saying "✗ NOT RUN ... its verdict is UNKNOWN — not absent": a textbook refusal, in words this
+    # tuple does not carry, and the first full from-scratch import of contoso3 reported it as FAIL.
+    case("MUTANT exit 2 is a REFUSAL even when its words are not in the refusal list",
+         classify(2, "\u2717 NOT RUN — found no concept, so it measured NOTHING\n",
+                  refusals)[0] == "refused",
+         "an empty population reported as a failure teaches an operator to ignore the word")
+    case("MUTANT exit 2 still reports the sentence the tool actually printed",
+         "NOT RUN" in classify(2, "\u2717 NOT RUN — found no concept\n", refusals)[1])
     case("MUTANT a missing dependency is UNAVAILABLE, not a failure",
          classify(1, "Traceback...\nModuleNotFoundError: No module named 'langchain_aws'\n",
                   refusals)[0] == "unavailable",
@@ -535,8 +545,16 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # checklist caught what resume got wrong, which is the whole reason a part has one.
         {"name": "samples-sources", "part": "sources", "produces": "data/samples/*.src.sample.csv",
          "d": "D11b", "cmd": [_tool("mac_sample.py"), str(root), "--plane", "sources"]},
-        {"name": "samples-datasets", "part": "datasets", "produces": "data/samples/*.sample.csv",
-         "d": "D11b", "cmd": [_tool("mac_sample.py"), str(root), "--plane", "datasets"]},
+        # PER-ITEM RESUME, because a GLOB CANNOT SEPARATE THE TWO PLANES HERE: served previews are
+        # `<stem>.sample.csv` and landed ones `<stem>.src.sample.csv`, and the first pattern matches
+        # the second. Found by a full from-scratch import 2026-09-28 — `samples-sources` ran, and
+        # `samples-datasets` then RESUMED on its sibling's seven files and wrote none of its own five.
+        # This is the third instance of one bug: `produces` must answer for THIS stage's output alone.
+        {"name": "samples-datasets", "part": "datasets", "d": "D11b",
+         "each": lambda: [[_tool("mac_sample.py"), str(root), "--plane", "datasets"]],
+         "missing": lambda: ([[_tool("mac_sample.py"), str(root), "--plane", "datasets"]]
+                             if any(not (root / "data" / "samples" / f"{r}.sample.csv").is_file()
+                                    for r in relations("datasets")) else [])},
         # `--accept` ON THE LOOKUP CUTTER IS NOT A BILLING DECISION. harvest's help says
         # "materialize/lookups create the own-schema views + name->code registers (DRY-RUN by
         # default, --accept to run the DDL/profiling live)" — the flag means RUN THE PROFILING, and
@@ -559,7 +577,11 @@ def _stages(root: pathlib.Path) -> list[dict]:
         {"name": "lookups-sources", "part": "sources", "produces": "data/lookups/*.csv", "d": "D12",
          "always": True,
          "cmd": [_tool("mac_lookups.py"), str(root), "--plane", "sources"]},
+        # `always`, for the same reason its sibling is: BOTH planes cut into data/lookups/, so the glob
+        # cannot answer for one of them and this stage resumed on the other's output. Re-cutting is
+        # cheap and idempotent — it reads domains already measured onto the descriptors.
         {"name": "lookups-datasets", "part": "datasets", "produces": "data/lookups/*.csv", "d": "D12",
+         "always": True,
          "cmd": [_tool("mac_lookups.py"), str(root), "--plane", "datasets"]},
         # ── THE PROMOTION PASS. `mac_descriptors` derives foreign keys from data/references*/ and
         # register pointers from data/lookups/, and BOTH are measured after it first runs — so a
@@ -596,16 +618,6 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # none of them — REGISTER-MONITOR went red with "18 register(s) are delivered and
         # acceptance/register_membership_runs.json does not exist". The monitor reads the register
         # directory, which both parts write into, so running it from either is correct and idempotent.
-        # THE GATE'S RUN RECORD IS EVIDENCE OF DELIVERY, so the delivery produces it. Found by
-        # redeploying contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come
-        # back, because it is written by `check_delivery_consistency` and NO stage ran it — the file
-        # was only ever on disk because a person ran the gate by hand. The console's Delivery tab reads
-        # it, so a from-scratch deploy left a consumer with nothing and no sign that anything was
-        # missing. `part: "both"`, for the same reason as the monitor: either delivery can be the one
-        # that completes the bundle, and the check reads whatever is on disk.
-        {"name": "delivery-check", "part": "both", "always": True,
-         "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
-         "cmd": [_tool("check_delivery_consistency.py"), str(root)]},
         {"name": "register-monitor", "part": "both", "always": True,
          "produces": "acceptance/register_membership_runs.json",
          "d": "D12b", "cmd": [_tool("check_register_membership.py"), str(root)]},
@@ -628,6 +640,20 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # proves invariants HOLD; a register says what is WRONG and who must rule on it.
         {"name": "dq-findings", "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
          "cmd": [_tool("mac_dq_findings.py"), str(root)]},
+        # AFTER dq-findings, NOT BEFORE IT. This gate READS the data-quality register —
+        # CONCEPT-RELATION asks whether a served relation nobody claims has been DECLINED there — so
+        # placed earlier it measured a bundle whose register did not exist yet and reported an
+        # inconsistency that was gone by the end of the same run. Measured on contoso3's first full
+        # from-scratch import, 2026-09-28: FAIL during the run, 0 failures immediately after it. A gate
+        # whose verdict depends on where in the chain it runs is not yet a gate.
+        #
+        # THE RUN RECORD IS EVIDENCE OF DELIVERY, so the delivery produces it. Found by redeploying
+        # contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come back, because
+        # it is written by `check_delivery_consistency` and NO stage ran it — the file was only ever on
+        # disk because a person ran the gate by hand, and the console's Delivery tab reads it.
+        {"name": "delivery-check", "part": "both", "always": True,
+         "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
+         "cmd": [_tool("check_delivery_consistency.py"), str(root)]},
         # `produces` IS THE DELIVERABLE'S OWN SHAPE, not the directory that holds it. As
         # `ontology/concepts` it was satisfied by ANY file in that directory — and the projection
         # writes `ontology/concepts/index.md` there, a generated read-view. Measured on the first
@@ -718,6 +744,16 @@ def classify(returncode: int, out: str, refusals: tuple[str, ...]) -> tuple[str,
     lastline = tail[-1][:88] if tail else ""
     if returncode == 0:
         return "ok", lastline
+    # EXIT 2 IS THE ESTATE'S OWN WORD FOR "COULD NOT RUN", and it outranks a string match because it
+    # is a contract rather than a phrase. `mac-integration-kit/run_gates.sh` states it, every gate in
+    # this repo returns it for an empty population, and matching only on WORDS meant a tool that used
+    # different ones was called a failure: measured on contoso3's first full from-scratch import,
+    # `mac_sample --plane concepts` exited 2 saying "✗ NOT RUN — found no concept ... its verdict is
+    # UNKNOWN — not absent", which is a textbook refusal, and the run reported FAIL. A bundle with no
+    # ontology cannot sample concepts; that is not a failure, it is the absence of a population.
+    if returncode == 2:
+        return "refused", next((ln.strip() for ln in reversed(out.splitlines()) if ln.strip()),
+                               lastline)[:88]
     if any(mark in out for mark in refusals):
         return "refused", next((ln.strip() for ln in reversed(out.splitlines())
                                 if any(m in ln for m in refusals)), lastline)[:88]
