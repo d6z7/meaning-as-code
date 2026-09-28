@@ -588,10 +588,48 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         )
         hdr = rows[0] if rows else []
         n = max(0, len(rows) - 1)
+        # A COLUMN THAT NEVER VARIES IS A FACT ABOUT THE REGISTER, NOT ABOUT A MEMBER. Operator,
+        # 2026-09-28: "in the lookup page these columns are redundant: source_view source_schema
+        # confidence note / you can put them above the table as they apply for the whole table".
+        # Correct, and measurably: `mac_lookups._render` writes the SAME source_view, source_schema,
+        # confidence and note on every data row, so a 120-member register repeated four constants 120
+        # times and the reader had to scan sideways past them to reach the member.
+        #
+        # DERIVED, NOT LISTED BY NAME. The rule is "one distinct value over every row", so a register
+        # whose note or schema genuinely varies per member keeps that column in the table, and a
+        # future constant column needs no change here. Hardcoding the four names would state the
+        # instance instead of the requirement.
+        #
+        # THE CODE COLUMN ALWAYS STAYS IN THE TABLE. On a one-member register every column is constant,
+        # including the code — and a register page whose table is empty because its single member was
+        # "constant" would be an absurd reading of the same rule.
+        #
+        # `confidence` IS DROPPED ALTOGETHER when constant, on the operator's ruling: "confidence can
+        # be dropped here ... of course its confiden ... its the database itself". A register is CUT
+        # from the warehouse by measurement, so a measured tier repeated on every row tells a reader
+        # nothing they did not already know from the artifact existing. It survives as a column only if
+        # it actually varies, which would be a real disagreement worth showing.
+        DROP_IF_CONSTANT = {"confidence"}
+        data_rows = rows[1:]
+        constant: dict[str, str] = {}
+        if hdr and data_rows:
+            for i, name in enumerate(hdr):
+                if i == 0:
+                    continue
+                vals = {(r[i] if len(r) > i else "") for r in data_rows}
+                if len(vals) == 1:
+                    constant[name] = next(iter(vals))
+        shown = [i for i, name in enumerate(hdr) if i == 0 or name not in constant]
         b = [f"Reference lookup · {n} rows · SSOT: `data/lookups/{lk.name}` (CSV).", ""]
+        facts = [(k, v) for k, v in constant.items() if k not in DROP_IF_CONSTANT and v]
+        if facts:
+            b += [f"- **{k}** — `{v}`" if len(v) < 60 else f"- **{k}** — {v}" for k, v in facts]
+            b += [""]
         if hdr:
-            b += ["| " + " | ".join(hdr) + " |", "| " + " | ".join(["---"] * len(hdr)) + " |"]
-            b += ["| " + " | ".join(r) + " |" for r in rows[1:201]]
+            head = [hdr[i] for i in shown]
+            b += ["| " + " | ".join(head) + " |", "| " + " | ".join(["---"] * len(head)) + " |"]
+            b += ["| " + " | ".join((r[i] if len(r) > i else "") for i in shown) + " |"
+                  for r in data_rows[:200]]
             if n > 200:
                 b += ["", f"_…{n - 200} more rows — open the CSV in the Source browser._"]
         lfm = {
