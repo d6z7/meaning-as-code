@@ -185,7 +185,7 @@ def test_an_unreadable_concept_file_is_a_finding(tmp_path):
 
 
 def test_a_measure_with_a_declared_measure_type_is_not_asked_how_it_aggregates(tmp_path):
-    concepts = {"net_sales": _concept("net_sales", "measure", semantics={"measure_type": "mac.concept.column.measure_type.Flow"})}
+    concepts = {"net_sales": _concept("net_sales", "measure", semantics={"measure_type": "mac.concept.column.measure_type.flow"})}
     out = _build(_bundle(tmp_path, concepts), concepts)
     assert out["sme_questions"] == []
     assert not [f for f in out["findings"] if f["id"] == "noagg.net_sales"]  # the finding twin agrees

@@ -439,6 +439,24 @@ def main() -> int:
         ppath.parent.mkdir(parents=True, exist_ok=True)
         ppath.write_text(yaml.safe_dump(prof, sort_keys=False, allow_unicode=True, width=100),
                          encoding="utf-8")
+        # ── THE KEY'S POSITIONS. `role: primary_key` alone says a column is part of the key and not
+        #    WHICH part, and the operator retired `composite_key_part` precisely because one role
+        #    collapsed those two facts: "composite PK should have number PK1, PK2 ... for each component
+        #    (instead of composite PK)". This writer set the role and never the position, so every
+        #    composite key it admitted rendered as `PK` twice — the order, which is the fact a reader
+        #    needs to join on it, was not written by anyone. Numbered in the descriptor's own column
+        #    order, 1..n, and ONLY for a composite: a single-column key has no position to state, which
+        #    is the convention `mac_descriptors` already writes and `column_table` already renders.
+        _pk = [c for c in (doc.get("columns") or []) if c.get("role") == "primary_key"]
+        for _i, _c in enumerate(_pk, 1):
+            if len(_pk) > 1:
+                _c["key_position"] = _i
+            else:
+                _c.pop("key_position", None)
+        if len(_pk) > 1:
+            _shown = ", ".join("{}=PK{}".format(c["name"], c["key_position"]) for c in _pk)
+            print(f"  KEY POSITIONS — {_shown}")
+
         path.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
                         encoding="utf-8")
         print(f"\n  written → {ppath.relative_to(root)} (evidence, determined_by)"

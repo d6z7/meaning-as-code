@@ -114,33 +114,33 @@ a composite"*; these say *which columns compose it*.
 > key is a claim about the **kind** of identity, which is `mac.identity_kind.code` or `fk_name` on
 > the concept, not a statement about one column's part in it.
 
-<!-- BEGIN GENERATED:vocabulary-terms:identity_role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.column.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
-> What part a column plays in its concept's identity (per column; see mac.identity_kind for the
+> What part a column plays in its concept's identity (per column; see mac.concept.identity for the
 concept).
 
-*`mac.identity_role` · 3 terms · closed — these are all of them*
+*`mac.concept.column.identity` · 3 terms · closed — these are all of them*
 
-#### `mac.identity_role.canonical`
+#### `mac.concept.column.identity.canonical`
 
 THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
 discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-says so through `mac.identity_kind.composite` or `resolved_axis` rather than nominating a column
-that does not identify.
+says so through `mac.concept.identity.composite` or `resolved_axis` rather than nominating a
+column that does not identify.
 
-#### `mac.identity_role.part`
+#### `mac.concept.column.identity.part`
 
 ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
 returns a set where a row was expected, and looks like an answer. Declared on every column of
-the tuple; the concept declares `mac.identity_kind.composite` alongside.
+the tuple; the concept declares `mac.concept.identity.composite` alongside.
 
-#### `mac.identity_role.reference`
+#### `mac.concept.column.identity.reference`
 
 A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
 points at is named separately; whether every value is PRESENT in the parent is a measurement,
 not a declaration, and a reference with no parent relation in the delivery is recorded AS
 dangling rather than dropped or invented.
-<!-- END GENERATED:vocabulary-terms:identity_role -->
+<!-- END GENERATED:vocabulary-terms:concept.column.identity -->
 
 ### `domain` — what values exist, and whether the list is complete
 

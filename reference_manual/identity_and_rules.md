@@ -17,47 +17,42 @@ engine must do**.
 Per **concept**, not per column. (For which *column* plays which part, see
 [`mac.identity_role`](column_specification.md).)
 
-<!-- BEGIN GENERATED:vocabulary-terms:identity_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > How a concept's canonical identity is established (declared once per concept).
 
-*`mac.identity_kind` · 7 terms · closed — these are all of them*
+*`mac.concept.identity` · 6 terms · closed — these are all of them*
 
-#### `mac.identity_kind.iso`
+#### `mac.concept.identity.iso`
 
 A universal external standard code (e.g. an ISO country code). Identity = the standard code;
 local names/labels are aliases.
 
-#### `mac.identity_kind.code`
+#### `mac.concept.identity.code`
 
 A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings
 are aliases.
 
-#### `mac.identity_kind.namespace_code`
+#### `mac.concept.identity.namespace_code`
 
 A code that only means something within a scope — identity = (namespace, code); the bare code
 collides across scopes. Guarded by mac.canon.composite_key_guard.
 
-#### `mac.identity_kind.fk_name`
+#### `mac.concept.identity.fk_name`
 
 An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity =
 the key; the name is a joined attribute, not the identity.
 
-#### `mac.identity_kind.composite`
+#### `mac.concept.identity.composite`
 
 Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no
 single-column key.
 
-#### `mac.identity_kind.resolved_axis`
-
-An axis the serving view PINS or collapses (e.g. reporting role, firmness). Keyless-by-design:
-not exposed as a filterable key on the default view (grounding columns: []).
-
-#### `mac.identity_kind.sme_pending`
+#### `mac.concept.identity.sme_pending`
 
 Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an
 SME rules.
-<!-- END GENERATED:vocabulary-terms:identity_kind -->
+<!-- END GENERATED:vocabulary-terms:concept.identity -->
 
 ### Choosing
 
@@ -93,44 +88,44 @@ Fourteen of contoso's twenty-one concepts are `fk_name`, four `code`, two `iso`,
 
 ---
 
-## `mac.rule_kind` — what a behavioural rule governs
+## `mac.concept.rule` — what a behavioural rule governs
 
-<!-- BEGIN GENERATED:vocabulary-terms:rule_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.rule (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > What a behavioural rule governs — the rule's type.
 
-*`mac.rule_kind` · 6 terms · closed — these are all of them*
+*`mac.concept.rule` · 6 terms · closed — these are all of them*
 
-#### `mac.rule_kind.resolution`
+#### `mac.concept.rule.resolution`
 
 Identity / matching / scoping of an entity from the question (name, code, key, definition).
 
-#### `mac.rule_kind.aggregation`
+#### `mac.concept.rule.aggregation`
 
 Measure math — additivity, period bounds, grain (how a measure may be summed/read).
 
-#### `mac.rule_kind.default`
+#### `mac.concept.rule.default`
 
 What to assume when an axis is unspecified but a safe default exists.
 
-#### `mac.rule_kind.ambiguity`
+#### `mac.concept.rule.ambiguity`
 
 An underspecified REQUIRED dimension — ASK, never guess.
 
-#### `mac.rule_kind.exclusion`
+#### `mac.concept.rule.exclusion`
 
 What to filter out / never include (pseudo-entries, unmapped rows, stale vintages).
 
-#### `mac.rule_kind.guarantee`
+#### `mac.concept.rule.guarantee`
 
 A fact the consumer INHERITS from the serving view (relied on, not re-derived).
-<!-- END GENERATED:vocabulary-terms:rule_kind -->
+<!-- END GENERATED:vocabulary-terms:concept.rule -->
 
 ### The shape of a rule
 
 ```yaml
 - id: continent.side.customer_only
-  kind: mac.rule_kind.resolution
+  kind: mac.concept.rule.resolution
   when:  "a question groups or filters sales by continent"
   then:  read Continent from the customer dimension
   never: deriving a store continent by mapping CountryCode through the customer dimension

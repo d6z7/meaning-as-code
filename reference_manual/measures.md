@@ -33,29 +33,29 @@ read rather than folded.
 
 ## `mac.MeasureType` — what kind of quantity it is
 
-<!-- BEGIN GENERATED:vocabulary-terms:MeasureType (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.column.measure_type (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > How a measure aggregates — defined once, over axis_kind.
 
-*`mac.MeasureType` · 5 members · closed — these are all of them*
+*`mac.concept.column.measure_type` · 5 terms · closed — these are all of them*
 
-#### `mac.MeasureType.Flow`
+#### `mac.concept.column.measure_type.flow`
 
 A quantity that accrues per period and accumulates over time (e.g. units sold in a period).
 
 | field | value |
 |---|---|
-| `additivity` | time: mac.aggregation_effect.additive · categorical: mac.aggregation_effect.additive |
+| `additivity` | time: mac.concept.aggregation_effect.additive · categorical: mac.concept.aggregation_effect.additive |
 
-#### `mac.MeasureType.Stock`
+#### `mac.concept.column.measure_type.stock`
 
 A level read at a point in time; it does not accumulate over time (e.g. inventory on hand).
 
 | field | value |
 |---|---|
-| `additivity` | time: mac.aggregation_effect.none · categorical: mac.aggregation_effect.additive |
+| `additivity` | time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregation_effect.additive |
 
-#### `mac.MeasureType.Intensive`
+#### `mac.concept.column.measure_type.intensive`
 
 A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an
 age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is
@@ -63,9 +63,9 @@ meaningless; the correct fold on ANY axis is a mean / median / percentile, not a
 
 | field | value |
 |---|---|
-| `additivity` | time: mac.aggregation_effect.average · categorical: mac.aggregation_effect.average |
+| `additivity` | time: mac.concept.aggregation_effect.average · categorical: mac.concept.aggregation_effect.average |
 
-#### `mac.MeasureType.Precomputed`
+#### `mac.concept.column.measure_type.precomputed`
 
 A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row
 matching the requested axis/parameter combination and read it. Nothing is derivable from
@@ -73,20 +73,20 @@ narrower cells: the source documentation describes one such reach measure as non
 or average of the measure is not the measure of the summed or averaged inputs) and computed
 iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of
 such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from
-is a MeasureType fact; whether you may fold is an axis fact.
+is a measure_type fact; whether you may fold is an axis fact.
 
 | field | value |
 |---|---|
-| `additivity` | time: mac.aggregation_effect.none · categorical: mac.aggregation_effect.none |
+| `additivity` | time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregation_effect.none |
 
-#### `mac.MeasureType.Target`
+#### `mac.concept.column.measure_type.target`
 
 A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis.
 
 | field | value |
 |---|---|
-| `additivity` | time: mac.aggregation_effect.none · categorical: mac.aggregation_effect.none |
-<!-- END GENERATED:vocabulary-terms:MeasureType -->
+| `additivity` | time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregation_effect.none |
+<!-- END GENERATED:vocabulary-terms:concept.column.measure_type -->
 
 ### Choosing
 
@@ -123,21 +123,21 @@ across categories answers *"how many"* and never *"how much"*.
 
 ## `mac.axis_kind` — which kind of axis you are folding along
 
-<!-- BEGIN GENERATED:vocabulary-terms:axis_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.axis_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The additivity-relevant classification of an aggregation axis.
 
-*`mac.axis_kind` · 2 terms · closed — these are all of them*
+*`mac.concept.axis_kind` · 2 terms · closed — these are all of them*
 
-#### `mac.axis_kind.time`
+#### `mac.concept.axis_kind.time`
 
 An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it.
 
-#### `mac.axis_kind.categorical`
+#### `mac.concept.axis_kind.categorical`
 
 A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are
 additive along it.
-<!-- END GENERATED:vocabulary-terms:axis_kind -->
+<!-- END GENERATED:vocabulary-terms:concept.axis_kind -->
 
 Two kinds, because only time has the property that matters: **a stock does not accumulate along it.**
 Product, store and customer all behave the same way for folding, so they are one kind.
@@ -146,7 +146,7 @@ Product, store and customer all behave the same way for folding, so they are one
 
 ## `mac.aggregation_effect` — the correct fold for one (measure, axis) pair
 
-<!-- BEGIN GENERATED:vocabulary-terms:aggregation_effect (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.aggregation_effect (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set
 answers one question in one grammar: "how do I fold this measure along this axis?" v0.1.15
@@ -163,26 +163,26 @@ measure says "READ the level at the END of the period" and a reach measure says 
 stored row and refuse to fold; they differ only in WHICH row, which is a RESOLUTION question and
 already lives in each concept's `resolve.*` rules, never in the fold vocabulary.
 
-*`mac.aggregation_effect` · 3 terms · closed — these are all of them*
+*`mac.concept.aggregation_effect` · 3 terms · closed — these are all of them*
 
-#### `mac.aggregation_effect.additive`
+#### `mac.concept.aggregation_effect.additive`
 
 SUM is correct across this axis.
 
-#### `mac.aggregation_effect.average`
+#### `mac.concept.aggregation_effect.average`
 
 SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number
 anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the
 two disagree about whether the sum means anything.
 
-#### `mac.aggregation_effect.none`
+#### `mac.concept.aggregation_effect.none`
 
 NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST
 as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME
 axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs
 no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure
 resolving to a matching abstraction level — needs the concept to say.
-<!-- END GENERATED:vocabulary-terms:aggregation_effect -->
+<!-- END GENERATED:vocabulary-terms:concept.aggregation_effect -->
 
 **Every term names an OPERATION**, and that is deliberate. The vocabulary records why the previous
 four were replaced: they answered one question in three grammars — `additive` named a property,

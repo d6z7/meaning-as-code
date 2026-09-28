@@ -85,7 +85,7 @@ contract:
   rules:
     - id: country.resolve.by_iso_code
       subject: "Resolve a country by ISO code, not its local-language display name"
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       confidence: C
       scope: ACME
       binds: [iso2, iso3]
@@ -99,7 +99,7 @@ contract:
 
     - id: country.resolve.channel_label_is_not_identity
       subject: "Treat market as a channel-perspective descriptor, not country identity"
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       confidence: C
       scope: ACME
       binds: [market]
@@ -111,7 +111,7 @@ contract:
 
     - id: country.count.served_not_catalogued
       subject: "Count served countries by the fact join, not the catalog dim"
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       confidence: C
       scope: ACME
       binds: [iso2, acme_channel_market_code]
@@ -136,7 +136,7 @@ contract:
 
     - id: country.breakdown.label_unmapped_markets
       subject: "In a per-market breakdown keyed on iso2, surface null-iso2 markets as one labeled bucket, never blank"
-      kind: mac.rule_kind.guarantee
+      kind: mac.concept.rule.guarantee
       confidence: C
       scope: ACME
       binds: [iso2, acme_channel_market_code]
@@ -166,7 +166,7 @@ contract:
 
     - id: country.rollup.region_is_derived
       subject: "Country is the atomic grain; regions are derived, not stored"
-      kind: mac.rule_kind.guarantee
+      kind: mac.concept.rule.guarantee
       confidence: C
       scope: ACME
       binds: []

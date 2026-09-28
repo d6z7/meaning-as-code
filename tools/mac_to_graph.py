@@ -17,6 +17,7 @@ Usage:  python3 tools/mac_to_graph.py <ontology_root> [-o out.cypher]
 import argparse, re, sys
 from pathlib import Path
 import yaml
+import mac_project as P
 from mac_project import resolve
 
 NODE_CLASSES = {"entity", "event", "reference", "grouping"}
@@ -47,7 +48,14 @@ def nodes(root):
                                       for s in (g.get("sources") or []) if isinstance(s, dict)), None)
         cols, pk = table_cols(root, tbl) if tbl else ([], None)
         ident = c.get("identity") or {}
-        key = g.get("key_column") or pk or ident.get("canonical_key")
+        # THE CONCEPT'S OWN KEY BEATS THE RELATION'S PK. This read the PK first and the concept's key
+        # last, so every concept grounding a SHARED relation at a different grain was keyed by the fact
+        # table's PK: measured on contoso4 2026-09-28, 6 of 10 nodes were wrong — ProductCategory and
+        # ProductSubCategory keyed by ProductKey, Location and Region by StoreKey. A graph that keys
+        # category by product draws category AT PRODUCT GRAIN, which is the one thing the Location /
+        # Store distinction exists to prevent. The canonical column is read from its single home
+        # (CONFORMANCE §2.1) with `identity.canonical_key` still honoured as a migration fallback.
+        key = g.get("key_column") or P.canonical_key(d) or pk
         out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "props": cols, "class": c["class"],
                           "concept.identity": ident.get("kind")}
     return out
@@ -87,7 +95,8 @@ def main():
     problems = []
     for n in N.values():
         if not n["key"] and n.get("concept.identity") not in KEYLESS_KINDS:
-            problems.append(f'node :{n["label"]} has no key (no grounding key_column / table PK / identity.canonical_key)')
+            problems.append(f'node :{n["label"]} has no key (no grounding key_column, no column '
+                            f'declaring identity: canonical, no table PK)')
         elif n["key"] and n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')
     for r in R:

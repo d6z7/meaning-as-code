@@ -41,7 +41,7 @@ pages described canons the vocabulary did not define.
 
 > The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
-*`mac.canon` · 19 members · open — a bundle may add its own*
+*`mac.canon` · 19 terms · open — a bundle may add its own*
 
 #### `mac.canon.composite_key_guard`
 

@@ -261,6 +261,20 @@ def _parse(p: Path):
         return None
 
 
+# THE TWO-PLANE RENAME BROKE THE PAIRING, SILENTLY. Commit a2ece73 moved nine vocabularies under
+# `mac.concept.*` / `mac.relation.*`, and a code-side constant is still spelled the short way — casing
+# rules cannot derive a plane, so `RULE_KINDS` folded to `rule_kind` while the vocabulary folded to
+# `concept.rule` and the two stopped being the same declaration. The pairing needs an explicit alias per
+# renamed vocabulary. ONLY THE CONSTANTS THAT EXIST ARE LISTED: `RULE_KINDS` (sdk/project/
+# ontology_quality.py) and `COLUMN_ROLES` (tools/check_delivery_consistency.py). Seven more vocabularies
+# were renamed and have no code-side home yet; when one grows a constant, it belongs here, because
+# without an entry it pairs with nothing and this gate reports agreement it never checked.
+_PLANE_ALIAS = {
+    "rule_kind": "concept.rule",
+    "column_role": "concept.column.role",
+}
+
+
 def _norm(name: str) -> str:
     """Fold a declaration's NAME to a comparable token: `credentialMode`, `credential_modes` and
     `CREDENTIAL_MODE` are one name in three casing conventions.
@@ -270,6 +284,10 @@ def _norm(name: str) -> str:
     `p_r_o_v_e_n_a_n_c_e`, so every module-level constant in this estate — which is every code-side
     vocabulary home — silently failed to pair, and the detector reported a population of 2.
     """
+    # An already plane-qualified namespace is the TARGET of the folding, not an input to it: flattening
+    # its dots to underscores would stop it matching the alias every short name folds to.
+    if "." in name:
+        return name.lower()
     s = name if (name.isupper() or name.islower()) else re.sub(r"(?<!^)(?=[A-Z])", "_", name)
     s = re.sub(r"[^A-Za-z0-9]+", "_", s).lower().strip("_")
     if s.endswith("ies"):
@@ -278,7 +296,7 @@ def _norm(name: str) -> str:
         s = s[:-2]
     elif s.endswith("s") and not s.endswith("ss"):
         s = s[:-1]
-    return s
+    return _PLANE_ALIAS.get(s, s)
 
 
 # ================================================================================================

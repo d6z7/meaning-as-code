@@ -124,10 +124,17 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     singles = {k: m["single_key"] for k, m in measured.items() if m.get("single_key")}
+    # THE TWO ENRICHMENTS, RE-DERIVED so a re-run rebuilds them instead of wiping them. Foreign keys come
+    # from the MEASUREMENT (data/references*/) and never from a name coincidence; register pointers come
+    # from the registers already cut (data/lookups/). Both are absent on a first run, which is honest —
+    # neither can be known before the stage that measures it — and the import pipeline re-runs this after.
+    fk_served, fk_raw = measured_fks(root, True), measured_fks(root, False)
+    regs = cut_registers(root)
     drift, wrote = [], 0
     for (schema, table), m in sorted(measured.items()):
         is_served = schema == served
-        body = _render(m, schema, table, is_served, singles, observed)
+        body = _render(m, schema, table, is_served, singles, observed,
+                       fk_served if is_served else fk_raw, regs)
         out = root / "data" / ("datasets" if is_served else "sources") / f"{table}.yaml"
         if a.check:
             now = out.read_text(encoding="utf-8") if out.is_file() else ""
@@ -226,7 +233,108 @@ def _is_unique(con, schema: str, table: str, cols: list[str], rows: int) -> bool
     return int(d[0]["d0"]) == rows
 
 
-def _render(m: dict, schema: str, table: str, served: bool, singles: dict, observed: str) -> str:
+def measured_fks(root: pathlib.Path, served: bool) -> dict:
+    """`{(relation, column): "parent.column"}` — FOREIGN KEYS AS MEASURED, not as guessed from a name.
+
+    WHY THIS REPLACES THE NAME MATCH, in the operator's words 2026-09-28: "foreign keys between tables
+    can have fully DIFFERENT column names. and since you don't have original data model is reverse
+    engineering through measurement and profiling the only safe way to establish relationships between
+    tables."
+
+    That is not a preference, it is structural. The old rule declared a foreign key only where the child
+    column's NAME equalled the parent's key column name, and a name coincidence is neither necessary nor
+    sufficient. MEASURED ON contoso4: 28 real references per plane, 6 declared. Of the 22 missed, 7 were
+    textbook many:one references into a single-column identity — including EVERY join to the date
+    dimension (`sales.OrderDate -> date.Date`, `sales.DeliveryDate -> date.Date`, `orders.DT ->
+    date.Date`), because the child column is named for what the date MEANS and the parent key is just
+    `Date`. The single most important join in the warehouse for any time question, undeclared, because two
+    strings differed.
+
+    THE TEST IS THE MEASUREMENT'S OWN VERDICT: `parent_key_role: identity` (the parent side is a whole
+    single-column key, not one part of a composite) and cardinality `many:one`. A reference into a
+    key_part is a shared value domain, not an identifying join — 15 of contoso4's 28 are those, all
+    many:many, and they stay out.
+
+    IT IS A SECOND PASS AND THAT IS HONEST. A first run has no references artifact yet and declares no
+    foreign keys; the import pipeline measures references and re-runs this, which REBUILDS them. Rebuild
+    rather than enrich is the whole point — see the register note below for what enrichment costs.
+    """
+    import yaml as _yaml
+    sub = "references_served" if served else "references"
+    out: dict = {}
+    d = root / "data" / sub
+    if not d.is_dir():
+        return out
+    import glob as _g
+    for f in sorted(_g.glob(str(d / "*.yaml"))):
+        try:
+            doc = _yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
+        except _yaml.YAMLError:
+            continue
+        for r in (doc.get("references") or []):
+            if not isinstance(r, dict) or r.get("verdict") != "real":
+                continue
+            if str(r.get("parent_key_role")) != "identity":
+                continue
+            card = r.get("cardinality") or {}
+            if (card.get("child"), card.get("parent")) != ("many", "one"):
+                continue
+            fr, to = r.get("from") or {}, r.get("to") or {}
+            if fr.get("relation") and fr.get("column") and to.get("relation") and to.get("column"):
+                out[(str(fr["relation"]), str(fr["column"]))] = f"{to['relation']}.{to['column']}"
+    return out
+
+
+def cut_registers(root: pathlib.Path) -> dict:
+    """`{(relation, column): "data/lookups/<file>"}` for every register already cut from a column.
+
+    WHY THIS IS HERE AND NOT LEFT TO THE ENRICHING STAGE. `mac_lookups` used to add the `register:`
+    pointer AFTER this producer ran, and a re-run of this producer WIPED ALL 23 OF THEM — caught by
+    REGISTER-ORPHAN reporting "23 of 23 registers are pointed at by no descriptor column". An enrichment
+    a regeneration destroys is not a pipeline, it is an ordering everyone has to remember. Deriving it
+    here instead makes this producer IDEMPOTENT: run it twice and the second run rebuilds the same file.
+
+    THE COLUMN COMES FROM THE FILE'S FIRST HEADER FIELD, not from its name. That is not a nicety: the
+    register loader itself infers a register's source column from exactly that field, so reading it any
+    other way here would attach the pointer by a rule the runtime does not use. It also removes a
+    dependency on the filename convention `<source>_<column>.lookup.csv`, which cannot be parsed
+    unambiguously when a source label contains an underscore.
+
+    THE RELATION COMES FROM `source_view` AND THE KEY IS THE PAIR. Keying on the column alone was wrong
+    and measurably so: it attached the 67-member register cut from `v_contoso4_store.State` to
+    `v_contoso4_customer.State`, a column with 565 distinct values, because the two columns share a name.
+    That is the SAME name-coincidence defect `measured_fks` exists to remove, committed one field over —
+    a register is a value set cut from ONE relation's column, and every row of the file records which.
+    A register is claimed only where it was cut: not on a same-named column of another relation, and not
+    on the raw table behind the view, whose row set is a superset the cut never looked at.
+    """
+    out: dict = {}
+    d = root / "data" / "lookups"
+    if not d.is_dir():
+        return out
+    import csv as _csv
+    for f in sorted(d.glob("*.lookup.csv")):
+        try:
+            with f.open(encoding="utf-8", newline="") as fh:
+                rows = list(_csv.reader(fh))
+        except (OSError, UnicodeDecodeError) as exc:
+            print(f"  register unreadable, skipped: {f.name}: {exc}")
+            continue
+        if not rows:
+            continue
+        header = [str(h).strip() for h in rows[0]]
+        col = header[0] if header else ""
+        if not col or "source_view" not in header:
+            continue
+        i = header.index("source_view")
+        for r in rows[1:]:
+            if len(r) > i and str(r[i]).strip():
+                out[(str(r[i]).strip(), col)] = f"data/lookups/{f.name}"
+    return out
+
+
+def _render(m: dict, schema: str, table: str, served: bool, singles: dict, observed: str,
+            fks_measured: dict | None = None, registers: dict | None = None) -> str:
     # A REFERENCE STAYS IN ITS OWN PLANE, and this comprehension used to pick by luck.
     #
     # `singles` is keyed by (schema, table) and the comprehension re-keys it by COLUMN, so when the same
@@ -243,9 +351,12 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
     #
     # Same-plane targets win; a cross-plane one is kept only where the plane has no candidate of its own,
     # because a reference that resolves nowhere is worse than one that crosses a boundary.
-    same = {c: t for (s_, t), c in singles.items() if t != table and s_ == schema}
-    other = {c: t for (s_, t), c in singles.items() if t != table and s_ != schema}
-    fks = {**other, **same}
+    # THE NAME MATCH IS GONE. What stood here built `{parent_key_column_name: parent_table}` and declared
+    # a foreign key wherever a child column happened to share that name — see `measured_fks` for why that
+    # is structurally wrong and what it cost. `singles` is still read, but only to keep the same-plane
+    # preference for a MEASURED reference; the measurement decides whether there is a reference at all.
+    fks = dict(fks_measured or {})
+    regs = dict(registers or {})
     lines = [
         f"# GENERATED by {GENERATOR} from the warehouse — do not edit; re-run the generator.",
         "#",
@@ -284,28 +395,27 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
     ckey = list(m["composite_key"] or [])
     for col, typ in m["columns"]:
         pos = None
+        ref = fks.get((table, col))
         if col == m["single_key"]:
             role = "primary_key"
         elif col in ckey:
             role, pos = "primary_key", ckey.index(col) + 1
-        elif col in fks:
+        elif ref:
             role = "foreign_key"
         else:
             role = "value"
         lines += [f"- name: {col}", f"  type: {_simple(typ)}", f"  role: {role}"]
         if pos is not None:
             lines.append(f"  key_position: {pos}")
-        if role == "foreign_key":
-            # QUALIFIED: `relation.column`, which the schema has required since v0.1.15 ("The
-            # parent this foreign_key column points at, as `relation.column`") and which this
-            # producer did not write — it emitted the relation alone, so "what column do I join
-            # to" was unanswerable from the declaration and every consumer had to assume the
-            # name matched. The PARENT KEY COLUMN is `col` itself: `singles` is keyed by
-            # (schema, table) -> that relation's single key column, and this branch fires
-            # because the referencing column carries the SAME NAME. So the join is stated, not
-            # inferred. Operator, 2026-09-28: "reference to tables and columns where FKs are
-            # pointing to".
-            lines.append(f"  references: {fks[col]}.{col}")
+        # A COLUMN CAN BE A KEY *AND* POINT SOMEWHERE, and `references` is a sibling of `role` rather than
+        # a property of it — so no grammar change was needed to say both. `sales.OrderKey` is PK1 of its
+        # own relation and a measured many:one reference to `orders.OrderKey`; `role` says what it IS
+        # here, `references` says what it POINTS AT. Writing the reference only for `role: foreign_key`
+        # was the reason that join went undeclared.
+        if ref:
+            lines.append(f"  references: {ref}")
+        if (table, col) in regs:
+            lines.append(f"  register: {regs[(table, col)]}")
         # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key
         # was read by nothing. It sat on 224 column entries across two planes in one bundle. Removed
         # from the core in v0.1.15 on CONFORMANCE.md §2's own test: "a key nothing consumes is a note,

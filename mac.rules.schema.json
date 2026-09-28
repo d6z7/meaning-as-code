@@ -27,7 +27,7 @@
           },
           "kind": {
             "type": "string",
-            "pattern": "^mac\\.rule_kind\\."
+            "pattern": "^mac\\.concept\\.rule\\."
           },
           "subject": {
             "type": "string",

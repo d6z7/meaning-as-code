@@ -162,7 +162,7 @@ and the register holds the map between them.
 contract:
   rules:
     - id: continent.resolution.by_register        # contract.rules[1]
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when:  "a question names a continent"
       then:  resolve through the register's `continent` column to the member country codes …
       never: resolving a continent on the STORE side — that relation has no continent column …

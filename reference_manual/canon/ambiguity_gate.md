@@ -7,7 +7,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 # Canon — `ambiguity_gate`
 
-> A **decision** canon realizing `mac.rule_kind.ambiguity`: it *detects* ambiguity deterministically and
+> A **decision** canon realizing `mac.concept.rule.ambiguity`: it *detects* ambiguity deterministically and
 > returns either `RESOLVE(candidate)` or `ASK(options)` (the ⊥ / abstain outcome). **Detecting** ambiguity
 > is mechanical; **choosing** among the options is interpretation — so the gate draws exactly the
 > determinism border. Single-homed here.

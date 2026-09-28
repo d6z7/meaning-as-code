@@ -75,7 +75,7 @@ relation* are the structures a data domain's meaning takes. Strong, and explicit
 
 **Rules** are equations for *derived* concepts: `derived = f(base₁, …, baseₙ)` — a new meaning on the left, an
 expression over existing extensions on the right (`render_kind` only says *how the right side is evaluated*).
-The six `mac.rule_kind`s are the operators of this algebra:
+The six `mac.concept.rule`s are the operators of this algebra:
 
 | rule_kind | as an operation |
 | --- | --- |

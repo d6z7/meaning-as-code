@@ -148,6 +148,86 @@ def concept_files(root):
     return sorted(d.rglob("*.yaml")) if d.is_dir() else []
 
 
+def canonical_key(doc: dict) -> str | None:
+    """A concept's canonical key column, read from its ONE home — the column that declares it.
+
+    CONFORMANCE §2.1 retired `concept.identity.canonical_key`: "the key is a COLUMN fact, so declaring it
+    here AND under concept.identity gives it two homes that can disagree." Retiring the second home broke
+    five readers and NOT ONE of them failed loudly. Measured on contoso4 2026-09-28: zero concepts carry
+    `canonical_key` while sixteen carry `identity: canonical` on a column, and `check_answerability`
+    reported 11 of 20 concepts unable to supply their `select` step while `mac_to_graph` reported nodes
+    with no key at all. The declarations were complete; the readers were looking at the retired address.
+
+    The column is authoritative. The retired field is still read as a FALLBACK, so a bundle nobody has
+    migrated keeps working instead of silently losing its key — the fallback is a migration ramp, not a
+    second home: nothing writes it, and when no bundle carries it the branch becomes dead and goes.
+    """
+    for src in ((doc.get("grounding") or {}).get("sources") or []):
+        if not isinstance(src, dict):
+            continue
+        # `columns:` HAS TWO PERMITTED SHAPES — a bare LIST of names, or a MAP of name -> spec. Only the
+        # map can carry `identity`, and the list form is what the framework's own fixtures use, so a
+        # reader that assumes the map crashes on a conformant bundle instead of reporting on it.
+        cols = src.get("columns")
+        if not isinstance(cols, dict):
+            continue
+        for col, spec in cols.items():
+            if isinstance(spec, dict) and spec.get("identity") == "canonical":
+                return str(col)
+    ck = ((doc.get("concept") or {}).get("identity") or {}).get("canonical_key")
+    return str(ck).strip() or None if ck else None
+
+
+def key_parts(doc: dict) -> list:
+    """The columns of a COMPOSITE identity — every column declaring `identity: part`.
+
+    A composite key CANNOT be written as `canonical_key` at all — that field is one string and a
+    composite key is several columns — which is why `store.yaml` says so in prose rather than declaring
+    it. Within a shared relation a complete composite key discriminates the concept exactly as a single
+    canonical column does, so a reader asking "does this concept identify its own rows" must accept both.
+    Three contoso4 concepts (ExchangeRate, OrderLine, SalesAmount) identify only this way.
+    """
+    for src in ((doc.get("grounding") or {}).get("sources") or []):
+        if not isinstance(src, dict):
+            continue
+        cols = src.get("columns")
+        if not isinstance(cols, dict):
+            continue
+        parts = [str(c) for c, spec in cols.items()
+                 if isinstance(spec, dict) and spec.get("identity") == "part"]
+        if parts:
+            return parts
+    return []
+
+
+def column_registers(root) -> dict:
+    """`{(relation, column): "data/lookups/<file>"}` — the registers the DATA plane declares.
+
+    The register pointer's one home is the data-plane column (`mac_descriptors` derives it from each
+    lookup's own `source_view`), so a concept-plane reader that wants to know whether a column's names
+    resolve has to come here. `check_answerability` used to answer that by grepping the CONCEPT file for
+    a `data/lookups/...csv` string, which finds a register only when someone also mentioned it in prose.
+    """
+    import yaml as _yaml
+    out: dict = {}
+    for plane in ("datasets", "sources"):
+        d = Path(root) / "data" / plane
+        if not d.is_dir():
+            continue
+        for f in sorted(d.glob("*.yaml")):
+            try:
+                doc = _yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            except _yaml.YAMLError:
+                continue
+            table = str((doc.get("table") or {}).get("name") or "").strip()
+            if not table:
+                continue
+            for c in (doc.get("columns") or []):
+                if isinstance(c, dict) and c.get("register") and c.get("name"):
+                    out[(table, str(c["name"]))] = str(c["register"])
+    return out
+
+
 def rel(root, path) -> str:
     """`path` as a reader should see it: relative to the project root when it lies inside it.
 

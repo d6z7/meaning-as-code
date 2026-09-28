@@ -180,11 +180,21 @@ def test_determined_by_lands_on_the_profile(written):
 
 
 def test_roles_stay_on_the_descriptor(written):
-    """A role is an AUTHORED design fact and TableFile defines it. The split moves only measurement."""
+    """A role is an AUTHORED design fact and TableFile defines it. The split moves only measurement.
+
+    A COMPOSITE KEY PART IS `primary_key` PLUS ITS POSITION. `composite_key_part` was retired from the
+    role enum on the operator's ruling 2026-09-27 — "composite PK should have number PK1, PK2 ... for
+    each component (instead of composite PK)" — because one role collapsed two facts, that the column is
+    part of the key and WHICH part, and the page could only ever render the first. The position is the
+    fact the reader needs: `PK1` and `PK2` say the order, `PK` twice says nothing.
+    """
     doc = yaml.safe_load(written["descriptor"].read_text(encoding="utf-8")) or {}
-    roles = {str(c["name"]): c.get("role") for c in doc.get("columns") or []}
-    assert roles["beta_id"] == "composite_key_part"
-    assert roles["zeta_id"] == "composite_key_part"
+    cols = {str(c["name"]): c for c in doc.get("columns") or []}
+    roles = {n: c.get("role") for n, c in cols.items()}
+    assert roles["beta_id"] == "primary_key"
+    assert roles["zeta_id"] == "primary_key"
+    # The POSITION is what replaced the retired role, so assert it and not merely the role.
+    assert [cols["beta_id"].get("key_position"), cols["zeta_id"].get("key_position")] == [1, 2], cols
     # COLLAPSIBLE is the residue: the machine must not settle it.
     assert roles["delta_axis"] == "value"
 

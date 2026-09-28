@@ -116,7 +116,7 @@ concept grounds to:
 contract:
   rules:
     - id: lineitem.revenue.net_of_discount
-      kind: mac.rule_kind.aggregation
+      kind: mac.concept.rule.aggregation
       then: "use l_extendedprice * (1 - l_discount); a NULL discount counts as 0"
       binds: [l_extendedprice, l_discount]     # ← must be columns of the grounded `lineitem` table
 ```
@@ -173,7 +173,7 @@ for what a domain adds — never a free-for-all, never ossified.
 - **SBVR** (OMG) — business vocabulary and rules with modality and verbalization. MAC's typed
   `contract.rules` are a lighter, executable-adjacent cousin: fewer linguistics, but bound to real columns
   and run by a gate.
-- **SKOS** (W3C) — concept schemes and closed vocabularies. MAC's `mac.rule_kind`, `mac.MeasureType`, and
+- **SKOS** (W3C) — concept schemes and closed vocabularies. MAC's `mac.concept.rule`, `mac.MeasureType`, and
   enumerations are exactly this discipline, kept small and closed.
 - **OSI** (Open Semantic Interchange, 2025) — an interchange format for datasets, measures, dimensions,
   relationships. It overlaps MAC's measure/grounding layer and is a natural **export target**: MAC can

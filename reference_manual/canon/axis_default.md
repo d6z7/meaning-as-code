@@ -8,7 +8,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 # Canon — `axis_default`
 
 > A **transform** canon (it *rewrites* the query, unlike a guard which only catches). Realizes
-> `mac.rule_kind.default`: when an orthogonal axis is left unspecified but a safe default exists, inject it.
+> `mac.concept.rule.default`: when an orthogonal axis is left unspecified but a safe default exists, inject it.
 > Single-homed here; bound via `realized_by: { udf, params }`. See the [content model](../the_content_model.md).
 
 ## Serves
@@ -73,4 +73,4 @@ axis_default("SELECT SUM(amount) FROM sales_fact WHERE scenario = 'PLAN'",
 - **Top-level scope only** — does not detect the axis being pinned inside a subquery/CTE, and rewrites only
   the outermost `SELECT`. A production version walks every scope and accounts params per scope.
 - **A transform, not a judge** — it assumes the default is genuinely safe; deciding *whether* a safe default
-  exists is the modeller's call (`mac.rule_kind.default` vs `ambiguity` → ask). Reference, not finished.
+  exists is the modeller's call (`mac.concept.rule.default` vs `ambiguity` → ask). Reference, not finished.

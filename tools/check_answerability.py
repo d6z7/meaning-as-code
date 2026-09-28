@@ -78,7 +78,7 @@ def _load(root):
     return out
 
 
-def answer_path(doc: dict, raw: str, shared: bool) -> dict:
+def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None) -> dict:
     """The steps an agent needs, DERIVED. Each value is the declaration that supplies it, or None.
 
     `shared` says whether another concept grounds the same relation — the only fact that cannot be
@@ -108,8 +108,12 @@ def answer_path(doc: dict, raw: str, shared: bool) -> dict:
             amap = (v.get("aliases") or {}).get("map") or {}
             if amap:
                 path["select"] = f"values.aliases.map -> {', '.join(sorted(amap))}"
-            elif ident.get("canonical_key"):
-                path["select"] = f"concept.identity.canonical_key: {ident['canonical_key']}"
+            elif P.canonical_key(doc):
+                path["select"] = (f"grounding.sources[0].columns.{P.canonical_key(doc)}."
+                                  "identity: canonical")
+            elif P.key_parts(doc):
+                path["select"] = ("grounding.sources[0].columns -> identity: part on "
+                                  + ", ".join(P.key_parts(doc)))
             elif v.get("items"):
                 path["select"] = f"values.items ({len(v['items'])} members)"
             else:
@@ -117,6 +121,15 @@ def answer_path(doc: dict, raw: str, shared: bool) -> dict:
 
     if cls in ("reference", "enumeration"):
         regs = sorted(set(re.findall(r"data/lookups/[\w.\-]+\.csv", raw)))
+        # THE REGISTER'S HOME IS THE DATA-PLANE COLUMN. Grepping this file finds a register only when
+        # someone also named it in prose here, which is the second home §2.1 removes. Region grounds
+        # `State`, whose register was cut and declared on the column; nothing was missing but the read.
+        if not regs and registers is not None:
+            for _c in ([P.canonical_key(doc)] or []) + P.key_parts(doc):
+                hit = registers.get((src.get("relation"), _c)) if _c else None
+                if hit:
+                    regs = [f"{hit} (declared on {src.get('relation')}.{_c})"]
+                    break
         path["resolve"] = (", ".join(regs) if regs else
                            (f"values.items ({len(v['items'])} members, in-file)" if v.get("items") else None))
     else:
@@ -149,6 +162,7 @@ def check_answerability(root) -> list:
             if isinstance(src, dict) and src.get("relation"):
                 users[src["relation"]] += 1
 
+    registers = P.column_registers(root)
     gaps, stubs = [], []
     for name, (rel, d, raw) in sorted(concepts.items()):
         ident = (d.get("concept") or {}).get("identity") or {}
@@ -156,7 +170,7 @@ def check_answerability(root) -> list:
             stubs.append(name)
             continue
         src = ((d.get("grounding") or {}).get("sources") or [{}])[0]
-        path = answer_path(d, raw, users.get(src.get("relation"), 0) > 1)
+        path = answer_path(d, raw, users.get(src.get("relation"), 0) > 1, registers=registers)
         for step in STEPS:
             if path.get(step) is None:
                 gaps.append(D.Witness(file=rel, path=f"answer_path.{step}",
@@ -185,13 +199,99 @@ def check_answerability(root) -> list:
         witnesses=gaps)]
 
 
+# ── the gate's OWN rule, seeded and mutated ───────────────────────────────────────────────────────
+# The discovery fixtures prove this gate SEES a concept. They prove nothing about whether it can still
+# REJECT one — the shared harness says so in its own docstring, and it printed `0 mutants of its own
+# rule` here until the `select`/`resolve` derivation was rewritten to read the single home. A rule
+# without a mutant is a rule nothing re-measures.
+
+_SUBJECT_GADGET = """concept:
+  name: Gadget
+  label: Gadget
+  class: entity
+  identity:
+    kind: code
+  semantics:
+    definition: A second concept on the SAME relation, so `shared` is true and the select rule runs.
+grounding:
+  sources:
+    - relation: widget_register
+      key: [gadget_code]
+      columns:
+        gadget_code:
+          role: key
+          identity: canonical
+  grain: one row per gadget
+"""
+
+_SUBJECT_DESCRIPTOR = """table:
+  name: widget_register
+columns:
+- name: widget_code
+  register: data/lookups/widget.lookup.csv
+- name: gadget_code
+"""
+
+
+def _subject(root):
+    """Seed a NON-ZERO population for this gate's own rule, on top of the concept fixture.
+
+    Two facts the bare fixture lacks. A SECOND concept on the same relation, because `select` is only
+    demanded when a relation is shared — with one concept the gate takes the dedicated-relation
+    exemption and the rule never runs. And a DESCRIPTOR carrying a register, because `resolve` for a
+    reference concept now reads the register from the data-plane column, which is where it lives."""
+    (Path(root) / "ontology" / "concepts").mkdir(parents=True, exist_ok=True)
+    cdir = Path(root) / "ontology" / "concepts"
+    if not cdir.is_dir() or not any(cdir.rglob("*.yaml")):
+        cdir = Path(root) / "concepts"                      # the flat_layout fixture
+    (cdir / "gadget.yaml").write_text(_SUBJECT_GADGET, encoding="utf-8")
+    dd = Path(root) / "data" / "datasets"
+    dd.mkdir(parents=True, exist_ok=True)
+    (dd / "widget_register.yaml").write_text(_SUBJECT_DESCRIPTOR, encoding="utf-8")
+
+
+def _widget(root):
+    for c in (Path(root) / "ontology" / "concepts", Path(root) / "concepts"):
+        hit = next(iter(c.rglob("widget.yaml")), None) if c.is_dir() else None
+        if hit:
+            return hit
+    raise AssertionError("fixture widget.yaml not found")
+
+
+def _break_select(root):
+    """Take away every declaration that can supply `select` on a SHARED relation."""
+    f = _widget(root)
+    f.write_text(f.read_text(encoding="utf-8").replace("    canonical_key: widget_code\n", ""),
+                 encoding="utf-8")
+
+
+def _break_resolve(root):
+    """Take away the register — the only thing that turns a NAME into this reference concept's code."""
+    d = Path(root) / "data" / "datasets" / "widget_register.yaml"
+    d.write_text(d.read_text(encoding="utf-8").replace(
+        "  register: data/lookups/widget.lookup.csv\n", ""), encoding="utf-8")
+
+
+_MUTANTS = (
+    ("select_gone",  _break_select,  "answer_path.select",
+     "a concept sharing its relation, with nothing that discriminates it"),
+    ("resolve_gone", _break_resolve, "answer_path.resolve",
+     "a reference concept whose names resolve through no declared register"),
+)
+
+
 def main() -> int:                                                      # pragma: no cover
     if "--self-test" in sys.argv[1:]:
-        return P.selftest_discovery(__file__)
+        return P.selftest_discovery(__file__, subject=_subject, mutants=_MUTANTS)
     root = sys.argv[1] if len(sys.argv) > 1 else "."
     d = check_answerability(root)
     print(D.render(d, root, show=D.INFO) or "check_answerability: every concept's answer path derives")
-    return D.EMPTY_EXIT if any(D.UNKNOWN_MARK in x.summary for x in d) else 0
+    # AN ERROR FINDING IS A FAILING EXIT. This returned 0 whatever it found, so the CLI could report
+    # 13 underivable steps and still look green to anything reading the exit code — and no mutant of
+    # its own rule could be written, because a rejection was indistinguishable from a pass.
+    if any(D.UNKNOWN_MARK in x.summary for x in d):
+        return D.EMPTY_EXIT
+    return 1 if any(x.severity == D.ERROR for x in d) else 0
 
 
 if __name__ == "__main__":                                              # pragma: no cover
@@ -234,7 +334,7 @@ def key_registry(concepts: dict) -> dict:
         c = d.get("concept") or {}
         if c.get("class") not in ("reference", "enumeration"):
             continue
-        ck = (c.get("identity") or {}).get("canonical_key")
+        ck = P.canonical_key(d)
         if not ck:
             continue
         csvs = sorted(set(re.findall(r"data/lookups/[\w.\-]+\.csv", raw)))
@@ -250,7 +350,7 @@ def consumers(doc: dict, concepts: dict) -> list:
     A dimension's guarantee has to say how it is attached to a fact, not only how its own names
     resolve. Derived by scanning every other concept's grounding columns for this one's key, so it
     stays correct when a new fact starts using the dimension."""
-    ck = ((doc.get("concept") or {}).get("identity") or {}).get("canonical_key")
+    ck = P.canonical_key(doc)
     mine = (doc.get("concept") or {}).get("name")
     if not ck:
         return []

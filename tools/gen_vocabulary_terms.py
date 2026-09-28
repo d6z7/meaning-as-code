@@ -30,7 +30,7 @@ VOCAB = ROOT / "mac_vocabulary.yaml"
 DOCS = ROOT / "reference_manual"
 
 BLOCK = re.compile(
-    r"(?P<open><!-- BEGIN GENERATED:vocabulary-terms:(?P<notion>[A-Za-z_]+) "
+    r"(?P<open><!-- BEGIN GENERATED:vocabulary-terms:(?P<notion>[A-Za-z_.]+) "
     r"\(tools/gen_vocabulary_terms\.py — do not edit inside this block\) -->\n)"
     r"(?P<body>.*?)"
     r"(?P<close><!-- END GENERATED:vocabulary-terms:(?P=notion) -->)",

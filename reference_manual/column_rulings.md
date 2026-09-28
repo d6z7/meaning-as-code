@@ -24,13 +24,13 @@ SYNOPSIS
           evidence:   <dq-id>
 ```
 
-<!-- BEGIN GENERATED:vocabulary-terms:column_ruling (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.column.ruling (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > An authored judgement about a column, beyond what measurement can establish.
 
-*`mac.column_ruling` · 4 terms · closed — these are all of them*
+*`mac.concept.column.ruling` · 4 terms · closed — these are all of them*
 
-#### `mac.column_ruling.label_of`
+#### `mac.concept.column.ruling.label_of`
 
 THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the
 column it labels; `register` says WHICH of that thing's names this one is. Group on the named
@@ -40,7 +40,7 @@ world calls it, "Contoso AG" is what the register calls it, and they are one com
 naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many
 and this ruling would be wrong. Cardinality cannot tell you which you have.
 
-#### `mac.column_ruling.finer_than`
+#### `mac.concept.column.ruling.finer_than`
 
 THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
 legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
@@ -49,7 +49,7 @@ carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 d
 double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
 colliding code space instead — see `scoped_by`, and measure before you rule.
 
-#### `mac.column_ruling.scoped_by`
+#### `mac.concept.column.ruling.scoped_by`
 
 THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
 filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
@@ -59,13 +59,13 @@ State` silently merges three unrelated regions into one row that looks like data
 `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which
 is the composite identity `mac.canon.composite_key_guard` exists to protect.
 
-#### `mac.column_ruling.never_axis`
+#### `mac.concept.column.ruling.never_axis`
 
 THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
 measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
 CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990
 served customers and is the dominant identifier in the row.
-<!-- END GENERATED:vocabulary-terms:column_ruling -->
+<!-- END GENERATED:vocabulary-terms:concept.column.ruling -->
 
 ---
 

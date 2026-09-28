@@ -66,7 +66,7 @@ prior_art:
     query to scope to one, and the future-dated plan rows still contaminate a naïve "latest".
 mac_expression: >
   Model the tracking variant as its OWN axis/concept (the orthogonal-axis principle, CONCEPT_SPEC §8),
-  explicitly distinct from the reporting cycle. A `default` rule (`mac.rule_kind.default`) pins ACTUAL when
+  explicitly distinct from the reporting cycle. A `default` rule (`mac.concept.rule.default`) pins ACTUAL when
   the question is silent; an `exclusion`/`aggregation` rule forbids summing across scenarios; and relative-
   period resolution (the `MAX(month)` that means "now") is scoped to the PINNED scenario's rows, so the
   plan horizon never leaks in.

@@ -60,7 +60,7 @@ prior_art:
     resolves to one.
 mac_expression: >
   A `disambiguation` block listing the competing definitions as NAMED candidates (each a resolution
-  predicate), plus an `mac.rule_kind.ambiguity` rule: when the term matches more than one candidate and the
+  predicate), plus an `mac.concept.rule.ambiguity` rule: when the term matches more than one candidate and the
   question pins none, ABSTAIN and ask, offering the candidates. Never silently pick.
 why_better: >
   The competing definitions become first-class, named options, and the ambiguity is SURFACED (ask), not
@@ -73,7 +73,7 @@ projects_to:
 antipattern: >
   Hardcoding one definition; silently defaulting to a 'house' meaning; treating an ambiguous term as
   resolved; offering only one option when several exist.
-status: scattered   # mac.rule_kind.ambiguity + the rule `disambiguation` block exist; never named as a pattern
+status: scattered   # mac.concept.rule.ambiguity + the rule `disambiguation` block exist; never named as a pattern
 canon_ref: [CONCEPT_SPEC.md §7 (rule disambiguation), mac_vocabulary.yaml (rule_kind.ambiguity), query_rules (ambiguity.ask_dont_guess)]
 ```
 

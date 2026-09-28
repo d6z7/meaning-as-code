@@ -69,7 +69,7 @@ prior_art:
     You COULD model per-brand SKOS concept schemes so each brand's 'M' is a distinct concept — but nothing
     forces a query/resolver to scope by parent, and the default reading conflates them.
 mac_expression: >
-  A scoped resolution rule (`mac.rule_kind.resolution`) on the concept: identity/scoping MUST include the
+  A scoped resolution rule (`mac.concept.rule.resolution`) on the concept: identity/scoping MUST include the
   parent — resolve a size by (brand, size_code), NEVER by size_code alone. The rule is typed (when → then →
   never), `binds` the columns it governs, and is enforced; the concept's `semantics.scope` states that the
   code is parent-relative.
@@ -86,7 +86,7 @@ projects_to:
 antipattern: >
   Equality on the bare code; treating a context-dependent code as a single global enumeration; pushing the
   parent-scoping into a comment instead of a typed resolution rule.
-status: clean   # mac.rule_kind.resolution + scoped resolution + binds support this directly
+status: clean   # mac.concept.rule.resolution + scoped resolution + binds support this directly
 canon_ref: [mac_vocabulary.yaml (rule_kind.resolution), CONCEPT_SPEC.md §6 semantics.scope, query_rules (resolve.by_semantic_identity)]
 ```
 

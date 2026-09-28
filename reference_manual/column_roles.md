@@ -84,39 +84,39 @@ something the numbers do not contain.
 
 ## 2. The terms
 
-<!-- BEGIN GENERATED:vocabulary-terms:column_role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The analytical role of a column — where a query may use it, and the default guardrail.
 
-*`mac.column_role` · 5 terms · closed — these are all of them*
+*`mac.concept.column.role` · 5 terms · closed — these are all of them*
 
-#### `mac.column_role.key`
+#### `mac.concept.column.role.key`
 
 IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins
 on the exact value. Never matched against a label, and never aggregated — an identifier that is
 summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and
 what the fact joins on.
 
-#### `mac.column_role.dimension`
+#### `mac.concept.column.role.dimension`
 
 A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a
 register states every member, so a non-member is answerable without probing) or OPEN (names
 resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
 `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
 
-#### `mac.column_role.measure`
+#### `mac.concept.column.role.measure`
 
-A NUMERIC PAYLOAD. Folded only as its mac.MeasureType and the axis allow — the law is stated
+A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
 once there and never restated per concept. Never filtered on directly: a threshold on a measure
 is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
 
-#### `mac.column_role.period`
+#### `mac.concept.column.role.period`
 
 THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
 relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
 `OrderDate` on a line that also carries `DeliveryDate`.
 
-#### `mac.column_role.housekeeping`
+#### `mac.concept.column.role.housekeeping`
 
 PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
 housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence
@@ -126,7 +126,7 @@ meaningless, and until this term existed it was spelled `attribute`, which reads
 you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING
 TRADITION that already has a word for these columns, rather than for the system that writes
 them: a load stamp is housekeeping whoever keeps the house.
-<!-- END GENERATED:vocabulary-terms:column_role -->
+<!-- END GENERATED:vocabulary-terms:concept.column.role -->
 
 ---
 
@@ -148,35 +148,30 @@ the reference plane measures inclusion against candidate parents, and
 `data/datasets/<relation>.yaml` records what they found. If you are hand-writing a `storage_role`,
 something upstream failed.
 
-<!-- BEGIN GENERATED:vocabulary-terms:storage_role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:relation.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The physical shape of a column in its relation, independent of its analytical role.
 
-*`mac.storage_role` · 5 terms · closed — these are all of them*
+*`mac.relation.column.role` · 4 terms · closed — these are all of them*
 
-#### `mac.storage_role.primary_key`
+#### `mac.relation.column.role.primary_key`
 
 The relation's own identity: one row per distinct value, measured rather than assumed.
 
-#### `mac.storage_role.foreign_key`
+#### `mac.relation.column.role.foreign_key`
 
 A reference to another relation's identity. Whether every value is PRESENT in the parent is a
 separate measurement — a declared key says the relationship is intended, not that it holds.
 
-#### `mac.storage_role.composite_key_part`
-
-One column of a multi-column identity. ALONE IT IDENTIFIES NOTHING, and using it as though it
-did is the defect this term exists to make visible.
-
-#### `mac.storage_role.value`
+#### `mac.relation.column.role.value`
 
 A payload column: it carries data, not identity and not a choice of row kind.
 
-#### `mac.storage_role.discriminator`
+#### `mac.relation.column.role.discriminator`
 
 A column whose value selects WHICH KIND of row this is — the column a perspective, status or
 type is read from.
-<!-- END GENERATED:vocabulary-terms:storage_role -->
+<!-- END GENERATED:vocabulary-terms:relation.column.role -->
 
 ### Anti-patterns
 
@@ -246,7 +241,7 @@ contract:
     …
   rules:
     - id: customer.geography.rollup_only
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       subject: …
       when:  "a question groups customers by geography"
       then:  …

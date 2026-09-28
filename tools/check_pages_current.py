@@ -67,11 +67,22 @@ def render_fresh(bundle: pathlib.Path, work: pathlib.Path) -> pathlib.Path:
     that wants an untouched comparison must bring its own copy.
 
     The copy skips the warehouse itself (parquet, duckdb) and the caches; a render reads YAML and prose.
+
+    IT MUST RENDER THE WAY THE PROJECTOR RENDERS, LINEAGE INCLUDED. A bare `build_data()` drops the
+    Lineage tab — `sdk/cli/harvest.py` says so three times ("it drops the Lineage view tab", "MUST be
+    threaded into the projection", "so ad-hoc build_data() calls are never needed") — and this gate made
+    exactly that ad-hoc call. Measured 2026-09-28, immediately after a clean projection of all three
+    bundles: 18 transform pages across contoso2/3/4 reported STALE and every diff line was the missing
+    Lineage table. A gate whose reference render is built differently from the artifact reports the
+    DIFFERENCE BETWEEN ITS TWO RENDERERS as a defect in the delivery, and the repair it demands ("re-run
+    the projector") cannot ever clear it. So the flows are threaded here from the projector's own helper
+    rather than re-derived, for the same reason the pages have one renderer.
     """
     dst = work / bundle.name
     shutil.copytree(bundle, dst, ignore=_SKIP, dirs_exist_ok=True)
+    from sdk.cli.harvest import _lineage_flows
     from sdk.project.project_data import build_data
-    build_data(dst / "data")
+    build_data(dst / "data", lineage=_lineage_flows(dst))
     return dst / "data"
 
 

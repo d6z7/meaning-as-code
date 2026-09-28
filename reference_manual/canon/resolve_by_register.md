@@ -70,7 +70,7 @@ Resolving a country by its name, filtering the fact directly:
 contract:
   rules:
     - id: country.resolution.by_register
-      kind: mac.rule_kind.resolution
+      kind: mac.concept.rule.resolution
       when:  "a question names a country"
       then:  resolve through the register to the two-letter code, then filter on it
       never: matching on the long name in the fact

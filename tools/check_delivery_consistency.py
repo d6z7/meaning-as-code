@@ -363,11 +363,39 @@ def inv_concept_relation(st: dict) -> list[dict]:
     return out
 
 
-#: THE CONCEPT COLUMN MAP'S CLOSED ROLE SET, mirroring mac.schema.json's enum for the same slot. Two
-#: homes for one vocabulary is a risk, and the alternative is worse: this module would have to load and
-#: walk the JSON schema to check a four-member set. The SELF-TEST pins them together instead, so a change
-#: to either side that is not made to both goes red rather than silent.
-COLUMN_ROLES = ("key", "dimension", "measure", "attribute")
+def _column_roles() -> tuple:
+    """The concept column map's closed role set, READ FROM ITS ONE HOME — mac.schema.json's enum.
+
+    THIS WAS A LITERAL TUPLE and the comment above it argued the copy was the lesser risk: "two homes for
+    one vocabulary is a risk, and the alternative is worse ... the SELF-TEST pins them together". The
+    self-test did pin it to the SCHEMA, and that is precisely what hid the problem, because the schema is
+    not the only other home. `mac_vocabulary.yaml#concept.column.role` is a third, and the moment the
+    two-plane rename's broken name pairing was repaired (2026-09-28) the seam gate reported a
+    closed-vocabulary divergence here: the schema enumerates `attribute`, the vocabulary enumerates
+    `period` and `housekeeping`. A literal restating one of two disagreeing homes makes the code a party
+    to the disagreement instead of a reader of it.
+
+    Reading the schema leaves one code path, and lets the schema-versus-vocabulary disagreement be
+    reported exactly once, by `check_vocabulary_parity`, whose whole job that is. It is STILL UNRULED —
+    44 live columns declare `attribute`, which the vocabulary no longer lists — and it is not this
+    module's to settle.
+
+    An unreadable schema returns the EMPTY set rather than a fallback literal, because a fallback is the
+    second home again. The invariant then grades each role `n/a` with that reason, which is what the
+    enumeration contract asks for: exclude a subject if you must, never invisibly.
+    """
+    import json as _json
+    try:
+        sp = pathlib.Path(__file__).resolve().parent.parent / "mac.schema.json"
+        enum = (_json.loads(sp.read_text(encoding="utf-8"))["$defs"]["grounding"]["properties"]
+                ["sources"]["items"]["properties"]["columns"]["oneOf"][1]["additionalProperties"]
+                ["properties"]["role"].get("enum"))
+        return tuple(enum or ())
+    except (OSError, KeyError, IndexError, ValueError):
+        return ()
+
+
+COLUMN_ROLES = _column_roles()
 
 _ROLE_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
 _NS_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.[A-Za-z0-9_.]+$")
@@ -441,6 +469,10 @@ def inv_role_vocab(st: dict) -> list[dict]:
                                       f"concept {name!r} column {col!r} on {rel!r} carries role {token!r} "
                                       f"and namespace {ns!r} is declared by no vocabulary.yaml — the "
                                       f"token resolves to nothing and no resolver will say so"))
+                elif not COLUMN_ROLES:
+                    out.append(_i(subject, NA, f"{subject} carries bare role {token!r} and the closed "
+                                               "set could not be read from mac.schema.json, so nothing "
+                                               "here can say whether it is a member"))
                 elif token in COLUMN_ROLES:
                     out.append(_i(subject, OK, f"{subject} is {token!r}, a member of the closed set"))
                 else:
@@ -549,9 +581,16 @@ def inv_fk_qualified(st: dict) -> list[dict]:
     for plane, table in (("served", st["served"]), ("raw", st["sources"])):
         for stem in sorted(table):
             for c in (table[stem].get("columns") or []):
-                if not isinstance(c, dict) or str(c.get("role")) != "foreign_key":
+                if not isinstance(c, dict):
                     continue
                 ref = str(c.get("references") or "").strip()
+                is_fk = str(c.get("role")) == "foreign_key"
+                # ENUMERATE BY THE REFERENCE, NOT BY THE ROLE. A column can be a KEY and point somewhere:
+                # `sales.OrderKey` is PK1 of its own relation and a measured many:one reference to
+                # `orders.OrderKey`. Checking only `role: foreign_key` skipped every such column, which is
+                # the same class of miss as reading `.split(".")[-1]` — a test narrower than the fact.
+                if not ref and not is_fk:
+                    continue
                 subject = f"{plane}:{stem}.{c.get('name')}"
                 if not ref:
                     out.append(_i(subject, VIOLATION,
@@ -868,7 +907,7 @@ INVARIANTS = (
     # A row that describes less than it checks is how a reader comes to trust the wrong denominator.
     ("ROLE-VOCAB", "every column role resolves: closed set, or a declared namespace", inv_role_vocab),
     ("ONE-HOME", "the canonical key is declared on the column, not also on the concept", inv_one_home),
-    ("FK-QUALIFIED", "a foreign key names the relation AND the column it lands on", inv_fk_qualified),
+    ("FK-QUALIFIED", "every declared reference names the relation AND the column", inv_fk_qualified),
     ("KEY-POSITION", "a composite key's positions are exactly 1..n on its key columns", inv_key_position),
     ("KEY-BACKED", "a concept's `key:` list and its column map agree", inv_key_backed),
     ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
@@ -1279,20 +1318,12 @@ def _self_test() -> int:
           counts(rv)[0] == 3 and any("field_role" in i["subject"] for i in rv)
           and any(i["subject"].endswith(" role") for i in rv))
 
-    # THE TWO HOMES ARE PINNED TOGETHER. COLUMN_ROLES mirrors mac.schema.json's enum for the same slot;
-    # a change to one and not the other is exactly the drift this estate keeps paying for, so it goes
-    # RED here instead of going quiet. Skipped, not failed, when the schema is not beside us — a
-    # self-test must not depend on a file layout.
-    try:
-        import json as _json
-        _sp = pathlib.Path(__file__).resolve().parent.parent / "mac.schema.json"
-        _e = (_json.loads(_sp.read_text(encoding="utf-8"))["$defs"]["grounding"]["properties"]["sources"]
-              ["items"]["properties"]["columns"]["oneOf"][1]["additionalProperties"]["properties"]
-              ["role"].get("enum"))
-        check("COLUMN_ROLES agrees with mac.schema.json's enum for the same slot",
-              _e is not None and tuple(_e) == COLUMN_ROLES)
-    except (OSError, KeyError, IndexError, ValueError):
-        pass
+    # THERE IS ONE HOME NOW, so the old assertion — two literals agreeing — has nothing to compare and
+    # was itself the thing that hid a third home. What must hold instead is that the set was actually
+    # READ: a loader that silently returns () would make every bare role `n/a` and the invariant would
+    # stop checking anything while still printing a verdict.
+    check("the closed column-role set is READ from mac.schema.json, not restated here",
+          len(_column_roles()) >= 3 and _column_roles() == COLUMN_ROLES)
 
     # ── THE VERDICT LINE (operator ruling, backlog item 8) ──────────────────────────────────────
     # A sentence, tested, because the defect WAS the sentence: `PASS: 7 invariant(s) hold` on a bundle
