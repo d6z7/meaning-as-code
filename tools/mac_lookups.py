@@ -275,9 +275,30 @@ def _marker(root: pathlib.Path, yaml) -> str:
 
 
 def _stem(marker: str, relation: str, column: str) -> str:
-    """`contoso_gender`, from the marker and the column — the shape the loader's tie-break reads."""
-    base = column.lower()
-    return f"{marker}_{base}" if marker and not base.startswith(marker) else base
+    """`v_contoso4_product_brand` — the register's name is its (RELATION, COLUMN), because that is
+    what a register IS.
+
+    IT TOOK `relation` AND THREW IT AWAY. The name was `{marker}_{column}`, so two relations carrying a
+    same-named column produced the SAME filename and the second cut silently OVERWROTE the first —
+    last writer wins, and the loser's domain is preserved nowhere. The collision is invisible in the
+    artifact, because an overwrite leaves one coherent file behind; it shows only in this tool's own
+    count. MEASURED 2026-09-28: contoso3 "cut 22 column domain(s) into 18 register file(s)" and
+    contoso5 24 into 23 — four and one domains lost, silently.
+
+    IT IS ALSO THE ROOT OF A BUG ALREADY "FIXED" ONCE. contoso4's `customer.State` (565 distinct
+    values) pointed at a 67-member register cut from `store`, and that was repaired at the POINTER by
+    keying `cut_registers` on the cut site. The pointer was never the cause: both columns cut into one
+    file named `contoso4_state`, and the store cut landed last.
+
+    ALWAYS QUALIFIED, NEVER CONDITIONALLY. Qualifying only on collision would make a register's name
+    depend on what ELSE the bundle holds, so adding an unrelated relation could rename an existing
+    file. A name that is a function of its own subject alone is the only one that stays put.
+
+    The marker is prefixed only when the relation does not already carry it, so a served relation that
+    is already named for its bundle (`v_contoso4_product`) does not say so twice.
+    """
+    base = f"{relation}_{column}".lower()
+    return f"{marker}_{base}" if marker and marker not in base else base
 
 
 def _label_column(code: str, names: set, con, schema, relation: str, members: list) -> str | None:
