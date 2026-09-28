@@ -794,7 +794,13 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # datasets-only delivery produced a served plane with no column-level provenance at all —
         # the one artifact that answers "where did this number come from". It is a fact about
         # transforms feeding served relations, so it belongs to the part that produces them.
-        {"name": "lineage", "part": "datasets", "produces": "data/lineage/lineage.json", "d": "D15",
+        # `always`, because the artifact is a pure RE-DERIVATION from the warehouse and the transforms,
+        # and a stale one is indistinguishable from a fresh one by its presence. Measured 2026-09-28:
+        # after the served views were renamed, this stage RESUMED on the old file and the checklist
+        # read T8 0 of 8 — the fourth time today a stage skipped on the existence of output that no
+        # longer described the bundle.
+        {"name": "lineage", "part": "datasets", "always": True,
+         "produces": "data/lineage/lineage.json", "d": "D15",
          "cmd": [_tool("mac_lineage.py"), str(root)]},
         {"name": "resources", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},

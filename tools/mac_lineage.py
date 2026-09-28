@@ -247,5 +247,65 @@ def _without_date(text: str) -> str:
     return "\n".join(ln for ln in text.splitlines() if '"observed"' not in ln)
 
 
+
+def flows(root) -> list:
+    """`data/lineage/lineage.json` in the FLOW shape every consumer already speaks.
+
+    ONE LINEAGE ARTIFACT. Operator, 2026-09-28: "why there are two lineage artfifacts? there should be
+    only one --- SSOT" — and then, on being shown the two: "its one too many !!!".
+
+    There were two producers and they DISAGREED. This tool parses the view SQL and records that
+    `dim_product.product_key` comes from `main.product.ProductKey`. `lineage_project.py` built a second
+    set of flows from `data/transforms/*.yaml#inputs[].consumes` — a map `mac_transforms` DOES NOT
+    GENERATE — so it found no edges and fell back to calling every column a derived CONSTANT, "via:
+    literal per branch", for `p."ProductKey" AS product_key`. The pages rendered that, the console's
+    Lineage view rendered "column edges: 0, derived: 12, kind: const" over a view whose every column has
+    a named source, and check_lineage_coverage scored the bundle 0 % using the same broken model.
+
+    IT WAS KNOWN AND PATCHED RATHER THAN FIXED: project_data._lineage_cols_md carries the comment
+    "(lineage_project mislabels the un-raw-sourced cols 'const'; the real provenance is upstream)". A
+    renderer compensating for a producer it does not trust is two homes with a patch between them —
+    and the console, having no patch, showed what the data actually said.
+
+    THE ADAPTER BELONGS TO THE PRODUCER, not to each consumer, or the third copy starts here. Both the
+    projection (sdk/cli/harvest) and the coverage gate call this.
+    """
+    import json as _json
+    f = pathlib.Path(root) / "data" / "lineage" / "lineage.json"
+    if not f.is_file():
+        return []
+    doc = _json.loads(f.read_text(encoding="utf-8"))
+    by_view: dict = {}
+    for c in (doc.get("columns") or []):
+        if isinstance(c, dict) and c.get("view"):
+            by_view.setdefault(str(c["view"]), []).append(c)
+    out = []
+    for view, cols in sorted(by_view.items()):
+        edges, derived, srcs = [], [], {}
+        for c in cols:
+            rel, col = c.get("source_relation"), c.get("source_column")
+            if rel and col:
+                edges.append({"to_col": c.get("column"), "src_table": str(rel).split(".")[-1],
+                              "src_col": col, "rule_id": "", "kind": "passthrough"})
+                srcs.setdefault(str(rel), []).append(str(col))
+            else:
+                # DERIVED MEANS COMPUTED and the expression is the whole answer. A derived column with
+                # NO expression is the one case worth flagging rather than labelling `const`.
+                derived.append({"to_col": c.get("column"),
+                                "via": c.get("expression") or "derived — no expression recorded",
+                                "kind": "computed" if c.get("expression") else "unexplained"})
+        out.append({
+            "transform": view,
+            "kindl": "passthrough" if edges and not derived else (
+                "computed" if derived and not edges else "passthrough + computed"),
+            "sources": [{"rel": r, "short": r.split(".")[-1], "schema": r.split(".")[0],
+                         "columns": sorted(set(cs)), "extra": 0, "role": None}
+                        for r, cs in sorted(srcs.items())],
+            "dataset": {"name": view, "columns": [{"name": c.get("column")} for c in cols]},
+            "edges": edges, "derived": derived, "seeds": [], "rules": [], "predicates": [],
+            "grain": None,
+        })
+    return out
+
 if __name__ == "__main__":
     sys.exit(main())

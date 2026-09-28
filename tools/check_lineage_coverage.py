@@ -30,7 +30,8 @@ literal per-branch constants and seed-joined columns are genuinely const/derived
 single upstream column. This gate does not ask a view to be fully traceable — it asks it to explain
 SOMETHING, and prints the per-dataset table so a human can see the weak spots.
 
-The coverage model is the lineage projection itself (tools/lineage_project.py), so this gate is OFFLINE
+The coverage model is the ONE lineage artifact (data/lineage/lineage.json via mac_lineage.flows),
+so this gate is OFFLINE
 and pure-structural: it reads the governed YAML descriptors (data/sources, data/transforms,
 data/datasets) and never touches the warehouse.
 
@@ -50,7 +51,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lineage_project import project  # noqa: E402
+from mac_lineage import flows as _flows  # noqa: E402
 
 # ── thresholds ──────────────────────────────────────────────────────────────────────────────────────
 # A dataset at or below this coverage is an ERROR: it explains NOTHING (the degenerate collapse).
@@ -95,7 +96,13 @@ def main(argv=None) -> int:
         print(f"root not found: {root}", file=sys.stderr)
         return 2
 
-    model, unclassifiable = project([str(root)])
+    # ONE ARTIFACT. This called lineage_project([root]) — the second producer, which builds column
+    # edges from `data/transforms/*.yaml#inputs[].consumes`, a map `mac_transforms` does not generate.
+    # So it found no edges, fell back to calling every column a derived const, and this gate scored
+    # every bundle 0 % against a model that could not see a column. The gate was right about the
+    # number and wrong about the cause. It now reads the measured artifact, like everything else.
+    model = {"flows": _flows(root)}
+    unclassifiable = []
     rows = coverage_rows(model)
 
     print(f"── lineage-coverage gate ── {len(rows)} flow(s) under {root} ──\n")

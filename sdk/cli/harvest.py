@@ -339,20 +339,34 @@ def _lineage_flows(cr: Path) -> list:
             + ". Without flows every source and dataset loses its Lineage view tab. "
             "Check the framework root resolved from boundaries.yaml."
         )
-    outp = Path(tempfile.gettempdir()) / f".lineage.{cr.name}.json"
-    try:
-        subprocess.run(
-            [sys.executable, str(tool), str(cr), "--out", str(outp)],
-            check=True,
-            capture_output=True,
-            timeout=180,
+    # ── ONE LINEAGE ARTIFACT. Operator, 2026-09-28: "why there are two lineage artfifacts? there
+    #    should be only one --- SSOT".
+    #
+    #    There were two, and they DISAGREED. `mac_lineage.py` writes data/lineage/lineage.json, which
+    #    says d_product.product_key comes from main.product.ProductKey. `lineage_project.py` produced a
+    #    second set of flows saying the same column is a DERIVED CONSTANT, "via: literal per branch,
+    #    kind: const" — for `p."ProductKey" AS product_key`, a plain column reference. The pages showed
+    #    the second one and the console's Lineage view showed "column edges: 0, derived: 12, kind:
+    #    const" over a view whose every column has a named source.
+    #
+    #    IT WAS ALREADY KNOWN AND WORKED AROUND RATHER THAN FIXED — project_data._lineage_cols_md
+    #    carries the comment "(lineage_project mislabels the un-raw-sourced cols 'const'; the real
+    #    provenance is upstream)". A renderer compensating for a producer it does not trust is two
+    #    homes with a patch between them; the console had no patch and showed the truth about the data
+    #    it was given.
+    #
+    #    So the flows are now SHAPED FROM the one artifact. `mac_lineage` measures; this adapts. The
+    #    consumers (the page sections and objects.json) are unchanged — they still receive `edges`,
+    #    `derived`, `sources` and `dataset` — but every field now traces to a single measurement.
+    lj = cr / "data" / "lineage" / "lineage.json"
+    if not lj.is_file():
+        raise RuntimeError(
+            f"lineage: refusing to project a lineage-less read view — {lj} does not exist. "
+            f"Run mac_lineage.py (the `lineage` stage of the datasets part) first."
         )
-        flows = json.loads(outp.read_text()).get("flows", [])
-        outp.unlink(missing_ok=True)
-        return flows
-    except Exception as e:
-        print(f"  lineage: generation FAILED ({e}) — refusing to project a lineage-less read view")
-        raise
+    sys.path.insert(0, str(_MAC_TOOLS))
+    import mac_lineage as _ml
+    return _ml.flows(cr)
 
 
 def _semantic_diagnostics(cr) -> dict:
