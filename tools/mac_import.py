@@ -730,6 +730,18 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come back, because
         # it is written by `check_delivery_consistency` and NO stage ran it — the file was only ever on
         # disk because a person ran the gate by hand, and the console's Delivery tab reads it.
+        # CONFORMANCE RUNS WITH THE DELIVERY, NOT AT COMPILE TIME. Operator, 2026-09-28, on my habit
+        # of inventing a convention when I cannot find one: "i cannot stop you doing that. but i can
+        # ask you to make checker if for specifig object standard notations and declarations have
+        # strictly been followd. if not you have to do it in the second round."
+        #
+        # THE TIMING IS THE POINT. The served-name rule existed all along and `check_served_name_distinct`
+        # enforced it — but only at `project`, so an invented `d_`/`f_`/`b_` scheme survived being
+        # designed, built, measured, committed and reported before anything objected. A rule that fires
+        # after the work is a record of a mistake; one that fires during it is a guard.
+        {"name": "conformance", "part": "both", "always": True, "d": "D1 D2",
+         "produces": "data/datasets/*.yaml",
+         "cmd": [_tool("check_artifact_conformance.py"), str(root)]},
         {"name": "delivery-check", "part": "both", "always": True,
          "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
          "cmd": [_tool("check_delivery_consistency.py"), str(root)]},

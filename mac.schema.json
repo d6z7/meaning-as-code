@@ -4092,6 +4092,95 @@
           }
         }
       }
+    },
+    "LineageFile": {
+      "type": "object",
+      "description": "data/lineage/lineage.json — WHERE EVERY SERVED COLUMN CAME FROM, measured from the view SQL by mac_lineage.py. THE ONE LINEAGE ARTIFACT: a second producer (lineage_project.py) once built a rival set of flows from a `consumes` map nothing generates, found no column edges, and labelled every column a derived CONSTANT — which is what the console rendered. Collapsed to this file on 2026-09-28 on the operator's ruling that two artifacts for one fact is 'one too many'. It had no definition here until the artifact-conformance gate asked, on its first run, why a structured artifact was routed to nothing.",
+      "required": [
+        "columns"
+      ],
+      "properties": {
+        "generated_by": {
+          "type": "string"
+        },
+        "observed": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string"
+        },
+        "counts": {
+          "type": "object"
+        },
+        "nodes": {
+          "type": "array"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "columns": {
+          "type": "array",
+          "description": "One entry per served column. It names a SOURCE (source_relation + source_column) or carries an EXPRESSION — those are the two honest answers. An entry with neither is a column nobody can explain, and check_lineage_coverage fails the dataset for it.",
+          "items": {
+            "type": "object",
+            "required": [
+              "view",
+              "column"
+            ],
+            "properties": {
+              "view": {
+                "type": "string",
+                "description": "the served relation, schema-qualified"
+              },
+              "column": {
+                "type": "string"
+              },
+              "source_relation": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source_column": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "transform": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "derived": {
+                "type": "boolean"
+              },
+              "expression": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "the arithmetic, when the column is computed"
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -1,0 +1,137 @@
+# mac_artifacts.yaml — THE ARTIFACT REGISTRY. One entry per artifact KIND, four properties each.
+#
+# WHY IT EXISTS, and the measurement that argued for it. On 2026-09-28 the estate declared a SHAPE for
+# 27 artifact kinds, a NAME rule for ONE, and a producer for NONE. Every defect that day fell exactly
+# in the undeclared gap: not one shape was violated, while four naming/producer faults and two
+# vocabulary faults were — an invented `d_`/`f_`/`b_` prefix scheme against a CLOSED role table, two
+# lineage producers disagreeing about the same column, an ER diagram and a page reading different
+# files, and a register filename that discarded its relation and silently overwrote eight value
+# domains. The operator: "the same content MUST follow naming convention and formal
+# language/vocabulary/grammar".
+#
+# SHAPE IS REFERENCED, NOT COPIED. mac.schema.json is already the single home for shape and is not
+# scattered; restating it here would create the second home this file exists to remove. What WAS
+# scattered — a name rule living inside one gate, a producer implied by a stage's `produces`, a
+# transient key documented nowhere — is declared here and nowhere else.
+#
+# `producers` IS A LIST WITH A ROLE EACH, on the operator's ruling: "if they do different thing over
+# same artifact - then why not". Three tools legitimately write a source descriptor — one MEASURES it,
+# one ADDS the value domains it profiled, one SLIMS those domains into a register. That is one owner
+# and two declared collaborators, not a conflict. What is forbidden is an UNDECLARED writer, and two
+# writers claiming the same role.
+#
+# `transient` IS A KEY LEGAL IN FLIGHT AND FORBIDDEN AT DELIVERY. DOMAIN-HOMED generalised.
+spec_version: mac.artifacts/1
+
+kinds:
+
+  landed_descriptor:
+    what: what a landed relation CONTAINS, measured from the warehouse catalog
+    path: data/sources/{relation}.yaml
+    name: the landing's own relation name, verbatim — a landing is not renamed
+    shape: mac.schema.json#/$defs/TableFile
+    vocabulary: [mac.relation.column.role]
+    transient: [values]
+    producers:
+      - {tool: tools/mac_descriptors.py, role: measures, args: "--plane sources"}
+      - {tool: tools/mac_profile.py,     role: adds the measured value domains}
+      - {tool: tools/mac_lookups.py,     role: cuts those domains into registers and removes them}
+
+  served_descriptor:
+    what: what a served relation LEAVES — the promotion's contract
+    path: data/datasets/{relation}.yaml
+    name: mac.name.served_relation      # the CLOSED role table; check_served_name_distinct owns it
+    shape: mac.schema.json#/$defs/TableFile
+    vocabulary: [mac.relation.column.role]
+    transient: [values]
+    producers:
+      - {tool: tools/mac_descriptors.py, role: measures, args: "--plane datasets"}
+      - {tool: tools/mac_profile.py,     role: adds the measured value domains}
+      - {tool: tools/mac_lookups.py,     role: cuts those domains into registers and removes them}
+
+  profile:
+    what: the measurement plane — row counts, distincts, nulls, identity evidence
+    path: data/profiles/{relation}.yaml
+    name: the relation's stem, verbatim
+    shape: mac.schema.json#/$defs/ProfileFile
+    producers:
+      - {tool: tools/mac_profile.py, role: measures}
+
+  reference_measurement:
+    what: the measured references of ONE relation, with evidence and cardinality
+    # ALTERNATION — the notation this file ALREADY uses for relation_preview, not a second
+    # `{_optional}` syntax invented here. The conformance gate caught exactly that on its first
+    # run: I wrote `data/references{_served}/` meaning "either directory", nothing understood it,
+    # and all 16 files read as misnamed in every bundle. A registry that invents notation inside
+    # itself is the fault it exists to catch.
+    path: data/references/{relation}.yaml | data/references_served/{relation}.yaml
+    name: the relation's stem, verbatim
+    shape: mac.schema.json#/$defs/ReferenceFile
+    producers:
+      - {tool: tools/mac_references.py, role: measures}
+
+  register:
+    what: a value DOMAIN cut from one column, with a label and a search key
+    path: data/lookups/{marker}_{relation}_{column}.lookup.csv
+    name: >-
+      marker, relation and column — the register IS its (relation, column). The marker is omitted when
+      the relation already carries it. A name keyed on the column ALONE made two relations sharing a
+      column name overwrite one another: measured 2026-09-28, eight domains lost across four bundles.
+    columns: [«code», label, search_key, source_view, source_schema, confidence, note]
+    producers:
+      - {tool: tools/mac_lookups.py, role: cuts}
+
+  relation_preview:
+    what: a seeded sample of one relation, for a reviewer to check a declaration against rows
+    path: data/samples/{relation}.sample.csv | data/samples/{relation}.src.sample.csv
+    name: >-
+      the served preview is `{relation}.sample.csv`; the landed one carries `.src.` — the two planes
+      share a directory and a 1:1 passthrough bundle shares the stem, so the plane must be in the name
+    producers:
+      - {tool: tools/mac_sample.py, role: draws}
+
+  column_lineage:
+    what: where every served column came from — a source column, or an expression
+    path: data/lineage/lineage.json
+    name: fixed
+    shape: mac.schema.json#/$defs/LineageFile
+    producers:
+      - {tool: tools/mac_lineage.py, role: measures from the view SQL}
+      - {tool: tools/mac_lineage.py, role: adapts to the flow shape, via flows()}
+
+  relation_page:
+    what: the page a person opens to read one relation
+    path: data/{plane}/{relation}.md
+    name: the descriptor's stem, verbatim
+    producers:
+      - {tool: sdk/project/project_data.py, role: renders}
+
+  plane_overview:
+    what: one page over ALL of a plane's relations — what was landed, how big, what is keyed
+    path: data/{plane}/index.md
+    name: fixed
+    producers:
+      - {tool: sdk/project/project_data.py, role: renders}
+
+  transform_sql:
+    what: the AUTHORED statement that produces one served relation
+    path: data/transforms/{relation}.sql
+    name: the served relation it produces
+    producers:
+      - {tool: «a person», role: authors}
+
+  transform_descriptor:
+    what: what a transform consumes and produces, measured from the catalog
+    path: data/transforms/{relation}.yaml
+    name: the served relation it produces
+    shape: mac.schema.json#/$defs/TransformFile
+    producers:
+      - {tool: tools/mac_transforms.py, role: measures}
+
+  data_quality_register:
+    what: what is WRONG and who must rule on it — raised, never ruled, by a tool
+    path: data/quality/data_quality_register.yaml
+    name: fixed
+    shape: mac.schema.json#/$defs/DataQualityRegisterFile
+    producers:
+      - {tool: tools/mac_dq_findings.py, role: raises and merges, preserving any ruling}
