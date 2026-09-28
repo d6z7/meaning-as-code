@@ -212,6 +212,55 @@ row, `Location` on the store row — relates to its host with nothing to lift, w
 bundle with 19 concepts carried 8 edges and owed 12 more. A producer that lifts only foreign keys
 cannot see the commonest relationship in a denormalised warehouse.
 
+### 2.4 STRUCTURED IN THE DECLARATION, COMPOSED IN THE PRESENTATION
+
+Two rules that look like one and are opposites, and both are needed:
+
+1. **A declaration keeps each fact in its own typed field.** `role: primary_key` and `key_position: 2`
+   are two fields because the position is a NUMBER — it compares, sorts and sums, and a gate can check
+   that the positions on a relation are exactly 1..n. Encoding it inside the role as `primary_key_2`
+   forces every consumer that wants the order to do string surgery on a vocabulary token, which is the
+   same defect as a value hidden inside an identifier (`StoreCode = StoreKey // 10`, rejected for
+   exactly that reason).
+2. **A page may compose those fields for reading.** The same table renders `PK2`, because a markdown
+   table is read by a person and parsed by nothing. Refusing to compose it there would make the page
+   worse for no gain.
+
+**The test for which rule applies: does anything PARSE this?** If yes it stays structured; if only a
+human reads it, compose it. Getting this backwards in either direction has a measured cost — one way
+gives you `primary_key_2` and string surgery in N consumers, the other gives you a table with a mostly
+empty `key` column that a reader has to join in their head.
+
+**A composed or abbreviated display token MUST carry its legend on the page.** `PK` and `FK` are not
+members of `mac.relation.column.role`; they exist only in the rendering. An agent reads these pages, so
+the page states the mapping rather than leaving it to be inferred — the same discipline as a refusal
+citing its measurement instead of asserting it.
+
+**ONE RENDERER PER ARTIFACT KIND.** The data plane's columns table was rendered in four places
+(`sdk/cli/harvest.py`, `sdk/project/project_data.py` twice, `tools/mac_to_okf.py`). Changing it meant
+changing it four times, and when a second change arrived the same afternoon three of the four would have
+drifted or one been missed. It is now `sdk/project/column_table.py` and the callers pass only what
+differs. A second copy of a renderer is the same defect as a second copy of a vocabulary.
+
+### 2.5 A DERIVED PAGE IS BUNDLE CONTENT
+
+A bundle is the UNIT OF DELIVERY — handed to someone, opened by the console, served. A page that is
+merely REGENERABLE is not delivered; it is reconstructable, which is a different thing. DNA §P11 draws
+the line: *"a produced file is not a delivered deliverable; deliver where the operator looks."*
+
+So in an **ontology** repo the rendered pages and the console-read projections are **tracked**, and this
+is the one place where an ontology repo and a code repo take opposite rules. The operator's own
+correction, 2026-09-28: *"this is perfectly ok for mac ... platform etc. but it is opposite for
+ontology. ontology should by all means contain everything."* A report (`compile.json`) is still not
+bundle content; neither is the warehouse itself, nor a published tarball.
+
+**AND A DELIVERED PAGE MUST MATCH WHAT ITS SOURCE RENDERS.** Measured on 2026-09-28: the data plane's
+columns table gained the PK position and the FK target across the schema, the producer, four renderers
+and 28 references in three bundles — and every delivered page still showed the old table, because
+nothing re-rendered them and no gate read them. Thirteen invariants passed while the source ran three
+changes ahead of the page. `tools/check_pages_current.py` re-renders into a copy of the bundle and fails
+on any page that differs; git shows what changed, the gate shows what should have.
+
 ## 3. What changed in v0.5 (the formalization delta from 0.4)
 
 Driven by an applied-instance drift audit (promote / profile / drop verdicts, ratified 2026-06-14):

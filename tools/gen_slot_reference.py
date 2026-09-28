@@ -54,6 +54,19 @@ SLOTS = (
      "differ: measured on the reference bundle, 16 of 16 concept/relation pairings had a physical "
      "primary key that was NOT the concept's identity, because an inline dimension is never keyed by "
      "its host's row key."),
+
+    ("relation_column", "The relation's column — the data plane's physical shape",
+     ["$defs", "TableFile", "properties", "columns", "items"],
+     {"role": "relation.column.role"},
+     "One entry per column of a described relation, in data/sources (a raw landing) or data/datasets (a "
+     "served relation). This is what the relation IS, MEASURED from the warehouse rather than declared "
+     "by a person — which is why it is a different slot from the concept plane's column map and why the "
+     "two routinely disagree: a relation's primary key identifies a ROW, a concept's canonical key "
+     "identifies a MEMBER, and an inline dimension is never keyed by its host's row key.\n\n"
+     "`role` + `key_position` are TWO FIELDS, not one token. The position is a number, so it compares "
+     "and a gate can check that a relation's positions are exactly 1..n; `primary_key_2` would put "
+     "string surgery in every consumer that wants the order. The rendered page composes them as `PK2` "
+     "for reading — CONFORMANCE.md §2.4."),
 )
 
 
@@ -89,8 +102,13 @@ def render(slot, schema: dict, vocab: dict) -> str:
              "`mac_vocabulary.yaml`. Do not edit: a hand-written synopsis can describe a grammar that "
              "does not exist, which is exactly what this file replaces.")
     L += ["", textwrap.fill(prose, 98), "", "## SYNOPSIS", "", "```yaml"]
+    # THE TWO PLANES SHAPE THE SAME IDEA DIFFERENTLY and the skeleton must say which: the concept plane
+    # keys columns BY NAME (a map), the data plane is an ordered LIST with `name` as a field. A page that
+    # rendered both the same way would teach a reader to write one as the other.
+    is_list = page.startswith("relation")
     L.append("columns:")
-    L.append("  <column-name>:")
+    if not is_list:
+        L.append("  <column-name>:")
 
     def _val(k, v, block):
         if block:
@@ -119,6 +137,13 @@ def render(slot, schema: dict, vocab: dict) -> str:
                      + ("      # REQUIRED" if k in required else ""))
 
     _emit(props, required, "    ", governs)
+    if is_list:
+        # A LIST ITEM'S FIRST FIELD CARRIES THE DASH. Marking it after the fact keeps _emit free of the
+        # two planes' shapes — it renders fields, not YAML dialects.
+        for i, ln in enumerate(L):
+            if ln.startswith("    ") and not ln.lstrip().startswith("#"):
+                L[i] = "  - " + ln[4:]
+                break
     L += ["```", ""]
     L.append(f"**{len(props)} key(s)**, and the map is "
              + ("**CLOSED** — any other key is a conformance error (MAC012)." if closed

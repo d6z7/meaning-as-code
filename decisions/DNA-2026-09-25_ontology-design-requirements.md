@@ -361,6 +361,25 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
     from even that. See P12.
 12. **A GATE MUST NOT FAIL A WORKING BUNDLE, and must never SKIP where it should FAIL.** Both
     failures teach an operator to ignore it, which is worse than having none. See P13.
+13. **STRUCTURED IN THE DECLARATION, COMPOSED IN THE PRESENTATION.** A declaration keeps each fact in
+    its own typed field — `role: primary_key` + `key_position: 2`, because a position is a NUMBER that
+    compares, sorts and can be checked 1..n. A page composes them and renders `PK2`, because a table is
+    read by a person and parsed by nothing. **The test is: does anything PARSE this?** Backwards either
+    way costs something measured — `primary_key_2` puts string surgery in every consumer that wants the
+    order, and a separate `key` column leaves the reader joining two cells in their head. A composed or
+    abbreviated display token CARRIES ITS LEGEND on the page, because `PK`/`FK` are not members of any
+    vocabulary and an agent reads these pages. And ONE RENDERER PER ARTIFACT KIND: the columns table
+    lived in four places, so every change to it was made four times or three times and a bug.
+    CONFORMANCE.md §2.4.
+14. **A DERIVED PAGE IS BUNDLE CONTENT, and must match what its source renders.** A bundle is the unit
+    of delivery; a page that is merely regenerable is reconstructable, not delivered (P11). In an
+    ONTOLOGY repo the pages and the console-read projections are TRACKED — the one place an ontology
+    repo takes the opposite rule from a code repo, on the operator's correction: *"ontology should by
+    all means contain everything."* A report is still not bundle content. And a delivered page that
+    disagrees with its source is a FAILURE, not a staleness to tidy later: measured 2026-09-28, a table
+    change crossed the schema, a producer, four renderers and 28 references in three bundles while every
+    delivered page still showed the old shape and thirteen invariants passed. `check_pages_current`
+    re-renders into a copy and fails on any difference. CONFORMANCE.md §2.5.
 
 ---
 
