@@ -170,8 +170,23 @@ def _proof_of(e: dict, refs_dir: str = REFS_DIR) -> dict:
     ev = e.get("evidence") or {}
     nn, orph = ev.get("child_nonnull"), ev.get("orphan_rows")
     if nn is None or orph is None:
-        return {"state": UNPROVED, "ref": f"{refs_dir}/{e['from']['relation']}.yaml#{e.get('id')}",
-                "why": "the measurement carries no child_nonnull/orphan_rows denominator",
+        # DECLARED, AND THAT IS A MEASURED FACT — not an absence of one. This model is now built from
+        # the DESCRIPTOR, which carries no evidence counters by design: the counters stay in
+        # data/references*/ where they were measured, and the descriptor states what the relationship
+        # IS. A declared reference only exists because `mac_descriptors` promoted a measurement whose
+        # verdict was `real`, whose parent side was a whole single-column identity, and whose
+        # cardinality was many:one — so reporting it as "unproved, a number is missing" would libel a
+        # relationship that passed a stricter bar than the counters alone.
+        card, part = e.get("cardinality") or {}, e.get("participation") or {}
+        if card.get("child") and card.get("parent"):
+            why = (f"declared in {e.get('declared_in', 'the descriptor')}, promoted from a measured "
+                   f"reference: cardinality {card['child']}:{card['parent']}")
+            if part.get("child") and part.get("parent"):
+                why += f", participation child {part['child']} / parent {part['parent']}"
+            return {"state": PROVED, "ref": e.get("declared_in", ""), "why": why,
+                    "members": 1, "members_proved": 1}
+        return {"state": UNPROVED, "ref": e.get("declared_in", ""),
+                "why": "declared with no measured cardinality, so the crow's feet cannot be drawn",
                 "members": 1, "members_proved": 0}
     why = (f"{nn - orph:,} of {nn:,} row(s) matched, {orph:,} orphan row(s) over "
            f"{ev.get('orphan_distinct', 0):,} orphan value(s)")
@@ -323,23 +338,45 @@ def build(root=None, plane: str = DEFAULT_PLANE, **_legacy) -> dict:
         return _unavailable(root, "no bundle root was supplied to the projector, so the measured "
                                   "reference artifact could not be located", plane)
     root = Path(root)
-    files = sorted(glob.glob(str(root / refs_dir / "*.yaml")))
+    files = sorted(glob.glob(str(root / ddir / "*.yaml")))
     if not files:
-        n_src = len(glob.glob(str(root / ddir / "*.yaml")))
         return _unavailable(
             root,
-            f"this bundle carries NO measured reference artifact for the {plane} plane: "
-            f"{refs_dir}/ holds no file, over {n_src} declared relation(s) in {ddir}/. Nothing has "
-            f"measured how those relations point at each other, so this diagram has nothing to draw "
-            f"and will not borrow another plane's relationships to fill the page", plane)
+            f"this bundle declares NO relation on the {plane} plane: {ddir}/ holds no descriptor, so "
+            f"there is nothing to draw. This diagram will not borrow another plane's relations to "
+            f"fill the page", plane)
 
     refs, entries, dangling = {}, [], []
     for fp in files:
         doc = _load(Path(fp))
-        stem = doc.get("of") or Path(fp).stem
-        refs[stem] = doc
-        entries += [e for e in (doc.get("references") or []) if e.get("drawn")]
-        dangling += list(doc.get("references_dangling") or [])
+        stem = Path(fp).stem
+        table = doc.get("table") or {}
+        refs[stem] = {"relation": table.get("name") or stem}
+        for c in (doc.get("columns") or []):
+            if not isinstance(c, dict):
+                continue
+            ref = c.get("references")
+            if not ref:
+                continue
+            to = (ref.get("to") if isinstance(ref, dict) else ref) or ""
+            bits = [b for b in str(to).split(".") if b]
+            if len(bits) < 2:
+                continue
+            card = (ref.get("cardinality") if isinstance(ref, dict) else None) or {}
+            part = (ref.get("participation") if isinstance(ref, dict) else None) or {}
+            entries.append({
+                "id": f"{table.get('name') or stem}.{c.get('name')}__{bits[-2]}.{bits[-1]}",
+                "from": {"relation": stem, "column": c.get("name")},
+                "to": {"relation": bits[-2], "column": bits[-1]},
+                "cardinality": card, "participation": part, "declared_in": f"{ddir}/{stem}.yaml",
+            })
+
+    # A REFERENCE NAMES ITS TARGET BY RELATION NAME; a box is keyed by descriptor STEM. On a plane
+    # that renames (dim_port <- port) the two differ, so the target is resolved through the relation
+    # names the descriptors themselves declare rather than assumed identical.
+    stem_of = {v["relation"]: k for k, v in refs.items() if v.get("relation")}
+    for e in entries:
+        e["to"]["relation"] = stem_of.get(e["to"]["relation"], e["to"]["relation"])
 
     fk_columns: dict[str, set] = {}
     for e in entries:
@@ -432,8 +469,15 @@ def build(root=None, plane: str = DEFAULT_PLANE, **_legacy) -> dict:
         # say the word concept here" ends up branching on a plane it has no opinion about.
         "plane": "physical",
         "physical_plane": plane,
-        "artifact_directory": refs_dir,
+        # IT SAYS WHAT IT ACTUALLY READ. This reported `refs_dir` while the model was built from the
+        # measurement artifact; it is now built from the DESCRIPTORS, and a self-report naming the
+        # wrong source is how "the ER and the page disagree" went unexplained for so long — the two
+        # were reading different files and both said they were reading the bundle.
+        "artifact_directory": ddir,
         "descriptor_plane": ddir,
+        # The measurement is still where the evidence lives; it is named so a reader can go there,
+        # and NOT read here, which is the whole point of the single source.
+        "evidence_artifact": refs_dir,
         "entities": entities,
         "relationships": rels,
         # Named rather than skipped: a reference this diagram cannot draw is a fact about the
@@ -456,9 +500,12 @@ def build(root=None, plane: str = DEFAULT_PLANE, **_legacy) -> dict:
             "isolated_entities": len([
                 e for e in entities
                 if not any(e["id"] in (r["from"]["entity"], r["to"]["entity"]) for r in rels)]),
-            "references_measured": sum(len(d.get("references") or []) for d in refs.values()),
-            "candidates_rejected": sum(len(d.get("candidates_rejected") or [])
-                                       for d in refs.values()),
+            # DECLARED, not measured: this model now counts what the descriptors declare. The
+            # measured totals live in data/references*/ and are a different, larger number by design
+            # — a reference into one PART of a composite key is a shared value domain and is
+            # deliberately not promoted to a foreign key.
+            "references_declared": len(entries),
+            "candidates_rejected": 0,
             "ambiguous": sum(1 for r in rels if r["ambiguous_with"]),
             "dangling": len(undrawable),
             # PRESENT INTEGERS, ALWAYS. An omitted `not_proved` paints "proof state unknown — re-run

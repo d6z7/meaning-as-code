@@ -83,10 +83,25 @@ def _bundle(root, *, references=None, dangling=None, sources=None, keys=None, ed
     srcs = sources if sources is not None else {
         "alpha": ["AlphaRef", "GammaRef", "DeltaRef"], "gamma": ["GammaRef", "Label"]}
     ks = keys if keys is not None else {"alpha": ["AlphaRef"], "gamma": ["GammaRef"]}
+    # THE REFERENCES GO ON THE DESCRIPTOR, because that is where the model reads them now. They used
+    # to be seeded only into data/references/, which is the artifact the ER no longer reads: the page
+    # and the diagram must be built from ONE source or they can disagree, and they did — 17 drawn
+    # against 6 listed on a live bundle. The `references=` fixture API is unchanged; only where it
+    # lands has moved.
+    _decl = {}
+    for r in references or []:
+        _decl.setdefault(r["from"]["relation"], {})[r["from"]["column"]] = {
+            "to": f"{r['to']['relation']}.{r['to']['column']}",
+            **({"cardinality": r["cardinality"]} if r.get("cardinality") else {}),
+            **({"participation": {k: v for k, v in (r.get("participation") or {}).items()
+                                  if k in ("child", "parent")}} if r.get("participation") else {}),
+        }
     for stem, cols in srcs.items():
+        _d = _decl.get(stem, {})
         (root / "data" / "sources" / f"{stem}.yaml").write_text(yaml.safe_dump(
             {"of": stem, "table": {"name": stem, "schema": "alpha_schema"},
-             "columns": [{"name": c, "type": "bigint", "role": "value"} for c in cols]}))
+             "columns": [{"name": c, "type": "bigint", "role": "value",
+                          **({"references": _d[c]} if c in _d else {})} for c in cols]}))
         (root / "data" / "profiles" / f"{stem}.yaml").write_text(yaml.safe_dump(
             {"of": stem, "profile": {"rows": 10},
              "identity_evidence": {"key": ks.get(stem, [])}}))
@@ -122,25 +137,25 @@ def _bundle(root, *, references=None, dangling=None, sources=None, keys=None, ed
 # works — every bundle that has an ontology keeps its lines — and it IS the conflation being removed.
 
 
-def test_a_bundle_with_no_measured_artifact_draws_NOTHING(tmp_path):
+def test_a_bundle_whose_columns_DECLARE_nothing_draws_boxes_and_no_lines(tmp_path):
+    # CHANGED DELIBERATELY, 2026-09-28. This model is now built from the DESCRIPTORS — the same file
+    # the page reads — so a relation that exists HAS a box whether or not anything references it.
+    # Drawing the boxes is the honest answer to "what is on this plane": the old empty page could not
+    # distinguish "no relations" from "no relationships", and those are different facts.
     m = E.build(root=_bundle(tmp_path))
-    assert m["entities"] == [] and m["relationships"] == []
+    assert [e["id"] for e in m["entities"]] == ["alpha", "gamma"]
+    assert m["relationships"] == []
 
 
 def test_the_empty_state_NAMES_what_is_missing_and_how_to_produce_it(tmp_path):
-    m = E.build(root=_bundle(tmp_path))
+    # THE DENOMINATOR IS STILL THE POINT, only the subject moved: this model is built from the
+    # DESCRIPTORS, so the state it cannot draw from is "no descriptor", not "no measured artifact".
+    (tmp_path / "data" / "sources").mkdir(parents=True, exist_ok=True)
+    m = E.build(root=tmp_path)
     u = m["unavailable"]
-    # THE DENOMINATOR IS THE POINT: "no artifact" is half an answer; "no artifact over 2 declared
-    # relations" is the fact, and the directory name is what tells a reader WHICH plane is empty.
-    assert "data/references/ holds no file" in u["reason"]
-    assert "2 declared relation(s) in data/sources/" in u["reason"]
-    assert "mac_references.py" in u["how"] and "--plane sources" in u["how"]
-    assert "ontology/edges.yaml" in u["note"]
-
-
-# --- THE TWO PHYSICAL PLANES -------------------------------------------------------------------
-# One builder draws both. Each test below is a way the second plane could quietly become the first
-# one wearing a different label, which is the failure that would make the pair of tabs a lie.
+    assert "data/sources/ holds no descriptor" in u["reason"]
+    assert "will not borrow another plane" in u["reason"]
+    assert m["entities"] == [] and m["relationships"] == []
 
 
 def _served_bundle(root, *, references=None, measured=True):
@@ -149,10 +164,26 @@ def _served_bundle(root, *, references=None, measured=True):
     (root / "data" / "datasets").mkdir(parents=True, exist_ok=True)
     cols = {"v_fact": [("FactKey", "primary_key"), ("DimKey", "foreign_key"), ("Amount", "value")],
             "v_dim": [("DimKey", "primary_key"), ("Label", "discriminator")]}
+    refs_for_descriptor = references if references is not None else [{
+        "from": {"relation": "v_fact", "column": "DimKey"},
+        "to": {"relation": "v_dim", "column": "DimKey"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "mandatory"},
+    }] if measured else []
+    _decl = {}
+    for r in refs_for_descriptor:
+        _decl.setdefault(r["from"]["relation"], {})[r["from"]["column"]] = {
+            "to": f"{r['to']['relation']}.{r['to']['column']}",
+            **({"cardinality": r["cardinality"]} if r.get("cardinality") else {}),
+            **({"participation": {k: v for k, v in (r.get("participation") or {}).items()
+                                  if k in ("child", "parent")}} if r.get("participation") else {}),
+        }
     for stem, cs in cols.items():
+        _d = _decl.get(stem, {})
         (root / "data" / "datasets" / f"{stem}.yaml").write_text(yaml.safe_dump(
             {"of": stem, "table": {"name": stem, "schema": "own_schema"},
-             "columns": [{"name": c, "type": "bigint", "role": r} for c, r in cs]}))
+             "columns": [{"name": c, "type": "bigint", "role": r,
+                          **({"references": _d[c]} if c in _d else {})} for c, r in cs]}))
     if not measured:
         return root
     (root / "data" / "references_served").mkdir(parents=True, exist_ok=True)
@@ -185,8 +216,12 @@ def test_the_served_plane_draws_its_own_population_not_the_sources_one(tmp_path)
     assert "alpha" not in str([e["id"] for e in m["entities"]])
     assert m["counts"]["relationships"] == 1 and m["counts"]["proved"] == 1
     assert m["physical_plane"] == "served"
-    assert m["artifact_directory"] == "data/references_served"
+    # IT NAMES WHAT IT READ. This asserted `data/references_served` while the model was built from
+    # that artifact; it is built from the descriptors now, and a self-report naming the wrong file is
+    # how "the ER and the page disagree" stayed unexplained — both claimed to be reading the bundle.
+    assert m["artifact_directory"] == "data/datasets"
     assert m["descriptor_plane"] == "data/datasets"
+    assert m["evidence_artifact"] == "data/references_served"
 
 
 def test_both_planes_still_say_plane_physical(tmp_path):
@@ -214,13 +249,18 @@ def test_the_served_plane_takes_its_key_from_the_DECLARED_role(tmp_path):
 def test_an_unmeasured_served_plane_is_EMPTY_WITH_A_REASON_not_the_sources_lines(tmp_path):
     # THE DEFECT THIS FORBIDS: falling back to the other physical plane is exactly as wrong as
     # falling back to the ontology, and far easier to do by accident because both are "physical".
-    root = _served_bundle(tmp_path, measured=False)
-    _bundle(root, references=[])                          # give SOURCES a measured artifact
-    m = E.build(root=root, plane="served")
+    # THE PROPERTY IS UNCHANGED and it is the important one: a plane with nothing of its own draws
+    # NOTHING, and never the other plane's lines. Only the trigger moved — from "no measured
+    # artifact" to "no descriptor", because the descriptor is what this model reads.
+    root = tmp_path / "b"
+    _bundle(root, references=[{"id": "a__g", "from": {"relation": "alpha", "column": "GammaRef"},
+                               "to": {"relation": "gamma", "column": "GammaRef"},
+                               "cardinality": {"child": "many", "parent": "one"},
+                               "participation": {"child": "mandatory", "parent": "mandatory"}}])
+    m = E.build(root=root, plane="served")                # sources is fully declared; served is empty
     assert m["entities"] == [] and m["relationships"] == []
-    assert "data/references_served/ holds no file" in m["unavailable"]["reason"]
-    assert "2 declared relation(s) in data/datasets/" in m["unavailable"]["reason"]
-    assert "--plane served" in m["unavailable"]["how"]
+    assert "data/datasets/ holds no descriptor" in m["unavailable"]["reason"]
+    assert "alpha" not in str(m["entities"]) and "alpha" not in str(m["relationships"])
     assert m["physical_plane"] == "served"
 
 
@@ -243,8 +283,11 @@ def test_an_ontology_present_does_NOT_become_the_physical_diagram(tmp_path):
     # MUTANT: the bundle has a perfectly good physical-looking edge in ontology/edges.yaml and no
     # measured artifact. A fallback would draw it. It must draw nothing and say why.
     m = E.build(root=_bundle(tmp_path, edges_yaml=True))
-    assert m["relationships"] == [] and "unavailable" in m
+    # The boxes come from the descriptors now, so the page is not empty — but NOT ONE LINE may come
+    # from ontology/edges.yaml, which is the property this test exists for and which is unchanged.
+    assert m["relationships"] == []
     assert not any("Alpha" in str(v) for v in m["relationships"])
+    assert "alpha__of_gamma" not in str(m)
 
 
 def test_the_empty_state_still_carries_the_counts_the_header_reads(tmp_path):
@@ -351,24 +394,32 @@ def test_a_reference_to_an_unmeasured_relation_is_DISCLOSED_never_emitted_as_a_l
     assert m["accounting_error"] == ""
 
 
-def test_a_dangling_column_becomes_a_disclosure_with_NO_far_side(tmp_path):
-    m = E.build(root=_bundle(
-        tmp_path,
-        references=[_ref("alpha", "GammaRef", "gamma", "GammaRef")],
-        dangling=[{"id": "alpha.DeltaRef__?",
-                   "from": {"relation": "alpha", "column": "DeltaRef"}, "to": None,
-                   "verdict": "dangling", "basis": "key_naming_convention",
-                   "basis_detail": "self-calibrated from this bundle's own measured key names",
-                   "evidence": {"child_distinct": 3}}]))
-    u = m["unrealised_edges"][0]
-    assert u["to_relation"] is None and u["from_relation"] == "alpha"
-    assert u["from_columns"] == ["DeltaRef"]
-    assert "NO relation in this bundle has it as a key column" in u["reason"]
-    assert u["proof"]["state"] == "unproved"     # weaker evidence, and it must not draw as proved
-    assert m["counts"]["dangling"] == 1
-
-
-# --- THE BOXES: COLUMNS, KEYS AND THE ROLE OVERLAY ----------------------------------------------
+def test_a_dangling_column_is_NOT_drawn_here_because_the_DQ_register_reports_it(tmp_path):
+    # CHANGED DELIBERATELY, 2026-09-28, on the operator's instruction: "we must start to remove
+    # redundant versions of the same ... lets agree on having one chain of events with SSOT."
+    #
+    # A dangling column — key-shaped, referencing nothing — WAS disclosed twice: here, as an
+    # undrawable entry, and in the data-quality register as a finding with an id, a severity and a
+    # page. CHECKED on contoso4 before removing it: references_dangling holds 4 entries
+    # (product.CategoryKey, product.SubCategoryKey, customer.GeoAreaKey, store.GeoAreaKey) and the
+    # register carries DQ-DANGLINGKEY-CATEGORYKEY, -SUBCATEGORYKEY and -GEOAREAKEY covering all of
+    # them. The register is the better home: it has an owner and a lifecycle; this had neither.
+    #
+    # So the fact is NOT lost — it is single-homed. This test holds that the diagram no longer
+    # carries a second copy, and it would fail if one came back.
+    root = _bundle(tmp_path, references=[{
+        "from": {"relation": "alpha", "column": "GammaRef"},
+        "to": {"relation": "gamma", "column": "GammaRef"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "mandatory"}}])
+    m = E.build(root=root)
+    # `alpha` also carries DeltaRef, which declares no reference at all — the dangling case.
+    assert m["counts"]["relationships"] == 1
+    assert m["unrealised_edges"] == []
+    assert "DeltaRef" not in str(m["relationships"])
+    # and the column is still THERE, on its box, as a plain column — not hidden
+    alpha = next(e for e in m["entities"] if e["id"] == "alpha")
+    assert "DeltaRef" in [c["name"] for c in alpha["columns"]]
 
 
 def test_the_measured_key_becomes_the_PK_badge_without_editing_the_descriptor(tmp_path):
@@ -415,30 +466,65 @@ def test_a_relation_with_no_reference_still_gets_a_BOX(tmp_path):
 # --- PROOF, PLANE AND THE COUNTS THE HEADER READS -----------------------------------------------
 
 
-def test_a_measured_reference_is_PROVED_and_its_why_carries_the_denominator(tmp_path):
-    m = E.build(root=_bundle(tmp_path, references=[
-        _ref("alpha", "GammaRef", "gamma", "GammaRef")]))
-    p = m["relationships"][0]["proof"]
-    assert p["state"] == "proved" and p["members"] == p["members_proved"] == 1
-    assert "100 of 100 row(s) matched" in p["why"] and "0 orphan row(s)" in p["why"]
-    assert "data/references/alpha.yaml#" in p["ref"]
+def test_a_declared_reference_is_PROVED_and_its_why_names_the_declaration(tmp_path):
+    # The `why` used to carry the row denominators, because the model read the measurement. It reads
+    # the DESCRIPTOR now, which carries the measured cardinality and participation but not the
+    # counters — those stay in data/references*/ where they were measured, and the model NAMES that
+    # artifact (`evidence_artifact`) without reading it.
+    #
+    # PROVED, NOT UNPROVED, and the distinction matters: a declared reference exists only because
+    # mac_descriptors promoted a measurement whose verdict was `real`, whose parent side was a whole
+    # single-column identity and whose cardinality was many:one. Reporting that as "a number is
+    # missing" would libel a relationship that passed a STRICTER bar than the counters alone.
+    root = _bundle(tmp_path, references=[{
+        "from": {"relation": "alpha", "column": "GammaRef"},
+        "to": {"relation": "gamma", "column": "GammaRef"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "optional"}}])
+    m = E.build(root=root)
+    pf = m["relationships"][0]["proof"]
+    assert pf["state"] == "proved" and pf["members"] == pf["members_proved"] == 1
+    assert "cardinality many:one" in pf["why"]
+    assert "data/sources/alpha.yaml" in pf["ref"]
+    assert m["evidence_artifact"] == "data/references"
 
 
 def test_participation_is_spelled_out_in_the_proof_sentence(tmp_path):
-    m = E.build(root=_bundle(tmp_path, references=[
-        _ref("alpha", "GammaRef", "gamma", "GammaRef", unreferenced=3)]))
-    why = m["relationships"][0]["proof"]["why"]
-    assert "participation, not cardinality" in why and "3 of 10 parent key value(s)" in why
+    # Participation is the half a key cannot supply — whether some parent rows are referenced by NO
+    # child — so it must reach the reader, and the crow's feet alone do not say it in words. It
+    # travels on the DECLARATION now rather than as a `parent_unreferenced` count, because the count
+    # is evidence and stays in data/references*/ with the rest of the evidence.
+    root = _bundle(tmp_path, references=[{
+        "from": {"relation": "alpha", "column": "GammaRef"},
+        "to": {"relation": "gamma", "column": "GammaRef"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "optional"}}])
+    why = E.build(root=root)["relationships"][0]["proof"]["why"]
+    assert "participation child mandatory / parent optional" in why
+    # and the OPPOSITE case must read differently, or the sentence is a constant
+    root2 = _bundle(tmp_path / "b", references=[{
+        "from": {"relation": "alpha", "column": "GammaRef"},
+        "to": {"relation": "gamma", "column": "GammaRef"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "mandatory"}}])
+    assert "parent mandatory" in E.build(root=root2)["relationships"][0]["proof"]["why"]
 
 
-def test_an_ambiguous_reference_says_so_and_is_still_drawn(tmp_path):
-    m = E.build(root=_bundle(tmp_path, references=[
-        _ref("alpha", "GammaRef", "gamma", "GammaRef",
-             ambiguous_with=["gamma.Other"], needs_ruling="value inclusion cannot separate them")]))
-    r = m["relationships"][0]
-    assert r["ambiguous_with"] == ["gamma.Other"]
-    assert "AMBIGUOUS" in r["proof"]["why"] and "needs a ruling" in r["proof"]["why"]
-    assert m["counts"]["ambiguous"] == 1
+def test_an_ambiguous_reference_is_reported_by_the_DQ_register_not_twice_here(tmp_path):
+    # Same de-duplication as the dangling case, and CHECKED the same way before removing it: on
+    # contoso4 the register carries DQ-AMBIGREF-CURRENCYCODE at severity HIGH — "`CurrencyCode`
+    # includes perfectly into 2 different keys — which is THE reference?". `ambiguous_with` was a
+    # field of the MEASUREMENT; the descriptor declares one target or none, because a promotion that
+    # cannot choose does not declare. So an ambiguous pair reaches the reader as a data-quality
+    # finding with an owner, and this diagram draws only what was actually declared.
+    root = _bundle(tmp_path, references=[{
+        "from": {"relation": "alpha", "column": "GammaRef"},
+        "to": {"relation": "gamma", "column": "GammaRef"},
+        "cardinality": {"child": "many", "parent": "one"},
+        "participation": {"child": "mandatory", "parent": "mandatory"}}])
+    m = E.build(root=root)
+    assert m["counts"]["ambiguous"] == 0
+    assert m["counts"]["relationships"] == 1
 
 
 def test_the_payload_declares_its_PLANE_and_claims_no_ontology_edges(tmp_path):

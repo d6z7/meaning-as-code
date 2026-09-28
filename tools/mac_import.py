@@ -596,6 +596,16 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # none of them — REGISTER-MONITOR went red with "18 register(s) are delivered and
         # acceptance/register_membership_runs.json does not exist". The monitor reads the register
         # directory, which both parts write into, so running it from either is correct and idempotent.
+        # THE GATE'S RUN RECORD IS EVIDENCE OF DELIVERY, so the delivery produces it. Found by
+        # redeploying contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come
+        # back, because it is written by `check_delivery_consistency` and NO stage ran it — the file
+        # was only ever on disk because a person ran the gate by hand. The console's Delivery tab reads
+        # it, so a from-scratch deploy left a consumer with nothing and no sign that anything was
+        # missing. `part: "both"`, for the same reason as the monitor: either delivery can be the one
+        # that completes the bundle, and the check reads whatever is on disk.
+        {"name": "delivery-check", "part": "both", "always": True,
+         "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
+         "cmd": [_tool("check_delivery_consistency.py"), str(root)]},
         {"name": "register-monitor", "part": "both", "always": True,
          "produces": "acceptance/register_membership_runs.json",
          "d": "D12b", "cmd": [_tool("check_register_membership.py"), str(root)]},
