@@ -397,6 +397,17 @@ CHECKLISTS: dict[str, list[dict]] = {
         {"id": "T6", "what": "every served relation has a rendered page",
          "probe": lambda r: _per_relation(r, "datasets", "datasets", ".md"),
          "where": "data/datasets/<relation>.md"},
+        # IF YOU HAVE A DATASET YOU MUST HAVE LINEAGE — the operator's rule, 2026-09-28, enforced at
+        # the two grains it can fail at. T8 asks whether the RELATION is traced at all; T9 asks
+        # whether every COLUMN of it is, which is the grain that actually answers "where did this
+        # number come from". A relation can be traced while a column it computed is not.
+        {"id": "T8", "what": "every served relation is traced in the lineage",
+         "probe": lambda r: ([s for s in _stems(r, "data", "datasets") if _lineage_index(r).get(s)],
+                             _stems(r, "data", "datasets")),
+         "where": "data/lineage/lineage.json"},
+        {"id": "T9", "what": "every served COLUMN has a source or a stated expression",
+         "probe": lambda r: _traced_columns(r),
+         "where": "data/lineage/lineage.json#columns[]"},
         {"id": "T7", "what": "the served plane has an overview page over ALL of its relations",
          "probe": lambda r: (["data/datasets/index.md"]
                              if (r / "data" / "datasets" / "index.md").is_file() else [],
@@ -404,6 +415,74 @@ CHECKLISTS: dict[str, list[dict]] = {
          "where": "data/datasets/index.md"},
     ],
 }
+
+
+def _traced_columns(root):
+    """(traced, all) served columns — the denominator is every column the descriptors declare."""
+    import yaml as _yaml
+    idx = _lineage_index(root)
+    have, want = [], []
+    d = pathlib.Path(root) / "data" / "datasets"
+    if not d.is_dir():
+        return have, want
+    for f in sorted(d.glob("*.yaml")):
+        try:
+            doc = _yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        except _yaml.YAMLError:
+            continue
+        for c in (doc.get("columns") or []):
+            if not isinstance(c, dict) or not c.get("name"):
+                continue
+            key = f"{f.stem}.{c['name']}"
+            want.append(key)
+            if (idx.get(f.stem) or {}).get(str(c["name"])):
+                have.append(key)
+    return have, want
+
+
+def _lineage_index(root) -> dict:
+    """`{relation_stem: {column: entry}}` from data/lineage/lineage.json.
+
+    A COLUMN COUNTS AS TRACED IF IT NAMES A SOURCE **OR** CARRIES AN EXPRESSION. Those are the two
+    honest answers: it came from there, or it was computed and here is the arithmetic. A column with
+    neither is one nobody can explain, which is what this rule exists to find.
+    """
+    import json as _json
+    f = pathlib.Path(root) / "data" / "lineage" / "lineage.json"
+    if not f.is_file():
+        return {}
+    try:
+        doc = _json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    # KEYED BY BOTH THE STEM AND THE DECLARED table.name, because they are not always the same string
+    # and a probe that assumes one of them reports a false gap. contoso4's lineage names its views
+    # `contoso_served.currencyexchange` while its descriptor stem is `v_contoso4_currencyexchange`;
+    # matching only the stem would have called a bundle untraced for a naming difference rather than
+    # for the real defect, which is that all 96 of its columns carry neither a source nor an
+    # expression.
+    import yaml as _yaml
+    alias: dict = {}
+    dd = pathlib.Path(root) / "data" / "datasets"
+    if dd.is_dir():
+        for f in sorted(dd.glob("*.yaml")):
+            try:
+                doc2 = _yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+            except _yaml.YAMLError:
+                continue
+            name = str(((doc2.get("table") or {}).get("name")) or "").split(".")[-1]
+            if name:
+                alias[name] = f.stem
+    out: dict = {}
+    for c in (doc.get("columns") or []):
+        if not isinstance(c, dict):
+            continue
+        view = str(c.get("view") or "").split(".")[-1]
+        stem = alias.get(view, view)
+        col = c.get("column")
+        if stem and col and (c.get("source_column") or c.get("expression")):
+            out.setdefault(stem, {})[str(col)] = c
+    return out
 
 
 def _print_checklist(root: pathlib.Path, part: str) -> int:
@@ -710,7 +789,12 @@ def _stages(root: pathlib.Path) -> list[dict]:
                  "order to author concepts from it"]},
         # LINEAGE FROM THE ENGINE, and it runs BEFORE `project` deliberately: the projection's own
         # lineage_graph needs an ontology plane, so on a first run this is the only lineage there is.
-        {"name": "lineage", "produces": "data/lineage/lineage.json", "d": "D15",
+        # LINEAGE IS PART OF THE DATASETS DELIVERY. Operator, 2026-09-28: "if you have dataset then
+        # you must have lineage". It was tagged to NO part, so `--part datasets` HELD it and a
+        # datasets-only delivery produced a served plane with no column-level provenance at all —
+        # the one artifact that answers "where did this number come from". It is a fact about
+        # transforms feeding served relations, so it belongs to the part that produces them.
+        {"name": "lineage", "part": "datasets", "produces": "data/lineage/lineage.json", "d": "D15",
          "cmd": [_tool("mac_lineage.py"), str(root)]},
         {"name": "resources", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},
