@@ -248,6 +248,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--self-test", action="store_true",
                     help="seed a mutant per reject class; needs no bundle and no warehouse")
     ap.add_argument("--refresh", action="store_true", help="re-run stages whose output exists")
+    # THE DATA PLANE IS TWO DELIVERIES (operator, 2026-09-28: "split data plane delivery in two
+    # parts: data sources and datasets ... have checklist for each one of them"). A part runs ONLY
+    # the stages tagged with it and reports ONLY its own checklist, because a part that quietly ran
+    # shared stages would be the whole import wearing a narrower name, and a checklist covering both
+    # planes cannot say which half is short.
+    ap.add_argument("--part", choices=("sources", "datasets", "all"), default="all",
+                    help="which delivery to run and report on (default: all). `sources` = the "
+                         "landing plane; `datasets` = the served plane")
     ap.add_argument("--stop-on-fail", action="store_true")
     a = ap.parse_args(argv)
     if a.self_test:
@@ -264,12 +272,21 @@ def main(argv: list[str] | None = None) -> int:
               f"  called. Everything else on the deliverables list is this command's OUTPUT.")
         return 2
 
-    print(f"mac_import {root.name} — {'REPORT ONLY' if a.report else ('ACCEPT (billed stages run)' if a.accept else 'FREE STAGES ONLY')}")
+    part = f" — PART: {a.part.upper()}" if a.part != "all" else ""
+    print(f"mac_import {root.name}{part} — {'REPORT ONLY' if a.report else ('ACCEPT (billed stages run)' if a.accept else 'FREE STAGES ONLY')}")
+    if a.part != "all":
+        ran = [st["name"] for st in _stages(root) if st.get("part") == a.part]
+        held = [st["name"] for st in _stages(root) if st.get("part") != a.part]
+        print(f"  running {len(ran)} stage(s): {', '.join(ran)}")
+        print(f"  HOLDING {len(held)} stage(s) that belong to another part or to no part: "
+              f"{', '.join(held)}")
     print("=" * 96)
 
     outcomes: list[tuple[str, str, str, float]] = []
     if not a.report:
         for stage in _stages(root):
+            if a.part != "all" and stage.get("part") != a.part:
+                continue
             outcomes.append(_run(stage, root, a))
             if a.stop_on_fail and outcomes[-1][1] == "FAIL":
                 print("\n  --stop-on-fail: stopping here")
@@ -280,12 +297,103 @@ def main(argv: list[str] | None = None) -> int:
         print("STAGES")
         for name, verdict, detail, secs in outcomes:
             print(f"  {verdict:8} {name:26} {secs:6.1f}s  {detail}")
+    if a.part != "all":
+        # THE PART REPORTS ITS OWN CHECKLIST, not the whole-bundle state. A part that printed the
+        # full deliverables table would say NO against seven things it was never asked to produce.
+        rc = _print_checklist(root, a.part)
+        print(f"\n  the other part's stages were HELD, so this says nothing about them. "
+              f"Run `--part {'datasets' if a.part == 'sources' else 'sources'}` for that checklist.")
+        return rc
     return _report(root, a)
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
 # THE CHAIN
 # ══════════════════════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# THE TWO CHECKLISTS. One per delivery, because the operator ruled the data plane is two deliveries
+# and "have checklist for each one of them" (2026-09-28).
+#
+# EVERY ITEM CARRIES ITS DENOMINATOR. The estate's standing lesson is that a green tick over an
+# unstated population says nothing — a gate reported PASS having examined zero files, and a stage
+# reported done having profiled 1 relation of 22. So an item here answers "n of m", and m is the
+# POPULATION the item is about, derived from the plane itself rather than from what happened to be
+# produced. `0 of 0` is reported as EMPTY and never as complete: nothing to check is not a pass.
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+def _stems(root: pathlib.Path, *rel: str) -> list[str]:
+    return sorted(p.stem for p in (root.joinpath(*rel)).glob("*.yaml"))
+
+
+def _per_relation(root, plane, produced, suffix=".yaml"):
+    """One expected artifact per relation OF THIS PLANE — the honest denominator for a per-item stage."""
+    want = _stems(root, "data", plane)
+    have = [r for r in want if (root / "data" / produced / f"{r}{suffix}").is_file()]
+    return have, want
+
+
+CHECKLISTS: dict[str, list[dict]] = {
+    "sources": [
+        {"id": "S1", "what": "every landed relation is described",
+         "probe": lambda r: (_stems(r, "data", "sources"), _stems(r, "data", "sources")),
+         "where": "data/sources/*.yaml"},
+        {"id": "S2", "what": "every landed relation is profiled",
+         "probe": lambda r: _per_relation(r, "sources", "profiles"),
+         "where": "data/profiles/<relation>.yaml"},
+        # `.src.sample.csv` — THE SUFFIX IS THE CONVENTION AND THE PROBE HAS TO KNOW IT. Written
+        # `.sample.csv` first, this item reported 0 of 7 against a plane that had all seven: a
+        # checklist that does not encode the naming rule raises a false alarm, which costs more
+        # trust than no checklist at all. `mac_sample` disambiguates the planes this way because a
+        # 1:1 passthrough bundle has the same stem on both.
+        {"id": "S3", "what": "every landed relation has a preview",
+         "probe": lambda r: _per_relation(r, "sources", "samples", ".src.sample.csv"),
+         "where": "data/samples/<relation>.src.sample.csv"},
+        {"id": "S4", "what": "referential structure measured on the landing plane",
+         "probe": lambda r: _per_relation(r, "sources", "references"),
+         "where": "data/references/<relation>.yaml"},
+    ],
+    "datasets": [
+        {"id": "T1", "what": "every served relation is described",
+         "probe": lambda r: (_stems(r, "data", "datasets"), _stems(r, "data", "datasets")),
+         "where": "data/datasets/*.yaml"},
+        {"id": "T2", "what": "every served relation is profiled",
+         "probe": lambda r: _per_relation(r, "datasets", "profiles"),
+         "where": "data/profiles/<relation>.yaml"},
+        {"id": "T3", "what": "every served relation has a preview",
+         "probe": lambda r: _per_relation(r, "datasets", "samples", ".sample.csv"),
+         "where": "data/samples/<relation>.sample.csv"},
+        {"id": "T4", "what": "referential structure measured on the served plane",
+         "probe": lambda r: _per_relation(r, "datasets", "references_served"),
+         "where": "data/references_served/<relation>.yaml"},
+        {"id": "T5", "what": "every served relation has a transform descriptor",
+         "probe": lambda r: _per_relation(r, "datasets", "transforms"),
+         "where": "data/transforms/<relation>.yaml"},
+    ],
+}
+
+
+def _print_checklist(root: pathlib.Path, part: str) -> int:
+    items = CHECKLISTS[part]
+    print(f"\nCHECKLIST — {part.upper()} ({len(items)} item(s))\n")
+    short = 0
+    for it in items:
+        have, want = it["probe"](root)
+        n, m = len(have), len(want)
+        if m == 0:
+            mark, note = "EMPTY", "nothing to check — 0 of 0 is not a pass, it is an empty population"
+        elif n == m:
+            mark, note = "OK   ", ""
+        else:
+            mark, note = "SHORT", "missing: " + ", ".join(x for x in want if x not in have)
+        if mark != "OK   ":
+            short += 1
+        print(f"  [{mark}] {it['id']:3} {it['what']:52} {n} of {m:<3} {it['where']}")
+        if note:
+            print(f"                {note}")
+    print(f"\n  {len(items) - short} of {len(items)} item(s) complete"
+          + ("" if not short else f"; {short} NOT complete"))
+    return 1 if short else 0
+
+
 def _stages(root: pathlib.Path) -> list[dict]:
     """Every stage, in dependency order. `produces` is what makes RESUME possible."""
     # BOTH PLANES. A measured bug of this file: `relations()` globbed data/datasets only, so the 8
@@ -308,9 +416,19 @@ def _stages(root: pathlib.Path) -> list[dict]:
     # naming scheme, and six consumers read `data/profiles/<stem>.yaml` — a `.src` suffix breaks stem
     # matching in `mac_references`. Guessing at it while shipping would be the defect class this
     # estate keeps paying for. So it is made LOUD, which is what a first run can honestly do about it.
-    relations = lambda: sorted(  # noqa: E731
-        p.stem for plane in ("datasets", "sources") for p in (root / "data" / plane).glob("*.yaml")
-    )
+    def relations(*planes):
+        """The relation stems of the named planes — BOTH when none is named.
+
+        A PART PROFILES ITS OWN PLANE. Splitting the data-plane delivery in two (operator,
+        2026-09-28) means the sources part must not profile the served relations and call itself
+        done, so the plane is a parameter rather than a fixed pair. The collision note above still
+        stands and gets LOUDER under the split, not quieter: `mac_profile` is addressed by bare stem
+        and searches data/datasets before data/sources, so on a 1:1 passthrough bundle a
+        sources-plane profile call still lands on the served relation. contoso3 renames every served
+        relation (dim_port <- port), so it has no collision to hide behind.
+        """
+        return sorted(pp.stem for plane in (planes or ("datasets", "sources"))
+                      for pp in (root / "data" / plane).glob("*.yaml"))
     return [
         # ---- the data plane, MEASURED (free) -------------------------------------------------
         # BOTH PLANES, DECLARED. `produces` named only `data/datasets/*.yaml` while the stage writes
@@ -319,18 +437,27 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # That is the same masking bug already fixed for the two reference planes, and it is the bug
         # a wipe-and-rerun exists to catch: `produces` must name EVERYTHING the stage writes, or
         # resume answers about a subset.
-        {"name": "descriptors", "produces": ["data/sources/*.yaml", "data/datasets/*.yaml"],
-         "d": "D1 D2", "cmd": [_tool("mac_descriptors.py"), str(root)]},
+        # ONE STAGE PER PLANE. This wrote both from a single call, which is precisely what made the
+        # two deliveries impossible to sign off separately: a checklist covering D1 and D2 at once
+        # cannot say which half is short, and a resume that saw either plane skipped the other.
+        {"name": "descriptors-sources", "part": "sources", "produces": "data/sources/*.yaml",
+         "d": "D1", "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "sources"]},
+        {"name": "descriptors-datasets", "part": "datasets", "produces": "data/datasets/*.yaml",
+         "d": "D2", "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "datasets"]},
         # `mac_profile` takes ONE relation, so this stage is one call per descriptor — the tool's
         # own signature, not a loop invented here.
         # PER-ITEM RESUME, and the stage-level kind was a measured bug of this file: one profile
         # existed from an earlier hand-run, `data/profiles/*.yaml` matched, and the whole stage
         # RESUMEd — 1 profile for 22 relations, reported as done. A stage that iterates must resume
         # per ITEM, or "present" means "one of them is present".
-        {"name": "profiles", "produces": "data/profiles/*.yaml", "d": "D9",
-         "each": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()],
-         "missing": lambda: [[_tool("mac_profile.py"), str(root), rel] for rel in relations()
-                             if not (root / "data" / "profiles" / f"{rel}.yaml").is_file()]},
+        {"name": "profiles-sources", "part": "sources", "produces": "data/profiles/*.yaml", "d": "D9",
+         "each": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("sources")],
+         "missing": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("sources")
+                             if not (root / "data" / "profiles" / f"{r}.yaml").is_file()]},
+        {"name": "profiles-datasets", "part": "datasets", "produces": "data/profiles/*.yaml", "d": "D9",
+         "each": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("datasets")],
+         "missing": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("datasets")
+                             if not (root / "data" / "profiles" / f"{r}.yaml").is_file()]},
 
         # TWO STAGES, NOT ONE, because the two planes have different INPUTS and only one of them
         # can be automated. Lumped together, the sources half's refusal masked the served half's
@@ -344,9 +471,11 @@ def _stages(root: pathlib.Path) -> list[dict]:
         #           writes — and that tool requires `--measure <column>`, "THE ONE BIT A HUMAN"
         #           supplies, per relation. A first run cannot produce it, and saying so is the
         #           honest output.
-        {"name": "references-served", "produces": "data/references_served/*.yaml", "d": "D10 D3",
+        {"name": "references-datasets", "part": "datasets",
+         "produces": "data/references_served/*.yaml", "d": "D10 D3",
          "cmd": [_tool("mac_references.py"), str(root), "--plane", "served"]},
-        {"name": "references-sources", "produces": "data/references/*.yaml", "d": "D10",
+        {"name": "references-sources", "part": "sources",
+         "produces": "data/references/*.yaml", "d": "D10",
          "needs_human": ("the SOURCES plane takes its key from the profile's identity_evidence, "
                          "which only mac_admit_identity writes — and it needs --measure <column> "
                          "per relation, which is a human's call"),
@@ -357,7 +486,7 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # .sql: measured 2026-09-26 on a bundle holding six .sql files and no descriptors, the graph
         # came back with 14 nodes and 0 EDGES, every dataset "with no input". The operator's report
         # was simply "i did not get lineage".
-        {"name": "transforms", "produces": "data/transforms/*.yaml", "d": "D15 D6",
+        {"name": "transforms", "part": "datasets", "produces": "data/transforms/*.yaml", "d": "D15 D6",
          "cmd": [_tool("mac_transforms.py"), str(root)]},
         # AFTER `transforms`, NOT BEFORE IT — moved 2026-09-26, found by deleting a bundle and
         # re-ingesting it from its 12 inputs. `mac_sample` names the TRANSFORM that produces a relation,
@@ -372,8 +501,17 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # so it is credited with D11b, which it can always deliver, and D11 only when there is a
         # concept to sample. Crediting it with D11 alone made a stage look like it had satisfied a
         # deliverable that no first run can produce.
-        {"name": "samples", "produces": "data/samples/*.sample.csv", "d": "D11b",
-         "cmd": [_tool("mac_sample.py"), str(root), "--plane", "both"]},
+        # `produces` MUST NAME EXACTLY WHAT THE STAGE WRITES — not less, and not more. The comment on
+        # `descriptors` above records the first direction: a glob naming only one of two planes let
+        # resume skip while the other was missing. This is the SECOND direction, measured on the very
+        # first split run (2026-09-28): both sample stages claimed `data/samples/*.sample.csv`, so
+        # with the sources previews deleted and the served ones intact, `samples-sources` matched its
+        # sibling's output and RESUMEd — 0 of 7 landed relations previewed, reported as done. The
+        # checklist caught what resume got wrong, which is the whole reason a part has one.
+        {"name": "samples-sources", "part": "sources", "produces": "data/samples/*.src.sample.csv",
+         "d": "D11b", "cmd": [_tool("mac_sample.py"), str(root), "--plane", "sources"]},
+        {"name": "samples-datasets", "part": "datasets", "produces": "data/samples/*.sample.csv",
+         "d": "D11b", "cmd": [_tool("mac_sample.py"), str(root), "--plane", "datasets"]},
         # `--accept` ON THE LOOKUP CUTTER IS NOT A BILLING DECISION. harvest's help says
         # "materialize/lookups create the own-schema views + name->code registers (DRY-RUN by
         # default, --accept to run the DDL/profiling live)" — the flag means RUN THE PROFILING, and
@@ -388,7 +526,7 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # credentials` — measured. It predates the connector seam. `mac_lookups` projects the value
         # domains `mac_profile` ALREADY captured onto the descriptors, so it needs no second scan and
         # works for any engine the seam answers for.
-        {"name": "lookups", "produces": "data/lookups/*.csv", "d": "D12",
+        {"name": "lookups", "part": "datasets", "produces": "data/lookups/*.csv", "d": "D12",
          "cmd": [_tool("mac_lookups.py"), str(root)]},
         # THE CLOSURE MONITOR, and it is OWED — DNA PART 1.8 "closed sets get a register; registers
         # get a monitor", PART 4 step 6 "`warranty: monitored` becomes provable". It is also a
@@ -398,7 +536,8 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # lists, so 30 of 86 cases went with them. This reads the register instead, which is where
         # the members now live, and it re-measures against the warehouse, which a static case list
         # never could.
-        {"name": "register-monitor", "produces": "acceptance/register_membership_runs.json",
+        {"name": "register-monitor", "part": "datasets",
+         "produces": "acceptance/register_membership_runs.json",
          "d": "D12b", "cmd": [_tool("check_register_membership.py"), str(root)]},
         # ---- the DQ plane, ALL OF IT BEFORE THE PROJECTION ----------------------------------
         # A measured ORDERING BUG of this file: `dq-findings` was documented as needing to run before

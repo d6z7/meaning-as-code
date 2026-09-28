@@ -82,6 +82,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--schema", help="the SERVED schema (default: connection.yaml#view_schema)")
     ap.add_argument("--raw-schema", default="main", help="the landing schema (default: main)")
     ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    # THE TWO PLANES ARE TWO DELIVERIES, and this tool wrote both in one call. The operator ruled the
+    # split on 2026-09-28: "split data plane delivery in two parts: data sources and datasets". They
+    # are not two halves of one job — a SOURCE descriptor describes what was landed and its roles are
+    # neutral until a measurement rules them, while a DATASET descriptor describes what a transform
+    # LEFT and its roles are the promotion's contract. Delivering them together means neither can be
+    # signed off on its own, and a checklist that covers both at once cannot say which half is short.
+    ap.add_argument("--plane", choices=("sources", "datasets", "both"), default="both",
+                    help="which plane to write (default: both). `sources` = the landing schema -> "
+                         "data/sources/; `datasets` = the served schema -> data/datasets/")
     a = ap.parse_args(argv)
 
     root = pathlib.Path(a.root).resolve()
@@ -104,7 +113,8 @@ def main(argv: list[str] | None = None) -> int:
     plane = meaning_plane_tables()
     measured: dict[tuple[str, str], dict] = {}
     excluded: list[str] = []
-    for schema in (served, a.raw_schema):
+    wanted = {"sources": (a.raw_schema,), "datasets": (served,), "both": (served, a.raw_schema)}[a.plane]
+    for schema in wanted:
         if not schema:
             continue
         for table in _tables(con, schema):
