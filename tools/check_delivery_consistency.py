@@ -71,6 +71,25 @@ Run the import first — a bundle with no data plane has nothing to be consisten
 # THE STATE — every artifact fact this gate compares, read once. PURE DATA, so every invariant below
 # is a pure function of it and every reject class is reachable from the self-test with no bundle.
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
+def ref_relation(ref: str) -> str:
+    """The RELATION a `columns[].references` points at, from `relation.column`.
+
+    THE SEGMENT MATTERS. The schema has required `relation.column` since v0.1.15 and the producer wrote
+    the relation alone until 2026-09-28, so every consumer used `.split(".")[-1]` to strip a schema
+    prefix — which on a correctly qualified value returns the COLUMN and silently points the reference
+    at a relation that does not exist. Second-to-last segment: `customer.CustomerKey` and
+    `main.customer.CustomerKey` both give `customer`, and a legacy unqualified `customer` still does.
+    """
+    parts = [p for p in str(ref or "").split(".") if p]
+    return parts[-2] if len(parts) >= 2 else (parts[0] if parts else "")
+
+
+def ref_column(ref: str) -> str:
+    """The COLUMN a reference lands on — empty when the value is unqualified (legacy)."""
+    parts = [p for p in str(ref or "").split(".") if p]
+    return parts[-1] if len(parts) >= 2 else ""
+
+
 def load(root: pathlib.Path, yaml) -> dict:
     def docs(pattern):
         out = {}
@@ -106,7 +125,7 @@ def load(root: pathlib.Path, yaml) -> dict:
         for c in d.get("columns") or []:
             tgt = str(c.get("references") or "").strip()
             if tgt and c.get("role") == "foreign_key":
-                fks.append((stem, str(c.get("name")), tgt.split(".")[-1]))
+                fks.append((stem, str(c.get("name")), ref_relation(tgt)))
 
     return {
         "served": served, "sources": sources, "profiles": docs("data/profiles/*.yaml"),
@@ -510,6 +529,50 @@ def inv_retired_shape(st: dict) -> list[dict]:
     return out
 
 
+def inv_fk_qualified(st: dict) -> list[dict]:
+    """A foreign key names the COLUMN it lands on, not just the relation.
+
+    THE SCHEMA HAS REQUIRED THIS SINCE v0.1.15 — `references` is documented as "The parent this
+    foreign_key column points at, as `relation.column`" — and `mac_descriptors` wrote the relation ALONE
+    until 2026-09-28. So "what column do I join to" was unanswerable from the declaration, and every
+    consumer assumed the parent's key carried the same name as the referencing column. That assumption
+    happens to hold in this warehouse and is nowhere stated, which is the definition of a fact the
+    delivery does not carry. Operator, 2026-09-28: "reference to tables and columns where FKs are
+    pointing to".
+
+    IT ALSO CATCHES THE READING BUG the qualification introduced: a consumer stripping a schema prefix
+    with `.split(".")[-1]` now gets the COLUMN and points the reference at a relation that does not
+    exist. That is checked here by resolving the named relation against the delivered descriptors.
+    """
+    out = []
+    known = set(st["served"]) | set(st["sources"])
+    for plane, table in (("served", st["served"]), ("raw", st["sources"])):
+        for stem in sorted(table):
+            for c in (table[stem].get("columns") or []):
+                if not isinstance(c, dict) or str(c.get("role")) != "foreign_key":
+                    continue
+                ref = str(c.get("references") or "").strip()
+                subject = f"{plane}:{stem}.{c.get('name')}"
+                if not ref:
+                    out.append(_i(subject, VIOLATION,
+                                  f"{stem}.{c.get('name')} is `role: foreign_key` and declares no "
+                                  f"`references` at all — a reference to nothing"))
+                elif not ref_column(ref):
+                    out.append(_i(subject, VIOLATION,
+                                  f"{stem}.{c.get('name')} references {ref!r} — the RELATION only. The "
+                                  f"schema requires `relation.column`, so the join column is left to be "
+                                  f"guessed from a name coincidence"))
+                elif ref_relation(ref) not in known:
+                    out.append(_i(subject, VIOLATION,
+                                  f"{stem}.{c.get('name')} references {ref!r}, whose relation "
+                                  f"{ref_relation(ref)!r} is described by no descriptor in this bundle"))
+                else:
+                    out.append(_i(subject, OK,
+                                  f"{stem}.{c.get('name')} -> {ref_relation(ref)}.{ref_column(ref)}, "
+                                  f"relation and column both named"))
+    return out
+
+
 def inv_key_position(st: dict) -> list[dict]:
     """A relation's composite key positions are exactly 1..n — no gaps, no repeats, none off a key.
 
@@ -805,6 +868,7 @@ INVARIANTS = (
     # A row that describes less than it checks is how a reader comes to trust the wrong denominator.
     ("ROLE-VOCAB", "every column role resolves: closed set, or a declared namespace", inv_role_vocab),
     ("ONE-HOME", "the canonical key is declared on the column, not also on the concept", inv_one_home),
+    ("FK-QUALIFIED", "a foreign key names the relation AND the column it lands on", inv_fk_qualified),
     ("KEY-POSITION", "a composite key's positions are exactly 1..n on its key columns", inv_key_position),
     ("KEY-BACKED", "a concept's `key:` list and its column map agree", inv_key_backed),
     ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
@@ -976,7 +1040,7 @@ def _self_test() -> int:
     def _base() -> dict:
         return {
             "served": {"v_s": {"columns": [{"name": "CK", "role": "foreign_key",
-                                            "references": "v_c"}]},
+                                            "references": "v_c.CK"}]},
                        "v_c": {"columns": [{"name": "CK", "role": "primary_key"},
                                             {"name": "B", "role": "value",
                                              "register": "data/lookups/b_x.lookup.csv"}]}},
@@ -1033,6 +1097,15 @@ def _self_test() -> int:
     case("MUTANT an undeclared vocabulary namespace",
          lambda st: st["concepts"]["line"]["grounding"]["field_roles"].__setitem__(
              "CK", "CONTOSO4.field_role.key"), "ROLE-VOCAB")
+    # ── FK-QUALIFIED: the relation alone is not a join ────────────────────────────────────────────
+    case("MUTANT a reference naming the relation but not the column",
+         lambda st: st["served"]["v_s"]["columns"][0].__setitem__("references", "v_c"), "FK-QUALIFIED")
+    case("MUTANT a reference whose relation no descriptor describes",
+         lambda st: st["served"]["v_s"]["columns"][0].__setitem__("references", "nope.CK"),
+         "FK-QUALIFIED")
+    case("MUTANT a foreign_key column with no reference at all",
+         lambda st: st["served"]["v_s"]["columns"][0].pop("references"), "FK-QUALIFIED")
+
     # ── KEY-POSITION / KEY-BACKED: the guards the ordinal and the second home need ─────────────────
     def _ck(st, a=1, b=2):
         """ADD a composite key rather than repurposing the fixture's FK column. A mutator that changes a

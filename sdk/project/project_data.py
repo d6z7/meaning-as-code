@@ -394,10 +394,13 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         # could declare into on this plane: the schema allows it, no source uses it, and the fact it
         # would carry lives elsewhere and is shown. An empty column whose emptiness is structural is
         # not information; it is a question asked of the wrong plane.
-        body = ["## Columns", "", "| column | type | role |", "|---|---|---|"]
+        body = ["## Columns", "", "| column | type | role | key | references |",
+                "|---|---|---|---|---|"]
         for c in src.get("columns", []) or []:
             body.append(
-                f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} |"
+                f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} "
+                f"| {c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} "
+                f"| {('`' + str(c['references']) + '`') if c.get('references') else ''} |"
             )
         # The doc is the raw schema-of-record (Columns). Lineage and quality findings live in the
         # object's TABS (Lineage / Quality) — not repeated here; a raw source has no ontology concept.
@@ -494,10 +497,21 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "relation": _drel,  # produced relation — for lineage flow matching
             "tags": [label, "dataset", "lifecycle:draft"],
         }
-        body = ["## Columns", "", "| column | type | role |", "|---|---|---|"]
+        body = ["## Columns", "", "| column | type | role | key | references |",
+                "|---|---|---|---|---|"]
         for c in ds.get("columns", []) or []:
-            body.append(f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} |")
-        fks = ds.get("foreign_keys", []) or []
+            body.append(f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} "
+                        f"| {c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} "
+                        f"| {('`' + str(c['references']) + '`') if c.get('references') else ''} |")
+        # THE FK SECTION READ THE RETIRED `foreign_keys:` BLOCK, which 0 of 16 descriptors carry — so it
+        # rendered nothing. It reads the one home now (ruling 2026-09-27) and falls back to the old block
+        # only so an older bundle still renders.
+        fks = list(ds.get("foreign_keys", []) or []) + [
+            {"from_column": c.get("name"),
+             "to_table": ".".join(str(c["references"]).split(".")[:-1]) or str(c["references"]),
+             "to_column": str(c["references"]).split(".")[-1]}
+            for c in (ds.get("columns") or [])
+            if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
         if fks:
             body += ["", "## Foreign keys"]
             body += [

@@ -125,10 +125,13 @@ def build_bundle(root):
         cols = table_cols(root, tbl)
         if cols:
             b += [f"# Schema", "", f"Grounded in `{schema + '.' if schema else ''}{tbl}`.", "",
-                  "| column | type | role | description |", "|---|---|---|---|"]
+                  "| column | type | role | key | references | description |",
+                  "|---|---|---|---|---|---|"]
             for col in cols:
                 meaning = mbt.get((tbl, col["name"])) or col.get("description", "")   # field rule first
                 b.append(f"| `{col['name']}` | {col.get('type', '')} | {col.get('role', '')} "
+                         f"| {col.get('key_position') or ('PK' if col.get('role') == 'primary_key' else '')} "
+                         f"| {('`' + str(col['references']) + '`') if col.get('references') else ''} "
                          f"| {' '.join(str(meaning).split())} |")
             b.append("")
 

@@ -64,7 +64,11 @@ def declared_key_columns(root: str) -> dict[str, list[str]]:
         # empty list on every delivered bundle, so this loop checked nothing — kept here
         # reading BOTH only so an older bundle is still checked rather than silently skipped.
         _fks = list(doc.get("foreign_keys") or []) + [
-            {"from_column": c.get("name"), "to_table": c.get("references")}
+            # `references` is `relation.column`; the RELATION is the second-to-last segment, so a
+                # qualified value does not smuggle the column in as a table name.
+                {"from_column": c.get("name"),
+                 "to_table": ".".join(str(c.get("references")).split(".")[:-1])
+                             or str(c.get("references"))}
             for c in (doc.get("columns") or [])
             if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
         for fk in _fks:

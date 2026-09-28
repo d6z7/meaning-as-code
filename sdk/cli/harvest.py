@@ -280,8 +280,12 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
                 f"| column | type |\n|---|---|\n{rows}"
             )
     colrows = "\n".join(
+        # `key` is the position in a composite key, or PK for a single-column one; `references` is the
+        # parent as relation.column. Operator, 2026-09-28: the columns table needs the PK position and
+        # where the FKs point.
         f"| {c.get('name')} | {c.get('type', '')} | {c.get('role', '')} | "
-        f"{c.get('description', '')} |"
+        f"{c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} | "
+        f"{c.get('references', '') or ''} | {c.get('description', '')} |"
         for c in cols
     )
     md = [f"# {produces_relation}  —  CLEAN serving relation (ACME data transformation layer)"]
@@ -290,8 +294,8 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
     md += [
         "",
         "## Clean schema (the AI-friendly serving shape the ontology binds to)",
-        "| column | type | role | description |",
-        "|---|---|---|---|",
+        "| column | type | role | key | references | description |",
+        "|---|---|---|---|---|---|",
         colrows,
     ]
     if fks:

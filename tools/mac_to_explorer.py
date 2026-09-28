@@ -633,7 +633,11 @@ def parse_data_plane(root, concepts):
             # RETIRED SHAPE: `columns[].references` is the one home (ruling 2026-09-27). The
             # old block was absent from every delivered descriptor, so this drew no edges.
             _fks = list(dd.get("foreign_keys", []) or []) + [
-                {"from_column": c.get("name"), "to_table": c.get("references")}
+                # `references` is `relation.column`; the RELATION is the second-to-last segment, so a
+                # qualified value does not smuggle the column in as a table name.
+                {"from_column": c.get("name"),
+                 "to_table": ".".join(str(c.get("references")).split(".")[:-1])
+                             or str(c.get("references"))}
                 for c in (dd.get("columns") or [])
                 if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
             for fk in _fks:

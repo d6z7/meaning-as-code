@@ -296,7 +296,16 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         if pos is not None:
             lines.append(f"  key_position: {pos}")
         if role == "foreign_key":
-            lines.append(f"  references: {fks[col]}")
+            # QUALIFIED: `relation.column`, which the schema has required since v0.1.15 ("The
+            # parent this foreign_key column points at, as `relation.column`") and which this
+            # producer did not write — it emitted the relation alone, so "what column do I join
+            # to" was unanswerable from the declaration and every consumer had to assume the
+            # name matched. The PARENT KEY COLUMN is `col` itself: `singles` is keyed by
+            # (schema, table) -> that relation's single key column, and this branch fires
+            # because the referencing column carries the SAME NAME. So the join is stated, not
+            # inferred. Operator, 2026-09-28: "reference to tables and columns where FKs are
+            # pointing to".
+            lines.append(f"  references: {fks[col]}.{col}")
         # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key
         # was read by nothing. It sat on 224 column entries across two planes in one bundle. Removed
         # from the core in v0.1.15 on CONFORMANCE.md §2's own test: "a key nothing consumes is a note,
