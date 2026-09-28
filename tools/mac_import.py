@@ -350,6 +350,23 @@ CHECKLISTS: dict[str, list[dict]] = {
         {"id": "S4", "what": "referential structure measured on the landing plane",
          "probe": lambda r: _per_relation(r, "sources", "references"),
          "where": "data/references/<relation>.yaml"},
+        # ── THE PAGES. A DESCRIPTOR IS NOT A DELIVERABLE TO A PERSON. Operator, 2026-09-28: "there is
+        #    one thing which is for sure missing - page overview on all sources ... i want to have
+        #    control mechanism which will report missing or make sure that it gets delivered".
+        #
+        #    Measured when these two items were added: contoso5, whose sources checklist read 4 of 4,
+        #    carried ZERO .md files. Every machine-readable artifact was present and nothing a person
+        #    opens was. The checklist said complete because it only ever asked about YAML — which is
+        #    the same defect class as a gate reporting PASS over a population it never looked at, one
+        #    level up: the ITEMS were the narrow thing, not the counts.
+        {"id": "S5", "what": "every landed relation has a rendered page",
+         "probe": lambda r: _per_relation(r, "sources", "sources", ".md"),
+         "where": "data/sources/<relation>.md"},
+        {"id": "S6", "what": "the landing plane has an overview page over ALL of its relations",
+         "probe": lambda r: (["data/sources/index.md"] if (r / "data" / "sources" / "index.md").is_file()
+                             else [],
+                             ["data/sources/index.md"] if _stems(r, "data", "sources") else []),
+         "where": "data/sources/index.md"},
     ],
     "datasets": [
         {"id": "T1", "what": "every served relation is described",
@@ -367,6 +384,14 @@ CHECKLISTS: dict[str, list[dict]] = {
         {"id": "T5", "what": "every served relation has a transform descriptor",
          "probe": lambda r: _per_relation(r, "datasets", "transforms"),
          "where": "data/transforms/<relation>.yaml"},
+        {"id": "T6", "what": "every served relation has a rendered page",
+         "probe": lambda r: _per_relation(r, "datasets", "datasets", ".md"),
+         "where": "data/datasets/<relation>.md"},
+        {"id": "T7", "what": "the served plane has an overview page over ALL of its relations",
+         "probe": lambda r: (["data/datasets/index.md"]
+                             if (r / "data" / "datasets" / "index.md").is_file() else [],
+                             ["data/datasets/index.md"] if _stems(r, "data", "datasets") else []),
+         "where": "data/datasets/index.md"},
     ],
 }
 
@@ -631,7 +656,18 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # requires a reason precisely so this is a decision on the record rather than a silent
         # override — and everything the console shows (lineage, the DQ board, the ER model) comes out
         # of this one stage.
-        {"name": "project", "produces": "objects.json", "d": "D3 D6 D15", "always": True,
+        # A PAGE IS PART OF THE DELIVERY, NOT A LATER FAVOUR. Operator, 2026-09-28: "there is one thing
+        # which is for sure missing - page overview on all sources" and then "page must be generated
+        # alonside ingestion". This stage renders every data-plane page, and it belonged to NEITHER part
+        # — so a part could report its checklist complete while the bundle held no readable page at all.
+        # Measured on contoso5: the sources checklist read 4 of 4 with ZERO .md files in the bundle. The
+        # machine-readable half was delivered and the half a person opens was not.
+        #
+        # `part: "both"`, because the projector renders the whole data plane from whatever is on disk and
+        # is idempotent: the plane a part did not touch re-renders identically. Scoping it per plane would
+        # mean splitting a 1050-line renderer, and a second renderer for the same page is the drift this
+        # estate keeps paying for.
+        {"name": "project", "part": "both", "produces": "objects.json", "d": "D3 D6 D15", "always": True,
          "sdk": ["--mode", "project", "--project-anyway",
                  "first run: the ontology plane is empty by design at this stage, and the operator "
                  "needs the projected data-plane state — lineage, the DQ board, the descriptors — in "

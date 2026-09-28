@@ -155,6 +155,61 @@ def _lineage_cols_md(f: dict) -> list:
 from sdk.project import column_table as _CT  # ONE renderer for the columns table
 
 
+def _plane_index(out, plane: str, title: str, docs: dict, label: str) -> int:
+    """`data/<plane>/index.md` — ONE PAGE OVER ALL OF A PLANE'S RELATIONS.
+
+    WHY IT EXISTS. Operator, 2026-09-28: "there is one thing which is for sure missing - page overview
+    on all sources". It was missing from every bundle in the estate, and nothing produced it: the root
+    `index.md` lists relation NAMES as links, and a per-relation page describes ONE relation. Neither
+    answers the question an operator actually opens a landing plane to ask — what did we land, how big is
+    it, what is keyed, and what still has no key. That question is about the PLANE, so it gets a page at
+    the plane, next to the descriptors it summarises.
+
+    EVERY NUMBER HERE IS READ FROM THE DESCRIPTORS, never recounted from the warehouse: this is a read
+    view, and a page that re-measures is a second measurement that can disagree with the first.
+
+    A RELATION WITH NO KEY IS CALLED OUT RATHER THAN LEFT BLANK. `mac_references` will not derive a key
+    and says so; a relation with none is not a parent endpoint and cannot be drawn in an ER model, which
+    is a fact worth one line on the overview instead of a shrug in a cell.
+    """
+    if not docs:
+        return 0
+    rows_total = cols_total = refs_total = regs_total = 0
+    keyless: list[str] = []
+    lines = [f"| relation | rows | columns | key | references | registers |",
+             "|---|---:|---:|---|---:|---:|"]
+    for stem, d in sorted(docs.items()):
+        tbl = d.get("table") or {}
+        cols = [c for c in (d.get("columns") or []) if isinstance(c, dict)]
+        n_rows = tbl.get("rows_measured")
+        pk = [c for c in cols if str(c.get("role")) == "primary_key"]
+        pk.sort(key=lambda c: (c.get("key_position") or 0))
+        refs = [c for c in cols if c.get("references")]
+        regs = [c for c in cols if c.get("register")]
+        rows_total += int(n_rows or 0)
+        cols_total += len(cols)
+        refs_total += len(refs)
+        regs_total += len(regs)
+        if pk:
+            key = " + ".join(f"`{c.get('name')}`" for c in pk)
+        else:
+            key = "**none measured**"
+            keyless.append(str(tbl.get("name") or stem))
+        lines.append(f"| [{tbl.get('name') or stem}]({stem}.md) | {n_rows if n_rows is not None else '?'} "
+                     f"| {len(cols)} | {key} | {len(refs)} | {len(regs)} |")
+    head = (f"{len(docs)} relation(s) · {rows_total:,} row(s) measured · {cols_total} column(s) · "
+            f"{refs_total} declared reference(s) · {regs_total} register pointer(s)")
+    body = [_fm({"type": "Index", "title": f"{label} {title}", "tags": [label, plane, "overview"]}),
+            "", head, ""] + lines
+    if keyless:
+        body += ["", f"**{len(keyless)} relation(s) carry NO measured key** — "
+                     + ", ".join(f"`{k}`" for k in keyless)
+                     + ". `mac_references` reads the key and will not derive one, so these are not "
+                       "parent endpoints and an ER model cannot draw them.", ""]
+    (out / plane / "index.md").write_text("\n".join(body) + "\n")
+    return len(docs)
+
+
 def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     # ONE tree: projected md co-locate WITH the SSOT under data_dir/<type>/ (dim_country.md next to
     # dim_country.yaml). index + objects.json live at the project root (data_dir.parent). out_dir ignored.
@@ -406,6 +461,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         # object's TABS (Lineage / Quality) — not repeated here; a raw source has no ontology concept.
         (out / "sources" / f"{stem}.md").write_text(_fm(fm) + "\n" + "\n".join(body))
 
+    # ---- the LANDING PLANE's own overview page ----
+    _plane_index(out, "sources", "landing plane", sources, label)
+
     # ---- Transform pages ----
     for stem, tr in transforms.items():
         prod = tr.get("produces", {}) or {}
@@ -507,6 +565,10 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         body += _CT.register_section(ds.get("columns"))
         # Lineage lives in the object's Lineage TAB — not repeated in the doc.
         (out / "datasets" / f"{stem}.md").write_text(_fm(fm) + "\n" + "\n".join(body))
+
+    # ---- the SERVED PLANE's own overview page. The same renderer, because the question an operator
+    #      asks of a plane does not change with the plane: what is here, how big, what is keyed.
+    _plane_index(out, "datasets", "served plane", datasets, label)
 
     # ---- Lookup pages (reference CSVs -> browsable MD tables; the SSOT stays CSV) ----
     import csv as _csv

@@ -95,11 +95,23 @@ def main(argv=None) -> int:
     lk_dir = root / "data" / "lookups"
     concepts_dir = Path(L.ontology) / "concepts"
 
-    # real relations = dataset stems ∪ their declared table.names (identity divergence is a separate gate)
+    # real relations = BOTH PLANES' stems union their declared table.names (identity divergence is a
+    # separate gate).
+    #
+    # IT READ ONLY THE SERVED PLANE, and that was an assumption rather than a rule: a register is cut
+    # from a column DOMAIN, and a landing-plane column has one too. The two-part delivery (operator,
+    # 2026-09-28) made the landing plane a delivery of its own, and `mac_lookups --plane sources` cuts
+    # its registers — at which point this gate called all 23 of contoso5's registers DANGLING because
+    # their `source_view` named `product` and `store` rather than a served view. It was the THIRD
+    # consumer holding the same built-in assumption, after check_register_membership (which resolved
+    # every register in the served schema) and mac_lookups itself (which cut only from datasets while
+    # STRIPPING both planes). None of them was wrong about the warehouse; all three were wrong that a
+    # register can only come from one plane.
     real_relations: set[str] = set()
-    ds_dir = L.descriptors
-    if ds_dir and Path(ds_dir).is_dir():
-        for p in sorted(Path(ds_dir).glob("*.yaml")):
+    for plane_dir in (L.descriptors, root / "data" / "sources"):
+        if not plane_dir or not Path(plane_dir).is_dir():
+            continue
+        for p in sorted(Path(plane_dir).glob("*.yaml")):
             real_relations.add(p.stem)
             doc = load(p)
             tbl = doc.get("table") if isinstance(doc, dict) else None
@@ -137,7 +149,8 @@ def main(argv=None) -> int:
                 if v.split(".")[-1] not in real_relations:
                     findings.append(
                         f"data/lookups/{csv_path.name} : source_view '{v}' resolves to no "
-                        f"data/datasets relation (dangling)")
+                        f"relation on EITHER plane — not in data/datasets and not in "
+                        f"data/sources (dangling)")
 
     print(f"── lookups gate ── {cited} cited lookup(s), {checked_sv} source_view value(s) under {root} ──")
     for f in findings:
