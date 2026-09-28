@@ -92,8 +92,23 @@ def row(col: dict, *, description: str | None = None, code: bool = True) -> str:
 
 
 def _ref_parts(col: dict) -> tuple:
-    """(relation, column) from a `relation.column` reference, or ('','')."""
-    p = [x for x in str((col or {}).get("references") or "").split(".") if x]
+    """(relation, column) from a reference, in EITHER shape it is written in.
+
+    TWO FUNCTIONS IN THIS FILE DISAGREED ABOUT ONE SHAPE, thirty lines apart. `reference_cell`
+    above has been dict-aware since the measured reference gained its cardinality block; this one
+    was left on `str(...).split(".")`, and a mapping stringifies to its repr rather than failing.
+    Measured 2026-09-29 in a DELIVERED bundle — contoso5/data/sources/sales.md renders the cell
+    correctly on line 19 and then, fourteen lines lower, prints:
+
+        - `OrderDate` → `{'to': 'date.Date', 'cardinality': {'child': 'many', ...}}`
+
+    A Python dict in a page a person reads, shipped, with every gate green. This is the exact defect
+    `CONSUMED` exists to name — a consumer reading a field in a shape its producer does not write —
+    and it was invisible because nothing could record that this function wanted `references.to`.
+    """
+    _r = (col or {}).get("references")
+    ref = _r.get("to") if isinstance(_r, dict) else _r
+    p = [x for x in str(ref or "").split(".") if x]
     return (".".join(p[:-1]), p[-1]) if len(p) >= 2 else ((p[0] if p else ""), "")
 
 
