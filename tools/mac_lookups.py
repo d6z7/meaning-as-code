@@ -21,7 +21,7 @@ exactly that — and `search_key` is what a person types.
 
 THE SHAPE, unchanged from what the resolver already reads:
 
-    <CodeColumn>,label,search_key,source_view,confidence,note
+    <CodeColumn>,label,search_key,source_view,source_schema,confidence,note
     DE,Germany,germany,dim_contoso_customer,I,"measured: 8 members"
 
 WHERE THE LABEL COMES FROM, and this is the one inference here. A code column often has a sibling
@@ -338,11 +338,19 @@ def _render(relation: str, code: str, members: list, label_col: str | None,
 
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
-    w.writerow([code, "label", "search_key", "source_view", "confidence", "note"])
+    # `source_schema` RECORDS THE PLANE IT WAS CUT FROM, and it is not a nicety. The monitor
+    # (check_register_membership) re-measures a register against its source relation, and it resolved
+    # that relation in the SERVED schema for every register — fine while registers were only ever cut
+    # from served views, and wrong the moment a landing-plane delivery cut its own: measured 2026-09-28
+    # on contoso5's first sources ingest, all 23 registers failed as `contoso_served.store does not
+    # exist` when they had been cut from `main.store`. The monitor's own docstring says the code column
+    # and the source relation are "read from the file, never guessed" — so the SCHEMA is read from the
+    # file too, rather than guessed from a connector default.
+    w.writerow([code, "label", "search_key", "source_view", "source_schema", "confidence", "note"])
     for m in members:
         val = "" if m is None else str(m)
         label = labels.get(val) or val
-        w.writerow([val, label, label.strip().lower(), relation, "I",
+        w.writerow([val, label, label.strip().lower(), relation, schema or "", "I",
                     f"measured: {len(members)} members in {relation}.{code}"])
     return buf.getvalue()
 

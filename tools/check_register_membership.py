@@ -78,7 +78,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"COULD NOT RUN: {exc}")
         return 2
 
-    schema = getattr(con, "view_schema", None) or "main"
+    # THE DEFAULT ONLY, for a register file written before `source_schema` existed. A register now
+    # RECORDS the plane it was cut from and that is what gets read — see the note in mac_lookups._render.
+    default_schema = getattr(con, "view_schema", None) or "main"
     new: list[tuple[str, list[str]]] = []
     missing: list[tuple[str, list[str]]] = []
     nulls: list[str] = []
@@ -86,7 +88,8 @@ def main(argv: list[str] | None = None) -> int:
     matched = 0
 
     for reg in registers:
-        code_col, relation, declared = _read(reg)
+        code_col, relation, declared, reg_schema = _read(reg)
+        schema = reg_schema or default_schema
         if not code_col or not relation:
             orphaned.append((reg.name, "the file declares no code column or no source_view"))
             continue
@@ -171,8 +174,8 @@ def _record(root: pathlib.Path, out: str, total: int, matched: int,
     }, indent=2) + "\n", encoding="utf-8")
 
 
-def _read(path: pathlib.Path) -> tuple[str | None, str | None, set[str]]:
-    """The code column, the relation, and the declared members — all from the file itself.
+def _read(path: pathlib.Path) -> tuple[str | None, str | None, set[str], str | None]:
+    """The code column, the relation, the declared members, AND THE SCHEMA — all from the file itself.
 
     THE FIRST HEADER FIELD IS THE CODE COLUMN. That is not a convention this file invents: the
     register loader infers a register's source column from exactly that, so reading it any other way
@@ -184,18 +187,26 @@ def _read(path: pathlib.Path) -> tuple[str | None, str | None, set[str]]:
     rows = list(csv.reader(lines))
     header = rows[0]
     code_col = header[0] if header else None
-    try:
-        view_ix = header.index("source_view")
-    except ValueError:
-        view_ix = None
-    members = {r[0] for r in rows[1:] if r}
-    relation = None
-    if view_ix is not None:
+    def _col(name):
+        try:
+            return header.index(name)
+        except ValueError:
+            return None
+
+    def _first(ix):
+        if ix is None:
+            return None
         for r in rows[1:]:
-            if len(r) > view_ix and r[view_ix]:
-                relation = r[view_ix]
-                break
-    return code_col, relation, members
+            if len(r) > ix and r[ix]:
+                return r[ix]
+        return None
+
+    members = {r[0] for r in rows[1:] if r}
+    # THE SCHEMA IS READ, NOT GUESSED. A register cut from the LANDING plane lives in `main` and one cut
+    # from a served view lives in the view schema; resolving both in the connector's default made every
+    # landing-plane register fail as "does not exist". Absent on a file written before the field existed,
+    # and the caller then falls back to the default — which is what that file's producer assumed anyway.
+    return code_col, _first(_col("source_view")), members, _first(_col("source_schema"))
 
 
 def _self_test() -> int:
