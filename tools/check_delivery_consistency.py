@@ -574,6 +574,52 @@ def inv_retired_shape(st: dict) -> list[dict]:
     return out
 
 
+def inv_domain_homed(st: dict) -> list[dict]:
+    """A VALUE DOMAIN lives in a register, never as a member list on a descriptor column.
+
+    THE RULING, 2026-09-26: "these values could be in lookup if necessary?!?!" — and moving the member
+    lists off the descriptors into `data/lookups/` cut the descriptor plane by 73 %. THE ENFORCEMENT,
+    2026-09-28, when the operator opened a descriptor and found a 120-member list still sitting in it:
+    "for this we established the RULE to put them into lookup / and the question is if you have RULE to
+    follow THAT rule". There was none. This is it.
+
+    `values:` IS A TRANSIENT, NOT A HOME. `mac_profile` writes the measured bounded domain onto the
+    column; `mac_lookups` cuts it into a register, points the column at that register, and POPS the
+    list. So a delivered descriptor carrying `values:` means the hand-off was never consumed — the
+    delivery stopped half way and the list is a second home for what the register already holds.
+
+    WHY IT WENT UNSEEN FOR TWO DAYS: compliance was an accident of ORDERING, not a rule. Measured
+    2026-09-28 — contoso2 0 of 14, contoso4 0 of 16, contoso3 7 of 7. The clean ones were clean only
+    because `mac_descriptors` (which regenerates without the list) happened to run last; contoso3 showed
+    the violation because a sources-only run ran the writer and not the consumer. Nothing was enforcing
+    anything, in either direction.
+
+    A VIOLATION NAMES THE REGISTER THE LIST SHOULD HAVE BECOME, so the repair is one command and not an
+    investigation.
+    """
+    out = []
+    for plane, docs in (("served", st["served"]), ("sources", st["sources"])):
+        for stem, d in sorted(docs.items()):
+            carriers = [(str(c.get("name")), len(c.get("values") or []))
+                        for c in (d.get("columns") or [])
+                        if isinstance(c, dict) and c.get("values")]
+            subject = f"{plane}:{stem}"
+            if not carriers:
+                n = len(d.get("columns") or [])
+                out.append(_i(subject, OK, f"no column carries a member list ({n} column(s) checked); "
+                                           f"bounded domains resolve through a register"))
+                continue
+            worst = max(n for _c, n in carriers)
+            named = ", ".join(f"{c} ({n} member(s))" for c, n in carriers[:4])
+            out.append(_i(subject, VIOLATION,
+                          f"{len(carriers)} column(s) still carry a `values:` member list — {named}"
+                          + (f", largest {worst}" if worst > 20 else "")
+                          + ". A value domain's home is a register in data/lookups/, pointed at by "
+                            "`register:`; the list here is the transient `mac_lookups` consumes. Run "
+                            f"`mac_lookups.py <root> --plane {plane if plane == 'sources' else 'datasets'}`"))
+    return out
+
+
 def inv_fk_qualified(st: dict) -> list[dict]:
     """A foreign key names the COLUMN it lands on, not just the relation.
 
@@ -924,6 +970,8 @@ INVARIANTS = (
     ("KEY-POSITION", "a composite key's positions are exactly 1..n on its key columns", inv_key_position),
     ("KEY-BACKED", "a concept's `key:` list and its column map agree", inv_key_backed),
     ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
+    ("DOMAIN-HOMED", "a value domain lives in a register, not as a member list on a descriptor",
+     inv_domain_homed),
     ("MEMBER-GRAIN", "a concept whose extension is a set names a canonical key", inv_member_grain),
     ("MEASURE-UNIT", "a composed measure states its own unit; a single one projects it", inv_measure_unit),
     ("REGISTER-MONITOR", "a register has a monitor; a register pointer resolves", inv_register_monitor),
@@ -1185,6 +1233,27 @@ def _self_test() -> int:
     case("MUTANT the canonical key declared on the concept AS WELL as the column",
          lambda st: st["concepts"]["cust"].setdefault("concept", {}).setdefault(
              "identity", {}).__setitem__("canonical_key", "CK"), "ONE-HOME")
+
+    # ── DOMAIN-HOMED: the member list the 2026-09-26 ruling moved into a register, coming back ────
+    # TWO MUTANTS, because the rule has two failure shapes and only one of them looks wrong at a glance:
+    # a SHORT list reads as harmless annotation and is the same second home as a long one.
+    case("MUTANT a descriptor column carrying a member list instead of a register",
+         lambda st: st["served"]["v_c"]["columns"].append(
+             {"name": "Status", "role": "value", "values": ["A", "B", "C"]}),
+         "DOMAIN-HOMED")
+    # THE SOURCES PLANE IS EMPTY IN THE CLEAN FIXTURE, so this branch had no coverage at all until the
+    # mutant SEEDED one — which is the same "0 of 0 is not a pass" trap the enumeration contract exists
+    # for, one level down: an invariant can be green on a plane it never looked at.
+    case("MUTANT a member list on the SOURCES plane, which a datasets-only run never slims",
+         lambda st: (st["sources"].__setitem__("c", {
+             "table": {"name": "c"},
+             "columns": [{"name": "HsCode", "role": "value",
+                          "values": [f"{i:06d}" for i in range(120)]}]}),
+             # THE PROFILE COMES WITH IT. Seeding a descriptor and no profile also trips PLANE-COUNTS,
+             # and a mutant that fires two invariants proves neither: the second could be doing all the
+             # work. A mutant isolates the rule it is named for.
+             st["profiles"].__setitem__("c", {}))[0],
+         "DOMAIN-HOMED")
 
     case("MUTANT a set-extension concept with no canonical key",
          lambda st: st["concepts"]["line"].update(values={"closure": "closed", "items": []}),

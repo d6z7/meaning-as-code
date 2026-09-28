@@ -260,7 +260,17 @@ def main() -> int:
         "engine": f"{eng.get('database')}@{eng.get('region')}",
         "scanned_bytes": meta.get("bytes_scanned"),
     })
-    path.write_text(yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
+    # THE DESCRIPTOR'S HEADER COMMENTS SURVIVE THE REWRITE. Dumping the parsed document discards every
+    # `#` line, and this stage rewrites a file it does not own: `mac_descriptors` opens each descriptor
+    # with "GENERATED ... do not edit; re-run the generator" plus two lines saying a descriptor states
+    # what the relation CONTAINS and not what it MEANS. Measured 2026-09-28 on a clean contoso3 import —
+    # all 7 source descriptors came out with no banner at all, so the one instruction telling a reader
+    # not to hand-edit the file was removed by the pipeline itself. `mac_lookups` already preserves them
+    # this way at its own rewrite; this stage did not.
+    _head = "\n".join(ln for ln in path.read_text(encoding="utf-8").splitlines()
+                      if ln.startswith("#")) if path.is_file() else ""
+    path.write_text((_head + "\n\n" if _head else "")
+                    + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
                     encoding="utf-8")
     ppath.parent.mkdir(parents=True, exist_ok=True)
     ppath.write_text(yaml.safe_dump(prof, sort_keys=False, allow_unicode=True, width=100),

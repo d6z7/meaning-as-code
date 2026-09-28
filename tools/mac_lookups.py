@@ -82,6 +82,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--max-members", type=int, default=MAX_MEMBERS)
     ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    # THE PLANE, because the data plane is TWO deliveries (operator, 2026-09-28) and this tool sits on
+    # the seam between them. `values:` on a descriptor is a TRANSIENT hand-off: `mac_profile` writes the
+    # bounded domain, this tool cuts the register and POPS the list. Split the parts without splitting
+    # this, and the sources delivery runs the writer and never the consumer — measured on contoso3's
+    # first sources-only run: 7 of 7 source descriptors left carrying their member lists, one of them
+    # 120 values long, which is the exact shape the operator ruled out of the YAML on 2026-09-26.
+    #
+    # AND CUTTING WAS DATASETS-ONLY WHILE STRIPPING WAS BOTH, which is a silent LOSS: a source column
+    # whose domain no served view exposes had its members deleted and preserved nowhere. Now a plane
+    # cuts what it strips.
+    ap.add_argument("--plane", choices=("sources", "datasets", "both"), default="both",
+                    help="which plane to cut registers from and slim (default: both)")
     a = ap.parse_args(argv)
 
     root = pathlib.Path(a.root).resolve()
@@ -102,7 +114,10 @@ def main(argv: list[str] | None = None) -> int:
     wrote, skipped, drift = 0, [], []
     repointed: dict[pathlib.Path, dict[str, str]] = {}
     seen_columns: set[tuple[str, str]] = set()
-    for desc in sorted((root / "data" / "datasets").glob("*.yaml")):
+    planes = {"sources": ("sources",), "datasets": ("datasets",),
+              "both": ("datasets", "sources")}[a.plane]
+    cut_from = [d for pl in planes for d in sorted((root / "data" / pl).glob("*.yaml"))]
+    for desc in cut_from:
         doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
         relation = (doc.get("table") or {}).get("name") or desc.stem
         schema = (doc.get("table") or {}).get("schema")
@@ -151,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         con.close()
 
     if not a.check:
-        slimmed = _slim_descriptors(root, repointed, yaml)
+        slimmed = _slim_descriptors(root, repointed, yaml, planes)
         if slimmed:
             print(f"\n  the members MOVED: {slimmed} descriptor line(s) of member list replaced by "
                   f"`distinct:` + `register:` — one home for the members, the count kept where it "
@@ -196,7 +211,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml) -> int:
+def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml, planes) -> int:
     """Replace every captured `values:` list with `distinct:` + `register:` where one was cut.
 
     EVERY bounded column is slimmed, not only the ones that got a register: a column refused as "data,
@@ -210,8 +225,9 @@ def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml) -> int:
     # BOTH PLANES. Slimming only `datasets` left the eight SOURCE descriptors carrying their member
     # lists, which is the same duplication one directory over — and measurably so: the generated
     # sanity suite still built 30 `enumeration` cases from them after the served copies were gone.
-    descs = sorted((root / "data" / "datasets").glob("*.yaml")) + \
-        sorted((root / "data" / "sources").glob("*.yaml"))
+    # SLIM EXACTLY THE PLANES THIS RUN CUT FROM. Stripping a plane this run did not cut is how a
+    # domain is lost: the members go and no register holds them.
+    descs = [d for pl in planes for d in sorted((root / "data" / pl).glob("*.yaml"))]
     for desc in descs:
         doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
         cols = doc.get("columns") or []

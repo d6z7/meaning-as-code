@@ -468,7 +468,7 @@ columns:  # REQUIRED
     nullable: <…>  # boolean
     notes: <…>  # string
     enum_ref: <…>  # string
-    values: [ ... ]  # the column's observed value DOMAIN, for a column small enough to…
+    values: [ ... ]  # TRANSIENT — the measured bounded domain, on its way to a register
     distinct: <…>  # integer · MEASURED distinct value count
     register: <…>  # string · Path to the register that holds this column's members, relative to the…
     references:  # one of: string | object · The parent this column points at  # closed: only keys above

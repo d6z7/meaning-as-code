@@ -275,8 +275,8 @@ def main(argv: list[str] | None = None) -> int:
     part = f" — PART: {a.part.upper()}" if a.part != "all" else ""
     print(f"mac_import {root.name}{part} — {'REPORT ONLY' if a.report else ('ACCEPT (billed stages run)' if a.accept else 'FREE STAGES ONLY')}")
     if a.part != "all":
-        ran = [st["name"] for st in _stages(root) if st.get("part") == a.part]
-        held = [st["name"] for st in _stages(root) if st.get("part") != a.part]
+        ran = [st["name"] for st in _stages(root) if st.get("part") in (a.part, "both")]
+        held = [st["name"] for st in _stages(root) if st.get("part") not in (a.part, "both")]
         print(f"  running {len(ran)} stage(s): {', '.join(ran)}")
         print(f"  HOLDING {len(held)} stage(s) that belong to another part or to no part: "
               f"{', '.join(held)}")
@@ -285,7 +285,7 @@ def main(argv: list[str] | None = None) -> int:
     outcomes: list[tuple[str, str, str, float]] = []
     if not a.report:
         for stage in _stages(root):
-            if a.part != "all" and stage.get("part") != a.part:
+            if a.part != "all" and stage.get("part") not in (a.part, "both"):
                 continue
             outcomes.append(_run(stage, root, a))
             if a.stop_on_fail and outcomes[-1][1] == "FAIL":
@@ -526,8 +526,38 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # credentials` — measured. It predates the connector seam. `mac_lookups` projects the value
         # domains `mac_profile` ALREADY captured onto the descriptors, so it needs no second scan and
         # works for any engine the seam answers for.
-        {"name": "lookups", "part": "datasets", "produces": "data/lookups/*.csv", "d": "D12",
-         "cmd": [_tool("mac_lookups.py"), str(root)]},
+        # ONE PER PART, because this stage CONSUMES a hand-off the profiling stage in the SAME part
+        # wrote. Tagged datasets-only, `--part sources` ran `mac_profile` (which writes `values:` onto
+        # the descriptor) and never the stage that cuts them into a register and pops them — leaving 7
+        # of 7 contoso3 source descriptors carrying member lists, one 120 values long. A part that
+        # writes a transient must also consume it, or the part cannot be delivered on its own.
+        {"name": "lookups-sources", "part": "sources", "produces": "data/lookups/*.csv", "d": "D12",
+         "always": True,
+         "cmd": [_tool("mac_lookups.py"), str(root), "--plane", "sources"]},
+        {"name": "lookups-datasets", "part": "datasets", "produces": "data/lookups/*.csv", "d": "D12",
+         "cmd": [_tool("mac_lookups.py"), str(root), "--plane", "datasets"]},
+        # ── THE PROMOTION PASS. `mac_descriptors` derives foreign keys from data/references*/ and
+        # register pointers from data/lookups/, and BOTH are measured after it first runs — so a
+        # single-pass pipeline can never declare them. Its own docstring said "the import pipeline
+        # measures references and re-runs this, which REBUILDS them"; the pipeline never did, and the
+        # result was that the declared FK set depended on how many times you had run the importer.
+        # Measured 2026-09-28: 26 references on contoso4 built incrementally, ZERO from scratch, with
+        # `customs_declaration.hs_code -> tariff_schedule.hs_code` measured `real`/`identity`/many:one
+        # and declared nowhere.
+        #
+        # SAFE ONLY BECAUSE EVERY FACT IS NOW RE-DERIVABLE from its own home — roles and keys from the
+        # warehouse, FKs from data/references*/, registers from data/lookups/, cardinality from
+        # data/profiles/. That was the precondition: a regeneration that WIPED an enrichment is how the
+        # register pointers were lost once already, and adding a second pass before closing that hole
+        # would have re-created the same defect one stage later.
+        #
+        # `always`, because its output exists by definition on the second pass.
+        {"name": "promote-sources", "part": "sources", "always": True, "d": "D1",
+         "produces": "data/sources/*.yaml",
+         "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "sources"]},
+        {"name": "promote-datasets", "part": "datasets", "always": True, "d": "D2",
+         "produces": "data/datasets/*.yaml",
+         "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "datasets"]},
         # THE CLOSURE MONITOR, and it is OWED — DNA PART 1.8 "closed sets get a register; registers
         # get a monitor", PART 4 step 6 "`warranty: monitored` becomes provable". It is also a
         # REPLACEMENT: moving the member lists off the descriptors and into the registers (operator,
@@ -536,7 +566,12 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # lists, so 30 of 86 cases went with them. This reads the register instead, which is where
         # the members now live, and it re-measures against the warehouse, which a static case list
         # never could.
-        {"name": "register-monitor", "part": "datasets",
+        # BOTH PARTS, because EITHER part can cut a register and DNA 1.8 says a closed set gets a
+        # monitor. Tagged datasets-only, the sources part cut 18 registers on contoso3 and monitored
+        # none of them — REGISTER-MONITOR went red with "18 register(s) are delivered and
+        # acceptance/register_membership_runs.json does not exist". The monitor reads the register
+        # directory, which both parts write into, so running it from either is correct and idempotent.
+        {"name": "register-monitor", "part": "both", "always": True,
          "produces": "acceptance/register_membership_runs.json",
          "d": "D12b", "cmd": [_tool("check_register_membership.py"), str(root)]},
         # ---- the DQ plane, ALL OF IT BEFORE THE PROJECTION ----------------------------------
