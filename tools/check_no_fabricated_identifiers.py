@@ -43,6 +43,7 @@ try:
 except ImportError:  # pragma: no cover
     sqlglot = None
 import yaml
+import mac_project as P
 
 DIALECT = "trino"
 
@@ -64,11 +65,11 @@ def declared_key_columns(root: str) -> dict[str, list[str]]:
         # empty list on every delivered bundle, so this loop checked nothing — kept here
         # reading BOTH only so an older bundle is still checked rather than silently skipped.
         _fks = list(doc.get("foreign_keys") or []) + [
-            # `references` is `relation.column`; the RELATION is the second-to-last segment, so a
-                # qualified value does not smuggle the column in as a table name.
+            # `references` is `relation.column` — or now a MAPPING carrying `to` plus the measured
+                # cardinality; one resolver reads both and takes the RELATION from the second-to-last
+                # segment, so a qualified value cannot smuggle the column in as a table name.
                 {"from_column": c.get("name"),
-                 "to_table": ".".join(str(c.get("references")).split(".")[:-1])
-                             or str(c.get("references"))}
+                 "to_table": (P.column_reference(c) or {}).get("relation") or ""}
             for c in (doc.get("columns") or [])
             if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
         for fk in _fks:

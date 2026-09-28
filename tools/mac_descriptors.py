@@ -281,7 +281,17 @@ def measured_fks(root: pathlib.Path, served: bool) -> dict:
                 continue
             fr, to = r.get("from") or {}, r.get("to") or {}
             if fr.get("relation") and fr.get("column") and to.get("relation") and to.get("column"):
-                out[(str(fr["relation"]), str(fr["column"]))] = f"{to['relation']}.{to['column']}"
+                # THE TARGET PLUS THE CROW'S FEET, and nothing else. Cardinality and participation are
+                # what makes the drawing an ER diagram rather than boxes and lines, and they are the
+                # half a key cannot supply. The EVIDENCE stays in data/references*/ where it was
+                # measured — see mac_project.column_reference for why copying it here is two copies.
+                card = r.get("cardinality") if isinstance(r.get("cardinality"), dict) else {}
+                part = r.get("participation") if isinstance(r.get("participation"), dict) else {}
+                out[(str(fr["relation"]), str(fr["column"]))] = {
+                    "to": f"{to['relation']}.{to['column']}",
+                    "cardinality": {"child": card.get("child"), "parent": card.get("parent")},
+                    "participation": {"child": part.get("child"), "parent": part.get("parent")},
+                }
     return out
 
 
@@ -413,7 +423,13 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         # here, `references` says what it POINTS AT. Writing the reference only for `role: foreign_key`
         # was the reason that join went undeclared.
         if ref:
-            lines.append(f"  references: {ref}")
+            lines.append("  references:")
+            lines.append(f"    to: {ref['to']}")
+            _c, _p = ref.get("cardinality") or {}, ref.get("participation") or {}
+            if _c.get("child") and _c.get("parent"):
+                lines.append(f"    cardinality: {{child: {_c['child']}, parent: {_c['parent']}}}")
+            if _p.get("child") and _p.get("parent"):
+                lines.append(f"    participation: {{child: {_p['child']}, parent: {_p['parent']}}}")
         if (table, col) in regs:
             lines.append(f"  register: {regs[(table, col)]}")
         # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key

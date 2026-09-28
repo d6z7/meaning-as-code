@@ -71,7 +71,20 @@ Run the import first — a bundle with no data plane has nothing to be consisten
 # THE STATE — every artifact fact this gate compares, read once. PURE DATA, so every invariant below
 # is a pure function of it and every reject class is reachable from the self-test with no bundle.
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
-def ref_relation(ref: str) -> str:
+def _ref_to(ref) -> str:
+    """The TARGET of a `columns[].references`, whichever shape it is written in.
+
+    It was a bare string naming `relation.column`; it may now be a MAPPING carrying `to` plus the
+    measured cardinality and participation, so an ER diagram can be drawn from the descriptor rather
+    than from a second artifact. Both shapes are read here, ONCE, instead of at each of this module's
+    four call sites — a shape that changes under its readers is how five of them came to read a dead
+    address without one of them failing (see mac_project.canonical_key for that measurement)."""
+    if isinstance(ref, dict):
+        return str(ref.get("to") or "").strip()
+    return str(ref or "").strip()
+
+
+def ref_relation(ref) -> str:
     """The RELATION a `columns[].references` points at, from `relation.column`.
 
     THE SEGMENT MATTERS. The schema has required `relation.column` since v0.1.15 and the producer wrote
@@ -80,13 +93,13 @@ def ref_relation(ref: str) -> str:
     at a relation that does not exist. Second-to-last segment: `customer.CustomerKey` and
     `main.customer.CustomerKey` both give `customer`, and a legacy unqualified `customer` still does.
     """
-    parts = [p for p in str(ref or "").split(".") if p]
+    parts = [p for p in _ref_to(ref).split(".") if p]
     return parts[-2] if len(parts) >= 2 else (parts[0] if parts else "")
 
 
-def ref_column(ref: str) -> str:
+def ref_column(ref) -> str:
     """The COLUMN a reference lands on — empty when the value is unqualified (legacy)."""
-    parts = [p for p in str(ref or "").split(".") if p]
+    parts = [p for p in _ref_to(ref).split(".") if p]
     return parts[-1] if len(parts) >= 2 else ""
 
 
@@ -123,7 +136,7 @@ def load(root: pathlib.Path, yaml) -> dict:
     fks = []
     for stem, d in {**served, **sources}.items():
         for c in d.get("columns") or []:
-            tgt = str(c.get("references") or "").strip()
+            tgt = _ref_to(c.get("references"))
             if tgt and c.get("role") == "foreign_key":
                 fks.append((stem, str(c.get("name")), ref_relation(tgt)))
 
@@ -583,7 +596,7 @@ def inv_fk_qualified(st: dict) -> list[dict]:
             for c in (table[stem].get("columns") or []):
                 if not isinstance(c, dict):
                     continue
-                ref = str(c.get("references") or "").strip()
+                ref = _ref_to(c.get("references"))
                 is_fk = str(c.get("role")) == "foreign_key"
                 # ENUMERATE BY THE REFERENCE, NOT BY THE ROLE. A column can be a KEY and point somewhere:
                 # `sales.OrderKey` is PK1 of its own relation and a measured many:one reference to

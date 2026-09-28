@@ -148,6 +148,53 @@ def concept_files(root):
     return sorted(d.rglob("*.yaml")) if d.is_dir() else []
 
 
+def column_reference(col: dict) -> dict | None:
+    """One column's declared foreign key, NORMALISED — from either shape it may be written in.
+
+    `columns[].references` is the one home the operator ruled for a foreign key (2026-09-27). It began
+    as a bare string naming the target, `v_contoso4_date.Date`, which is everything a PAGE needs and
+    half of what an ER DIAGRAM needs: the crow's feet are cardinality and participation, and
+    `er_model.py` calls those "the half a key cannot supply". Without them the descriptor could not
+    draw the picture, so the diagram read a different artifact than the page and the two disagreed --
+    17 relationships drawn against 6 listed.
+
+    So the field may now be a MAPPING carrying `to` plus the measured cardinality and participation.
+    The string form is still read, because a bundle nobody has regenerated must keep working and
+    because a page only ever needed the target. ONE resolver, and every reader goes through it: the
+    last time a shape changed under five readers, not one of them failed -- they read the dead address
+    and reported clean. See the `canonical_key` note above for that measurement.
+
+    WHAT DOES NOT COME HERE: the evidence. `admitted_because`, the thirteen `evidence` fields,
+    `ambiguous_with` and `needs_ruling` stay in `data/references*/`, which is where they were measured.
+    The descriptor says WHAT THE RELATIONSHIP IS; the measurement says WHY IT IS TRUE. Copying the
+    second into the first is not one home, it is two copies.
+    """
+    if not isinstance(col, dict):
+        return None
+    ref = col.get("references")
+    if not ref:
+        return None
+    if isinstance(ref, str):
+        to = ref.strip()
+        if not to:
+            return None
+        card = part = None
+    elif isinstance(ref, dict):
+        to = str(ref.get("to") or "").strip()
+        if not to:
+            return None
+        card = ref.get("cardinality") if isinstance(ref.get("cardinality"), dict) else None
+        part = ref.get("participation") if isinstance(ref.get("participation"), dict) else None
+    else:
+        return None
+    bits = [b for b in to.split(".") if b]
+    return {"to": to,
+            "relation": bits[-2] if len(bits) >= 2 else (bits[0] if bits else ""),
+            "column": bits[-1] if len(bits) >= 2 else "",
+            "cardinality": card,
+            "participation": part}
+
+
 def canonical_key(doc: dict) -> str | None:
     """A concept's canonical key column, read from its ONE home — the column that declares it.
 

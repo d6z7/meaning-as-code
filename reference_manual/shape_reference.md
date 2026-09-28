@@ -471,7 +471,14 @@ columns:  # REQUIRED
     values: [ ... ]  # the column's observed value DOMAIN, for a column small enough to…
     distinct: <…>  # integer · MEASURED distinct value count
     register: <…>  # string · Path to the register that holds this column's members, relative to the…
-    references: <…>  # string · The parent this foreign_key column points at, as `relation.column`
+    references:  # one of: string | object · The parent this column points at  # closed: only keys above
+      to: <…>  # REQUIRED · string · The parent, as `relation.column`.
+      cardinality:  # MEASURED cardinality  # closed: only keys above
+        child: <…>  # enum: one | many
+        parent: <…>  # enum: one | many
+      participation:  # MEASURED participation — the half a key cannot supply  # closed: only keys above
+        child: <…>  # enum: mandatory | optional
+        parent: <…>  # enum: mandatory | optional
     key_position: <…>  # integer · THIS COLUMN'S PLACE IN A COMPOSITE PRIMARY KEY — 1 for the first part,…
 
 foreign_keys:

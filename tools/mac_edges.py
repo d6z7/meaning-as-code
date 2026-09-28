@@ -30,6 +30,7 @@ import argparse
 import glob
 import pathlib
 import sys
+import mac_project as P
 
 # The REPO ROOT, not sdk/: sdk.authoring.edges imports itself as `sdk.authoring.authoring`.
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
@@ -79,11 +80,14 @@ def datasets_info(root: pathlib.Path, yaml) -> list:
             ref = c.get("references")
             if not ref:
                 continue
-            # `references: <relation>` names the target RELATION; the target COLUMN is the same name,
-            # which is this warehouse's convention and is what the measurement recorded. A qualified
-            # `relation.column` is honoured when present so the shape can grow without a new reader.
-            t = str(ref)
-            to_tab, to_col = (t.split(".", 1) if "." in t else (t, name))
+            # THE SHAPE GREW AND THIS READER GOES THROUGH THE RESOLVER. `references` may be a bare
+            # target string or a mapping carrying `to` + cardinality + participation; `column_reference`
+            # normalises both, and takes the relation from the SECOND-TO-LAST segment so a schema-
+            # qualified `main.customer.CustomerKey` no longer yields the table `main`.
+            _r = P.column_reference(c)
+            if not _r:
+                continue
+            to_tab, to_col = _r["relation"], (_r["column"] or name)
             fks.append({"from_column": name, "to_table": to_tab, "to_column": to_col})
         if fks:
             out.append({"relation_bare": stem, "produces_relation": stem,

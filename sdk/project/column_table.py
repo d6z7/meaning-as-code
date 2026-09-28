@@ -56,7 +56,12 @@ def reference_cell(col: dict, *, code: bool = True) -> str:
     """
     c = col or {}
     parts = []
-    ref = str(c.get("references") or "").strip()
+    # BOTH SHAPES. `references` was a bare target string and may now be a mapping carrying `to` plus the
+    # measured cardinality and participation, so the ER diagram can be drawn from the descriptor instead
+    # of from a second artifact. The CELL wants only the target — the crow's feet are the diagram's job,
+    # and a table that printed `many:one` in a reference column would be restating the picture badly.
+    _r = c.get("references")
+    ref = str((_r.get("to") if isinstance(_r, dict) else _r) or "").strip()
     if ref:
         parts.append(f"→ `{ref}`" if code else f"→ {ref}")
     reg = str(c.get("register") or "").strip()
