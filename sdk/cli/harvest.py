@@ -290,16 +290,14 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
         "## Clean schema (the AI-friendly serving shape the ontology binds to)",
         *_CT.header(description=True),
         colrows,
+        *_CT.fk_section(cols),
+        *_CT.register_section(cols),
     ]
-    if fks:
-        md += [
-            "",
-            "## Foreign keys (declared joins to other serving relations)",
-            *[
-                f"- {fk.get('from_column')} -> {fk.get('to_table')}.{fk.get('to_column')}"
-                for fk in fks
-            ],
-        ]
+    # THE HAND-BUILT FK SECTION WAS REMOVED HERE, and it is the reason the one-renderer rule exists.
+    # `_CT.fk_section(cols)` above already renders it from `columns[].references` — the one home — so this
+    # block would have printed a SECOND "## Foreign keys" heading on the same page, reading the separate
+    # `fks` list built earlier from a different source. Two sections with one name, disagreeing silently
+    # whenever the two sources did: exactly the four-homes defect that put the renderer in one place.
     if sql:
         md += ["", "## Built by this transform (the data-transformation SQL)", "```sql", sql, "```"]
     if raw_md:

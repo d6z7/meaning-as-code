@@ -400,6 +400,8 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         body = ["## Columns", ""] + _CT.header()
         for c in src.get("columns", []) or []:
             body.append(_CT.row(c))
+        body += _CT.fk_section(src.get("columns"))
+        body += _CT.register_section(src.get("columns"))
         # The doc is the raw schema-of-record (Columns). Lineage and quality findings live in the
         # object's TABS (Lineage / Quality) — not repeated here; a raw source has no ontology concept.
         (out / "sources" / f"{stem}.md").write_text(_fm(fm) + "\n" + "\n".join(body))
@@ -498,21 +500,11 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         body = ["## Columns", ""] + _CT.header()
         for c in ds.get("columns", []) or []:
             body.append(_CT.row(c))
-        # THE FK SECTION READ THE RETIRED `foreign_keys:` BLOCK, which 0 of 16 descriptors carry — so it
-        # rendered nothing. It reads the one home now (ruling 2026-09-27) and falls back to the old block
-        # only so an older bundle still renders.
-        fks = list(ds.get("foreign_keys", []) or []) + [
-            {"from_column": c.get("name"),
-             "to_table": ".".join(str(c["references"]).split(".")[:-1]) or str(c["references"]),
-             "to_column": str(c["references"]).split(".")[-1]}
-            for c in (ds.get("columns") or [])
-            if isinstance(c, dict) and c.get("references") and c.get("role") == "foreign_key"]
-        if fks:
-            body += ["", "## Foreign keys"]
-            body += [
-                f"- `{fk.get('from_column')}` → `{fk.get('to_table')}.{fk.get('to_column')}`"
-                for fk in fks
-            ]
+        # BOTH RESOLUTION SURFACES, from the one renderer. The old hand-built block read the RETIRED
+        # `foreign_keys:` key — which 0 of 16 descriptors carry — so it rendered nothing on every
+        # delivered bundle; and registers had no section at all.
+        body += _CT.fk_section(ds.get("columns"))
+        body += _CT.register_section(ds.get("columns"))
         # Lineage lives in the object's Lineage TAB — not repeated in the doc.
         (out / "datasets" / f"{stem}.md").write_text(_fm(fm) + "\n" + "\n".join(body))
 

@@ -84,3 +84,59 @@ def row(col: dict, *, description: str | None = None, code: bool = True) -> str:
     if description is not None:
         cells.append(" ".join(str(description).split()))
     return "| " + " | ".join(cells) + " |"
+
+
+def _ref_parts(col: dict) -> tuple:
+    """(relation, column) from a `relation.column` reference, or ('','')."""
+    p = [x for x in str((col or {}).get("references") or "").split(".") if x]
+    return (".".join(p[:-1]), p[-1]) if len(p) >= 2 else ((p[0] if p else ""), "")
+
+
+def register_name(col: dict) -> str:
+    """The register's bare name from a `data/lookups/<name>.lookup.csv` pointer."""
+    reg = str((col or {}).get("register") or "").strip()
+    if not reg:
+        return ""
+    name = reg.rsplit("/", 1)[-1]
+    for suf in (".lookup.csv", ".csv"):
+        if name.endswith(suf):
+            return name[: -len(suf)]
+    return name
+
+
+def fk_section(cols) -> list:
+    """`## Foreign keys` — one line per column pointing at another relation, or [] if none."""
+    out = []
+    for c in cols or []:
+        if not isinstance(c, dict) or str(c.get("role")) != "foreign_key":
+            continue
+        rel, tgt = _ref_parts(c)
+        if rel:
+            out.append(f"- `{c.get('name')}` → `{rel}.{tgt}`" if tgt else f"- `{c.get('name')}` → `{rel}`")
+    return ["", "## Foreign keys", ""] + out if out else []
+
+
+def register_section(cols) -> list:
+    """`## Registers` — one line per column whose values resolve through a declared value set.
+
+    THE SIBLING OF `## Foreign keys`, and named for what the framework already calls these: the column
+    field is `register`, the invariants are REGISTER-MONITOR and REGISTER-ORPHAN, and the vocabulary says
+    `register` 42 times. The operator asked for a section "References ... alike to Foreign keys"; the
+    intent is this section, and the NAME is `Registers` because a third word for a thing already called
+    two is how `attribute` came to mean four things. The artifacts live in `data/lookups/`, so the line
+    names the file a reader can open.
+
+    WHY IT EXISTS AT ALL. Before the columns table gained a `reference` cell, a register pointer appeared
+    NOWHERE on any page — 24 columns across 7 of the reference bundle's descriptors carried one and the
+    word `register` occurred 0 times in any rendered page. The cell made it visible per column; this
+    section makes the relation's whole resolution surface readable in one place, which is the question an
+    operator actually asks ("what does this table resolve against").
+    """
+    out = []
+    for c in cols or []:
+        if not isinstance(c, dict):
+            continue
+        n = register_name(c)
+        if n:
+            out.append(f"- `{c.get('name')}` → `data/lookups/{n}.lookup.csv`")
+    return ["", "## Registers", ""] + out if out else []
