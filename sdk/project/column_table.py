@@ -23,11 +23,18 @@ WHAT THE CELLS SAY, and the reasoning is the operator's:
          VALUES with labels, and a page that renders them identically claims they are one thing.
          Measured before this was built: 24 columns across 7 of contoso4's descriptors carry a register
          pointer and the word `register` appeared 0 times in any rendered table.
+
+NO LEGEND. An earlier version printed a paragraph above every table explaining that `PK1` is the
+`primary_key` role with its `key_position`. That was my invention, not a requirement, and the operator
+removed it: "we dont need the legend". `PK` and `FK` are the conventional abbreviations every reader of a
+table definition already knows, and the same paragraph repeated on 42 pages is clutter, not clarity. The
+principle it came from — state a vocabulary rather than leave it inferred — is real and belongs to
+TOKENS a framework closes; it does not extend to two abbreviations a DBA reads at a glance.
 """
 
 from __future__ import annotations
 
-#: The display abbreviations, and the terms they stand for. Stated on the page by `legend()`.
+#: The display abbreviations. Conventional, and deliberately not explained on the page.
 _ABBREV = {"primary_key": "PK", "foreign_key": "FK"}
 
 
@@ -77,16 +84,3 @@ def row(col: dict, *, description: str | None = None, code: bool = True) -> str:
     if description is not None:
         cells.append(" ".join(str(description).split()))
     return "| " + " | ".join(cells) + " |"
-
-
-def legend() -> str:
-    """The one line that keeps `PK1`/`FK` from being a private dialect.
-
-    An agent reads these pages. `PK` and `FK` are not members of mac.relation.column.role, so the page
-    says what they stand for rather than leaving it to be inferred — the same reason a refusal cites its
-    measurement instead of asserting it.
-    """
-    return ("> `PK1`/`PK2` are the `primary_key` role with its `key_position`; `PK` a single-column key; "
-            "`FK` the `foreign_key` role. The YAML descriptor carries `role` and `key_position` as "
-            "separate fields — this column composes them for reading. `→` is a foreign key's target "
-            "relation.column; `register:` a declared value set in `data/lookups`.")

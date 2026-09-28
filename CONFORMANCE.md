@@ -231,10 +231,12 @@ human reads it, compose it. Getting this backwards in either direction has a mea
 gives you `primary_key_2` and string surgery in N consumers, the other gives you a table with a mostly
 empty `key` column that a reader has to join in their head.
 
-**A composed or abbreviated display token MUST carry its legend on the page.** `PK` and `FK` are not
-members of `mac.relation.column.role`; they exist only in the rendering. An agent reads these pages, so
-the page states the mapping rather than leaving it to be inferred — the same discipline as a refusal
-citing its measurement instead of asserting it.
+**Abbreviate only where the abbreviation is conventional.** `PK` and `FK` are the forms every reader of
+a table definition already knows, so they need no gloss. A framework TOKEN is the opposite case and
+§2.2 governs it: `mac.*` terms are closed and checked, never inferred. (An earlier version of this
+section required a legend above every table explaining `PK1`; that was over-applying the token rule to
+two conventional abbreviations, and the operator removed it — the same paragraph on 42 pages is clutter,
+not clarity.)
 
 **ONE RENDERER PER ARTIFACT KIND.** The data plane's columns table was rendered in four places
 (`sdk/cli/harvest.py`, `sdk/project/project_data.py` twice, `tools/mac_to_okf.py`). Changing it meant

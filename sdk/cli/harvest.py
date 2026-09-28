@@ -288,8 +288,6 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
     md += [
         "",
         "## Clean schema (the AI-friendly serving shape the ontology binds to)",
-        _CT.legend(),
-        "",
         *_CT.header(description=True),
         colrows,
     ]

@@ -366,9 +366,9 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
     compares, sorts and can be checked 1..n. A page composes them and renders `PK2`, because a table is
     read by a person and parsed by nothing. **The test is: does anything PARSE this?** Backwards either
     way costs something measured — `primary_key_2` puts string surgery in every consumer that wants the
-    order, and a separate `key` column leaves the reader joining two cells in their head. A composed or
-    abbreviated display token CARRIES ITS LEGEND on the page, because `PK`/`FK` are not members of any
-    vocabulary and an agent reads these pages. And ONE RENDERER PER ARTIFACT KIND: the columns table
+    order, and a separate `key` column leaves the reader joining two cells in their head. Abbreviate only
+    where the abbreviation is CONVENTIONAL — `PK`/`FK` need no gloss; a framework `mac.*` token is the
+    opposite case and law 2 governs it. And ONE RENDERER PER ARTIFACT KIND: the columns table
     lived in four places, so every change to it was made four times or three times and a bug.
     CONFORMANCE.md §2.4.
 14. **A DERIVED PAGE IS BUNDLE CONTENT, and must match what its source renders.** A bundle is the unit

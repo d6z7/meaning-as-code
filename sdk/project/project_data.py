@@ -397,7 +397,7 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         # could declare into on this plane: the schema allows it, no source uses it, and the fact it
         # would carry lives elsewhere and is shown. An empty column whose emptiness is structural is
         # not information; it is a question asked of the wrong plane.
-        body = ["## Columns", "", _CT.legend(), ""] + _CT.header()
+        body = ["## Columns", ""] + _CT.header()
         for c in src.get("columns", []) or []:
             body.append(_CT.row(c))
         # The doc is the raw schema-of-record (Columns). Lineage and quality findings live in the
@@ -495,7 +495,7 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "relation": _drel,  # produced relation — for lineage flow matching
             "tags": [label, "dataset", "lifecycle:draft"],
         }
-        body = ["## Columns", "", _CT.legend(), ""] + _CT.header()
+        body = ["## Columns", ""] + _CT.header()
         for c in ds.get("columns", []) or []:
             body.append(_CT.row(c))
         # THE FK SECTION READ THE RETIRED `foreign_keys:` BLOCK, which 0 of 16 descriptors carry — so it

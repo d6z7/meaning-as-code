@@ -98,40 +98,6 @@ def compare(data_dir: pathlib.Path, fresh: pathlib.Path) -> list:
     return out
 
 
-#: A composed display token that no vocabulary declares. CONFORMANCE.md §2.4: a page carrying one must
-#: state its mapping, because an agent reads these pages and `PK`/`FK` are members of nothing.
-_COMPOSED = ("| PK", "| FK", "PK1", "PK2")
-_LEGEND_MARK = "are the `primary_key` role with its `key_position`"
-
-
-def legend_check(data_dir: pathlib.Path) -> list:
-    """(relpath, state, detail) for every delivered page that renders a composed role token.
-
-    THE HOLE THIS CLOSES. check_pages_current proves a page matches its source; it says nothing about
-    whether the page is READABLE. On 2026-09-28 the columns table began rendering `PK1`/`PK2`/`FK` —
-    abbreviations that exist only in the rendering and are members of no vocabulary — and a page could
-    carry them with no statement of what they mean. That is the `attribute` failure in miniature: a token
-    whose meaning lives in someone's head.
-    """
-    out = []
-    for sub, pat in PAGES:
-        d = data_dir / sub
-        if not d.is_dir():
-            continue
-        for f in sorted(d.glob(pat)):
-            t = f.read_text(encoding="utf-8")
-            rel = f"{sub}/{f.name}"
-            if not any(m in t for m in _COMPOSED):
-                out.append((rel, "no_composed_token", "renders no composed role token"))
-            elif _LEGEND_MARK in t:
-                out.append((rel, "legend", "carries the legend for its composed tokens"))
-            else:
-                out.append((rel, "no_legend",
-                            "renders a composed role token (PK1/PK2/FK) and states nowhere what it "
-                            "means — the abbreviations are members of no vocabulary"))
-    return out
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("bundle", nargs="?", default=".")
@@ -156,8 +122,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"\n\n{ACCEPTED_SHAPE}")
             return 2
         rows = compare(data, fresh)
-        legends = legend_check(data)
-        bad = [r for r in rows if r[1] != "current"] + [r for r in legends if r[1] == "no_legend"]
+        bad = [r for r in rows if r[1] != "current"]
         print(f"  PAGES CURRENT — {root.name}\n  {len(rows)} operator-facing page(s) compared against a "
               f"fresh render\n")
         for rel, state, detail in rows:
@@ -168,12 +133,6 @@ def main(argv: list[str] | None = None) -> int:
                     y = (fresh / rel).read_text(encoding="utf-8").splitlines() if (fresh / rel).is_file() else []
                     for ln in list(difflib.unified_diff(x, y, "delivered", "fresh", lineterm=""))[:12]:
                         print(f"           {ln}")
-        for rel, state, detail in legends:
-            if state == "no_legend":
-                print(f"  [FAIL] {rel:44} NO LEGEND — {detail}")
-        n_leg = sum(1 for r in legends if r[1] == "legend")
-        if n_leg:
-            print(f"\n  {n_leg} page(s) render a composed role token and carry its legend")
         if not rows:
             print("  NOTHING TO COMPARE — the producer rendered no page and the bundle carries none. "
                   "That is not a pass: a data plane with no operator-facing page is undelivered.")
@@ -220,18 +179,6 @@ def _self_test() -> int:
         case("MUTANT a delivered page no producer renders is EXTRA",
              got.get("sources/gone.md") == "extra")
         case("every page gets exactly one verdict", len(got) == 4)
-        # THE LEGEND HALF: a composed token with no statement of its meaning must fail.
-        (d / "datasets" / "withlegend.md").write_text(
-            f"x {_LEGEND_MARK} y\n| a | PK1 |\n", encoding="utf-8")
-        (d / "datasets" / "nolegend.md").write_text("| a | PK1 |\n", encoding="utf-8")
-        (d / "datasets" / "plain.md").write_text("| a | value |\n", encoding="utf-8")
-        lg = {r[0]: r[1] for r in legend_check(d)}
-        case("a page with a composed token AND its legend passes",
-             lg.get("datasets/withlegend.md") == "legend")
-        case("MUTANT a composed token with NO legend fails",
-             lg.get("datasets/nolegend.md") == "no_legend")
-        case("a page with no composed token is not asked for a legend",
-             lg.get("datasets/plain.md") == "no_composed_token")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     bad = [l for l, ok in cases if not ok]
@@ -243,8 +190,7 @@ def _self_test() -> int:
         return 1
     print(f"PASS: check_pages_current self-test — {n}/{n} case(s): identical is current, a page the "
           f"source has moved past is STALE, one the producer renders but the bundle lacks is MISSING, "
-          f"and one delivered with no producer is EXTRA; and a page rendering a COMPOSED role token "
-          f"(PK1/PK2/FK) must state what it means, since those are members of no vocabulary")
+          f"and one delivered with no producer is EXTRA")
     return 0
 
 

@@ -128,7 +128,7 @@ def build_bundle(root):
         cols = table_cols(root, tbl)
         if cols:
             b += [f"# Schema", "", f"Grounded in `{schema + '.' if schema else ''}{tbl}`.", "",
-                  _CT.legend(), ""] + _CT.header(description=True)
+                  ] + _CT.header(description=True)
             for col in cols:
                 meaning = mbt.get((tbl, col["name"])) or col.get("description", "")   # field rule first
                 b.append(_CT.row(col, description=meaning))
