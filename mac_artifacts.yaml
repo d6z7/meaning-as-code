@@ -25,8 +25,21 @@ spec_version: mac.artifacts/1
 
 kinds:
 
+# EVERY ITEM CARRIES ITS DENOMINATOR. `population.of` is the set the artifact must cover and
+# `population.from` is where that set is counted — so "8 of 8" means something and "0 of 0" is
+# reported EMPTY, never complete. The rule is the estate's, from mac_import's checklist header:
+# "a green tick over an unstated population says nothing". The two kinds that had NO denominator
+# until 2026-09-29 are `register` and `data_quality_register`, and the second is why a delivery
+# reported 6 of 6 and 9 of 9 with its entire data-quality assessment missing.
+
   landed_descriptor:
     what: what a landed relation CONTAINS, measured from the warehouse catalog
+    phase: [sources]
+    lifecycle: re-derived
+    population:
+      of: every landed relation
+      from: the warehouse's landing schema
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/sources/{relation}.yaml
     name: the landing's own relation name, verbatim — a landing is not renamed
     shape: mac.schema.json#/$defs/TableFile
@@ -39,8 +52,21 @@ kinds:
 
   served_descriptor:
     what: what a served relation LEAVES — the promotion's contract
+    phase: [datasets]
+    lifecycle: re-derived
+    population:
+      of: every served relation
+      from: the warehouse's served schema
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/datasets/{relation}.yaml
-    name: mac.name.served_relation      # the CLOSED role table; check_served_name_distinct owns it
+    # THE SPELLING IS NOT RESTATED HERE. `check_served_name_distinct` publishes the convention in
+    # its own refusal, derived from the bundle — copying it into this file would be a second home
+    # that does not move when the gate moves. This line used to name a vocabulary token under a
+    # `name` namespace that `mac_vocabulary.yaml` does not declare, and `check_vocabulary_tokens`
+    # was failing on it — in the file whose job is to stop exactly that. (Writing the dead token
+    # out again HERE, to explain its removal, made the gate fail a second time: a reference in a
+    # comment is still a reference, and the gate is right to say so.)
+    name: the CLOSED role table — tools/check_served_name_distinct.py owns the spelling
     shape: mac.schema.json#/$defs/TableFile
     vocabulary: [mac.relation.column.role]
     transient: [values]
@@ -51,6 +77,12 @@ kinds:
 
   profile:
     what: the measurement plane — row counts, distincts, nulls, identity evidence
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every relation of the plane
+      from: data/{plane}/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/profiles/{relation}.yaml
     name: the relation's stem, verbatim
     shape: mac.schema.json#/$defs/ProfileFile
@@ -59,6 +91,12 @@ kinds:
 
   reference_measurement:
     what: the measured references of ONE relation, with evidence and cardinality
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every relation of the plane
+      from: data/{plane}/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     # ALTERNATION — the notation this file ALREADY uses for relation_preview, not a second
     # `{_optional}` syntax invented here. The conformance gate caught exactly that on its first
     # run: I wrote `data/references{_served}/` meaning "either directory", nothing understood it,
@@ -72,6 +110,12 @@ kinds:
 
   register:
     what: a value DOMAIN cut from one column, with a label and a search key
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every column whose value domain was measured
+      from: data/{plane}/*.yaml#columns[].values
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/lookups/{marker}_{relation}_{column}.lookup.csv
     name: >-
       marker, relation and column — the register IS its (relation, column). The marker is omitted when
@@ -83,6 +127,12 @@ kinds:
 
   relation_preview:
     what: a seeded sample of one relation, for a reviewer to check a declaration against rows
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every relation of the plane
+      from: data/{plane}/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/samples/{relation}.sample.csv | data/samples/{relation}.src.sample.csv
     name: >-
       the served preview is `{relation}.sample.csv`; the landed one carries `.src.` — the two planes
@@ -92,6 +142,12 @@ kinds:
 
   column_lineage:
     what: where every served column came from — a source column, or an expression
+    phase: [datasets]
+    lifecycle: re-derived
+    population:
+      of: every served relation, and every served COLUMN
+      from: data/datasets/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/lineage/lineage.json
     name: fixed
     shape: mac.schema.json#/$defs/LineageFile
@@ -101,6 +157,12 @@ kinds:
 
   relation_page:
     what: the page a person opens to read one relation
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every relation of the plane
+      from: data/{plane}/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/{plane}/{relation}.md
     name: the descriptor's stem, verbatim
     producers:
@@ -108,6 +170,12 @@ kinds:
 
   plane_overview:
     what: one page over ALL of a plane's relations — what was landed, how big, what is keyed
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every plane that has a relation
+      from: data/{plane}/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/{plane}/index.md
     name: fixed
     producers:
@@ -115,6 +183,12 @@ kinds:
 
   transform_sql:
     what: the AUTHORED statement that produces one served relation
+    phase: [datasets]
+    lifecycle: authored-once
+    population:
+      of: every served relation
+      from: data/datasets/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/transforms/{relation}.sql
     name: the served relation it produces
     producers:
@@ -122,6 +196,12 @@ kinds:
 
   transform_descriptor:
     what: what a transform consumes and produces, measured from the catalog
+    phase: [datasets]
+    lifecycle: re-derived
+    population:
+      of: every served relation
+      from: data/datasets/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/transforms/{relation}.yaml
     name: the served relation it produces
     shape: mac.schema.json#/$defs/TransformFile
@@ -130,6 +210,12 @@ kinds:
 
   data_quality_register:
     what: what is WRONG and who must rule on it — raised, never ruled, by a tool
+    phase: [sources, datasets]
+    lifecycle: re-derived
+    population:
+      of: every relation of BOTH planes
+      from: data/sources/*.yaml + data/datasets/*.yaml
+      empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/quality/data_quality_register.yaml
     name: fixed
     shape: mac.schema.json#/$defs/DataQualityRegisterFile

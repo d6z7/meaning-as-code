@@ -184,6 +184,28 @@ def _emit_ontology_sme_md(register, needs, odir, label):
     (odir / "SME-QUESTIONS.md").write_text(fm + "\n" + "\n".join(body))
 
 
+def _lookup_cut_from(csv) -> dict | None:
+    """`{"kind": "source", "ref": "<relation>"}` — the relation this register was cut from, read
+    from the CSV's own `source_view` column. Returns None when the register does not say, which is
+    the honest answer for a HAND-AUTHORED seed: it was not cut from anything and must not be drawn
+    as though it were. Reads the header and ONE row; a register is a value domain, not a scan.
+    """
+    import csv as _csv
+
+    try:
+        with open(csv, encoding="utf-8", newline="") as fh:
+            r = _csv.reader(fh)
+            head = next(r, None)
+            if not head or "source_view" not in head:
+                return None
+            i = head.index("source_view")
+            row = next(r, None)
+            ref = (row[i] or "").strip() if row and i < len(row) else ""
+            return {"kind": "source", "ref": ref} if ref else None
+    except Exception:  # noqa: BLE001 — an unreadable register is not a reason to lose the graph
+        return None
+
+
 def grounded_relations(concept: dict) -> list[dict]:
     """The relations a concept grounds on, from EITHER grounding shape.
 
@@ -764,6 +786,12 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             "data": f"data/lookups/{csv.name}",
             "schema": f"data/lookups/{stem}.yaml" if yaml_sib.exists() else None,
         }
+        # WHERE THE REGISTER WAS CUT FROM, read from the register's OWN HEADER. Every row a
+        # `mac_lookups` cut writes carries `source_schema` + `source_view`, so a value domain's
+        # provenance is already measured — it was simply in no graph. Measured on contoso5:
+        # 72 registers, 0 lineage nodes, orphaned by nothing because nothing looked. One column
+        # read here puts every one of them on the chain behind the source it came from.
+        cut = _lookup_cut_from(csv)
         objects.append(
             {
                 "id": stem,
@@ -773,8 +801,9 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
                 "relation": None,
                 "views": _views("lookup", paths, False, []),
                 "paths": paths,
-                "lineage": False,
+                "lineage": bool(cut),
                 "quality": [],
+                "cut_from": cut,
             }
         )
 
@@ -1148,12 +1177,19 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
             for k in ("dataset", "source", "lookup", "quality", "concept")
         },
     }
-    # ---- the WHOLE-BUNDLE lineage graph: every source, dataset and concept in ONE picture, with
-    # the transformation folded into its dataset (1:1). Built from `objects` so it can never disagree
-    # with the pages it links to. See sdk/project/lineage_graph.py for why the strand-at-a-time views
-    # were not enough.
-    lgraph = lineage_graph.build(objects)
-    result["lineage_graph"] = lgraph
+    # ---- the WHOLE-BUNDLE lineage graph: every source, register, dataset and concept in ONE
+    # picture, with the transformation folded into its dataset (1:1). See lineage_graph.py.
+    #
+    # IT IS NOT EMBEDDED HERE ANY MORE, and that is the point. There were THREE homes for this one
+    # graph — `objects.json#lineage_graph`, `lineage_graph.json`, and `data/lineage/lineage.json` —
+    # measured on contoso5 at 124 199 / 4 561 / 18 218 bytes, disagreeing on the node id scheme so
+    # that the same relation had two names. Operator: "why there are two lineage artfifacts? there
+    # should be only one --- SSOT", "its one too many !!!". `data/lineage/lineage.json` is now the
+    # one home; this projector writes its OWN HALF into it (registers, concepts, issue counts) and
+    # leaves the warehouse measurement that `tools/mac_lineage.py` put there untouched. Consumers
+    # read the file — the console through `GET /lineage/{domain}/{dataset}#graph`.
+    lgraph = lineage_graph.build(Path(data_dir).parent, objects)
+    lineage_graph.save(Path(data_dir).parent, lgraph)
     # ---- the PHYSICAL ENTITY-RELATIONSHIP model: relations with their measured keys, and the
     # references between them with MEASURED cardinality and participation. See
     # sdk/project/er_model.py — the crow's feet are measured from the warehouse through the
@@ -1179,9 +1215,6 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
     result["er_model_served"] = er_model.build(root=Path(data_dir).parent, plane="served")
     if out_dir:
         (Path(out_dir) / "objects.json").write_text(json.dumps(result, indent=2, sort_keys=True))
-        (Path(out_dir) / "lineage_graph.json").write_text(
-            json.dumps(lgraph, indent=2, sort_keys=True)
-        )
         if concepts:
             odir = Path(out_dir) / "ontology"
             odir.mkdir(parents=True, exist_ok=True)

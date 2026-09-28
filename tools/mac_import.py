@@ -554,9 +554,17 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # ONE STAGE PER PLANE. This wrote both from a single call, which is precisely what made the
         # two deliveries impossible to sign off separately: a checklist covering D1 and D2 at once
         # cannot say which half is short, and a resume that saw either plane skipped the other.
-        {"name": "descriptors-sources", "part": "sources", "produces": "data/sources/*.yaml",
+                # `always`, LIKE ITS PROMOTE SIBLING. Both stages write `data/sources/*.yaml` and only the
+        # promotion carried the flag — which the manifest gate could not see while it unioned
+        # `always` across every writer of a glob. A descriptor measured from the warehouse is
+        # `re-derived` by declaration, and one writer willing to skip is all a stale artifact needs.
+{"name": "descriptors-sources", "part": "sources", "always": True, "produces": "data/sources/*.yaml",
          "d": "D1", "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "sources"]},
-        {"name": "descriptors-datasets", "part": "datasets", "produces": "data/datasets/*.yaml",
+                # `always`, LIKE ITS PROMOTE SIBLING. Both stages write `data/sources/*.yaml` and only the
+        # promotion carried the flag — which the manifest gate could not see while it unioned
+        # `always` across every writer of a glob. A descriptor measured from the warehouse is
+        # `re-derived` by declaration, and one writer willing to skip is all a stale artifact needs.
+{"name": "descriptors-datasets", "part": "datasets", "always": True, "produces": "data/datasets/*.yaml",
          "d": "D2", "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "datasets"]},
         # `mac_profile` takes ONE relation, so this stage is one call per descriptor — the tool's
         # own signature, not a loop invented here.
@@ -564,11 +572,25 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # existed from an earlier hand-run, `data/profiles/*.yaml` matched, and the whole stage
         # RESUMEd — 1 profile for 22 relations, reported as done. A stage that iterates must resume
         # per ITEM, or "present" means "one of them is present".
-        {"name": "profiles-sources", "part": "sources", "produces": "data/profiles/*.yaml", "d": "D9",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "profiles-sources", "part": "sources", "always": True, "produces": "data/profiles/*.yaml", "d": "D9",
          "each": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("sources")],
          "missing": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("sources")
                              if not (root / "data" / "profiles" / f"{r}.yaml").is_file()]},
-        {"name": "profiles-datasets", "part": "datasets", "produces": "data/profiles/*.yaml", "d": "D9",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "profiles-datasets", "part": "datasets", "always": True, "produces": "data/profiles/*.yaml", "d": "D9",
          "each": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("datasets")],
          "missing": lambda: [[_tool("mac_profile.py"), str(root), r] for r in relations("datasets")
                              if not (root / "data" / "profiles" / f"{r}.yaml").is_file()]},
@@ -585,10 +607,24 @@ def _stages(root: pathlib.Path) -> list[dict]:
         #           writes — and that tool requires `--measure <column>`, "THE ONE BIT A HUMAN"
         #           supplies, per relation. A first run cannot produce it, and saying so is the
         #           honest output.
-        {"name": "references-datasets", "part": "datasets",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "references-datasets", "part": "datasets", "always": True,
          "produces": "data/references_served/*.yaml", "d": "D10 D3",
          "cmd": [_tool("mac_references.py"), str(root), "--plane", "served"]},
-        {"name": "references-sources", "part": "sources",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "references-sources", "part": "sources", "always": True,
          "produces": "data/references/*.yaml", "d": "D10",
          "needs_human": ("the SOURCES plane takes its key from the profile's identity_evidence, "
                          "which only mac_admit_identity writes — and it needs --measure <column> "
@@ -600,7 +636,14 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # .sql: measured 2026-09-26 on a bundle holding six .sql files and no descriptors, the graph
         # came back with 14 nodes and 0 EDGES, every dataset "with no input". The operator's report
         # was simply "i did not get lineage".
-        {"name": "transforms", "part": "datasets", "produces": "data/transforms/*.yaml", "d": "D15 D6",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "transforms", "part": "datasets", "always": True, "produces": "data/transforms/*.yaml", "d": "D15 D6",
          "cmd": [_tool("mac_transforms.py"), str(root)]},
         # AFTER `transforms`, NOT BEFORE IT — moved 2026-09-26, found by deleting a bundle and
         # re-ingesting it from its 12 inputs. `mac_sample` names the TRANSFORM that produces a relation,
@@ -622,14 +665,32 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # with the sources previews deleted and the served ones intact, `samples-sources` matched its
         # sibling's output and RESUMEd — 0 of 7 landed relations previewed, reported as done. The
         # checklist caught what resume got wrong, which is the whole reason a part has one.
-        {"name": "samples-sources", "part": "sources", "produces": "data/samples/*.src.sample.csv",
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "samples-sources", "part": "sources", "always": True, "produces": "data/samples/*.src.sample.csv",
          "d": "D11b", "cmd": [_tool("mac_sample.py"), str(root), "--plane", "sources"]},
         # PER-ITEM RESUME, because a GLOB CANNOT SEPARATE THE TWO PLANES HERE: served previews are
         # `<stem>.sample.csv` and landed ones `<stem>.src.sample.csv`, and the first pattern matches
         # the second. Found by a full from-scratch import 2026-09-28 — `samples-sources` ran, and
         # `samples-datasets` then RESUMED on its sibling's seven files and wrote none of its own five.
         # This is the third instance of one bug: `produces` must answer for THIS stage's output alone.
-        {"name": "samples-datasets", "part": "datasets", "d": "D11b",
+        # `produces` WAS ABSENT, so the served preview measured as a phase-1-only artifact even
+        # though this stage is what writes it. A stage that declares nothing produces nothing as far
+        # as every reader of this table is concerned.
+        # `always`, ON THE MANIFEST'S RULING. `mac_artifacts.yaml` declares this kind `re-derived`:
+        # a pure function of the warehouse, whose stale copy is indistinguishable from a fresh one
+        # by its presence. `check_artifact_conformance#PHASED` holds the stage to that declaration,
+        # and it found this one resuming. Measured 2026-09-28, the same defect three times: the DQ
+        # stages resumed on phase 1's output and left the served plane with 0 of 8 relations
+        # assessed; `lineage` resumed after a rename and the checklist read T8 0 of 8; and the
+        # transform descriptors resumed on views that no longer existed.
+        {"name": "samples-datasets", "part": "datasets", "always": True, "d": "D11b",
+         "produces": "data/samples/*.sample.csv",
          "each": lambda: [[_tool("mac_sample.py"), str(root), "--plane", "datasets"]],
          "missing": lambda: ([[_tool("mac_sample.py"), str(root), "--plane", "datasets"]]
                              if any(not (root / "data" / "samples" / f"{r}.sample.csv").is_file()
@@ -707,9 +768,32 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # fixed. The two suites need only the profiles, so they move up as well, which removes the
         # circularity (findings read the run record) without needing a second pass.
         # ---- the two suites: GENERATED, then EXECUTED. Generating is not testing. -------------
-        {"name": "dq-suite", "produces": "acceptance/data_sanity_generated.yaml", "d": "D7a",
+        # `always`, FOR THE SAME REASON `lineage` CARRIES IT: this is a pure RE-DERIVATION over the
+        # descriptor planes on disk, and a stale register is indistinguishable from a fresh one by
+        # its presence. Measured on contoso5, 2026-09-28, on the first two-part run where DQ was
+        # tagged at all: phase 2 RESUMED all three stages on phase 1's output, so the served plane
+        # got ZERO properties (0 of 8 relations) and the register still carried eight
+        # `DQ-ORPHAN-<landing>` findings saying each landing "is consumed by no transformation" —
+        # eight transformations later. Both halves wrong, and the checklist could not see it.
+        # DQ BELONGS TO EVERY DELIVERY, NOT TO "ALL". These three carried NO `part`, so `--part
+        # sources` AND `--part datasets` both HELD them and the data-quality assessment ran only
+        # under `--part all` — which the operator's delivery rule forbids ("1. data sources - FULL
+        # COMPLETE APPROVED / 2. datasets - FULL COMPLETE APPROVED"). Measured on contoso5,
+        # 2026-09-28: a two-part delivery finished 6 of 6 and 9 of 9 with `data/quality/` ABSENT
+        # and `issues: 0`, because no checklist item asks about DQ either. Operator: "where the
+        # fuck is now DQ assessment".
+        #
+        # This is the SECOND stage to be lost this way — `lineage` was untagged for the same reason
+        # and the same operator caught it the same day ("if you have dataset then you must have
+        # lineage"). An untagged stage is not neutral, it is held by every part that exists.
+        #
+        # `both`, like `project` and `delivery-check`: the tools enumerate whatever descriptor
+        # planes are ON DISK (`for plane in ("datasets", "sources")`), so part 1 assesses the
+        # landing plane because that is all there is, and part 2 re-runs over both. Idempotent, so
+        # the plane a part did not touch is re-assessed identically.
+        {"name": "dq-suite", "part": "both", "always": True, "produces": "acceptance/data_sanity_generated.yaml", "d": "D7a",
          "cmd": [_tool("mac_generate_sanity.py"), str(root)]},
-        {"name": "dq-run", "produces": "acceptance/data_sanity_generated_runs.json",
+        {"name": "dq-run", "part": "both", "always": True, "produces": "acceptance/data_sanity_generated_runs.json",
          "d": "D7b D7c",
          "suite": "acceptance/data_sanity_generated.yaml"},
         # THE DQ FINDINGS REGISTER, and it must run BEFORE `project`: the console's data-quality
@@ -717,7 +801,7 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # With no register the board is `{"total": 0, "findings": []}` — "DQ is completely empty",
         # which is what the operator saw while a suite of 86 cases was passing beside it. A suite
         # proves invariants HOLD; a register says what is WRONG and who must rule on it.
-        {"name": "dq-findings", "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
+        {"name": "dq-findings", "part": "both", "always": True, "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
          "cmd": [_tool("mac_dq_findings.py"), str(root)]},
         # AFTER dq-findings, NOT BEFORE IT. This gate READS the data-quality register —
         # CONCEPT-RELATION asks whether a served relation nobody claims has been DECLINED there — so
@@ -739,8 +823,12 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # enforced it — but only at `project`, so an invented `d_`/`f_`/`b_` scheme survived being
         # designed, built, measured, committed and reported before anything objected. A rule that fires
         # after the work is a record of a mistake; one that fires during it is a guard.
+        # A GATE PRODUCES NOTHING, and claiming otherwise is not harmless. This declared
+        # `produces: data/datasets/*.yaml` while being strictly read-only, so the served descriptor
+        # appeared to have four writers — three real collaborators and a checker. `produces` is the
+        # field the manifest derives PHASE from, and a false claim in it puts a kind in a delivery
+        # that does not write it.
         {"name": "conformance", "part": "both", "always": True, "d": "D1 D2",
-         "produces": "data/datasets/*.yaml",
          "cmd": [_tool("check_artifact_conformance.py"), str(root)]},
         {"name": "delivery-check", "part": "both", "always": True,
          "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
@@ -794,13 +882,16 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # is idempotent: the plane a part did not touch re-renders identically. Scoping it per plane would
         # mean splitting a 1050-line renderer, and a second renderer for the same page is the drift this
         # estate keeps paying for.
-        {"name": "project", "part": "both", "produces": "objects.json", "d": "D3 D6 D15", "always": True,
-         "sdk": ["--mode", "project", "--project-anyway",
-                 "first run: the ontology plane is empty by design at this stage, and the operator "
-                 "needs the projected data-plane state — lineage, the DQ board, the descriptors — in "
-                 "order to author concepts from it"]},
-        # LINEAGE FROM THE ENGINE, and it runs BEFORE `project` deliberately: the projection's own
-        # lineage_graph needs an ontology plane, so on a first run this is the only lineage there is.
+        # LINEAGE FROM THE ENGINE, AND IT RUNS BEFORE `project`. The comment here said exactly that
+        # while the entry sat AFTER it in this list, and the order is the one that executes.
+        # Measured on contoso5, 2026-09-28, on a clean two-part delivery: `project` rendered every
+        # served page from the lineage of the PREVIOUS part (0 columns), so `data/datasets/*.md`
+        # came out with NO lineage section at all, and the projector's own `claims` edges then
+        # outranked the 8 measured `feeds` edges this stage wrote a moment later. T8 and T9 both
+        # reported complete over that artifact. The projection RENDERS lineage, so lineage has to
+        # exist first; and `lineage_graph`'s own precedence rule now makes the outcome independent
+        # of this order rather than dependent on it — a defect this deep should not be held shut
+        # by a list position alone.
         # LINEAGE IS PART OF THE DATASETS DELIVERY. Operator, 2026-09-28: "if you have dataset then
         # you must have lineage". It was tagged to NO part, so `--part datasets` HELD it and a
         # datasets-only delivery produced a served plane with no column-level provenance at all —
@@ -814,7 +905,29 @@ def _stages(root: pathlib.Path) -> list[dict]:
         {"name": "lineage", "part": "datasets", "always": True,
          "produces": "data/lineage/lineage.json", "d": "D15",
          "cmd": [_tool("mac_lineage.py"), str(root)]},
-        {"name": "resources", "produces": "*.mac", "d": "D13 D5",
+        # `produces` NAMES EVERYTHING THE PROJECTOR WRITES, not just its headline artifact. It
+        # declared `objects.json` alone while also writing every relation page, both plane
+        # overviews, the DQ pages, the register pages, the reference projections and the bundle
+        # index — so the manifest measured `relation_page` and `plane_overview` as belonging to NO
+        # delivery. An under-declared `produces` hides a whole artifact class from the phase it is
+        # owed by; an over-declared one lets a stage resume on a sibling's output. Both have
+        # happened here, which is why this is a list.
+        {"name": "project", "part": "both", "d": "D3 D6 D15", "always": True,
+         "produces": ["objects.json", "index.md", "compile.json",
+                      "data/sources/*.md", "data/datasets/*.md", "data/transforms/*.md",
+                      "data/sources/index.md", "data/datasets/index.md",
+                      "data/lookups/*.lookup.md",
+                      "data/quality/*.md", "data/quality/dq_dashboard.json",
+                      "references/usage_guardrails.md", "references/known_issues/*.md",
+                      "ontology/diagnostics.json"],
+         "sdk": ["--mode", "project", "--project-anyway",
+                 "first run: the ontology plane is empty by design at this stage, and the operator "
+                 "needs the projected data-plane state — lineage, the DQ board, the descriptors — in "
+                 "order to author concepts from it"]},
+        # `both`: the bundle resource file describes WHATEVER has been delivered, so each part
+        # leaves one that matches its own state. Untagged, it was held by both parts exactly like
+        # the DQ stages above.
+        {"name": "resources", "part": "both", "produces": "*.mac", "d": "D13 D5",
          "cmd": [_tool("mac_resources.py"), str(root)]},
         {"name": "ontology-suite", "produces": "acceptance/ontology_generated.yaml", "d": "D8a",
          "cmd": [_tool("mac_generate_ontology_tests.py"), str(root)]},
@@ -887,14 +1000,21 @@ def _run(stage: dict, root: pathlib.Path, a) -> tuple[str, str, str, float]:
     # nothing". Worse, `mac_profile` is what ADDS the value domains to a descriptor, so the register
     # cutter downstream then wrote 0 registers from descriptors that had just been reset.
     todo: list[list[str]] = []
+    # `always` MUST BE HONOURED ON BOTH BRANCHES, and it was honoured on only one. The `elif` below
+    # consults it; this branch never did — so every ITERATING stage (`profiles-*`, `samples-*`,
+    # `references-*`, `descriptors-*`) silently ignored the flag. Measured 2026-09-29: seven stages
+    # were marked `always: True` to stop them serving stale artifacts, the gate confirmed the flag
+    # was set, and five of them resumed anyway on the very next run. A flag that is set, reported,
+    # and not read is worse than an absent one: everything says the fix is in.
+    force = bool(a.refresh or stage.get("always"))
     if "each" in stage:
-        todo = stage["each"]() if a.refresh else (
+        todo = stage["each"]() if force else (
             stage["missing"]() if "missing" in stage else stage["each"]()
         )
-        if not todo and not a.refresh:
+        if not todo and not force:
             total = len(stage["each"]())
             return (name, "RESUME", f"all {total} item(s) present", 0.0)
-    elif produced and not stage.get("always") and not a.refresh and _present(root, produced):
+    elif produced and not force and _present(root, produced):
         seen = ", ".join(produced) if isinstance(produced, (list, tuple)) else produced
         return (name, "RESUME", f"{seen} present", 0.0)
     if stage.get("billed") and not a.accept:
@@ -1100,9 +1220,21 @@ def _probe(root: pathlib.Path, kind: str) -> tuple[bool, str]:
             m = doc.get(key) or {}
             best = max(best, len((m.get("entities") or [])))
         return best > 0, f"{best} entit(ies)" if best else "0 entities — projected but EMPTY"
-    g = doc.get("lineage_graph") or {}
-    n = len(g.get("nodes") or []) if isinstance(g, dict) else 0
-    return n > 0, f"{n} node(s)" if n else "0 nodes"
+    # THE ONE ARTIFACT, not `objects.json#lineage_graph` — retired 2026-09-28 as the third home
+    # for this graph. A probe still reading the retired address reports "0 nodes" on a bundle whose
+    # chain is complete, which is a false NOT-DELIVERED and exactly the failure mode this whole
+    # collapse was about.
+    import json as _j
+    f = root / "data" / "lineage" / "lineage.json"
+    if not f.is_file():
+        return False, "data/lineage/lineage.json absent"
+    try:
+        g = _j.loads(f.read_text(encoding="utf-8")) or {}
+    except Exception:  # noqa: BLE001
+        return False, "the lineage artifact is unreadable"
+    n, e = len(g.get("nodes") or []), len(g.get("edges") or [])
+    return bool(n and e), (f"{n} node(s), {e} edge(s)" if n and e
+                           else f"{n} node(s) and {e} edge(s) — projected but EMPTY")
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════
@@ -1125,32 +1257,21 @@ def _lineage(root: pathlib.Path) -> tuple[bool, str]:
         return False, "the lineage artifact is unreadable"
     if not c.get("edges"):
         return False, "0 edges — measured but EMPTY"
-    # AND THE GRAPH THE CONSOLE ACTUALLY RENDERS. Reporting only my own artifact is how "lineage
-    # delivered" was claimed while the console's view was empty: objects.json#lineage_graph is what
-    # the page reads, and it is built from the transform descriptors, not from this file.
-    shown = _console_lineage(root)
-    return True, (f"{c.get('nodes')} node(s), {c.get('edges')} edge(s), "
-                  f"{c.get('columns_with_a_stated_source')} of {c.get('columns')} column(s) traced"
-                  f"  · console graph: {shown}")
-
-
-def _console_lineage(root: pathlib.Path) -> str:
-    """What `objects.json#lineage_graph` holds — the thing the console's lineage view renders."""
-    import json
-    f = root / "objects.json"
-    if not f.is_file():
-        return "objects.json ABSENT, so the console shows nothing"
-    try:
-        g = (json.loads(f.read_text(encoding="utf-8")) or {}).get("lineage_graph") or {}
-    except Exception:  # noqa: BLE001
-        return "objects.json unreadable"
-    nodes = g.get("nodes")
-    edges = g.get("edges")
-    n = len(nodes) if isinstance(nodes, list) else (nodes or 0)
-    e = len(edges) if isinstance(edges, list) else (edges or 0)
-    if not e:
-        return f"{n} node(s) and 0 EDGES — the view draws nothing; are there transform descriptors?"
-    return f"{n} node(s), {e} edge(s)"
+    # ONE ARTIFACT, SO ONE REPORT. This used to read `objects.json#lineage_graph` as well and print
+    # both — "console graph: N nodes, M edges" — because the console rendered a DIFFERENT file from
+    # the one measured here, and reporting only this one was how "lineage delivered" got claimed
+    # over an empty view. That second home is retired; the console reads this file now, so a second
+    # figure would be the same figure twice.
+    #
+    # WHICH HALVES ARE PRESENT IS THE THING WORTH SAYING. Both producers write here and either may
+    # not have run: a `measured` of False means the warehouse was never read, and a `grounds` count
+    # of zero on a bundle with concepts means the projector has not folded them in.
+    by_kind = c.get("edges_by_kind") or {}
+    halves = ", ".join(f"{k} {v}" for k, v in sorted(by_kind.items())) or "no edge kinds"
+    return True, (f"{c.get('source')} source(s), {c.get('lookup')} register(s), "
+                  f"{c.get('dataset')} dataset(s), {c.get('concept')} concept(s); "
+                  f"{c.get('edges')} edge(s) [{halves}]; "
+                  f"{c.get('columns_with_a_stated_source')} of {c.get('columns')} column(s) traced")
 
 
 def _suite_cases(root: pathlib.Path, kind: str) -> tuple[bool, str]:

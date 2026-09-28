@@ -360,10 +360,42 @@ def _lineage_flows(cr: Path) -> list:
     #    `derived`, `sources` and `dataset` — but every field now traces to a single measurement.
     lj = cr / "data" / "lineage" / "lineage.json"
     if not lj.is_file():
-        raise RuntimeError(
-            f"lineage: refusing to project a lineage-less read view — {lj} does not exist. "
-            f"Run mac_lineage.py (the `lineage` stage of the datasets part) first."
-        )
+        # MISSING IS NOT THE SAME AS NOTHING TO HAVE, and conflating them made a whole delivery
+        # impossible. Operator ruling 2026-09-28: the planes are delivered and APPROVED in order —
+        # "1. data sources - FULL COMPLETE APPROVED / 2. datasets - FULL COMPLETE APPROVED /
+        # 3. ontology - FIRST DRAFT". A landing-plane delivery has an EMPTY served schema by
+        # design (contoso5's build.sh: "the served schema is created empty and stays empty until a
+        # datasets delivery is asked for"), so there is no view definition to measure and
+        # `mac_lineage` correctly exits 1 with "NOTHING TO MEASURE". Refusing here on that basis
+        # made `project` fail, which left every source page unrendered — measured on contoso5:
+        # S5 0 of 8 pages, S6 no index — and a part-1 delivery could never be completed at all.
+        #
+        # So the guard keeps its teeth exactly where it earned them: a bundle that HAS a served
+        # plane and no measurement of it is still a refusal, because that is the silent-regression
+        # case the docstring dates twice (2026-08-13, 2026-09-15). A bundle with no served plane
+        # gets `0 of 0` and a recorded reason, which is the honest empty.
+        # THE TEST IS THE DELIVERABLE, NOT THE INPUT. Keyed on `data/transforms/*.sql` too, this
+        # refused a LANDING-PLANE delivery on a bundle whose phase-2 transform SQL simply happened
+        # to be on disk already — which it is, because the SQL is AUTHORED INPUT that exists before
+        # the delivery that consumes it. Measured on contoso5, 2026-09-28: phase 1 failed `project`
+        # and came back S5 0 of 8, S6 0 of 1, for a bundle with no served descriptor at all.
+        #
+        # `data/datasets/*.yaml` is the honest signal: a DESCRIBED served relation is what the
+        # projection renders and what needs lineage. In a datasets delivery those descriptors are
+        # written before this runs, so the guard still bites exactly where it earned its teeth.
+        served = sorted((cr / "data" / "datasets").glob("*.yaml"))
+        if served:
+            raise RuntimeError(
+                f"lineage: refusing to project a lineage-less read view — {lj} does not exist, "
+                f"yet this bundle describes {len(served)} served relation(s) "
+                f"(e.g. {served[0].relative_to(cr)}). Without flows every source and dataset "
+                f"loses its Lineage view tab. Run mac_lineage.py (the `lineage` stage of the "
+                f"datasets part) first."
+            )
+        print("  lineage: 0 flows — this bundle declares NO served relation (no data/datasets "
+              "descriptor and no transform), so there is no view definition to measure. This is "
+              "a landing-plane delivery, not a missing measurement.")
+        return []
     sys.path.insert(0, str(_MAC_TOOLS))
     import mac_lineage as _ml
     return _ml.flows(cr)

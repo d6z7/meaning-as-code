@@ -443,12 +443,21 @@ def check_coverage(bundle, root) -> list:
     """The lineage completeness CONFORMANCE.md requires of a bundle with a data plane."""
     try:
         from check_lineage_coverage import MAX_COVERAGE_ERROR, MIN_COVERAGE_WARN, coverage_rows
-        from lineage_project import project
+        from mac_lineage import flows as _flows
     except ImportError as exc:  # pragma: no cover - environment, not content
         return [Diagnostic(code="MAC011", severity=WARNING, source=SOURCE,
                            summary=f"lineage completeness could not be measured: {exc}")]
 
-    model, unclassifiable = project([str(root)])   # raises on a malformed descriptor — run() reports it
+    # THE ONE ARTIFACT, and this was the LAST consumer still on the other one. It called
+    # `lineage_project.project([root])`, which builds column edges from
+    # `data/transforms/*.yaml#inputs[].consumes` — a map `mac_transforms` does not generate — so it
+    # found no edges and filed every column under `derived`. Measured on contoso5 the day this was
+    # changed: this gate reported "overall column coverage 0/63 (0 %)" and raised MAC011 at ERROR
+    # over eight datasets, while `mac_lineage` had measured 58 of the same 63 columns back to a
+    # named source column in the warehouse's own view definitions. A gate failing a bundle on the
+    # output of a producer nobody else reads is worse than no gate: it is a false verdict with a
+    # code attached. `flows()` is the adapter on the one producer; every consumer speaks it.
+    model = {"flows": _flows(str(root))}
     rows = coverage_rows(model)
     if not rows:
         return []                        # no data plane: nothing to be complete about
@@ -524,15 +533,13 @@ def check_coverage(bundle, root) -> list:
                      f"— legitimate by construction, and outside lineage"),
             witnesses=seed_only,
             note=f"becomes an error the moment such a view declares a raw_source|dataset parent. {scale}"))
-    if unclassifiable:
-        out.append(Diagnostic(
-            code="MAC011", severity=WARNING, source=SOURCE,
-            summary=(f"{de(len(unclassifiable))} `consumes` entr(y/ies) name a rule instead of a column, "
-                     f"so they produce no lineage edge"),
-            witnesses=[Witness(file=file_of.get(str(u[0]).split(".")[-1], str(u[0])),
-                               detail=f"consumes column {u[1]!r} names rule {u[2]!r} — {u[3]}")
-                       for u in unclassifiable],
-            note=scale))
+    # THE `unclassifiable` BRANCH IS GONE, and this is why rather than a silent deletion. It
+    # reported `consumes` entries that name a rule instead of a column — a defect that exists only
+    # in `lineage_project`'s model, which this check no longer reads. Keeping it would have meant
+    # keeping the second producer alive purely to feed one warning about the second producer's own
+    # input format. The measurement has no `consumes` map to be wrong about: a column either
+    # resolves to a source column in the view definition or it does not, and both outcomes are
+    # already reported above (`thin`, `explains_nothing`) with the column named.
     return out
 
 

@@ -768,13 +768,48 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     # ---- SME questions — the DATA + DATA-QUALITY sign-offs, exposed as ONE prioritised, in-sync list.
     # Derived from the register's per-issue `sme_owner` (the DQ perspective) + each transform's
     # `open_transforms` (the data-model perspective). A VIEW of authored sources — re-projected every run. ----
-    def _owner_ask(s):
-        s = str(s or "").strip()
+    def _ask_from_owner(v):
+        """The ask out of a hand-authored `sme_owner`, which packs owner and question into one
+        string separated by a dash or a colon. Returns "" when it carries only a role."""
+        v = str(v or "").strip()
         for sep in ("—", " - ", ": "):
-            if sep in s:
-                o, a = s.split(sep, 1)
-                return o.strip(), a.strip()
-        return "domain-owner", s
+            if sep in v:
+                return v.split(sep, 1)[1].strip()
+        return ""
+
+    def _owner_ask(i):
+        """(owner, question, answer-set) — READ FROM THE FIELDS THE REGISTER ACTUALLY CARRIES.
+
+        THIS READ A KEY NOBODY WRITES. It took `issue["sme_owner"]` and split it on a dash to
+        recover an owner and an ask. No finding `mac_dq_findings` has ever written carries that
+        key — the register's fields are id/title/severity/status/ruled_by/reason/finding/needs/
+        ruling/raised_by — so `ask` was the empty string on every row. Measured on contoso5,
+        2026-09-28: SME-QUESTIONS.md rendered 7 sign-offs, 1 high and 6 medium, each with an owner,
+        a finding link, a status chip and a table name, and a BLANK QUESTION. The one column an SME
+        opens the page for was the one that was empty, and the page looked complete without it.
+
+        The questions were there the whole time, and they are good ones: `needs` carries the ask in
+        prose with its recommendation, and `ruling` carries it as a closed choice — `question` plus
+        an `answers` list. A closed answer set is the thing an SME can actually act on, so it is
+        rendered as its own column rather than buried in the prose.
+        """
+        r = i.get("ruling") or {}
+        # THREE FIELD GENERATIONS, READ IN ORDER OF PRECISION — and the third is not legacy cruft,
+        # it is the only ask a HAND-AUTHORED register carries. Fixing this reader to prefer
+        # `ruling`/`needs` (which only `mac_dq_findings` writes) silently blanked every bundle whose
+        # register was written by a person: measured 2026-09-28, estate/estate2 carries `sme_owner` 45
+        # times and `ruling:` zero times, as do archive-estate and mac-ontology-contoso. Dropping
+        # the oldest spelling turned the bug inside out instead of fixing it.
+        q = ((r.get("question") or "").strip()
+             or str(i.get("needs") or "").strip()
+             or _ask_from_owner(i.get("sme_owner")))
+        answers = r.get("answers") or []
+        owner = str(i.get("sme_owner") or "").strip() or "domain-owner"
+        for sep in ("—", " - ", ": "):
+            if sep in owner:
+                owner = owner.split(sep, 1)[0].strip()
+                break
+        return owner, q, " \u007c ".join(str(a) for a in answers)
 
     _pipe = "\\|"
 
@@ -796,16 +831,16 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         sq += [
             f"## {sevname.title()} priority — {len(rows)} question(s)",
             "",
-            "| ask | owner | on (finding) | status | table |",
-            "|---|---|---|---|---|",
+            "| ask | answer one of | owner | on (finding) | status | table |",
+            "|---|---|---|---|---|---|",
         ]
         for i in rows:
-            owner, ask = _owner_ask(i.get("sme_owner"))
+            owner, ask, answers = _owner_ask(i)
             cov = (resmap.get(i.get("id")) or {}).get("coverage")
             chip = _COV_CHIP.get(cov, "unreconciled") if cov else "unreconciled"
             sq.append(
-                f"| {_esc(ask, 130)} | {_esc(owner, 22)} | [{_esc(i.get('title'), 56)}]({i['_id']}.md) "
-                f"| {chip} | {i.get('_table') or '—'} |"
+                f"| {_esc(ask, 200)} | {_esc(answers, 90) or '—'} | {_esc(owner, 22)} "
+                f"| [{_esc(i.get('title'), 56)}]({i['_id']}.md) | {chip} | {i.get('_table') or '—'} |"
             )
         sq += [""]
     prop = [

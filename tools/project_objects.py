@@ -622,7 +622,12 @@ def derive(root: Path) -> tuple[dict, int]:
         "counts": built.get("counts") or {},
         "er_model": built.get("er_model"),
         "er_model_served": built.get("er_model_served"),
-        "lineage_graph": built.get("lineage_graph"),
+        # `lineage_graph` IS NO LONGER PUBLISHED HERE. It was one of three homes for the same
+        # graph and the projector stopped embedding it on 2026-09-28; the one artifact is
+        # `data/lineage/lineage.json`, which the console reads through `GET /lineage/{d}/{s}`.
+        # Publishing `None` under the old key would have been worse than dropping it: a client
+        # that reads the key cannot tell "this bundle has no chain" from "this seam stopped
+        # carrying it", and the seam declares `aux` optional AS A WHOLE for exactly that reason.
     }
 
     if partial:

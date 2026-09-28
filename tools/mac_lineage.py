@@ -45,10 +45,20 @@ import sys
 from datetime import UTC, datetime
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+_REPO = str(pathlib.Path(__file__).resolve().parent.parent)
+if _REPO not in sys.path:
+    sys.path.insert(0, _REPO)
 import _plugin  # noqa: E402
 
-GENERATOR = "mac_lineage.py/1"
-OUT = pathlib.Path("data") / "lineage" / "lineage.json"
+# THE SHAPE, THE ID SCHEME AND THE MERGE ALL LIVE IN ONE MODULE. This tool used to write its own
+# document with its own node ids (`main.sales`), while the projector wrote the same graph with
+# different ids (`src:sales`) into two other files. Three homes for one fact, and the id schemes
+# were why nobody had folded them: the same relation had two names. Importing the shape is what
+# makes "one artifact, two producers" a mechanism rather than an intention.
+from sdk.project import lineage_graph as _lg  # noqa: E402
+
+GENERATOR = "mac_lineage.py"
+OUT = _lg.ARTIFACT
 
 #: `FROM x` and `JOIN x` — the relations a definition reads. Deliberately not a SQL parser: this
 #: reads DECLARED dependencies out of a CREATE VIEW the engine itself stored, and every name it
@@ -70,8 +80,26 @@ _ALIAS = re.compile(r"\b([A-Za-z_][\w.]*)\s+(?:AS\s+)?([a-z]\w?)\b(?=\s*(?:,|\)|
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("root", nargs="?", default=".")
+
+    # `--flows` EMITS THE ADAPTER'S OUTPUT ON STDOUT, because the console may not IMPORT the
+
+    # framework — boundaries.yaml gives that tree `may_not_import: [sdk]` and
+
+    # `may_sys_path_mutate: false`, so it reaches a tool only by running it. Without this the
+
+    # console would need its own copy of `flows()`, which is the second home this whole change
+
+    # exists to remove.
+
+    ap.add_argument("--flows", action="store_true",
+
+                    help="print the measured lineage in the FLOW shape consumers speak")
     ap.add_argument("--check", action="store_true", help="report drift; write nothing")
     a = ap.parse_args(argv)
+    if getattr(a, "flows", False):
+        import json as _j
+        print(_j.dumps({"flows": flows(a.root)}))
+        return 0
 
     root = pathlib.Path(a.root).resolve()
     try:
@@ -94,31 +122,40 @@ def main(argv: list[str] | None = None) -> int:
     edges: list[dict] = []
     columns: list[dict] = []
     for view, sql in views.items():
-        nodes.setdefault(f"{schema}.{view}", {"id": f"{schema}.{view}", "kind": "view",
-                                              "schema": schema, "name": view})
+        me = _node(nodes, f"{schema}.{view}", "view")
         for ref in sorted(_refs(sql, catalog, schema, view)):
-            kind = catalog.get(ref, "unknown")
-            nodes.setdefault(ref, {"id": ref, "kind": kind,
-                                   "schema": ref.split(".")[0] if "." in ref else None,
-                                   "name": ref.split(".")[-1]})
-            edges.append({"from": ref, "to": f"{schema}.{view}", "kind": "reads"})
+            kind = catalog.get(ref, "table")
+            n = _node(nodes, ref, kind)
+            # `feeds` from a LANDING, `derives_from` from another VIEW. One relation-level fact,
+            # two kinds, because a reader following a wrong number needs to know whether the next
+            # hop up is raw or already transformed.
+            edges.append({"from": n["id"], "to": me["id"],
+                          "kind": "derives_from" if kind == "view" else "feeds"})
         columns.extend(_columns(con, schema, view, sql))
+
+    # THE CENSUS, NOT JUST WHAT A VIEW HAPPENED TO REFERENCE. Without this the graph held only the
+    # relations some view reads, and an orphan register cannot report a source that feeds nothing
+    # if that source is not in the graph at all. Measured on contoso5 before this block: 7 source
+    # nodes for 8 declared landings — `orderrows` was absent, `orders` appeared only as a ghost
+    # cited by a value register, and `sources_feeding_nothing` came back `[]` over a bundle where
+    # two landings deliberately feed nothing. A census of ZERO is the only honest empty.
+    for plane, kind in (("sources", "table"), ("datasets", "view")):
+        for desc in sorted((root / "data" / plane).glob("*.yaml")):
+            _node(nodes, f"{schema if kind == 'view' else 'main'}.{desc.stem}", kind)
 
     stated = sum(1 for c in columns if c["source_column"])
     traced = sum(1 for c in columns if c["source_column"] and c.get("transform"))
-    doc = {
-        "generated_by": GENERATOR,
-        "observed": datetime.now(UTC).date().isoformat(),
-        "schema": schema,
-        "counts": {"nodes": len(nodes), "edges": len(edges),
-                   "columns": len(columns), "columns_with_a_stated_source": stated,
-                   "columns_traced_through_a_transform": traced,
-                   "columns_derived_from_several_or_none": len(columns) - stated},
-        "nodes": sorted(nodes.values(), key=lambda n: n["id"]),
-        "edges": sorted(edges, key=lambda e: (e["to"], e["from"])),
-        "columns": columns,
-    }
-    body = json.dumps(doc, indent=2) + "\n"
+    # MERGE, NEVER OVERWRITE. The projector's half — the registers, the concepts, the issue counts —
+    # lives in this same file and this tool does not own it. `_lg.merge` replaces exactly the node
+    # kinds and edge kinds declared in `_lg.OWNERSHIP` for this producer and preserves everything
+    # else, so re-measuring a warehouse cannot silently delete a bundle's ontology chain.
+    doc = _lg.merge(
+        _lg.load(root), GENERATOR,
+        sorted(nodes.values(), key=lambda n: n["id"]),
+        sorted(edges, key=lambda e: (e["to"], e["from"])),
+        columns=columns, schema=schema, observed=datetime.now(UTC).date().isoformat(),
+    )
+    body = json.dumps(doc, indent=2, sort_keys=True) + "\n"
     out = root / OUT
     if a.check:
         now = out.read_text(encoding="utf-8") if out.is_file() else ""
@@ -130,13 +167,29 @@ def main(argv: list[str] | None = None) -> int:
 
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(body, encoding="utf-8")
-    print(f"  {OUT}: {len(nodes)} node(s), {len(edges)} edge(s), "
+    print(f"  {OUT}: {len(nodes)} relation node(s), {len(edges)} relation edge(s), "
           f"{stated} of {len(columns)} column(s) traced "
           f"({traced} through a transform, {len(columns) - stated} derived from several or none)")
     for e in doc["edges"]:
-        print(f"    {e['from']:44} -> {e['to']}")
+        if e["kind"] in _lg.OWNERSHIP[GENERATOR]["edges"]:
+            print(f"    {e['from']:44} --{e['kind']}-> {e['to']}")
+    kept = [n for n in doc["nodes"] if n["kind"] not in _lg.OWNERSHIP[GENERATOR]["nodes"]]
+    if kept:
+        print(f"    (kept {len(kept)} node(s) this tool does not own: "
+              f"{', '.join(sorted({n['kind'] for n in kept}))})")
     con.close()
     return 0
+
+
+def _node(nodes: dict, relation: str, kind: str) -> dict:
+    """One relation, in the ONE id scheme — `src:<name>` for a landing, `ds:<name>` for a served
+    view. The bundle's descriptors name their objects by bare relation name and the projector keys
+    on that, so resolving here is what lets both producers write the same node."""
+    bare = relation.split(".")[-1]
+    node_kind = "dataset" if kind == "view" else "source"
+    nid = f"{_lg._PREFIX[node_kind]}:{bare}"
+    return nodes.setdefault(nid, {"id": nid, "ref": bare, "kind": node_kind, "title": bare,
+                                  "relation": relation, "issues": 0})
 
 
 def _catalog(con) -> dict[str, str]:
@@ -298,8 +351,21 @@ def flows(root) -> list:
             "transform": view,
             "kindl": "passthrough" if edges and not derived else (
                 "computed" if derived and not edges else "passthrough + computed"),
+            # `columns` IS A LIST OF OBJECTS, NOT OF STRINGS, and that is a contract, not a
+            # preference. The renderer does `(s.columns || []).map((c) => ({ name: c.name }))`
+            # (LineageView.jsx#buildModel) and the downstream branch keys a Map on `c.name`. This
+            # adapter shipped `sorted(set(cs))` — bare strings — so every row resolved to
+            # `undefined` and the SOURCE BOX RENDERED WITH NO COLUMNS while the header still said
+            # "sources: 1 · column edges: 12 · kind: passthrough". Twelve edges converged on an
+            # empty box. The header was right and the picture was empty, which is the worst of the
+            # two failure modes: nothing looked broken enough to disbelieve.
+            #
+            # `badge` is carried because the shape it replaces carried it; a renderer reading an
+            # absent key gets undefined either way, but a producer that silently narrows a shape is
+            # how this happened in the first place.
             "sources": [{"rel": r, "short": r.split(".")[-1], "schema": r.split(".")[0],
-                         "columns": sorted(set(cs)), "extra": 0, "role": None}
+                         "columns": [{"name": c, "badge": None} for c in sorted(set(cs))],
+                         "extra": 0, "role": None}
                         for r, cs in sorted(srcs.items())],
             "dataset": {"name": view, "columns": [{"name": c.get("column")} for c in cols]},
             "edges": edges, "derived": derived, "seeds": [], "rules": [], "predicates": [],
