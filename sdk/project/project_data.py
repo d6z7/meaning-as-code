@@ -152,6 +152,9 @@ def _lineage_cols_md(f: dict) -> list:
     return body
 
 
+from sdk.project import column_table as _CT  # ONE renderer for the columns table
+
+
 def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     # ONE tree: projected md co-locate WITH the SSOT under data_dir/<type>/ (dim_country.md next to
     # dim_country.yaml). index + objects.json live at the project root (data_dir.parent). out_dir ignored.
@@ -394,14 +397,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         # could declare into on this plane: the schema allows it, no source uses it, and the fact it
         # would carry lives elsewhere and is shown. An empty column whose emptiness is structural is
         # not information; it is a question asked of the wrong plane.
-        body = ["## Columns", "", "| column | type | role | key | references |",
-                "|---|---|---|---|---|"]
+        body = ["## Columns", "", _CT.legend(), ""] + _CT.header()
         for c in src.get("columns", []) or []:
-            body.append(
-                f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} "
-                f"| {c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} "
-                f"| {('`' + str(c['references']) + '`') if c.get('references') else ''} |"
-            )
+            body.append(_CT.row(c))
         # The doc is the raw schema-of-record (Columns). Lineage and quality findings live in the
         # object's TABS (Lineage / Quality) — not repeated here; a raw source has no ontology concept.
         (out / "sources" / f"{stem}.md").write_text(_fm(fm) + "\n" + "\n".join(body))
@@ -497,12 +495,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             "relation": _drel,  # produced relation — for lineage flow matching
             "tags": [label, "dataset", "lifecycle:draft"],
         }
-        body = ["## Columns", "", "| column | type | role | key | references |",
-                "|---|---|---|---|---|"]
+        body = ["## Columns", "", _CT.legend(), ""] + _CT.header()
         for c in ds.get("columns", []) or []:
-            body.append(f"| `{c.get('name')}` | {c.get('type', '')} | {c.get('role', '')} "
-                        f"| {c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} "
-                        f"| {('`' + str(c['references']) + '`') if c.get('references') else ''} |")
+            body.append(_CT.row(c))
         # THE FK SECTION READ THE RETIRED `foreign_keys:` BLOCK, which 0 of 16 descriptors carry — so it
         # rendered nothing. It reads the one home now (ruling 2026-09-27) and falls back to the old block
         # only so an older bundle still renders.

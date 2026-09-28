@@ -279,23 +279,18 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
                 f"### raw source: {stbl.get('schema', '')}.{stbl.get('name', Path(desc).stem)}\n"
                 f"| column | type |\n|---|---|\n{rows}"
             )
-    colrows = "\n".join(
-        # `key` is the position in a composite key, or PK for a single-column one; `references` is the
-        # parent as relation.column. Operator, 2026-09-28: the columns table needs the PK position and
-        # where the FKs point.
-        f"| {c.get('name')} | {c.get('type', '')} | {c.get('role', '')} | "
-        f"{c.get('key_position') or ('PK' if c.get('role') == 'primary_key' else '')} | "
-        f"{c.get('references', '') or ''} | {c.get('description', '')} |"
-        for c in cols
-    )
+    from sdk.project import column_table as _CT   # ONE renderer for the columns table
+    colrows = "\n".join(_CT.row(c, description=c.get("description", "") or "", code=False)
+                        for c in cols)
     md = [f"# {produces_relation}  —  CLEAN serving relation (ACME data transformation layer)"]
     if grain:
         md.append(f"\ngrain: {grain}")
     md += [
         "",
         "## Clean schema (the AI-friendly serving shape the ontology binds to)",
-        "| column | type | role | key | references | description |",
-        "|---|---|---|---|---|---|",
+        _CT.legend(),
+        "",
+        *_CT.header(description=True),
         colrows,
     ]
     if fks:

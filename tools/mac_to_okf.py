@@ -31,6 +31,9 @@ Usage:
   python3 tools/mac_to_okf.py <ontology_root> --check               # validate the bundle just written
 """
 import argparse
+import sys, pathlib as _pl
+sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1]))
+from sdk.project import column_table as _CT  # ONE renderer for the columns table
 import sys
 from pathlib import Path
 
@@ -125,14 +128,10 @@ def build_bundle(root):
         cols = table_cols(root, tbl)
         if cols:
             b += [f"# Schema", "", f"Grounded in `{schema + '.' if schema else ''}{tbl}`.", "",
-                  "| column | type | role | key | references | description |",
-                  "|---|---|---|---|---|---|"]
+                  _CT.legend(), ""] + _CT.header(description=True)
             for col in cols:
                 meaning = mbt.get((tbl, col["name"])) or col.get("description", "")   # field rule first
-                b.append(f"| `{col['name']}` | {col.get('type', '')} | {col.get('role', '')} "
-                         f"| {col.get('key_position') or ('PK' if col.get('role') == 'primary_key' else '')} "
-                         f"| {('`' + str(col['references']) + '`') if col.get('references') else ''} "
-                         f"| {' '.join(str(meaning).split())} |")
+                b.append(_CT.row(col, description=meaning))
             b.append("")
 
         # # Values — closed enumeration code list
