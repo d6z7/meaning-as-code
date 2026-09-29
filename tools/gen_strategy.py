@@ -36,13 +36,20 @@ def render(doc: dict) -> str:
     L.append("**This page describes the present.** It is generated from `guardrails/strategy.yaml`, the one home of the "
              "strategy; `tools/check_strategy.py` holds every name on it to what exists and reports which rung a bundle "
              "has reached; the framework gate runner holds the rungs' gates on every delivery.\n")
+    e = doc.get("essay") or {}
+    for key, heading in (("opening", None), ("common", "The common ground"), ("mac", "What MAC is for"),
+                         ("console", "What the console is for"), ("ladder", "The ladder, as a story")):
+        if e.get(key):
+            if heading:
+                L.append(f"## {heading}\n")
+            L.append(e[key].strip() + "\n")
     L.append("## Stop condition\n")
     L.append(doc["stop_condition"].strip() + "\n")
-    L.append("## Principles\n")
+    L.append("## Principles, as declared\n")
     for p in doc["principles"]:
         L.append(f"- **{p['id']}** — {p['rule'].strip()}  \n  *Because:* {p['because'].strip()}")
     L.append("")
-    L.append("## The ladder\n")
+    L.append("## The rungs, as declared\n")
     L.append("| rung | what AI does | what a person does |")
     L.append("|---|---|---|")
     for r in doc["rungs"]:

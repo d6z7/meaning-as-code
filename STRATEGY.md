@@ -5,11 +5,59 @@ AI carries a data source from ingestion to a served layer, generates the first o
 
 **This page describes the present.** It is generated from `guardrails/strategy.yaml`, the one home of the strategy; `tools/check_strategy.py` holds every name on it to what exists and reports which rung a bundle has reached; the framework gate runner holds the rungs' gates on every delivery.
 
+A data warehouse knows everything and means nothing. Its tables carry the sales of ten years, and not one of them says what a sale is, which of two dates a month is counted by, or that a store called "Online" with a country of "--" is two-fifths of the business filed under a punctuation mark. The people who know are few, busy, and not in the room when a question is asked. Every answer produced without them is a guess wearing a number.
+
+This platform exists to put that knowledge somewhere a machine can hold it to account: to write the meaning of a data source down as declarations, to let AI do the long work of getting there, to let a person rule at the few points where ruling is needed, and to prove — question by question, against answers a subject-matter expert has approved — that the meaning as written produces the right answer. The aim is not a chatbot over a database. It is an ontology that is correct, and known to be correct, because it has been held to a corpus of questions until every one of them passes.
+
+## The common ground
+
+Everything on this platform stands on a few commitments that do not change from one rung of the ladder to the next.
+
+**Meaning is declared, not coded.** What a concept is, how a measure folds, which column is an identity, when an answer must refuse — every one of these is a declaration in a file held by a schema and a closed vocabulary. The generator that writes SQL reads declarations and nothing else. When an answer is wrong, the fix is a declaration, never a branch in code and never a prompt that knows one question by name. This is the discipline the whole loop rests on: a corpus can only tune what is declared.
+
+**There are two planes, and they are kept apart.** The data plane is what the warehouse delivers and what we make of it — sources as they land, the transformations that turn them into served datasets, the profiles, samples, registers and quality findings measured along the way. The ontology plane is what it means — concepts, rules, rulings, edges. The ontology grounds on the served plane and on nothing rawer; the data plane never reaches up. A finding on the data plane (a duplicated fact, a dangling key, a sentinel row) is raised there, answered there, and only then does the ontology stand on it.
+
+**One fact has one home.** A closed vocabulary lives in one file and is read everywhere else — schema enums are landed from it, the manual's term pages are generated from it, and this page is generated from its own declaration. The day a term was retired in the vocabulary while the schema, the authoring guidance and a neighbouring bundle went on offering it, an author took the schema's word and wrote twenty columns with a word that did not exist. Two homes that may disagree will.
+
+**AI proposes; a person ratifies.** The composer never certifies its own output as confirmed; the guard lets an agent describe a finding and only a human dispose of it; a transform is `passthrough` until the profiling justifies a `proposed` improvement and `ruled` only when a person drove it; a rule's confidence moves from proposed to confirmed by a subject-matter expert and by nobody else. The machine's job is to make the ruling small, well-founded and visible — never to make it.
+
+**A red gate stops something.** Every check the framework ships runs on every delivery. A failure is either declared, with an owner, a date, a reason and what would make it green, or it is news — and news stops the delivery. There is no bare pass over standing failures, and a declaration that outlives its failure is itself a failure. Without this the rest decays: a runner that is always red switches nothing.
+
+**Measure before you rule.** A ruling that a column labels another, or must never be an axis, or is unique only within its parent, is made from a measurement and cites it. The profiler counts; the quality register raises; the ontology cites the finding by its id. A prohibition without a measurement is a preference.
+
+## What MAC is for
+
+MAC — meaning as code — is the framework: the standard every bundle is held to, and the tools that hold it. It is deliberately small and deliberately closed.
+
+The **standard** is a schema and its vocabularies. A concept is one of six classes — event, measure, enumeration, grouping, reference, entity — decided top to bottom, and it grounds on a served relation whose columns are declared one by one: a role (key, dimension, measure, period, housekeeping), an identity part (canonical, part, reference), a measure's type and unit, and the rulings a person has made about it. A rule is one of six kinds — resolution, aggregation, default, ambiguity, exclusion, guarantee — and says, in the bundle's own words with every model identifier marked as such, when it applies, what to do, and what never to do. A register is a value set: one virtual table per set of values, attached to every column that carries it, so that a name typed by a person resolves to a code exactly once. An edge is a verb between two concepts, declared by the concept that owns the reference and measured before it is claimed.
+
+The **tools** do the long work and keep the standard honest. An import pipeline carries a source from landing to served layer — descriptors, profiles, samples, registers, references, findings, transforms, datasets, manifest — and every stage leaves an artifact the guardrails declare with its producer, its consumers and its checker. Seventy-nine gates hold the result: a bundle either compiles or says why. Generators keep the derived pages derived. A composer drafts concepts and a reader in the runtime loads them, and one fixture is held to both so what the composer emits, the reader loads.
+
+The **runtime** is what the standard is for. Given a question, it resolves each word through the registers — exactly, then by a near miss, then by asking with candidates, never by guessing — finds the concept and the column the ontology says the word lives in, folds the measure by the law its type declares, applies the rules that bind those columns, and writes the SQL with its caveats. When the declarations do not cover the question, it refuses and says what is missing. A refusal that names its reason is an answer; a guess is not.
+
+## What the console is for
+
+The console is where the platform is worked. It began as a viewer — a way to read what the pipeline produced without opening a file — and that is still its first duty: a source's tables and columns, the datasets served from them, the registers cut from their values, the quality board with every finding and its disposition, lineage from landing to served column, the ER diagram measured from the references, the concepts with their rules and edges, the graph of the ontology, the manifest and the delivery's consistency, and now the framework's own manual and this strategy beside them. It reads through seams — framework tools that answer a question by printing an envelope — so the console never imports the framework and never derives a number of its own; what it shows, a tool computed, and the tool says which inputs it read.
+
+Its second duty is the conversation the ontology cannot do without. The quality register raises questions only a domain expert can answer; the console carries them as threads — expert, platform and engineer in one place, each question with its status and the action taken — and the same surface holds the pinned questions that become the regression corpus: a question, the answer given, the expert's verdict. This is the channel through which a bundle's meaning is ratified, and it is why the console is central rather than incidental: ratification happens here or it does not happen.
+
+Its third duty is the one the strategy adds: authoring. Ingestion is started and watched here; connections are opened, remembered and pinned here; the LLM the composer uses is chosen here; and the ontology itself will be created, corrected and re-run from here as the loop runs. That is a change of charter, and it is made carefully: every write the console makes goes through the one writer the framework declares and past the same guard an agent faces, so the console cannot become a second way to put a fact in a file. What the console will never do is decide. It shows a person what the machine measured and proposed, and records what the person ruled.
+
+## The ladder, as a story
+
+The rungs below are the order in which a bundle is climbed, and the ladder is meant to be read as a story with two halves.
+
+In the **first half**, AI does almost all of the work and a person rules at four points. A source arrives and is ingested: every relation described, profiled, sampled, its references measured, its value sets cut into registers. What the profiling shows becomes findings — a fact delivered twice, a key that points at nothing, a row that is a channel wearing a country — each with a recommendation, and the first transformation is a faithful pass-through until a finding justifies more. The served layer is established and its delivery checked for consistency. Around it, AI builds what an ontology will lean on: questions for the expert, the quality board, a sanity suite, measured edges and the diagram they draw. Then the first ontology is written — not from the schema's shape but from the rows, around the one concept the data is a record of, with a log of the line of thought — and every derived object the console shows is generated from it. At the end of the first half a bundle has a served layer, an ontology on the standard, and a console that renders all of it; what it does not yet have is proof that any of it is right.
+
+The **second half** is the proof, and it is a loop. Domain questions arrive in the test framework — the expert's questions, in the expert's words. AI answers each one by direct, read-only access to the data, shows its work, and the expert approves the number or does not; an approved answer is a reference, and pass or fail against it is the only verdict there is. Now the ontology is configured for that question with the framework's vocabulary and grammar — a rule, a ruling, a register, an edge — so that the generator, reading declarations alone, produces the SQL that yields the approved number. And then AI runs: over every question, identifying the right answer, diagnosing which declarations fired and which were missing, tuning them, re-running the whole corpus so that fixing the twelfth question cannot break the first eleven, until every approved question passes and the gate runner reports nothing it did not already know.
+
+That is the stop condition, and it is the definition of an ontology that is finished: not that it is complete — no ontology is — but that everything the domain has asked of it, it answers correctly, and everything it cannot answer, it refuses with a reason. A bundle that reaches the top of the ladder is not done; it has earned the right to be asked the next question.
+
 ## Stop condition
 
 Every domain question in the bundle's corpus passes against its SME-approved answer, and the framework gate runner reports no NEWS — every remaining red is a declared, owned standing failure.
 
-## Principles
+## Principles, as declared
 
 - **declarations-not-code** — Every behaviour of the answer comes from the ontology's declarations — concepts, rules, rulings, registers, edges — never from generator code or per-question prompts. The loop tunes declarations.  
   *Because:* the grammar was measured not to be the bottleneck (70 of 70 questions encoded; the declarations were); code patched per question overfits the corpus.
@@ -24,7 +72,7 @@ Every domain question in the bundle's corpus passes against its SME-approved ans
 - **one-home-per-fact** — A fact is declared once and generated everywhere else (schema enums from the vocabulary, the manual's term blocks, this document).  
   *Because:* two homes that may disagree will.
 
-## The ladder
+## The rungs, as declared
 
 | rung | what AI does | what a person does |
 |---|---|---|
