@@ -863,33 +863,6 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # proves invariants HOLD; a register says what is WRONG and who must rule on it.
         {"name": "dq-findings", "part": "both", "always": True, "produces": "data/quality/data_quality_register.yaml", "d": "D7c",
          "cmd": [_tool("mac_dq_findings.py"), str(root)]},
-        # AFTER dq-findings, NOT BEFORE IT. This gate READS the data-quality register —
-        # CONCEPT-RELATION asks whether a served relation nobody claims has been DECLINED there — so
-        # placed earlier it measured a bundle whose register did not exist yet and reported an
-        # inconsistency that was gone by the end of the same run. Measured on contoso3's first full
-        # from-scratch import, 2026-09-28: FAIL during the run, 0 failures immediately after it. A gate
-        # whose verdict depends on where in the chain it runs is not yet a gate.
-        #
-        # THE RUN RECORD IS EVIDENCE OF DELIVERY, so the delivery produces it. Found by redeploying
-        # contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come back, because
-        # it is written by `check_delivery_consistency` and NO stage ran it — the file was only ever on
-        # disk because a person ran the gate by hand, and the console's Delivery tab reads it.
-        # CONFORMANCE RUNS WITH THE DELIVERY, NOT AT COMPILE TIME. Operator, 2026-09-28, on my habit
-        # of inventing a convention when I cannot find one: "i cannot stop you doing that. but i can
-        # ask you to make checker if for specifig object standard notations and declarations have
-        # strictly been followd. if not you have to do it in the second round."
-        #
-        # THE TIMING IS THE POINT. The served-name rule existed all along and `check_served_name_distinct`
-        # enforced it — but only at `project`, so an invented `d_`/`f_`/`b_` scheme survived being
-        # designed, built, measured, committed and reported before anything objected. A rule that fires
-        # after the work is a record of a mistake; one that fires during it is a guard.
-        # A GATE PRODUCES NOTHING, and claiming otherwise is not harmless. This declared
-        # `produces: data/datasets/*.yaml` while being strictly read-only, so the served descriptor
-        # appeared to have four writers — three real collaborators and a checker. `produces` is the
-        # field the manifest derives PHASE from, and a false claim in it puts a kind in a delivery
-        # that does not write it.
-        {"name": "conformance", "part": "both", "always": True, "d": "D1 D2",
-         "cmd": [_tool("check_artifact_conformance.py"), str(root)]},
         # THE MANIFEST'S OWN ACCEPTANCE TEST, and it runs on every delivery deliberately. It seeds
         # each of the five losses of 2026-09-28 as a mutant and asserts a named invariant refuses
         # it. It needs no bundle and no warehouse — it is a guard on the GUARD. `NAME-MATCHES`
@@ -1002,6 +975,46 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # `check_pages_current` reported 9 of 9 pages current and this refused 4 sections.
         {"name": "page-shape", "part": "both", "always": True, "d": "D6",
          "cmd": [_tool("check_page_shape.py"), str(root)]},
+        # IT RUNS AFTER `project`, WHICH IS WHAT WRITES THE PAGES IT COUNTS. Placed before it, this
+        # measured the PREVIOUS run's output and wrote that into `acceptance/manifest_runs.json`.
+        # Invisible on a re-run, because the pages were already there from last time; exposed the
+        # first time the bundle was rebuilt from true inputs only — the record claimed
+        # `register_page have: 21, missing: [country_name, day_of_week, month_name, year_month]`
+        # while all 25 sat on disk. Those four are exactly the registers the DATASETS delivery cut,
+        # so the record was one stage stale and said so only on a clean build.
+        #
+        # THAT IS THE FIFTH ORDERING DEFECT OF THIS SHAPE in this file — a stage reading what a
+        # later stage produces — and the operator named the reason it kept hiding: reusing a
+        # previous result masks the method that was supposed to produce it.
+
+        # AFTER dq-findings, NOT BEFORE IT. This gate READS the data-quality register —
+        # CONCEPT-RELATION asks whether a served relation nobody claims has been DECLINED there — so
+        # placed earlier it measured a bundle whose register did not exist yet and reported an
+        # inconsistency that was gone by the end of the same run. Measured on contoso3's first full
+        # from-scratch import, 2026-09-28: FAIL during the run, 0 failures immediately after it. A gate
+        # whose verdict depends on where in the chain it runs is not yet a gate.
+        #
+        # THE RUN RECORD IS EVIDENCE OF DELIVERY, so the delivery produces it. Found by redeploying
+        # contoso5 from nothing: `acceptance/delivery_consistency_runs.json` did not come back, because
+        # it is written by `check_delivery_consistency` and NO stage ran it — the file was only ever on
+        # disk because a person ran the gate by hand, and the console's Delivery tab reads it.
+        # CONFORMANCE RUNS WITH THE DELIVERY, NOT AT COMPILE TIME. Operator, 2026-09-28, on my habit
+        # of inventing a convention when I cannot find one: "i cannot stop you doing that. but i can
+        # ask you to make checker if for specifig object standard notations and declarations have
+        # strictly been followd. if not you have to do it in the second round."
+        #
+        # THE TIMING IS THE POINT. The served-name rule existed all along and `check_served_name_distinct`
+        # enforced it — but only at `project`, so an invented `d_`/`f_`/`b_` scheme survived being
+        # designed, built, measured, committed and reported before anything objected. A rule that fires
+        # after the work is a record of a mistake; one that fires during it is a guard.
+        # A GATE PRODUCES NOTHING, and claiming otherwise is not harmless. This declared
+        # `produces: data/datasets/*.yaml` while being strictly read-only, so the served descriptor
+        # appeared to have four writers — three real collaborators and a checker. `produces` is the
+        # field the manifest derives PHASE from, and a false claim in it puts a kind in a delivery
+        # that does not write it.
+        {"name": "conformance", "part": "both", "always": True, "d": "D1 D2",
+         "cmd": [_tool("check_artifact_conformance.py"), str(root)]},
+
         # `both`: the bundle resource file describes WHATEVER has been delivered, so each part
         # leaves one that matches its own state. Untagged, it was held by both parts exactly like
         # the DQ stages above.
