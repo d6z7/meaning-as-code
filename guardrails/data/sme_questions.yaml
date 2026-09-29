@@ -25,6 +25,27 @@ delivers:
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
     covers: every finding whose ruling is unanswered
     lifecycle: re-derived
+    shape:
+      # NO SECTION IS DECLARED, deliberately: the headings are severities — `High priority`,
+      # `Medium priority` — and which exist depends on what the register found. Requiring one
+      # would fail any bundle whose findings happen to be all of another severity.
+      #
+      # THE TABLE ROW IS GOVERNED INSTEAD, and it is the thing that actually broke: this page
+      # rendered seven sign-offs with an EMPTY first cell for months, because the renderer read
+      # `sme_owner` while the producer wrote `ruling.question`. Every other column was populated,
+      # so the page looked finished. The one column an SME opens it for was the empty one.
+      sections:
+        - {heading: High priority, required: never}
+        - {heading: Medium priority, required: never}
+      line_selectors:
+        High priority: '^\| '
+        Medium priority: '^\| '
+      lines:
+        High priority: '^\|\s*[^|\s].*\|\s*$'
+        Medium priority: '^\|\s*[^|\s].*\|\s*$'
+      line_forms:
+        High priority: 'a table row whose FIRST cell — the ask — is not empty'
+        Medium priority: 'a table row whose FIRST cell — the ask — is not empty'
     producers: [{tool: sdk/project/project_data.py, role: projects the register's rulings}]
     consumers:
       - {tool: "sdk/project/objects.py", role: "indexes it as the dqquestions object", reads: ["«path only»"]}

@@ -53,9 +53,13 @@ def sections(text: str) -> dict:
     for line in (text or "").splitlines():
         h = re.match(r"^#{2,3}\s+(.+?)\s*$", line)
         if h:
-            # a heading may carry a parenthetical — `## Lineage (column-level)` — and the section is
-            # still the thing before it, or a declaration could never name it.
-            cur = re.sub(r"\s*\(.*\)\s*$", "", h.group(1)).strip()
+            # A HEADING'S NAME IS WHAT PRECEDES ITS QUALIFIER. Renderers put live detail in the
+            # heading itself — `## Lineage (column-level)`, `## High priority — 1 question(s)`,
+            # `## Chain — \`raw source → transformation\`` — so the literal string varies with the
+            # data and a declaration could never name it. The name is the stable part: everything
+            # before a parenthetical or an em-dash qualifier.
+            cur = re.sub(r"\s*\(.*\)\s*$", "", h.group(1))
+            cur = re.split(r"\s+—\s+", cur, maxsplit=1)[0].strip()
             out.setdefault(cur, [])
             continue
         if cur is not None and line.strip():
@@ -74,6 +78,25 @@ def _needs(cond: str, descriptor: dict) -> bool | None:
     if cond == "when_a_column_has_a_register":
         return any(isinstance(c, dict) and c.get("register") for c in cols)
     return None                                       # an unknown condition is NOT a silent True
+
+
+def resolve_shape(shape: dict, items: dict) -> dict:
+    """Follow `lines_like` to the kind that OWNS the line rules, so a pattern has one home.
+
+    A copy of a regex is a second home and it drifted inside four minutes: the served page's copy
+    was double-escaped (`\\\\.` for `\\.`) and rejected three correctly rendered pages. The rule
+    lives with the kind that defined it; everyone else points at it.
+    """
+    ref = shape.get("lines_like")
+    if not ref:
+        return shape
+    kind = str(ref).split("#")[-1]
+    owner = (items.get(kind) or {}).get("shape") or {}
+    out = dict(shape)
+    out["lines"] = {**(owner.get("lines") or {}), **(shape.get("lines") or {})}
+    out["line_forms"] = {**(owner.get("line_forms") or {}), **(shape.get("line_forms") or {})}
+    out["line_selectors"] = {**(owner.get("line_selectors") or {}), **(shape.get("line_selectors") or {})}
+    return out
 
 
 def check_page(rel: str, text: str, shape: dict, descriptor: dict) -> list:
@@ -102,7 +125,11 @@ def check_page(rel: str, text: str, shape: dict, descriptor: dict) -> list:
         if not rx:
             out.append(_i(f"{rel}#{head}", NA, "present; no line pattern is declared for it"))
             continue
-        bad = [ln for ln in present[head] if ln.startswith("- ") and not re.match(rx, ln)]
+        # WHICH LINES THE PATTERN JUDGES, declared. A bullet section governs `- ` lines; a table
+        # section governs `| ` rows. The SME sign-off page rendered SEVEN questions with an empty
+        # first cell for months, and no bullet pattern could ever have seen it.
+        sel = (shape.get("line_selectors") or {}).get(head, "^- ")
+        bad = [ln for ln in present[head] if re.match(sel, ln) and not re.match(rx, ln)]
         if bad:
             out.append(_i(f"{rel}#{head}", VIOLATION,
                           f"LINE_MALFORMED — {len(bad)} of {len(present[head])} line(s) do not match "
@@ -155,7 +182,8 @@ def run(root: pathlib.Path, framework: pathlib.Path) -> list:
                     desc = yaml.safe_load(src.read_text(encoding="utf-8")) or {}
                 except Exception:                                         # noqa: BLE001
                     desc = {}
-            out += check_page(rel, pg.read_text(encoding="utf-8"), item["shape"], desc)
+            out += check_page(rel, pg.read_text(encoding="utf-8"),
+                              resolve_shape(item["shape"], items), desc)
     return out
 
 

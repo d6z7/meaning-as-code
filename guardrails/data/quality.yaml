@@ -52,6 +52,8 @@ delivers:
     naming: fixed — the leading 0 sorts it first in the directory a person browses
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
     lifecycle: re-derived
+    shape:
+      sections: [{heading: All findings, required: always}]
     producers: [{tool: sdk/project/project_data.py, role: renders the overview}]
     consumers: [{tool: sdk/project/objects.py, role: links it from the quality object, reads: ["«path only»"]}]
     checkers: [{tool: tools/check_projection_field_parity.py, rejects: [dropped, stale, phantom]}]
@@ -78,6 +80,13 @@ delivers:
     naming: fixed
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
     lifecycle: re-derived
+    shape:
+      # `Chain` and `Change protocol` are in every delivered health page measured. The third
+      # section, `Lineage coverage`, appears only where a served plane exists, so it is NOT
+      # declared here — asserting it would fail every landing-only delivery.
+      sections:
+        - {heading: Chain, required: always}
+        - {heading: Change protocol, required: always}
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: sdk/project/objects.py, role: carries it as the quality object's health path, reads: ["«path only»"]}]
     # NO CHECKER. Nothing re-renders it and compares; `check_pages_current` covers sources,

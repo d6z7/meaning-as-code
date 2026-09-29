@@ -21,6 +21,15 @@ delivers:
     naming: fixed
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
     lifecycle: re-derived
+    shape:
+      # THE FIRST DOCUMENT AN ASK-AGENT READS, and it is measured EMPTY on one bundle: 30 lines
+      # against 645, because `references.py` globs `concepts/*.yaml` flat and that bundle files
+      # concepts by domain. Declaring the three sections does not fix that — a section can be
+      # present and empty — but it is the floor, and the floor was missing.
+      sections:
+        - {heading: Routing, required: always}
+        - {heading: How to answer, required: always}
+        - {heading: Filter traps & known issues, required: always}
     producers: [{tool: sdk/project/references.py, role: aggregates the ontology's own guardrails}]
     consumers:
       - {tool: "mac-console/local_ask.py", role: "the instruction to read it FIRST", reads: ["«whole document»"]}

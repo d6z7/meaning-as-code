@@ -63,6 +63,13 @@ delivers:
     naming: the transform's stem, verbatim
     population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
     lifecycle: re-derived
+    shape:
+      # WHAT A TRANSFORM PAGE OWES A READER: what it does, where its columns came from, and the
+      # statement itself. Measured across every delivered transform page in the estate.
+      sections:
+        - {heading: Rules, required: always}
+        - {heading: Lineage, required: always}
+        - {heading: SQL realization, required: always}
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: sdk/project/objects.py, role: carries it as the dataset's cleaning path, reads: ["«path only»"]}]
     checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
@@ -98,6 +105,18 @@ delivers:
     naming: the descriptor's stem, verbatim
     population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
     lifecycle: re-derived
+    shape:
+      # THE SERVED PLANE READS THE SAME WAY AS THE LANDING PLANE. One form, two planes — a reader
+      # should not have to learn a second grammar to read the other half of the same bundle.
+      sections:
+        - {heading: Columns, required: always}
+        - {heading: Foreign keys, required: when_a_column_has_references}
+        - {heading: Registers, required: when_a_column_has_a_register}
+      # THE PATTERN IS NOT RESTATED HERE. It was, for about four minutes, and the copy was
+      # double-escaped — `\\.` where the original has `\.` — so it rejected three correctly
+      # rendered pages. Two homes for one rule drift immediately and in silence; this names the
+      # rule and lets the gate resolve it.
+      lines_like: guardrails/data/sources.yaml#relation_page
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
     checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]

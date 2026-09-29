@@ -882,13 +882,6 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # as it existed; nothing in the estate would have noticed if this had gone the same way.
         {"name": "manifest-acceptance", "part": "both", "always": True, "d": "D1",
          "cmd": [_tool("check_manifest_catches_yesterday.py")]},
-        # THE PAGE'S SHAPE, HELD TO ITS DECLARATION — and it runs on every delivery, which is the
-        # difference between doing a thing once and doing it every time. Operator, 2026-09-29:
-        # "my question is not if you can do it ONCE ... the question is if you can do it EVERY
-        # TIME". Demonstrated the same day: with the renderer deliberately broken,
-        # `check_pages_current` reported 9 of 9 pages current and this refused 4 sections.
-        {"name": "page-shape", "part": "both", "always": True, "d": "D6",
-         "cmd": [_tool("check_page_shape.py"), str(root)]},
         {"name": "delivery-check", "part": "both", "always": True,
          "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
          "cmd": [_tool("check_delivery_consistency.py"), str(root)]},
@@ -983,6 +976,17 @@ def _stages(root: pathlib.Path) -> list[dict]:
                  "first run: the ontology plane is empty by design at this stage, and the operator "
                  "needs the projected data-plane state — lineage, the DQ board, the descriptors — in "
                  "order to author concepts from it"]},
+        # IT RUNS AFTER `project`, WHICH IS WHAT WRITES THE PAGES. Placed before it, this judged
+        # the PREVIOUS run's output: the stage reported PASS and the same command run by hand a
+        # minute later refused three pages. That is the fourth ordering defect of this shape in
+        # this file — a stage reading what a later stage produces — and the third I have made.
+        # THE PAGE'S SHAPE, HELD TO ITS DECLARATION — and it runs on every delivery, which is the
+        # difference between doing a thing once and doing it every time. Operator, 2026-09-29:
+        # "my question is not if you can do it ONCE ... the question is if you can do it EVERY
+        # TIME". Demonstrated the same day: with the renderer deliberately broken,
+        # `check_pages_current` reported 9 of 9 pages current and this refused 4 sections.
+        {"name": "page-shape", "part": "both", "always": True, "d": "D6",
+         "cmd": [_tool("check_page_shape.py"), str(root)]},
         # `both`: the bundle resource file describes WHATEVER has been delivered, so each part
         # leaves one that matches its own state. Untagged, it was held by both parts exactly like
         # the DQ stages above.
