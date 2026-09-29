@@ -106,12 +106,15 @@ def _segments(rel: str) -> str:
     for parent, token in GROUPED_UNDER.items():
         if d.startswith(parent + "/") and d.count("/") == parent.count("/") + 1:
             d = f"{parent}/{token}"
+    fixed_first = {"samples.run.json", "references.run.json"}
+    if base in fixed_first:
+        return f"{d}/{base}" if d != "." else base
     for pat, lbl in (
         (r".+\.src\.sample\.csv$", "{relation}.src.sample.csv"),
         (r".+\.sample\.csv$", "{relation}.sample.csv"),
         (r".+\.lookup\.csv$", "{register}.lookup.csv"),
         (r".+\.lookup\.md$", "{register}.lookup.md"),
-        (r".+\.run\.json$", "{stem}.run.json"),
+
         (r"^DQ-.+\.md$", "DQ-{id}.md"),
         (r"^NS-.+\.md$", "NS-{id}.md"),
         (r"^\d{8}T\d{6}Z-.+\.json$", "{utc}-{suite}.json"),
@@ -120,7 +123,12 @@ def _segments(rel: str) -> str:
         if re.match(pat, base):
             return f"{d}/{lbl}" if d != "." else lbl
     # a FIXED name is its own class; anything else varies over its directory's population
-    fixed = {"index.md", "objects.json", "compile.json", "lineage.json",
+    # FIXED NAMES ARE TESTED BEFORE PATTERNS. `samples.run.json` and `references.run.json` are
+    # ONE file each, not a family — generalising them to `{stem}.run.json` meant a declaration
+    # naming the real file could not claim the census class, and the BOM reported two artifacts
+    # ABSENT that were sitting on disk. A pattern that swallows a fixed name is a false family.
+    fixed = {"samples.run.json", "references.run.json",
+             "index.md", "objects.json", "compile.json", "lineage.json",
              "data_quality_register.yaml", "dq_dashboard.json", "diagnostics.json",
              "PLANE-HEALTH.md", "SME-QUESTIONS.md", "0-issues-overview.md",
              "0-registers-overview.md", "suite_history.jsonl", "suite_history.json",
@@ -586,3 +594,108 @@ def checklist(root, part: str, kinds: dict) -> list:
             "empty_is": pop.get("empty_is") or "EMPTY",
         })
     return items
+
+
+def load_guardrails(framework) -> dict:
+    """{topic -> spec} from guardrails/*.yaml. A topic that does not parse is SKIPPED and named,
+    never silently dropped — an unreadable declaration must not read as an empty one."""
+    import yaml
+
+    out, broken = {}, []
+    d = pathlib.Path(framework) / "guardrails"
+    if not d.is_dir():
+        return {}
+    for f in sorted(d.glob("*.yaml")):
+        try:
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        except Exception as exc:                                          # noqa: BLE001
+            broken.append(f"{f.name}: {str(exc).splitlines()[0]}")
+            continue
+        out[doc.get("topic") or f.stem] = doc
+    if broken:
+        out["«broken»"] = broken
+    return out
+
+
+def declared_everywhere(framework) -> tuple:
+    """(claims, conflicts) over EVERY declaration in the estate.
+
+    `claims` is {item-name -> {path, owner}}; `owner` is the guardrail topic or `mac_artifacts.yaml`.
+    `conflicts` is any item declared in two places — which must stay empty: the whole point of moving
+    the phase-1 kinds OUT of mac_artifacts.yaml rather than copying them is that no precedence rule
+    is ever needed. If this list is non-empty, two homes exist again.
+    """
+    claims, seen = {}, {}
+    for topic, spec in load_guardrails(framework).items():
+        if topic == "«broken»" or not isinstance(spec, dict):
+            continue
+        # A GUARDRAIL'S PHASE IS THE TOPIC'S, not the item's. The topic rules one delivery, so
+        # every item it declares belongs to that delivery — which is the whole reason topics are
+        # split per delivery rather than one file carrying a phase per row.
+        ph = spec.get("phase")
+        for name, item in (spec.get("delivers") or {}).items():
+            claims[name] = {"path": item.get("path"), "owner": f"guardrails/{topic}",
+                            "phase": [ph] if isinstance(ph, str) else (ph or []),
+                            "optional": (item.get("population") or {}).get("empty_is") == "OK"}
+            seen.setdefault(name, []).append(f"guardrails/{topic}")
+    for name, item in (declared_kinds(framework) or {}).items():
+        ph = item.get("phase") or []
+        claims.setdefault(name, {"path": item.get("path"), "owner": "mac_artifacts.yaml",
+                                 "phase": ph if isinstance(ph, list) else [ph],
+                                 "optional": (item.get("population") or {}).get("empty_is") == "OK"})
+        seen.setdefault(name, []).append("mac_artifacts.yaml")
+    conflicts = {n: w for n, w in seen.items() if len(w) > 1}
+    return claims, conflicts
+
+
+def bom(root, framework, phase=None) -> dict:
+    """The delivery's BILL OF MATERIALS: declaration x disk, in THREE outcomes.
+
+    A BOM with two outcomes can only say what is here. Three says what is OWED:
+
+        present     declared, and found          -> delivered
+        absent      declared, and NOT found      -> the completeness answer
+        undeclared  found, and claimed by no one -> the gap in the declaration itself
+
+    The third is what makes this honest. Measured 2026-09-29: the existing `.mac` knew 41 of the
+    138 files a phase-1 delivery writes, over 4 kinds of 30 — every data-quality page, every
+    register page, the SME questions and the lineage artifact were invisible to it, because its
+    kind table was written by hand. A BOM that cannot see a thing cannot report it missing.
+    """
+    root = pathlib.Path(root)
+    claims, conflicts = declared_everywhere(framework)
+    disk = {c: v for c, v in disk_classes([root]).items() if _delivered(c)[0]}
+
+    present, absent, undeclared, other_phase = [], [], [], []
+    for name, c in sorted(claims.items()):
+        hits = [k for k in disk if _claims(c["path"], k)]
+        row = {"item": name, "path": c["path"], "owner": c["owner"],
+               "phase": c.get("phase") or [], "files": sum(disk[k]["files"] for k in hits)}
+        # SCOPED, OR IT IS NOT A COMPLETENESS ANSWER. Unscoped, a landing-only delivery reports
+        # every served-plane item as `absent` — nine of them — and "incomplete" then means nothing,
+        # because the delivery was never asked for them. `absent` must mean: THIS delivery owed it
+        # and it is not there.
+        mine = phase is None or phase in (c.get("phase") or []) or "both" in (c.get("phase") or [])
+        if not mine:
+            other_phase.append(row)
+        elif hits:
+            present.append(row)
+        elif c.get("optional"):
+            # `empty_is: OK` — a kind that exists only where somebody chose to write one. A
+            # decision record, a bundle-local build script, an SME thread: absence is the normal
+            # state, and reporting it as a shortfall makes "incomplete" mean nothing.
+            row["optional"] = True
+            other_phase.append(row)
+        else:
+            absent.append(row)
+    for k in sorted(disk):
+        if not any(_claims(c["path"], k) for c in claims.values()):
+            undeclared.append({"class": k, "files": disk[k]["files"]})
+    return {"phase": phase, "present": present, "absent": absent, "undeclared": undeclared,
+            "other_phase": other_phase, "conflicts": conflicts,
+            "complete": not absent and not conflicts,
+            "counts": {"declared": len(claims), "in_this_phase": len(present) + len(absent),
+                       "present": len(present), "absent": len(absent),
+                       "undeclared": len(undeclared), "other_phase": len(other_phase),
+                       "files_claimed": sum(r["files"] for r in present),
+                       "files_undeclared": sum(r["files"] for r in undeclared)}}

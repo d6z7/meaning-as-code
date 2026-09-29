@@ -377,8 +377,59 @@ def describe(root: Path) -> dict:
         "derived": derived,
         "resources": resources,
         # DECLARED, so a reader can tell "this plane is empty" from "I did not look".
-        "absent": absent,
+        "planes_empty": absent,
+        # ── THE BILL OF MATERIALS ──────────────────────────────────────────────────────────────
+        # Was this delivery COMPLETE? Three outcomes, per phase, and the third is what makes it an
+        # answer rather than an inventory:
+        #
+        #   present     declared, and found
+        #   absent      declared for THIS phase, and NOT found   <- the completeness answer
+        #   undeclared  found, and claimed by no declaration     <- the gap in the declaration
+        #
+        # PRESENCE AND NAMING ONLY. It says nothing about whether a file's CONTENT is right — the
+        # per-item checkers own that. It says the file was delivered and is named the way its
+        # declaration says, which is the one thing that can be asked of every artifact regardless
+        # of form, and it is what covers the data-quality pages and the SME questions formally.
+        #
+        # WHY IT REPLACED A HAND-WRITTEN TABLE. This block used to come from `PLANES` — nine
+        # patterns over four kinds. Measured 2026-09-29 on a phase-1 delivery: 41 of 138 files
+        # seen, every DQ page, every register page, the SME questions and the lineage artifact
+        # invisible. A BOM that cannot see a thing cannot report it missing, so its `absent` list
+        # read clean over sixty-six undeclared files.
+        "bom": _bom(root),
     }
+
+
+def _bom(root: Path) -> dict:
+    """Declaration x disk, per declared phase. Lazily imported: `mac_manifest` reads THIS module's
+    registry tables, so a module-level import would close a cycle."""
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import mac_manifest as M
+    except Exception as exc:                                              # noqa: BLE001
+        return {"unavailable": f"the census could not be taken: {type(exc).__name__}: {exc}"}
+    fw = Path(__file__).resolve().parent.parent
+    try:
+        claims, conflicts = M.declared_everywhere(fw)
+    except Exception as exc:                                              # noqa: BLE001
+        return {"unavailable": f"the declarations could not be read: {exc}"}
+    phases = sorted({p for c in claims.values() for p in (c.get("phase") or [])
+                     if p and p != "both"})
+    out = {"conflicts": conflicts, "phases": {}}
+    for ph in phases:
+        try:
+            b = M.bom(root, fw, phase=ph)
+        except Exception as exc:                                          # noqa: BLE001
+            out["phases"][ph] = {"unavailable": str(exc)}
+            continue
+        out["phases"][ph] = {
+            "complete": b["complete"],
+            "counts": b["counts"],
+            "absent": [{"item": r["item"], "path": r["path"], "owner": r["owner"]}
+                       for r in b["absent"]],
+            "undeclared": b["undeclared"],
+        }
+    return out
 
 
 def existing(root: Path) -> list[Path]:

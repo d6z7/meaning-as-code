@@ -32,26 +32,6 @@ kinds:
 # until 2026-09-29 are `register` and `data_quality_register`, and the second is why a delivery
 # reported 6 of 6 and 9 of 9 with its entire data-quality assessment missing.
 
-  landed_descriptor:
-    what: what a landed relation CONTAINS, measured from the warehouse catalog
-    phase: [sources]
-    lifecycle: re-derived
-    population:
-      of: every landed relation
-      from: data/sources/*.yaml    # SELF — the true denominator is the warehouse,
-                                   # and only the importer, holding a connection, can
-                                   # count it. Offline this asks 'is every descriptor
-                                   # complete', never 'is every relation described'.
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    path: data/sources/{relation}.yaml
-    name: the landing's own relation name, verbatim — a landing is not renamed
-    shape: mac.schema.json#/$defs/TableFile
-    vocabulary: [mac.relation.column.role]
-    transient: [values]
-    producers:
-      - {tool: "tools/mac_descriptors.py", role: "measures", args: "--plane sources"}
-      - {tool: "tools/mac_profile.py", role: "adds the measured value domains"}
-      - {tool: "tools/mac_lookups.py", role: "cuts those domains into registers and removes them"}
 
   served_descriptor:
     what: what a served relation LEAVES — the promotion's contract
@@ -81,79 +61,9 @@ kinds:
       - {tool: "tools/mac_profile.py", role: "adds the measured value domains"}
       - {tool: "tools/mac_lookups.py", role: "cuts those domains into registers and removes them"}
 
-  profile:
-    what: the measurement plane — row counts, distincts, nulls, identity evidence
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: every relation of the plane
-      from: data/{plane}/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    path: data/profiles/{relation}.yaml
-    name: the relation's stem, verbatim
-    shape: mac.schema.json#/$defs/ProfileFile
-    producers:
-      - {tool: "tools/mac_profile.py", role: "measures"}
 
-  reference_measurement:
-    what: the measured references of ONE relation, with evidence and cardinality
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: every relation of the plane
-      from: data/{plane}/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    # ALTERNATION — the notation this file ALREADY uses for relation_preview, not a second
-    # `{_optional}` syntax invented here. The conformance gate caught exactly that on its first
-    # run: I wrote `data/references{_served}/` meaning "either directory", nothing understood it,
-    # and all 16 files read as misnamed in every bundle. A registry that invents notation inside
-    # itself is the fault it exists to catch.
-    path: data/references/{relation}.yaml | data/references_served/{relation}.yaml
-    name: the relation's stem, verbatim
-    shape: mac.schema.json#/$defs/ReferenceFile
-    producers:
-      - {tool: "tools/mac_references.py", role: "measures"}
 
-  register:
-    # FOUR WRITERS, MEASURED 2026-09-29 — the registry declared one. Only the first is in the
-    # delivery pipeline; `cut_missing_registers` is an out-of-band repair and states the opposite
-    # lifecycle in its own docstring ("It never overwrites a file that exists -- a hand-corrected
-    # register must survive a re-cut"). That is a genuine conflict with `lifecycle: re-derived`
-    # and it is recorded here rather than resolved by whichever tool happens to run last.
-    what: a value DOMAIN cut from one column, with a label and a search key
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: the artifact itself — ONE file
-      from: «this artifact»
-      empty_is: EMPTY
-    covers: every column whose value domain was measured   # what the ONE file must account for; its checker owns this
-    path: data/lookups/{marker}_{relation}_{column}.lookup.csv
-    name: >-
-      marker, relation and column — the register IS its (relation, column). The marker is omitted when
-      the relation already carries it. A name keyed on the column ALONE made two relations sharing a
-      column name overwrite one another: measured 2026-09-28, eight domains lost across four bundles.
-    columns: [«code», label, search_key, source_view, source_schema, confidence, note]
-    producers:
-      - {tool: "tools/mac_lookups.py", role: "cuts from the domains the profile measured"}
-      - {tool: "sdk/authoring/materialize.py", role: "profiles a live dim view for a name/code pair"}
-      - {tool: "tools/cut_missing_registers.py", role: "fills a domain that has no register"}
-      - {tool: "«a person»", role: "authors a per-register build script"}
 
-  relation_preview:
-    what: a seeded sample of one relation, for a reviewer to check a declaration against rows
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: every relation of the plane
-      from: data/{plane}/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    path: data/samples/{relation}.sample.csv | data/samples/{relation}.src.sample.csv
-    name: >-
-      the served preview is `{relation}.sample.csv`; the landed one carries `.src.` — the two planes
-      share a directory and a 1:1 passthrough bundle shares the stem, so the plane must be in the name
-    producers:
-      - {tool: "tools/mac_sample.py", role: "draws"}
 
   column_lineage:
     what: where every served column came from — a source column, or an expression
@@ -175,33 +85,6 @@ kinds:
     producers:
       - {tool: "tools/mac_lineage.py", role: "measures the warehouse: relation edges and column origins"}
       - {tool: "sdk/project/lineage_graph.py", role: "folds in registers, concepts and the orphan register"}
-
-  relation_page:
-    what: the page a person opens to read one relation
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: every relation of the plane
-      from: data/{plane}/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    path: data/{plane}/{relation}.md
-    name: the descriptor's stem, verbatim
-    producers:
-      - {tool: "sdk/project/project_data.py", role: "renders"}
-
-  plane_overview:
-    what: one page over ALL of a plane's relations — what was landed, how big, what is keyed
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: one page per plane, and each delivery owes its own
-      from: «this artifact»
-      empty_is: EMPTY          # 0 of 0 is never a pass
-    covers: every relation of the plane
-    path: data/{plane}/index.md
-    name: fixed
-    producers:
-      - {tool: "sdk/project/project_data.py", role: "renders"}
 
   transform_sql:
     what: the AUTHORED statement that produces one served relation
@@ -230,22 +113,6 @@ kinds:
     producers:
       - {tool: "tools/mac_transforms.py", role: "measures"}
 
-  data_quality_register:
-    what: what is WRONG and who must rule on it — raised, never ruled, by a tool
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: the artifact itself — ONE file
-      from: «this artifact»
-      empty_is: EMPTY
-    covers: every relation of BOTH planes   # what the ONE file must account for; its checker owns this
-    path: data/quality/data_quality_register.yaml
-    name: fixed
-    shape: mac.schema.json#/$defs/DataQualityRegisterFile
-    producers:
-      - {tool: "tools/mac_dq_findings.py", role: "raises and merges"}
-
-  # ══ the classes the registry had never declared — census of 2026-09-29 ═════════════════════
 
   register_build_script:
     what: a bundle-local script that cuts ONE register from the warehouse — the register family's second door
