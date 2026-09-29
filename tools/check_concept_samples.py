@@ -47,7 +47,37 @@ import pathlib
 import sys
 
 MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
-SAMPLE_DIR = pathlib.Path("data") / "samples" / "concepts"
+FRAMEWORK = pathlib.Path(__file__).resolve().parents[1]
+GUARDRAIL = FRAMEWORK / "guardrails" / "ontology" / "concepts.yaml"
+FALLBACK_PATTERN = "ontology/samples/{concept}.sample.csv"
+
+
+def sample_pattern() -> str:
+    """WHERE A CONCEPT SAMPLE LIVES, read from guardrails/ontology/concepts.yaml#concept_sample.path.
+
+    RENAMES BREAK READERS SILENTLY (measured 2026-09-29): the producer moved concept samples from
+    `data/samples/concepts/<Concept>.sample.csv` to `<ontology plane>/samples/<stem>.sample.csv`,
+    the guardrail declared the new home, and this gate kept its literal — so a bundle with 17
+    fresh samples was reported 17 MISSING. The guardrail is the one home; the literal below is
+    only what stands when the guardrail cannot be read, and says so.
+    """
+    try:
+        import yaml
+
+        doc = yaml.safe_load(GUARDRAIL.read_text(encoding="utf-8")) or {}
+        pattern = ((doc.get("delivers") or {}).get("concept_sample") or {}).get("path")
+        if isinstance(pattern, str) and "{concept}" in pattern:
+            return pattern
+    except Exception:  # noqa: BLE001 - an unreadable guardrail falls back, disclosed below
+        pass
+    print(f"  note: {GUARDRAIL} could not be read; assuming {FALLBACK_PATTERN}")
+    return FALLBACK_PATTERN
+
+
+def sample_path(root: pathlib.Path, pattern: str, concept) -> pathlib.Path:
+    """The concept's stem — its own file name, the naming the guardrail declares — in the pattern."""
+    stem = pathlib.Path(concept.source_file or concept.name).stem if getattr(concept, "source_file", None) else concept.name
+    return root / pattern.replace("{concept}", stem)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -75,14 +105,15 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     findings, ok, nothing = [], 0, []
+    pattern = sample_pattern()
     for name, concept in sorted(index.concepts.items()):
         declared = list(concept.grounding.served_columns)
         if not concept.grounding.table or not declared:
             nothing.append(name)
             continue
-        path = root / SAMPLE_DIR / f"{name}.sample.csv"
+        path = sample_path(root, pattern, concept)
         if not path.is_file():
-            findings.append((name, "MISSING", f"no {SAMPLE_DIR / (name + '.sample.csv')} — "
+            findings.append((name, "MISSING", f"no {path.relative_to(root)} — "
                                               f"{len(declared)} declared columns have never been "
                                               f"looked at"))
             continue
@@ -116,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
     print("\nA CONCEPT WITHOUT A CURRENT SAMPLE IS UNREVIEWABLE:\n")
     for name, kind, why in findings:
         print(f"  {kind:11} {name}\n      {why}\n")
-    print("FAIL — run the bundle's sample generator (data/samples.build.py).")
+    print("FAIL — run `python3 tools/mac_sample.py <bundle> --plane concepts` (the guardrail's producer).")
     return 1
 
 

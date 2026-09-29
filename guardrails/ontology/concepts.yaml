@@ -143,10 +143,25 @@ delivers:
     # A CONCEPT WITHOUT ONE IS A CLAIM NOBODY CHECKED. The sample is drawn from the warehouse
     # THROUGH the concept's own grounding, so it fails loudly where that grounding is wrong — which
     # a YAML file alone never does.
-    producers: [{tool: tools/mac_sample.py, role: draws through the concept's grounding}]
-    consumers: [{tool: sdk/project/objects.py, role: offers the Sample tab, reads: ["«path only»"]}]
+    producers: [{tool: tools/mac_sample.py, role: draws through the concept's grounding, args: "--plane concepts"}]
+    consumers:
+      - {tool: mac-console/ui/src/views/ConceptSamplePane.jsx, role: shows the rows on the concept page, reads: ["«path only»"]}
+      - {tool: sdk/authoring/authoring.py, role: hands the rows to the composer — a concept is authored FROM its rows, never from the schema alone, reads: ["«rows»"]}
     checkers:
-      - {tool: tools/check_concept_samples.py, rejects: [MISSING, STALE, EMPTY]}
+      # THE GATE READS `path` FROM THIS ENTRY. It carried its own literal once (data/samples/concepts/)
+      # and reported 17 fresh samples as 17 MISSING the day the producer moved (2026-09-29).
+      - {tool: tools/check_concept_samples.py, rejects: [MISSING, DRIFTED, STALE, EMPTY]}
+
+  concept_sample_run:
+    what: the concept draws' provenance — engine, seed, order, what was withheld and why
+    phase: [ontology]
+    path: ontology/samples/samples.run.json
+    naming: fixed
+    population: {of: one record for the plane, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_sample.py, role: records the draw, args: "--plane concepts"}]
+    consumers: []
+    checkers: []
 
 conventions:
   - what: a concept's file name

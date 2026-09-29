@@ -302,6 +302,16 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
         md += ["", "## Built by this transform (the data-transformation SQL)", "```sql", sql, "```"]
     if raw_md:
         md += ["", "## Upstream raw source(s) it derives from (the original DBs)", *raw_md]
+    # THE ROWS, LAST AND LOUDEST. A concept is authored FROM its rows, never from the schema alone
+    # (guardrails/ontology/concepts.yaml#concept_sample: "a concept without one is a claim nobody
+    # checked"; DNA law 8). Until 2026-09-29 the composer was handed columns, types, SQL and SME
+    # prose and NOT ONE ROW — so it could declare a grain the data contradicts (contoso5 Store:
+    # "one row per store" over 74 version rows of 67 codes) and nothing in its input could say so.
+    rows_md = _rows_md(data_dir / "samples" / f"{ds_path.stem}.sample.csv")
+    if rows_md:
+        md += ["", f"## Rows — a seeded sample of `{produces_relation}` (data/samples/{ds_path.stem}.sample.csv)",
+               "Read the definition, the identity and the grain FROM THESE ROWS; a claim they contradict is wrong.",
+               rows_md]
     terms = (
         [name]
         + [w for w in re.split(r"[_\s]+", name) if len(w) > 2]
@@ -315,6 +325,29 @@ def _dataset_input(ds_path: Path, data_dir: Path) -> dict:
         "foreign_keys": fks,
         "roles": {c.get("name"): c.get("role") for c in cols if c.get("name")},
     }
+
+
+def _rows_md(sample: Path, limit: int = 8) -> str:
+    """The first ``limit`` rows of a seeded relation sample as a markdown table, or "" without one.
+
+    The `#` provenance block the sampler writes is not data and is skipped; a ragged row is
+    rendered as it is rather than repaired, because the composer should see what is there.
+    """
+    try:
+        lines = [ln for ln in sample.read_text(encoding="utf-8").splitlines()
+                 if ln.strip() and not ln.startswith("#")]
+    except OSError:
+        return ""
+    if len(lines) < 2:
+        return ""
+    import csv as _csv
+    reader = list(_csv.reader(lines))
+    header, body = reader[0], reader[1:limit + 1]
+    esc = lambda v: str(v).replace("|", "\\|")  # noqa: E731
+    out = ["| " + " | ".join(esc(h) for h in header) + " |", "|" + "---|" * len(header)]
+    out += ["| " + " | ".join(esc(c) for c in row) + " |" for row in body]
+    out.append(f"({len(body)} of {len(reader) - 1} sampled rows shown)")
+    return "\n".join(out)
 
 
 def _lineage_flows(cr: Path) -> list:

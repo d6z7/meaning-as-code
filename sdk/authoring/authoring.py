@@ -410,8 +410,10 @@ def author_concept(
     human = (
         "## EXAMPLE MAC CONCEPT (shape reference only — do NOT copy its content)\n\n"
         f"{exemplar}\n\n"
-        "## GROUNDING RELATIONS — schema + provenance for EVERY relation this notion needs\n\n"
-        "(one concept may ground on several; list each under grounding.sources)\n\n"
+        "## GROUNDING RELATIONS — schema, provenance and ROWS for EVERY relation this notion needs\n\n"
+        "(one concept may ground on several; list each under grounding.sources. Each relation ends "
+        "with a sample of its rows: the definition, the identity and the grain are read FROM THE ROWS, "
+        "and a claim the rows contradict is wrong.)\n\n"
         f"{schema_md}\n\n"
         "## CONTEXT — SME docs (grounding; use what's relevant, ignore the rest)\n\n"
         f"{context or '(no context docs uploaded)'}\n\n"
