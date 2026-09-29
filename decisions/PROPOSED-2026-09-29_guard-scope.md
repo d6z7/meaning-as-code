@@ -155,3 +155,12 @@ absence lets an agent open a gate.
 **Ordering.** B2 first: it is the only one where the absence lets an agent manufacture an approval.
 A is a one-function convenience that unblocks the ontology guardrails. B1 is cheap and can ride with
 either.
+
+## Addendum 2026-09-29 — a false positive, measured three times
+
+`$C/ontology/concepts/x.yaml` in a shell command trips the guard's `gate_unreachable` branch: the
+variable is not expanded when the hook reads the command, so the path does not resolve and the guard
+denies as unreachable. Three denials in one session, each a read. Literal paths pass. Either the guard
+expands `$VAR` against the caller's environment before judging reachability, or it says "unexpanded
+variable" instead of "unreachable" — the second is the honest minimum, because the current message
+sends the author to look for a missing file that exists.

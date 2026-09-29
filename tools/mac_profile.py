@@ -8,7 +8,7 @@ artifact**, which is why grain ended up hand-typed, hand-typed DIFFERENTLY in tw
 extension had to be invented to hold it. This does not add a scan; it keeps one already paid for.
 
 WHAT IT WRITES, both machine-only:
-    columns[].profile   {distinct, nulls, min, max}   the census
+    columns[].profile   {distinct, nulls, min, max, singletons}   the census
     profile             {measured_at, rows, newest_write, method, engine, scanned_bytes}
 
 EXACT COUNTS, NOT SKETCHES. `approx_distinct` is HLL and was measured returning MORE distinct
@@ -37,7 +37,7 @@ import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
 
 SCHEMA_VERSION = "0.1.14-develop"
 
-TOOL = "mac_profile.py/5"
+TOOL = "mac_profile.py/6"
 
 # A column with at most this many distinct values is treated as BOUNDED and its full value set is
 # captured. Above it, membership is volume — a model-code list grows by design — and only the count
@@ -127,6 +127,65 @@ def bounded_values_sql(relation: str, cols: list[tuple[str, str]]) -> str:
     return "SELECT " + ", ".join(sel) + f"\nFROM {relation}"
 
 
+#: A column is a SINGLETON CANDIDATE when it is near-unique enough that most of its values could name
+#: one row: at least this many distinct values, and at least this share of the rows. Below either,
+#: the measurement is not taken and the profile carries no `singletons` for the column -- absent
+#: means "not a candidate", never "zero".
+SINGLETON_MIN_DISTINCT = 1000
+SINGLETON_MIN_SHARE = 0.01
+
+
+def singleton_candidates(row: dict, columns: list[dict]) -> list[str]:
+    """Non-key, non-numeric columns near-unique enough to be an identifier in disguise.
+
+    WHY THIS IS MEASURED AT ALL. `rulings.never_axis: privacy` (reference_manual/column_rulings.md
+    §4) is a ruling made FROM a measurement -- "ZipCode alone singles out 29 193 of 104 990 served
+    customers" -- and must cite it as `evidence`. The census counts distinct and nulls; neither says
+    how many values are held by EXACTLY ONE row, which is the number that turns a dimension into a
+    list of people. Measured on contoso5 2026-09-29, from the served customer dimension:
+    customer_name 94 488 of 99 200 values held by one row, city 21 317 of 34 581, birth_date 1 476
+    of 24 147 -- the first two are identifiers wearing a dimension's role, the third is not.
+
+    Keys are excluded because a key is SUPPOSED to be one per row; numbers are excluded because a
+    money amount with many distinct values is a measure, not a person."""
+    n = int(row["n_rows"])
+    out = []
+    for i, c in enumerate(columns):
+        role = str(c.get("role") or "")
+        if role.endswith("key") or c.get("key_position") is not None or _is_complex(c):
+            continue
+        if any(str(c.get("type", "")).lower().startswith(o) for o in ORDERABLE if o not in ("date", "time", "timestamp")):
+            continue
+        d = int(row[f"d{i}"])
+        if d >= SINGLETON_MIN_DISTINCT and n > 0 and d / n >= SINGLETON_MIN_SHARE:
+            out.append(str(c["name"]))
+    return out
+
+
+def singletons_sql(relation: str, cols: list[str]) -> str:
+    """ALL candidate columns in ONE scan: values held by exactly one row, per column.
+
+    GROUPING SETS, for the same reason `bounded_values_sql` uses array_agg(DISTINCT): one pass with
+    one hash table per set, instead of one pass per column. `GROUPING(c0..ck)` is the bitmask of the
+    columns NOT in the set, so the set (c_i) reports as (2^k - 1) - 2^(k-1-i) and the caller maps it
+    back. A NULL is not a value that names a row: for the set (c_i) every other column is NULL by
+    construction, so "all columns NULL" is exactly "c_i is NULL" and those groups are not counted.
+    Proven on DuckDB against a per-column GROUP BY ... HAVING count(*) = 1 (identical counts); the
+    syntax is SQL:2003 and Athena/Trino carry it."""
+    qs = ['"' + c.replace('"', "") + '"' for c in cols]
+    allnull = " AND ".join(f"{q} IS NULL" for q in qs)
+    return ("SELECT g, count(*) FILTER (WHERE n = 1 AND NOT nul) AS singles FROM ("
+            f"SELECT GROUPING({', '.join(qs)}) AS g, count(*) AS n, ({allnull}) AS nul "
+            f"FROM {relation} GROUP BY GROUPING SETS ({', '.join(f'({q})' for q in qs)})) "
+            "GROUP BY g")
+
+
+def singletons_by_column(rows: list[dict], cols: list[str]) -> dict[str, int]:
+    k = len(cols)
+    by_mask = {int(r["g"]): int(r["singles"] or 0) for r in rows}
+    return {c: by_mask.get((2 ** k - 1) - 2 ** (k - 1 - i), 0) for i, c in enumerate(cols)}
+
+
 def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> tuple[dict, dict]:
     """Fold the measurement into (descriptor, profile).
 
@@ -141,6 +200,8 @@ def apply(doc: dict, row: dict, columns: list[dict], meta: dict) -> tuple[dict, 
         cell = {"name": str(c["name"]), "distinct": int(row[f"d{i}"]), "nulls": int(row[f"z{i}"])}
         if f"mn{i}" in row:
             cell["min"], cell["max"] = row.get(f"mn{i}"), row.get(f"mx{i}")
+        if str(c["name"]) in (meta.get("singletons") or {}):
+            cell["singletons"] = int(meta["singletons"][str(c["name"])])
         # `determined_by` is written by the ADMISSION pass, not the census — carry it, never clear it
         keep = (prev.get(str(c["name"])) or {}).get("determined_by")
         if keep:
@@ -242,6 +303,17 @@ def main() -> int:
             bounded[name] = raw.split(chr(31)) if raw else []
         meta["bytes_scanned"] = (meta.get("bytes_scanned") or 0) + (vmeta.get("bytes_scanned") or 0)
 
+    # THIRD PASS, only for near-unique non-key columns: how many values are held by exactly one row.
+    # This is the measurement a `never_axis: privacy` ruling cites, and it is not derivable from the
+    # census. One GROUPING SETS scan over all candidates, never one scan per column.
+    singletons: dict[str, int] = {}
+    cand = singleton_candidates(rows[0], columns)
+    if cand:
+        sr, smeta = ath.query(singletons_sql(relation, cand))
+        singletons = singletons_by_column(sr, cand)
+        meta["bytes_scanned"] = (meta.get("bytes_scanned") or 0) + (smeta.get("bytes_scanned") or 0)
+        print(f"  singletons measured for {', '.join(f'{c}={singletons[c]:,}' for c in cand)}")
+
     wm_sql = watermark_sql(relation, columns)
     newest = None
     if wm_sql:
@@ -254,6 +326,7 @@ def main() -> int:
         "measured_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "newest_write": newest,
         "bounded": bounded,
+        "singletons": singletons,
         "stem": a.dataset,
         "relation": relation,
         "prev_profile": prev,

@@ -1569,6 +1569,11 @@
                   "null"
                 ]
               },
+              "singletons": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "VALUES HELD BY EXACTLY ONE ROW. Measured by mac_profile.py/6 in one GROUPING SETS scan, only for near-unique non-key, non-numeric columns (>= 1,000 distinct and >= 1% of rows); ABSENT means the column was not a candidate, never that the count is zero. This is the measurement behind `rulings.never_axis: privacy` (reference_manual/column_rulings.md §4): a column most of whose values name one row is an identifier wearing a dimension's role, and GROUP BY it returns one row per person. mac_dq_findings.py raises DQ-IDENTIFYING-<relation>-<column> from it, and the ruling cites that id as `evidence`. Added 2026-09-29, operator: the ruling is a MUST HAVE, and a prohibition without a measurement is a preference."
+              },
               "determined_by": {
                 "type": "array",
                 "items": {
@@ -3914,9 +3919,10 @@
                             "key",
                             "dimension",
                             "measure",
-                            "attribute"
+                            "period",
+                            "housekeeping"
                           ],
-                          "$comment": "CLOSED 2026-09-27. It was `type: string` with NO enum while `identity` beside it was closed to three values, so `role: dimensio` passed validate_schema in SILENCE — the same silence the 141 inert CONTOSO4.field_role.* tokens had, reached by a different mechanism. THE FOUR MEMBERS ARE NOT INVENTED: they are the four in use across contoso4's 142 column declarations (dimension 57, attribute 45, key 37, measure 3 = 142), so closing the set invalidates no delivered file. DELIBERATELY NOT VERSION-BUMPED: nothing delivered becomes invalid, a bump re-keys every cached completion (which is backlog item 1's own complaint), and `version.py --check` is RED on this tree with four disagreeing current-version claims while exiting 0 — tightening a rule into that state is how the version line got into it."
+                          "$comment": "RE-CLOSED 2026-09-29 TO THE VOCABULARY'S TERMS — operator ruling: `attribute` was deprecated (mac_vocabulary.yaml#concept.column.role says it IS DELIBERATELY ABSENT) and this enum still offered it, so an author reading the schema, the authoring guidance (sdk/authoring/authoring.py showed `Surname: {role: attribute}`) and the neighbouring bundle (contoso4, 44 uses) was handed the deprecated term by every surface at once, and validate_schema passed 20 such columns in one day. check_vocabulary_parity had reported the disagreement since 09-27; it ran in the framework gate run and nobody stopped. Per CONFORMANCE §2.1 this enum IS the vocabulary's term list; contoso4's 45 `attribute` columns become invalid, which is the honest consequence — the earlier comment kept the term precisely so they would not. HISTORY — CLOSED 2026-09-27. It was `type: string` with NO enum while `identity` beside it was closed to three values, so `role: dimensio` passed validate_schema in SILENCE — the same silence the 141 inert CONTOSO4.field_role.* tokens had, reached by a different mechanism. THE FOUR MEMBERS ARE NOT INVENTED: they are the four in use across contoso4's 142 column declarations (dimension 57, attribute 45, key 37, measure 3 = 142), so closing the set invalidates no delivered file. DELIBERATELY NOT VERSION-BUMPED: nothing delivered becomes invalid, a bump re-keys every cached completion (which is backlog item 1's own complaint), and `version.py --check` is RED on this tree with four disagreeing current-version claims while exiting 0 — tightening a rule into that state is how the version line got into it."
                         },
                         "identity": {
                           "type": "string",

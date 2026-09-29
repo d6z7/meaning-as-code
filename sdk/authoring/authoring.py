@@ -81,12 +81,14 @@ Shape of a concept file:
         CustomerKey: {role: key, identity: reference}
         OrderDate:   {role: dimension}
         Quantity:    {role: measure, measure: {type: mac.concept.column.measure_type.flow, unit: units}}
-        Surname:     {role: attribute}
+        Surname:     {role: dimension}
+        ValidFrom:   {role: housekeeping}   # pipeline bookkeeping — never offered to a question
         Status:                      # a bare name serves the column and says nothing more
-  TODAY'S FLAGS ARE role, identity, measure — and ONLY those three, because a flag ships with the code
+  TODAY'S FLAGS ARE role, identity, measure, rulings — and ONLY those four, because a flag ships with the code
   that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a flag and a
   sentence. `identity: canonical` becomes the concept's canonical_key; `part` marks one column of a
-  composite key; `reference` marks a foreign key. Only ONE column per concept may carry `measure:`.
+  composite key; `reference` marks a foreign key. Several columns may carry `measure:` when they compose
+  ONE quantity (Quantity x NetPrice); then `semantics.unit` on the concept states the composed unit.
   DO NOT WRITE A `field_roles:` BLOCK. It is PROJECTED from these roles — writing both gives one fact
   two homes that can drift, and `check_column_spec` reports a concept that declares both. Do not write
   the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
@@ -132,7 +134,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 
 Authoring rules:
 - Ground on the REAL table and columns provided. NEVER invent a column that isn't in the schema.
-- Give every meaningful column a field_role: keys are identity/join columns; dimensions are filterable; attributes are display-only; measures are additive numeric facts.
+- Give every meaningful column a role from mac.concept.column.role: key (identity/join), dimension (filterable, groupable), measure (numeric payload, folded as its measure_type allows), period (THE reporting date when a relation carries several), housekeeping (pipeline bookkeeping — validity windows, load stamps — never offered to a question). `attribute` is not a role.
 - identity.canonical_key is a SINGLE column name (a string). If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), set identity.kind: composite and OMIT canonical_key entirely — NEVER set canonical_key to a list.
 - Write a precise 2-4 sentence definition anchored in the schema + context.
 - WHERE MAC HAS A CANON FOR A RULE SHAPE, BIND — DO NOT WRITE THE CLAUSES. Supply

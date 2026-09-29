@@ -162,6 +162,10 @@ transform.driven_by:
     APPLIES; where the profiling already shows something, the platform PROPOSES an improvement; and
     an SME or data scientist drives the change after that — including during concept authoring,
     depending on what the concepts need. Three drivers at three moments, not three kinds of file.
+    ABSENT IS NOT A FOURTH TERM: a transform carrying no `driven_by` is UNDECLARED — nobody recorded
+    who drove it. Every curated transform in the estate is in that state today, and labelling them
+    `ruled` would assert a ruling that is on no record; the estate's own three-outcome discipline
+    (present / absent / undeclared) rather than a default that flatters the data.
   terms:
     passthrough: >
       The floor. Every column, nothing renamed, derived or dropped — computable from the catalog,
@@ -175,11 +179,6 @@ transform.driven_by:
     ruled: >
       A person decided — an SME or a data scientist — and `because` names what they answered.
       Nothing regenerates a ruled transform.
-  note: >
-    ABSENT IS NOT A FOURTH TERM. A transform carrying no `driven_by` is UNDECLARED: nobody recorded
-    who drove it. Every curated transform in the estate is in that state today and labelling them
-    `ruled` would assert a ruling that is on no record — the estate's own three-outcome discipline
-    (present / absent / undeclared) rather than a default that flatters the data.
 
 relation.column.role:
   kind: vocabulary

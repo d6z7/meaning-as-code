@@ -68,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     findings += _keyless(root, yaml)
     findings += _duplicate_landings(root, yaml)
     findings += _all_null_columns(root, yaml)
+    findings += _identifying_columns(root, yaml)
     findings += _failing_cases(root)
     findings += _broken_references(root, yaml)
     findings += _ambiguous_references(root, yaml)
@@ -685,6 +686,59 @@ def _all_null_columns(root: pathlib.Path, yaml) -> list[dict]:
                     "needs": ("a ruling: drop the column, or state what its absence MEANS. A served "
                               "column with no value is declared and empty."),
                 })
+    return out
+
+
+#: A column is IDENTIFYING when at least this share of its distinct values is held by exactly one
+#: row. ZipCode on the curated customer dimension measures 0.72; contoso5's customer_name 0.95 and
+#: city 0.62; its birth_date 0.06 and state 0.03 are not. Half is the honest cut between "a list of
+#: people" and "an axis some of whose members happen to be small".
+IDENTIFYING_SHARE = 0.5
+
+
+def _identifying_columns(root: pathlib.Path, yaml) -> list[dict]:
+    """A served dimension column most of whose values name exactly one row.
+
+    Read from the profile's `singletons` (mac_profile.py/6, one GROUPING SETS scan); a profile made
+    by an older method carries none and raises nothing here -- absent is not zero. Served relations
+    only: the same column on the landing measures the same and would double the finding.
+
+    WHY IT IS A DQ FINDING AND NOT A GATE. The number is a fact; whether the column may be an axis is
+    a person's call -- `rulings.never_axis: privacy` on the concept's column, citing this id as
+    `evidence` (reference_manual/column_rulings.md §4). Operator, 2026-09-29: that ruling is a MUST
+    HAVE, and a prohibition without a measurement is a preference; this is the measurement."""
+    served = {f.stem for f in (root / "data" / "datasets").glob("*.yaml")}
+    out = []
+    for f in sorted((root / "data" / "profiles").glob("*.yaml")):
+        if f.stem not in served:
+            continue
+        doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        rows = (doc.get("profile") or {}).get("rows")
+        for c in doc.get("columns") or []:
+            single, distinct = c.get("singletons"), c.get("distinct")
+            if not isinstance(single, int) or not isinstance(distinct, int) or distinct <= 0:
+                continue
+            share = single / distinct
+            # A COLUMN 1:1 WITH THE ROW IS ANOTHER NAME FOR THE KEY, not a dimension that happens to
+            # single people out -- that is the `label_of` constellation (column_rulings.md §1) and is
+            # ruled there. Measured 2026-09-29: date_key 4,018 of 4,018, product_code and product_name
+            # 2,517 of 2,517 all fired here before this line existed; customer_name (99,200 of 104,990
+            # rows) and city did not stop being findings.
+            if share < IDENTIFYING_SHARE or (isinstance(rows, int) and distinct >= rows):
+                continue
+            col = str(c.get("name"))
+            out.append({
+                "id": f"DQ-IDENTIFYING-{f.stem.upper()}-{col.upper()}",
+                "title": f"`{f.stem}.{col}` names individuals — {single:,} of {distinct:,} values are held by exactly one row",
+                "severity": "medium",
+                "finding": (f"{single:,} of {distinct:,} distinct values ({share:.0%}) over {rows:,} rows are held "
+                            f"by exactly one row (mac_profile.py/6, one GROUPING SETS scan). A column most of "
+                            f"whose values name one row is an identifier wearing a dimension's role: GROUP BY it "
+                            f"returns one row per person, and the query succeeds."),
+                "needs": (f"a ruling on the concept that grounds `{f.stem}.{col}`: `rulings: {{never_axis: privacy, "
+                          f"evidence: DQ-IDENTIFYING-{f.stem.upper()}-{col.upper()}}}` on the column, or a written "
+                          f"reason the axis is safe to offer. Until then the planner has nothing to refuse with."),
+            })
     return out
 
 
