@@ -46,9 +46,9 @@ kinds:
     vocabulary: [mac.relation.column.role]
     transient: [values]
     producers:
-      - {tool: tools/mac_descriptors.py, role: measures, args: "--plane sources"}
-      - {tool: tools/mac_profile.py,     role: adds the measured value domains}
-      - {tool: tools/mac_lookups.py,     role: cuts those domains into registers and removes them}
+      - {tool: "tools/mac_descriptors.py", role: "measures", args: "--plane sources"}
+      - {tool: "tools/mac_profile.py", role: "adds the measured value domains"}
+      - {tool: "tools/mac_lookups.py", role: "cuts those domains into registers and removes them"}
 
   served_descriptor:
     what: what a served relation LEAVES — the promotion's contract
@@ -71,9 +71,9 @@ kinds:
     vocabulary: [mac.relation.column.role]
     transient: [values]
     producers:
-      - {tool: tools/mac_descriptors.py, role: measures, args: "--plane datasets"}
-      - {tool: tools/mac_profile.py,     role: adds the measured value domains}
-      - {tool: tools/mac_lookups.py,     role: cuts those domains into registers and removes them}
+      - {tool: "tools/mac_descriptors.py", role: "measures", args: "--plane datasets"}
+      - {tool: "tools/mac_profile.py", role: "adds the measured value domains"}
+      - {tool: "tools/mac_lookups.py", role: "cuts those domains into registers and removes them"}
 
   profile:
     what: the measurement plane — row counts, distincts, nulls, identity evidence
@@ -87,7 +87,7 @@ kinds:
     name: the relation's stem, verbatim
     shape: mac.schema.json#/$defs/ProfileFile
     producers:
-      - {tool: tools/mac_profile.py, role: measures}
+      - {tool: "tools/mac_profile.py", role: "measures"}
 
   reference_measurement:
     what: the measured references of ONE relation, with evidence and cardinality
@@ -106,7 +106,7 @@ kinds:
     name: the relation's stem, verbatim
     shape: mac.schema.json#/$defs/ReferenceFile
     producers:
-      - {tool: tools/mac_references.py, role: measures}
+      - {tool: "tools/mac_references.py", role: "measures"}
 
   register:
     # FOUR WRITERS, MEASURED 2026-09-29 — the registry declared one. Only the first is in the
@@ -128,10 +128,10 @@ kinds:
       column name overwrite one another: measured 2026-09-28, eight domains lost across four bundles.
     columns: [«code», label, search_key, source_view, source_schema, confidence, note]
     producers:
-      - {tool: tools/mac_lookups.py, role: cuts from the domains the profile measured}
-      - {tool: sdk/authoring/materialize.py, role: profiles a live dim view for a name/code pair}
-      - {tool: tools/cut_missing_registers.py, role: fills a domain that has no register, out of band}
-      - {tool: «a person», role: authors a per-register build script}
+      - {tool: "tools/mac_lookups.py", role: "cuts from the domains the profile measured"}
+      - {tool: "sdk/authoring/materialize.py", role: "profiles a live dim view for a name/code pair"}
+      - {tool: "tools/cut_missing_registers.py", role: "fills a domain that has no register"}
+      - {tool: "«a person»", role: "authors a per-register build script"}
 
   relation_preview:
     what: a seeded sample of one relation, for a reviewer to check a declaration against rows
@@ -146,7 +146,7 @@ kinds:
       the served preview is `{relation}.sample.csv`; the landed one carries `.src.` — the two planes
       share a directory and a 1:1 passthrough bundle shares the stem, so the plane must be in the name
     producers:
-      - {tool: tools/mac_sample.py, role: draws}
+      - {tool: "tools/mac_sample.py", role: "draws"}
 
   column_lineage:
     what: where every served column came from — a source column, or an expression
@@ -160,8 +160,8 @@ kinds:
     name: fixed
     shape: mac.schema.json#/$defs/LineageFile
     producers:
-      - {tool: tools/mac_lineage.py, role: measures from the view SQL}
-      - {tool: tools/mac_lineage.py, role: adapts to the flow shape, via flows()}
+      - {tool: "tools/mac_lineage.py", role: "measures from the view SQL"}
+      - {tool: "tools/mac_lineage.py", role: "adapts to the flow shape"}
 
   relation_page:
     what: the page a person opens to read one relation
@@ -174,7 +174,7 @@ kinds:
     path: data/{plane}/{relation}.md
     name: the descriptor's stem, verbatim
     producers:
-      - {tool: sdk/project/project_data.py, role: renders}
+      - {tool: "sdk/project/project_data.py", role: "renders"}
 
   plane_overview:
     what: one page over ALL of a plane's relations — what was landed, how big, what is keyed
@@ -187,7 +187,7 @@ kinds:
     path: data/{plane}/index.md
     name: fixed
     producers:
-      - {tool: sdk/project/project_data.py, role: renders}
+      - {tool: "sdk/project/project_data.py", role: "renders"}
 
   transform_sql:
     what: the AUTHORED statement that produces one served relation
@@ -200,7 +200,7 @@ kinds:
     path: data/transforms/{relation}.sql
     name: the served relation it produces
     producers:
-      - {tool: «a person», role: authors}
+      - {tool: "«a person»", role: "authors"}
 
   transform_descriptor:
     what: what a transform consumes and produces, measured from the catalog
@@ -214,7 +214,7 @@ kinds:
     name: the served relation it produces
     shape: mac.schema.json#/$defs/TransformFile
     producers:
-      - {tool: tools/mac_transforms.py, role: measures}
+      - {tool: "tools/mac_transforms.py", role: "measures"}
 
   data_quality_register:
     what: what is WRONG and who must rule on it — raised, never ruled, by a tool
@@ -228,7 +228,7 @@ kinds:
     name: fixed
     shape: mac.schema.json#/$defs/DataQualityRegisterFile
     producers:
-      - {tool: tools/mac_dq_findings.py, role: raises and merges, preserving any ruling}
+      - {tool: "tools/mac_dq_findings.py", role: "raises and merges"}
 
   # ══ the classes the registry had never declared — census of 2026-09-29 ═════════════════════
 
@@ -244,17 +244,17 @@ kinds:
     origin: authored
     name: the register it builds, with the marker the bundle uses
     producers:
-      - {tool: «a person», role: authors}
+      - {tool: "«a person»", role: "authors"}
     consumers:
       # NOTHING READS ITS CONTENT FOR MEANING, and that is the honest declaration. The two gates
       # below read it as raw text hunting for escapes and secrets; the producer-census matches its
       # FILENAME inside a reproduction command, never the file. Its real consumer is a person.
-      - {tool: tools/check_artifact_has_producer.py, role: accepts its name as proof the family has a producer, reads: [«path only»]}
-      - {tool: tools/check_bundle_isolation.py, role: scans for a path escaping the bundle, reads: [«raw text»]}
-      - {tool: sdk/gate/check_bundle_secrets.py, role: scans for a secret or infra handle, reads: [«raw text»]}
+      - {tool: "tools/check_artifact_has_producer.py", role: "accepts its name as proof the family has a producer", reads: ["«path only»"]}
+      - {tool: "tools/check_bundle_isolation.py", role: "scans for a path escaping the bundle", reads: ["«raw text»"]}
+      - {tool: "sdk/gate/check_bundle_secrets.py", role: "scans for a secret or infra handle", reads: ["«raw text»"]}
     checkers:
-      - {tool: tools/check_bundle_isolation.py, rejects: [ESCAPES, NAMES_ANOTHER_BUNDLE, BREACH]}
-      - {tool: sdk/gate/check_bundle_secrets.py, rejects: [secret, infra-handle]}
+      - {tool: "tools/check_bundle_isolation.py", rejects: [ESCAPES, NAMES_ANOTHER_BUNDLE, BREACH]}
+      - {tool: "sdk/gate/check_bundle_secrets.py", rejects: [secret, infra-handle]}
 
   dq_dashboard:
     what: the DQ register joined to the resolution map — the only structured artifact the console's quality page reads
@@ -268,15 +268,15 @@ kinds:
     origin: derived
     name: fixed
     producers:
-      - {tool: sdk/project/project_data.py, role: projects register x resolution map}
+      - {tool: "sdk/project/project_data.py", role: "projects register x resolution map"}
     consumers:
-      - {tool: sdk/project/objects.py, role: groups finding ids per raw table for the Quality tab, reads: [findings[].table, findings[].id]}
-      - {tool: tools/project_objects.py, role: declares it a seam input and reports absence rather than swallowing it, reads: [«path only»]}
-      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: renders the DQ overview, resolution bar and findings, reads: [stats.total, stats.resolved, stats.partial, stats.gap, stats.unreconciled, stats.by_severity, stats.by_status, findings[].id, findings[].title, findings[].severity, findings[].status, findings[].table, findings[].impurity_class, findings[].coverage, findings[].resolving_transforms, findings[].guarantee, findings[].evidence]}
-      - {tool: mac-console/ui/src/views/DataQualityBoard.jsx, role: the register-closure and worklist tabs, reads: [findings, stats.by_status, findings[].status, findings[].resolving_transforms, findings[].guarantee]}
-      - {tool: mac-console/ui/src/views/ConceptCatalogPane.jsx, role: shows the defects a concept's transforms treat, reads: [findings[].resolving_transforms, findings[].id, findings[].impurity_class]}
+      - {tool: "sdk/project/objects.py", role: "groups finding ids per raw table for the Quality tab", reads: ["findings[].table", "findings[].id"]}
+      - {tool: "tools/project_objects.py", role: "declares it a seam input and reports absence rather than swallowing it", reads: ["«path only»"]}
+      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "renders the DQ overview", reads: ["stats.total", "stats.resolved", "stats.partial", "stats.gap", "stats.unreconciled", "stats.by_severity", "stats.by_status", "findings[].id", "findings[].title", "findings[].severity", "findings[].status", "findings[].table", "findings[].impurity_class", "findings[].coverage", "findings[].resolving_transforms", "findings[].guarantee", "findings[].evidence"]}
+      - {tool: "mac-console/ui/src/views/DataQualityBoard.jsx", role: "the register-closure and worklist tabs", reads: ["findings", "stats.by_status", "findings[].status", "findings[].resolving_transforms", "findings[].guarantee"]}
+      - {tool: "mac-console/ui/src/views/ConceptCatalogPane.jsx", role: "shows the defects a concept's transforms treat", reads: ["findings[].resolving_transforms", "findings[].id", "findings[].impurity_class"]}
     checkers:
-      - {tool: tools/check_projection_field_parity.py, rejects: [dropped, stale, phantom]}
+      - {tool: "tools/check_projection_field_parity.py", rejects: [dropped, stale, phantom]}
 
   impurity_resolution_map:
     what: the cross-link from a registered defect to the transform that dissolves it, with the guarantee that transform establishes
@@ -291,14 +291,14 @@ kinds:
     name: fixed
     shape: mac.schema.json#/$defs/ImpurityResolutionMapFile
     producers:
-      - {tool: «a person», role: authors}
+      - {tool: "«a person»", role: "authors"}
     consumers:
-      - {tool: sdk/project/project_data.py, role: joins each issue to its resolution across dashboard, pages and index, reads: [resolutions[].finding_id, resolutions[].coverage, resolutions[].impurity_class, resolutions[].resolving_transforms, resolutions[].guarantee, resolutions[].evidence]}
-      - {tool: sdk/project/objects.py, role: builds the TREATS panel on every dataset page, reads: [resolutions[].finding_id, resolutions[].coverage, resolutions[].guarantee, resolutions[].resolving_transforms]}
-      - {tool: sdk/project/references.py, role: renders filter traps and known issues, reads: [resolutions[].finding_id]}
-      - {tool: mac-console/console_api.py, role: GET /quality/{d}/{ds}/register — linked / not-linked counts with denominators, reads: [metadata.generated, resolutions[].finding_id, resolutions[].resolving_transforms, resolutions[].coverage]}
+      - {tool: "sdk/project/project_data.py", role: "joins each issue to its resolution across dashboard", reads: ["resolutions[].finding_id", "resolutions[].coverage", "resolutions[].impurity_class", "resolutions[].resolving_transforms", "resolutions[].guarantee", "resolutions[].evidence"]}
+      - {tool: "sdk/project/objects.py", role: "builds the TREATS panel on every dataset page", reads: ["resolutions[].finding_id", "resolutions[].coverage", "resolutions[].guarantee", "resolutions[].resolving_transforms"]}
+      - {tool: "sdk/project/references.py", role: "renders filter traps and known issues", reads: ["resolutions[].finding_id"]}
+      - {tool: "mac-console/console_api.py", role: "GET /quality/{d}/{ds}/register — linked / not-linked counts with denominators", reads: ["metadata.generated", "resolutions[].finding_id", "resolutions[].resolving_transforms", "resolutions[].coverage"]}
     checkers:
-      - {tool: tools/check_dq_resolution_sync.py, rejects: [duplicate-id, status-missing, status-unknown, ruling-missing, accepted-dq-id-dangling, resolution-dangling, resolution-transform-missing, coverage-invalid, resolves-unregistered, resolves-unlinked, impurity-unregistered]}
+      - {tool: "tools/check_dq_resolution_sync.py", rejects: [duplicate-id, status-missing, status-unknown, ruling-missing, accepted-dq-id-dangling, resolution-dangling, resolution-transform-missing, coverage-invalid, resolves-unregistered, resolves-unlinked, impurity-unregistered]}
 
   sme_thread_log:
     what: the trilateral SME conversation per question — comments, disposition and the action taken, both planes in one file
@@ -312,11 +312,11 @@ kinds:
     origin: authored
     name: fixed
     producers:
-      - {tool: mac-console/console_api.py, role: appends comments and rulings}
+      - {tool: "mac-console/console_api.py", role: "appends comments and rulings"}
     consumers:
-      - {tool: mac-console/console_api.py, role: serves one plane's threads, reads: [data, ontology, "{qid}.comments", "{qid}.status", "{qid}.action"]}
-      - {tool: mac-console/ui/src/views/DataQualityBoard.jsx, role: fetches threads and folds a new comment in, reads: [threads, "{qid}.comments", "{qid}.status"]}
-      - {tool: mac-console/ui/src/components/sme/SMEThread.jsx, role: renders each question as a thread, reads: ["{qid}.status", "{qid}.comments", "{qid}.action", comments[].author, comments[].role, comments[].text, comments[].timestamp]}
+      - {tool: "mac-console/console_api.py", role: "serves one plane's threads", reads: ["data", "ontology", "{qid}.comments", "{qid}.status", "{qid}.action"]}
+      - {tool: "mac-console/ui/src/views/DataQualityBoard.jsx", role: "fetches threads and folds a new comment in", reads: ["threads", "{qid}.comments", "{qid}.status"]}
+      - {tool: "mac-console/ui/src/components/sme/SMEThread.jsx", role: "renders each question as a thread", reads: ["{qid}.status", "{qid}.comments", "{qid}.action", "comments[].author", "comments[].role", "comments[].text", "comments[].timestamp"]}
     # NO CHECKER, NO SCHEMA, NO ROUTE IN validate_schema — and it is a store the operator's
     # 2026-09-22 ruling created, competing with governance/sme-questions.yaml whose own design is
     # mutant-tested. Reconciling two operator rulings is out of scope here (O3, RULED separate).
@@ -334,13 +334,13 @@ kinds:
     origin: derived
     name: fixed per plane
     producers:
-      - {tool: tools/mac_references.py, role: records the run}
+      - {tool: "tools/mac_references.py", role: "records the run"}
     consumers:
       # ONE READER, ONE FIELD. Measured 2026-09-29: nothing in the framework opens these at all;
       # the console reads `measured_at` as a clock. The denominators, the verdicts, the admission
       # rule and 857 pruned pairs — the facts the producer's own docstring says live here BECAUSE
       # they are global and bulky — are read by nothing.
-      - {tool: mac-console/ingest_progress.py, role: the references step's clock, reads: [measured_at]}
+      - {tool: "mac-console/ingest_progress.py", role: "the references step's clock", reads: ["measured_at"]}
     checkers: []
 
   preview_run_record:
@@ -355,13 +355,13 @@ kinds:
     origin: derived
     name: fixed
     producers:
-      - {tool: tools/mac_sample.py, role: records the relation draw}
+      - {tool: "tools/mac_sample.py", role: "records the relation draw"}
     consumers:
       # TWO FIELDS OF MANY. `engine`, `limit`, `order`, `refused[]` and every `sha256` are read by
       # nothing, though the producer argues at length that `engine` and `limit` are why it exists.
-      - {tool: tools/check_sample_matches_descriptor.py, role: attests each preview's provenance, reads: [samples[].stem, samples[].derived_from]}
+      - {tool: "tools/check_sample_matches_descriptor.py", role: "attests each preview's provenance", reads: ["samples[].stem", "samples[].derived_from"]}
     checkers:
-      - {tool: tools/check_sample_matches_descriptor.py, rejects: [UNRECORDED, PROPOSAL_PREVIEW]}
+      - {tool: "tools/check_sample_matches_descriptor.py", rejects: [UNRECORDED, PROPOSAL_PREVIEW]}
 
   object_index:
     what: the object-centric read model the console navigates by — one object per relation, concept and register with its view tabs
@@ -375,16 +375,16 @@ kinds:
     origin: derived
     name: fixed
     producers:
-      - {tool: sdk/project/objects.py, role: builds and writes the index}
+      - {tool: "sdk/project/objects.py", role: "builds and writes the index"}
     consumers:
-      - {tool: tools/check_edge_joins_its_grounding.py, role: proves an edge's join_rule touches its grounding, reads: [objects[].kind, objects[].name, objects[].grounds[].id]}
-      - {tool: tools/mac_import.py, role: probes whether the ER projection produced entities, reads: [er_model.entities, er_model_served.entities]}
-      - {tool: sdk/cli/publish.py, role: packs it into the published container, reads: [«path only»]}
-      - {tool: mac-console/console_api.py, role: the /objects seam's fallback when a live derivation is unavailable, reads: [objects, counts]}
-      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: drives every nav group, object page and tab, reads: [objects[].id, objects[].kind, objects[].plane, objects[].title, objects[].relation, objects[].views, objects[].paths, objects[].grounds, objects[].quality, objects[].lineage]}
-      - {tool: mac-console/ui/src/views/ConceptCatalogPane.jsx, role: assembles the concept catalogue, reads: [objects[].kind, objects[].id, objects[].name, objects[].grounds]}
+      - {tool: "tools/check_edge_joins_its_grounding.py", role: "proves an edge's join_rule touches its grounding", reads: ["objects[].kind", "objects[].name", "objects[].grounds[].id"]}
+      - {tool: "tools/mac_import.py", role: "probes whether the ER projection produced entities", reads: ["er_model.entities", "er_model_served.entities"]}
+      - {tool: "sdk/cli/publish.py", role: "packs it into the published container", reads: ["«path only»"]}
+      - {tool: "mac-console/console_api.py", role: "the /objects seam's fallback when a live derivation is unavailable", reads: ["objects", "counts"]}
+      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "drives every nav group", reads: ["objects[].id", "objects[].kind", "objects[].plane", "objects[].title", "objects[].relation", "objects[].views", "objects[].paths", "objects[].grounds", "objects[].quality", "objects[].lineage"]}
+      - {tool: "mac-console/ui/src/views/ConceptCatalogPane.jsx", role: "assembles the concept catalogue", reads: ["objects[].kind", "objects[].id", "objects[].name", "objects[].grounds"]}
     checkers:
-      - {tool: tools/check_seam_contract.py, rejects: [an input whose corruption does not change the payload, an undeclared read]}
+      - {tool: "tools/check_seam_contract.py", rejects: [an input whose corruption does not change the payload, an undeclared read]}
 
   bundle_index_page:
     what: the bundle's front page — the data-plane map and the resolution scoreboard
@@ -398,11 +398,11 @@ kinds:
     origin: derived
     name: fixed
     producers:
-      - {tool: sdk/project/project_data.py, role: renders}
+      - {tool: "sdk/project/project_data.py", role: "renders"}
     consumers:
-      - {tool: mac-console/console_api.py, role: lists and serves it with a projected_at stamp, reads: [«whole file», «file mtime»]}
-      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: renders the markdown with an as-of, reads: [«whole file», frontmatter.type, frontmatter.title]}
-      - {tool: mac-console/ingest_progress.py, role: with objects.json, the marker that a projection has run, reads: [«path only»]}
+      - {tool: "mac-console/console_api.py", role: "lists and serves it with a projected_at stamp", reads: ["«whole file»", "«file mtime»"]}
+      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "renders the markdown with an as-of", reads: ["«whole file»", "frontmatter.type", "frontmatter.title"]}
+      - {tool: "mac-console/ingest_progress.py", role: "with objects.json", reads: ["«path only»"]}
     # NO CONTENT CHECKER. `check_pages_current` re-renders and byte-compares only
     # sources/datasets/transforms; the root index is outside its population, so nothing in the
     # estate can tell a stale one from a current one.
@@ -420,15 +420,15 @@ kinds:
     origin: derived
     name: fixed
     producers:
-      - {tool: tools/mac_compile.py, role: compiles and writes}
-      - {tool: sdk/cli/harvest.py, role: runs it as the projection gate and stamps the override}
+      - {tool: "tools/mac_compile.py", role: "compiles and writes"}
+      - {tool: "sdk/cli/harvest.py", role: "runs it as the projection gate and stamps the override"}
     consumers:
-      - {tool: sdk/project/objects.py, role: emits the compile object even when the verdict is DOES_NOT_COMPILE, reads: [«path only»]}
-      - {tool: sdk/project/ontology_quality.py, role: reads the answerability verdict rather than recomputing it, reads: [diagnostics[].source, diagnostics[].witnesses[].detail, diagnostics[].note]}
-      - {tool: sdk/container/save.py, role: carries the admission into the sealed version, reads: [gate.override]}
-      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: renders the compiler report, reads: [verdict, summary.errors, summary.by_severity, codes, checks, gate, diagnostics[].code, diagnostics[].severity, diagnostics[].summary, diagnostics[].witnesses[].file, diagnostics[].witnesses[].line, diagnostics[].witnesses[].detail]}
+      - {tool: "sdk/project/objects.py", role: "emits the compile object even when the verdict is DOES_NOT_COMPILE", reads: ["«path only»"]}
+      - {tool: "sdk/project/ontology_quality.py", role: "reads the answerability verdict rather than recomputing it", reads: ["diagnostics[].source", "diagnostics[].witnesses[].detail", "diagnostics[].note"]}
+      - {tool: "sdk/container/save.py", role: "carries the admission into the sealed version", reads: ["gate.override"]}
+      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "renders the compiler report", reads: ["verdict", "summary.errors", "summary.by_severity", "codes", "checks", "gate", "diagnostics[].code", "diagnostics[].severity", "diagnostics[].summary", "diagnostics[].witnesses[].file", "diagnostics[].witnesses[].line", "diagnostics[].witnesses[].detail"]}
     checkers:
-      - {tool: tools/check_mac_public.py, rejects: [a local path leaking into a committed record]}
+      - {tool: "tools/check_mac_public.py", rejects: [a local path leaking into a committed record]}
 
   resource_description:
     what: the bundle's own resource description — what components exist, how the planes lie, what is derived, and the grammar and tree hash it was judged under
@@ -442,15 +442,15 @@ kinds:
     origin: derived
     name: the bundle's own label
     producers:
-      - {tool: tools/mac_resources.py, role: derives and stamps}
+      - {tool: "tools/mac_resources.py", role: "derives and stamps"}
     consumers:
-      - {tool: tools/mac_resources.py, role: --check re-derives and refuses on any difference, reads: [identity.tree_hash, identity.grammar_id, counts]}
-      - {tool: sdk/container/loader.py, role: resolves the container from a picked description, reads: [«path only»]}
-      - {tool: tools/check_vocabulary_tokens.py, role: holds every mac.* token in it to the vocabulary, reads: [«raw text, every mac.* token»]}
-      - {tool: mac-console/console_api.py, role: marks a directory openable and resolves the container by identity, reads: [identity.tree_hash, identity.container, metadata.project, metadata.data_domain, metadata.dataset]}
+      - {tool: "tools/mac_resources.py", role: "--check re-derives and refuses on any difference", reads: ["identity.tree_hash", "identity.grammar_id", "counts"]}
+      - {tool: "sdk/container/loader.py", role: "resolves the container from a picked description", reads: ["«path only»"]}
+      - {tool: "tools/check_vocabulary_tokens.py", role: "holds every mac.* token in it to the vocabulary", reads: ["«raw text", "every mac.* token»"]}
+      - {tool: "mac-console/console_api.py", role: "marks a directory openable and resolves the container by identity", reads: ["identity.tree_hash", "identity.container", "metadata.project", "metadata.data_domain", "metadata.dataset"]}
     checkers:
-      - {tool: tools/mac_resources.py, rejects: [no description, two descriptions, tree_hash drift, grammar_id drift, counts drift]}
-      - {tool: tools/check_vocabulary_tokens.py, rejects: [namespace-not-declared, closed-vocabulary-violated, namespace-not-snake_case]}
+      - {tool: "tools/mac_resources.py", rejects: [no description, two descriptions, tree_hash drift, grammar_id drift, counts drift]}
+      - {tool: "tools/check_vocabulary_tokens.py", rejects: [namespace-not-declared, closed-vocabulary-violated, namespace-not-snake_case]}
 
   decision_record:
     what: an ADR — the authored rationale the descriptors are only the consequence of, and what a governance sign-off must cite
@@ -464,10 +464,10 @@ kinds:
     origin: authored
     name: the decision's own slug, with its status and date
     producers:
-      - {tool: «a person», role: authors}
+      - {tool: "«a person»", role: "authors"}
     consumers:
-      - {tool: sdk/project/objects.py, role: indexes each record so the reasoning is navigable, reads: [«first H1 as the title», «filename»]}
-      - {tool: tools/check_data_plane_approved.py, role: the sign-off must cite a record that EXISTS, reads: [«path only»]}
-      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: renders the record in the doc pane, reads: [«whole file»]}
+      - {tool: "sdk/project/objects.py", role: "indexes each record so the reasoning is navigable", reads: ["«first H1 as the title»", "«filename»"]}
+      - {tool: "tools/check_data_plane_approved.py", role: "the sign-off must cite a record that EXISTS", reads: ["«path only»"]}
+      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "renders the record in the doc pane", reads: ["«whole file»"]}
     checkers:
-      - {tool: tools/check_data_plane_approved.py, rejects: [approval_unratified]}
+      - {tool: "tools/check_data_plane_approved.py", rejects: [approval_unratified]}

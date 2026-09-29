@@ -49,3 +49,46 @@ def quote_reads(text: str) -> str:
 
 if __name__ == "__main__":
     sys.stdout.write(quote_reads(sys.stdin.read()))
+
+
+def quote_flow_mapping(line: str) -> str:
+    """Re-emit one `- {k: v, k: v}` line with every scalar quoted.
+
+    A field path (`columns[].name`), a route (`/quality/{d}/{ds}/register`) and a prose role with a
+    comma in it are all natural things to write and all invalid inside a YAML flow mapping. Quoting
+    per-key with a regex fails on every one of them, so this splits on TOP-LEVEL separators only,
+    counting brackets and braces.
+    """
+    i = line.find("- {")
+    if i < 0 or not line.rstrip().endswith("}"):
+        return line
+    indent, inner = line[:i], line[i + 3:line.rstrip().rfind("}")]
+    pairs, depth, cur = [], 0, ""
+    for ch in inner:
+        if ch == "," and depth == 0:
+            pairs.append(cur); cur = ""; continue
+        if ch in "[{":
+            depth += 1
+        elif ch in "]}":
+            depth -= 1
+        cur += ch
+    pairs.append(cur)
+    out = []
+    for pair in pairs:
+        pair = pair.strip()
+        if not pair:
+            continue
+        k, _, v = pair.partition(":")
+        k, v = k.strip(), v.strip()
+        if not _:
+            continue
+        if v.startswith("[") or v.startswith(("'", '"')):
+            out.append(f"{k}: {v}")
+        else:
+            out.append(f'{k}: "{v.replace(chr(34), chr(39))}"')
+    return f"{indent}- {{{', '.join(out)}}}\n"
+
+
+def repair(text: str) -> str:
+    return "".join(quote_flow_mapping(ln) if "- {" in ln else ln
+                   for ln in quote_reads(text).splitlines(keepends=True))
