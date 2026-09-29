@@ -192,6 +192,12 @@ projection:
       what: asking for one column still returns the concept's identity column beside it
       example: a slice on ProductName yields "ProductName, ProductCode AS product"
       why: the identity is appended by the assembler and no field withholds it
+      note: >-
+        CLOSED 2026-09-29 by the runtime (mac-runtime grammar_reader.CLOSED_GAPS): a LIST that
+        names a column of its own subject gets that column alone — "countries where we have
+        customers" is SELECT DISTINCT country, 8 rows, where it was country beside every customer
+        name, 100,793 rows. A slice on ANOTHER concept still lists the subject beside it
+        ("products by category"), which is the design, not the gap. Listed until retired.
     - id: identity_column_duplicated
       what: naming the identity column as a slice emits it TWICE
       example: "SELECT DISTINCT ProductName, ProductCode, ProductCode AS product"

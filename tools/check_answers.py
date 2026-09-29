@@ -200,6 +200,22 @@ def main(argv=None) -> int:
             continue
         got = answered_value(cap)
         if got is None:
+            # AN APPROVED NUMBER AGAINST A LIST IS JUDGED BY ITS ROW COUNT, and says so. "List all
+            # countries where we have customers" is approved as 8; the engine answers a list of 8
+            # rows and no scalar. Until 2026-09-29 that was "not judged" — a correct answer with no
+            # verdict, on every list question in the corpus (RC01, RC02, RC03 ...).
+            got_table = answered_table(cap) if isinstance(expected, int) and not isinstance(expected, bool) else None
+            if got_table is not None:
+                got = got_table["rows"]
+                row = (qid, expected, f"{got} rows", ref.get("question", ""))
+                if same(expected, got):
+                    passed.append(row)
+                elif is_stale:
+                    stale.append((qid, f"expected {expected!r} rows, got {got!r} — captured before the "
+                                       f"ontology changed"))
+                else:
+                    failed.append(row)
+                continue
             unrun.append((qid, cap.get("route") or "no value returned"))
             continue
         row = (qid, expected, got, ref.get("question", ""))
