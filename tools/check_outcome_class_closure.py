@@ -139,11 +139,19 @@ def scan(root: pathlib.Path, law: dict) -> dict:
             if not isinstance(v, str):
                 continue
             t = v.strip()
-            per_key[k][t] += 1
-            sites[(k, t)][str(f.relative_to(root))] += 1
+            # AN AXIS IS A KEY IN A PLACE. The same carrier key holds THIS vocabulary in one
+            # directory and a different axis next door: `outcome` is COMMIT/REFUSE in
+            # acceptance/oracle/ and the rules evaluator's check verdict (pass / not_applicable)
+            # inside acceptance/answers/. Judged per bundle, six captured answers turned 36 check
+            # verdicts into "unknown spellings" (contoso5, 2026-09-29) — a finding about nothing.
+            # So the confirmation below is taken per DIRECTORY, and the report names the place.
+            place = f"{k} @ {f.parent.relative_to(root).as_posix() or '.'}/"
+            per_key[place][t] += 1
+            sites[(place, t)][str(f.relative_to(root))] += 1
 
-    # AXIS CONFIRMATION, PER KEY, PER BUNDLE. A carrier key is this vocabulary's only once one of its
-    # values is a declared term. Otherwise it is a different axis wearing the same name.
+    # AXIS CONFIRMATION, PER KEY, PER PLACE. A carrier key is this vocabulary's in a directory only
+    # once one of its values THERE is a declared term. Otherwise it is a different axis wearing the
+    # same name, and is skipped and disclosed rather than reported.
     judged, skipped = {}, {}
     for k, vc in per_key.items():
         if any(v.upper() in ci for v in vc):
