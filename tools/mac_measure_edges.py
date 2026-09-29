@@ -495,7 +495,26 @@ def _athena(root: pathlib.Path):
     """Borrow the bundle's own client so region, workgroup and profile come from one place."""
     rp = root / "tools" / "run_properties.py"
     if not rp.exists():
-        raise SystemExit(f"REFUSED: no query runner at {rp}")
+        # THE CONNECTOR SEAM ANSWERS FOR A BUNDLE THAT HAS NO ATHENA CLIENT, and this tool
+        # predates it — the same gap `mac_lookups` records: "the framework HAS a connector seam
+        # ... and the lookup cutter predates it. So a DuckDB bundle could not cut a register at
+        # all." Here it could not measure an EDGE at all: `_athena` wants a bundle-local
+        # run_properties.py plus acceptance/properties.yaml#engine carrying an AWS profile,
+        # region and workgroup, and exactly one bundle in this estate has them.
+        #
+        # THE INTERFACE IS ALREADY THE SAME. The only thing asked of the returned object is
+        # `query(sql) -> (rows, meta)`, which is precisely what the seam provides, so nothing but
+        # the lookup changes. Measured 2026-09-29: contoso5 declared 43 edges, 42 of them
+        # measurable, and every one came back `predicate-unmeasured` because no client could be
+        # built — a gate reporting an absence that was a missing adapter, not missing evidence.
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import _plugin
+        try:
+            return _plugin.required(str(root), "Athena")(root=str(root))
+        except Exception as exc:  # noqa: BLE001
+            raise SystemExit(
+                f"REFUSED: no query runner at {rp}, and the connector seam could not answer "
+                f"for this bundle either ({str(exc)[:80]})") from None
     spec = importlib.util.spec_from_file_location("rp", rp)
     m = importlib.util.module_from_spec(spec)
     argv, sys.argv = sys.argv, ["x"]
