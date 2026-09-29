@@ -1,28 +1,27 @@
-# guardrails/ontology/ — EMPTY, DELIBERATELY.
+# guardrails/ontology/ — the ontology plane's rules.
 
-No topic here yet. Under the one rule this directory tree rests on — **UNSPECIFIED IS NOT RULED** —
-that means the ontology plane is currently unruled, and writing to it is allowed.
+`concepts.yaml` — the AUTHORED semantic model: concept definitions, the rules they bind, the edges
+they join by, and the sample that proves each concept returns something real.
 
-That is a statement, not an oversight. It is recorded here so a reader can tell "nothing constrains
-this yet" from "somebody forgot", which are different facts and only one of them is a bug.
+**WHAT CHANGED, 2026-09-29.** This directory was empty, deliberately, and the note here said so:
+under UNSPECIFIED IS NOT RULED an empty directory meant the ontology plane was unruled and writing
+to it was allowed — a statement rather than an oversight. It is no longer true. Twelve checkers
+already governed this plane and no declaration named any of them, so what they rejected was
+reachable only by reading their source.
 
-## What will live here
+**AND THE FILE COULD NOT BE WRITTEN.** The ontology guard denied it `gate_unreachable`: the path
+holds `/ontology/` and no bundle manifest sits above it, so the rules that GOVERN the ontology plane
+were blocked by the guard that protects it — the third time that guard has blocked its own
+mechanism, and its own note on the first two reads "a guard that makes its own mechanism unfixable
+protects nothing and costs a day".
 
-One file per subject, the way `../data/` is split:
+The fix is `_is_guardrail_tree` in the kit: a POSITIVE identification, two conditions, neither
+sufficient alone — `/guardrails/ontology/` under a root carrying `mac.schema.json`. Measured over
+all twelve `ontology` directories in this estate, exactly one is exempt; the framework's own
+`example_shop_ontology/ontology` stays protected, which is why a root test alone would not do. The
+operator installed it, because an agent that can edit a gate has no gate.
 
-| likely topic | what it would rule |
-|---|---|
-| `concepts.yaml` | one business notion per file, its grounding, its rules, its identity |
-| `edges.yaml` | the declared relationships between concepts, and what proves each |
-| `vocabulary.yaml` | which terms are closed, and who owns each closed set |
-
-## What is already waiting for it
-
-`../unfiled.yaml` holds two artifacts the data deliveries write that belong to this plane, each
-carrying `belongs_to: ontology`:
-
-* `semantic_diagnostics` — `ontology/diagnostics.json`
-* `ontology_conformance_suite` — `acceptance/ontology_generated.yaml`
-
-When a topic here claims them, they MOVE. Never a copy: a kind belongs to exactly one declaration,
-which is why no precedence rule exists anywhere in this tree and why `bom.conflicts` must stay empty.
+**WHAT IS STILL NOT RULED HERE.** The derived half of the plane — `vocabulary.json`, `edges.json`,
+`ontology_quality.json`, `SME-QUESTIONS.md` — and `ontology_conformance_suite`, which is still filed
+under `unfiled.yaml` with `belongs_to: ontology` awaiting its move. Absence from this directory is
+still permission, not oversight.

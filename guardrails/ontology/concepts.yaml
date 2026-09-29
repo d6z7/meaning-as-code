@@ -1,0 +1,166 @@
+# guardrails/ontology/concepts.yaml — WHAT THE DATA MEANS.
+#
+# Phase 3. The AUTHORED semantic model: what a business notion is, how it is grounded in the served
+# plane, which rules constrain it, and which edges join one to another.
+#
+# THIS PLANE IS ALMOST ENTIRELY AUTHORED, and that is what separates it from the two before it. The
+# data plane is MEASURED — a column's type, a relation's row count and a reference's cardinality are
+# facts nobody argues about. A concept is an argument: "one row per order LINE", "revenue is net of
+# discount", "a customer is the billing party, not the shipping one". Nothing can measure whether
+# that is right, so every gate here holds the SHAPE of the argument and its evidence, never its
+# truth.
+#
+# IT CONSUMES PHASE 2. A concept grounds on a served relation, and the grain it claims is the ruling
+# the served descriptor deliberately refuses to make — `mac_transforms` writes "NO GRAIN IS CLAIMED
+# HERE. 'One row per X' is a RULING and belongs in ontology/concepts/, where a person argues for it."
+# This is where that argument goes.
+#
+# WHY IT WAS EMPTY UNTIL NOW, and the note it replaces said so: under UNSPECIFIED IS NOT RULED, an
+# empty directory meant the ontology plane was unruled and writing to it was allowed. That was a
+# statement, not an oversight. Twelve checkers already governed this plane and no declaration named
+# any of them, so what they rejected was reachable only by reading their source.
+#
+# AND THIS FILE COULD NOT BE WRITTEN UNTIL 2026-09-29. The ontology guard denied it
+# `gate_unreachable` — the path holds `/ontology/` and no bundle manifest sits above it — so the
+# rules that GOVERN the ontology plane were blocked by the guard that protects it. The guard's own
+# note on the same defect, met twice before: "a guard that makes its own mechanism unfixable
+# protects nothing and costs a day." Fixed in the kit with `_is_guardrail_tree`, proven over all
+# twelve `ontology` directories in the estate, and installed by the operator — whose act it had to
+# be, because an agent that can edit a gate has no gate.
+#
+# UNSPECIFIED IS NOT RULED (see README). Absence from this file is permission, not oversight.
+
+spec_version: mac.guardrail/1
+topic: ontology.concepts
+status: PROPOSED 2026-09-29
+
+delivers:
+
+  concept_definition:
+    what: one business notion — what it is, what it is grounded on, and what may be asked of it
+    phase: [ontology]
+    path: ontology/concepts/{concept}.yaml
+    naming: >-
+      the concept's own name, snake_case, and NOT the relation it is grounded on —
+      `check_concepts_not_per_table` exists because a concept per table is a schema with new
+      filenames, not a model. One notion may read two relations and one relation may carry three
+      notions.
+    population:
+      # NO DENOMINATOR, AND THAT IS HONEST. There is no formula for "how many concepts this
+      # warehouse owes": that is the modelling judgement itself. `check_datasets_are_grounded`
+      # answers the OTHER direction — does anything ask about this dataset — which is countable.
+      of: every notion a person chose to model
+      from: ontology/concepts/*.yaml
+      empty_is: EMPTY
+    lifecycle: authored-once
+    producers:
+      - {tool: «a person», role: authors}
+      - {tool: sdk/cli/harvest.py, role: drafts from the served plane, args: "--mode concepts --accept"}
+    consumers:
+      - {tool: sdk/project/objects.py, role: projects the vocabulary, the edges and the quality view,
+         reads: ["concept.name", "concept.class", "concept.grounding", "concept.semantics"]}
+      - {tool: mac-runtime/resolver/registers.py, role: binds a word to a code through a register,
+         reads: ["grounding.sources[].columns"]}
+      - {tool: tools/mac_generate_ontology_tests.py, role: renders the conformance suite from them}
+    checkers:
+      - {tool: tools/check_concepts_not_per_table.py, rejects: [a-concept-per-table]}
+      - {tool: tools/check_canon_implemented.py, rejects: [canon-the-runtime-does-not-implement]}
+      - {tool: tools/check_canon_binding.py, rejects: [bound-rule-whose-prose-lost-its-canon]}
+      - {tool: tools/check_answerability.py, rejects: [unanswerable-without-probing]}
+      - {tool: tools/check_datasets_are_grounded.py, rejects: [a-served-dataset-nothing-asks-about]}
+      - {tool: tools/check_no_shadow_ontology.py, rejects: [a-concept-outside-the-declared-plane]}
+      - {tool: tools/check_grain_declaration.py, rejects: [a-concept-with-no-declared-grain-or-key]}
+
+  concept_rule:
+    what: one constraint on a concept — what must hold, and what the runtime does when it does not
+    phase: [ontology]
+    path: ontology/concepts/rules/{rule}.yaml
+    naming: the rule's own id
+    population: {of: every rule some concept binds, from: ontology/concepts/rules/*.yaml, empty_is: EMPTY}
+    lifecycle: authored-once
+    producers: [{tool: «a person», role: authors}]
+    consumers:
+      - {tool: mac-runtime/parser.py, role: binds the rule to the concept that declares it}
+      - {tool: sdk/project/objects.py, role: carries it into the object index}
+    checkers:
+      - {tool: tools/check_rule_reference_basis.py, rejects: [a-rule-naming-a-concept-with-no-basis-to-reach-it]}
+      - {tool: tools/check_canon_binding.py, rejects: [bound-rule-whose-prose-lost-its-canon]}
+
+  edge_declaration:
+    what: how two concepts join, with the cardinality that join CLAIMS
+    phase: [ontology]
+    path: ontology/edges.yaml
+    naming: fixed
+    population: {of: one file for the plane, from: «this artifact», empty_is: EMPTY}
+    lifecycle: authored-once
+    # AN EDGE'S CARDINALITY IS A CLAIM, and the data plane already measured the answer. The served
+    # reference measurement carries `cardinality` and `participation` with the evidence behind each
+    # — orphan rows, parent distinct, max children per parent. An edge claiming one:many where the
+    # measurement found many:many is wrong in a way nothing at query time will catch: it simply
+    # multiplies rows, and the answer still looks like an answer. Three gates hold this one file.
+    producers: [{tool: «a person», role: authors}]
+    consumers:
+      - {tool: sdk/project/project_edges.py, role: projects edges.json for the console}
+      - {tool: tools/mac_to_shacl.py, role: renders the shapes}
+      - {tool: mac-runtime/ask_bundle.py, role: plans a join across two concepts}
+    checkers:
+      - {tool: tools/check_edge_definition.py, rejects: [unnamed-edge, cardinality-outside-the-closed-set]}
+      - {tool: tools/check_edge_joins_measured.py, rejects: [a-join-predicate-no-measurement-supports]}
+      - {tool: tools/check_edge_claims_proved.py, rejects: [a-cardinality-claim-nothing-proves]}
+      - {tool: tools/check_er_projection.py, rejects: [an-edge-carrying-no-join_rule-realized_by-or-resolved_by]}
+
+  concept_sample:
+    what: a few real rows of what one concept actually returns — the thing a reader believes
+    phase: [ontology]
+    path: ontology/samples/{concept}.sample.csv
+    naming: the concept's stem, verbatim
+    population: {of: every concept, from: ontology/concepts/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    # A CONCEPT WITHOUT ONE IS A CLAIM NOBODY CHECKED. The sample is drawn from the warehouse
+    # THROUGH the concept's own grounding, so it fails loudly where that grounding is wrong — which
+    # a YAML file alone never does.
+    producers: [{tool: tools/mac_sample.py, role: draws through the concept's grounding}]
+    consumers: [{tool: sdk/project/objects.py, role: offers the Sample tab, reads: ["«path only»"]}]
+    checkers:
+      - {tool: tools/check_concept_samples.py, rejects: [MISSING, STALE, EMPTY]}
+
+conventions:
+  - what: a concept's file name
+    closed: "{concept}.yaml — the NOTION, never the relation"
+    owner: tools/check_concepts_not_per_table.py
+    note: >-
+      a concept named for its table is the defect that gate exists to refuse: it turns a model back
+      into the schema it was supposed to interpret.
+
+  - what: the ontology plane's location
+    closed: ontology/
+    owner: tools/check_no_shadow_ontology.py
+    note: >-
+      a concept authored anywhere else is a SHADOW ontology — loadable by nothing, read by nobody,
+      and indistinguishable from the real one to whoever wrote it.
+
+refuses:
+  - id: CONCEPT-PER-TABLE
+    when: authoring one concept per served relation, named for that relation
+    why: >-
+      that is the schema with new filenames. A concept is a business notion: one notion may read two
+      relations, and one relation may carry three notions. The model earns its keep exactly where
+      the two shapes DISAGREE.
+    instead: name the notion, then ground it — the grounding may name more than one relation
+
+  - id: GRAIN-UNCLAIMED
+    when: a concept that grounds a served relation and states no grain
+    why: >-
+      the served descriptor deliberately refuses to claim one — `mac_transforms` writes "NO GRAIN IS
+      CLAIMED HERE. 'One row per X' is a RULING and belongs in ontology/concepts/". If the concept
+      does not claim it either, nothing in the bundle says what one row means, and every aggregate
+      over it is unverifiable.
+    instead: state the grain and the key it rests on; the measured key is in data/profiles/
+
+  - id: EDGE-CLAIM-UNMEASURED
+    when: declaring an edge whose cardinality no measurement supports
+    why: >-
+      the served plane already MEASURED this — cardinality, participation, orphan rows, parent
+      distinct — so a claim that contradicts it is not an opinion, it is wrong. A one:many that is
+      really many:many multiplies rows at query time and the answer still looks like an answer.
+    instead: read data/references_served/{relation}.yaml, then claim what it found
