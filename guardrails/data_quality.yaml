@@ -1,0 +1,120 @@
+# guardrails/data_quality.yaml — WHAT IS WRONG.
+#
+# Every defect the physical layer carries, raised against evidence, and every projection of it a
+# person or an agent reads. It does NOT judge whether a finding is correct — that is a ruling, and
+# rulings are the SME's (see `sme_questions.yaml`).
+#
+# PHASE 2 CONSUMES THIS. Operator, 2026-09-29: "second phase shold create transformation and based
+# on sme answers and findings." So these are not incidental output; they are the INPUT to the next
+# delivery, which is the reason they are a topic of their own rather than a corner of another.
+#
+# MEASURED 2026-09-28, why it is declared at all: a two-part delivery finished 6 of 6 and 9 of 9
+# with data/quality/ ABSENT. No item asked about it, so no item could be short.
+
+spec_version: mac.guardrail/1
+topic: data_quality
+status: PROPOSED 2026-09-29
+
+delivers:
+  data_quality_register:
+    what: what is WRONG on the landing plane and who must rule on it
+    phase: [sources]
+    path: data/quality/data_quality_register.yaml
+    naming: fixed
+    population: {of: one register, from: «this artifact», empty_is: EMPTY}
+    covers: every landed relation
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_dq_findings.py, role: raises and merges, preserving any ruling}]
+    consumers:
+      - {tool: sdk/project/project_data.py, role: renders the DQ pages and the SME questions,
+         reads: ["issues[].id", "issues[].title", "issues[].severity", "issues[].status", "issues[].finding", "issues[].needs", "issues[].ruling.question", "issues[].ruling.answers"]}
+    checkers: [{tool: tools/check_dq_resolution_sync.py, rejects: [duplicate-id, status-missing, status-unknown]}]
+
+  dq_finding_page:
+    what: one page per registered data-quality finding — what was measured, how it is handled, what it costs
+    phase: [sources]
+    path: data/quality/DQ-{id}.md
+    naming: "DQ-{TYPE}-{SUBJECT}, uppercase — the finding's own id, never renamed"
+    population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders one page per finding}]
+    consumers:
+      - {tool: "mac-console/console_api.py", role: "serves the page", reads: ["«whole document»"]}
+    checkers: [{tool: tools/check_projection_field_parity.py, rejects: [dropped, stale, phantom]}]
+
+  dq_issues_overview:
+    what: the register at a glance — every finding with its severity and resolution coverage
+    phase: [sources]
+    path: data/quality/0-issues-overview.md
+    naming: fixed — the leading 0 sorts it first in the directory a person browses
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders the overview}]
+    consumers: [{tool: sdk/project/objects.py, role: links it from the quality object, reads: ["«path only»"]}]
+    checkers: [{tool: tools/check_projection_field_parity.py, rejects: [dropped, stale, phantom]}]
+
+  dq_dashboard:
+    what: the register joined to the resolution map — the only structured artifact the console's quality page reads
+    phase: [sources]
+    path: data/quality/dq_dashboard.json
+    naming: fixed
+    population: {of: one dashboard, from: «this artifact», empty_is: EMPTY}
+    covers: every finding in the register
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: projects register x resolution map}]
+    consumers:
+      - {tool: "sdk/project/objects.py", role: "groups finding ids per raw table", reads: ["findings[].table", "findings[].id"]}
+      - {tool: mac-console/ui/src/views/DataQualityBoard.jsx, role: the data-plane quality board,
+         reads: ["stats.total", "stats.by_severity", "stats.by_status", "findings[].id", "findings[].severity", "findings[].status", "findings[].table"]}
+    checkers: [{tool: tools/check_projection_field_parity.py, rejects: [dropped, stale, phantom]}]
+
+  plane_health_page:
+    what: the delivery's own health — what was landed, what is described, what is measured, what is not
+    phase: [sources]
+    path: data/quality/PLANE-HEALTH.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: sdk/project/objects.py, role: carries it as the quality object's health path, reads: ["«path only»"]}]
+    # NO CHECKER. Nothing re-renders it and compares; `check_pages_current` covers sources,
+    # datasets and transforms only. Declared so the gap is COUNTED rather than invisible.
+    checkers: []
+
+  known_issue_page:
+    what: one page per finding, in the plane an ask-agent reads — the trap it must not fall into
+    phase: [sources]
+    path: references/known_issues/DQ-{id}.md
+    naming: the finding's own id, verbatim
+    population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/references.py, role: renders one per finding}]
+    consumers:
+      - {tool: "mac-console/ask_support.py", role: "serves the page body to the agent", reads: ["frontmatter.title", "body"]}
+    checkers: []
+
+  known_issues_index:
+    what: the register at a glance for an ask-agent — severity and coverage per finding
+    phase: [sources]
+    path: references/known_issues/index.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/references.py, role: renders the index}]
+    consumers: [{tool: mac-console/ask_support.py, role: the agent's index-first entry, reads: ["«whole document»"]}]
+    checkers: []
+
+  # ── THE REGISTER'S OWN PAGE ──────────────────────────────────────────────────────────────────
+
+conventions:
+  - what: a data-quality finding id
+    closed: "DQ-{TYPE}-{SUBJECT}"
+    owner: tools/mac_dq_findings.py
+    note: >-
+      chosen once and never changed. A rename breaks the register, the finding page, the
+      known-issues projection and any sign-off that cites it — four places, and only two are gated.
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest

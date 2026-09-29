@@ -1,0 +1,86 @@
+# guardrails/unfiled.yaml — DELIVERED, AND FILED UNDER NO SUBJECT YET.
+#
+# These are written by a delivery and belong to a topic that does not exist. They are declared here
+# so the bill of materials stays complete — an undeclared artifact reads as a gap in the
+# DECLARATION, and these are not that. Each carries `belongs_to`, which is the debt.
+#
+# THEY ARE HERE BECAUSE I FILED BY THE WRONG CRITERION ONCE ALREADY. I put them in the data topic
+# because phase 1 WRITES them. The criterion is what an artifact is ABOUT, not which run emits it.
+# Moving each to its own topic is a MOVE, never a copy.
+
+spec_version: mac.guardrail/1
+topic: unfiled
+status: PROPOSED 2026-09-29
+
+delivers:
+  usage_guardrails:
+    what: the routing table and per-concept playbooks — the FIRST document an ask-agent must read
+    phase: [sources]
+    belongs_to: reference   # move here when that topic exists
+    path: references/usage_guardrails.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/references.py, role: aggregates the ontology's own guardrails}]
+    consumers:
+      - {tool: "mac-console/local_ask.py", role: "the instruction to read it FIRST", reads: ["«whole document»"]}
+      - {tool: "mac-chat/guardrails_gate.py", role: "MECHANICALLY denies read_page until it is read", reads: ["«path only»"]}
+    # NO CHECKER, and it is measured empty on one bundle: 30 lines on contoso against 645 on estate2,
+    # because references.py globs concepts FLAT and that bundle files them in groups. The first
+    # document the agent reads carries no routing there, and nothing says so.
+    checkers: []
+
+  questions_dashboard:
+    what: the question corpus's read view — every oracle-relative verdict, derived once
+    phase: [sources]
+    belongs_to: testing   # move here when that topic exists
+    path: acceptance/questions_dashboard.json
+    naming: fixed
+    population: {of: one dashboard, from: «this artifact», empty_is: OK}
+    lifecycle: re-derived
+    # NOT PRODUCED BY AN INGESTION STAGE. The console shells `sdk.project.questions` on demand; no
+    # stage of any delivery writes it, which is why it is `empty_is: OK` here.
+    producers: [{tool: sdk/project/questions.py, role: projects the acceptance plane, args: "shelled by the console"}]
+    consumers:
+      - {tool: "mac-console/ui/src/views/TestingBoardView.jsx", role: "the testing board", reads: ["stats.total", "stats.by_verdict", "questions[].id", "questions[].verdict"]}
+    checkers: []
+
+  suite_history_log:
+    what: the append-only trend log — one deduped row per (suite, run_at, commit)
+    phase: [sources]
+    belongs_to: testing   # move here when that topic exists
+    path: acceptance/suite_history.jsonl
+    naming: fixed
+    population: {of: one log, from: «this artifact», empty_is: EMPTY}
+    lifecycle: resumable
+    producers:
+      - {tool: "tools/run_suite.py", role: "appends this run's row"}
+      - {tool: "tools/suite_history.py", role: "merges and appends deduped rows"}
+    # THE CONSOLE READS THE .json PROJECTION, NOT THIS. Measured 2026-09-29: contoso4 and contoso5
+    # ship the .jsonl and no .json, because only `suite_history.py:main()` writes the projection and
+    # the ingestion never takes that path — so the history panel is empty on those bundles by
+    # construction. Declared so the missing projection is COUNTED.
+    consumers: [{tool: tools/suite_history.py, role: projects it to the .json the console reads, reads: ["suite", "run_at", "commit", "pass", "fail", "total"]}]
+    checkers: []
+
+  semantic_diagnostics:
+    what: what the model says twice, and what disagrees — restated and contradicting facts
+    phase: [sources]
+    belongs_to: ontology   # move here when that topic exists
+    path: ontology/diagnostics.json
+    naming: fixed
+    population: {of: one record, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    # WRITTEN BY THE PROJECTOR DURING THIS DELIVERY even though it lands on the ontology plane — a
+    # landing-only bundle still gets one, carrying zero findings. Declared here because THIS phase
+    # writes it; when an `ontology` topic exists it should move, not be copied.
+    producers: [{tool: sdk/cli/harvest.py, role: runs the semantic phase and writes it}]
+    consumers:
+      - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: the diagnostics pane,
+         reads: ["stats.facts", "stats.restated", "findings[].severity", "findings[].subject", "findings[].sites[].file"]}
+    checkers: []
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest

@@ -138,29 +138,6 @@ kinds:
       - {tool: "tools/check_bundle_isolation.py", rejects: [ESCAPES, NAMES_ANOTHER_BUNDLE, BREACH]}
       - {tool: "sdk/gate/check_bundle_secrets.py", rejects: [secret, infra-handle]}
 
-  dq_dashboard:
-    what: the DQ register joined to the resolution map — the only structured artifact the console's quality page reads
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: the artifact itself — ONE file
-      from: «this artifact»
-      empty_is: EMPTY
-    covers: every finding in the data-quality register   # what the ONE file must account for; its checker owns this
-    path: data/quality/dq_dashboard.json
-    origin: derived
-    name: fixed
-    producers:
-      - {tool: "sdk/project/project_data.py", role: "projects register x resolution map"}
-    consumers:
-      - {tool: "sdk/project/objects.py", role: "groups finding ids per raw table for the Quality tab", reads: ["findings[].table", "findings[].id"]}
-      - {tool: "tools/project_objects.py", role: "declares it a seam input and reports absence rather than swallowing it", reads: ["«path only»"]}
-      - {tool: "mac-console/ui/src/views/ObjectsView.jsx", role: "renders the DQ overview", reads: ["stats.total", "stats.resolved", "stats.partial", "stats.gap", "stats.unreconciled", "stats.by_severity", "stats.by_status", "findings[].id", "findings[].title", "findings[].severity", "findings[].status", "findings[].table", "findings[].impurity_class", "findings[].coverage", "findings[].resolving_transforms", "findings[].guarantee", "findings[].evidence"]}
-      - {tool: "mac-console/ui/src/views/DataQualityBoard.jsx", role: "the register-closure and worklist tabs", reads: ["findings", "stats.by_status", "findings[].status", "findings[].resolving_transforms", "findings[].guarantee"]}
-      - {tool: "mac-console/ui/src/views/ConceptCatalogPane.jsx", role: "shows the defects a concept's transforms treat", reads: ["findings[].resolving_transforms", "findings[].id", "findings[].impurity_class"]}
-    checkers:
-      - {tool: "tools/check_projection_field_parity.py", rejects: [dropped, stale, phantom]}
-
   impurity_resolution_map:
     what: the cross-link from a registered defect to the transform that dissolves it, with the guarantee that transform establishes
     phase: [datasets]
@@ -206,49 +183,6 @@ kinds:
     # 2026-09-22 ruling created, competing with governance/sme-questions.yaml whose own design is
     # mutant-tested. Reconciling two operator rulings is out of scope here (O3, RULED separate).
     checkers: []
-
-  reference_run_record:
-    what: the reference measurement's provenance — the global denominators, the admission rule, and every pruned pair with its reason
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: the artifact itself — ONE file
-      from: «this artifact»
-      empty_is: EMPTY
-    covers: one record per plane that was measured   # what the ONE file must account for; its checker owns this
-    path: data/references/references.run.json | data/references_served/references.run.json
-    origin: derived
-    name: fixed per plane
-    producers:
-      - {tool: "tools/mac_references.py", role: "records the run"}
-    consumers:
-      # ONE READER, ONE FIELD. Measured 2026-09-29: nothing in the framework opens these at all;
-      # the console reads `measured_at` as a clock. The denominators, the verdicts, the admission
-      # rule and 857 pruned pairs — the facts the producer's own docstring says live here BECAUSE
-      # they are global and bulky — are read by nothing.
-      - {tool: "mac-console/ingest_progress.py", role: "the references step's clock", reads: ["measured_at"]}
-    checkers: []
-
-  preview_run_record:
-    what: the previews' provenance — which engine cut them, at what limit and order, and which relations were refused
-    phase: [sources, datasets]
-    lifecycle: re-derived
-    population:
-      of: the artifact itself — ONE file
-      from: «this artifact»
-      empty_is: EMPTY
-    covers: one record per plane that was previewed   # what the ONE file must account for; its checker owns this
-    path: data/samples/samples.run.json
-    origin: derived
-    name: fixed
-    producers:
-      - {tool: "tools/mac_sample.py", role: "records the relation draw"}
-    consumers:
-      # TWO FIELDS OF MANY. `engine`, `limit`, `order`, `refused[]` and every `sha256` are read by
-      # nothing, though the producer argues at length that `engine` and `limit` are why it exists.
-      - {tool: "tools/check_sample_matches_descriptor.py", role: "attests each preview's provenance", reads: ["samples[].stem", "samples[].derived_from"]}
-    checkers:
-      - {tool: "tools/check_sample_matches_descriptor.py", rejects: [UNRECORDED, PROPOSAL_PREVIEW]}
 
   object_index:
     what: the object-centric read model the console navigates by — one object per relation, concept and register with its view tabs

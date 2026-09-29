@@ -1,0 +1,43 @@
+# guardrails/sme_questions.yaml — WHAT MUST BE DECIDED.
+#
+# One item. That is the right size: this artifact has a written design behind it
+# (mac-platform/temp/sme-questions/DESIGN.md, PROPOSED 2026-09-17, its schema mutant-tested 47 of
+# 47), a COMPETING store created by a later ruling, and a standing operator ruling that reconciling
+# the two is a separate job. A one-item topic that can be ruled on alone beats the same item buried
+# in a file about something else.
+#
+# FORMAL ONLY, and this artifact is why that distinction matters. On 2026-09-28 it rendered seven
+# sign-offs with a BLANK ask column, for months, because the renderer read `sme_owner` while the
+# producer wrote `ruling.question`. Presence and naming would not have caught that — the
+# `consumers[].reads` declaration is what does. Whether the QUESTIONS are the right ones is a
+# judgement no gate makes.
+
+spec_version: mac.guardrail/1
+topic: sme_questions
+status: PROPOSED 2026-09-29
+
+delivers:
+  sme_questions_page:
+    what: the SME sign-off surface — every open question the register raises, with its closed answer set
+    phase: [sources]
+    path: data/quality/SME-QUESTIONS.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    covers: every finding whose ruling is unanswered
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: projects the register's rulings}]
+    consumers:
+      - {tool: "sdk/project/objects.py", role: "indexes it as the dqquestions object", reads: ["«path only»"]}
+    # FORMAL ONLY, and this artifact is why the distinction matters. On 2026-09-28 it rendered seven
+    # sign-offs with a BLANK ask column for months, because the renderer read `sme_owner` and the
+    # producer wrote `ruling.question`. Presence and naming would not have caught that; the
+    # `consumers[].reads` declaration is what does. Whether the QUESTIONS are the right ones is a
+    # judgement no gate makes.
+    checkers: []
+
+  # ── THE REFERENCE PLANE — what an ask-agent is told to read ──────────────────────────────────
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest

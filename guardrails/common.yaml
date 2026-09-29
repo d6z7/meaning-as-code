@@ -1,0 +1,60 @@
+# guardrails/common.yaml — THE RULES THAT HOLD EVERYWHERE.
+#
+# A topic that DELIVERS NOTHING. It exists because three of the refusals are not about the landing
+# plane, or the data-quality plane, or any plane — they are about writing anything at all, and
+# repeating them in every topic file would be four homes for one rule.
+#
+# A guardrail may therefore declare `refuses` and `conventions` with no `delivers`. Nothing in the
+# bill of materials comes from here.
+#
+# UNSPECIFIED IS NOT RULED still holds: these three are the complete set of universal rules, and a
+# thing not named here is not ruled by this file.
+
+spec_version: mac.guardrail/1
+topic: common
+status: PROPOSED 2026-09-29
+
+conventions:
+  - what: every `mac.<namespace>.<term>` token in any authored file
+    closed: «whatever mac_vocabulary.yaml declares»
+    owner: mac_vocabulary.yaml
+    note: >-
+      the spelling is NOT restated here. Run tools/check_vocabulary_tokens.py, read its refusal, use
+      the namespace it hands you — a copy is a second home and it does not move when the gate moves.
+
+refuses:
+
+  - id: UNDECLARED-ARTIFACT
+    when: writing a file under a plane some topic rules, that no item of any topic claims
+    why: >-
+      an artifact nobody declared is one nobody reads, checks or regenerates. Measured 2026-09-28:
+      a delivery reported 6 of 6 complete with its entire data-quality assessment missing, because
+      no item asked about it. Operator ruling 2026-09-29: undeclared is an ERROR, not a warning —
+      a warning is exactly how that happened while every surface read green.
+    instead: declare it in the topic it belongs to, or name it in mac.project.yaml#conformance.out_of_scope with a reason
+
+  - id: INVENTED-VOCABULARY
+    when: writing a `mac.<namespace>.<term>` token whose namespace mac_vocabulary.yaml does not declare
+    why: >-
+      a token no vocabulary declares places no predicate, and no resolver will say so. I invented
+      `mac.name.served_relation` inside the very registry whose job is to stop that — and then wrote
+      it AGAIN into the comment explaining its removal, which failed the gate a second time. A
+      reference in a comment is still a reference.
+    instead: use a declared namespace, or declare the new one in mac_vocabulary.yaml first
+
+  - id: UNPARSEABLE-SPEC
+    when: writing any guardrail file that does not parse as YAML
+    why: >-
+      mac_artifacts.yaml was committed unparseable on 2026-09-29 — the write happened before the
+      line that validated it — and for four commits every run of the gate was a traceback rather
+      than a verdict. A declaration that cannot be read is worse than an absent one: the file says
+      the rule is covered.
+    instead: parse it before writing it
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest
+  note: >-
+    the record is written WHATEVER the verdict. A gate that records only its passes leaves a display
+    that goes blank exactly when something is wrong.

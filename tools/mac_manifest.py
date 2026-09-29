@@ -106,7 +106,15 @@ def _segments(rel: str) -> str:
     for parent, token in GROUPED_UNDER.items():
         if d.startswith(parent + "/") and d.count("/") == parent.count("/") + 1:
             d = f"{parent}/{token}"
-    fixed_first = {"samples.run.json", "references.run.json"}
+    # EVERY FIXED NAME A DELIVERY WRITES. Generalising one into `{stem}.yaml` means a declaration
+    # naming the real file cannot claim it, and the BOM reports an artifact ABSENT that is sitting
+    # on disk — measured twice now, first on the run records and again on the suites.
+    fixed_first = {"samples.run.json", "references.run.json",
+                   "data_sanity_generated.yaml", "data_sanity_generated_runs.json",
+                   "ontology_generated.yaml", "ontology_generated_runs.json",
+                   "delivery_consistency_runs.json", "register_membership_runs.json",
+                   "manifest_runs.json", "guardrail_runs.json",
+                   "questions_dashboard.json", "expected_first_run.yaml", "sme_needs.json"}
     if base in fixed_first:
         return f"{d}/{base}" if d != "." else base
     for pat, lbl in (
@@ -629,13 +637,21 @@ def declared_everywhere(framework) -> tuple:
     for topic, spec in load_guardrails(framework).items():
         if topic == "«broken»" or not isinstance(spec, dict):
             continue
-        # A GUARDRAIL'S PHASE IS THE TOPIC'S, not the item's. The topic rules one delivery, so
-        # every item it declares belongs to that delivery — which is the whole reason topics are
-        # split per delivery rather than one file carrying a phase per row.
-        ph = spec.get("phase")
+        # THE PHASE IS THE ITEM'S, not the topic's — and it had to move. A topic groups by SUBJECT
+        # (what an artifact is ABOUT), a phase is a DELIVERY (when it is owed), and they are not the
+        # same axis: measured 2026-09-29, only 4 of 25 items are landing-plane-specific while 21 are
+        # written or re-derived by both deliveries. A topic carrying one phase for all its items is
+        # what made `data-ingestion` say `phase: sources` over a file that mostly was not.
+        #
+        # The topic's own `phase`, where one is still declared, is the fallback — so a single-phase
+        # topic need not repeat itself on every row.
+        tph = spec.get("phase")
+        tph = [tph] if isinstance(tph, str) else (tph or [])
         for name, item in (spec.get("delivers") or {}).items():
+            iph = item.get("phase")
+            iph = [iph] if isinstance(iph, str) else (iph or [])
             claims[name] = {"path": item.get("path"), "owner": f"guardrails/{topic}",
-                            "phase": [ph] if isinstance(ph, str) else (ph or []),
+                            "phase": iph or tph,
                             "optional": (item.get("population") or {}).get("empty_is") == "OK"}
             seen.setdefault(name, []).append(f"guardrails/{topic}")
     for name, item in (declared_kinds(framework) or {}).items():

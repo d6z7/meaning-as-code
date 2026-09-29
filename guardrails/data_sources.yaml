@@ -1,0 +1,273 @@
+# guardrails/data_sources.yaml — WHAT IS THERE.
+#
+# The physical layer, described. What a warehouse already holds, measured, previewed, cut into
+# registers and rendered for a person to read — plus the sanity suite that measures it.
+#
+# THIS IS PHASE 1's FIRST JOB. Operator, 2026-09-29: "while doing data ingestion it should create
+# only FULL reference to the pyhsical layer DQ and SME questions." That is three deliverables, not
+# one, and they are three files: this one, `data_quality.yaml`, and `sme_questions.yaml`. They are
+# approved separately because you can accept the reference and dispute a finding.
+#
+# IT ENDS BEFORE ANYTHING IS TRANSFORMED. The served plane, its transforms and its lineage belong
+# to `data_transformation.yaml`, which consumes this topic's findings and the SME's answers.
+#
+# UNSPECIFIED IS NOT RULED (see README). Absence from this file is permission, not oversight.
+
+spec_version: mac.guardrail/1
+topic: data_sources
+status: PROPOSED 2026-09-29
+
+delivers:
+  landed_descriptor:
+    what: what a landed relation CONTAINS, measured from the warehouse catalog
+    phase: [sources]
+    path: data/sources/{relation}.yaml
+    naming: the landing's own relation name, verbatim — a landing is never renamed
+    population: {of: every landed relation, from: the warehouse's landing schema, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers:
+      - {tool: "tools/mac_descriptors.py", role: "measures", args: "--plane sources"}
+      - {tool: "tools/mac_profile.py", role: "adds the measured value domains"}
+      - {tool: "tools/mac_lookups.py", role: "cuts those domains out into registers"}
+    consumers:
+      - {tool: sdk/project/project_data.py, role: renders the relation page,
+         reads: ["table.name", "table.schema", "columns[].name", "columns[].type", "columns[].role", "columns[].references", "columns[].register"]}
+      - {tool: sdk/project/er_model.py, role: draws the ER entity and its crow's feet,
+         reads: ["table.name", "columns[].name", "columns[].references.to", "columns[].references.cardinality", "columns[].references.participation"]}
+      - {tool: "tools/mac_references.py", role: "takes the measured key", reads: ["columns[].role", "columns[].name"]}
+    checkers:
+      - {tool: "tools/check_column_planes.py", rejects: [R1, R2, R3]}
+      - {tool: "tools/check_profile_plane.py", rejects: [MISNAMED, ORPHAN, STALE_COLUMN, STALE_DOMAIN]}
+    transient: [values]          # legal in flight, forbidden at delivery — it belongs in a register
+
+  profile:
+    what: the measurement — row counts, distincts, nulls, and the identity evidence behind a key
+    phase: [sources]
+    path: data/profiles/{relation}.yaml
+    naming: the relation's stem, verbatim
+    population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_profile.py, role: measures}]
+    consumers:
+      - {tool: "sdk/project/er_model.py", role: "the MEASURED key on the ER box", reads: ["identity_evidence.key"]}
+      - {tool: tools/mac_descriptors.py, role: re-derives a register column's cardinality,
+         reads: ["of", "columns[].name", "columns[].distinct"]}
+    checkers: [{tool: tools/check_profile_plane.py, rejects: [MISNAMED, ORPHAN, STALE_COLUMN, STALE_DOMAIN]}]
+
+  reference_measurement:
+    what: the measured references of one relation, with the evidence behind each verdict
+    phase: [sources]
+    path: data/references/{relation}.yaml
+    naming: the relation's stem, verbatim
+    population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_references.py, role: measures, args: "--plane sources"}]
+    consumers:
+      - {tool: tools/mac_descriptors.py, role: promotes a real identity reference onto the column,
+         reads: ["references[].verdict", "references[].parent_key_role", "references[].cardinality", "references[].participation", "references[].from", "references[].to"]}
+      - {tool: sdk/project/er_model.py, role: the line's proof channel,
+         reads: ["evidence.orphan_rows", "evidence.parent_distinct", "ambiguous_with", "cardinality", "participation"]}
+    checkers:
+      - {tool: tools/check_physical_references.py,
+         rejects: [EVIDENCE_MISSING, ADMISSION_MISSING, ENDPOINT_UNRESOLVED, COLUMN_UNDECLARED,
+                   PARTICIPATION_MISSING, VOCABULARY_CLOSED, AMBIGUITY_HIDDEN, DANGLING_INVENTED,
+                   ID_COLLISION, UNMEASURED_RELATION]}
+
+  reference_run_record:
+    what: the reference measurement's provenance — the denominators, the admission rule, every pruned pair
+    phase: [sources]
+    path: data/references/references.run.json
+    naming: fixed
+    population: {of: one record for the plane, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_references.py, role: records the run}]
+    # ONE READER, ONE FIELD, measured 2026-09-29: nothing in the framework opens this at all; the
+    # console reads `measured_at` as a clock. The denominators and 857 pruned pairs are read by
+    # nothing. Declared so the gap is COUNTED rather than invisible.
+    consumers:
+      - {tool: "mac-console/ingest_progress.py", role: "the references step's clock", reads: ["measured_at"]}
+    checkers: []
+
+  # ── THE DATA-QUALITY FAMILY ──────────────────────────────────────────────────────────────────
+  # Six artifacts, not one. Declaring only the register is how the whole assessment went missing on
+  # 2026-09-28 while the delivery reported 6 of 6 complete: no item asked about the pages, so no
+  # item could be short. Presence and naming only — whether a finding is CORRECT is a judgement no
+  # gate makes.
+
+  relation_preview:
+    what: a seeded sample of one landed relation, for a person to look at
+    phase: [sources]
+    path: data/samples/{relation}.src.sample.csv
+    naming: >-
+      the relation's stem plus `.src.` — the two planes share a directory and a 1:1 passthrough
+      bundle shares the stem, so the plane must be in the name
+    population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_sample.py, role: draws, args: "--plane sources"}]
+    consumers: [{tool: sdk/project/objects.py, role: offers the Sample tab, reads: ["«path only»"]}]
+    checkers:
+      - {tool: tools/check_sample_matches_descriptor.py,
+         rejects: [HEADER_DRIFT, RAGGED, ORPHAN, SUFFIX_CROSSED, EMPTY_PREVIEW, MISSING_PREVIEW,
+                   UNRECORDED, OUTSIDE_DECLARED_VALUES]}
+
+  preview_run_record:
+    what: the previews' provenance — which engine cut them, at what limit and order, what was refused
+    phase: [sources]
+    path: data/samples/samples.run.json
+    naming: fixed
+    population: {of: one record for the plane, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_sample.py, role: records the draw}]
+    consumers:
+      - {tool: tools/check_sample_matches_descriptor.py, role: attests each preview's provenance,
+         reads: ["samples[].stem", "samples[].derived_from"]}
+    checkers: [{tool: tools/check_sample_matches_descriptor.py, rejects: [UNRECORDED, PROPOSAL_PREVIEW]}]
+
+  register:
+    what: a value DOMAIN cut from one column — its members, with a label and a search key
+    phase: [sources]
+    path: data/lookups/{marker}_{relation}_{column}.lookup.csv
+    naming: >-
+      marker, relation and column — the register IS its (relation, column). The marker is omitted
+      when the relation already carries it. A name keyed on the COLUMN ALONE made two relations
+      sharing a column name overwrite one another: measured 2026-09-28, eight domains lost across
+      four bundles.
+    columns: [«code», label, search_key, source_view, source_schema, confidence, note]
+    population: {of: every column whose value domain was measured, from: the profile's domains, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_lookups.py, role: cuts, args: "--plane sources"}]
+    consumers:
+      - {tool: tools/mac_descriptors.py, role: re-attaches the column's register pointer,
+         reads: ["«header[0]»", "source_view"]}
+      - {tool: sdk/project/project_data.py, role: renders the register page,
+         reads: ["«header»", "«rows»", "source_view", "source_schema", "note"]}
+    checkers:
+      - {tool: "tools/check_lookups.py", rejects: [cited-register-missing, source_view-dangling]}
+      - {tool: "tools/check_one_register_per_dimension.py", rejects: [two-registers-one-column]}
+      - {tool: "tools/check_register_membership.py", rejects: [MISSING, NEW, NULLS, ORPHANED]}
+
+  register_page:
+    what: the browsable page for one value register — its members, with the constants lifted above the table
+    phase: [sources]
+    path: data/lookups/{register}.lookup.md
+    naming: the register's own stem, verbatim — one page per .lookup.csv
+    population: {of: every register cut on this plane, from: data/lookups/*.lookup.csv, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders one page per register}]
+    consumers: [{tool: sdk/project/objects.py, role: carries it as the register object's doc path, reads: ["«path only»"]}]
+    # THE LARGEST UNCHECKED CLASS IN THE DELIVERY — 24 files, 17 % of it. `check_pages_current`
+    # covers sources, datasets and transforms and stops. These can go stale, vanish, or desync from
+    # their CSV and every gate stays green.
+    checkers: []
+
+  # ── THE MEASUREMENT OF THE DELIVERY ITSELF ───────────────────────────────────────────────────
+
+  relation_page:
+    what: the page a person opens to read one landed relation
+    phase: [sources]
+    path: data/sources/{relation}.md
+    naming: the descriptor's stem, verbatim
+    population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
+    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+
+  plane_overview:
+    what: one page over ALL of the landing plane — what was landed, how big, what is keyed
+    phase: [sources]
+    path: data/sources/index.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: mac-console/console_api.py, role: lists and serves it, reads: ["«whole document»"]}]
+    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+
+  data_sanity_suite:
+    what: the data-sanity properties, PROJECTED from the measured profile — nobody authors these
+    phase: [sources]
+    path: acceptance/data_sanity_generated.yaml
+    naming: fixed
+    population: {of: one suite, from: «this artifact», empty_is: EMPTY}
+    covers: every relation of the plane
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_generate_sanity.py, role: projects from the profile}]
+    consumers:
+      - {tool: "tools/run_suite.py", role: "executes it", reads: ["properties[].id", "properties[].sql", "properties[].assertion", "properties[].severity"]}
+    checkers:
+      - {tool: "tools/check_vacuous_assertions.py", rejects: [LITERAL-ONLY, NEVER-ZERO, CONSTANT, ABSENT, WHOLE-RESULT, UNRESOLVED, UNPARSEABLE]}
+
+  suite_run_record:
+    what: the current state of a suite — per case, overwritten every run
+    phase: [sources]
+    path: acceptance/data_sanity_generated_runs.json | acceptance/delivery_consistency_runs.json | acceptance/register_membership_runs.json | acceptance/manifest_runs.json
+    naming: "{suite}_runs.json — the suite it records, never a date"
+    population: {of: one record per suite that ran, from: «this artifact», empty_is: EMPTY}
+    lifecycle: resumable
+    producers:
+      - {tool: "tools/suite_record.py", role: "builds"}
+      - {tool: "tools/check_delivery_consistency.py", role: "records its own verdict"}
+      - {tool: "tools/check_register_membership.py", role: "records its own verdict"}
+      - {tool: "tools/check_artifact_conformance.py", role: "records the manifest verdict"}
+    consumers:
+      - {tool: "tools/mac_dq_findings.py", role: "raises a finding per case that did not pass", reads: ["results[].id", "results[].status", "results[].detail"]}
+      - {tool: "mac-console/ui/src/views/DataQualityBoard.jsx", role: "the suite board", reads: ["results[].id", "results[].status", "declared", "examined", "run_at"]}
+    checkers:
+      - {tool: "tools/check_run_records.py", rejects: [NO_RECORD, NO_COMMIT, NO_DENOMINATOR, HEADER_DISAGREES, SHORT_POPULATION, BAD_STATUS, UNEVALUATED]}
+
+  dated_run_record:
+    what: one suite run, append-only — the copy that makes the trend independent of git
+    phase: [sources]
+    path: acceptance/runs/{utc}-{suite}.json
+    naming: "{UTC}-{suite}.json — the instant it ran, so two runs never collide"
+    population: {of: one per run, from: «this artifact», empty_is: EMPTY}
+    lifecycle: resumable
+    producers: [{tool: tools/suite_record.py, role: writes the dated copy}]
+    # READ FOR ITS MTIME ONLY. Its contents are parsed by nothing but an opt-in --replay path.
+    consumers: [{tool: mac-console/ingest_progress.py, role: the test step's clock, reads: ["«path only»"]}]
+    checkers: []
+
+conventions:
+  - what: the role a data-plane column may carry
+    closed: [primary_key, foreign_key, value, discriminator]
+    owner: mac_vocabulary.yaml#relation.column.role
+    note: >-
+      the MEASURED plane's vocabulary. The authored/analytical roles (key, dimension, measure,
+      period, housekeeping) are a different vocabulary on a different plane and are NOT ruled here.
+
+  - what: a landed relation's name
+    closed: «the warehouse's own»
+    owner: the warehouse catalog
+    note: a landing is described, never renamed. Renaming belongs to the served plane, not to this one.
+
+  - what: a register's file name
+    closed: "{marker}_{relation}_{column}.lookup.csv"
+    owner: tools/mac_lookups.py#_stem
+
+refuses:
+
+  - id: RENAMED-LANDING
+    when: writing a landed descriptor that does not name a relation the warehouse actually landed
+    why: >-
+      a landing is DESCRIBED, not invented. Checking the stem against `table.name` was not enough
+      and the feasibility test proved it: `d_customer.yaml` declaring `table.name: d_customer` is
+      internally consistent and entirely made up. INTERNAL CONSISTENCY IS NOT CONFORMANCE. On
+      2026-09-28 a `d_`/`f_`/`b_` prefix scheme survived being designed, built, measured, committed
+      and reported before anything objected.
+    instead: describe the landing under its own name; rename on the served plane if you must
+
+  - id: INVENTED-COLUMN-ROLE
+    when: writing a data-plane column `role` outside the closed set
+    why: the vocabulary is closed, and closed means closed
+    instead: use one of primary_key | foreign_key | value | discriminator
+
+  - id: TRANSIENT-AT-DELIVERY
+    when: a delivered landed descriptor still carries `values:` on a column
+    why: a member list is a value DOMAIN and its home is a register, not a descriptor
+    instead: run tools/mac_lookups.py, which cuts the domain out and leaves `distinct:` + `register:`
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest
