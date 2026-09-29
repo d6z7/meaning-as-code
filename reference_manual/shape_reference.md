@@ -461,16 +461,13 @@ derived_from:  # (views only) LINEAGE — how this serving relation is built
 
 columns:  # REQUIRED
   - <item>
-    name: <…>  # REQUIRED · string
-    type: <…>  # string
-    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     description: <…>  # string
-    nullable: <…>  # boolean
-    notes: <…>  # string
-    enum_ref: <…>  # string
-    values: [ ... ]  # TRANSIENT — the measured bounded domain, on its way to a register
     distinct: <…>  # integer · MEASURED distinct value count
-    register: <…>  # string · Path to the register that holds this column's members, relative to the…
+    enum_ref: <…>  # string
+    key_position: <…>  # integer · THIS COLUMN'S PLACE IN A COMPOSITE PRIMARY KEY — 1 for the first part,…
+    name: <…>  # REQUIRED · string
+    notes: <…>  # string
+    nullable: <…>  # boolean
     references:  # one of: string | object · The parent this column points at  # closed: only keys above
       to: <…>  # REQUIRED · string · The parent, as `relation.column`.
       cardinality:  # MEASURED cardinality  # closed: only keys above
@@ -479,7 +476,11 @@ columns:  # REQUIRED
       participation:  # MEASURED participation — the half a key cannot supply  # closed: only keys above
         child: <…>  # enum: mandatory | optional
         parent: <…>  # enum: mandatory | optional
-    key_position: <…>  # integer · THIS COLUMN'S PLACE IN A COMPOSITE PRIMARY KEY — 1 for the first part,…
+    register: <…>  # string · Path to the register that holds this column's members, relative to the…
+    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
+    searchable: <…>  # enum: like · HOW A VALUE IN THIS COLUMN IS RESOLVED when no register can hold it
+    type: <…>  # string
+    values: [ ... ]  # TRANSIENT — the measured bounded domain, on its way to a register
 
 foreign_keys:
   - <item>

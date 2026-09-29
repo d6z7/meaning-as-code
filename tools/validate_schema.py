@@ -106,6 +106,13 @@ def _pick_def(path, layout=None):
                                                      getattr(layout, 'references_served', None))
                                     if x}:
         return 'ReferenceFile'
+    # A REGISTER'S OWN DESCRIPTOR (operator ruling 2026-09-29: a register is a virtual table). Routed
+    # by BASENAME rather than by directory, because data/lookups/ also holds the members (.csv) and
+    # the page (.md) and only this suffix is a MAC document. Unrouted it landed in the "carries no
+    # MAC definition" bucket — 25 files reading as undeclared debt rather than as a shape the
+    # validator had not been taught, which is the same misreading the note on references/ describes.
+    if base.endswith('.lookup.yaml'):
+        return 'ValueRegisterFile'
     if layout is not None and getattr(layout, 'sources', None) and d == str(layout.sources):
         return 'TableFile'
     descriptors_dir = getattr(layout, 'descriptors', None) if layout is not None else None
@@ -267,9 +274,13 @@ def enumerate_bundle(root, layout=None):
     # interventions/); a source scaffolded from v0.1.16 puts them in one `governance/` plane. Routing
     # keys on BASENAME, so it already handled both — collection did not, and a definition nothing
     # enumerates is a definition nothing applies. Second time that half was the one missed.
+    # THIRD TIME FOR THIS EXACT HALF. The note above records the first two; adding
+    # `ValueRegisterFile` to $defs and routing it in `_pick_def` left all 25 register descriptors in
+    # the "carries no MAC definition" bucket, because nothing collected them. Both halves, always.
     for pat in ('acceptance/*.yaml', 'interventions/ledger.yaml',
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
+                'data/lookups/*.lookup.yaml',
                 'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',
                 'governance/*.yaml', 'governance/protosql/*.yaml'):
         files += [f for f in glob.glob(os.path.join(root, pat)) if not _skipped(f)]

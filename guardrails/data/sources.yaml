@@ -349,6 +349,21 @@ conventions:
     owner: the warehouse catalog
     note: a landing is described, never renamed. Renaming belongs to the served plane, not to this one.
 
+  - what: how a value in a data-plane column is RESOLVED
+    closed: ['«a register: pointer»', 'searchable: like', '«neither»']
+    owner: tools/mac_descriptors.py#_searchable
+    note: >-
+      the operator, 2026-09-29: "not everyting is suitable for lookup. one huge table where the
+      search criteria is text cannot be converted into lookup. it should just be declared later to
+      be searchebal with like." An open-text column used to carry NOTHING here, which is
+      indistinguishable from one nobody had profiled — contoso5 held 16 of them, silent, including
+      `dim_customer.customer_name` at 99 200 distinct over 104 990 rows. The rule lives in
+      `mac_register_plan.classify` and is IMPORTED rather than restated: a first version of the
+      descriptor branch carried its own copy and disagreed within the hour, missing `Occupation`
+      (2 571 distinct) and `Company` (1 031) because it tested the ratio and not the count.
+      «neither» stays legal and means exactly what it says — measured, and resolvable by nothing
+      offline.
+
   - what: a register's file name
     closed: "{marker}_{notion}.lookup.csv, falling back to {marker}_{relation}_{column} on a clash"
     owner: tools/mac_lookups.py#_assign_names

@@ -103,6 +103,14 @@ def reference_cell(col: dict, *, code: bool = True) -> str:
                 name = name[: -len(suf)]
                 break
         parts.append(f"register: `{name}`" if code else f"register: {name}")
+    # HOW A VALUE IN THIS COLUMN IS RESOLVED is the question this cell answers, and for an open-text
+    # column the answer was BLANK — indistinguishable from a column nobody had profiled. The
+    # operator, 2026-09-29: "one huge table where the search criteria is text cannot be converted
+    # into lookup. it should just be declared later to be searchebal with like." contoso5 carries 16
+    # such columns; `dim_customer.customer_name` holds 99 200 distinct values over 104 990 rows, and
+    # a register of it would be the table.
+    if str(c.get("searchable") or "").strip() == "like":
+        parts.append("search: `like`" if code else "search: like")
     return " · ".join(parts)
 
 

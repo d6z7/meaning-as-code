@@ -511,6 +511,32 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
             if (table, col) in dists:
                 lines.append(f"  distinct: {dists[(table, col)]}")
             lines.append(f"  register: {regs[(table, col)]}")
+        # NOT EVERYTHING IS A REGISTER (operator, 2026-09-29): "one huge table where the search
+        # criteria is text cannot be converted into lookup. it should just be declared later to be
+        # searchebal with like."
+        #
+        # This says so, on the column, where a reader of the descriptor will see it. Until now an
+        # open-text column carried NOTHING to distinguish it from a column nobody had got round to
+        # profiling: contoso5 held 16 of them — `dim_customer.customer_name` at 99 200 distinct of
+        # 104 990 rows, `customer.StreetAddress` at 95 854, `product.ProductName` at 2 517 of
+        # 2 517 — every one of them silent.
+        #
+        # THE RULE IS NOT distinct/rows ALONE. That hypothesis is killed by the most canonical
+        # register in the estate: `dim_currency.currency_code` is 5 values over 5 rows, ratio 1.0,
+        # because a dimension table IS its own register. It is only consulted HERE, below the
+        # register branch, where the column already has no register — so the dimension-key case
+        # cannot reach it.
+        # ONE HOME FOR THE RULE. This branch first carried its own copy — `distinct > 100 and
+        # distinct/rows > 0.05` — and it disagreed with the planner within the hour: `Occupation`
+        # (2 571 distinct over 104 990 rows) and `Company` (1 031) have a LOW ratio and are still
+        # far past the point a person names them, so the plan called them searchable and the
+        # descriptor called them nothing. Two homes for one rule is the defect this estate keeps
+        # paying for, so the rule is imported from where it is tested rather than restated here.
+        elif (_simple(typ) == "string" and not ref
+              and (table, col) in dists and m["rows"]
+              and _searchable(dists[(table, col)], m["rows"])):
+            lines.append(f"  distinct: {dists[(table, col)]}")
+            lines.append("  searchable: like")
         # NO `confidence: I` — a column read out of information_schema was not INFERRED, and the key
         # was read by nothing. It sat on 224 column entries across two planes in one bundle. Removed
         # from the core in v0.1.15 on CONFORMANCE.md §2's own test: "a key nothing consumes is a note,
@@ -535,6 +561,22 @@ def _simple(sql_type: str) -> str:
 #: with `distinct:` + `register:` when the members move to their register. None of them is this
 #: generator's output, and comparing against them made `--check` report drift on all 14 descriptors of
 #: a bundle nothing had changed — a check that always fails is a check nobody can use (DNA law 12).
+def _searchable(distinct: int, rows: int) -> bool:
+    """Is this column open TEXT rather than a value set? The planner's rule, not a copy of it.
+
+    `mac_register_plan.classify` is where the rule is written and where its mutants are held — the
+    plain distinct/rows hypothesis is killed there by `dim_currency.currency_code`, 5 values over 5
+    rows. `referenced=False` is correct at this call site and not a simplification: this branch runs
+    only where the column has NO register, and a dimension key other relations point at would have
+    one.
+    """
+    try:
+        from mac_register_plan import classify
+    except Exception:  # noqa: BLE001 - no planner on the path: declare nothing rather than guess
+        return False
+    return classify(int(distinct), int(rows), False)[0] == "searchable"
+
+
 _ENRICHED_BY_LATER_STAGES = ("values", "distinct", "register", "domain")
 
 
