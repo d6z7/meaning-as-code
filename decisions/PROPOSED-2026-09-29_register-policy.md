@@ -109,6 +109,60 @@ pairs. This costs one function, changes no artifact, and turns today's silent `O
 
 ---
 
+### P7 — A REGISTER IS A VIRTUAL TABLE (operator, 2026-09-29)
+
+> *"it reads like one register is like virtual table. then many rules from the table domain will fit
+> for the register lookup. you have authored/invariant column names — i agree on this"*
+
+This is the frame the rest of the policy was groping for, and it settles the open question in §P1–P6
+rather than adding to it: **a register's schema is ITS OWN, not borrowed from whatever column it was
+cut from.** That single consequence is what makes one register serve many attach points, because a
+file headed `CurrencyCode` can only ever belong to the column called `CurrencyCode`.
+
+The estate was already treating registers as tables without saying so — which is exactly why the
+schema stayed borrowed. `check_register_membership` compares a register's members against the
+warehouse and reports `MISSING / NEW / NULLS / ORPHANED`: that is referential integrity between a
+dimension and its source, written as if it were something else.
+
+**Column names become invariant — RULED.**
+
+```
+code,label,search_key          every register, every bundle
+```
+
+`«code»` in the current declaration is a guillemetted VARIABLE — the source column's name. It
+becomes the literal `code`. This is also what the runtime already expects:
+`resolver/registers.py::Declaration` binds `code` / `search` / `display_label` by column NAME against
+the header, validated on load.
+
+**What else the table domain gives for free**
+
+| table rule | applied to a register |
+|---|---|
+| a relation has a DESCRIPTOR | `data/lookups/<name>.yaml` — `table:` + `columns:` + grain |
+| a relation declares its GRAIN | one row per `code`; `code` is `primary_key`, `key_position: 1` |
+| a column declares a REFERENCE | an attach point IS a reference — `sales.CurrencyCode → currency_code.code` |
+| references are checked for INTEGRITY | `check_register_membership` over EVERY attach point, not just the one relation it was cut from — a strengthening, see below |
+| a relation's name follows a CONVENTION | already declared; the convention's BODY changes (§P5) |
+| a page is held to a declared SHAPE | `register_page` exists and is currently governed by nothing |
+| a descriptor is held to a SCHEMA | `validate_schema` applies once the descriptor exists |
+
+**Provenance leaves the rows.** `source_view` and `source_schema` are repeated on every row today —
+a table storing its own lineage in each row. Under the table model they move to the descriptor as
+the ATTACH LIST, which is the thing that became plural. This also fixes a real narrowing:
+`check_register_membership` reads `source_view` from the file and checks the register against that
+ONE relation. With an attach list it checks every attached column, which is what referential
+integrity over a shared dimension actually means.
+
+**What does NOT transfer.** A register has no SQL transform, so no lineage edge from one; it is not
+in the warehouse catalog, so it has no schema there and `check_pages_current`-style physical
+verification does not apply to its existence; and its `rows_measured` is trivially its member count.
+A reference to a register is a reference to a VIRTUAL relation, so it keeps its own field
+(`register:`) rather than being folded into `references:` — same rules, different target plane.
+Folding them would have the page claim a physical foreign key that the warehouse does not hold.
+
+---
+
 ## The one real risk, and why it sets the order
 
 A register's header today names its source column (`CurrencyCode`, `currency_code`, …). A shared

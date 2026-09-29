@@ -155,7 +155,15 @@ delivers:
          reads: ["«header»", "«rows»", "source_view", "source_schema", "note"]}
     checkers:
       - {tool: "tools/check_lookups.py", rejects: [cited-register-missing, source_view-dangling]}
-      - {tool: "tools/check_one_register_per_dimension.py", rejects: [two-registers-one-column]}
+      # TWO REJECT CLASSES, BECAUSE P4 HAS TWO HALVES AND ONLY ONE WAS EVER ENFORCED. Its TITLE
+      # rules one register per DIMENSION; its BODY rules "refuse to write where a register already
+      # covers that source column". The cutter keys on (relation, column), this gate counted the
+      # same pair and called it a "domain", and so contoso5 read
+      #     registers: 48   distinct domains: 48   DUPLICATED: 0   OK
+      # over 48 files holding 25 value sets. Estate-wide, measured 2026-09-29: 213 files, 114
+      # sets, 99 redundant copies. A gate is only as true as its denominator.
+      - {tool: "tools/check_one_register_per_dimension.py",
+         rejects: [two-registers-one-column, one-domain-many-registers]}
       - {tool: "tools/check_register_membership.py", rejects: [MISSING, NEW, NULLS, ORPHANED]}
 
   register_page:
