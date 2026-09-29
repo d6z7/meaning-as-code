@@ -489,6 +489,34 @@ bundle must reach the start before anything is allowed to run.
     reported MAC002 as NOT COMPUTED. `validate_schema` is now wrapped as a real owner, and a code is
     UNKNOWN only when **no** owner answered — a false absorption is worse than an admitted hole,
     because a hole gets a TODO and an absorption gets a green tick.
+- **`0.1.16`** — **a register is a virtual table, so it gets a definition.** `ValueRegisterFile`
+  defines `data/lookups/<stem>.lookup.yaml`: the register's name, its member COUNT, its grain (one
+  row per code), and `attached[]` — every `(relation, column, schema)` of the bundle whose values
+  ARE that set. Operator ruling, 2026-09-29: *"one register for one thing that can be attached to
+  multiple targets"*, and *"it reads like one register is like virtual table. then many rules from
+  the table domain will fit."*
+  - **THE ATTACH LIST IS THE FACT THAT BECAME PLURAL.** `source_view` is written into every ROW of
+    the CSV — a table carrying its lineage in each record — which was tolerable while a register had
+    exactly one source and wrong the moment it had eight. The SCHEMA travels per attach point,
+    because a shared register spans planes: the same twelve month names sit on `main.date` and
+    `contoso_served.dim_date`, and applying the owner's schema to all of them fails as
+    `contoso_served.date does not exist` on a register that is correct.
+  - `TableFile.columns.items` **gains `searchable`**, a closed one-term enum (`like`). *"not
+    everyting is suitable for lookup. one huge table where the search criteria is text cannot be
+    converted into lookup. it should just be declared later to be searchebal with like."* An
+    open-text column carried NOTHING here before and was indistinguishable from one nobody had
+    profiled: one bundle held 16, including a column with 99 200 distinct values over 104 990 rows.
+    It has a consumer on arrival — the relation page prints `search: like` in the reference cell —
+    because a key nothing reads is the §2 test this estate keeps failing.
+  - **A DEFINITION NEEDS FOUR HALVES, and the gate named each in turn.** The definition; the ROUTE
+    (by basename — `data/lookups/` also holds `.csv` members and `.md` pages); the COLLECTION glob,
+    without which a routed definition is never applied; and a REQUIRED `schema_version`, since the
+    version gate skips what it cannot date and 25 files came back `UNCHECKED`, which reads as
+    coverage and is not. `validate_schema`'s own comment already said *"a definition nothing
+    enumerates is a definition nothing applies"* and *"Second time that half was the one missed."*
+    This was the third. Then the closed schema immediately caught the producer writing the member
+    LIST where an integer was declared — on a kind that had had no definition an hour earlier.
+
 - **`0.1.16`** — **the column standard becomes writable.** `grounding.sources[].columns` now accepts
   EITHER the flat array of names OR a MAP keyed by column name whose values are that column's flags
   (`role`, `identity`, `measure` — and only those three, `additionalProperties: false`, so a

@@ -657,6 +657,63 @@ Two registers over one column WILL disagree, and nothing in the runtime arbitrat
 refuse to write where a register already covers that source column, and say which file already
 covers it.
 
+**AMENDED 2026-09-29 — and the amendment is a lesson about premises, not only about registers.**
+
+This premise's TITLE said *dimension* and its BODY said *that source column*, and for four days
+every layer beneath it implemented the body: the cutter keyed `seen_columns` on `(relation, column)`,
+and `check_one_register_per_dimension.py` counted the same pair and **called it a domain**. So the
+gate read, over a bundle holding 48 files for 25 value sets:
+
+```
+registers: 48   distinct domains: 48   DUPLICATED: 0
+OK — every (source_view, column) has at most one register.
+```
+
+Nothing was inconsistent. Every layer agreed with itself, the gate was green, and 47 % of the
+registers were copies. **A premise whose title and body disagree is enforced at its body, silently,
+and the title goes on being quoted.** That is the general form and it is worth watching for.
+
+**A DIMENSION IS A VALUE SET.** Not a column, not a filename. Two columns holding the same members
+are one register however they are spelled; two columns holding different members are two registers
+however alike they are named. The operator, 2026-09-29: *"there only one lookup for one thing that
+can be attached to multiple targets."*
+
+Both alternatives had already failed here, in opposite directions, which is why neither name is the
+identity:
+
+| identity | what it does | what it cost |
+|---|---|---|
+| the NOTION (`{marker}_{column}`) | two relations sharing a column name collide on one file | contoso4's `customer.State`, 565 members, silently overwritten by a 67-member cut from `store` |
+| the (relation, column) | every column gets its own file | contoso5: 48 files, 25 sets, the five currency codes stored **eight** times |
+| **the VALUE SET** | one file per set, attached to many columns | 48 → 25, nothing lost |
+
+**A REGISTER IS A VIRTUAL TABLE** (operator's framing, the same day): *"then many rules from the
+table domain will fit for the register lookup. you have authored/invariant column names."* So it
+carries a descriptor like any other relation — `data/lookups/<stem>.lookup.yaml`, stating its member
+count, its grain (one row per code), and every `(relation, column, schema)` attached to it. The
+schema travels **per attach point**, because a shared register spans planes: the same twelve month
+names sit on `main.date` and `contoso_served.dim_date`.
+
+**AND NOT EVERY COLUMN IS A REGISTER.** *"one huge table where the search criteria is text cannot be
+converted into lookup. it should just be declared later to be searchebal with like."* The obvious
+rule — `distinct/rows` — is **killed** by the most canonical register in the estate:
+`dim_currency.currency_code` is 5 values over 5 rows, ratio 1.0, because a dimension table IS its own
+register. What survives, and lives once in `mac_register_plan.classify`:
+
+```
+REGISTER            referenced by other relations       (a shared dimension key)
+                 or <= 100 members                      (a person can name them all)
+                 or <= 5 % of rows and <= 1000 members  (a vocabulary, repeated)
+searchable: like    anything else                       (open text)
+```
+
+**WHAT FOUND THE DEFECTS, which bears on P5's diagnosis order.** No gate found any of the three real
+ones. The name collision was found by SEEDING it deliberately and watching `cut 2 column domain(s)
+into 1 register file(s)` — two domains in, one file out, exit 0. A lost label (`AU,Australia`
+becoming `AU,AU`, a register that can no longer resolve the word "Australia") was found by DIFFING
+the re-cut bundle against a backup. Gates hold what is already understood; **a diff against the
+previous state is what finds what is not**, and it belongs in any change that rewrites a population.
+
 ### P8 — EVERY PRODUCED ARTIFACT NEEDS SOMETHING THAT PRODUCES IT
 
 `setup.sh` built contoso's eight landing tables and stopped. The six
@@ -752,7 +809,7 @@ itself. What holds each one today:
 | P1 | canon must be implemented | **`check_canon_implemented.py`** — walks every `realized_by` in the document tree |
 | P2 | unimplemented canon fails loudly | **the loader** — reports each as a `SkippedRegister`; **console readiness** publishes them |
 | P3 | no workaround for an unimplemented mechanism | P1 + P5 make the real cause findable; not mechanically checkable |
-| P4 | one register per dimension | **`check_one_register_per_dimension.py`**, and **the cutter refuses by column** |
+| P4 | one register per dimension, and a dimension is a VALUE SET | **`check_one_register_per_dimension.py`** counts distinct value sets (it counted `(view, column)` pairs until 2026-09-29 and read `DUPLICATED: 0` over 23 copies); **the cutter** keys identity on the set and refuses a bare notion two sets both claim |
 | P5 | the diagnosis order | this document; step 3 is now a gate |
 | P6 | a lone guess still asks | **`test_planner_value_column.py`** — 3 near-miss cases + the normalized counter-case |
 | P7 | no canon an implemented one expresses | `mac_runtime/canon.py` `KNOWN_UNIMPLEMENTED` says so at the point of temptation |

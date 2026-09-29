@@ -226,6 +226,83 @@ ENFORCERS = {
 }
 
 
+def verify_enforced_by(framework: pathlib.Path) -> list:
+    """Every `enforced_by` claim must name a real producer, and every `proven_by` a real case.
+
+    `enforced_by` exists so a refusal enforced BY CONSTRUCTION in its producer is not reported as
+    unenforced. That is an accurate distinction and it is also a HATCH: the moment it can be written
+    without being checked, it becomes the way to silence this report — which is precisely the defect
+    the whole guardrail tree exists to prevent. So a claim costs a named self-test case, and this
+    reads the producer to confirm the case is there.
+
+    Returns a list of complaints; empty is clean.
+    """
+    bad = []
+    for name, spec in load_topics(framework).items():
+        if not isinstance(spec, dict):
+            continue
+        for r in spec.get("refuses") or []:
+            claim = r.get("enforced_by")
+            if not claim:
+                continue
+            tool = str(claim).split("#", 1)[0].strip()
+            path = framework / tool
+            if not path.is_file():
+                bad.append(f"{name}/{r['id']}: enforced_by names {tool!r}, which does not exist")
+                continue
+            body = path.read_text(encoding="utf-8", errors="replace")
+            anchor_ = str(claim).split("#", 1)[1].strip() if "#" in str(claim) else ""
+            if anchor_ and anchor_ not in body:
+                bad.append(f"{name}/{r['id']}: {tool} carries no {anchor_!r}")
+            proof = str(r.get("proven_by") or "").strip()
+            if not proof:
+                bad.append(f"{name}/{r['id']}: claims enforced_by with no proven_by — "
+                           f"a claim nothing backs is how this field becomes a way to go quiet")
+                continue
+            case = proof.split(":", 1)[1].strip() if ":" in proof else proof
+            if case and case not in body:
+                bad.append(f"{name}/{r['id']}: {tool} has no self-test case {case!r}")
+    return bad
+
+
+def _self_test(framework: pathlib.Path) -> int:
+    """The enforcement claims, checked. Needs no bundle."""
+    ok = [0, 0]
+
+    def case(what, cond):
+        ok[0] += 1
+        ok[1] += bool(cond)
+        print(("  ✓ " if cond else "  ✗ ") + what)
+
+    topics = load_topics(framework)
+    case("every guardrail topic parses", "«broken»" not in topics)
+    declared = [r for t in topics.values() if isinstance(t, dict)
+                for r in (t.get("refuses") or [])]
+    case(f"{len(declared)} refusal(s) declared across the tree", bool(declared))
+    claims = [r for r in declared if r.get("enforced_by")]
+    complaints = verify_enforced_by(framework)
+    for c in complaints:
+        print(f"      {c}")
+    case(f"every `enforced_by` claim names a real producer AND a real self-test case "
+         f"({len(claims)} claim(s))", not complaints)
+    # THE HATCH, CLOSED. A claim with no proof must be REFUSED, or `enforced_by` is just a quieter
+    # way of being unenforced.
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = pathlib.Path(tmp)
+        (fake / "guardrails" / "data").mkdir(parents=True)
+        (fake / "guardrails" / "data" / "x.yaml").write_text(
+            "spec_version: mac.guardrail/1\ntopic: t\ndelivers: {}\n"
+            "refuses:\n  - {id: FAKE, when: w, why: y, enforced_by: tools/nope.py#nothing}\n",
+            encoding="utf-8")
+        case("MUTANT an `enforced_by` naming a tool that does not exist is REFUSED",
+             bool(verify_enforced_by(fake)))
+
+    print(("PASS" if ok[1] == ok[0] else "FAIL")
+          + f": check_guardrails self-test — {ok[1]}/{ok[0]} case(s)")
+    return ALLOW if ok[1] == ok[0] else REFUSE
+
+
 def propose(framework: pathlib.Path, rel: str, text: str | None) -> tuple:
     """(verdict, findings, unenforced) for ONE proposed write."""
     topics = load_topics(framework)
@@ -250,9 +327,14 @@ def main(argv=None) -> int:
     ap.add_argument("--propose", metavar="PATH", help="a bundle-relative path about to be written")
     ap.add_argument("--content-file", help="the content it would be written with")
     ap.add_argument("--inspect", metavar="BUNDLE", help="how a bundle stands against every topic")
+    ap.add_argument("--self-test", action="store_true",
+                    help="hold every `enforced_by` claim to a real producer and a real case")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args(argv)
     fw = pathlib.Path(a.framework).resolve()
+
+    if a.self_test:
+        return _self_test(fw)
 
     if a.propose:
         text = None
@@ -305,8 +387,21 @@ def inspect(fw: pathlib.Path, bundle: pathlib.Path, as_json: bool) -> int:
                          "population": (decl.get("population") or {}).get("of", "—")})
         report["topics"][name] = {"phase": spec.get("phase"), "items": rows,
                                   "refuses": [r["id"] for r in (spec.get("refuses") or [])],
+                                  # THREE STATES, NOT TWO. A refusal can be enforced by the
+                                  # write-time hook, enforced BY CONSTRUCTION in its producer, or
+                                  # enforced by nothing — and collapsing the middle into the last
+                                  # is how an accurate report becomes one nobody believes.
+                                  # `DOMAIN-CUT-TWICE` cannot be checked here at all: `propose` is
+                                  # handed one path and its text, never the bundle, so it cannot
+                                  # see the sibling registers. The cutter keys identity on the
+                                  # value set, so the defect cannot be produced, and the claim is
+                                  # backed by a named self-test case rather than asserted.
+                                  "elsewhere": [f"{r['id']} ({r['enforced_by']})"
+                                                for r in (spec.get("refuses") or [])
+                                                if r["id"] not in ENFORCERS and r.get("enforced_by")],
                                   "unenforced": [r["id"] for r in (spec.get("refuses") or [])
-                                                 if r["id"] not in ENFORCERS]}
+                                                 if r["id"] not in ENFORCERS
+                                                 and not r.get("enforced_by")]}
     if as_json:
         print(json.dumps(report, indent=2, sort_keys=True))
         return ALLOW
@@ -316,6 +411,8 @@ def inspect(fw: pathlib.Path, bundle: pathlib.Path, as_json: bool) -> int:
             flag = f"  ✗ {len(r['misnamed'])} MISNAMED: {', '.join(r['misnamed'][:3])}" if r["misnamed"] else ""
             print(f"  {r['item']:24} {r['present']:>3} file(s)   {r['path']}{flag}")
         print(f"  refuses: {', '.join(t['refuses'])}")
+        if t.get("elsewhere"):
+            print(f"  enforced by its producer: {', '.join(t['elsewhere'])}")
         if t["unenforced"]:
             print(f"  NOT ENFORCED: {', '.join(t['unenforced'])} — declared is not enforced")
     return ALLOW

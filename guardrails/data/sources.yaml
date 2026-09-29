@@ -397,6 +397,41 @@ refuses:
     why: a member list is a value DOMAIN and its home is a register, not a descriptor
     instead: run tools/mac_lookups.py, which cuts the domain out and leaves `distinct:` + `register:`
 
+  # THE OPERATOR RULED THE POLICY, 2026-09-29: "there only one lookup for one thing that can be
+  # attached to multiple targets". These two refusals are the write-time half; the gate's
+  # `one-domain-many-registers` is the read-time half over what was already delivered.
+  - id: DOMAIN-CUT-TWICE
+    when: cutting a register for a value set this bundle already holds under another name
+    why: >-
+      a register IS its members, so two files over one set are one register with two names — and
+      which of them answers a question depends on load order. Measured on contoso5 2026-09-28: 48
+      files over 25 value sets, the five currency codes stored EIGHT times, while the gate keyed on
+      (source_view, column) and read DUPLICATED: 0 over all of it.
+    instead: >-
+      attach. The column's `register:` pointer is many-to-one already and always was; the cutter
+      records the new attach point in the register's `<stem>.lookup.yaml` and writes no second file.
+    # ENFORCED BY CONSTRUCTION, which is stronger than a hook that inspects after the fact: the
+    # cutter keys `by_set` on the members, so a second file for a set it already holds cannot be
+    # written. The propose-time hook could not check this anyway — it is handed one path and its
+    # text, never the bundle, so it cannot see the sibling registers.
+    enforced_by: tools/mac_lookups.py#by_set
+    proven_by: "tools/mac_lookups.py --self-test: three columns, one value set -> ONE register"
+
+  - id: BARE-NOTION-TWO-SETS
+    when: naming a register after a notion that a DIFFERENT value set in this bundle also claims
+    why: >-
+      this is how contoso4 lost a domain: `customer.State` (565 codes) and `store.State` (67 names)
+      both derive `state`, one file was written and the loser's members were preserved NOWHERE.
+      Set-level identity does not prevent it — two different sets are correctly two registers and
+      then collide on the FILENAME. Reproduced deliberately 2026-09-29: `cut 2 column domain(s) into
+      1 register file(s)`, four codes gone, exit 0.
+    instead: >-
+      every claimant falls back to `{relation}_{column}` of its own cut site, which is unique. Never
+      the later claimant only — qualifying just the loser leaves the winner's name depending on scan
+      order.
+    enforced_by: tools/mac_lookups.py#_assign_names
+    proven_by: "tools/mac_lookups.py --self-test: MUTANT two different sets claiming one notion keep BOTH domains"
+
 watch:
   record: acceptance/guardrail_runs.json
   written_by: tools/check_guardrails.py
