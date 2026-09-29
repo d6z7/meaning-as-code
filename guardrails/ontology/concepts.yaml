@@ -192,18 +192,28 @@ refuses:
       over it is unverifiable.
     instead: state the grain and the key it rests on; the measured key is in data/profiles/
 
-  - id: ONE-RELATIONSHIP-ONE-EDGE
+  - id: ENDPOINT-GUESSED
     when: >-
-      emitting an edge per CONCEPT grounded on a relation, rather than per relationship
+      declaring an edge whose endpoint could not be resolved from a declaration — or REFUSING an
+      edge because several concepts on one relation reference the same target
     why: >-
-      two concepts sharing a relation and pointing at the same target through the same column are
-      ONE relationship seen twice. `NetRevenue__store_key__to__Store` and
-      `UnitsSold__store_key__to__Store` are not two facts about the world. Measured 2026-09-29:
-      five concepts grounded on the sales relation x six foreign keys produced 43 edges where the
-      curated model declares 28 — a cartesian product wearing a model's clothes.
+      CONFORMANCE §2.3 rules both halves, and this refusal replaces one that contradicted it.
+      "One foreign key fans out to many edges. Where OrderLine, Order and SalesAmount all declare
+      CustomerKey identity: reference, all three reference Customer and all three are edges.
+      Refusing that as 'ambiguous' took a reference bundle from 3 wrong edges to 0." So an edge
+      per (referencing concept, referenced concept) is the standard, not duplication — the from
+      endpoint is EVERY concept on the relation declaring the column a reference, the to endpoint
+      is the ONE concept whose canonical key is that column. What §2.3 refuses is a GUESSED
+      endpoint: "an endpoint that cannot be resolved is skipped with its reason recorded, never
+      guessed", because a resolvable endpoint is not a correct one.
     instead: >-
-      declare the relationship once, from the concept that OWNS it, and let the others reach it
-      through their own grounding
+      derive the edge set from `identity: reference` declarations — the second contoso5 attempt
+      did this after first writing the opposite rule here; MODELLING-LOG entry 12 records both.
+    # THE RULE THIS REPLACES was `ONE-RELATIONSHIP-ONE-EDGE`, written 2026-09-29 morning from the
+    # dropped draft's 43 edges without reading §2.3. The draft's defects were column-named ids and
+    # self-join predicates on computed relations; its COUNT was closer to the standard than the 16
+    # that replaced it. A guardrail written from a symptom, not from the standard, and caught the
+    # same day by the operator asking whether I had read the vocabulary and grammar rules.
 
   - id: NAMEABLE-DIMENSION-NOT-LIFTED
     when: >-
