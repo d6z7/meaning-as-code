@@ -167,9 +167,14 @@ kinds:
     path: data/lineage/lineage.json
     name: fixed
     shape: mac.schema.json#/$defs/LineageFile
+    # TWO PRODUCERS WITH DISJOINT OWNERSHIP, declared in sdk/project/lineage_graph.py#OWNERSHIP and
+    # enforced by its `merge()`: each replaces only the node kinds and edge kinds it owns, so
+    # re-measuring a warehouse cannot delete a bundle's ontology chain. This entry previously named
+    # `mac_lineage.py` twice — once for `flows()`, which is an ADAPTER on the producer and not a
+    # writer — and omitted the projector entirely.
     producers:
-      - {tool: "tools/mac_lineage.py", role: "measures from the view SQL"}
-      - {tool: "tools/mac_lineage.py", role: "adapts to the flow shape"}
+      - {tool: "tools/mac_lineage.py", role: "measures the warehouse: relation edges and column origins"}
+      - {tool: "sdk/project/lineage_graph.py", role: "folds in registers, concepts and the orphan register"}
 
   relation_page:
     what: the page a person opens to read one relation

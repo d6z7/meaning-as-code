@@ -423,6 +423,81 @@ def run(root: pathlib.Path, framework: pathlib.Path, yaml) -> tuple[list, int]:
     return rows, 0
 
 
+#: WHERE THE MEASUREMENT GOES SO SOMEBODY CAN SEE IT. Operator, 2026-09-29: "if this is the
+#: instrument ... where is display to watch the measurement?" — and the estate already answers that
+#: for its sibling: `check_delivery_consistency` DECIDES and writes
+#: `acceptance/delivery_consistency_runs.json`, and the console only RENDERS it. One home for the
+#: verdict, one renderer, and no second opinion computed in a browser. This follows that exactly.
+RECORD = pathlib.Path("acceptance") / "manifest_runs.json"
+
+
+def record(root: pathlib.Path, rows, kinds, checklist_by_part) -> dict:
+    """The run record: the verdict, every invariant with its denominators, and the projected
+    checklist per delivery. The ENUMERATION CONTRACT holds here too — one item per subject, the
+    reason on every exclusion, counts derived from the list so they cannot disagree with it."""
+    import json
+    from datetime import UTC, datetime
+
+    out_rows = []
+    for code, what, items in rows:
+        n, held, bad, na = counts(items)
+        out_rows.append({
+            "code": code, "checks": what,
+            "enumerated": n, "held": held, "failed": bad, "not_applicable": na,
+            "verdict": VIOLATION if bad else OK,
+            # VACUOUS IS ITS OWN FACT, not a flavour of `ok`. An invariant that examined nothing
+            # has proved nothing, and `NAME-MATCHES` reported PASS over 11 of 12 kinds it could
+            # not judge for as long as it existed.
+            "vacuous": (held + bad) == 0,
+            "items": items,
+        })
+    doc = {
+        "generated_by": "check_artifact_conformance.py",
+        "executed": datetime.now(UTC).isoformat(timespec="seconds"),
+        "bundle": root.name,
+        "verdict": VIOLATION if any(r["verdict"] == VIOLATION for r in out_rows) else OK,
+        "invariants": len(out_rows),
+        "invariants_failing": sum(1 for r in out_rows if r["verdict"] == VIOLATION),
+        "invariants_vacuous": sum(1 for r in out_rows if r["vacuous"]),
+        "kinds_declared": len(kinds or {}),
+        "rows": out_rows,
+        "checklist": checklist_by_part,
+    }
+    f = root / RECORD
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(doc, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return doc
+
+
+def _checklists(root: pathlib.Path, kinds) -> dict:
+    """The projected checklist for every delivery, folded into the same record — so the operator
+    reads ONE artifact to answer both 'does the manifest hold' and 'what does this delivery owe'."""
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import mac_manifest as M
+    except Exception:                                                    # noqa: BLE001
+        return {}
+    out = {}
+    for part in ("sources", "datasets", "ontology", "tuning"):
+        try:
+            items = M.checklist(root, part, kinds)
+        except Exception:                                                # noqa: BLE001
+            continue
+        if not items:
+            continue
+        out[part] = [{
+            "id": it["id"], "what": it["what"], "of": it["of"], "where": it["where"],
+            "have": len(it["have"]), "want": len(it["want"]),
+            "na": it.get("na"),
+            "verdict": ("n/a" if it.get("na") else
+                        ("ok" if (len(it["want"]) and len(it["have"]) == len(it["want"]))
+                         or (not len(it["want"]) and it.get("empty_is") == "OK")
+                         else ("empty" if not len(it["want"]) else "short"))),
+            "missing": [str(x) for x in it["want"] if x not in it["have"]][:12],
+        } for it in items]
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("root", nargs="?", default=".")
@@ -440,6 +515,14 @@ def main(argv=None) -> int:
     rows, rc = run(root, fw, yaml)
     if rc:
         return rc
+    # WRITE THE RECORD BEFORE PRINTING, and write it whatever the verdict. A gate that records only
+    # its passes leaves the operator with a display that goes blank exactly when something is wrong.
+    kinds = load_registry(fw, yaml) or {}
+    try:
+        doc = record(root, rows, kinds, _checklists(root, kinds))
+        _wrote = f"{RECORD} — {doc['invariants']} invariant(s), {doc['kinds_declared']} kind(s)"
+    except Exception as exc:                                             # noqa: BLE001
+        _wrote = f"the record could NOT be written: {type(exc).__name__}: {exc}"
     print(f"── artifact conformance ── {root.name} ──")
     failed = 0
     for code, what, items in rows:
@@ -450,6 +533,7 @@ def main(argv=None) -> int:
         for i in items:
             if i["verdict"] == VIOLATION:
                 print(f"         - {i['subject']}: {i['note']}")
+    print(f"  -> {_wrote}")
     if failed:
         print(f"\nFAIL: check_artifact_conformance — {failed} of {len(rows)} invariant(s) broken. An "
               f"artifact that does not follow its kind's declaration is one nobody can find, "
