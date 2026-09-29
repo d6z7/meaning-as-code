@@ -30,6 +30,27 @@ delivers:
     naming: the served relation it produces
     population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
     lifecycle: authored-once
+    # WHO DECIDED THIS SHAPE is declared in the .sql banner and lifted onto the descriptor:
+    # `mac.transform.driven_by` is one of passthrough | proposed | ruled (mac_vocabulary.yaml),
+    # and `mac.transform.because` names the finding behind a proposal or a ruling. Absent is
+    # UNDECLARED — nobody recorded it — never `ruled`.
+    #
+    # TWO HALVES ARE DEFERRED, ON PURPOSE, and the operator said why on 2026-09-29: "i cannot tell
+    # at the moment if the strategy for the proposal can be developed ... how to do this
+    # transformation. so deffer."
+    #
+    #   * NOTHING GENERATES A `proposed` TRANSFORM. The term is recordable and is recorded — three
+    #     of contoso5's eight carry it — but the proposing is done on request, by a person asking
+    #     and an agent answering, not by a producer. That is a deliberate hold, not a missing
+    #     producer of the kind P8 refuses: the question of WHETHER a general strategy exists for
+    #     proposing a data model from a profile is itself unsettled.
+    #
+    #   * `tools/mac_passthrough.py` IS STILL UNWIRED. It is declared as a producer here and runs
+    #     from no stage. Wiring it was tried on 2026-09-29 and reverted within the hour: with no
+    #     driver markers to read it regenerated transforms for `orders` and `orderrows` — two
+    #     landings deliberately unserved because DQ-DUP-ORDERROWS-SALES recommends serving exactly
+    #     one — leaving 10 .sql for 8 views while the checklist still reported 39 of 39 complete.
+    #     The prerequisite is that it reads `driven_by`, not that it is switched on.
     producers:
       - {tool: «a person», role: authors}
       - {tool: tools/mac_passthrough.py, role: generates a 1:1 layer where no judgement is needed}
