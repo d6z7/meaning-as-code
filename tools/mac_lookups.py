@@ -170,9 +170,21 @@ def main(argv: list[str] | None = None) -> int:
             held = by_set.get(key)
             if held is not None:
                 held["attached"].append((relation, name, desc, schema))
+                # THE RICHEST CUT SITE WINS, and this is not a tidiness preference. The register is
+                # rendered from ONE attach point, and only some of them carry a label sibling: the
+                # eight country codes are `Country`/`CountryFull` on `customer` and a bare `country`
+                # on `dim_customer`. Scan order alone picked the owner, and `datasets` is read
+                # first, so this change turned `AU,Australia` into `AU,AU` — a register that can no
+                # longer resolve the word "Australia".
+                #
+                # That is exactly the pair `check_one_register_per_dimension` was written about:
+                # "contoso_country … DE,Germany,germany — labels, roll-up, sentinel" against
+                # "country_country … DE,DE,de — no labels, no roll-up. The second cannot resolve the
+                # word Germany." Caught by diffing a re-cut bundle against its backup.
+                held["candidates"].append((relation, name, schema, label_col))
                 continue
-            by_set[key] = {"members": members, "label_col": label_col, "relation": relation,
-                           "schema": schema, "column": name,
+            by_set[key] = {"members": members,
+                           "candidates": [(relation, name, schema, label_col)],
                            "attached": [(relation, name, desc, schema)]}
 
     # NOTHING IS WRITTEN UNTIL EVERY ATTACH POINT IS KNOWN, because the NAME depends on them. Cut
@@ -181,6 +193,11 @@ def main(argv: list[str] | None = None) -> int:
     # `dim_currency_currency_code` or `sales_currencycode` depending on plane order alone. A name
     # that moves when an unrelated relation is added is the instability `_stem` warns about; a name
     # settled after the whole bundle is read is at least a function of the whole bundle.
+    # THE OWNER FIRST, THEN THE NAME: `_assign_names` falls back to `{relation}_{column}` of the
+    # cut site on a clash, so it must be told which cut site won before it can name anything.
+    for held in by_set.values():
+        held["relation"], held["column"], held["schema"], held["label_col"] = \
+            _pick_owner(held["candidates"])
     _assign_names(marker, by_set)
     for key, held in by_set.items():
         held["out"] = root / "data" / "lookups" / f"{held['stem']}.lookup.csv"
@@ -325,6 +342,21 @@ def _self_test() -> int:
     got = cut({"big": {"Zip": [str(i) for i in range(300)]}})
     case(f"a column above --max-members is NOT a register  (got {got})", got == {})
 
+    # THE OWNER IS THE RICHEST CUT SITE, tested directly because the label pairing is VERIFIED
+    # against the warehouse and this self-test has none — `_label_column` returns None with no
+    # connection, so a cut here can never exercise the promotion. The regression it guards was real
+    # and shipped for one commit: one register per value set made `dim_customer.country` the owner
+    # over `customer.Country`, and `AU,Australia` became `AU,AU`.
+    case("the attach point WITH a label sibling becomes the owner, whatever the scan order",
+         _pick_owner([("dim_customer", "country", "served", None),
+                      ("customer", "Country", "main", "CountryFull")])[0] == "customer")
+    case("...and when it is scanned first it simply stays",
+         _pick_owner([("customer", "Country", "main", "CountryFull"),
+                      ("dim_customer", "country", "served", None)])[0] == "customer")
+    case("MUTANT with no labels anywhere the first is kept — an unchanged cut",
+         _pick_owner([("dim_customer", "country", "served", None),
+                      ("customer", "Country", "main", None)])[0] == "dim_customer")
+
     print(("PASS" if ok[1] == ok[0] else "FAIL")
           + f": mac_lookups self-test — {ok[1]}/{ok[0]} case(s), including the collision that cost "
             f"contoso4 a domain and the duplication that cost contoso5 twenty-three files.")
@@ -364,6 +396,28 @@ def _register_name(marker: str, held: dict) -> str:
         # old rule — it cannot collide — and the plan reports it for a person to author.
         base = _snake(f"{held['relation']}_{held['column']}")
     return f"{marker}_{base}" if marker and marker not in base else base
+
+
+def _pick_owner(candidates: list) -> tuple:
+    """Which attach point the register is RENDERED from: the richest, not the first scanned.
+
+    A register is cut from ONE column even when many carry its members, and only some of them have
+    a label sibling — the eight country codes are `Country`/`CountryFull` on `customer` and a bare
+    `country` on `dim_customer`. Scan order alone used to decide, and `datasets` is read before
+    `sources`, so one value set per register turned `AU,Australia` into `AU,AU`: a register that
+    can no longer resolve the word "Australia".
+
+    That is precisely the pair `check_one_register_per_dimension` was written about —
+    "contoso_country … DE,Germany,germany: labels, roll-up, sentinel" against "country_country …
+    DE,DE,de: no labels. The second cannot resolve the word Germany." Caught by diffing a re-cut
+    bundle against its backup, which is why the diff is worth running and not only the gates.
+
+    Ties break on the ORDER GIVEN, so a bundle with no labels anywhere cuts exactly as before.
+    """
+    for cand in candidates:
+        if cand[3] is not None:
+            return cand
+    return candidates[0]
 
 
 def _assign_names(marker: str, by_set: dict) -> None:
