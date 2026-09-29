@@ -1,0 +1,210 @@
+# guardrails/strategy.yaml — THE STRATEGY, formulated once. The one home.
+#
+# Operator, 2026-09-29: "let me explain what is the new strategy and aim of the platform ...
+# it needs to be formulated once properly, expressed in the docu ... and enforced, as you did not
+# do it right on the first shot. The most affected is the documentation, which describes all
+# possible states of the past."
+#
+# So: this file is the formulation; STRATEGY.md is GENERATED from it by tools/gen_strategy.py and
+# cannot narrate the past; tools/check_strategy.py holds every name below to what exists across the
+# three repositories and reports which rung a bundle has reached; the framework gate runner holds the
+# rungs' gates. Edit HERE. A rung names what AI does, what a person ratifies, the tools that do it,
+# the artifacts it leaves, the gates that hold it, the console surface that shows it, and the kit
+# skill an agent follows. References: `mac:` this repository, `kit:` mac-integration-kit,
+# `platform:` mac-platform, `bundle:` a path inside a delivered bundle (a glob).
+spec_version: mac.strategy/1
+status: RULED 2026-09-29
+aim: >
+  AI carries a data source from ingestion to a served layer, generates the first ontology and
+  everything around it, and then — against domain questions whose answers a subject-matter expert
+  has approved — tunes the ontology's declarations in a loop until the generator produces sound SQL
+  for every one of them. The console is the central place where all of it is created, authored and
+  seen. A person rules; AI proposes, measures, drafts and iterates.
+
+principles:
+  - id: declarations-not-code
+    rule: >
+      Every behaviour of the answer comes from the ontology's declarations — concepts, rules, rulings, registers, edges — never from generator code or per-question prompts. The loop tunes declarations.
+    because: >
+      the grammar was measured not to be the bottleneck (70 of 70 questions encoded; the declarations were); code patched per question overfits the corpus.
+  - id: vocabulary-is-the-frameworks
+    rule: >
+      The closed vocabularies (mac_vocabulary.yaml) are the framework's and are read, never restated. A bundle tunes its USE of them. A missing term is a framework proposal, not a bundle tweak.
+    because: >
+      one fact in six homes is how `attribute` stayed alive for two days after its retirement.
+  - id: ai-proposes-a-person-ratifies
+    rule: >
+      Rule confidence P→C, register and DQ dispositions, transform drivers `ruled`, and approved answers are a person's acts. The composer never stamps C; the guard lets an agent describe and only a human dispose.
+    because: >
+      a generator certifying its own output reads as a ratified fact to anyone who did not check.
+  - id: whole-corpus-per-change
+    rule: >
+      A change made for one question is re-run against every question. Fixing question 12 must not break 1–11.
+    because: >
+      a corpus is the specification; a single question is a test case.
+  - id: a-red-gate-stops-something
+    rule: >
+      Every non-green gate is declared with an owner (tools/gate_register.py) or it is news, and news exits 1. There is no bare PASS over standing failures.
+    because: >
+      a runner that was red continuously switched nothing.
+  - id: one-home-per-fact
+    rule: >
+      A fact is declared once and generated everywhere else (schema enums from the vocabulary, the manual's term blocks, this document).
+    because: >
+      two homes that may disagree will.
+
+stop_condition: >
+  Every domain question in the bundle's corpus passes against its SME-approved answer, and the
+  framework gate runner reports no NEWS — every remaining red is a declared, owned standing failure.
+
+documentation:
+  rule: >
+    A document describes the PRESENT. History lives in protocol/ (append-only) and in CONFORMANCE §6
+    (the changelog); a proposal says PROPOSED on its first line; a document that narrates a past
+    state is marked history or retired by the citation rule (cited by no gate, tool, guardrail,
+    wiki claim or README, and describing a shape the schema no longer routes).
+  enforced_by:
+    - mac:tools/check_dangling_references.py     # a document may not send a reader to a file that is not there, or to a RETIRED one as if live
+    - mac:tools/check_retired_terms.py           # a retired word in prose fails
+    - mac:tools/gen_strategy.py                  # this document is generated; a hand edit fails --check
+    - mac:tools/gen_vocabulary_terms.py          # the manual's term blocks are generated from the vocabulary
+  owed: >
+    a `describes: current | history | proposal` front-matter ratchet over every hand-written page, so
+    a page that narrates the past says so on its face.
+
+rungs:
+  - id: 1
+    name: ingest
+    ai: >
+      ingests the sources — describes each landing relation, profiles it (distincts, nulls, singletons), cuts samples, measures references and keys, cuts value-set registers
+    person: >
+      disposes the registers' findings (only a human disposes; an agent may describe)
+    tools: [mac:tools/mac_import.py, mac:tools/mac_profile.py, mac:tools/mac_sample.py, mac:tools/mac_lookups.py, mac:tools/mac_register_plan.py, mac:tools/mac_references.py, mac:tools/mac_admit_identity.py]
+    skills: [kit:ontology/skills/mac-ingest/SKILL.md, kit:ontology/skills/source-profiling/SKILL.md, kit:ontology/skills/sample-cutting/SKILL.md, kit:ontology/skills/lookup-pre-resolution/SKILL.md, kit:ontology/skills/reference-measuring/SKILL.md]
+    artifacts: [bundle:data/sources/*.yaml, bundle:data/profiles/*.yaml, bundle:data/samples/*.src.sample.csv, bundle:data/lookups/*.lookup.csv]
+    gates: [check_first_run.py, check_profile_plane.py, check_register_membership.py, check_one_register_per_dimension.py, check_lookups.py, check_relation_identity.py, check_served_name_distinct.py, check_mac_public.py]
+    console: [sources, lookups, ingest]
+  - id: 2
+    name: analyse-and-transform
+    ai: >
+      analyses the sources — raises data-quality findings with a recommendation each, traces lineage, drafts the first transformation as a 1:1 passthrough and PROPOSES improvements where the profiling shows them (`driven_by: passthrough | proposed | ruled` on the .sql)
+    person: >
+      rules each finding; an SME or data scientist drives the `ruled` transforms
+    tools: [mac:tools/mac_dq_findings.py, mac:tools/mac_passthrough.py, mac:tools/mac_apply_transforms.py, mac:tools/mac_lineage.py, mac:tools/mac_transforms.py]
+    skills: [kit:ontology/skills/transformation-authoring/SKILL.md, kit:ontology/skills/data-profiling-lineage/SKILL.md, kit:ontology/skills/data-quality-registration/SKILL.md]
+    artifacts: [bundle:data/quality/data_quality_register.yaml, bundle:data/transforms/*.sql, bundle:data/lineage/lineage.json]
+    gates: [check_dq_resolution_sync.py, check_transform_sql_extracted.py, check_column_planes.py, check_physical_references.py, check_lineage_coverage.py, check_grain_key_consistency.py]
+    console: [dataquality, lineage, interventions]
+    owed: >
+      the strategy that turns a DQ finding into a `proposed` transform automatically (deferred 2026-09-29; the recommendation channel exists on every finding)
+  - id: 3
+    name: serve
+    ai: >
+      establishes the served layer — applies the transforms, describes the datasets, promotes them, writes the delivery manifest and checks the delivery's consistency
+    person: >
+      approves the data plane
+    tools: [mac:tools/mac_import.py, mac:tools/mac_apply_transforms.py, mac:tools/mac_manifest.py, mac:tools/mac_resources.py]
+    skills: [kit:ontology/skills/dataset-promotion/SKILL.md]
+    artifacts: [bundle:data/datasets/*.yaml, bundle:acceptance/manifest_runs.json, bundle:acceptance/delivery_consistency_runs.json]
+    gates: [check_delivery_consistency.py, check_manifest_catches_yesterday.py, check_sample_matches_descriptor.py, check_data_plane_approved.py, check_artifact_has_producer.py, check_artifact_conformance.py]
+    console: [datasets, manifest, delivery]
+  - id: 4
+    name: dependencies
+    ai: >
+      creates everything the ontology will lean on — SME questions from the findings, the data-quality board, the sanity suite, measured edges, the ER diagram
+    person: >
+      the SME answers the questions in the trilateral channel
+    tools: [mac:tools/mac_generate_sanity.py, mac:tools/mac_measure_edges.py, mac:tools/project_edges.py, mac:tools/mac_project.py]
+    skills: [kit:ontology/skills/data-test-projection/SKILL.md, kit:ontology/skills/data-quality-registration/SKILL.md]
+    artifacts: [bundle:data/quality/dq_dashboard.json, bundle:acceptance/data_sanity_generated.yaml, bundle:evidence/edge_measurements.json, bundle:data/quality/PLANE-HEALTH.md]
+    gates: [check_er_projection.py, check_edge_joins_measured.py, check_vacuous_assertions.py, check_intervention_ledger.py, check_pages_current.py, check_page_shape.py]
+    console: [er, dataquality, interventions]
+  - id: 5
+    name: first-ontology
+    ai: >
+      generates the first ontology from the rows — the centre found in the data, one concept per notion (A2 decides the class), rules in the six kinds, rulings measured before ruled, edges as verbs — and keeps the modelling log of its line of thought
+    person: >
+      reads the log, rules confidence P→C, answers the SME questions the model raises
+    tools: [mac:sdk/cli/harvest.py, mac:sdk/authoring/authoring.py, mac:sdk/authoring/exemplars/bundle/mac.project.yaml, mac:MODELLERS_COOKBOOK.md, mac:tools/mac_lookups.py]
+    skills: [kit:ontology/skills/ontology-authoring/SKILL.md, kit:ontology/skills/concept-authoring/SKILL.md, kit:ontology/skills/grain-and-identity/SKILL.md, kit:ontology/skills/measure-semantics/SKILL.md, kit:ontology/skills/edges-and-rules/SKILL.md, kit:ontology/skills/ontology-shared-facts/SKILL.md]
+    artifacts: [bundle:ontology/concepts/*.yaml, bundle:ontology/edges.yaml, bundle:ontology/MODELLING-LOG.md]
+    gates: [validate_schema.py, check_concepts_not_per_table.py, check_concept_columns_exist.py, check_grain_declaration.py, check_datasets_are_grounded.py, check_answerability.py, check_rule_reference_basis.py, check_edge_definition.py, check_edge_claims_proved.py, check_edge_joins_its_grounding.py, check_cookbook_smells.py, check_ontology_grounds_on_datasets.py, check_vocabulary_tokens.py, check_enumeration_closure.py, check_measure_additivity_registry.py, check_registers_reachable.py, check_no_shadow_ontology.py, check_shapes.py, check_references.py, check_common_rules.py]
+    console: [concepts, edges, rules, vocabulary, ontologyquality]
+    enforced_by: [mac:tests/test_column_roundtrip.py]
+    owed: >
+      the composer's plan pass carries the procedure (centre from the rows, A2 per concept, the log) — today it lives in the skills and not in the prompt, which is how the first version drifts
+  - id: 6
+    name: supporting-objects
+    ai: >
+      generates every derived object the console shows — objects.json, concept pages, the edges projection, concept samples, the ER and lineage graphs, the resource description
+    person: >
+      none — derived, never authored
+    tools: [mac:tools/project_objects.py, mac:tools/project_concept_page.py, mac:tools/project_edges.py, mac:tools/mac_resources.py, mac:tools/mac_import.py]
+    skills: [kit:ontology/skills/ontology-test-rendering/SKILL.md]
+    artifacts: [bundle:objects.json, bundle:ontology/diagnostics.json, bundle:ontology/edges.json, bundle:ontology/concepts/*.md]
+    gates: [check_seam_contract.py, check_projection_field_parity.py, check_concept_samples.py, check_page_shape.py, check_pages_current.py, check_er_projection.py]
+    console: [graph, er, explorer, browse, canvas]
+  - id: 7
+    name: console
+    ai: >
+      none — the console is where a person creates, authors and sees; AI works behind its surfaces
+    person: >
+      the operator and the SME work here — every rung has a surface; authoring from the console goes through the one SSOT writer and the guard
+    tools: [platform:packages/mac-console/src/mac_console/console_api.py, platform:packages/mac-console/src/mac_console/ui/src/App.jsx, mac:sdk/authoring/operations.py, kit:ontology/install/hooks/ontology_guard.py]
+    skills: [kit:ontology/planes/PIPELINES.md, kit:ontology/planes/governance.md]
+    artifacts: []
+    gates: [check_guard_scope.py, check_guard_seam.py]
+    console: [manual, connection, llm, decisions, compiler]
+    owed: >
+      the console's charter is a VIEWER with narrow writes; authoring from it is a change to that charter and must land on sdk/authoring/operations.py, not beside it
+  - id: 8
+    name: questions
+    ai: >
+      none — the questions are the domain's; AI renders them into the test framework
+    person: >
+      the SME poses the domain questions
+    tools: [mac:tools/run_suite.py, mac:tools/suite_record.py]
+    skills: [kit:ontology/planes/testing.md, kit:ontology/skills/ontology-test-rendering/SKILL.md]
+    artifacts: [bundle:acceptance/reference, bundle:acceptance/test_cards.json]
+    gates: [check_answers.py, check_cards_match_runs.py, check_evidence_attributable.py, check_outcome_class_closure.py, check_rule_coverage.py]
+    console: [testing, askbench]
+  - id: 9
+    name: answer-and-approve
+    ai: >
+      answers each question by direct, read-only access to the data — resolution ladder, no guessed endpoint — and presents the number with its evidence
+    person: >
+      the SME approves the answer; pass/fail is the only verdict, and the approved number is the reference
+    tools: [platform:packages/mac-console/src/mac_console/ask_engine.py, platform:packages/mac-console/src/mac_console/local_ask.py, platform:packages/mac-runtime/src/mac_runtime/pipeline.py, mac:tools/duckdb_seam.py]
+    skills: [kit:ontology/planes/testing.md]
+    artifacts: [bundle:acceptance/reference, bundle:acceptance/*_runs.json]
+    gates: [check_answers.py, check_reproduction.py, check_run_records.py, check_no_fabricated_identifiers.py]
+    console: [chat, testing, askbench]
+  - id: 10
+    name: configure
+    ai: >
+      configures the ontology for each approved question with the framework's vocabulary and grammar — rules, rulings, registers, edges, surfaces — so the planner produces sound SQL from declarations alone
+    person: >
+      ratifies the rules it changes (confidence C) and the dispositions it needs
+    tools: [platform:packages/mac-runtime/src/mac_runtime/planner/plan.py, mac:grammar/query_grammar.yaml, mac:mac_vocabulary.yaml, mac:mac_rules.yaml, mac:tools/check_vocabulary_parity.py]
+    skills: [kit:ontology/skills/edges-and-rules/SKILL.md, kit:ontology/skills/ontology-shared-facts/SKILL.md]
+    artifacts: [bundle:ontology/concepts/*.yaml, bundle:ontology/edges.yaml, bundle:data/lookups/*.lookup.yaml]
+    gates: [check_query_grammar.py, check_additivity_in_sql.py, check_canon_binding.py, check_canon_implemented.py, check_vocabulary_parity.py, check_vocabulary_drift.py, check_rule_coverage.py]
+    console: [rules, vocabulary, compiler, advisor]
+  - id: 11
+    name: loop
+    ai: >
+      runs over every question — identifies the correct answer, diagnoses which declarations fired and which were missing, tunes them, re-runs the whole corpus — until every approved question passes
+    person: >
+      none per iteration; ratification as in rung 10; the stop condition is theirs to call
+    tools: [mac:tools/run_suite.py, mac:tools/suite_history.py, mac:tools/run_framework_gates.sh, mac:tools/gate_register.py, platform:packages/mac-eval]
+    skills: [kit:ontology/planes/testing.md]
+    artifacts: [bundle:acceptance/suite_history.jsonl, bundle:acceptance/standing_failures.yaml]
+    gates: [check_run_records.py, check_cards_match_runs.py, check_answers.py]
+    console: [testing, askbench, board]
+    owed: >
+      the loop driver — no tool runs the loop today; the runner, the records and the register are its instruments
+
+enforcement:
+  - mac:tools/check_strategy.py      # every name above resolves; a bundle's rung is reported from what is on disk and declared
+  - mac:tools/gen_strategy.py        # STRATEGY.md is generated from this file; --check fails on a hand edit
+  - mac:tools/run_framework_gates.sh # the rungs' gates run on every delivery; standing failures carry an owner

@@ -29,6 +29,8 @@ jobs:
           python tests/test_negative.py
           python tests/test_shapes.py
           python tests/test_column_roundtrip.py
+          python tools/gen_strategy.py --check
+          python tools/check_strategy.py
 
       - name: Structural validation (validate_schema.py)
         run: python tools/validate_schema.py example_shop_ontology

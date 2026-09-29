@@ -137,7 +137,7 @@ run_capped() {
 # handed a bundle root it reported 58 new and 35 stale — a calling-convention miss, not a finding.
 REPO_SUBJECT_GATES=(check_protocol.py check_canon_documented.py check_projection_field_parity.py
   check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
-  check_wiki_citations.py check_dangling_references.py)
+  check_wiki_citations.py check_dangling_references.py check_strategy.py)
 
 repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
   local n="$1" g

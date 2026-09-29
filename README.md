@@ -1,4 +1,6 @@
 # Meaning as Code (MAC)
+
+> **The strategy — what the platform is for and the eleven rungs a bundle climbs — is [STRATEGY.md](STRATEGY.md), generated from `guardrails/strategy.yaml` (the one formulation) and held to what exists by `tools/check_strategy.py`. Read it first.**
 #### the YAML Ontology Framework
 
 > *Capturing knowledge and meaning in a structured form is an old pursuit — taxonomies and controlled
