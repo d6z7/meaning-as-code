@@ -3032,7 +3032,22 @@
       ],
       "properties": {
         "metadata": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "because": {
+              "type": "string",
+              "description": "WHAT MOTIVATED IT — a data-quality finding id, for `proposed` and `ruled`. A proposal without its finding is an opinion, and the point of proposing is that the measurement is already on record: DQ-DUP-ORDERROWS-SALES is why only one of two identical 223,974-row relations is served. Read from a `-- mac.transform.because:` line in the .sql."
+            },
+            "driven_by": {
+              "type": "string",
+              "enum": [
+                "passthrough",
+                "proposed",
+                "ruled"
+              ],
+              "description": "WHO DECIDED THIS TRANSFORM'S SHAPE, and therefore who may change it — mac.transform.driven_by. Operator ruling 2026-09-29: the first version is a 1:1 passthrough IF NO OTHER REGULATION APPLIES; where the profiling already shows something the platform PROPOSES an improvement; and an SME or data scientist drives the change after that, including during concept authoring. Read by mac_transforms from a `-- mac.transform.driven_by:` line in the .sql, which is the authored artifact and so the only honest source. OPTIONAL: a transform without it is UNDECLARED, not `ruled` — every curated transform in the estate is in that state, and defaulting them to `ruled` would assert a ruling that is on no record."
+            }
+          }
         },
         "produces": {
           "type": "object",

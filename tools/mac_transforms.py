@@ -53,7 +53,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    ap.add_argument("--self-test", action="store_true",
+                    help="hold the driver marker; needs no bundle and no warehouse")
     a = ap.parse_args(argv)
+    if a.self_test:
+        return _self_test()
 
     root = pathlib.Path(a.root).resolve()
     try:
@@ -109,6 +113,49 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
+def _driver_lines(sql_path: pathlib.Path) -> list:
+    """The metadata lines for a declared driver, and NOTHING when none is declared."""
+    driven, because = driver_of(sql_path)
+    out = []
+    if driven:
+        out.append(f"  driven_by: {driven}")
+    if because:
+        out.append(f"  because: {because}")
+    return out
+
+
+def driver_of(sql_path: pathlib.Path) -> tuple:
+    """`(driven_by, because)` read from the .sql — WHO decided this transform's shape.
+
+    THE .SQL IS THE AUTHORED ARTIFACT, so it is the only honest place this can come from. The
+    descriptor beside it is re-derived from the warehouse's view definition on every run, so a fact
+    written there would be erased by its own generator; and inferring it — "this one looks curated"
+    — would be the guess this estate keeps paying for.
+
+    Operator ruling, 2026-09-29: the first version is a 1:1 passthrough IF NO OTHER REGULATION
+    APPLIES; where the profiling already shows something the platform PROPOSES an improvement; and
+    an SME or data scientist drives the change after that, including during concept authoring.
+
+    ABSENT IS NOT `ruled`. A transform with no marker is UNDECLARED — nobody recorded who drove it —
+    and every curated transform in this estate is in that state today. Labelling them `ruled` would
+    assert a ruling that is on no record, which is the same defect as a gate reporting PASS over a
+    population it never enumerated.
+    """
+    if not sql_path.is_file():
+        return None, None
+    driven = because = None
+    for line in sql_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        t = line.strip()
+        if not t.startswith("--"):
+            break          # the markers live in the banner, above the statement
+        t = t.lstrip("-").strip()
+        if t.startswith("mac.transform.driven_by:"):
+            driven = t.split(":", 1)[1].strip() or None
+        elif t.startswith("mac.transform.because:"):
+            because = t.split(":", 1)[1].strip() or None
+    return driven, because
+
+
 def _render(root: pathlib.Path, schema: str, view: str, refs: list[str],
             catalog: dict[str, str], observed: str) -> str:
     sql_file = f"data/transforms/{view}.sql"
@@ -134,6 +181,7 @@ def _render(root: pathlib.Path, schema: str, view: str, refs: list[str],
         "  confidence: I",
         f"  observed: '{observed}'",
         f"  generated_by: {GENERATOR}",
+        *_driver_lines(root / sql_file),
         "",
         "produces:",
         f"  relation: {schema}.{view}",
@@ -165,6 +213,58 @@ def _render(root: pathlib.Path, schema: str, view: str, refs: list[str],
 
 def _without_date(text: str) -> str:
     return "\n".join(ln for ln in text.splitlines() if "observed:" not in ln)
+
+
+def _self_test() -> int:
+    """The driver marker, held to real files. No bundle, no warehouse.
+
+    IT LIVES HERE AND NOT IN A SCRATCH SCRIPT. Operator, 2026-09-29: "i am fine if you reuse the
+    strategy/method which leads to the correct result. but i am not ok if you just copy result —
+    because the method is what we are testing." A check that proves something once, in a temp file
+    nobody runs again, proves it once.
+    """
+    import tempfile
+
+    ok = [0, 0]
+
+    def case(what, cond):
+        ok[0] += 1
+        ok[1] += bool(cond)
+        print(("  ✓ " if cond else "  ✗ ") + what)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        d = pathlib.Path(tmp)
+        a = d / "a.sql"
+        a.write_text("-- x.sql — GENERATED\n--\n-- mac.transform.driven_by: passthrough\n--\n"
+                     "CREATE VIEW s.t AS SELECT 1;\n", encoding="utf-8")
+        case("a stamped passthrough is read", driver_of(a) == ("passthrough", None))
+
+        b = d / "b.sql"
+        b.write_text("-- mac.transform.driven_by: proposed\n"
+                     "-- mac.transform.because: DQ-DUP-ORDERROWS-SALES\n"
+                     "CREATE VIEW s.t AS SELECT 1;\n", encoding="utf-8")
+        case("a proposal carries the finding that motivated it",
+             driver_of(b) == ("proposed", "DQ-DUP-ORDERROWS-SALES"))
+
+        # ABSENT IS NOT A FOURTH TERM, and defaulting it to `ruled` would assert a ruling that is
+        # on no record — every curated transform in this estate is in exactly that state.
+        c = d / "c.sql"
+        c.write_text("-- a curated banner, no marker\nCREATE VIEW s.t AS SELECT 1;\n",
+                     encoding="utf-8")
+        case("MUTANT an unmarked transform is UNDECLARED, never `ruled`", driver_of(c) == (None, None))
+        case("...and emits no metadata line at all", _driver_lines(c) == [])
+
+        # THE BANNER IS THE CONTRACT. Scanning the whole file would let a marker inside the SELECT
+        # — or inside a string literal — decide who drove the transform.
+        e = d / "e.sql"
+        e.write_text("CREATE VIEW s.t AS SELECT 1;\n-- mac.transform.driven_by: ruled\n",
+                     encoding="utf-8")
+        case("MUTANT a marker BELOW the statement is not read", driver_of(e) == (None, None))
+        case("a missing .sql is undeclared, not an error", driver_of(d / "nope.sql") == (None, None))
+
+    print(("PASS" if ok[1] == ok[0] else "FAIL")
+          + f": mac_transforms self-test — {ok[1]}/{ok[0]} case(s)")
+    return 0 if ok[1] == ok[0] else 1
 
 
 if __name__ == "__main__":

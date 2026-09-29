@@ -518,6 +518,8 @@ governance:  # Housekeeping
 
 ```yaml
 metadata:
+  because: <…>  # string · WHAT MOTIVATED IT — a data-quality finding id, for `proposed` and…
+  driven_by: <…>  # enum: passthrough | proposed | ruled · WHO DECIDED THIS TRANSFORM'S SHAPE, and therefore who may change it —…
 
 produces:  # REQUIRED · the single dataset this pipeline emits — the seam the ontology binds to.
   relation: <…>  # REQUIRED · string · the produced dataset relation (schema.name)

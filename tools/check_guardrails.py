@@ -313,7 +313,12 @@ def propose(framework: pathlib.Path, rel: str, text: str | None) -> tuple:
         for r in (spec.get("refuses") or []) if isinstance(spec, dict) else []:
             fn = ENFORCERS.get(r["id"])
             if fn is None:
-                unenforced.append(r["id"])
+                # THE SAME THREE STATES `--inspect` REPORTS. A refusal enforced BY CONSTRUCTION in
+                # its producer is not unenforced, and listing it here as though it were made the
+                # propose path contradict the inspect path on the same two rules — an accurate
+                # report and an inaccurate one, from one file, about one tree.
+                if not r.get("enforced_by"):
+                    unenforced.append(r["id"])
                 continue
             note = fn(rel, text, r, topics)
             if note:
