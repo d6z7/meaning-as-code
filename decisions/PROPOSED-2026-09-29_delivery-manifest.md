@@ -1,6 +1,31 @@
 # DELIVERY MANIFEST — ONE DECLARATION PER DELIVERED ITEM
 
-**Status:** RULED 2026-09-29 (the four open items below are decided; see OPEN). Written 2026-09-29. Written after five re-ingests of contoso5 in one day, each of
+**Status: SUPERSEDED 2026-09-29 by `PROPOSED-2026-09-29_guardrails.md`.** Its four rulings stand and
+were carried forward verbatim (scope, severity, SME, the failing vocabulary gate). Its PACKAGING did
+not survive contact with the operator: this proposed ONE registry carrying every artifact kind, and
+the operator replaced it the same day with per-topic files under `guardrails/`, the way ontology
+concepts work. The measurement and diagnosis below remain the record of WHY any of this exists and
+are not restated in the successor.
+
+**What survived, and is now in the successor:** `consumers[].reads` (the one genuinely new fact);
+`phase`; `lifecycle`; `population` as a stated denominator; the `CONSUMED` / `PHASED` / `COVERED`
+invariants; and the meta-rule that an invariant must be shown to reject a mutant or it is not an
+invariant.
+
+**What was wrong with it, measured within a day:**
+
+1. **One big file.** 492 lines, 23 kinds, and a topic buried in it could not be approved, revised or
+   retired on its own. Operator: *"instead of building one BIG FILE you should have topic related
+   set of small ones ... similar to ontology concepts."*
+2. **It reported; it did not refuse.** Every invariant here produces a finding AFTER the fact.
+   `conformance` printed FAIL and the delivery ran to completion; this very file's registry was
+   committed unparseable because nothing stood between writing it and committing it.
+3. **Its item list came from the checklist, not the census.** It declared what somebody had already
+   written down. Measured on a phase-1 delivery: 30 artifact classes written, 8 declared — the whole
+   data-quality family, the SME questions, the register pages and the lineage artifact absent from
+   it, which is the same omission it was written to end.
+
+Originally written 2026-09-29. Written after five re-ingests of contoso5 in one day, each of
 which lost a different deliverable and each of which reported itself complete.
 
 ---
