@@ -40,6 +40,21 @@ delivers:
     what: one business notion — what it is, what it is grounded on, and what may be asked of it
     phase: [ontology]
     path: ontology/concepts/{concept}.yaml
+    # THE PROCEDURE AND THE WORKED EXAMPLE, NAMED HERE BECAUSE NAMING THEM ELSEWHERE DID NOT WORK.
+    # `MODELLERS_COOKBOOK.md` has decided this since before contoso5 existed — A1 picks the layer,
+    # A2 picks the class from a CLOSED six-term procedure, B1 authors a concept, B5 connects two,
+    # C1-C6 are the antipatterns — and the first contoso5 draft ran none of it. It was authored by
+    # imitating the neighbouring bundle in the same directory, which was the wrong one: contoso4
+    # carries mechanical edge names and an `ontology_generated.yaml` with NO runs record beside
+    # it, so its habits came from a model nothing had ever executed.
+    #
+    # Measured against the curated reference, 2026-09-29: 6 of 15 classes wrong, 43 edges where 28
+    # was right, and not one edge naming a relationship. Every gate passed.
+    #
+    # A method at the repo root is reachable by somebody who already knows to look. A method named
+    # on the KIND is reachable from the work.
+    procedure: MODELLERS_COOKBOOK.md#A1-A2-B1
+    reference: mac-ontology-contoso
     naming: >-
       the concept's own name, snake_case, and NOT the relation it is grounded on —
       `check_concepts_not_per_table` exists because a concept per table is a schema with new
@@ -132,6 +147,17 @@ conventions:
       a concept named for its table is the defect that gate exists to refuse: it turns a model back
       into the schema it was supposed to interpret.
 
+  - what: an edge's id
+    closed: "{subject}__{verb}__{object}"
+    owner: tools/check_edge_definition.py
+    note: >-
+      `order_line__sells__product`, never `SalesLine__product_key__to__Product`. THE VERB IS THE
+      ONTOLOGY'S CONTRIBUTION at that point — the foreign key was already measured on the data
+      plane, so an edge id carrying a COLUMN name restates what another layer owns and says
+      nothing new. That is the single-homing law (FW §3.2) broken one layer up. MODELLERS_COOKBOOK
+      B5 has carried the worked example all along: "order__placed_by__customer and
+      product__belongs_to__category".
+
   - what: the ontology plane's location
     closed: ontology/
     owner: tools/check_no_shadow_ontology.py
@@ -156,6 +182,50 @@ refuses:
       does not claim it either, nothing in the bundle says what one row means, and every aggregate
       over it is unverifiable.
     instead: state the grain and the key it rests on; the measured key is in data/profiles/
+
+  - id: ONE-RELATIONSHIP-ONE-EDGE
+    when: >-
+      emitting an edge per CONCEPT grounded on a relation, rather than per relationship
+    why: >-
+      two concepts sharing a relation and pointing at the same target through the same column are
+      ONE relationship seen twice. `NetRevenue__store_key__to__Store` and
+      `UnitsSold__store_key__to__Store` are not two facts about the world. Measured 2026-09-29:
+      five concepts grounded on the sales relation x six foreign keys produced 43 edges where the
+      curated model declares 28 — a cartesian product wearing a model's clothes.
+    instead: >-
+      declare the relationship once, from the concept that OWNS it, and let the others reach it
+      through their own grounding
+
+  - id: NAMEABLE-DIMENSION-NOT-LIFTED
+    when: >-
+      leaving a column a question would NAME as `role: dimension` inside another concept
+    why: >-
+      `color`, `continent`, `channel`, `store_status` are words people say. As a column flag they
+      resolve against nothing: there is no concept to name, no members to match, no register to
+      bind. The curated reference lifts all four; the first contoso5 draft lifted none, and its 15
+      concepts against 21 is almost entirely that.
+    instead: >-
+      run A2 on it — a code list with no attributes is an `enumeration`, a roll-up above a leaf is
+      a `grouping`
+    # NOT ENFORCED, AND IT SHOULD SAY SO. Which columns deserve lifting is a judgement, and a gate
+    # that guessed it would refuse correct models — so the honest form is a candidate list a
+    # person reads, which nothing yet produces. `enforced_by` is for a refusal enforced BY
+    # CONSTRUCTION in a named producer; writing it here to look covered is precisely the hatch
+    # `verify_enforced_by` exists to close, and it caught this line within a minute of it being
+    # written.
+
+  - id: CLASS-UNRUN
+    when: choosing a concept's `class` without running A2
+    why: >-
+      the vocabulary is CLOSED and six-termed, and A2 decides it top-to-bottom in six lines. Six of
+      fifteen classes in the first draft were wrong the same way: `entity` taken for Product,
+      Store, CalendarDay and Location, which A2 calls "the residual, deliberately narrow ... most
+      'objects' you'll meet are actually reference/measure/event in disguise — check those first".
+      Brand and ProductCategory were `enumeration` where they are roll-ups over products, which is
+      `grouping`.
+    instead: >-
+      run A2 and record the branch in `class_basis` — "a keyed dimension facts point at" — so a
+      wrong class is visible in review rather than in a graph six hours later
 
   - id: EDGE-CLAIM-UNMEASURED
     when: declaring an edge whose cardinality no measurement supports
