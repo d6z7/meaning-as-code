@@ -54,7 +54,16 @@ delivers:
     # A method at the repo root is reachable by somebody who already knows to look. A method named
     # on the KIND is reachable from the work.
     procedure: MODELLERS_COOKBOOK.md#A1-A2-B1
-    reference: mac-ontology-contoso
+    # NO REFERENCE BUNDLE IS DECLARED, and a line here did claim one for about an hour. It named
+    # `mac-ontology-contoso` because it looked leaner than the draft — which is an observation,
+    # not a ruling, and the operator said so: "nobody said that mac-ontology-contoso is reference
+    # ontology. i did not." A guardrail that promotes the author's taste to canon is the exact
+    # defect this tree exists to refuse, one file in.
+    #
+    # THE METHOD IS NOT "COPY THE BEST-LOOKING BUNDLE". It is: find the CENTRAL concept by reading
+    # what the physical data CONTAINS — not what the schema is shaped like — and build outward
+    # from it. The subject of a concept originates in the rows, never in the structure of the
+    # model. The log of that reasoning lives beside the ontology it produced.
     naming: >-
       the concept's own name, snake_case, and NOT the relation it is grounded on —
       `check_concepts_not_per_table` exists because a concept per table is a schema with new
