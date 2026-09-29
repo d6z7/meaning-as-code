@@ -127,6 +127,44 @@ def main(argv: list[str] | None = None) -> int:
     # `seen_columns` guard below still stands and still does its own job — it keeps the two halves
     # of a bijective pair from each cutting a register of the same dimension under two spellings.
     by_set: dict[frozenset, dict] = {}
+    # SEED FROM WHAT THIS BUNDLE ALREADY HOLDS, because "one register for one thing" is a fact
+    # about the BUNDLE and not about one invocation. The data plane is TWO deliveries (operator,
+    # 2026-09-28) and the operator runs them separately — sources, inspect, then datasets — so the
+    # second run's `by_set` started empty and could not see the first run's registers. Measured
+    # 2026-09-29 on exactly that sequence: `--part sources` cut 21, `--part datasets` cut 19, and
+    # the bundle held 28 files over 25 value sets. Three copies, from a cutter that produces none
+    # in a single `--plane both` run. A dedup scoped to one process is not a policy.
+    #
+    # A SEEDED REGISTER IS NEVER RE-RENDERED. Its members are already on disk with the labels the
+    # warehouse gave them, and a later run may have no connection — re-cutting would flatten
+    # `AU,Australia` to `AU,AU`. It only gains attach points.
+    for csv_path in sorted((root / "data" / "lookups").glob("*.lookup.csv")):
+        try:
+            rows = list(csv.reader(csv_path.open(encoding="utf-8-sig", newline="")))
+        except Exception:  # noqa: BLE001 - an unreadable register is reported by check_lookups
+            continue
+        if len(rows) < 2:
+            continue
+        key = frozenset(r[0] for r in rows[1:] if r)
+        stem = csv_path.name[: -len(".lookup.csv")]
+        side = csv_path.parent / f"{stem}.lookup.yaml"
+        attached = []
+        if side.is_file():
+            try:
+                doc = yaml.safe_load(side.read_text(encoding="utf-8")) or {}
+                attached = [(str(a.get("relation")), str(a.get("column")), None,
+                             str(a.get("schema") or "") or None)
+                            for a in (doc.get("attached") or []) if a.get("relation")]
+            except Exception:  # noqa: BLE001
+                attached = []
+        by_set[key] = {"members": [r[0] for r in rows[1:] if r], "seeded": True,
+                       "stem": stem, "out": csv_path, "label_col": None,
+                       "relation": None, "column": None, "schema": None,
+                       "candidates": [], "attached": attached}
+    if by_set:
+        print(f"  ({len(by_set)} register(s) already cut — a column presenting one of those value "
+              f"sets attaches to it)")
+
     for desc in cut_from:
         doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
         relation = (doc.get("table") or {}).get("name") or desc.stem
@@ -196,10 +234,14 @@ def main(argv: list[str] | None = None) -> int:
     # THE OWNER FIRST, THEN THE NAME: `_assign_names` falls back to `{relation}_{column}` of the
     # cut site on a clash, so it must be told which cut site won before it can name anything.
     for held in by_set.values():
+        if held.get("seeded"):
+            continue           # its owner, name and bytes are settled; it only gains attach points
         held["relation"], held["column"], held["schema"], held["label_col"] = \
             _pick_owner(held["candidates"])
-    _assign_names(marker, by_set)
+    _assign_names(marker, {k: v for k, v in by_set.items() if not v.get("seeded")})
     for key, held in by_set.items():
+        if held.get("seeded"):
+            continue           # already on disk with the labels the warehouse gave it
         held["out"] = root / "data" / "lookups" / f"{held['stem']}.lookup.csv"
         body = _render(held["relation"], held["column"], held["members"], held["label_col"],
                        con, held["schema"], marker)
@@ -383,6 +425,36 @@ def _self_test() -> int:
     case("MUTANT with no labels anywhere the first is kept — an unchanged cut",
          _pick_owner([("dim_customer", "country", "served", None),
                       ("customer", "Country", "main", None)])[0] == "dim_customer")
+
+    # TWO DELIVERIES, ONE BUNDLE. The operator runs `--part sources`, inspects, then `--part
+    # datasets`, so the cutter runs TWICE over one bundle — and `by_set` starting empty on the
+    # second call could not see the first call's registers. Measured on contoso5 2026-09-29: 21 +
+    # 19 cut, 28 files over 25 value sets, three copies from a cutter that produces none in a
+    # single `--plane both` run. A dedup scoped to one process is not a policy.
+    def cut_twice(sources: dict, datasets: dict) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "data" / "sources").mkdir(parents=True)
+            (root / "data" / "datasets").mkdir(parents=True)
+            (root / "mac.project.yaml").write_text("metadata: {dataset: tb}\n", encoding="utf-8")
+            for plane, rels in (("sources", sources), ("datasets", datasets)):
+                for rel, cols in rels.items():
+                    doc = {"table": {"name": rel, "schema": "main"},
+                           "columns": [{"name": c, "type": "string", "values": v}
+                                       for c, v in cols.items()]}
+                    (root / "data" / plane / f"{rel}.yaml").write_text(
+                        _yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+            import contextlib
+            import io as _io
+            with contextlib.redirect_stdout(_io.StringIO()):
+                main([str(root), "--plane", "sources"])
+                main([str(root), "--plane", "datasets"])
+            return {f.stem.replace(".lookup", ""): len(f.read_text().splitlines()) - 1
+                    for f in sorted((root / "data" / "lookups").glob("*.lookup.csv"))}
+
+    got = cut_twice({"sales": {"CurrencyCode": CUR}}, {"dim_currency": {"currency_code": CUR}})
+    case(f"MUTANT a SECOND delivery attaches to the first's register, never copies it  (got {got})",
+         got == {"tb_currency_code": 5})
 
     print(("PASS" if ok[1] == ok[0] else "FAIL")
           + f": mac_lookups self-test — {ok[1]}/{ok[0]} case(s), including the collision that cost "

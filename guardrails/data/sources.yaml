@@ -315,8 +315,12 @@ delivers:
     lifecycle: resumable
     producers:
       - {tool: "tools/suite_record.py", role: "builds"}
-      - {tool: "tools/check_delivery_consistency.py", role: "records its own verdict"}
-      - {tool: "tools/check_register_membership.py", role: "records its own verdict"}
+      # EACH CO-WRITER SAYS WHICH VERDICT IT RECORDS. Two of them claimed "records its own
+      # verdict", which reads as one role held twice — a conflict, not a collaboration — and is
+      # what PRODUCER-DECLARED refuses. The path is shared and the FILES are not: each writes its
+      # own `*_runs.json` beside the others.
+      - {tool: "tools/check_delivery_consistency.py", role: "records the delivery-consistency verdict"}
+      - {tool: "tools/check_register_membership.py", role: "records the register-membership verdict"}
       - {tool: "tools/check_artifact_conformance.py", role: "records the manifest verdict"}
     consumers:
       - {tool: "tools/mac_dq_findings.py", role: "raises a finding per case that did not pass", reads: ["results[].id", "results[].status", "results[].detail"]}

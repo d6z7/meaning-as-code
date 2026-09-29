@@ -990,9 +990,24 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # `both`: the bundle resource file describes WHATEVER has been delivered, so each part
         # leaves one that matches its own state. Untagged, it was held by both parts exactly like
         # the DQ stages above.
-        {"name": "resources", "part": "both", "produces": "*.mac", "d": "D13 D5",
+        # ALWAYS, BECAUSE ITS OUTPUT IS A SUMMARY OF EVERYTHING ELSE. `.mac` describes what the
+        # bundle CONTAINS, so it goes stale the moment any other stage writes — and `produces:
+        # "*.mac"` made it resume on its own earlier output. Measured 2026-09-29 on a two-part
+        # run: the sources delivery wrote 38 components, the datasets delivery then RESUMED on that
+        # file ("*.mac present") and the bundle shipped claiming 38 where the real answer was 69 —
+        # 8 datasets, 8 transforms and 9 more registers missing from its own description.
+        #
+        # AND THE CHECKLIST CALLED IT COMPLETE: `resource_description 1 of 1 [OK]`. Presence is not
+        # currency, and a stage whose output summarises its siblings can never be judged by whether
+        # the file is there.
+        {"name": "resources", "part": "both", "produces": "*.mac", "d": "D13 D5", "always": True,
          "cmd": [_tool("mac_resources.py"), str(root)]},
+        # ALWAYS, for the same reason `resources` is: the kind declares `lifecycle: re-derived`
+        # and a re-derived artifact whose stage RESUMES is a contradiction — a stale suite and a
+        # fresh one are indistinguishable by presence. Caught by PHASED the hour the conformance
+        # gate started reading the real registry instead of six kinds.
         {"name": "ontology-suite", "produces": "acceptance/ontology_generated.yaml", "d": "D8a",
+         "always": True,
          "cmd": [_tool("mac_generate_ontology_tests.py"), str(root)]},
         {"name": "ontology-run", "produces": "acceptance/ontology_generated_runs.json",
          "d": "D8b",

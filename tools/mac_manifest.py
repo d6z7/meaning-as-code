@@ -122,6 +122,13 @@ def _segments(rel: str) -> str:
         (r".+\.sample\.csv$", "{relation}.sample.csv"),
         (r".+\.lookup\.csv$", "{register}.lookup.csv"),
         (r".+\.lookup\.md$", "{register}.lookup.md"),
+        # THE REGISTER'S OWN DESCRIPTOR, added with the kind and not after it. Without this line
+        # its 28 files collapsed into the generic `{stem}.yaml`, which no declaration names — so
+        # COVERED reported them "claimed by NO declared kind" while `register_descriptor` declared
+        # `data/lookups/{register}.lookup.yaml` two files away. A new artifact needs its DEFINITION,
+        # its ROUTE, its COLLECTION and its CLASS PATTERN; this is the fourth half of the same
+        # lesson, on the same artifact, in the same week.
+        (r".+\.lookup\.yaml$", "{register}.lookup.yaml"),
 
         (r"^DQ-.+\.md$", "DQ-{id}.md"),
         (r"^NS-.+\.md$", "NS-{id}.md"),

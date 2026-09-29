@@ -55,10 +55,34 @@ def counts(items):
 
 
 def load_registry(framework: pathlib.Path, yaml):
+    """Every declared kind — the guardrail tree FIRST, then whatever is still unfiled.
+
+    IT READ `mac_artifacts.yaml` ALONE, AND THAT FILE IS NEARLY EMPTY NOW. The kinds moved into
+    `guardrails/`, one small file per subject, and this gate did not move with them — so it judged
+    SIX kinds and then enumerated 43 artifact classes on disk against them. `COVERED` reported 38
+    files "claimed by NO declared kind" when the guardrails declare almost all of them, which is a
+    gate crying wolf: 38 false findings a reader has to disbelieve to find a real one.
+
+    The checklist had exactly this defect after exactly this move and was fixed the same way — it
+    reported "6 of 6 complete" over a delivery owing 32 items. Same registry, same reader problem,
+    second occurrence. `mac_manifest.declared_items` is the one enumeration of what MAC declares;
+    a second answer would be a second truth and the first bundle where they disagreed would be
+    unarguable.
+    """
+    kinds: dict = {}
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import mac_manifest as M
+        kinds.update(M.declared_items(framework) or {})
+    except Exception as exc:  # noqa: BLE001 - fall back to the unfiled registry alone, and say so
+        print(f"  (guardrails unreadable, judging mac_artifacts.yaml alone: {str(exc)[:70]})")
     f = framework / "mac_artifacts.yaml"
-    if not f.is_file():
-        return None
-    return (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("kinds") or {}
+    if f.is_file():
+        # WHAT HAS NOT MOVED YET, and it must not shadow a filed kind: a kind belongs to exactly
+        # ONE file, so anything still here that a topic already declares is debt, not an override.
+        for name, k in ((yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("kinds") or {}).items():
+            kinds.setdefault(name, k)
+    return kinds or None
 
 
 def inv_producer(kinds) -> list:
