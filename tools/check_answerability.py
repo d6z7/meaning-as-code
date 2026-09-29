@@ -78,7 +78,8 @@ def _load(root):
     return out
 
 
-def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None) -> dict:
+def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None,
+                registry: dict | None = None) -> dict:
     """The steps an agent needs, DERIVED. Each value is the declaration that supplies it, or None.
 
     `shared` says whether another concept grounds the same relation — the only fact that cannot be
@@ -130,6 +131,22 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
                 if hit:
                     regs = [f"{hit} (declared on {src.get('relation')}.{_c})"]
                     break
+        # A REFERENCE MAY RESOLVE THROUGH ITS ATTRIBUTES, and `resolvers()` below already computes
+        # exactly that — it just fed the prose and never the step. A2 names Product as THE example
+        # of `reference`, and Product is 2,517 surrogate-keyed SKUs: no register can exist on its
+        # key, and none is needed, because nobody asks for "Contoso 4G MP3 Player E400 Green" —
+        # they ask for green MP3 players, or Contoso audio. Measured 2026-09-29 on contoso5:
+        # `resolvers(Product)` returned Brand, ProductCategory and Color, each with a register, and
+        # the step still read None. Under the old rule a large keyed dimension could never be a
+        # reference, which contradicts the procedure that decides the class.
+        #
+        # THE PATH IS STILL OFFLINE. brand -> register -> code, then filter the product rows: no
+        # probe. And it is derived from the grounding, so a reference with no attribute that any
+        # concept resolves still reads None — that is the mutant below.
+        if not regs and not v.get("items") and registry is not None:
+            via = resolvers(doc, registry)
+            if via:
+                regs = [f"through {n} ({r})" for n, r in via]
         path["resolve"] = (", ".join(regs) if regs else
                            (f"values.items ({len(v['items'])} members, in-file)" if v.get("items") else None))
     else:
@@ -163,6 +180,11 @@ def check_answerability(root) -> list:
                 users[src["relation"]] += 1
 
     registers = P.column_registers(root)
+    # THE CONCEPT KEY-REGISTRY, computed once: which reference/enumeration concept owns which
+    # canonical column, and the register that resolves a name to it. `answer_path` reads it so a
+    # reference with no register of its own can resolve THROUGH the concepts it grounds — the path
+    # `resolvers()` always computed and only ever rendered.
+    registry = key_registry(concepts)
     gaps, stubs = [], []
     for name, (rel, d, raw) in sorted(concepts.items()):
         ident = (d.get("concept") or {}).get("identity") or {}
@@ -170,7 +192,8 @@ def check_answerability(root) -> list:
             stubs.append(name)
             continue
         src = ((d.get("grounding") or {}).get("sources") or [{}])[0]
-        path = answer_path(d, raw, users.get(src.get("relation"), 0) > 1, registers=registers)
+        path = answer_path(d, raw, users.get(src.get("relation"), 0) > 1, registers=registers,
+                           registry=registry)
         for step in STEPS:
             if path.get(step) is None:
                 gaps.append(D.Witness(file=rel, path=f"answer_path.{step}",
@@ -248,6 +271,74 @@ def _subject(root):
     dd = Path(root) / "data" / "datasets"
     dd.mkdir(parents=True, exist_ok=True)
     (dd / "widget_register.yaml").write_text(_SUBJECT_DESCRIPTOR, encoding="utf-8")
+    # THE ATTRIBUTE-RESOLUTION PAIR. Doodad is a reference whose key carries NO register and whose
+    # file cites none — like a 2,517-row SKU dimension — and it resolves only because it grounds
+    # `hue`, which Hue owns with a values block. The control must derive; the mutant below demotes
+    # Hue to an entity, which drops it from the key-registry, and Doodad must then read None.
+    (cdir / "hue.yaml").write_text(_SUBJECT_HUE, encoding="utf-8")
+    (cdir / "doodad.yaml").write_text(_SUBJECT_DOODAD, encoding="utf-8")
+    (dd / "doodad_register.yaml").write_text(_SUBJECT_DOODAD_DESCRIPTOR, encoding="utf-8")
+
+
+_SUBJECT_HUE = """metadata: {concept: Hue, schema_version: 0.1.16, status: draft, owner: t, confidence: I, provenance: authored}
+concept:
+  name: Hue
+  class: enumeration
+  identity: {kind: code}
+  definition: a colour word
+values:
+  closure: closed
+  items:
+    - {code: red, label: red, meaning: red}
+    - {code: blue, label: blue, meaning: blue}
+grounding:
+  sources:
+    - relation: doodad_register
+      key: [hue]
+      columns:
+        hue: {role: dimension, identity: canonical}
+  grain: one member per hue
+"""
+
+_SUBJECT_DOODAD = """metadata: {concept: Doodad, schema_version: 0.1.16, status: draft, owner: t, confidence: I, provenance: authored}
+concept:
+  name: Doodad
+  class: reference
+  identity: {kind: fk_name}
+  definition: a keyed thing nobody names directly; reached by its hue
+grounding:
+  sources:
+    - relation: doodad_register
+      key: [doodad_key]
+      columns:
+        doodad_key: {role: key, identity: canonical}
+        hue: {role: dimension}
+  grain: one row per doodad
+"""
+
+_SUBJECT_DOODAD_DESCRIPTOR = """metadata: {table: doodad_register, schema_version: 0.1.15, status: measured, kind: served_dataset}
+table:
+  name: doodad_register
+  schema: main
+  type: view
+  rows_measured: 3
+columns:
+- {name: doodad_key, type: integer, role: primary_key}
+- {name: hue, type: string, role: value}
+"""
+
+
+def _break_attribute_resolution(root):
+    """Demote Hue to an entity: it leaves the key-registry, and Doodad — which resolves through
+    nothing else — must read None on `resolve`. Proves the new path is DERIVED from a real
+    reference/enumeration owner, not granted to any concept that happens to share a column."""
+    for c in (Path(root) / "ontology" / "concepts", Path(root) / "concepts"):
+        h = c / "hue.yaml"
+        if h.exists():
+            h.write_text(h.read_text(encoding="utf-8").replace("class: enumeration", "class: entity"),
+                         encoding="utf-8")
+            return
+    raise AssertionError("fixture hue.yaml not found")
 
 
 def _widget(root):
@@ -277,6 +368,9 @@ _MUTANTS = (
      "a concept sharing its relation, with nothing that discriminates it"),
     ("resolve_gone", _break_resolve, "answer_path.resolve",
      "a reference concept whose names resolve through no declared register"),
+    ("attribute_resolver_gone", _break_attribute_resolution, "answer_path.resolve",
+     "a reference with no register of its own, whose only resolving attribute stops being a "
+     "reference/enumeration concept"),
 )
 
 
@@ -292,10 +386,6 @@ def main() -> int:                                                      # pragma
     if any(D.UNKNOWN_MARK in x.summary for x in d):
         return D.EMPTY_EXIT
     return 1 if any(x.severity == D.ERROR for x in d) else 0
-
-
-if __name__ == "__main__":                                              # pragma: no cover
-    raise SystemExit(main())
 
 
 # ── the projection: the guarantee RENDERED from the path, so it cannot drift ──────────────────────
@@ -411,7 +501,7 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool, registry: dic
     ct = doc.get("contract") or {}
     s = c.get("semantics") or {}
     src = (g.get("sources") or [{}])[0]
-    path = answer_path(doc, raw, shared)
+    path = answer_path(doc, raw, shared, registry=registry)
     L = [f"GENERATED from this concept's declarations — do not edit; edit the declarations.",
          f"To use {c.get('label') or name} an agent needs ONLY:"]
     n = 0
@@ -474,3 +564,13 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool, registry: dic
     L.append("Never probe, and never filter a NAME literal against the fact — every name resolves to a "
              "code first (mac.resolve.join_on_declared_key, mac.guarantee.never_guess).")
     return "\n".join(L) + "\n"
+
+
+# THE ENTRY POINT IS LAST, AND IT WAS NOT. It sat at line 391 of 570 with `key_registry` defined
+# at 424 and `render_guarantee` at 494 — so a script run fired main() before those names
+# existed. Latent for as long as nothing above the guard needed a name below it; the first
+# patch that did (answer_path reading the concept key-registry) crashed every layout fixture
+# and every mutant with a NameError the harness reported as "rejection unattributed".
+# Measured 2026-09-29. An import never sees it, which is why the in-process proof passed.
+if __name__ == "__main__":                                              # pragma: no cover
+    raise SystemExit(main())
