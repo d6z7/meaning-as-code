@@ -71,7 +71,7 @@ antipattern: >
   `AVG(total_amount)` as "average sale" (it's average-of-sums); joining summary to detail and summing
   (double-counts); querying below the declared grain (the detail isn't there).
 status: scattered   # grain + guarantee + reused additivity_guard express it; the grain bound is the fact to state
-canon_ref: [canon/additivity_guard.md, CONCEPT_SPEC.md §6 (grounding.grain, guarantee), MODELLERS_COOKBOOK.md C6]
+canon_ref: [canon/additivity_guard.md, shape_reference.md (ConceptFile; grounding.grain, guarantee), MODELLERS_COOKBOOK.md C6]
 ```
 
 ## The determinism border

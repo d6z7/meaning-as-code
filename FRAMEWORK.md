@@ -9,10 +9,9 @@ scope: GENERIC methodology — domain-independent and vendor-neutral. Contains N
   this framework, not the framework itself.
 supersedes: FRAMEWORK_v0.4_partial.md, ONTOLOGY_FRAMEWORK.md (both retired to archive/)
 companions:
-  - CONCEPT_SPEC.md     # the detailed, key-by-key reference (appendix to this document)
+  - reference_manual/shape_reference.md  # the key-by-key reference, GENERATED from the schema (CONCEPT_SPEC.md is a retired redirect)
   - mac.schema.json     # v0.1.14: the machine-checkable schema — the strict, enforceable contract
   - CONFORMANCE.md      # v0.1.14: conformance levels + the closed-core rule (x- is PROHIBITED)
-  - FRAMEWORK_STRUCTURE_MAP.md  # the visual companion (diagrams)
   - example_shop_ontology/   # a worked, validated example on a neutral domain — "this framework, applied"
 ---
 
@@ -140,10 +139,27 @@ The framework is the disciplined application of seven principles. Everything in 
 | **Edges** | relations between concepts, at three levels | the meaning of either endpoint, any computation | Concepts (endpoints) + the physical FK (`realized_by:`) |
 | **Physical** | tables, columns, types, foreign keys — the grounding targets | any meaning, rule, or relation | the data backing (reconciled by execution) |
 
-A concept file lives at `<source>/concepts/<group>/<concept>.yaml`; rules at `<source>/rules.yaml`;
-edges at `<source>/edges.yaml` (plus a cross-source `federation/edges.yaml`); tables at
-`<source>/tables/<table>.yaml`. (`<source>` is one application's data source; a single-source project
-has one, a federated project has several.)
+### The authored object types — what you create, and where it lives
+
+Everything you author is one of a small, fixed set of object types. Each has exactly one home and
+belongs to exactly one layer. Paths are relative to a bundle root and follow the two-plane layout
+(`ontology/` for meaning, `data/` for how the data is made — see
+[reference_manual/data_plane.md](reference_manual/data_plane.md)); `example_shop_ontology/` is the
+worked instance of every row.
+
+| # | Object type | What it is | Home (bundle-relative) | Layer | Cardinality |
+| - | --- | --- | --- | --- | --- |
+| 1 | **Concept** | one named thing the business reasons about | `ontology/concepts/<group>/<concept>.yaml` | Concept | 1 file = 1 concept |
+| 2 | **Rule** | a derivation / membership computation | entry in `ontology/rules.yaml` | Rules | many per file |
+| 3 | **Edge** | a navigable relation between two concepts, at `level: physical`, `business` or `federation` | entry in `ontology/edges.yaml` | Edges | many per file |
+| 4 | **Dataset descriptor** | physical grounding target (columns / types / keys) | `data/datasets/<relation>.yaml` | Physical | 1 file = 1 relation |
+| 5 | **Finding** | a data-vs-model discrepancy caught by execution | `data/quality/` (the register and its `DQ-*` records; the example keeps `recon_findings.md`) | (cross-cutting record) | append-only |
+| 6 | **Open question** | an SME-actionable unknown | `open_questions:` inside a concept (or a rule) | (lives on the object) | inline list |
+
+A cross-source *federation* edge is an ordinary entry in `ontology/edges.yaml` with `level: federation`
+(the schema's `EdgesFile` admits it and a `federation_concept_id`). There is no separate `federation/` directory
+and there is no `aliases.yaml` file; no bundle in this repository exercises the level today — the layer is
+declared, not yet built out.
 
 ## 5. The concept — the unit of meaning
 
@@ -240,8 +256,10 @@ A relation *between two concepts* is an edge, not a property of either. Edges co
 - **business** — an identity relation at the concept level (references the physical edge via
   `realized_by:`; never restates the join).
 - **federation** — a *cross-source* bridge or identity alias (e.g. "this source's customer code denotes
-  the same real-world customer as that source's account id"), living in `federation/edges.yaml` /
-  `aliases.yaml`. Federation edges *refer*; they never carry a raw join.
+  the same real-world customer as that source's account id"). It is an entry in the same
+  `ontology/edges.yaml` with `level: federation` — there is no separate `federation/` directory and
+  there is no `aliases.yaml` (§4). Federation edges *refer*; they never carry a raw join. No bundle in
+  this repository declares one yet.
 
 Containment (whole→part membership) and is-a hierarchy are *concept structure*, not edges — they live on
 the concept. Keeping relations out of concepts is what keeps each concept file about one thing.
@@ -375,10 +393,13 @@ degrades to an annotation or convention — the *information is never lost*, onl
 
 ## 13. Where to go next
 
-- **The complete key reference** — every predefined key, exhaustively — is `CONCEPT_SPEC.md`
-  (the appendix to this document).
-- **The visual companion** — directory layout, layer diagrams, the concept anatomy — is
-  `FRAMEWORK_STRUCTURE_MAP.md`.
+- **The complete key reference** — every predefined key, exhaustively — is
+  [reference_manual/shape_reference.md](reference_manual/shape_reference.md), generated from
+  `mac.schema.json` so it cannot drift. (`CONCEPT_SPEC.md` is a retired redirect to it.)
+- **The diagrams** — the four layers (§4), the two consumers (§2), the concept anatomy (§5) and the
+  trust gradient (§8) — are in this document. The former `FRAMEWORK_STRUCTURE_MAP.md` was retired on
+  2026-09-29: it described the pre-two-plane layout (`<source>/tables/`, `federation/`), and its one
+  still-true table, the object types, was folded into §4.
 - **The worked example** — this entire framework applied to a small, neutral, synthetic domain
   (an online shop) — is `example_shop_ontology/`. Read it to see, rather than read about, every
   construct above.
@@ -387,5 +408,5 @@ degrades to an annotation or convention — the *information is never lost*, onl
 
 *This is the canonical, domain-neutral framework description. Two prior drafts are superseded and
 retired to `archive/`, their content absorbed here: `FRAMEWORK_v0.4_partial.md` (the prior provisional
-definition) and `ONTOLOGY_FRAMEWORK.md` (the earlier domain-neutral draft — its core/pluggable split
+definition) and `ONTOLOGY_FRAMEWORK.md` (retired; the earlier domain-neutral draft — its core/pluggable split
 and projection table are now §10–§11 above, upgraded to the current model).*

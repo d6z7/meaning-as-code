@@ -1,5 +1,5 @@
 ---
-title: How a measure folds — MeasureType, axes, and what a question binds
+title: How a measure folds — measure_type, axes, and what a question binds
 status: measure_type and additivity are READ and enforced; binding_mode is not yet read
 audience: ontology authors declaring a measure
 companions: [column_roles.md, ../mac_vocabulary.yaml, patterns/semi_additive_balance.md]
@@ -15,23 +15,23 @@ the axis you are summing along — and the two combine into one answer per pair.
 Declare **one** thing per measure — `semantics.measure_type` — and the correct fold along every axis
 follows:
 
-| `MeasureType` | along **time** | along **categorical** | example |
+| `measure_type` | along **time** | along **categorical** | example |
 |---|---|---|---|
-| `Flow` | `additive` | `additive` | units sold in a period |
-| `Stock` | **`none`** | `additive` | inventory on hand |
-| `Intensive` | `average` | `average` | a duration, a rate, a ratio |
-| `Precomputed` | `none` | `none` | a stored rate at the grain it was computed for |
-| `Target` | `none` | `none` | a sales goal |
+| `flow` | `additive` | `additive` | units sold in a period |
+| `stock` | **`none`** | `additive` | inventory on hand |
+| `intensive` | `average` | `average` | a duration, a rate, a ratio |
+| `precomputed` | `none` | `none` | a stored rate at the grain it was computed for |
+| `target` | `none` | `none` | a sales goal |
 
-Read a row: **`Stock` is additive across products and not across months.** That single cell is the
+Read a row: **`stock` is additive across products and not across months.** That single cell is the
 semi-additive balance problem, and it is why the type cannot be a boolean.
 
-Read a column: **only `Flow` is safe to sum along time.** Everything else either averages or must be
+Read a column: **only `flow` is safe to sum along time.** Everything else either averages or must be
 read rather than folded.
 
 ---
 
-## `mac.MeasureType` — what kind of quantity it is
+## `mac.concept.column.measure_type` — what kind of quantity it is
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.measure_type (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -121,7 +121,7 @@ across categories answers *"how many"* and never *"how much"*.
 
 ---
 
-## `mac.axis_kind` — which kind of axis you are folding along
+## `mac.concept.axis_kind` — which kind of axis you are folding along
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.axis_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -200,7 +200,7 @@ compute it.**
 
 ## What a question does with a dimension — `mac.binding_mode`
 
-A different axis from everything above. `MeasureType` is intrinsic to the measure; **this is
+A different axis from everything above. `measure_type` is intrinsic to the measure; **this is
 per-question** — the interpreter assigns it to every dimension the question names.
 
 <!-- BEGIN GENERATED:vocabulary-terms:binding_mode (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
@@ -249,7 +249,7 @@ into result rows.
 > total inventory by quarter
 
 REFUSED (ADDITIVITY_VIOLATION)
-InventoryOnHand is mac.MeasureType.Stock — along a time axis its fold is
+InventoryOnHand is mac.concept.column.measure_type.stock — along a time axis its fold is
 `none`: a level does not accumulate. Sum it across products, or read the
 level at a stated point in time.
 ```

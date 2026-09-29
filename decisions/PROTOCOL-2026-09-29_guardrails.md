@@ -4,6 +4,8 @@
 structure".** Everything below is measured or quoted, not remembered. Where a number appears, the
 command that produced it is nameable.
 
+**Paths: bundle-relative.** `data/…`, `ontology/…`, `acceptance/…`, `governance/…` and `projections/…` below name files of an applied ontology (the bundle being worked on), not files of this repository.
+
 ---
 
 ## PART 1 — THE DAY'S VERDICT, IN THE OPERATOR'S WORDS

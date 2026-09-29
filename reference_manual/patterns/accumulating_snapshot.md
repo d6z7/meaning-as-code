@@ -73,7 +73,7 @@ antipattern: >
   Averaging a lag over all rows (errors / drops in-flight silently); reporting completed-only durations as
   "all orders" without disclosing survivorship; treating an unreached milestone as missing data.
 status: scattered   # event lifecycle + measures + null_semantics express it; never named as a pattern
-canon_ref: [FRAMEWORK.md §5 (event lifecycle), CONCEPT_SPEC.md §6 (lifecycle, null_semantics), patterns/absence_semantics.md]
+canon_ref: [FRAMEWORK.md §5 (event lifecycle), shape_reference.md (ConceptFile; lifecycle, null_semantics), patterns/absence_semantics.md]
 ```
 
 ## The determinism border

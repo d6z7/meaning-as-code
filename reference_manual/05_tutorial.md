@@ -19,7 +19,8 @@ time. It teaches the *mechanics*; when a shape turns tricky, it hands you to the
 ## 5.1 Hello, ontology
 
 The smallest complete thing you can write is **one concept**. An `enumeration` is the simplest — values +
-closure + grounding, no joins (cookbook **B3**). Create `shop/concepts/order/order_status.yaml`:
+closure + grounding, no joins (cookbook **B3**). Create `shop/ontology/concepts/order/order_status.yaml`
+(the two-plane layout; the finished file is `example_shop_ontology/ontology/concepts/order/order_status.yaml`):
 
 ```yaml
 metadata: { concept: OrderStatus, source: shop, version: '1.0', schema_version: '0.1.9', status: draft, confidence: I }

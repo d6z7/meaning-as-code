@@ -2,7 +2,9 @@
 title: Modeling Meaning as Code — The Reference Manual
 version: '0.1.0'
 date: 2026-06-23
-status: DRAFT SCAFFOLD — structure laid as a directory of chapters; ch.01 written, ch.03 + one pattern prototyped.
+status: IN USE — chapters 00–05 written; 22 patterns under patterns/; the canon library under canon/; three
+  generated references (shape_reference.md, column_map.generated.md, relation_column.generated.md) held
+  current by --check gates. Depth is uneven and each page carries its own status line.
 audience: data modellers, ontology architects, data/AI engineers, and evaluators comparing this to RDF/OWL,
   dimensional/BI semantic layers, and platform ontologies (Palantir-style).
 scope: GENERIC — domain-neutral. All examples are from example_shop_ontology/ (a synthetic online shop).
@@ -52,7 +54,7 @@ Start with the trace: it shows the machine the switches are switches on.
 | [column_specification.md](column_specification.md) | **The column specification** — *a fact about one column is declared on that column*. The complete block, every key, two worked concepts. | `identity_role` |
 | [column_roles.md](column_roles.md) | **Column roles** — the five roles read off two real relations, plus the physical role every column also carries. | `column_role` · `storage_role` |
 | [column_rulings.md](column_rulings.md) | **Column rulings** — judgements measurement cannot make, in reference form: synopsis, parameters, constellation, errors. | `column_ruling` · `name_register` |
-| [measures.md](measures.md) | **How a measure folds** — MeasureType × axis → the correct fold, in one table. | `MeasureType` · `axis_kind` · `aggregation_effect` · `binding_mode` |
+| [measures.md](measures.md) | **How a measure folds** — measure_type × axis → the correct fold, in one table. | `measure_type` · `axis_kind` · `aggregation_effect` · `binding_mode` |
 | [identity_and_rules.md](identity_and_rules.md) | **Identity and rules** — what makes one instance one instance, and what the engine must do. | `identity_kind` · `rule_kind` |
 | [canon_library.md](canon_library.md) | **The canon library** — the executable half of a declaration. Three lists that must agree; only 3 of 19 do anything today. | `canon` |
 | [refusals_and_findings.md](refusals_and_findings.md) | **Refusals, findings and gates** — what the engine says when it will not answer, what is wrong with a bundle, why a handoff was refused. | `outcome_class` · `diagnostic_code` · `data_plane_gate` |

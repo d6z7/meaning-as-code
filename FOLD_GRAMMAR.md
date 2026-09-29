@@ -1,5 +1,6 @@
 <!-- STATUS: PROPOSED. This describes decisions/0004 in mac-ontology-contoso, which the operator
-     has NOT ratified. The code it documents is landed and INERT: the law is consulted only where a
+     has NOT ratified. Paths: bundle-relative (the contoso bundle) unless prefixed; the runtime it
+     describes is mac-platform's mac_runtime. The code it documents is landed and INERT: the law is consulted only where a
      bundle declares a fold plane, and no bundle declares one. Two points ARE ruled and marked so.
      Do not treat this as framework guidance until 0004 is ratified.
 
@@ -178,7 +179,7 @@ concepts:
 | the one sentinel (the member that is not a store) | **1** |
 | **total, honest minimum** | **24** |
 
-The plane as actually authored carries **31**. The extra 7 are measured dead: `per: __rows__` ×4 (the code treats it identically to silence), `evaluate_at` ×2 (parsed into the concept plane and **read by zero lines of `law.py`**), `ordinal` ×1. Ablated all together, across both bundles, the score is unchanged: **16 of 18 at 43 tokens instead of 52.**
+The plane as actually authored carries **31**. The extra 7 are measured dead: `per: __rows__` ×4 (the code treats it identically to silence), `evaluate_at` ×2 (parsed into the concept plane and **read by zero lines of `mac_runtime/foldplane/law.py`**), `ordinal` ×1. Ablated all together, across both bundles, the score is unchanged: **16 of 18 at 43 tokens instead of 52.**
 
 ### Only now, the summary table
 
@@ -440,7 +441,7 @@ I asked "how many X" for all 14 non-measure concepts.
 - **Answerable with one declaration: 2 of 14**, both executed — OrderLine → `counts_as: OrderKey` → **93,470** (and `order_line.grain.no_header_relation` **already says** "answer by count(DISTINCT OrderKey)… never counting rows, which overstates 93,470 orders as 223,974", with `binds: [OrderKey]` — authored, machine-readable, and unexecutable); Product → **2,517** (the one concept where every candidate agrees; tier came back **`inferred`**, because the product relation carries no `ruled_by` and the meet law refuses to launder a strong ruling through a weak input).
 - **Not answerable, and not reachable by any fold-plane declaration: 11 of 14.** They refuse at step 1, in `_resolve_measure`, before the fold law is ever called: *"Customer is declared class 'entity'… its grounding marks no column `field_role: measure` — so nothing declares a number it carries."* I proved `counts_as` cannot rescue them: added a relation plane **and** `counts_as: CustomerKey`, and got the identical refusal with the fold law never invoked.
 
-So which concepts can be counted is decided by **whether they happen to declare a numeric payload column** — Store has `SquareMeters`, Product has `Weight/Cost/Price`. That has nothing to do with countability. **Customer is the most obviously countable entity in the bundle — 104,990 rows / 104,990 `CustomerKey` / 52,189 on the fact — and it is unanswerable because a customer row carries no number.** That is a one-line ordering defect in `plan.py`, not a flaw in the fold plane, and **it caps this design at 3 of 14 countable concepts**. It is the item I would raise first, ahead of anything in the design itself.
+So which concepts can be counted is decided by **whether they happen to declare a numeric payload column** — Store has `SquareMeters`, Product has `Weight/Cost/Price`. That has nothing to do with countability. **Customer is the most obviously countable entity in the bundle — 104,990 rows / 104,990 `CustomerKey` / 52,189 on the fact — and it is unanswerable because a customer row carries no number.** That is a one-line ordering defect in `mac_runtime/planner/plan.py`, not a flaw in the fold plane, and **it caps this design at 3 of 14 countable concepts**. It is the item I would raise first, ahead of anything in the design itself.
 
 One closing measurement. `Store.definition` contains, verbatim, *"a question about 'how many stores' means 67, not 74."* That string is written into the interpreter's system prompt on **every single call**. The model is told the answer every time it is asked, and until `counts_as` existed it could not emit it — because the only output it had was a request for a number, and 67 was not a number it was allowed to want.
 
@@ -497,11 +498,11 @@ Every human ruling the design needs, as plain questions. No YAML, no SQL, no jar
 
 ### Three small corrections found while grounding this document
 
-- `vocabulary.py`'s comment says the re-observation axis is "intercepted by **G4**". In `law.py`, G4 is the **unit** guard; the collapse is decided in the stage section from `partition_role == "reobserves"`. Cosmetic, and it misleads a reader of the design.
+- `mac_runtime/foldplane/vocabulary.py`'s comment says the re-observation axis is "intercepted by **G4**". In `mac_runtime/foldplane/law.py`, G4 is the **unit** guard; the collapse is decided in the stage section from `partition_role == "reobserves"`. Cosmetic, and it misleads a reader of the design.
 - `evaluate_at` should be deleted from `ConceptPlane`, not just left unread. It is authored on **2 of 2** concept entries in the real bundle and changes nothing about the emitted SQL.
 - The landed test file holds **3 tests**, all about the 25-cell table being total, naming known operators, and not having drifted. **0 of 3** assert the emitted mean or weighted-mean SQL. That coverage lives only in the 18-case harness, which is a scratchpad script and not a suite test.
 
-**Where things live.** The decision: `decisions/0004-the-fold-plane.md` in the worked-example bundle. The code: `packages/mac-runtime/src/mac_runtime/foldplane/{vocabulary,planes,law}.py` in the platform repository. The tests: `packages/mac-runtime/tests/test_foldplane_law.py`. The worked planes, the 18-case harness and every probe behind the figures above were run from a scratch directory and are not committed; the figures are reproducible from the bundle and the landed code.
+**Where things live.** The decision: `mac-ontology-contoso/decisions/0004-the-fold-plane.md` in the worked-example bundle (superseded in approach by `0005-what-we-learned-and-what-supersedes-0002-0004.md` beside it — see the header). The code: `mac-platform/packages/mac-runtime/src/mac_runtime/foldplane/{vocabulary,planes,law}.py`. The tests: `mac-platform/packages/mac-runtime/tests/test_foldplane_law.py`. The worked planes, the 18-case harness and every probe behind the figures above were run from a scratch directory and are not committed; the figures are reproducible from the bundle and the landed code.
 
 No repo file was edited, no `ontology/` path was written, no lock marker was created or moved, the warehouse was opened read-only, and no server was touched.
 

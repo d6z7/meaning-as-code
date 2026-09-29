@@ -66,7 +66,7 @@ antipattern: >
   A single un-roled join (conflates the roles); or cloning the dimension once per role (loses that it's one
   thing).
 status: scattered   # edge `role` expresses it; never named as a pattern — a "six suffice" confirmation
-canon_ref: [FRAMEWORK.md §7 (edges, per-endpoint role), CONCEPT_SPEC.md §6]
+canon_ref: [FRAMEWORK.md §7 (edges, per-endpoint role), shape_reference.md (ConceptFile)]
 ```
 
 ## The determinism border

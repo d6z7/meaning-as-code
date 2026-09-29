@@ -2,7 +2,7 @@
 """duckdb_seam.py — THE FRAMEWORK'S OWN ENGINE SEAM FOR A DUCKDB BUNDLE.
 
 WHY IT EXISTS — defect B1 of DELIVERABLES-2026-09-26_first-run-state.md. `_plugin.py` requires the
-BUNDLE to supply `tools/run_properties.py`, and the framework shipped no default. So a brand-new
+BUNDLE to supply `<bundle>/tools/run_properties.py`, and the framework shipped no default. So a brand-new
 bundle could not be MEASURED at all: `mac_profile.py` answered
 
     this check needs tools/run_properties.py to supply 'Athena', and the bundle declares none

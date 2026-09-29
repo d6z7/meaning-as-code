@@ -80,7 +80,7 @@ antipattern: >
   Assuming closed (and rejecting legitimate new values) or assuming open (and missing real anomalies);
   putting `closure` in `semantics:` instead of with the value set (COOKBOOK C5).
 status: clean   # closure (open/closed/unknown) + closure_why is a required, validator-checked part of an enumeration
-canon_ref: [CONCEPT_SPEC.md §6 (values/closure), MODELLERS_COOKBOOK.md A3/C5, FRAMEWORK.md §11 (oneOf projection)]
+canon_ref: [shape_reference.md (ConceptFile; values/closure), MODELLERS_COOKBOOK.md A3/C5, FRAMEWORK.md §11 (oneOf projection)]
 ```
 
 ## The determinism border

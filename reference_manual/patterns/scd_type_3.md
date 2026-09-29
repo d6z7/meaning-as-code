@@ -67,7 +67,7 @@ antipattern: >
   Reading `previous_category` as "the history"; computing a change-count or a multi-step trajectory from a
   one-step column.
 status: scattered   # properties + scope express it; the depth-bound is the fact that needs stating
-canon_ref: [CONCEPT_SPEC.md §6 (properties, semantics.scope)]
+canon_ref: [shape_reference.md (ConceptFile; properties, semantics.scope)]
 ```
 
 ## The determinism border

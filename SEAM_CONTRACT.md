@@ -91,7 +91,7 @@ the NAME of — enumerates 6 planes in one, 2 files in another and 2 paths in th
 
 ### 2.1 The transport is not a choice
 
-From the host repository's `boundaries.yaml`, the tree the console lives in:
+From the host repository's `mac-platform/boundaries.yaml` (its root; enforced by `sdk/gate/check_boundaries.py`), the tree the console lives in:
 
 ```yaml
     may_import: [wiki]                   # NEVER sdk.{authoring,engine,gate,project}

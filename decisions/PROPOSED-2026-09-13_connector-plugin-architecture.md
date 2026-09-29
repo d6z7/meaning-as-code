@@ -3,6 +3,12 @@
 STATUS: **PROPOSED** · DATE: 2026-09-13 · **REVISED 2026-09-13 after adversarial review**
 SUPERSEDES: nothing · MEASURED AT: `meaning-as-code` @ `cadb2bd`, re-measured at revision time
 
+> **2026-09-29 — DESIGNED, NOT ENFORCED.** None of the four gates this record proposes exists. The seam
+> that shipped is `mac.schema.json#ConnectionFile` + `sdk/connector/` (`base.py`, `probe.py`). §4 (TRACK
+> B) and §10.4/§12 are cited as `RECORD:` by `sdk/connector/__init__.py`, `sdk/connector/base.py`,
+> `sdk/gate/engine_noun_floor.txt` and `sdk/gate/engine_coupling_floor.txt`, which is why this file is
+> kept: read it as the rationale behind those, not as a description of what runs.
+
 > Per CORE.md, an agent may write only PROPOSED. Ratification is the maintainer's act. Nothing in
 > this record has been built; no file outside `decisions/` was modified in producing it or in
 > revising it. Every measurement below was re-taken read-only. Nothing reached AWS or Bedrock.

@@ -2,13 +2,12 @@
 title: The Modeller's Cookbook — decision procedures & recipes for authoring the framework
 version: '1.0'
 date: 2026-06-07
-status: GUIDE — the task-oriented companion to the canon. Routes to FRAMEWORK.md / CONCEPT_SPEC.md; does not restate them.
+status: GUIDE — the task-oriented companion to the canon. Routes to FRAMEWORK.md / reference_manual/shape_reference.md; does not restate them.
 audience: anyone authoring or reviewing concept/rules/edges/tables YAML under this framework
 scope: GENERIC — domain-neutral. All examples are from example_shop_ontology/ (a synthetic online shop). No real domain.
 companions:
   - FRAMEWORK.md            # the canon — the why and the complete definition (READ FIRST)
-  - CONCEPT_SPEC.md         # the exhaustive key-by-key reference
-  - FRAMEWORK_STRUCTURE_MAP.md  # the visual companion
+  - reference_manual/shape_reference.md  # the exhaustive key-by-key reference, generated from the schema
   - example_shop_ontology/  # the worked example every recipe below points at
 ---
 
@@ -17,10 +16,10 @@ companions:
 > **What this is.** A decision-and-recipe manual for the moment you are *authoring* — when you have a
 > thing in front of you and need to know *where it goes and how to shape it*. It does not re-define the
 > framework; it routes you to the canon. Every rule of truth lives in [FRAMEWORK.md](FRAMEWORK.md) and
-> [CONCEPT_SPEC.md](CONCEPT_SPEC.md); this file is the procedure for *applying* them.
+> [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this file is the procedure for *applying* them.
 >
 > **What this is NOT.** Not a tutorial (read the canon + `example_shop_ontology/` first), not a spec
-> (every key is in CONCEPT_SPEC.md), and deliberately **not an exhaustive scenario catalogue** — the
+> (every key is in reference_manual/shape_reference.md), and deliberately **not an exhaustive scenario catalogue** — the
 > framework is closed (4 layers, 6 classes), so this manual is organised around its *closed primitives*
 > and the *recurring decisions* you make against them, not around the open-ended list of domains you
 > might model. New domains will surprise you; the decisions you make about them won't.
@@ -37,7 +36,7 @@ companions:
    *well-formed*, not *correct* (FRAMEWORK §8).
 
 Section references like *(FW §6)* point at [FRAMEWORK.md](FRAMEWORK.md); *(SPEC §7)* at
-[CONCEPT_SPEC.md](CONCEPT_SPEC.md).
+[reference_manual/shape_reference.md](reference_manual/shape_reference.md).
 
 ---
 
@@ -131,7 +130,7 @@ Two placement traps (the validator enforces both):
 ```
 Same source, a real FK join between tables?              → level: physical    (carries join_rule + realized_by)
 Same source, an identity relation at concept level?      → level: business    (references the physical edge via realized_by; never restates the join)
-ACROSS sources — "this code = that id, same real thing"? → level: federation  (federation/edges.yaml or aliases.yaml; refers, never carries a raw join)
+ACROSS sources — "this code = that id, same real thing"? → level: federation  (same ontology/edges.yaml, level: federation; refers, never carries a raw join — declared, no bundle here uses it)
 ```
 
 And the thing that is **not** an edge: **containment** (whole→part) and **is-a** hierarchy are *concept
@@ -165,7 +164,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 7. `governance.change_log:` — one `CREATION` entry. Append-only forever after.
 
 **Validate:** run the validator (Part D). **Canon:** SPEC §6; FW §5. **Worked diff:** any file under
-`example_shop_ontology/concepts/` — `customer/customer.yaml` is the simplest entity.
+`example_shop_ontology/ontology/concepts/` — `customer/customer.yaml` is the simplest entity.
 
 ## B2. Model an *event* with a lifecycle
 
@@ -184,7 +183,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 4. Lifecycle is **descriptive** — the framework records the machine, never executes it.
 
 **Validate:** phases present; states grouped under phases; sequence ordered. **Canon:** FW §5.3, SPEC §6.
-**Worked diff:** [`concepts/order/order.yaml`](example_shop_ontology/concepts/order/order.yaml) — the
+**Worked diff:** [`ontology/concepts/order/order.yaml`](example_shop_ontology/ontology/concepts/order/order.yaml) — the
 `CHECKOUT → FULFILMENT → CLOSED` machine, with the OrderStatus enumeration carrying the value set.
 
 ## B3. Add an *enumeration* (controlled value set)
@@ -224,7 +223,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 
 **Validate:** legal `render_kind` + payload; params bound not interpolated; `validated_against` columns
 exist. **Canon:** FW §6, SPEC §7. **Worked diff:**
-[`rules.yaml` → `net_revenue`](example_shop_ontology/rules.yaml) — gross − refunds, paid-only, period
+[`ontology/rules.yaml` → `net_revenue`](example_shop_ontology/ontology/rules.yaml) — gross − refunds, paid-only, period
 bound as params.
 
 ## B5. Connect two concepts with an *edge*
@@ -232,7 +231,7 @@ bound as params.
 **When:** A1 → edge. Run A4 for the level first.
 
 **Steps:**
-1. In `edges.yaml` (or `federation/edges.yaml` for cross-source), add an entry with the canonical edge
+1. In `ontology/edges.yaml` (cross-source too — a federation edge is the same file at `level: federation`), add an entry with the canonical edge
    shape: `edge_id` · `level` · `type` · `endpoints{from,to}` · `join_rule` · `realized_by`.
 2. Each endpoint: `{ source, concept, ref: "concepts/…/x.yaml#concept", role, cardinality }`. Set
    cardinality on **both** ends (e.g. customer `0..N` ↔ order `1`).
@@ -241,7 +240,7 @@ bound as params.
 4. For `level: business`/`federation`, **refer** to the physical edge / alias; never carry a raw join.
 
 **Validate:** level/type legal; endpoints resolve; cardinality on both ends. **Canon:** FW §7. **Worked
-diff:** [`edges.yaml`](example_shop_ontology/edges.yaml) — `order__placed_by__customer` and
+diff:** [`ontology/edges.yaml`](example_shop_ontology/ontology/edges.yaml) — `order__placed_by__customer` and
 `product__belongs_to__category`.
 
 ## B6. Ground a concept to physical data
@@ -253,30 +252,31 @@ diff:** [`edges.yaml`](example_shop_ontology/edges.yaml) — `order__placed_by__
    adapter is pluggable, FW §10), `table:`/`tables:`, `schema:`, `key_column:`/`code_column:`,
    `value_filter:` (to select this concept's rows from a shared/EAV table), `join_rule:` /
    `discriminator:` / `snapshot_rule:` as needed.
-2. The **column types, FKs, volumetrics** live in `tables/<table>.yaml` (the Physical layer), *not* in
+2. The **column types, FKs, volumetrics** live in `data/datasets/<relation>.yaml` (the Physical layer), *not* in
    grounding. Grounding says *which* table/columns; the tables layer describes them.
 3. Naming contract: physical names are **values** (`table:`, `column:`, `key_column:`), never keys.
 
 **Validate:** referenced table/columns exist in the tables layer; naming contract. **Canon:** SPEC §6
 grounding + §5. **Worked diff:** the `grounding:` block in `concepts/order/order.yaml` + the matching
-[`tables/orders.yaml`](example_shop_ontology/tables/orders.yaml).
+[`data/datasets/orders.yaml`](example_shop_ontology/data/datasets/orders.yaml).
 
 ## B7. Bridge two sources (federation)
 
 **When:** "this source's X denotes the same real-world thing as that source's Y."
 
 **Steps:**
-1. This is an **edge at `level: federation`** (A4), homed in `federation/edges.yaml` or an
-   `aliases.yaml` — **not** in either source's `edges.yaml`.
+1. This is an **edge at `level: federation`** (A4). It is an entry in `ontology/edges.yaml` like any
+   other edge — there is no separate `federation/` directory or `aliases.yaml` file; the level is what
+   marks it (schema: `EdgesFile`, with an optional `federation_concept_id`).
 2. It **refers** to the two concepts and asserts the identity/mapping; it does **not** carry a raw join
    (the sources may not even be co-located). Use `realized_by:`-style references, not an ON clause.
 3. Federation arity is a project plug (FW §10): a single-source project has none; a federated one names
    N sources.
 
-**Validate:** level `federation`; lives in the federation file; no raw join. **Canon:** FW §7, §10.
-**Worked diff:** the shop example is single-source, so this is specified-but-unexercised here — the
-*shape* mirrors B5 with `level: federation`. (Your application's `federation/` directory is the live
-example.)
+**Validate:** level `federation`; no raw join. **Canon:** FW §7, §10.
+**Worked diff:** none — the shop example is single-source and no bundle in this repository declares a
+federation edge, so the level is specified-but-unexercised. The *shape* mirrors B5 with
+`level: federation` in the same `ontology/edges.yaml`.
 
 ## B8. Handle a dirty enumeration / data impurity (relabelled codes, "Rest" buckets, missing attributes)
 
@@ -434,7 +434,7 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 
 2. **Execution validation.** Run the query the model implies against the live warehouse/graph and
    sanity-check the number. When the model says X and the data says Y, that is **the loop working**:
-   record a **finding** (see `example_shop_ontology/recon_findings.md` for the shape), fix the model,
+   record a **finding** (see `example_shop_ontology/data/quality/recon_findings.md` for the shape), fix the model,
    move on. A fact is only trustworthy at the right-hand end of the trust gradient — *authored →
    structurally valid → execution-validated → expert-confirmed* (FW §8). Promote `confidence:`
    accordingly.
@@ -466,5 +466,5 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 | done authoring | Part D (validate → execute) |
 
 *All recipes are grounded in `example_shop_ontology/` (synthetic shop). The canon — every definition and
-every key — is [FRAMEWORK.md](FRAMEWORK.md) and [CONCEPT_SPEC.md](CONCEPT_SPEC.md); this cookbook only
+every key — is [FRAMEWORK.md](FRAMEWORK.md) and [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this cookbook only
 tells you how to apply them.*

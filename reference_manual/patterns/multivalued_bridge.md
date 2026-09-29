@@ -68,7 +68,7 @@ antipattern: >
   `= value` on a multivalued attribute (use membership); `SUM(measure) GROUP BY tag` without allocation
   (double-counts multi-tagged rows).
 status: scattered   # array-membership rule exists (query_rules attr.array_membership); the allocation hazard is a stated limit
-canon_ref: [query_rules (attr.array_membership), CONCEPT_SPEC.md §6, patterns/associative_entity.md]
+canon_ref: [query_rules (attr.array_membership), shape_reference.md (ConceptFile), patterns/associative_entity.md]
 ```
 
 ## The determinism border

@@ -3,6 +3,8 @@
 *Instructions to myself, written 2026-09-25 on the operator's instruction: "YOU must write
 instructions to yourself what everything must be part of the ontology design."*
 
+**Paths: bundle-relative.** `data/…`, `ontology/…`, `acceptance/…`, `governance/…` and `projections/…` below name files of an applied ontology (the bundle being worked on), not files of this repository.
+
 This is a CHECKLIST, not an essay. If a dimension cannot answer every question in Part 1, the
 ontology is not finished — whatever else is green.
 
@@ -865,6 +867,11 @@ places ignored it: the prompt OFFERED those columns (27 of 73) and the planner n
 at all, so `GROUP BY ZipCode` planned and would have executed — against DQ-CUSTOMER-02, which
 measured that ZipCode alone singles out 29 193 of 104 990 rows. Now 46 columns offered, and a
 forbidden axis is `POLICY_DENIED` naming what CAN be grouped on instead.
+
+> **Superseded 2026-09-29.** `field_role: attribute` went with the `field_roles` shape: `attribute` was
+> retired from `mac.concept.column.role`, pipeline bookkeeping is now `role: housekeeping` on the column
+> map, and the "never group on this" judgement is `rulings.never_axis` with `evidence` — the same ZipCode
+> case is the worked example in `reference_manual/column_rulings.md` §4.
 
 *A, the channel split.* The operator's ruling applied: `Channel` is derived in the store
 transform, declared `closure: closed` with warranty **derived** — produced by a CASE expression,

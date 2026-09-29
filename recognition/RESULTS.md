@@ -167,7 +167,7 @@ so rather than picking the flattering reading.**
 
 First measurement of the interpreter this project has ever had, and it runs with **no AWS
 session**: the `claude_code` provider added the same day. Model `haiku`, 2 generated paraphrases
-per question, variants committed to `acceptance/paraphrases.yaml` so the run is reproducible.
+per question, variants committed to `mac-ontology-contoso/acceptance/paraphrases.yaml` so the run is reproducible.
 
 ```
 12 questions attempted · 11 graded · 36 interpretations

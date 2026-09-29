@@ -70,7 +70,7 @@ antipattern: >
   Treating the supertype as homogeneous (averaging subtype-only columns across all rows); or splitting into
   unrelated concepts and losing the shared identity.
 status: scattered   # subclasses + null_semantics express it; never named as a pattern — a "six suffice" confirmation
-canon_ref: [FRAMEWORK.md §5 (subclasses / is-a), CONCEPT_SPEC.md §6 (subclasses, null_semantics)]
+canon_ref: [FRAMEWORK.md §5 (subclasses / is-a), shape_reference.md (ConceptFile; subclasses, null_semantics)]
 ```
 
 ## The determinism border

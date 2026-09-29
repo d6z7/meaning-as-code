@@ -80,7 +80,7 @@ particle.
 | elementary particle | **Observation** | a directly-readable fact about the raw data | "`units_on_hand` is a number"; "one row per date × product × warehouse" |
 | *the missing bond* | **Latent fact — the QUESTION** | the load-bearing fact the observations do **not** determine | *"is this additive over time?"* |
 | atom | **Constellation** | a recurring, named bundle of observations that signals a specific latent fact | "a level, measured repeatedly over time and across entities" |
-| elementary particle *(other charge)* | **Construct** | one primitive from the Chapter-02 vocabulary | `class: measure` · `MeasureType` · an additivity declaration |
+| elementary particle *(other charge)* | **Construct** | one primitive from the Chapter-02 vocabulary | `class: measure` · `measure_type` · an additivity declaration |
 | molecule | **Response — the ANSWER** | the bonded assembly of constructs that *supplies* the latent fact | measure + `Stock` + (time → point_in_time, entity → additive) |
 | named compound | **Pattern** | one constellation ↔ its latent question ↔ its canonical response | "semi-additive balance" |
 | bulk material | **Model / Ontology** | many instantiated patterns applied over a real domain | the whole shop ontology |

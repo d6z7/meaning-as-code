@@ -85,7 +85,7 @@ antipattern: >
   Joining on `parent_id` without the `parent_type` discriminator (silent cross-type mis-join); declaring a
   single-target FK (impossible / wrong); collapsing the types and losing which target a row points at.
 status: gap   # workaround expressible; first-class polymorphic-edge construct MISSING — FINDINGS.md F1 (for decision)
-canon_ref: [FRAMEWORK.md §7 (edges), CONCEPT_SPEC.md §6 (grounding discriminator / value_filter), FINDINGS.md]
+canon_ref: [FRAMEWORK.md §7 (edges), shape_reference.md (ConceptFile; grounding discriminator / value_filter), FINDINGS.md]
 ```
 
 ## The determinism border

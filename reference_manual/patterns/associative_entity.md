@@ -81,7 +81,7 @@ antipattern: >
   (a quantity is neither the order's nor the product's); or losing the line grain by defining its measures
   elsewhere.
 status: scattered   # expressible today (promote to concept + edges); never named — a candidate 🔴 that RESOLVES to ⚠️
-canon_ref: [FRAMEWORK.md §5 (the six classes), FRAMEWORK.md §7 (edges), CONCEPT_SPEC.md §4]
+canon_ref: [FRAMEWORK.md §5 (the six classes), FRAMEWORK.md §7 (edges), shape_reference.md (ConceptFile; class)]
 ```
 
 ## The determinism border

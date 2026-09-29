@@ -61,7 +61,7 @@ reconstruction — which is the whole point, since the one repo holding the reco
 
 THE GATE THAT MAKES THIS STICK is `tools/check_run_records.py`: it exits 2 when a bundle declares
 suites and no record can be measured, and exits 1 when a header disagrees with the evidence under
-it. Naming it here is the admission test (`decisions/PLAN.yaml` R16) — a new field with no gate
+it. Naming it here is the admission test (`mac-integration-kit/decisions/PLAN.yaml` R16) — a new field with no gate
 behind it is `authority: sme`, adopted 0 of 101 times.
 """
 from __future__ import annotations

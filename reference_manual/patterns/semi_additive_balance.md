@@ -37,7 +37,7 @@ nothing in the schema tells you so.
 > **The question** (what the data can't tell you): *Is `units_on_hand` additive over time?*
 >
 > **The answer** (the fact we supply): *No — it is a **Stock**: point-in-time over time, additive across
-> entities (warehouses). Declared once on `MeasureType`, inherited by every query.*
+> entities (warehouses). Declared once on `measure_type`, inherited by every query.*
 
 ## The pattern (the structured entry)
 
@@ -61,8 +61,8 @@ prior_art:
     A datatype property holding a number. RDF carries no additivity semantics at all; the "never sum across
     time" fact has nowhere to live.
 mac_expression: >
-  class: measure, with `semantics.additivity` referencing `mac.MeasureType.Stock`. The additivity LAW is
-  stated ONCE on the type, over axis KINDS (Stock × time = point_in_time; Stock × categorical = additive),
+  class: measure, with `semantics.measure_type: mac.concept.column.measure_type.stock`. The additivity LAW is
+  stated ONCE on the type, over axis KINDS (stock × time = none; stock × categorical = additive),
   and the measure references it rather than re-encoding it. An agent reads the law and SUMs across
   warehouses but takes the value AT the grain (or last/avg) across months — because the artifact says time
   is point_in_time for a Stock.
@@ -80,8 +80,8 @@ antipattern: >
   Re-encoding additivity on every measure (duplication — the law belongs on the type), or omitting it
   entirely (the agent assumes additive and sums the stock across time). The rule-count smell C6 if every
   measure grows its own "don't sum over time" note instead of pointing at the type.
-status: scattered   # the additivity law (mac.MeasureType × axis_kind) exists; "semi-additive balance" was never named as a pattern
-canon_ref: [mac_vocabulary.yaml (MeasureType × axis_kind), CONCEPT_SPEC.md §6 semantics.additivity, MODELLERS_COOKBOOK.md C6]
+status: scattered   # the additivity law (mac.concept.column.measure_type × axis_kind) exists; "semi-additive balance" was never named as a pattern
+canon_ref: [mac_vocabulary.yaml (measure_type × axis_kind), shape_reference.md (ConceptFile; semantics.additivity), MODELLERS_COOKBOOK.md C6]
 ```
 
 ## The determinism border
@@ -91,7 +91,7 @@ has no interpretative remainder at all:
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Which axis is additive vs point-in-time | **skeleton** | `MeasureType.Stock × axis_kind` — typed, no prose |
+| Which axis is additive vs point-in-time | **skeleton** | `measure_type.stock × axis_kind` — typed, no prose |
 | `SUM(units_on_hand)` may not cross the time axis unpinned | **canon-backed** | the [`additivity_guard`](../canon/additivity_guard.md) canon |
 | anything interpretative | **none** | the cleanest case: skeleton + canon → 100% determinism coverage |
 
@@ -105,10 +105,10 @@ additivity:
     udf: additivity_guard
     params:
       measure_column: units_on_hand
-      axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = MeasureType.Stock × axis_kind
+      axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = measure_type.stock × axis_kind
 ```
 
-Because `axis_effects` is derived from `MeasureType.Stock × axis_kind` (already in the ontology), the guard
+Because `axis_effects` is derived from `measure_type.stock × axis_kind` (already in the ontology), the guard
 is **auto-pluggable** — write the type, the params follow. Contrast `context_dependent_meaning`, which keeps
 a genuine prose-fallback ("which brand?"); here there is none.
 

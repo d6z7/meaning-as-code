@@ -6,14 +6,14 @@
 
 ## Why this file exists
 
-The C1 number was measured for a full day against a file called `bird_dev.json` that nobody had
+The C1 number was measured for a full day against a file called `bird_dev.json` (not shipped in any repository) that nobody had
 recorded the origin of. When the OFFICIAL BIRD dev set was finally downloaded and compared, the
 two differed in **182 of 1 534 questions (12 %)** — same count, same fields, different content,
 so a different release. Measured on the same classifier, the same day:
 
 | file | reachable |
 |---|---|
-| the unrecorded `bird_dev.json` | **71.8 %** |
+| the unrecorded `bird_dev.json` (not shipped) | **71.8 %** |
 | official `dev_20240627` | **81.4 %** |
 
 **9.6 points between two files both called "BIRD dev".** A headline number quoted without naming
@@ -28,8 +28,8 @@ which one is not a measurement, and an external reviewer would ask this first.
 | sha256 (dev.zip) | `cdd6d19faeb45a23970b98d3ef6c40a87987c95459c2cf12076897a60cf5a630` |
 | size | 346 207 293 bytes |
 | release inside | `dev_20240627/` |
-| questions | 1 534, in `dev.json` |
-| databases | 11 SQLite files, 1.4 GB unpacked, in `dev_databases.zip` |
+| questions | 1 534, in `dev.json` (not shipped — it lives outside every repository, see below) |
+| databases | 11 SQLite files, 1.4 GB unpacked, in `dev_databases.zip` (not shipped) |
 
 Each question carries `evidence` — a hand-written hint. **That field is the C4 control**: it is
 the per-question way of supplying meaning, and the claim MAC has to beat.

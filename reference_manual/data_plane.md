@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral. Uses the shop example; no business domain.
 how a project separates the two, and the seam between them. It is the foundation of the broader
 data-handling and transformation material that will grow here.*
 
-> **This chapter is now the home of the two-plane layout** (migrated from the former `design/two-plane-layout.md`).
+> **This chapter is now the home of the two-plane layout** (migrated from the former `design/two-plane-layout.md`, which no longer exists).
 > Everything that pointed at that file now points here. *Planned expansion (a bigger chapter):* sources →
 > transforms → datasets in depth — descriptor shapes, the transform construct, lineage-completeness, and
 > data-quality registers. The ratified architecture below is the spine; the handling/transformation detail

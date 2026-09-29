@@ -63,7 +63,7 @@ That question **is** the line you asked to be drawn. Everything else here follow
 | --- | --- | --- |
 | `class` (∈ 6) | **skeleton** | — |
 | `grounding.table / key / column` | **skeleton** (pointer) | a checker resolves it |
-| `semantics.additivity` (MeasureType × axis_kind) | **skeleton** | the algebra decides the fold |
+| `semantics.additivity` (measure_type × axis_kind) | **skeleton** | the algebra decides the fold |
 | `closure`, `cardinality`, edge `level` / `type` | **skeleton** | — |
 | `value_set` items (the codes) | **skeleton** (data) | — |
 | `grounding.value_filter / snapshot_rule / discriminator` | **behaviour-bearing** | UDF = a SQL predicate / a ROW_NUMBER wrapper |

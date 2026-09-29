@@ -2,7 +2,7 @@
 """_plugin.py — the BUNDLE owns how its declarations resolve; MAC owns the analysis.
 
 WHY THIS EXISTS. Five tools need a resolver or a warehouse connection that only the subject bundle
-can supply, so they import `tools/run_properties.py` from the bundle under test. Three of them
+can supply, so they import `<bundle>/tools/run_properties.py` from the bundle under test. Three of them
 guarded that import with:
 
     resolve = lambda x: x

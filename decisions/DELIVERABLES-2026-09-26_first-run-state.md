@@ -3,6 +3,8 @@
 **Status:** the contract. Written 2026-09-26 from the operator's own list, with the measured state of
 each producer beside it.
 
+**Paths: bundle-relative.** `data/…`, `ontology/…`, `acceptance/…`, `governance/…` and `projections/…` below name files of an applied ontology (the bundle being worked on), not files of this repository.
+
 ---
 
 ## THE EXPECTATION, IN THE OPERATOR'S WORDS
@@ -102,7 +104,7 @@ All four were hit importing one bundle. Any first run on a DuckDB bundle hit all
 
 | | defect | evidence | state |
 |---|---|---|---|
-| **B1** | **no framework engine seam.** `_plugin.py` requires the bundle to supply `tools/run_properties.py`, and the framework ships no default. A brand-new bundle cannot be MEASURED until someone hand-copies a 157-line shim. | `mac_profile.py` answers *"this check needs tools/run_properties.py to supply 'Athena', and the bundle declares none"* | **fixed** — `duckdb_seam.py` is the framework default, offered by `_plugin.required` only when the bundle's own manifest declares DuckDB, so it can never answer for another engine. Self-test 21/21. |
+| **B1** | **no framework engine seam.** `_plugin.py` requires the bundle to supply `<bundle>/tools/run_properties.py`, and the framework ships no default. A brand-new bundle cannot be MEASURED until someone hand-copies a 157-line shim. | `mac_profile.py` answers *"this check needs tools/run_properties.py to supply 'Athena', and the bundle declares none"* | **fixed** — `duckdb_seam.py` is the framework default, offered by `_plugin.required` only when the bundle's own manifest declares DuckDB, so it can never answer for another engine. Self-test 21/21. |
 | **B2** | **`mac_profile.py` emits Trino-only SQL.** Its value-domain capture uses `array_join(array_sort(array_agg(DISTINCT …)))`; DuckDB answers *"Did you mean array_position?"* and the run dies before writing a profile. `example/contoso` never hits it only because its domains were already captured — latent, not absent. | the run dies with `_duckdb.CatalogException` | **fixed** — translated in the seam that owns the connection: `string_agg(DISTINCT expr, sep ORDER BY expr)`, which keeps DISTINCT and SORTED so a captured domain stays deterministic |
 | **B3** | **`mac_references.py` crashed instead of reporting.** With zero candidate pairs it raised `ZeroDivisionError` on its own summary line, losing the finding that explains it. | now prints `0 pair(s) considered … NOTHING TO MEASURE: 0 of 6 relation(s) carry a key` | **fixed 2026-09-26** |
 

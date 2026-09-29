@@ -123,9 +123,8 @@ six independent verdicts. (Outputs live under each example's `projections/`.)
 | [articles/projecting-outward.md](articles/projecting-outward.md) | **One model, six formats** — the exporters as the "projects onto whatever you run" proof: OSI · openCypher · RDF/OWL · SHACL · OKF · Mermaid, each self-validating in its target's own terms. |
 | [reference_manual/data_plane.md](reference_manual/data_plane.md) | **The two-plane layout** — data plane (how the data is made) vs ontology plane (what it means), the seam, the manifest, and the structure-vs-meaning (Option A → B) split. The Foundry separation, vendor-neutral. |
 | **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
-| [CONCEPT_SPEC.md](CONCEPT_SPEC.md) | The exhaustive key-by-key reference — every predefined key and its meaning. |
+| [reference_manual/shape_reference.md](reference_manual/shape_reference.md) | The exhaustive key-by-key reference — every object type's shape, **generated from `mac.schema.json`**. (`CONCEPT_SPEC.md` is a retired redirect to it.) |
 | [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
-| [FRAMEWORK_STRUCTURE_MAP.md](FRAMEWORK_STRUCTURE_MAP.md) | The visual companion — diagrams of the object types, layers, and concept anatomy. |
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
 | [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.1.14) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
 | [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core contract, and the v0.1.9 change list. |

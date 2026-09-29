@@ -1,7 +1,9 @@
 # REQUIREMENT — the console's Connection page, under the connector model
 
 **Status:** PROPOSED. Operator-stated, 2026-09-13. Feeds
-`PROPOSED-2026-09-13_connector-plugin-architecture.md`; that spec did not cover the UI.
+`PROPOSED-2026-09-13_connector-plugin-architecture.md`, which is designed-not-enforced (none of its
+four proposed gates exists; the shipped seam is `mac.schema.json#ConnectionFile` + `sdk/connector/`);
+that spec did not cover the UI.
 
 > "currently there is a page in console 'connection'. i think this should be integrated/refactored to
 > show the new functionality about connection configuration. so what is connector and all the details
@@ -54,7 +56,7 @@ true.
 ## This is a REFACTOR, not a rewrite — measured
 
 The operator's ruling: recycle the page. That is the right call and the file supports it better than
-its hardcoded body suggests. `ConnectionView.jsx` is 259 lines; the parts that survive are the parts
+its hardcoded body suggests. `mac-console/src/mac_console/ui/src/views/ConnectionView.jsx` is 259 lines; the parts that survive are the parts
 that were already generic:
 
 | part | lines | verdict |

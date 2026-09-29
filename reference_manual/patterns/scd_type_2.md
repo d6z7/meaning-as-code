@@ -67,7 +67,7 @@ prior_art:
     interval. Expressive but heavy; the validity logic is not something an LLM reads and applies cheaply.
 mac_expression: >
   History is a SECOND AXIS, not a second concept. Model the validity/as-of as its own axis (the
-  orthogonal-axis principle, CONCEPT_SPEC §8) — NOT by minting a concept per version. The dimension concept
+  orthogonal-axis principle, patterns/tracking_vintage.md) — NOT by minting a concept per version. The dimension concept
   stays one concept; its grounding carries a `snapshot_rule:` describing the versioning, and a single
   snapshot-latest collapse rule (a ROW_NUMBER wrapper, `applied_as: subquery_wrapper`) reduces to the
   current version unless the question supplies an explicit as-of. The collapse rule is authored ONCE and
@@ -88,7 +88,7 @@ antipattern: >
   smell C6 if every measure grows its own "latest version" special-case instead of inheriting the one
   collapse rule.
 status: scattered   # the pieces exist (SPEC §8 + snapshot collapse rule) but were never named "SCD-2"
-canon_ref: [CONCEPT_SPEC.md §8, CONCEPT_SPEC.md §7 (snapshot-latest collapse), MODELLERS_COOKBOOK.md C6/C9]
+canon_ref: [patterns/tracking_vintage.md (orthogonal axes), shape_reference.md (RuleFile; snapshot-latest collapse), MODELLERS_COOKBOOK.md C6/C9]
 ```
 
 ## The determinism border

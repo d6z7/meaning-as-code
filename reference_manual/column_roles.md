@@ -1,6 +1,9 @@
 ---
 title: Column Roles — what a column IS, and where a query may use it
-status: DRAFT — the shape is specified; `housekeeping` and the `columns:` block are not yet implemented
+status: ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed to
+  the vocabulary's five terms (re-closed 2026-09-29; `attribute` retired), and mac-runtime's parser reads it
+  (ontology/parser.py projects it to field_roles; an explicit field_roles block still wins). §2B's storage
+  role is measured, not authored.
 audience: ontology authors, importer developers
 companions:
   - column_rulings.md        # what a PERSON decided about a column, on top of its role
@@ -140,8 +143,11 @@ QUERY may do with it; `storage_role` says what SHAPE it is in the relation.
 | `dim_contoso_store.StoreKey` | `primary_key` | `key` |
 | `dim_contoso_store.CountryCode` | `value` | `dimension` |
 | `v_contoso_order_line.CustomerKey` | `foreign_key` | `key` |
-| `v_contoso_order_line.RowNumber` | `composite_key_part` | `key` |
+| `v_contoso_order_line.RowNumber` | `primary_key` + `key_position: 2` | `key` |
 | `dim_contoso_store.Status` | `discriminator` | `dimension` |
+
+(`composite_key_part` was retired 2026-09-27: every key column is `primary_key` and its place in a
+composite key is the integer `key_position` — see `mac.relation.column.role`.)
 
 **You never author this one.** It is measured — the profile plane counts distinct values and nulls,
 the reference plane measures inclusion against candidate parents, and
@@ -258,29 +264,29 @@ grounding:
   serves_from: data/transforms/dim_contoso_customer.sql
 
   columns:
-    CustomerKey:  { role: mac.column_role.key }
-    GeoAreaKey:   { role: mac.column_role.key }
-    StartDT:      { role: mac.column_role.housekeeping }
-    EndDT:        { role: mac.column_role.housekeeping }
-    Continent:    { role: mac.column_role.dimension }
-    Country:      { role: mac.column_role.dimension }
+    CustomerKey:  { role: key }
+    GeoAreaKey:   { role: key }
+    StartDT:      { role: housekeeping }
+    EndDT:        { role: housekeeping }
+    Continent:    { role: dimension }
+    Country:      { role: dimension }
     CountryFull:
-      role: mac.column_role.dimension
+      role: dimension
       rulings: { label_of: Country, register: long }
     State:
-      role: mac.column_role.dimension
+      role: dimension
       rulings: { scoped_by: Country }
     StateFull:
-      role: mac.column_role.dimension
+      role: dimension
       rulings: { label_of: State, register: long }
     City:
-      role: mac.column_role.dimension
-      rulings: { never_axis: privacy, evidence: DQ-CUSTOMER-02 }
+      role: dimension
+      rulings: { never_axis: "identifies a person (with ZipCode)", evidence: DQ-CUSTOMER-02 }
     ZipCode:
-      role: mac.column_role.dimension
-      rulings: { never_axis: privacy, evidence: DQ-CUSTOMER-02 }
-    Gender:       { role: mac.column_role.dimension }
-    age_band_5y:  { role: mac.column_role.dimension }
+      role: dimension
+      rulings: { never_axis: "identifies a person — 29 193 of 104 990 values held by one customer", evidence: DQ-CUSTOMER-02 }
+    Gender:       { role: dimension }
+    age_band_5y:  { role: dimension }
 
 open_questions:
   - id: CUS-Q1

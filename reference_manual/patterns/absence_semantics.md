@@ -82,7 +82,7 @@ antipattern: >
   `AVG` over present rows when absence means zero (overstates); `COALESCE 0` when absence means not-loaded
   (understates / fabricates data); treating structurally-untracked cells as zero (pollutes denominators).
 status: scattered   # semantics.null_semantics exists; never named as a pattern, and the densify/exclude behaviour was not canonized
-canon_ref: [CONCEPT_SPEC.md §6 (semantics.null_semantics), FRAMEWORK.md §5 (semantics)]
+canon_ref: [shape_reference.md (ConceptFile; semantics.null_semantics), FRAMEWORK.md §5 (semantics)]
 ```
 
 ## The determinism border

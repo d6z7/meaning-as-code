@@ -5,7 +5,7 @@
 
 ── WHY THIS GATE EXISTS ───────────────────────────────────────────────────────────────────────
 
-`decisions/PLAN.yaml` R16: *name the gate that exits 2 when this artifact is absent or stale, in
+`mac-integration-kit/decisions/PLAN.yaml` R16: *name the gate that exits 2 when this artifact is absent or stale, in
 the same paragraph that proposes it, or do not create it.* `tools/suite_record.py` adds `commit`,
 `declared`, `examined`, `skipped` and `total` to the run record. This is that gate — without it
 those five fields are `authority: sme`, which was adopted 0 of 101 times, and `question_id`, 0 of
@@ -29,7 +29,9 @@ move a red without one.* A field is adopted when something refuses to proceed wi
     SHORT_POPULATION  `total` < `declared`: results are missing for declared properties. A declared
                       property with no result must be NOT_RUN, not absent, because absence reads
                       as nothing-to-report.
-    BAD_STATUS        a status outside `PASS|FAIL|ACCEPTED|FROZEN|ERROR|NOT_RUN`.
+    BAD_STATUS        a status outside `suite_record.STATUSES` — PASS · FAIL · ACCEPTED · FROZEN ·
+                      ERROR · NOT_RUN · VACUOUS. The code reads the tuple; this line is prose and
+                      lagged it by one term (VACUOUS) until 2026-09-29.
     UNEVALUATED       `declared > 0` and `examined == 0` — the suite COULD NOT EVALUATE, which is
                       neither a pass nor a fail. Measured: this gate printed
                       `PASS — 0 defect(s) over 2 record(s) for 2 declared suite(s)`, exit 0, on a

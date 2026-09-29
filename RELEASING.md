@@ -59,9 +59,11 @@ the application deliberately: bump its files' `schema_version` and re-run its ga
 ## Visualization is part of the model
 
 After any ontology change, the committed `projections/` (incl. the diagram) must be **regenerated**, not
-left stale. A model whose picture no longer matches it is a release defect. *(Planned: a
-`tools/check_projections.py` freshness gate — regenerate to a temp dir and diff against the committed
-`projections/` — wired into `validate.sh`/CI.)*
+left stale. A model whose picture no longer matches it is a release defect. The freshness check is
+`tools/regen_projections.sh <bundle root>` followed by `git diff --exit-code -- projections/` (the QUALITY.md
+cross-projector impact gate); `tools/check_pages_current.py` applies the same rule to a bundle's delivered
+pages, and `tools/check_er_projection.py` refuses an edge that joins nothing. The once-planned
+`tools/check_projections.py` was never written.
 
 ## The Shape Reference is generated — keep it in lock-step with the schema
 

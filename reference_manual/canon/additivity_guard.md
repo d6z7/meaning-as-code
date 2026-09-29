@@ -16,7 +16,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 The [`semi_additive_balance`](../patterns/semi_additive_balance.md) pattern — and **any** measure whose
 additivity differs by axis (a Stock, a Target, a balance). Its parameters are the **projection of
-`mac.MeasureType × axis_kind`** over the concrete axes, so for a typed measure they are *derived, not
+`mac.concept.column.measure_type × axis_kind`** over the concrete axes, so for a typed measure they are *derived, not
 hand-authored*.
 
 ## Contract (the pluggable interface)
@@ -82,10 +82,10 @@ realized_by:
   udf: additivity_guard
   params:
     measure_column: units_on_hand
-    axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = MeasureType.Stock × axis_kind
+    axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = measure_type.stock × axis_kind
 ```
 
-The `axis_effects` are **not invented** — they are `MeasureType.Stock` projected over the axes' kinds
+The `axis_effects` are **not invented** — they are `measure_type.stock` projected over the axes' kinds
 (`time → point_in_time`, `categorical → additive`). The skeleton *feeds* the canon: write the type, the
 params follow.
 

@@ -5,7 +5,7 @@
 
 ## 2026-09-24 · First generated bundle, and the first point on the L0 → L2 curve
 
-`bundlegen/generate.py --tier L1` over **`contoso.duckdb#main`** — the RAW landing, eight tables,
+`bundlegen/generate.py --tier L1` over **`contoso.duckdb#main`** (the bundle's local landing database, not committed) — the RAW landing, eight tables,
 **no declared constraints at all** (measured: `duckdb_constraints()` returns 0 rows for that
 schema). Nothing was asked of a person.
 

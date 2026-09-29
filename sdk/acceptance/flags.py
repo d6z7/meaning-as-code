@@ -37,7 +37,7 @@ WHY ``rules`` IS A FOURTH FLAG AND NOT A WIDENING OF ``pins``
 THE VOCABULARIES BELOW ARE A FROZEN CROSS-WORKSTREAM CONTRACT
     ``sdk/project/questions.py`` copies them into ``questions_dashboard.json`` (schema
     ``mac.questions_dashboard/4``); the UI mirrors them once, in
-    ``wiki/ui/src/components/questions/FlagStrip.jsx``, and paints what it is given. The browser
+    ``mac-platform/packages/mac-console/src/mac_console/ui/src/components/questions/FlagStrip.jsx``, and paints what it is given. The browser
     computes no flag, no state and no verdict — grading logic on both sides of the wire is how the
     .xlsx export comes to disagree with the screen. If a name here changes, the dashboard schema id
     changes with it, in the same commit.

@@ -173,7 +173,7 @@ for what a domain adds — never a free-for-all, never ossified.
 - **SBVR** (OMG) — business vocabulary and rules with modality and verbalization. MAC's typed
   `contract.rules` are a lighter, executable-adjacent cousin: fewer linguistics, but bound to real columns
   and run by a gate.
-- **SKOS** (W3C) — concept schemes and closed vocabularies. MAC's `mac.concept.rule`, `mac.MeasureType`, and
+- **SKOS** (W3C) — concept schemes and closed vocabularies. MAC's `mac.concept.rule`, `mac.concept.column.measure_type`, and
   enumerations are exactly this discipline, kept small and closed.
 - **OSI** (Open Semantic Interchange, 2025) — an interchange format for datasets, measures, dimensions,
   relationships. It overlaps MAC's measure/grounding layer and is a natural **export target**: MAC can

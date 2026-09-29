@@ -21,7 +21,7 @@ all twelve `ontology` directories in this estate, exactly one is exempt; the fra
 `example_shop_ontology/ontology` stays protected, which is why a root test alone would not do. The
 operator installed it, because an agent that can edit a gate has no gate.
 
-**WHAT IS STILL NOT RULED HERE.** The derived half of the plane — `vocabulary.json`, `edges.json`,
+**WHAT IS STILL NOT RULED HERE.** The derived half of the plane — `<bundle>/ontology/vocabulary.json`, `<bundle>/ontology/edges.json`,
 `ontology_quality.json`, `SME-QUESTIONS.md` — and `ontology_conformance_suite`, which is still filed
 under `unfiled.yaml` with `belongs_to: ontology` awaiting its move. Absence from this directory is
 still permission, not oversight.

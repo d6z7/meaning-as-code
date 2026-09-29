@@ -1,7 +1,9 @@
 ---
 title: How a question becomes SQL — read this first
-status: the trace is real; every number was measured on the contoso bundle 2026-09-25
+status: the trace is real; every number was measured 2026-09-25 on the contoso bundle, which lives in a
+  separate repository (mac-ontology-contoso) and runs on mac-platform's runtime — not reproducible from this repo alone
 audience: anyone who wants to change what the ontology does
+paths: bundle-relative (the contoso bundle) unless prefixed
 ---
 
 # How a question becomes SQL

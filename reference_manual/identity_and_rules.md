@@ -12,10 +12,10 @@ engine must do**.
 
 ---
 
-## `mac.identity_kind` — how identity is established
+## `mac.concept.identity` — how identity is established
 
 Per **concept**, not per column. (For which *column* plays which part, see
-[`mac.identity_role`](column_specification.md).)
+[`mac.concept.column.identity`](column_specification.md).)
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -58,19 +58,20 @@ SME rules.
 
 ```
 1. Is identity a TUPLE of columns?                          → composite
-2. Is it pinned or collapsed by the serving view?           → resolved_axis
-3. Is it an external standard code?                         → iso
-4. Does the bare code collide across scopes?                → namespace_code
-5. Is it a stable key carrying a resolved human name?       → fk_name
-6. Is it a closed internal code set?                        → code
-7. Not yet known?                                           → sme_pending, never invented
+2. Is it an external standard code?                         → iso
+3. Does the bare code collide across scopes?                → namespace_code
+4. Is it a stable key carrying a resolved human name?       → fk_name
+5. Is it a closed internal code set?                        → code
+6. Not yet known?                                           → sme_pending, never invented
 ```
 
-**Steps 1 and 2 are the keyless-by-design cases**, and they come first deliberately. A concept that
+**Steps 1 and 6 are the keyless-by-design cases**, and step 1 comes first deliberately. A concept that
 legitimately has no single-column key must say so rather than nominate a column that does not
-identify — which is the failure `composite` and `resolved_axis` exist to prevent.
+identify — which is the failure `composite` exists to prevent. (A third keyless kind, `resolved_axis` —
+"the serving view pins or collapses this axis" — was retired 2026-09-28 by operator ruling: 0 of 62
+concepts across four bundles used it. The schema enum still lists it; that is an open parity gap.)
 
-**Step 4 is `scoped_by` in its concept-level form.** `namespace_code` is the same fact the
+**Step 3 is `scoped_by` in its concept-level form.** `namespace_code` is the same fact the
 [`context_dependent_meaning`](patterns/context_dependent_meaning.md) pattern describes and
 [`composite_key_guard`](canon/composite_key_guard.md) enforces — a `State` code that means Corse in
 France and Colorado in the United States.

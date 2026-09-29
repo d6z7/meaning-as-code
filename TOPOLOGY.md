@@ -51,7 +51,7 @@ describes — the same defect `mac_resources.py` exists to prevent for bundle de
 | container open / trust / capabilities | `sdk/container/` | |
 | the gate harness | `sdk/gate/contract.py` | every gate uses it; no gate rolls its own |
 | **answer-time resolution and execution** | **`mac-platform/packages/mac-runtime`** | intent → score → SQL → value |
-| the host / rendering | `mac-platform/packages/mac-console` | renders recorded results; `boundaries.yaml` forbids importing sdk |
+| the host / rendering | `mac-platform/packages/mac-console` | renders recorded results; `mac-platform/boundaries.yaml` (the host root, enforced by `sdk/gate/check_boundaries.py`) forbids importing sdk |
 | an estate's own values (tokens, handles, schemas) | gitignored registers, `registers/` + `sdk/gate/*.txt` | never in MAC; only `.example` files ship |
 | a bundle's connection config | the BUNDLE's `connection.yaml` | never in MAC, never in the tooling's defaults |
 | a bundle's identity | the BUNDLE's `mac.project.yaml` | the manifest is not overridable; the connection file is |

@@ -4,8 +4,8 @@ STATUS: ACCEPTED (option C) · DATE: 2026-09-10
 
 ## Context
 
-The framework had no Python packaging of any kind — no `pyproject.toml`, `setup.py` or
-`setup.cfg` — and no `v0.1.x` tag. A downstream project therefore could not depend on a *version*
+The framework had no Python packaging of any kind — no `pyproject.toml` (since added), and
+`setup.py` / `setup.cfg` never existed — and no `v0.1.x` tag. A downstream project therefore could not depend on a *version*
 of MAC; it could only depend on a **directory**, found by convention or by an environment
 variable, with whatever contents that directory happened to have.
 

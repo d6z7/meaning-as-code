@@ -74,7 +74,7 @@ antipattern: >
   Hardcoding one definition; silently defaulting to a 'house' meaning; treating an ambiguous term as
   resolved; offering only one option when several exist.
 status: scattered   # mac.concept.rule.ambiguity + the rule `disambiguation` block exist; never named as a pattern
-canon_ref: [CONCEPT_SPEC.md §7 (rule disambiguation), mac_vocabulary.yaml (rule_kind.ambiguity), query_rules (ambiguity.ask_dont_guess)]
+canon_ref: [shape_reference.md (RuleFile; rule disambiguation), mac_vocabulary.yaml (rule_kind.ambiguity), query_rules (ambiguity.ask_dont_guess)]
 ```
 
 ## The determinism border

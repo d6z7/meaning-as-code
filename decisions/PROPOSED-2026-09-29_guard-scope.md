@@ -1,6 +1,6 @@
 # PROPOSED 2026-09-29 — what the ontology guard should ask, and what else it should ask it about
 
-Two changes to `ontology_guard.py`, which **no agent may write** — including the agent proposing
+Two changes to `.claude/hooks/ontology_guard.py` (the hook each bundle repository carries; not a file of this repo), which **no agent may write** — including the agent proposing
 this. That is the point of it, and it is why this is a proposal rather than a commit.
 
 ---

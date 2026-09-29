@@ -57,7 +57,7 @@ why_better:     the specific advantage for THIS job (single-homing / agent-safet
 projects_to:    { rdf: ..., graph: ..., relational: ... }   # proves it round-trips
 antipattern:    the tempting wrong move + the cookbook antipattern id
 status:         clean | scattered | gap
-canon_ref:      FRAMEWORK / CONCEPT_SPEC / COOKBOOK pointers
+canon_ref:      FRAMEWORK / shape_reference / COOKBOOK pointers
 ```
 
 `status` is the honest self-assessment: **scattered** = the framework handles it but the guidance was never

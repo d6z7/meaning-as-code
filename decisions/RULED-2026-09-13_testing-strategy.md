@@ -1,8 +1,14 @@
 # RULED — 2026-09-13 · the testing strategy's two gating decisions
 
 **Status: RULED BY THE OPERATOR.** This records a ratification, not a proposal. The analysis it
-rules on is `PROPOSED-2026-09-13_testing-strategy.md` (1517 lines, six measurement passes plus two
-adversarial ones). Per CORE §3 an agent may only write `PROPOSED`; these two lines are the operator's.
+rules on was `PROPOSED-2026-09-13_testing-strategy.md` (1 517 lines, six measurement passes plus two
+adversarial ones), **retired 2026-09-29** — see `README.md` in this directory. What it established, in
+two sentences so this record stands alone: the operator's "always some 40 % does not work" was real
+and measured — 35 of 82 graded questions at `with-b` did not pass on the bundle he clicks, and the
+rest of the estate was not 40 % broken but UNKNOWN, because its greens had never been shown able to
+fail; and a census of 8 bundles found three acceptance dialects, of which only B had a reader,
+anchors and a property plane. R-A and R-B below are the two rulings taken on that analysis. Per
+CORE §3 an agent may only write `PROPOSED`; the rulings are the operator's.
 
 ---
 

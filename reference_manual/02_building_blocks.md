@@ -48,7 +48,7 @@ A construct's **class** says *what kind of right-hand side is allowed*. There ar
 | --- | --- | --- | --- |
 | **reference / entity** | a **set with identity** — a key is an injection `id: ⟦C⟧ ↪ K` | `⟦C⟧ = { r ∈ table : filter(r) }`; each row has a unique identity | extensional set theory |
 | **enumeration** | a **set + a closure predicate** | `V(C) = { allowed values }`; `closed ⇒ V complete`, `open ⇒ V a lower bound` | open-/closed-world logic |
-| **measure** | a **function + an aggregation algebra** `m: cells → ℝ`, `α: axis → effect` | the value *and* which fold is valid per axis (`α` from `mac.MeasureType × axis_kind`) | dimensional analysis (stock vs flow) |
+| **measure** | a **function + an aggregation algebra** `m: cells → ℝ`, `α: axis → effect` | the value *and* which fold is valid per axis (`α` from `mac.concept.column.measure_type × axis_kind`) | dimensional analysis (stock vs flow) |
 | **grouping** | a **surjection** `π: leaves ↠ groups` | the roll-up map (a partition of the leaf set) | order theory / lattices |
 | **event** | a **transition system** `(S, →, ≤)` | the reachable states and their order | automata / partial orders |
 | **edge** *(relation between the above)* | a **relation** `R ⊆ A × B` | how two extensions connect | relational algebra |
@@ -97,7 +97,7 @@ established foundation, not on our taste:
   members; identity is an injection; an edge is a relation.
 - **measure additivity** → **dimensional analysis / physics**: a *stock* is a level read at an instant
   (point-in-time over time), a *flow* accrues per period (additive — integrable over time). The
-  `MeasureType × axis_kind` law is this physics, written down once.
+  `measure_type × axis_kind` law is this physics, written down once.
 - **closure** → **open- vs closed-world logic** (CWA/OWA): `closed` is `owl:oneOf` / a complete set; `open` is
   the open-world default; `unknown` is honest about not having decided.
 - **resolution / identity** → **equality theory**: when are two coded values the *same* thing (and under what

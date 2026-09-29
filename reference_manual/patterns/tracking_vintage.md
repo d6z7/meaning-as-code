@@ -65,7 +65,7 @@ prior_art:
     Separate named graphs (or scenario-qualified statements) per version — expressive, but nothing forces a
     query to scope to one, and the future-dated plan rows still contaminate a naïve "latest".
 mac_expression: >
-  Model the tracking variant as its OWN axis/concept (the orthogonal-axis principle, CONCEPT_SPEC §8),
+  Model the tracking variant as its OWN axis/concept (the orthogonal-axis principle — this pattern; formerly CONCEPT_SPEC §8),
   explicitly distinct from the reporting cycle. A `default` rule (`mac.concept.rule.default`) pins ACTUAL when
   the question is silent; an `exclusion`/`aggregation` rule forbids summing across scenarios; and relative-
   period resolution (the `MAX(month)` that means "now") is scoped to the PINNED scenario's rows, so the
@@ -83,8 +83,8 @@ antipattern: >
   Treating `scenario` as an ordinary filter dimension and forgetting to pin it (COOKBOOK C9 — two orthogonal
   axes modelled as one); a global `MAX(date)` that lands on the plan horizon instead of the latest actual
   (the relative-period sibling of this footgun).
-status: scattered   # CONCEPT_SPEC §8 (orthogonal axes) + the default/exclusion rule kinds exist; never named as a pattern
-canon_ref: [CONCEPT_SPEC.md §8, mac_vocabulary.yaml (rule_kind.default / exclusion / aggregation), MODELLERS_COOKBOOK.md C9]
+status: scattered   # orthogonal axes (this pattern; formerly CONCEPT_SPEC §8) + the default/exclusion rule kinds exist; never named as a pattern
+canon_ref: [shape_reference.md (semantics.axis_kinds), mac_vocabulary.yaml (rule_kind.default / exclusion / aggregation), MODELLERS_COOKBOOK.md C9]
 ```
 
 ## The determinism border

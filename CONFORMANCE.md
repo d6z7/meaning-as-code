@@ -8,14 +8,14 @@ companions:
   - tools/mac_diag.py   # the FROZEN diagnostic contract §5.1 reproduces (the code IS the contract)
   - tools/mac_compile.py # the compiler §5 defines — one invocation, one finding list, one verdict
   - FRAMEWORK.md        # the why (READ FIRST)
-  - CONCEPT_SPEC.md     # the prose key reference
+  - reference_manual/shape_reference.md  # the key reference, generated from this schema (CONCEPT_SPEC.md is a retired redirect)
   - MODELLERS_COOKBOOK.md
 ---
 
 # MAC Conformance
 
 This document is the **strict-syntax contract** for Meaning-as-Code. `FRAMEWORK.md` says *why* MAC
-exists and `CONCEPT_SPEC.md` describes every key in prose; **this** document plus **`mac.schema.json`**
+exists and `reference_manual/shape_reference.md` lists every key, generated from the schema; **this** document plus **`mac.schema.json`**
 say, normatively and machine-checkably, *exactly what a conformant file may contain*. The schema is the
 enforcer; this document is the rulebook around it.
 
@@ -148,11 +148,14 @@ hand-typed list standing beside them. Two lists of one fact drift, and neither i
 Enforced by `tools/check_vocabulary_parity.py`, which declares the governed slots and fails on any
 disagreement **in either direction**. Measured on its first run:
 
-| slot | schema | `mac_vocabulary.yaml` |
-|---|---|---|
-| concept column `role` | `attribute` | `period`, `housekeeping` |
-| concept column `identity` | — agree — | `canonical · part · reference` |
-| `TableFile` column `role` | `audit`, `delivery_axis`, `unknown` | — none of them — |
+| slot | schema (2026-09-27) | `mac_vocabulary.yaml` (2026-09-27) | today (2026-09-29) |
+|---|---|---|---|
+| concept column `role` | `attribute` | `period`, `housekeeping` | **re-closed 2026-09-29** to the vocabulary's five (`key · dimension · measure · period · housekeeping`); `attribute` retired; the gate reports `identical` |
+| concept column `identity` | — agree — | `canonical · part · reference` | agree |
+| `TableFile` column `role` | `audit`, `delivery_axis`, `unknown` | — none of them — | **still open** — the one disagreement the gate reports; ruled in neither direction |
+
+The first two columns are the 2026-09-27 measurement, kept as history; the last is the state on the day
+this was re-read.
 
 **Half of that was written on 2026-09-27 and by me.** Closing the concept column map's `role` that
 morning, I derived the enum from the 142 declarations a delivered bundle carried and never checked
@@ -287,8 +290,11 @@ Validating `mac.schema.json` against `example_shop_ontology/` exposed two places
 contradicted itself. Both are now ruled — and in both, **the schema as written is already correct; the
 example is what migrates** (a Phase-C task):
 
-- **Q1 — column-role vocabulary → KEEP NARROW.** The core role set stays *physical*
-  (`primary_key/foreign_key/value/discriminator/audit/composite_key_part/unknown`); DECISION 4 holds.
+- **Q1 — column-role vocabulary → KEEP NARROW.** The core role set stays *physical* — today the
+  vocabulary's four, `mac.relation.column.role.{primary_key, foreign_key, value, discriminator}`;
+  `composite_key_part` was retired 2026-09-27 for the integer `key_position`, and the schema's enum
+  additionally carries `audit`, `delivery_axis`, `unknown`, which no vocabulary declares — the open parity
+  disagreement §2.1 records and `check_vocabulary_parity.py` fails on; DECISION 4 holds.
   Rationale: a column's *analytical* meaning (measure/dimension/attribute) already lives in the Concept
   layer — tagging the column too would restate it (single-homing). Phase C migrates the example's
   `measure/attribute/temporal` down to canonical (`→ value`).
@@ -533,6 +539,30 @@ bundle must reach the start before anything is allowed to run.
     "is how a standard stays in a manual."
   - Nothing else moves. The projection is the only new reader; the planner, the resolver and the gates
     go on reading `field_roles`, so a column's role has one authored home and no internal duplicate.
+- **`0.1.16`, 2026-09-29** — **the enums are the vocabulary's, and the reader reads what the schema admits.**
+  Additive, all of it; nothing delivered on `0.1.16` becomes invalid except the retired term below.
+  - **`columns.<col>.role` is re-closed to `mac_vocabulary.yaml#concept.column.role`** — key · dimension
+    · measure · period · housekeeping. `attribute` is gone: the enum had been closed on 2026-09-27 from a
+    bundle's usage (45 of 142 declarations) so that bundle would stay valid, the authoring guidance showed
+    it, `validate_schema` passed it, and the parity gate had said so for two days. Operator: "attribute
+    does not exist anymore." A bundle still on it is invalid here, which is the honest consequence.
+  - **`rulings.register` requires `label_of`** (`dependentRequired`, beside `never_axis → evidence`), so
+    the runtime and the schema refuse the same file. `never_axis` stays free text — no vocabulary has
+    ever declared `privacy | grain | derived`.
+  - **`concept.identity.kind` no longer lists `resolved_axis`** (retired from the vocabulary 2026-09-28, 0
+    of 62 concepts). The enum was landed by `tools/check_vocabulary_parity.py --write`, which is now the
+    ONE home of the slot→vocabulary table (12 governed slots, `gen_slot_reference` imports it) and the
+    only way a governed enum changes — §2.1 as a generator, not only a gate. Two slots still disagree and
+    await a ruling: `TableFile.columns.role` (schema-only audit · delivery_axis · unknown) and the DQ
+    issue `status` (schema rejected · waived vs vocabulary wont_fix).
+  - **`ProfileFile.columns[].singletons`** — values held by exactly one row, measured by
+    `mac_profile.py/6` in one GROUPING SETS scan for near-unique non-key columns; the measurement a
+    `never_axis: privacy` ruling cites through `DQ-IDENTIFYING-<relation>-<column>`.
+  - **The reader caught up.** mac-runtime loads `rulings` (label_of, finer_than, never_axis with readers;
+    scoped_by loaded) and several measure columns that compose one quantity under `semantics.unit`; the
+    first bundle on the column standard (contoso5, 17 concepts) could not load there before. One fixture
+    bundle — `sdk/authoring/exemplars/bundle/` — is now the composer's exemplar and the round-trip test
+    in both repos: what the composer emits, the reader loads.
 - A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
   the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
@@ -597,7 +627,7 @@ bundle must reach the start before anything is allowed to run.
   vocabulary** (additive over `0.1.11`, so `0.1.11` files remain valid): the business-edge `type` enum
   widens from `identity` to **`identity | shared_attribute`** (`shared_attribute` = a symmetric business
   relation where two instances of the SAME concept relate iff they share a non-null value of a named
-  attribute — not a stored FK); two OPTIONAL edge fields — **`resolved_by`** (a `path.yaml#anchor` ref to
+  attribute — not a stored FK); two OPTIONAL edge fields — **`resolved_by`** (a `<path>.yaml#<anchor>` ref to
   the rule that computes the relation set; the `shared_attribute` counterpart of the `identity`-edge
   `realized_by` requirement) and **`aliases`** (`$defs/relationAliasBlock`); and the **`relationAliasBlock`**
   `$def` — a CLOSED `{ realized_by, multilingual{de,en,syn} }` object holding the auditable surface→relation
@@ -670,7 +700,7 @@ bundle must reach the start before anything is allowed to run.
   [ruled_by, reason]` on the term itself — they are the two terms that CLAIM a human acted, so they
   must name the evidence that one did. **Measured 2026-09-14** (protocol/2026-09-14/003): a register
   issue had **no status at all** — `metadata.status` sat at the REGISTER level and said nothing about
-  any one issue — so "still open" was inferred by joining to `impurity_resolution_map.yaml` and
+  any one issue — so "still open" was inferred by joining to the bundle's `impurity_resolution_map.yaml` (a bundle file, not shipped here) and
   **treating absence as open**, which made a deliberately-tolerated defect and one nobody has read
   byte-identical. On the measured register that is **44 entries · 43 distinct ids · 22 joined · 22
   not**, and **44 of 44 carry no status**. This needs **NO `mac.schema.json` change**: `$defs/`

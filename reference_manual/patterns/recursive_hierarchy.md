@@ -76,7 +76,7 @@ antipattern: >
   A flat `= node` filter (drops descendants); flattening to fixed levels (loses ragged depth); modelling
   containment as an edge in edges.yaml (it is concept structure — COOKBOOK C3).
 status: scattered   # containment-as-concept-structure exists; the recursive traversal was never named as a canon/pattern
-canon_ref: [FRAMEWORK.md §7 (containment is concept structure), MODELLERS_COOKBOOK.md C3, CONCEPT_SPEC.md §6 (members)]
+canon_ref: [FRAMEWORK.md §7 (containment is concept structure), MODELLERS_COOKBOOK.md C3, shape_reference.md (ConceptFile; members)]
 ```
 
 ## The determinism border

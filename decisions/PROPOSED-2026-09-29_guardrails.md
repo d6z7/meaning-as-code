@@ -1,8 +1,16 @@
 # GUARDRAILS — ONE SMALL FILE PER TOPIC, AND SOMETHING THAT CAN SAY NO
 
+**Paths: bundle-relative** where a descriptor or data file is named (`d_customer.yaml`, `data/…`); guardrail files are under this repo's `guardrails/`.
+
 **Status: PROPOSED.** Written by an agent; an agent may only write PROPOSED. The design is the
 operator's; the measurement is mine. Supersedes `PROPOSED-2026-09-29_delivery-manifest.md`, whose
 four rulings are carried forward unchanged and whose diagnosis is not restated here.
+
+**What shipped (2026-09-29):** the single `guardrails/data-ingestion.yaml` named below was never written under that name;
+what shipped is four topic files — `guardrails/data/quality.yaml`, `guardrails/data/sources.yaml`,
+`guardrails/data/transformation.yaml`, `guardrails/data/sme_questions.yaml` — plus `guardrails/common.yaml`,
+`guardrails/unfiled.yaml` and `guardrails/ontology/`, checked by `tools/check_guardrails.py`. Where a
+path below says data-ingestion, read the four.
 
 ---
 
@@ -53,7 +61,7 @@ nothing about datasets, the ontology or the console.
 ## MOVED, NOT COPIED
 
 A kind belongs to exactly one declaration. When the eight phase-1 kinds moved into
-`guardrails/data-ingestion.yaml` they LEFT `mac_artifacts.yaml` (23 → 15). **There is therefore no
+`guardrails/data-ingestion.yaml` (never shipped under that name) they LEFT `mac_artifacts.yaml` (23 → 15). **There is therefore no
 precedence rule anywhere**, and `bom.conflicts` is the gate that keeps it that way.
 
 My first attempt copied them instead, and within minutes four of eight disagreed on their paths —

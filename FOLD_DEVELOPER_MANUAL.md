@@ -1,5 +1,9 @@
-<!-- STATUS: PROPOSED, and the code it documents is LANDED AND INERT. `decisions/0004-the-fold-plane.md`
-     (mac-ontology-contoso) is not ratified; no bundle declares a fold plane, so on every bundle in the
+<!-- STATUS: PROPOSED, and the code it documents is LANDED AND INERT. THIS MANUAL DESCRIBES mac-runtime,
+     WHICH LIVES IN mac-platform (`mac-platform/packages/mac-runtime/src/mac_runtime/`); nothing in it is
+     runnable from this repository, and the probes it names (`$SP/...`) were scratch files, never committed.
+     Paths: bundle-relative (the contoso bundle — `contoso.duckdb`, its concept files) unless prefixed.
+     Its design record, `mac-ontology-contoso/decisions/0004-the-fold-plane.md`, is not ratified and is
+     superseded in approach by 0005 beside it (see FOLD_GRAMMAR.md's header); no bundle declares a fold plane, so on every bundle in the
      estate today this manual describes behaviour you must switch on yourself with an env var.
      Where the operator has not ruled, the section says UNRULED and names the options. Do not silently
      pick one. Every count below carries its denominator; figures marked [measured here] were re-run
@@ -14,13 +18,13 @@
 
 Use this file when you have a **specific situation in the data** and need the configuration block for it.
 
-* It is **not** the design record. That is `decisions/0004-the-fold-plane.md` in `mac-ontology-contoso`: why four planes, what was deleted, what would reverse it.
+* It is **not** the design record. That is `mac-ontology-contoso/decisions/0004-the-fold-plane.md` (superseded in approach by `0005-what-we-learned-and-what-supersedes-0002-0004.md` beside it): why four planes, what was deleted, what would reverse it.
 * It is **not** the tutorial. That is `FOLD_GRAMMAR.md` in `meaning-as-code`: what the words mean, how to explain them to an SME, what an SME is asked.
 * It **is** the lookup: 18 situations plus 5 combinations that actually occur, each with a copy-pasteable block, the SQL it produces, the command that proves it, and what it does not cover.
 
 Read section 4 (the decision tree) once. After that, jump to the situation.
 
-**About the numbers.** Every count carries its denominator. Figures tagged **[measured here]** were re-run on 2026-09-20 against the installed runtime (`packages/mac-runtime/src/mac_runtime/planner/plan.py`), the real contoso bundle, and — where a number rather than a plan is quoted — a read-only connection to `contoso.duckdb`. Untagged figures are carried from `decisions/0004`, `FOLD_GRAMMAR.md` and the option adjudication; they are attributed where it matters and none of them is load-bearing for a configuration block.
+**About the numbers.** Every count carries its denominator. Figures tagged **[measured here]** were re-run on 2026-09-20 against the installed runtime (`mac-platform/packages/mac-runtime/src/mac_runtime/planner/plan.py`), the real contoso bundle, and — where a number rather than a plan is quoted — a read-only connection to `contoso.duckdb`. Untagged figures are carried from `mac-ontology-contoso/decisions/0004`, `FOLD_GRAMMAR.md` and the option adjudication; they are attributed where it matters and none of them is load-bearing for a configuration block.
 
 Two conventions used throughout:
 
@@ -41,7 +45,7 @@ A number column says **what kind of number it is** (`quantity_kind`: one of `ext
 
 ## 3. WHERE THE BLOCK GOES — **UNRULED (R1)**
 
-**What the landed code reads, today, and the only form measured to work:** a directory named by `MAC_FOLD_PLANE_DIR` holding one or more `<name>.fold.yaml` files with two top-level keys, `relations:` and `concepts:`. Every block in this manual is in that form. `planes.py:load_plane` globs `*.fold.yaml`, **merges every file into one flat namespace keyed by relation name**, then keeps only the relations the loaded index actually grounds on.
+**What the landed code reads, today, and the only form measured to work:** a directory named by `MAC_FOLD_PLANE_DIR` holding one or more `<name>.fold.yaml` files with two top-level keys, `relations:` and `concepts:`. Every block in this manual is in that form. `mac-platform/packages/mac-runtime/src/mac_runtime/foldplane/planes.py:load_plane` globs `*.fold.yaml`, **merges every file into one flat namespace keyed by relation name**, then keeps only the relations the loaded index actually grounds on.
 
 The three candidate production homes, and why this manual does not pick:
 
@@ -51,7 +55,7 @@ The three candidate production homes, and why this manual does not pick:
 | `data/datasets/<relation>.yaml` — the design's own stated home | `x-quantity-kind`, `x-per`, `x-denominated-by` on `columns[]`; `x-grain-semantics`, `x-observation` on `table:` | **rejected in the adjudication**: 13 of 18 cases (no concept plane there, so `counts_as`/`modality` have nowhere to sit), MAC012 exit 1 on `x-` keys, and `GroundingColumn` is `extra="forbid"` with 4 fields, so 0 of 9 `x-` keys reach the model |
 | `ontology/...` anywhere | — | **do not.** The lock is armed; a write there is exit 2 |
 
-Until R1 is ruled: keep the plane in a scratch directory and point `MAC_FOLD_PLANE_DIR` at it. Nothing else about the mechanism changes when the home is ruled — the reader in `planes.py` prefers real extension keys on `serving_columns` when they are present and falls back to the overlay, so the same code path serves both.
+Until R1 is ruled: keep the plane in a scratch directory and point `MAC_FOLD_PLANE_DIR` at it. Nothing else about the mechanism changes when the home is ruled — the reader in `foldplane/planes.py` prefers real extension keys on `serving_columns` when they are present and falls back to the overlay, so the same code path serves both.
 
 **One trap that is a property of the home, not of your file:** the merge is keyed by **relation name across the whole estate**, not by bundle. Two bundles that both serve a relation called `orders` share one plane entry. Keep relation names qualified the way contoso does (`v_contoso_order_line`, `dim_contoso_store`), and never name a plane entry after a fixture relation.
 
@@ -121,7 +125,7 @@ Then, always: add `ruled_by: "<what the person said>"` beside anything a person 
 Silence is not neutral -- it means `inferred`, the weakest tier.
 ```
 
-**Do not type, in any situation:** `cell_key` (derived; [measured here] every `cell_key` removed from both planes still scores **16 of 18**), `quantity_kind: identifier` (derived 18 of 18), `denominator_distinct` (derive it from the profile — the one hand-typed value in the estate is wrong, see M6), `per: __rows__` (identical code path to silence), `evaluate_at` (parsed into `ConceptPlane` and read by **0 lines** of `law.py`), any `axes:` block ([measured here] appending one to the contoso plane leaves the score at **16 of 18** — it is silently dropped).
+**Do not type, in any situation:** `cell_key` (derived; [measured here] every `cell_key` removed from both planes still scores **16 of 18**), `quantity_kind: identifier` (derived 18 of 18), `denominator_distinct` (derive it from the profile — the one hand-typed value in the estate is wrong, see M6), `per: __rows__` (identical code path to silence), `evaluate_at` (parsed into `ConceptPlane` and read by **0 lines** of `foldplane/law.py`), any `axes:` block ([measured here] appending one to the contoso plane leaves the score at **16 of 18** — it is silently dropped).
 
 ---
 
@@ -416,7 +420,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/manual/ask.py Ex
 cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/manual/ask.py ExchangeRate by=currency
 ```
 
-**WHAT IT DOES NOT COVER.** "By currency" on an ordered pair is ambiguous (FROM or INTO?) and there is no field for the answer. And the thing this refusal prevented is worth knowing: before the plane, this question emitted `JOIN v_contoso_fx_rate_day ... ON` followed by **nothing** — an empty `ON` clause, in 3 of 5 plans this measure produced. That defect is in `planner/sql.py` (`join_rule = edge.join_rule or ""`, then the clause is appended with no guard) and **no plane, kind, home or derivation fixes it**. [measured here] I reproduced it this session on a different question: `... JOIN dim_contoso_customer ON WHERE fold_cycle.mac_fold_rank = 1`.
+**WHAT IT DOES NOT COVER.** "By currency" on an ordered pair is ambiguous (FROM or INTO?) and there is no field for the answer. And the thing this refusal prevented is worth knowing: before the plane, this question emitted `JOIN v_contoso_fx_rate_day ... ON` followed by **nothing** — an empty `ON` clause, in 3 of 5 plans this measure produced. That defect is in `mac-platform/packages/mac-runtime/src/mac_runtime/planner/sql.py` (`join_rule = edge.join_rule or ""`, then the clause is appended with no guard) and **no plane, kind, home or derivation fixes it**. [measured here] I reproduced it this session on a different question: `... JOIN dim_contoso_customer ON WHERE fold_cycle.mac_fold_rank = 1`.
 
 ---
 
@@ -493,7 +497,7 @@ axes:                                    # DOES NOTHING. Parses, dropped, never 
 ```
 to the contoso plane leaves the 18 cases at **16 of 18**, unchanged. Do not believe a green run of one.
 
-**WHAT YOU GET.** On contoso, a refusal for an unrelated reason: `Refusal(no_join_path) No legal join path between GrossSalesAmount and Brand.` — 0 of 17 declared edges name Brand (a roll-up belongs in `members.over`, and the route-finder reads only `edges.yaml`), so **4 of 17** concepts (Brand, ProductCategory, ProductSubcategory, Continent) can never appear in an answer however they are declared. That is a join defect, and the only case on this list no fold declaration can reach.
+**WHAT YOU GET.** On contoso, a refusal for an unrelated reason: `Refusal(no_join_path) No legal join path between GrossSalesAmount and Brand.` — 0 of 17 declared edges name Brand (a roll-up belongs in `members.over`, and the route-finder reads only the bundle's `ontology/edges.yaml`), so **4 of 17** concepts (Brand, ProductCategory, ProductSubcategory, Continent) can never appear in an answer however they are declared. That is a join defect, and the only case on this list no fold declaration can reach.
 
 **HOW TO CHECK IT WORKED.** You cannot. `sed -n '/--- CASE 11:/,/^$/p'` shows the same refusal before and after, under every plane in this manual.
 
@@ -581,7 +585,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/proto/harness_la
 # look for: COUNT(*) FILTER (WHERE ... = 1). A SUM means `indicator` did not land
 ```
 
-**WHAT IT DOES NOT COVER — a real hazard.** **Which value means yes is not declarable.** The runtime hardcodes `= 1` in `law.py`. A flag where `1 = holiday`, or one encoded `1/2`, is counted backwards, silently. An SME can answer this question and there is nowhere to put the answer. Also: folding a flag across a join still counts the wrong rows (`SUM(WorkingDay)` over order lines joined on `OrderDate` = 160,273 against a true 2,413 of 2,760 — a 66× error), and the `indicator` declaration does not prevent the join; it only fixes the operator. And the alias still reads `workingdaytotal` — the arithmetic is governed, the wording is not.
+**WHAT IT DOES NOT COVER — a real hazard.** **Which value means yes is not declarable.** The runtime hardcodes `= 1` in `foldplane/law.py`. A flag where `1 = holiday`, or one encoded `1/2`, is counted backwards, silently. An SME can answer this question and there is nowhere to put the answer. Also: folding a flag across a join still counts the wrong rows (`SUM(WorkingDay)` over order lines joined on `OrderDate` = 160,273 against a true 2,413 of 2,760 — a 66× error), and the `indicator` declaration does not prevent the join; it only fixes the operator. And the alias still reads `workingdaytotal` — the arithmetic is governed, the wording is not.
 
 ---
 
@@ -621,7 +625,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/manual/ask.py St
 
 1. **`counts_as` is consulted unconditionally.** [measured here] "stores by country" and "stores by geography" both come back as `COUNT(DISTINCT StoreCode)` grouped by the axis. There is no question-shape condition, so once you declare it you cannot ask for floor area by country through this concept.
 2. **Remove it and the answer is not a refusal — it is a third number.** [measured here] with `counts_as` deleted and the rest of the plane present: `SUM(fold_cycle.SquareMeters)` over the collapsed rows — 99,300 m², confidently, with a collapse disclosure and no hint that a counting question was answered with an area.
-3. **It cannot rescue a concept that carries no number.** 11 of 14 non-measure contoso concepts refuse one step earlier, in `_resolve_measure` (`plan.py`), which asks whether the row carries a number at all: *"Customer is declared class 'entity' … its grounding marks no column `field_role: measure`."* Adding a relation plane **and** `counts_as: CustomerKey` yields the identical refusal with the fold law never invoked. Customer is the most obviously countable entity in the bundle (104,990 rows / 104,990 keys) and is unanswerable because a customer row carries no number. That is a one-line ordering defect in `plan.py`, and it caps this design at 3 of 14 countable concepts.
+3. **It cannot rescue a concept that carries no number.** 11 of 14 non-measure contoso concepts refuse one step earlier, in `_resolve_measure` (`mac-platform/packages/mac-runtime/src/mac_runtime/planner/plan.py`), which asks whether the row carries a number at all: *"Customer is declared class 'entity' … its grounding marks no column `field_role: measure`."* Adding a relation plane **and** `counts_as: CustomerKey` yields the identical refusal with the fold law never invoked. Customer is the most obviously countable entity in the bundle (104,990 rows / 104,990 keys) and is unanswerable because a customer row carries no number. That is a one-line ordering defect in `planner/plan.py`, and it caps this design at 3 of 14 countable concepts.
 4. Related trap: [measured here] deleting `quantity_kind` from `SquareMeters` while `counts_as` is present changes **nothing** — with a count target the operand list is empty, so G1 is never consulted. A `counts_as` concept is not evidence that the relation's columns are declared.
 
 ---
@@ -649,7 +653,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/proto/harness_la
   | sed -n '/--- CASE 15:/,/^$/p'
 ```
 
-**WHAT IT DOES NOT COVER.** A ratio that is **not stored** as a column — contoso's real shape, where net share must be recomputed from two other columns — needs the fold to happen before the division across a *derived* expression. `evaluate_at: after_fold` exists for exactly this, parses into `ConceptPlane`, and is **read by 0 lines of `law.py`**: you can write it and it changes nothing. Until that is implemented, the only route is a `*.derivation.*` rule that owns its own SELECT (stage 2), which is what contoso does.
+**WHAT IT DOES NOT COVER.** A ratio that is **not stored** as a column — contoso's real shape, where net share must be recomputed from two other columns — needs the fold to happen before the division across a *derived* expression. `evaluate_at: after_fold` exists for exactly this, parses into `ConceptPlane`, and is **read by 0 lines of `foldplane/law.py`**: you can write it and it changes nothing. Until that is implemented, the only route is a `*.derivation.*` rule that owns its own SELECT (stage 2), which is what contoso does.
 
 ---
 
@@ -717,7 +721,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/proto/harness_la
 
 **WHEN YOU HAVE THIS.** One row per *version* of a thing, with a validity window: `OpenDate`/`CloseDate`, `valid_from`, `is_current`. Give-away: `COUNT(*) > COUNT(DISTINCT <business code>)` — 74 vs 67 here, with 6 codes at two versions and 1 at three.
 
-**THE CONFIGURATION.** On contoso: **nothing.** `store.yaml` already carries `realized_by: mac.canon.snapshot_collapse` with `params.natural_key: StoreCode`, and the derivation fills `grain_semantics: observation`, `subject_key: StoreCode`, `observed_at: OpenDate`. [measured here] 1 of 1 relations, 0 authored, `tier=derived`. On a bundle with no canon, write S3's `observation:` block by hand.
+**THE CONFIGURATION.** On contoso: **nothing.** The bundle's store concept (`ontology/concepts/…/store.yaml` in mac-ontology-contoso) already carries `realized_by: mac.canon.snapshot_collapse` with `params.natural_key: StoreCode`, and the derivation fills `grain_semantics: observation`, `subject_key: StoreCode`, `observed_at: OpenDate`. [measured here] 1 of 1 relations, 0 authored, `tier=derived`. On a bundle with no canon, write S3's `observation:` block by hand.
 
 ```yaml
 relations:
@@ -993,7 +997,7 @@ The column loader reads exactly `quantity_kind`, `per`, `denominated_by`, `denom
 ```
 Every one of those lines is filled by a conformance derivation when it is absent. [measured here] removing **every** `cell_key` from both authored planes leaves the score at **16 of 18**. Typing them costs you: a typed value is re-declared at `inferred` tier unless you add `ruled_by`, it drifts from the warehouse (M6), and it hides the fact that the derivation was never checked.
 
-**Write instead:** nothing. Then run `explain.py` and read `DERIVED FILLS` and the per-column `source=derived:...` lines to confirm the gate filled what you expected.
+**Write instead:** nothing. Then run `$SP/manual/explain.py` (a scratch probe, not committed — §9.6) and read `DERIVED FILLS` and the per-column `source=derived:...` lines to confirm the gate filled what you expected.
 
 ### M4 · `cell_key` where `subject_key` is meant — **silent, and expensive**
 
@@ -1030,7 +1034,7 @@ The two blocks name the same two facts with **different keys**, and the column b
         denominated_by: WeightUnit
         denominator_distinct: 2         # WRONG. The warehouse says 3.
 ```
-[measured here, read-only] `dim_contoso_product.WeightUnit`: **3** distinct non-null values — pounds 1,867 / ounces 418 / grams 10 — with 222 of 2,517 rows null. This is the only one of the estate's authored tokens that a derivation disagrees with, and the derivation is right. It is also written into `decisions/0004` itself, so the design record carries the wrong number too (**R6, unruled**: amend, or leave).
+[measured here, read-only] `dim_contoso_product.WeightUnit`: **3** distinct non-null values — pounds 1,867 / ounces 418 / grams 10 — with 222 of 2,517 rows null. This is the only one of the estate's authored tokens that a derivation disagrees with, and the derivation is right. It is also written into `mac-ontology-contoso/decisions/0004` itself, so the design record carries the wrong number too (**R6, unruled**: amend, or leave).
 
 **Write instead:** omit it and let the profile fill it. G4 fires on `> 1`, so the exact value matters only for the sentence the reader sees — which is precisely why a wrong one is worth catching. If you must pin it, pin it with `derived_by:` naming the profile run, never bare.
 
@@ -1041,7 +1045,7 @@ axes:                                   # PARSES. DROPPED. READ BY NOTHING.
   v_contoso_order_line:
     CurrencyCode: { ordered: false, partition_role: partitions }
 ```
-[measured here] appended to the contoso plane, the 18 cases score **16 of 18** — identical to the plane without it. There is no axis level in the plane. `partition_role` is computed inside `law.py` from the relation's own facts and cannot be authored.
+[measured here] appended to the contoso plane, the 18 cases score **16 of 18** — identical to the plane without it. There is no axis level in the plane. `partition_role` is computed inside `foldplane/law.py` from the relation's own facts and cannot be authored.
 
 **Write instead:** nothing. If you need orthogonality, level-ness or orderedness of an axis, that is S11 and it is unbuilt — raise it rather than writing a block that reads as if it worked.
 
@@ -1170,7 +1174,7 @@ The rules, so you can predict it: `ruled_by:` → `confirmed`, `derived_by:` →
 | "by currency means the currency we convert INTO" | no term for the direction of an ordered pair |
 | "at 40% share, stop answering and refuse" | the sentinel threshold is undecided |
 | "this ratio is not stored; recompute it after the fold" | `evaluate_at: after_fold` parses and is read by 0 lines |
-| "show the rows in this order" / "top 5" | **deliberately excluded** from the fold law (`decisions/0004` §4 role 4). `Intent` carries no sort and no top-N, and the planner emits no outer `ORDER BY` |
+| "show the rows in this order" / "top 5" | **deliberately excluded** from the fold law (`mac-ontology-contoso/decisions/0004` §4 role 4). `Intent` carries no sort and no top-N, and the planner emits no outer `ORDER BY` |
 | "two independent re-observation clocks meet here" | undefined |
 
 ### The four things an SME can say and the system cannot hold
@@ -1184,7 +1188,7 @@ These have been answered out loud, by a person, on this estate, and there is now
 
 ### And the limit under all four: nothing files the question
 
-A fold refusal names the file, the relation, the column and the missing key — and then forgets. [measured here] `open_question_id=None` at **15 of 15** construction sites under `packages/*/src` (`planner/plan.py` ×9, `planner/resolve.py` ×4, `planner/joins.py` ×1, `foldplane/law.py` ×1) and **0 of 15** pass anything else. The downstream path already exists (`CaveatKind.OPEN_QUESTION` is a member of the closed set; caveat propagation is documented as mandatory; the console renders it). Nothing is missing but the assignment. Until it lands, "the SME will be asked when a question needs it" is not a workflow — and refusal-driven authoring has a measured ceiling anyway: a refusal can name only **2 of 11** plane terms, and the fixpoint is **8 of 18**.
+A fold refusal names the file, the relation, the column and the missing key — and then forgets. [measured here] `open_question_id=None` at **15 of 15** construction sites under `mac-platform/packages/mac-runtime/src/mac_runtime` (`planner/plan.py` ×9, `planner/resolve.py` ×4, `planner/joins.py` ×1, `foldplane/law.py` ×1) and **0 of 15** pass anything else. The downstream path already exists (`CaveatKind.OPEN_QUESTION` is a member of the closed set; caveat propagation is documented as mandatory; the console renders it). Nothing is missing but the assignment. Until it lands, "the SME will be asked when a question needs it" is not a workflow — and refusal-driven authoring has a measured ceiling anyway: a refusal can name only **2 of 11** plane terms, and the fixpoint is **8 of 18**.
 
 ### Two boundaries on every number in this file
 
@@ -1242,7 +1246,7 @@ Stages run in numbered order, and stages 0 and 1 **coincide** when the collapse 
 | `precomputed` | `resolve_match` | `resolve_match` | `resolve_match` | `resolve_match` | `resolve_match` |
 | `UNKNOWN` | `refuse(undeclared_grain)` | `refuse(undeclared_grain)` | `refuse(undeclared_grain)` | `refuse(undeclared_grain)` | `refuse(undeclared_grain)` |
 
-25 of 25 filled; `len(LAW) == 25` is asserted at import and re-asserted by `test_foldplane_law.py` (**3 tests, 3 passed** [measured here]). An `observation` relation folds exactly like an `event` on every axis it does not re-observe on; the re-observation axis is intercepted **before** this table is read, in the stage section, by `partition_role == "reobserves"`. `weighted_mean` degrades to `mean` when `per` is absent or `__rows__`. **Nobody authors this table**, and a sixth `quantity_kind` breaks `test_the_law_is_total`.
+25 of 25 filled; `len(LAW) == 25` is asserted at import and re-asserted by `mac-platform/packages/mac-runtime/tests/test_foldplane_law.py` (**3 tests, 3 passed** [measured here]). An `observation` relation folds exactly like an `event` on every axis it does not re-observe on; the re-observation axis is intercepted **before** this table is read, in the stage section, by `partition_role == "reobserves"`. `weighted_mean` degrades to `mean` when `per` is absent or `__rows__`. **Nobody authors this table**, and a sixth `quantity_kind` breaks `test_the_law_is_total`.
 
 ### 9.5 The refusal codes — what each means, what to do
 

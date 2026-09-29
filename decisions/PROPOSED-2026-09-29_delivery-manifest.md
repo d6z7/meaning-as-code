@@ -1,3 +1,5 @@
+**SUPERSEDED 2026-09-29 by `PROPOSED-2026-09-29_guardrails.md` — kept as the record of WHY; do not build from it.**
+
 # DELIVERY MANIFEST — ONE DECLARATION PER DELIVERED ITEM
 
 **Status: SUPERSEDED 2026-09-29 by `PROPOSED-2026-09-29_guardrails.md`.** Its four rulings stand and
@@ -237,7 +239,7 @@ Thirteen overlaps become one home. The largest:
   `_stages().produces`, each bundle's manifest). `mac_import`'s own comments record **three separate
   resume bugs** caused by them disagreeing.
 * producer, declared four times and contradicting on four families (above).
-* `origin`, declared three times, with `hybrid` existing in `BLUEPRINT.md` and having no
+* `origin`, declared three times, with `hybrid` existing in `mac-integration-kit/ontology/BLUEPRINT.md` and having no
   representation in any machine registry — which is *why* C1–C3 read as contradictions rather than
   as "tool-seeded, model-completed".
 * `who`/`authoring`, declared twice with incompatible vocabularies

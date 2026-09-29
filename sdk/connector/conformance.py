@@ -3,7 +3,7 @@
 
 RECORD: §3.2 (the falsifier and its honest limit), §4.3, §4.4, §10.3 (G3's fixture table).
 
-WHAT THIS IS NOT. It is NOT G3 (`sdk/gate/check_connector_contract.py`). G3 is TRACK B, gated on
+WHAT THIS IS NOT. It is NOT G3 (`check_connector_contract`, a gate the retired connector proposal named and which does not exist). G3 is TRACK B, gated on
 Rulings 12 and 14, and it runs THIRTEEN hostile classes -- including four that need a subprocess
 (exits at import, hangs at import, ghost distribution, driver at import) and one, registry cache
 poisoning, that is a property of `resolve()` rather than of any connector. None of that is here:

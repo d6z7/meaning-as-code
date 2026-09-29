@@ -63,7 +63,7 @@ antipattern: >
   Inventing a dimension concept/table for an attribute-less grouping key; or dropping it and losing the grain
   it defines.
 status: scattered   # a property expresses it; the "don't over-model" judgment is the point
-canon_ref: [CONCEPT_SPEC.md §6 (properties), patterns/associative_entity.md]
+canon_ref: [shape_reference.md (ConceptFile; properties), patterns/associative_entity.md]
 ```
 
 ## The determinism border

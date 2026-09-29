@@ -1,5 +1,8 @@
-<!-- STATUS: companion to QUERY_GRAMMAR.md. Every trace below is REAL OUTPUT from the landed
-     planner on 2026-09-23, produced by acceptance/tools/trace_question.py in a worked bundle.
+<!-- STATUS: companion to QUERY_GRAMMAR.md. NOT REPRODUCIBLE FROM THIS REPOSITORY: the producer,
+     `acceptance/tools/trace_question.py`, lives in the worked bundle
+     (`mac-ontology-contoso/acceptance/tools/trace_question.py`) and runs on mac-platform's runtime;
+     nothing in meaning-as-code regenerates these traces. Paths: bundle-relative (that bundle) unless prefixed. Every trace below is REAL OUTPUT from the
+     landed planner on 2026-09-23, produced by that script in that bundle.
      Nothing here is illustrative or reconstructed. Where a trace shows a refusal, that is what
      the runtime really answers today. -->
 
@@ -429,7 +432,7 @@ The traces above are unedited output. To produce them for any question:
 
 ```bash
 # in a bundle that has the harness (acceptance/tools/)
-<platform>/.venv/bin/python acceptance/tools/trace_question.py cases.json
+<platform>/.venv/bin/python acceptance/tools/trace_question.py cases.json   # run from the bundle (mac-ontology-contoso)
 ```
 
 where `cases.json` is `{"<id>": {"question": "...", "intent": { … }}}`. Write the intent by hand to

@@ -34,12 +34,12 @@ framework's own generated conformance suite would ERROR on every marker-carrying
 construction; contoso was simply the first bundle to prove it.
 
 The resolver existed — ONCE, and inside a BUNDLE rather than in the framework: one bundle's own local
-`tools/run_properties.py` carried the marker regex, a fragment resolver and a declaration resolver, and
+the bundle's `<bundle>/tools/run_properties.py` carried the marker regex, a fragment resolver and a declaration resolver, and
 applied the last of them immediately before each query. That bundle's comparable suite ran 41 declared
 / 41 examined / 36 PASS / 5 FAIL on the SAME generator and the SAME marker grammar. Same suite kind,
 two runners, one resolves and one does not.
 
-AND THE PER-BUNDLE HOME IS WHAT HID IT. A SECOND bundle's `tools/run_properties.py` defines
+AND THE PER-BUNDLE HOME IS WHAT HID IT. A SECOND bundle's `<bundle>/tools/run_properties.py` defines
 
     def resolve_declared(text) -> str:   # "here it means: nothing to resolve"
         return text

@@ -96,7 +96,7 @@ antipattern: >
   data inside the concept DEFINITION instead of recording the disposition; treating an undecidable case as if
   it were decidable (skipping the block/escalate option).
 status: gap   # the disposition SHAPE is described; the curation layer + typed DQ register are not yet framework primitives
-canon_ref: [MODELLERS_COOKBOOK.md B8 (curation-layer scope note), CONCEPT_SPEC.md §6 (open_questions / scope / closure)]
+canon_ref: [MODELLERS_COOKBOOK.md B8 (curation-layer scope note), shape_reference.md (ConceptFile; open_questions / scope / closure)]
 ```
 
 ## The determinism border

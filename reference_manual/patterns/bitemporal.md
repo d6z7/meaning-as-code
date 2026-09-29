@@ -77,7 +77,7 @@ antipattern: >
   Collapsing only the valid axis (returns the corrected value, loses 'as known at'); treating the four date
   columns as one axis.
 status: gap   # each axis expressible (snapshot_collapse ×2 workaround); single dual-as-of construct MISSING — FINDINGS F2
-canon_ref: [patterns/scd_type_2.md, canon/snapshot_collapse.md, FINDINGS.md, CONCEPT_SPEC.md §8 (orthogonal axes)]
+canon_ref: [patterns/scd_type_2.md, canon/snapshot_collapse.md, FINDINGS.md, patterns/tracking_vintage.md (orthogonal axes)]
 ```
 
 ## The determinism border

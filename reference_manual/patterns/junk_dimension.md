@@ -66,7 +66,7 @@ antipattern: >
   Modelling the bundle as ONE enumeration/dimension (buries the individual flags); treating the junk
   surrogate key as semantically meaningful.
 status: scattered   # N enumerations + shared grounding express it — a "six suffice" confirmation, NOT a finding
-canon_ref: [CONCEPT_SPEC.md §6 (enumerations, grounds_column), FRAMEWORK.md §5]
+canon_ref: [shape_reference.md (ConceptFile; enumerations, grounds_column), FRAMEWORK.md §5]
 ```
 
 ## The determinism border

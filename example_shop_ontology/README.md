@@ -3,7 +3,7 @@
 A tiny, **synthetic** e-commerce ontology that applies the four-layer YAML framework end to end.
 It exists to make the framework concrete: every construct the framework defines appears here, on a
 neutral domain (an online shop), with no real data. It is the canonical worked example for
-[`../FRAMEWORK.md`](../FRAMEWORK.md) and the key reference [`../CONCEPT_SPEC.md`](../CONCEPT_SPEC.md) —
+[`../FRAMEWORK.md`](../FRAMEWORK.md) and the key reference [`../reference_manual/shape_reference.md`](../reference_manual/shape_reference.md) —
 read those for the *why* and the *what*, then read these files to see the framework applied.
 
 ## Project layout — two planes

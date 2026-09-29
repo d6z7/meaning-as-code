@@ -1,5 +1,9 @@
 # PROPOSED 2026-09-29 — the ontology has a procedure, and nothing makes it reachable
 
+**Status: PROPOSED — designed, not enforced.** No gate checks anything this record asks for; the
+procedure it names is the DNA checklist (`DNA-2026-09-25_ontology-design-requirements.md`) and the
+ontology skills, and no tool today refuses a draft that skipped them.
+
 Operator, after seeing the first draft beside the curated one: *"what is your strategy in creating
 ontology? every time you do it it looks different!?!?!?!?!"*
 

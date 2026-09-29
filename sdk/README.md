@@ -1,6 +1,6 @@
 # `sdk/` — the managed authoring framework (build-time, VSC only)
 
-The **only** code that may write the ontology SSOT (`sources/**`). Disallowed operations are not merely discouraged — they are not exposed. See `../decisions/2026-08-12_three-plane-authoring-model.md` and `../boundaries.yaml`.
+The **only** code that may write the ontology SSOT (`sources/**`). Disallowed operations are not merely discouraged — they are not exposed. See `mac-platform/decisions/2026-08-12_three-plane-authoring-model.md` and `mac-platform/boundaries.yaml` (both live in the host repository, not here; the boundary is enforced by `sdk/gate/check_boundaries.py`).
 
 ## Contract
 - **May import:** `meaning-as-code` (the pinned grammar), other `sdk/` modules. **Never** `wiki/`.

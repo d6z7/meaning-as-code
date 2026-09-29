@@ -1,6 +1,9 @@
 ---
 title: Column rulings — reference
-status: DRAFT — `never_axis` is implemented; the rest are specified
+status: PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.rulings
+  (added 2026-09-28); mac-runtime READS label_of and finer_than (planner/sql.py) and never_axis (planner/plan.py
+  POLICY_DENIED, interpret/vocabulary.py never offers it); scoped_by is LOADED, NOT PLANNED-ON (waived in
+  test_declared_but_unread as a ticket). Per-ruling status is stated on each section below.
 companions: [column_roles.md, column_specification.md, ../mac_vocabulary.yaml]
 ---
 
@@ -14,14 +17,14 @@ under `rulings:` on a column and are always optional; a column with no rulings b
 SYNOPSIS
     columns:
       <column>:
-        role: <mac.column_role.*>
+        role: key | dimension | measure | period | housekeeping   # a bare mac.concept.column.role term
         rulings:
           label_of:   <column>
-          register:   common | legal | long | short | code
+          register:   common | legal | long | short | code      # REQUIRES label_of (schema dependentRequired)
           finer_than: <column>
           scoped_by:  <column>
-          never_axis: privacy | grain | derived
-          evidence:   <dq-id>
+          never_axis: <the reason, one line of prose>          # free text; no privacy|grain|derived vocabulary exists
+          evidence:   <dq-id>                                  # REQUIRED with never_axis (schema dependentRequired)
 ```
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.ruling (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
@@ -70,6 +73,9 @@ served customers and is the dominant identifier in the row.
 ---
 
 # 1 · `label_of`
+
+**Status: IMPLEMENTED.** Schema-admitted; read by mac-runtime `planner/sql.py` (the label is selected, the
+named column grouped on, with a disclosure naming the register).
 
 ## Synopsis
 
@@ -133,9 +139,9 @@ would be one-to-many — a `key` pointing at a parent, not a label.
 grounding:
   columns:
     Brand:
-      role: mac.column_role.dimension
+      role: dimension
     Manufacturer:
-      role: mac.column_role.dimension
+      role: dimension
       rulings:
         label_of: Brand
         register: legal
@@ -225,6 +231,9 @@ A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 # 2 · `finer_than`
 
+**Status: IMPLEMENTED.** Schema-admitted; read by mac-runtime `planner/sql.py` (a disclosure that the finer of
+two levels was used).
+
 ## Synopsis
 
 ```yaml
@@ -277,9 +286,9 @@ parent the totals stop adding up, with no symptom.
 ```yaml
 grounding:
   columns:
-    CategoryName:    { role: mac.column_role.dimension }
+    CategoryName:    { role: dimension }
     SubCategoryName:
-      role: mac.column_role.dimension
+      role: dimension
       rulings: { finer_than: CategoryName }
 ```
 
@@ -304,6 +313,10 @@ self-reference rather than two columns
 ---
 
 # 3 · `scoped_by`
+
+**Status: LOADED, NOT PLANNED-ON.** Schema-admitted and parsed into `ColumnRulings` (mac-runtime
+`ontology/models.py`), but no planner step reads it yet — waived in `test_declared_but_unread` as a ticket.
+The protection this describes comes today from the `composite_key_guard` canon, not from this key.
 
 ## Synopsis
 
@@ -352,9 +365,9 @@ returns French, Italian and American customers.
 ```yaml
 grounding:
   columns:
-    Country: { role: mac.column_role.dimension }
+    Country: { role: dimension }
     State:
-      role: mac.column_role.dimension
+      role: dimension
       rulings: { scoped_by: Country }
 ```
 
@@ -375,27 +388,31 @@ grounding:
 
 # 4 · `never_axis`
 
-**Status: IMPLEMENTED.** Refuses today with `POLICY_DENIED`.
+**Status: IMPLEMENTED.** Refuses today with `POLICY_DENIED` (mac-runtime `planner/plan.py` `_axis_denied`,
+citing `evidence`; `interpret/vocabulary.py` never offers the column as groupable). **The value is a
+REASON in prose, not a code**: an earlier draft of this page proposed the closed set `privacy | grain |
+derived`, no vocabulary has ever declared those three, and the schema admits a free string. Closing the
+reason is an open question for the operator.
 
 ## Synopsis
 
 ```yaml
 rulings:
-  never_axis: privacy | grain | derived
-  evidence:   <dq-id>
+  never_axis: <the reason, one line of prose>
+  evidence:   <dq-id>                          # REQUIRED — schema dependentRequired
 ```
 
 ## Description
 
 Declares that this column, though a legitimate dimension, **must not be used as an axis**. The
-reason is outside the data, so the ruling carries both a reason code and the measurement that
-establishes it.
+reason is outside the data, so the ruling carries both the reason (a sentence) and the measurement
+that establishes it.
 
 ## Parameters
 
 | parameter | required | default | legal values | meaning |
 |---|---|---|---|---|
-| `never_axis` | yes | — | `privacy` · `grain` · `derived` | why it may not be an axis |
+| `never_axis` | yes | — | free text — one line stating the reason | why it may not be an axis (quoted into the refusal) |
 | `evidence` | **yes** | — | a DQ register id | the measurement. A prohibition without one is a preference. |
 
 ## When to use it — the constellation
@@ -421,9 +438,9 @@ query is valid; the ontology's own measurement forbids it; nothing connects the 
 grounding:
   columns:
     ZipCode:
-      role: mac.column_role.dimension
+      role: dimension
       rulings:
-        never_axis: privacy
+        never_axis: "identifies a person — 29 193 of 104 990 values are held by exactly one customer"
         evidence: DQ-CUSTOMER-02
 ```
 
@@ -432,7 +449,7 @@ grounding:
 ```
 ```
 REFUSED (POLICY_DENIED)
-Customer.ZipCode is declared `never_axis: privacy` — DQ-CUSTOMER-02 measured that
+Customer.ZipCode is declared `never_axis` ("identifies a person") — DQ-CUSTOMER-02 measured that
 29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names
 individuals. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.
 ```

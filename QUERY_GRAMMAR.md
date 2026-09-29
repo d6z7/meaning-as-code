@@ -204,7 +204,7 @@ older document is the one that has drifted. Recorded rather than silently correc
 
 ### It agrees with
 
-- **`decisions/0005`** (worked bundle) — the governing record. Its finding *is* this grammar's
+- **`mac-ontology-contoso/decisions/0005`** (the worked bundle's record) — the governing record. Its finding *is* this grammar's
   second axis: the declarations are mostly there and the runtime does not read them. §4's 7
   declaration gaps and 3 framework gaps are the same finding, re-measured from a different
   direction.
@@ -217,7 +217,7 @@ older document is the one that has drifted. Recorded rather than silently correc
 
 | document | what it says | what is true |
 |---|---|---|
-| `04-SPEC-semantic-runtime.md` §4 | `Intent.measure: str`, no `operation` | renamed to `subject` with an explicit `operation`; `measure` survives only as a back-compat alias |
+| `mac-platform/docs/04-SPEC-semantic-runtime.md` §4 | `Intent.measure: str`, no `operation` | renamed to `subject` with an explicit `operation`; `measure` survives only as a back-compat alias |
 | `ADR-006` §7 | "the chat agent remains as the free-form fallback" | that endpoint was retired; it answers 410 |
 | `ADR-006` Phase 3 | the system-ontology concepts live in the framework repo | they are generated in memory by the platform's `meaning_plane.py`; that directory does not exist |
 | `ADR-006` Phase 5 | a "quality refactor", pass rate unchanged | the corpus's one anti-join question is blocked on it, so it is a feature dependency |
