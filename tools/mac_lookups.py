@@ -115,7 +115,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  (no engine: {str(exc)[:70]} — labels will fall back to the code)")
 
     marker = _marker(root, yaml)
-    wrote, skipped, drift = 0, [], []
+    wrote, skipped, drift, dropped = 0, [], [], []
     repointed: dict[pathlib.Path, dict[str, str]] = {}
     seen_columns: set[tuple[str, str]] = set()
     planes = {"sources": ("sources",), "datasets": ("datasets",),
@@ -216,6 +216,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {out.name:44} {len(held['members']):>4} member(s){lab}")
         for e in extra:
             print(f"  {'':44}      + {e}")
+        # THE SPELLINGS THIS COLLAPSE DROPS, said out loud. One register per value set means ONE
+        # code column survives — and the runtime has an UNDECLARED resolution path that matches a
+        # register's first header field to a concept's column. `check_registers_reachable` states
+        # the consequence plainly: renaming that field "breaks a live behaviour with no error".
+        #
+        # Measured on contoso5, 2026-09-29: collapsing 48 registers to 25 dropped 19 code-column
+        # spellings — `CurrencyCode`, `FromCurrency`, `ToCurrency`, `from_currency` and
+        # `to_currency` all became `currency_code`. That bundle grounds no concepts, so nothing
+        # resolved through them; a bundle that DOES would lose those bindings silently. Printing
+        # them is not the fix — declaring the bindings is — but a loss nobody is told about is the
+        # one this estate keeps paying for.
+        lost = sorted({c for _r, c, _s, _l in held["candidates"]} - {held["column"]})
+        if lost:
+            dropped.extend(f"{held['stem']}: {c}" for c in lost)
     if con is not None:
         con.close()
 
@@ -243,6 +257,19 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print("OK — every register matches the measured domains.")
         return 0
+    if dropped:
+        concepts = (root / "ontology" / "concepts")
+        grounded = len(list(concepts.glob("**/*.yaml"))) if concepts.is_dir() else 0
+        print(f"\n  {len(dropped)} code-column spelling(s) no longer name a register — one value "
+              f"set keeps ONE code column:")
+        for d in dropped:
+            print(f"      {d}")
+        print(f"  This bundle grounds {grounded} concept(s). The runtime also resolves a register "
+              f"by matching its FIRST HEADER FIELD to a concept's column, and that path is "
+              f"undeclared — so where a binding relied on a dropped spelling it now resolves "
+              f"through nothing, with no error. Run tools/check_registers_reachable.py."
+              if grounded else
+              f"  This bundle grounds no concepts, so nothing resolved through them.")
     for s in skipped:
         print(f"  NOT A REGISTER  {s}")
     if not wrote:
