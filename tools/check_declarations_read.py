@@ -51,6 +51,9 @@ META_KEYS = {"metadata", "governance", "version", "schema_version", "status", "o
 
 
 # ── the declarations ──────────────────────────────────────────────────────────────────────────
+NODE_TEXT: dict[str, str] = {}   # declaration path -> the node's own description/$comment (its provenance)
+
+
 def _walk(schema: dict, defs: dict, path: str, out: list, seen: set) -> None:
     if "$ref" in schema:
         name = schema["$ref"].rsplit("/", 1)[-1]
@@ -65,6 +68,8 @@ def _walk(schema: dict, defs: dict, path: str, out: list, seen: set) -> None:
     for k, v in props.items():
         p = f"{path}.{k}" if path else k
         out.append(p)
+        if isinstance(v, dict):
+            NODE_TEXT[p] = " ".join(str(v.get(x, "")) for x in ("description", "$comment", "title"))
         _walk(v, defs, p, out, seen)
     ap = schema.get("additionalProperties")
     if isinstance(ap, dict):
@@ -208,8 +213,85 @@ def audit(runtime: pathlib.Path, family: str | None = None) -> dict:
     return report
 
 
+# ── provenance: where an unread declaration came from, and which grammar it belongs to ────────
+import subprocess
+
+VERSION_RX = re.compile(r"\b(?:v)?(0\.(?:[1-9]\d?)(?:\.\d+)?)\b")
+NEW_GRAMMAR_FLOOR = (0, 1, 14)     # the nine artifacts + the column standard: 0.1.14 .. 0.1.16
+OLD_MARK = re.compile(r"\b(legacy|retired|superseded|deprecated|no longer|pre-0\.1|v0\.[45]\b)", re.I)
+
+
+def _first_commit(needle: str, path: str) -> tuple[str, str, str]:
+    """(sha, date, subject) of the commit that first introduced `needle` into `path`, or blanks."""
+    try:
+        out = subprocess.run(["git", "log", "--reverse", "--date=short", "--format=%h\t%ad\t%s", "-S", needle, "--", path],
+                             cwd=ROOT, capture_output=True, text=True, timeout=60).stdout.strip().splitlines()
+    except (subprocess.SubprocessError, OSError):
+        return "", "", ""
+    if not out:
+        return "", "", ""
+    sha, date, subj = (out[0].split("\t") + ["", "", ""])[:3]
+    return sha, date, subj
+
+
+INITIAL_RELEASE = "2026-06-29"   # the v0.5 content model landed whole on this day
+
+
+def _era(family: str, markers: list[str], text: str, date: str) -> str:
+    """WHICH GRAMMAR a declaration belongs to, by ORIGIN — not by a date floor.
+
+    The estate has had four grammars: the v0.5 CONTENT MODEL of the initial release (attributes,
+    instances, individual_kpis, lifecycle states, members definitions, multilingual aliases —
+    2026-06-29); the COMMON RULES of 2026-08-19 (mac_rules.yaml, the laws every bundle answers
+    under); the QUERY GRAMMAR of 2026-09-23/24 (what a question can and cannot express); and the
+    COLUMN STANDARD of 0.1.14..0.1.16 (2026-09-26..29). The canon spans all of them: declared in
+    the initial release, extended since, mostly never implemented. A rule or a grammar clause with
+    no reader is NOT old — it is the current law unread; a v0.5 key with no reader is the old
+    content model still in the schema."""
+    if OLD_MARK.search(text or ""):
+        return "1 RETIRED/LEGACY — the schema says so"
+    if family == "rules":
+        return "3 COMMON RULES (current grammar, 2026-08-19) — unread"
+    if family == "grammar":
+        return "4 QUERY GRAMMAR (current grammar, 2026-09-23) — unread"
+    if family == "canon":
+        return "5 CANON (current grammar; declared, not implemented)"
+    vers = []
+    for m in markers:
+        try:
+            vers.append(tuple(int(x) for x in m.split(".")))
+        except ValueError:
+            pass
+    if vers and max(vers) >= NEW_GRAMMAR_FLOOR or (date and date >= "2026-09-26"):
+        return "6 COLUMN STANDARD (new grammar, 0.1.14+)"
+    if date == INITIAL_RELEASE:
+        return "2 v0.5 CONTENT MODEL (old grammar, initial release)"
+    return "7 MID-ERA (0.1.6..0.1.13, field-anchoring / two-plane)"
+
+
+def provenance(report: dict) -> list[dict]:
+    rows = []
+    owning = {"schema": "mac.schema.json", "vocabulary": "mac_vocabulary.yaml", "rules": "mac_rules.yaml",
+              "grammar": "grammar/query_grammar.yaml", "canon": "mac_vocabulary.yaml"}
+    for sec, items in report.items():
+        for r in items:
+            if r["reader"]:
+                continue
+            fam = r["family"]
+            text = NODE_TEXT.get(r["declaration"], "") if fam == "schema" else ""
+            needle = r["key"] if fam != "grammar" else r["key"]
+            sha, date, subj = _first_commit(f'"{needle}"' if fam == "schema" else needle, owning[fam])
+            markers = VERSION_RX.findall(text)
+            rows.append({**r, "markers": sorted(set(markers)), "first_commit": sha, "first_date": date,
+                         "first_subject": subj[:70], "era": _era(fam, markers, text, date),
+                         "note": (text[:140] + "…") if len(text) > 140 else text})
+    return rows
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--provenance", action="store_true",
+                    help="for every UNREAD declaration: its version marker, first commit, and era (old grammar / new grammar / retired)")
     ap.add_argument("--runtime", default=str(RUNTIME))
     ap.add_argument("--family", choices=("schema", "vocabulary", "rules", "grammar", "canon"))
     ap.add_argument("--json", action="store_true")
@@ -220,6 +302,20 @@ def main(argv: list[str] | None = None) -> int:
         print(f"could not run: no runtime at {runtime}")
         return 2
     report = audit(runtime, a.family)
+    if a.provenance:
+        rows = provenance(report)
+        if a.json:
+            print(json.dumps(rows, indent=1))
+            return 0
+        by_era: dict[str, list[dict]] = {}
+        for r in rows:
+            by_era.setdefault(r["era"], []).append(r)
+        for era, rs in sorted(by_era.items()):
+            print(f"\n== {era}: {len(rs)}")
+            for r in sorted(rs, key=lambda x: (x["family"], x["first_date"], x["declaration"])):
+                side = " (gates only)" if r.get("other_side") else " (nobody)"
+                print(f"  {r['family']:<10} {r['declaration'][:58]:<58} {r['first_date'] or '—':<10} {(','.join(r['markers']) or '—'):<12}{side}  {r['first_subject'][:50]}")
+        return 0
     if a.json:
         print(json.dumps(report, indent=1))
         return 0
