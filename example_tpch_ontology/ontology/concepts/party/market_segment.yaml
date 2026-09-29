@@ -36,9 +36,6 @@ values:
   # v0.1.9 — aliasBlock witness (MULTILINGUAL-ONLY tier, no scope_key): the second example proves the same
   # mechanism rides an enum with NO scope tier — a surface 'auto' resolves to AUTOMOBILE; a token outside the
   # closed five ASKs. mac.canon.alias_resolve.
-  aliases:
-    realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
-    map:
 grounding:
   kind: sql_table
   schema: tpch

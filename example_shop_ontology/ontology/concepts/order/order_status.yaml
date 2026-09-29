@@ -47,9 +47,6 @@ values:
   # v0.1.9 — aliasBlock witness (the GENERIC scope_relative tier, scoped by the dimension 'channel'):
   # 'cancelled' resolves to CANCELLED, but under a wholesale channel 'rejected' also means CANCELLED.
   # Multilingual tier is scope-free.
-  aliases:
-    realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
-    map:
 grounding:
   kind: sql_table
   schema: shop_warehouse
