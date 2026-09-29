@@ -136,8 +136,19 @@ def _r_invented_vocabulary(rel, text, spec, topics):
 
 
 def _r_invented_column_role(rel, text, spec, topics):
-    """A data-plane column `role` outside the closed set."""
+    """A data-plane column `role` outside the closed set — and ONLY on the data plane.
+
+    IT FIRED ON A CONCEPT FILE. The ontology's grounding columns carry `role: key | dimension |
+    measure | attribute`, a different closed set on a different plane, and this enforcer matched
+    every `role:` in any proposed YAML against the data plane's `primary_key | foreign_key | value
+    | discriminator`. Measured 2026-09-29 on the first concept written under the guardrails: REFUSE,
+    three "invented" roles, all of them the ontology's own vocabulary. The refusal it enforces is
+    declared in `data.sources`; the enforcer forgot the scope. A rule that cries wolf once is
+    ignored ever after, and this one would have refused every concept ever written.
+    """
     if text is None or not rel.endswith((".yaml", ".yml")):
+        return None
+    if not rel.replace("\\", "/").lstrip("./").startswith("data/"):
         return None
     closed = None
     for t in topics.values():
