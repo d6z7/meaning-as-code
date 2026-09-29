@@ -93,18 +93,32 @@ def main(argv: list[str] | None = None) -> int:
         if not code_col or not relation:
             orphaned.append((reg.name, "the file declares no code column or no source_view"))
             continue
-        try:
-            rows, _ = con.query(
-                f'SELECT DISTINCT "{code_col}" AS d0 FROM "{schema}"."{relation}"'
-            )
-        except Exception as exc:  # noqa: BLE001
-            orphaned.append((reg.name, f"{schema}.{relation}.{code_col} — {str(exc)[:70]}"))
+        # EVERY ATTACH POINT, NOT JUST THE ONE IT WAS CUT FROM. A register is one value set serving
+        # many columns (operator, 2026-09-29), so its members are what the warehouse holds ACROSS
+        # them: a code present on `sales.CurrencyCode` and absent from `orders.CurrencyCode` is not
+        # a missing member. Checking only `source_view` would report the other seven columns' values
+        # as NEW and the sentinel rows they lack as MISSING — a monitor that cries wolf on the very
+        # change it was asked to permit. A register with no descriptor beside it falls back to the
+        # single source_view, which is exactly what it meant before this change.
+        points = _attached(reg, relation, code_col, schema, default_schema)
+        live: set = set()
+        failed = None
+        for p_schema, p_rel, p_col in points:
+            try:
+                rows, _ = con.query(
+                    f'SELECT DISTINCT "{p_col}" AS d0 FROM "{p_schema}"."{p_rel}"'
+                )
+            except Exception as exc:  # noqa: BLE001
+                failed = f"{p_schema}.{p_rel}.{p_col} — {str(exc)[:70]}"
+                break
+            live |= {str(r["d0"]) for r in rows if r["d0"] is not None}
+            # NULL IS NOT A MEMBER. See the docstring: this is the fix for this check's own first
+            # finding, which was two false closure breaches that were both NULL.
+            if any(r["d0"] is None for r in rows):
+                nulls.append(f"{p_rel}.{p_col}")
+        if failed:
+            orphaned.append((reg.name, failed))
             continue
-        # NULL IS NOT A MEMBER. See the docstring: this line is the fix for this check's own first
-        # finding, which was two false closure breaches that were both NULL.
-        live = {str(r["d0"]) for r in rows if r["d0"] is not None}
-        if any(r["d0"] is None for r in rows):
-            nulls.append(f"{relation}.{code_col}")
         gone = sorted(declared - live)
         added = sorted(live - declared)
         if not gone and not added:
@@ -172,6 +186,33 @@ def _record(root: pathlib.Path, out: str, total: int, matched: int,
         "columns_with_nulls": nulls,
         "orphaned": {n: w for n, w in orphaned},
     }, indent=2) + "\n", encoding="utf-8")
+
+
+def _attached(reg: pathlib.Path, relation: str, code_col: str,
+              schema: str, default_schema: str) -> list:
+    """Every `(schema, relation, column)` this register governs — declared, else the cut site.
+
+    `mac_lookups` writes `<stem>.lookup.yaml` beside the CSV with the attach list, because that is
+    the fact that became PLURAL when one register began serving many columns. Read it where it
+    exists; fall back to the single `source_view` where it does not, so a bundle cut before the
+    change is checked exactly as it was.
+    """
+    side = reg.parent / f"{reg.name[: -len('.lookup.csv')]}.lookup.yaml"
+    if side.is_file():
+        try:
+            import yaml as _yaml
+            doc = _yaml.safe_load(side.read_text(encoding="utf-8")) or {}
+            out = []
+            for att in doc.get("attached") or []:
+                rel, col = (att or {}).get("relation"), (att or {}).get("column")
+                if rel and col:
+                    out.append((str((att or {}).get("schema") or schema or default_schema),
+                                str(rel), str(col)))
+            if out:
+                return out
+        except Exception:  # noqa: BLE001 - an unreadable descriptor falls back to the cut site
+            pass
+    return [(schema, relation, code_col)]
 
 
 def _read(path: pathlib.Path) -> tuple[str | None, str | None, set[str], str | None]:

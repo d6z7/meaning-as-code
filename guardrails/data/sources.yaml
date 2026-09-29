@@ -131,26 +131,36 @@ delivers:
     checkers: [{tool: tools/check_sample_matches_descriptor.py, rejects: [UNRECORDED, PROPOSAL_PREVIEW]}]
 
   register:
-    what: a value DOMAIN cut from one column — its members, with a label and a search key
+    what: one value SET — its members, with a label and a search key — serving every column that carries it
     phase: [sources, datasets]
-    path: data/lookups/{marker}_{relation}_{column}.lookup.csv
+    path: data/lookups/{marker}_{notion}.lookup.csv
     naming: >-
-      marker, relation and column — the register IS its (relation, column). The marker is omitted
-      when the relation already carries it. A name keyed on the COLUMN ALONE made two relations
-      sharing a column name overwrite one another: measured 2026-09-28, eight domains lost across
-      four bundles.
+      marker and the NOTION its attach points agree on, normalised — `contoso5_gender` for
+      `customer.Gender` and `dim_customer.gender` alike. Where the attach points call the set
+      different things, or where TWO different sets would claim one notion, every claimant falls
+      back to `{relation}_{column}` of its cut site, which cannot collide. Both poles have failed
+      here: naming by column alone made two relations overwrite one another (eight domains lost
+      across four bundles, 2026-09-28), and qualifying every name by its relation produced 48 files
+      holding 25 value sets (2026-09-29).
+    # THE FIRST FIELD IS STILL THE SOURCE COLUMN'S NAME, not the literal `code`, and that is a
+    # SEQUENCED gap rather than an oversight. The operator ruled on 2026-09-29 that a register is a
+    # virtual table and its column names are authored and invariant; six of these seven already
+    # are. The seventh cannot move until the concept bindings that currently resolve through it are
+    # declared — `check_registers_reachable` says plainly that renaming it "breaks a live behaviour
+    # with no error". See decisions/PROPOSED-2026-09-29_register-policy.md, step (c).
     columns: [«code», label, search_key, source_view, source_schema, confidence, note]
     population:
-      # WHAT WAS ACTUALLY CUT. The profile's domains are consumed in flight and gone by delivery,
-      # so they cannot be the denominator at the moment anybody asks.
-      of: every column whose value domain was measured
+      # ONE PER VALUE SET, which is what a register IS (operator, 2026-09-29): "there only one
+      # lookup for one thing that can be attached to multiple targets". Not one per column — that
+      # denominator is what let contoso5 ship 48 files over 25 domains while the gate read OK.
+      of: every distinct value set measured on the plane
       from: data/lookups/*.lookup.csv
       empty_is: EMPTY
     lifecycle: re-derived
     producers: [{tool: tools/mac_lookups.py, role: cuts, args: "--plane sources"}]
     consumers:
-      - {tool: tools/mac_descriptors.py, role: re-attaches the column's register pointer,
-         reads: ["«header[0]»", "source_view"]}
+      - {tool: tools/mac_descriptors.py, role: re-attaches the register pointer to every attach point,
+         reads: ["«the sibling .lookup.yaml attached[]»", "«header[0]»", "source_view"]}
       - {tool: sdk/project/project_data.py, role: renders the register page,
          reads: ["«header»", "«rows»", "source_view", "source_schema", "note"]}
     checkers:
@@ -165,6 +175,38 @@ delivers:
       - {tool: "tools/check_one_register_per_dimension.py",
          rejects: [two-registers-one-column, one-domain-many-registers]}
       - {tool: "tools/check_register_membership.py", rejects: [MISSING, NEW, NULLS, ORPHANED]}
+
+  register_descriptor:
+    what: one register's own shape — what it holds, and EVERY column of this bundle attached to it
+    phase: [sources, datasets]
+    path: data/lookups/{register}.lookup.yaml
+    naming: the register's own stem, verbatim — one descriptor per .lookup.csv
+    # A REGISTER IS A VIRTUAL TABLE (operator, 2026-09-29): "it reads like one register is like
+    # virtual table. then many rules from the table domain will fit for the register lookup."
+    # A relation states its shape in a descriptor, so a register does too — and the fact that
+    # became PLURAL when one register began serving many columns is exactly the one that had
+    # nowhere to live. `source_view` is written into every ROW of the CSV, a table carrying its
+    # lineage in each record; tolerable at one source, wrong at eight.
+    #
+    # THE SCHEMA TRAVELS WITH EACH ATTACH POINT, because a shared register spans PLANES: the same
+    # twelve month names sit on `main.date` and `contoso_served.dim_date`. Applying the owner's
+    # schema to all of them resolved half against the wrong catalog — measured the hour this list
+    # became plural: `contoso_served.date does not exist`, on a register that was correct.
+    keys: [register.name, register.csv, register.members, register.grain, "attached[].relation",
+           "attached[].column", "attached[].schema"]
+    population:
+      of: every register cut on this plane
+      from: data/lookups/*.lookup.csv
+      empty_is: EMPTY
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_lookups.py, role: writes one per value set}]
+    consumers:
+      - {tool: tools/mac_descriptors.py, role: attaches the pointer to every declared column,
+         reads: ["attached[].relation", "attached[].column"]}
+      - {tool: tools/check_register_membership.py, role: re-measures across every attach point,
+         reads: ["attached[].relation", "attached[].column", "attached[].schema"]}
+    checkers:
+      - {tool: tools/check_one_register_per_dimension.py, rejects: [one-domain-many-registers]}
 
   register_page:
     what: the browsable page for one value register — its members, with the constants lifted above the table
@@ -308,8 +350,15 @@ conventions:
     note: a landing is described, never renamed. Renaming belongs to the served plane, not to this one.
 
   - what: a register's file name
-    closed: "{marker}_{relation}_{column}.lookup.csv"
-    owner: tools/mac_lookups.py#_stem
+    closed: "{marker}_{notion}.lookup.csv, falling back to {marker}_{relation}_{column} on a clash"
+    owner: tools/mac_lookups.py#_assign_names
+    note: >-
+      the NOTION its attach points agree on, normalised. `_stem` still builds the qualified form
+      and is no longer the naming rule on its own: it names the CUT SITE, which is unique, and that
+      is what a claimant falls back to when the attach points disagree or when two different value
+      sets would claim one notion. The fallback applies to EVERY claimant, never to the later one
+      only — qualifying just the loser would leave the winner's name depending on scan order, and
+      a bare notion shared by two sets is how `contoso4_state` came to hold the wrong 67 members.
 
 refuses:
 

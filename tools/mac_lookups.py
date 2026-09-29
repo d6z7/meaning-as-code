@@ -82,6 +82,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("root", nargs="?", default=".")
     ap.add_argument("--max-members", type=int, default=MAX_MEMBERS)
     ap.add_argument("--check", action="store_true", help="report drift; write nothing")
+    ap.add_argument("--self-test", action="store_true",
+                    help="cut real bundles in a temp dir; needs no warehouse")
     # THE PLANE, because the data plane is TWO deliveries (operator, 2026-09-28) and this tool sits on
     # the seam between them. `values:` on a descriptor is a TRANSIENT hand-off: `mac_profile` writes the
     # bounded domain, this tool cuts the register and POPS the list. Split the parts without splitting
@@ -95,6 +97,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--plane", choices=("sources", "datasets", "both"), default="both",
                     help="which plane to cut registers from and slim (default: both)")
     a = ap.parse_args(argv)
+    if a.self_test:
+        return _self_test()
 
     root = pathlib.Path(a.root).resolve()
     try:
@@ -117,6 +121,12 @@ def main(argv: list[str] | None = None) -> int:
     planes = {"sources": ("sources",), "datasets": ("datasets",),
               "both": ("datasets", "sources")}[a.plane]
     cut_from = [d for pl in planes for d in sorted((root / "data" / pl).glob("*.yaml"))]
+    # ONE REGISTER PER VALUE SET (operator, 2026-09-29): "there only one lookup for one thing that
+    # can be attached to multiple targets". `by_set` accumulates every column carrying a given set,
+    # so the second column to present it ATTACHES rather than cutting a second file. The old
+    # `seen_columns` guard below still stands and still does its own job — it keeps the two halves
+    # of a bijective pair from each cutting a register of the same dimension under two spellings.
+    by_set: dict[frozenset, dict] = {}
     for desc in cut_from:
         doc = yaml.safe_load(desc.read_text(encoding="utf-8")) or {}
         relation = (doc.get("table") or {}).get("name") or desc.stem
@@ -150,22 +160,60 @@ def main(argv: list[str] | None = None) -> int:
                 # only, so the label half came round again and wrote the same register a second time.
                 seen_columns.add((relation, label_col))
                 seen_columns.add((relation, name))
-            body = _render(relation, name, members, label_col, con, schema, marker)
-            out = root / "data" / "lookups" / f"{_stem(marker, relation, name)}.lookup.csv"
-            if a.check:
-                if out.read_text(encoding="utf-8") if out.is_file() else "" != body:
-                    drift.append(str(out.relative_to(root)))
-            else:
-                out.parent.mkdir(parents=True, exist_ok=True)
-                out.write_text(body, encoding="utf-8")
-                wrote += 1
-                repointed.setdefault(desc, {})[name] = str(out.relative_to(root))
-                lab = f" label<-{label_col}" if label_col else " (code is its own label)"
-                print(f"  {out.name:44} {len(members):>4} member(s){lab}")
+            # THE SET IS THE IDENTITY. A column presenting members this bundle has already cut
+            # ATTACHES to that register; it does not get a file of its own. Measured on contoso5
+            # before this line existed: 48 files holding 25 value sets, the five currency codes
+            # stored EIGHT times — once per column carrying them — and
+            # `check_one_register_per_dimension` read `DUPLICATED: 0` over all of it, because it
+            # counted the same (relation, column) pair the cutter keyed on.
+            key = frozenset("" if m is None else str(m) for m in members)
+            held = by_set.get(key)
+            if held is not None:
+                held["attached"].append((relation, name, desc, schema))
+                continue
+            by_set[key] = {"members": members, "label_col": label_col, "relation": relation,
+                           "schema": schema, "column": name,
+                           "attached": [(relation, name, desc, schema)]}
+
+    # NOTHING IS WRITTEN UNTIL EVERY ATTACH POINT IS KNOWN, because the NAME depends on them. Cut
+    # inside the loop, a register was named for whichever relation the scan reached first — and the
+    # scan reads `datasets` before `sources`, so the same three currency columns produced
+    # `dim_currency_currency_code` or `sales_currencycode` depending on plane order alone. A name
+    # that moves when an unrelated relation is added is the instability `_stem` warns about; a name
+    # settled after the whole bundle is read is at least a function of the whole bundle.
+    _assign_names(marker, by_set)
+    for key, held in by_set.items():
+        held["out"] = root / "data" / "lookups" / f"{held['stem']}.lookup.csv"
+        body = _render(held["relation"], held["column"], held["members"], held["label_col"],
+                       con, held["schema"], marker)
+        out = held["out"]
+        if a.check:
+            if (out.read_text(encoding="utf-8") if out.is_file() else "") != body:
+                drift.append(str(out.relative_to(root)))
+            continue
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(body, encoding="utf-8")
+        wrote += 1
+        lab = f" label<-{held['label_col']}" if held["label_col"] else " (code is its own label)"
+        extra = [f"{r}.{c}" for r, c, _, _sc in held["attached"][1:]]
+        print(f"  {out.name:44} {len(held['members']):>4} member(s){lab}")
+        for e in extra:
+            print(f"  {'':44}      + {e}")
     if con is not None:
         con.close()
 
+    # EVERY ATTACH POINT POINTS AT THE ONE FILE. `repointed` is what `_slim_descriptors` writes
+    # back onto each column as its `register:`, and it is built from the groups rather than at cut
+    # time so that the seventh column carrying the currency codes gets the same pointer as the
+    # first. This is the whole of "attached to multiple targets" — the descriptor field was always
+    # many-to-one capable; only the cutter's per-column identity prevented it.
+    for held in by_set.values():
+        rel = str(held["out"].relative_to(root))
+        for _relation, column, desc, _schema in held["attached"]:
+            repointed.setdefault(desc, {})[column] = rel
+
     if not a.check:
+        _write_register_descriptors(root, by_set, yaml)
         slimmed = _slim_descriptors(root, repointed, yaml, planes)
         if slimmed:
             print(f"\n  the members MOVED: {slimmed} descriptor line(s) of member list replaced by "
@@ -209,6 +257,187 @@ def main(argv: list[str] | None = None) -> int:
     print(f"\ncut {wrote} column domain(s) into {files} register file(s), from domains already "
           f"measured on the descriptors")
     return 0
+
+
+def _self_test() -> int:
+    """Cut real bundles in a temp directory and count what came out. No warehouse, no network.
+
+    THIS FILE HAD NO SELF-TEST, which is how both of its naming regimes shipped broken. The cases
+    below are the two failures that actually happened, seeded so they cannot come back silently.
+    """
+    import tempfile
+
+    import yaml as _yaml
+
+    ok = [0, 0]
+
+    def case(what, cond):
+        ok[0] += 1
+        ok[1] += bool(cond)
+        print(("  ✓ " if cond else "  ✗ ") + what)
+
+    def cut(relations: dict) -> dict:
+        """relations: {relation: {column: [members]}} -> {stem: member count}."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "data" / "sources").mkdir(parents=True)
+            (root / "mac.project.yaml").write_text("metadata: {dataset: tb}\n", encoding="utf-8")
+            for rel, cols in relations.items():
+                doc = {"table": {"name": rel, "schema": "main"},
+                       "columns": [{"name": c, "type": "string", "values": v}
+                                   for c, v in cols.items()]}
+                (root / "data" / "sources" / f"{rel}.yaml").write_text(
+                    _yaml.safe_dump(doc, sort_keys=False), encoding="utf-8")
+            import contextlib
+            import io as _io
+            with contextlib.redirect_stdout(_io.StringIO()):
+                main([str(root), "--plane", "sources"])
+            out = {}
+            for f in sorted((root / "data" / "lookups").glob("*.lookup.csv")):
+                out[f.stem.replace(".lookup", "")] = len(f.read_text().splitlines()) - 1
+            return out
+
+    CUR = ["AUD", "CAD", "EUR", "GBP", "USD"]
+
+    # ONE VALUE SET, MANY COLUMNS -> ONE FILE. The operator's ruling, and the thing contoso5 got
+    # wrong 23 times over.
+    got = cut({"sales": {"CurrencyCode": CUR}, "orders": {"CurrencyCode": CUR},
+               "dim_currency": {"currency_code": CUR}})
+    case(f"three columns, one value set -> ONE register named for the notion  (got {got})",
+         got == {"tb_currency_code": 5})
+
+    # TWO SETS THAT AGREE ON A NOTION MUST NOT SHARE A FILE. This is contoso4's `state`: naming by
+    # notion alone cut 2 domains into 1 file and lost four codes with exit 0.
+    got = cut({"dim_location": {"state": ["Alaska", "Arkansas", "Utah"]},
+               "customer": {"State": ["AK", "AL", "UT", "CB"]}})
+    case(f"MUTANT two different sets claiming one notion keep BOTH domains  (got {got})",
+         got == {"tb_customer_state": 4, "tb_dim_location_state": 3})
+
+    # AND THE QUALIFIED FALLBACK IS APPLIED TO ALL CLAIMANTS, not just the later one — otherwise
+    # the winner's name depends on which plane the scan reached first.
+    case("neither claimant keeps the bare notion when two sets claim it",
+         "tb_state" not in got)
+
+    got = cut({"sales": {"Gender": ["female", "male"], "CurrencyCode": CUR}})
+    case(f"two unrelated sets on one relation -> two registers  (got {got})",
+         got == {"tb_currency_code": 5, "tb_gender": 2})
+
+    got = cut({"big": {"Zip": [str(i) for i in range(300)]}})
+    case(f"a column above --max-members is NOT a register  (got {got})", got == {})
+
+    print(("PASS" if ok[1] == ok[0] else "FAIL")
+          + f": mac_lookups self-test — {ok[1]}/{ok[0]} case(s), including the collision that cost "
+            f"contoso4 a domain and the duplication that cost contoso5 twenty-three files.")
+    return 0 if ok[1] == ok[0] else 1
+
+
+def _snake(name: str) -> str:
+    """`SubCategoryName` -> `sub_category_name`, so two spellings of one notion compare equal."""
+    import re
+    return re.sub(r"_+", "_", re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", str(name))).strip("_").lower()
+
+
+def _register_name(marker: str, held: dict) -> str:
+    """The register's file stem: the NOTION its attach points agree on, qualified when they do not.
+
+    THE ESTATE HAS ALREADY TRIED BOTH POLES AND BEEN BURNED BY EACH. `_stem` below records it: the
+    name was `{marker}_{column}`, two relations carrying a same-named column collided on one
+    filename and the second cut silently OVERWROTE the first — contoso4's `customer.State`, 565
+    members, pointing at a 67-member register cut from `store`. Qualifying every name with its
+    relation fixed that and produced the duplication the operator ruled against on 2026-09-29: 48
+    files holding 25 value sets.
+
+    Neither name was ever the identity — the VALUE SET is, and that is settled above. This only
+    chooses what to CALL the one file, and the collision that broke notion-naming can no longer
+    happen: two different sets are two registers by construction, so if they also agree on a notion
+    the qualified fallback keeps them apart instead of one overwriting the other.
+
+    `state` in contoso5 is exactly that case and it is not a defect to design away — 67 NAMES on
+    `dim_location` against 565 CODES on `customer` really are two dimensions. They keep their
+    qualified names and `check_one_register_per_dimension` no longer calls them duplicates.
+    """
+    spellings = {_snake(c) for _, c, _, _sc in held["attached"]}
+    base = next(iter(spellings)) if len(spellings) == 1 else None
+    if base is None:
+        # UNSETTLED: the attach points call this set different things (`store_name` against
+        # `Description`). Falling back to the cut site's (relation, column) is the SAFE half of the
+        # old rule — it cannot collide — and the plan reports it for a person to author.
+        base = _snake(f"{held['relation']}_{held['column']}")
+    return f"{marker}_{base}" if marker and marker not in base else base
+
+
+def _assign_names(marker: str, by_set: dict) -> None:
+    """Give every value set a stem, and make sure no two sets claim the same one.
+
+    THIS IS THE GUARD WHOSE ABSENCE COST FOUR BUNDLES. Naming by notion is right and is also
+    precisely how `contoso4_state` came to hold the wrong members: `customer.State` (565 codes) and
+    `store.State` (67 names) both derive `state`, one file was written, and the loser's domain was
+    preserved NOWHERE. Reproduced deliberately while writing this, on a two-relation bundle:
+
+        cut 2 column domain(s) into 1 register file(s)
+
+    — two domains in, one file out, four codes gone, exit 0. The set-level identity above does not
+    prevent it: two different sets are correctly two registers and then collide on the FILENAME.
+
+    So a notion claimed by more than one set is not usable as a name, and every set claiming it
+    falls back to its own `{relation}_{column}` — which cannot collide, because the cut site is
+    unique. The fallback is applied to ALL claimants, never to the later one only: qualifying just
+    the loser would leave the winner's name depending on scan order.
+    """
+    import collections
+    prefer = {k: _register_name(marker, h) for k, h in by_set.items()}
+    claimed = collections.Counter(prefer.values())
+    for key, held in by_set.items():
+        name = prefer[key]
+        if claimed[name] > 1:
+            base = _snake(f"{held['relation']}_{held['column']}")
+            name = f"{marker}_{base}" if marker and marker not in base else base
+            held["name_qualified_because"] = f"{claimed[prefer[key]]} value sets claim {prefer[key]!r}"
+        held["stem"] = name
+
+
+def _write_register_descriptors(root: pathlib.Path, by_set: dict, yaml) -> int:
+    """One `<stem>.lookup.yaml` per register: what it holds and every column attached to it.
+
+    A REGISTER IS A VIRTUAL TABLE (operator, 2026-09-29): "it reads like one register is like
+    virtual table. then many rules from the table domain will fit for the register lookup." A table
+    states its shape in a descriptor, so a register does too — and the fact that became PLURAL when
+    one register began serving many columns is exactly the one that had nowhere to live.
+
+    IT REPLACES A FACT SMEARED ACROSS THE ROWS. `source_view` and `source_schema` are written into
+    EVERY row of the CSV today — a table carrying its own lineage in each record. That was tolerable
+    while a register had exactly one source and is wrong the moment it has eight. The columns stay
+    in the CSV for now because four readers resolve through them (`mac_descriptors`,
+    `check_register_membership`, `check_registers_reachable`, and this file), and
+    `check_registers_reachable` says plainly that renaming that header "breaks a live behaviour with
+    no error". They name the OWNER; this names all of them.
+    """
+    wrote = 0
+    for held in by_set.values():
+        rel_csv = str(held["out"].relative_to(root))
+        # THE SCHEMA TRAVELS WITH EACH ATTACH POINT. A shared register spans PLANES — the same
+        # twelve month names sit on `main.date` and `contoso_served.dim_date` — so applying the
+        # owner's schema to every attach point resolved half of them against the wrong catalog.
+        # Measured on contoso5 the hour this list became plural: `contoso_served.date does not
+        # exist`, on a register that was correct.
+        attached = sorted({(r, c, sc or "") for r, c, _, sc in held["attached"]})
+        owner_rel, owner_col, _owner_schema = attached[0]
+        doc = {
+            "metadata": {"kind": "value_register", "generated_by": "mac_lookups.py/1"},
+            "register": {"name": held["stem"], "csv": rel_csv,
+                         "members": held["members"], "grain": "one row per code"},
+            "attached": [{"relation": r, "column": c, "schema": sc} for r, c, sc in attached],
+        }
+        head = ("# GENERATED by mac_lookups.py/1 — do not edit; re-run the cutter.\n"
+                "#\n"
+                "# A register is a VIRTUAL TABLE: `code` is its key, one row per member, and\n"
+                "# `attached` is every column of this bundle whose values ARE this set.\n"
+                f"# Cut from {owner_rel}.{owner_col}; the others attach to it.\n")
+        out = held["out"].parent / f"{held['stem']}.lookup.yaml"
+        out.write_text(head + yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100),
+                       encoding="utf-8")
+        wrote += 1
+    return wrote
 
 
 def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml, planes) -> int:

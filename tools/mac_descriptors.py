@@ -370,7 +370,35 @@ def cut_registers(root: pathlib.Path) -> dict:
     if not d.is_dir():
         return out
     import csv as _csv
+
+    # THE DECLARATION BEATS THE HEURISTIC, where there is one. Everything above describes inferring
+    # the attach point from `(source_view, header[0])`, which was the only way to know it while a
+    # register WAS one column's values. The operator ruled otherwise on 2026-09-29 — one register
+    # per value set, attached to many columns — and `mac_lookups` now writes that attach list into
+    # `<stem>.lookup.yaml`. Under the old inference a shared register would be claimed by its OWNER
+    # alone and the other seven columns would silently lose their `register:` pointer on the next
+    # regeneration, which is the same class of loss the paragraph above was written about.
+    #
+    # The CSV path below still runs for every register with no descriptor beside it, so a bundle cut
+    # before this change keeps working exactly as it did.
+    claimed: set = set()
+    try:
+        import yaml as _yaml
+        for y in sorted(d.glob("*.lookup.yaml")):
+            doc = _yaml.safe_load(y.read_text(encoding="utf-8")) or {}
+            csv_rel = ((doc.get("register") or {}).get("csv")
+                       or f"data/lookups/{y.stem.replace('.lookup', '')}.lookup.csv")
+            for att in doc.get("attached") or []:
+                rel, col = (att or {}).get("relation"), (att or {}).get("column")
+                if rel and col:
+                    out[(str(rel), str(col))] = str(csv_rel)
+            claimed.add(pathlib.Path(csv_rel).name)
+    except Exception as exc:  # noqa: BLE001 - an unreadable descriptor falls back to the CSV scan
+        print(f"  register descriptors unreadable, falling back to source_view: {exc}")
+
     for f in sorted(d.glob("*.lookup.csv")):
+        if f.name in claimed:
+            continue
         try:
             with f.open(encoding="utf-8", newline="") as fh:
                 rows = list(_csv.reader(fh))
