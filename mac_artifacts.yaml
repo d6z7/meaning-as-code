@@ -38,7 +38,10 @@ kinds:
     lifecycle: re-derived
     population:
       of: every landed relation
-      from: the warehouse's landing schema
+      from: data/sources/*.yaml    # SELF — the true denominator is the warehouse,
+                                   # and only the importer, holding a connection, can
+                                   # count it. Offline this asks 'is every descriptor
+                                   # complete', never 'is every relation described'.
       empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/sources/{relation}.yaml
     name: the landing's own relation name, verbatim — a landing is not renamed
@@ -56,7 +59,10 @@ kinds:
     lifecycle: re-derived
     population:
       of: every served relation
-      from: the warehouse's served schema
+      from: data/datasets/*.yaml    # SELF — the true denominator is the warehouse,
+                                   # and only the importer, holding a connection, can
+                                   # count it. Offline this asks 'is every descriptor
+                                   # complete', never 'is every relation described'.
       empty_is: EMPTY          # 0 of 0 is never a pass
     path: data/datasets/{relation}.yaml
     # THE SPELLING IS NOT RESTATED HERE. `check_served_name_distinct` publishes the convention in
@@ -118,9 +124,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every column whose value domain was measured
-      from: data/{plane}/*.yaml#columns[].values
-      empty_is: EMPTY          # 0 of 0 is never a pass
+      of: the artifact itself — ONE file
+      from: «this artifact»
+      empty_is: EMPTY
+    covers: every column whose value domain was measured   # what the ONE file must account for; its checker owns this
     path: data/lookups/{marker}_{relation}_{column}.lookup.csv
     name: >-
       marker, relation and column — the register IS its (relation, column). The marker is omitted when
@@ -153,9 +160,10 @@ kinds:
     phase: [datasets]
     lifecycle: re-derived
     population:
-      of: every served relation, and every served COLUMN
-      from: data/datasets/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
+      of: the artifact itself — ONE file
+      from: «this artifact»
+      empty_is: EMPTY
+    covers: every served relation, and every served COLUMN   # what the ONE file must account for; its checker owns this
     path: data/lineage/lineage.json
     name: fixed
     shape: mac.schema.json#/$defs/LineageFile
@@ -181,9 +189,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every plane that has a relation
-      from: data/{plane}/*.yaml
+      of: one page per plane, and each delivery owes its own
+      from: «this artifact»
       empty_is: EMPTY          # 0 of 0 is never a pass
+    covers: every relation of the plane
     path: data/{plane}/index.md
     name: fixed
     producers:
@@ -221,9 +230,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every relation of BOTH planes
-      from: data/sources/*.yaml + data/datasets/*.yaml
-      empty_is: EMPTY          # 0 of 0 is never a pass
+      of: the artifact itself — ONE file
+      from: «this artifact»
+      empty_is: EMPTY
+    covers: every relation of BOTH planes   # what the ONE file must account for; its checker owns this
     path: data/quality/data_quality_register.yaml
     name: fixed
     shape: mac.schema.json#/$defs/DataQualityRegisterFile
@@ -261,9 +271,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every finding in the data-quality register
-      from: data/quality/data_quality_register.yaml#issues[]
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every finding in the data-quality register   # what the ONE file must account for; its checker owns this
     path: data/quality/dq_dashboard.json
     origin: derived
     name: fixed
@@ -283,9 +294,10 @@ kinds:
     phase: [datasets]
     lifecycle: authored-once
     population:
-      of: every finding a transform claims to treat
-      from: data/quality/data_quality_register.yaml#issues[]
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every finding a transform claims to treat   # what the ONE file must account for; its checker owns this
     path: data/quality/impurity_resolution_map.yaml
     origin: authored
     name: fixed
@@ -305,9 +317,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: authored-once
     population:
-      of: every SME question the register raises
-      from: data/quality/data_quality_register.yaml#issues[]
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every SME question the register raises   # what the ONE file must account for; its checker owns this
     path: data/quality/sme_threads.json
     origin: authored
     name: fixed
@@ -327,10 +340,11 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: one record per plane that was measured
-      from: data/{plane}/*.yaml
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
-    path: data/references/{stem}.run.json | data/references_served/{stem}.run.json
+    covers: one record per plane that was measured   # what the ONE file must account for; its checker owns this
+    path: data/references/references.run.json | data/references_served/references.run.json
     origin: derived
     name: fixed per plane
     producers:
@@ -348,10 +362,11 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: one record per plane that was previewed
-      from: data/{plane}/*.yaml
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
-    path: data/samples/{stem}.run.json
+    covers: one record per plane that was previewed   # what the ONE file must account for; its checker owns this
+    path: data/samples/samples.run.json
     origin: derived
     name: fixed
     producers:
@@ -368,9 +383,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every addressable object of every plane
-      from: data/{plane}/*.yaml + ontology/concepts/**/*.yaml + data/lookups/*.lookup.csv
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every addressable object of every plane   # what the ONE file must account for; its checker owns this
     path: objects.json
     origin: derived
     name: fixed
@@ -391,9 +407,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: one per bundle
-      from: «the bundle»
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: the bundle   # what the ONE file must account for; its checker owns this
     path: index.md
     origin: derived
     name: fixed
@@ -413,9 +430,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every code in the closed diagnostic taxonomy
-      from: mac_vocabulary.yaml#diagnostic_code
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every code in the closed diagnostic taxonomy   # what the ONE file must account for; its checker owns this
     path: compile.json
     origin: derived
     name: fixed
@@ -435,9 +453,10 @@ kinds:
     phase: [sources, datasets]
     lifecycle: re-derived
     population:
-      of: every artifact family the bundle holds
-      from: «the bundle tree»
+      of: the artifact itself — ONE file
+      from: «this artifact»
       empty_is: EMPTY
+    covers: every artifact family the bundle holds   # what the ONE file must account for; its checker owns this
     path: "{stem}.mac"
     origin: derived
     name: the bundle's own label

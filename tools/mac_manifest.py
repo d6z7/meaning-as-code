@@ -427,3 +427,162 @@ def _self_test() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# THE CHECKLIST, PROJECTED FROM THE MANIFEST
+#
+# It was fifteen hand-written lambdas, and that is how an entire deliverable went missing while the
+# report read `6 of 6` and `9 of 9`: the data-quality assessment was in no item, so no item could be
+# short. A hand-written list can only ever check what somebody remembered to write down, and the
+# thing this whole change exists to fix is that I do not remember reliably.
+#
+# Derived from three declared fields and nothing else:
+#   phase       which delivery owes the artifact          -> which checklist it appears on
+#   path        where its files live                      -> what HAS been delivered
+#   population  the set it must cover, and where counted  -> the DENOMINATOR
+#
+# `0 of 0` stays EMPTY and never complete, because that rule is the estate's and predates this file.
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+
+#: Where a population phrase is counted, per plane. The manifest says `data/{plane}/*.yaml`; this is
+#: the only place that knows `sources` and `datasets` are the two planes it can mean.
+_PLANE_OF = {"sources": "sources", "datasets": "datasets"}
+
+#: The population of a kind that is ONE artifact: itself. Spelled once so the projector can ask
+#: "is this a single-file kind" without re-deriving the answer from the path.
+_SELF = "«this artifact»"
+
+
+def _plane_stems(root, plane) -> list:
+    return sorted(p.stem for p in (pathlib.Path(root) / "data" / plane).glob("*.yaml"))
+
+
+def _have_for(root, path_pattern: str, plane: str, stems: list) -> list:
+    """Which of `stems` actually have this kind's file, for this plane."""
+    out = []
+    for branch in str(path_pattern or "").split("|"):
+        b = branch.strip().replace("{plane}", plane)
+        if "{" not in b:
+            continue
+        head, _, tail = b.partition("{")
+        _tok, _, ext = tail.partition("}")
+        for s in stems:
+            f = pathlib.Path(root) / f"{head}{s}{ext}"
+            if f.is_file() and s not in out:
+                out.append(s)
+    return sorted(out)
+
+
+def _resolve_population(root, pop: dict, plane: str) -> tuple:
+    """(want, reason-it-cannot-be-counted). The DENOMINATOR comes from `population.from` and from
+    nowhere else — reading it off the path is how one kind silently borrows another's population."""
+    root = pathlib.Path(root)
+    frm = str(pop.get("from") or "").strip()
+    if not frm:
+        return [], "the kind declares no `population.from`, so its denominator is unstated"
+    if frm.startswith("«"):
+        # «none» — a kind that exists only where somebody chose to write one. Its honest
+        # denominator is zero, and `empty_is: OK` is what distinguishes that from a shortfall.
+        return ([] if "none" in frm else [_SELF]), ""
+    if "#" in frm:
+        where, _, sel = frm.partition("#")
+        where = where.strip().replace("{plane}", plane)
+        if where.startswith("mac_"):
+            return ["«the framework's own declaration»"], ""
+        f = root / where
+        if not f.is_file():
+            return [], f"{where} is not present, so {sel} cannot be counted"
+        try:
+            import yaml as _y
+            doc = _y.safe_load(f.read_text(encoding="utf-8")) or {}
+        except Exception:                                                 # noqa: BLE001
+            return [], f"{where} could not be read, so {sel} cannot be counted"
+        key = sel.split("[")[0].split(".")[0]
+        got = doc.get(key)
+        if isinstance(got, list):
+            return [str(i.get("id") if isinstance(i, dict) else i) for i in got], ""
+        return [], f"{where} carries no `{key}` list, so {sel} cannot be counted"
+    if "+" in frm:
+        out = []
+        for part_ in frm.split("+"):
+            out += _plane_stems(root, part_.strip().split("/")[1]) if "/" in part_ else []
+        return sorted(set(out)), ""
+    if "{plane}" in frm or f"data/{plane}" in frm:
+        return _plane_stems(root, plane), ""
+    if frm.startswith("data/"):
+        d = frm.split("/")[1]
+        return _plane_stems(root, d), ""
+    return [], f"`population.from: {frm}` names no countable set this projector understands"
+
+
+def checklist(root, part: str, kinds: dict) -> list:
+    """One item per declared kind that THIS delivery owes, with its measured (have, want).
+
+    Three item shapes, derived from the declared `path` — not from a taxonomy invented here:
+      * a `{relation}` token  -> one file per member of the population
+      * a `{plane}` token only -> one file per plane that has any relation
+      * no token at all        -> one file, present or not
+    """
+    root = pathlib.Path(root)
+    items = []
+    for name, k in sorted(kinds.items()):
+        phases = k.get("phase") or []
+        phases = phases if isinstance(phases, list) else [phases]
+        if part not in phases and "both" not in phases:
+            continue
+        pop = k.get("population") or {}
+        path = str(k.get("path") or "")
+        plane = _PLANE_OF.get(part, part)
+        want, why = _resolve_population(root, pop, plane)
+        if why:
+            # A POPULATION THIS CANNOT COUNT IS `n/a` WITH ITS REASON, never a silent number.
+            # Defaulting to the plane's relations is what made `register` read `0 of 8` against a
+            # bundle holding 48 registers cut from 24 columns: a denominator borrowed from another
+            # kind is worse than none, because it looks like an answer.
+            items.append({"id": name, "what": str(k.get("what") or name), "of": pop.get("of") or "—",
+                          "where": path.replace("{plane}", plane), "have": [], "want": [],
+                          "na": why, "empty_is": pop.get("empty_is") or "EMPTY"})
+            continue
+        # THE SHAPE OF THE WANT DECIDES, NOT THE SHAPE OF THE PATH. `register`'s path contains the
+        # token `{relation}` inside `{marker}_{relation}_{column}`, so a path-first test sent it down
+        # the one-file-per-relation branch and reported `0 of 1` over 48 delivered registers. What
+        # makes a kind per-relation is that its POPULATION is relations — which is the thing the
+        # manifest states outright.
+        if want == [_SELF]:
+            have = []
+            for branch in path.split("|"):
+                b = branch.strip().replace("{plane}", plane)
+                hits = list(root.glob(_tokenless(b))) if "{" in b else \
+                    ([root / b] if (root / b).is_file() else [])
+                if any(h.is_file() for h in hits):
+                    have = [_SELF]
+                    break
+        elif "{relation}" in path:
+            have = _have_for(root, path, plane, want)
+        elif "{plane}" in path:
+            have = [plane] if (root / path.replace("{plane}", plane)).is_file() else []
+        else:
+            # A SINGLE-FILE KIND IS PRESENT IF ANY BRANCH OF ITS PATH MATCHES. `(root/path).is_file()`
+            # answered False for every kind whose path carries an alternation or a token — the
+            # register (48 files on disk) read `0 of 1`, and so did the reference run records and the
+            # bundle's own resource description. A checklist that reports a delivered artifact absent
+            # is worse than one that omits it: it sends somebody to look for what is already there.
+            have = []
+            for branch in path.split("|"):
+                b = branch.strip().replace("{plane}", plane)
+                hits = list(root.glob(_tokenless(b))) if "{" in b else \
+                    ([root / b] if (root / b).is_file() else [])
+                if any(h.is_file() for h in hits):
+                    have = [path]
+                    break
+        items.append({
+            "id": name,
+            "what": str(k.get("what") or name),
+            "of": pop.get("of") or "—",
+            "where": path.replace("{plane}", plane),
+            "have": have,
+            "want": want,
+            "empty_is": pop.get("empty_is") or "EMPTY",
+        })
+    return items

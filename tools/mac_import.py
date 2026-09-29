@@ -486,26 +486,63 @@ def _lineage_index(root) -> dict:
 
 
 def _print_checklist(root: pathlib.Path, part: str) -> int:
-    items = CHECKLISTS[part]
-    print(f"\nCHECKLIST — {part.upper()} ({len(items)} item(s))\n")
+    """The checklist, PROJECTED from mac_artifacts.yaml — not written here.
+
+    IT WAS FIFTEEN HAND-WRITTEN LAMBDAS, and that is how a whole deliverable went missing while this
+    function printed `6 of 6` and `9 of 9`: the data-quality assessment was in no item, so no item
+    could be short. A hand-written list checks what somebody remembered to write down, and the defect
+    this whole change answers is that I do not remember reliably.
+
+    Projected from three DECLARED fields — `phase`, `path`, `population` — it went from 15 items to
+    40 on the same bundle without anyone writing the extra 25. The old list is kept below as
+    `CHECKLISTS` and used only as a FALLBACK when the registry cannot be read, so a framework
+    without a manifest still reports something rather than nothing.
+    """
+    items, projected = _projected_checklist(root, part), True
+    if not items:
+        items, projected = [dict(it, na=None) for it in CHECKLISTS.get(part, [])], False
+    src = "projected from mac_artifacts.yaml" if projected else "the hand-written fallback"
+    print(f"\nCHECKLIST — {part.upper()} ({len(items)} item(s), {src})\n")
     short = 0
     for it in items:
-        have, want = it["probe"](root)
+        if it.get("na"):
+            print(f"  [n/a  ] {it['id']:26} {it['na']}")
+            continue
+        if projected:
+            have, want = it["have"], it["want"]
+        else:
+            have, want = it["probe"](root)
         n, m = len(have), len(want)
         if m == 0:
-            mark, note = "EMPTY", "nothing to check — 0 of 0 is not a pass, it is an empty population"
+            if it.get("empty_is") == "OK":
+                mark, note = "OK   ", ""
+            else:
+                mark, note = "EMPTY", "nothing to check — 0 of 0 is not a pass, it is an empty population"
         elif n == m:
             mark, note = "OK   ", ""
         else:
-            mark, note = "SHORT", "missing: " + ", ".join(x for x in want if x not in have)
+            mark, note = "SHORT", "missing: " + ", ".join(str(x) for x in want if x not in have)
         if mark != "OK   ":
             short += 1
-        print(f"  [{mark}] {it['id']:3} {it['what']:52} {n} of {m:<3} {it['where']}")
+        print(f"  [{mark}] {str(it['id']):26} {str(it['what'])[:46]:46} {n} of {m:<3} {it['where']}")
         if note:
             print(f"                {note}")
     print(f"\n  {len(items) - short} of {len(items)} item(s) complete"
           + ("" if not short else f"; {short} NOT complete"))
     return 1 if short else 0
+
+
+def _projected_checklist(root: pathlib.Path, part: str) -> list:
+    """The manifest's own answer, or [] when it cannot be read — never a guess."""
+    try:
+        sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+        import mac_manifest as M
+        fw = pathlib.Path(__file__).resolve().parent.parent
+        kinds = M.declared_kinds(fw)
+        return M.checklist(root, part, kinds) if kinds else []
+    except Exception as exc:                                             # noqa: BLE001
+        print(f"  (the manifest could not be projected: {exc}; falling back to the written list)")
+        return []
 
 
 def _stages(root: pathlib.Path) -> list[dict]:
