@@ -50,8 +50,6 @@ values:
   aliases:
     realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
     map:
-      CANCELLED:
-      RETURNED:
 grounding:
   kind: sql_table
   schema: shop_warehouse
