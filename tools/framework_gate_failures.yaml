@@ -12,7 +12,7 @@ spec_version: mac.gate_failures/1
 scope: repo
 declared: 2026-09-29
 review_by: 2026-12-29
-standing: 9
+standing: 10
 entries:
   check_protocol.py:
     kind: fail
@@ -70,3 +70,10 @@ entries:
     since: 2026-09-29
     reason: "takes --framework / --propose / --inspect / --self-test and refuses a bare bundle root; the runner has one calling convention"
     expected: "a runner convention for flag-driven gates, or a default subject in the gate; its --self-test is 4/4"
+  check_declarations_read.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "119 of 453 declarations the framework admits have no reader in the runtime: all 9 common rules (mac_rules.yaml), 14 of 19 canon members, 9 not_expressible shapes, a register's `attached`, axis_kind.categorical, measure_type.stock; 68 are read by nothing on either side"
+    expected: "the objective of 2026-09-29 — every declaration read at answer time by the runtime, or retired from the schema; the list this gate prints is the work"
+    record: STRATEGY.md
