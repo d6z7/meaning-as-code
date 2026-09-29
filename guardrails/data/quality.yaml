@@ -1,4 +1,4 @@
-# guardrails/data_quality.yaml — WHAT IS WRONG.
+# guardrails/data/quality.yaml — WHAT IS WRONG.
 #
 # Every defect the physical layer carries, raised against evidence, and every projection of it a
 # person or an agent reads. It does NOT judge whether a finding is correct — that is a ruling, and
@@ -12,7 +12,7 @@
 # with data/quality/ ABSENT. No item asked about it, so no item could be short.
 
 spec_version: mac.guardrail/1
-topic: data_quality
+topic: data.quality
 status: PROPOSED 2026-09-29
 
 delivers:

@@ -42,7 +42,13 @@ def load_topics(framework: pathlib.Path) -> dict:
     d = framework / GUARDRAILS
     if not d.is_dir():
         return {"«none»": {}}
-    for f in sorted(d.glob("*.yaml")):
+    # RECURSIVE, AND THAT IS NOT A DETAIL. A flat glob over a directory whose files are filed in
+    # groups is this estate's most-repeated defect — nine occurrences, the worst of them shipping an
+    # EMPTY `usage_guardrails.md` (30 lines against 645) because `references.py` globbed
+    # `concepts/*.yaml` on a bundle that files concepts by domain. The moment `guardrails/` gained
+    # `data/` and `ontology/`, a flat glob here would have read FOUR topics as zero and every
+    # declaration with them — reporting a complete delivery as entirely undeclared.
+    for f in sorted(d.rglob("*.yaml")):
         try:
             doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception as exc:                                          # noqa: BLE001

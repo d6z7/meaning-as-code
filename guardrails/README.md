@@ -47,8 +47,34 @@ guardrail that cannot say NO at the moment of the action is a note, not a guard.
 So each topic declares `refuses`, and those are enforced by a hook that blocks the tool call — not
 by a checker that complains about it later.
 
-## Files
+## How it is laid out
 
-| file | topic |
-|---|---|
-| `data-ingestion.yaml` | phase 1 — the landing plane: what an ingestion of data SOURCES owes |
+Grouped by PLANE, then one file per SUBJECT within it — the way `ontology/concepts/` groups by
+domain. The topic id is the path, dotted: `data/sources.yaml` declares `topic: data.sources`.
+
+```
+guardrails/
+  common.yaml                  rules that hold everywhere; delivers NOTHING
+  unfiled.yaml                 delivered, and filed under no subject yet — the debt list
+  data/
+    sources.yaml               what is THERE      — the physical layer, described
+    quality.yaml               what is WRONG      — findings and their projections
+    sme_questions.yaml         what must be DECIDED
+    transformation.yaml        what we decided to SERVE — and it CONSUMES the two above
+  ontology/                    empty; see its README. Unruled is not unnoticed.
+```
+
+**TOPIC IS SUBJECT. PHASE IS DELIVERY.** They are not the same axis, and conflating them is what
+made an earlier file called `data-ingestion` declare `phase: sources` over a set of items that were
+mostly written by both deliveries. A topic groups by what an artifact is ABOUT; the phase lives on
+the ITEM and says which delivery owes it.
+
+**A LOADER HERE MUST RECURSE.** A flat `guardrails/*.yaml` sees `common` and `unfiled` and misses
+every topic under `data/` — measured the hour this tree was grouped: 2 topics found instead of 6,
+which would have reported a complete delivery as entirely undeclared. This estate's most-repeated
+defect is a flat glob over a grouped directory; the worst instance ships an empty
+`usage_guardrails.md`, 30 lines against 645, because `references.py` globs `concepts/*.yaml`.
+
+**A KIND BELONGS TO EXACTLY ONE FILE.** Moving one between topics is a MOVE, never a copy — which
+is why no precedence rule exists anywhere in this tree, and why `bom.conflicts` must stay empty.
+I have made that mistake twice; the gate caught it both times.

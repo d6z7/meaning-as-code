@@ -1,4 +1,4 @@
-# guardrails/data_transformation.yaml — WHAT WE DECIDED TO SERVE, AND WHY.
+# guardrails/data/transformation.yaml — WHAT WE DECIDED TO SERVE, AND WHY.
 #
 # Phase 2. The served plane: an AUTHORED statement of what this warehouse should look like to
 # somebody asking questions of it, and everything measured about the result.
@@ -18,7 +18,7 @@
 # ontology. UNSPECIFIED IS NOT RULED.
 
 spec_version: mac.guardrail/1
-topic: data_transformation
+topic: data.transformation
 status: PROPOSED 2026-09-29
 
 delivers:

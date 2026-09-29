@@ -1,4 +1,4 @@
-# guardrails/sme_questions.yaml — WHAT MUST BE DECIDED.
+# guardrails/data/sme_questions.yaml — WHAT MUST BE DECIDED.
 #
 # One item. That is the right size: this artifact has a written design behind it
 # (mac-platform/temp/sme-questions/DESIGN.md, PROPOSED 2026-09-17, its schema mutant-tested 47 of
@@ -13,7 +13,7 @@
 # judgement no gate makes.
 
 spec_version: mac.guardrail/1
-topic: sme_questions
+topic: data.sme_questions
 status: PROPOSED 2026-09-29
 
 delivers:

@@ -1,20 +1,20 @@
-# guardrails/data_sources.yaml — WHAT IS THERE.
+# guardrails/data/sources.yaml — WHAT IS THERE.
 #
 # The physical layer, described. What a warehouse already holds, measured, previewed, cut into
 # registers and rendered for a person to read — plus the sanity suite that measures it.
 #
 # THIS IS PHASE 1's FIRST JOB. Operator, 2026-09-29: "while doing data ingestion it should create
 # only FULL reference to the pyhsical layer DQ and SME questions." That is three deliverables, not
-# one, and they are three files: this one, `data_quality.yaml`, and `sme_questions.yaml`. They are
+# one, and they are three files: this one, `data/quality.yaml`, and `sme_questions.yaml`. They are
 # approved separately because you can accept the reference and dispute a finding.
 #
 # IT ENDS BEFORE ANYTHING IS TRANSFORMED. The served plane, its transforms and its lineage belong
-# to `data_transformation.yaml`, which consumes this topic's findings and the SME's answers.
+# to `data/transformation.yaml`, which consumes this topic's findings and the SME's answers.
 #
 # UNSPECIFIED IS NOT RULED (see README). Absence from this file is permission, not oversight.
 
 spec_version: mac.guardrail/1
-topic: data_sources
+topic: data.sources
 status: PROPOSED 2026-09-29
 
 delivers:
