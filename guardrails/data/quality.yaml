@@ -33,8 +33,11 @@ delivers:
   dq_finding_page:
     what: one page per registered data-quality finding — what was measured, how it is handled, what it costs
     phase: [sources, datasets]
-    path: data/quality/DQ-{id}.md
-    naming: "DQ-{TYPE}-{SUBJECT}, uppercase — the finding's own id, never renamed"
+    path: data/quality/{finding_id}.md
+    naming: >-
+      the finding's OWN id, verbatim — it already carries its `DQ-` prefix. Writing the path as
+      `DQ-{id}` added a second one and the checklist looked for `DQ-DQ-ORPHAN-STORE.md`, reporting
+      1 of 13 pages present over a directory holding all thirteen.
     population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
     lifecycle: re-derived
     producers: [{tool: sdk/project/project_data.py, role: renders one page per finding}]
@@ -84,7 +87,7 @@ delivers:
   known_issue_page:
     what: one page per finding, in the plane an ask-agent reads — the trap it must not fall into
     phase: [sources, datasets]
-    path: references/known_issues/DQ-{id}.md
+    path: references/known_issues/{finding_id}.md
     naming: the finding's own id, verbatim
     population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
     lifecycle: re-derived

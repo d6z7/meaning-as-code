@@ -513,7 +513,12 @@ def _print_checklist(root: pathlib.Path, part: str) -> int:
         else:
             have, want = it["probe"](root)
         n, m = len(have), len(want)
-        if m == 0:
+        if it.get("optional") and n == 0:
+            # `empty_is: OK` — absence is the NORMAL state for this kind. `sme_thread_log` is
+            # written by the console when somebody comments, never by an import; reporting it
+            # SHORT on every delivery makes "not complete" mean nothing.
+            mark, note = "OK   ", ""
+        elif m == 0:
             if it.get("empty_is") == "OK":
                 mark, note = "OK   ", ""
             else:
@@ -538,7 +543,10 @@ def _projected_checklist(root: pathlib.Path, part: str) -> list:
         sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
         import mac_manifest as M
         fw = pathlib.Path(__file__).resolve().parent.parent
-        kinds = M.declared_kinds(fw)
+        # EVERY DECLARATION, not just the big file. When the phase-1 kinds moved into guardrails/
+        # this read `declared_kinds` — mac_artifacts.yaml alone — and a delivery owing 29 items
+        # printed a checklist of 6 leftovers and called it `6 of 6 complete`.
+        kinds = M.declared_items(fw)
         return M.checklist(root, part, kinds) if kinds else []
     except Exception as exc:                                             # noqa: BLE001
         print(f"  (the manifest could not be projected: {exc}; falling back to the written list)")
@@ -874,6 +882,13 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # as it existed; nothing in the estate would have noticed if this had gone the same way.
         {"name": "manifest-acceptance", "part": "both", "always": True, "d": "D1",
          "cmd": [_tool("check_manifest_catches_yesterday.py")]},
+        # THE PAGE'S SHAPE, HELD TO ITS DECLARATION — and it runs on every delivery, which is the
+        # difference between doing a thing once and doing it every time. Operator, 2026-09-29:
+        # "my question is not if you can do it ONCE ... the question is if you can do it EVERY
+        # TIME". Demonstrated the same day: with the renderer deliberately broken,
+        # `check_pages_current` reported 9 of 9 pages current and this refused 4 sections.
+        {"name": "page-shape", "part": "both", "always": True, "d": "D6",
+         "cmd": [_tool("check_page_shape.py"), str(root)]},
         {"name": "delivery-check", "part": "both", "always": True,
          "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
          "cmd": [_tool("check_delivery_consistency.py"), str(root)]},

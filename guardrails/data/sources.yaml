@@ -23,7 +23,14 @@ delivers:
     phase: [sources]
     path: data/sources/{relation}.yaml
     naming: the landing's own relation name, verbatim — a landing is never renamed
-    population: {of: every landed relation, from: the warehouse's landing schema, empty_is: EMPTY}
+    population:
+      # SELF, and the reason is worth stating: the true denominator is the WAREHOUSE, and only the
+      # importer — holding a connection — can count it. Offline this asks "is every descriptor
+      # complete", never "is every relation described". A population that cannot be counted is
+      # reported `n/a` with its reason, never as a pass.
+      of: every landed relation
+      from: data/sources/*.yaml
+      empty_is: EMPTY
     lifecycle: re-derived
     producers:
       - {tool: "tools/mac_descriptors.py", role: "measures", args: "--plane sources"}
@@ -133,7 +140,12 @@ delivers:
       sharing a column name overwrite one another: measured 2026-09-28, eight domains lost across
       four bundles.
     columns: [«code», label, search_key, source_view, source_schema, confidence, note]
-    population: {of: every column whose value domain was measured, from: the profile's domains, empty_is: EMPTY}
+    population:
+      # WHAT WAS ACTUALLY CUT. The profile's domains are consumed in flight and gone by delivery,
+      # so they cannot be the denominator at the moment anybody asks.
+      of: every column whose value domain was measured
+      from: data/lookups/*.lookup.csv
+      empty_is: EMPTY
     lifecycle: re-derived
     producers: [{tool: tools/mac_lookups.py, role: cuts, args: "--plane sources"}]
     consumers:
@@ -169,9 +181,36 @@ delivers:
     naming: the descriptor's stem, verbatim
     population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
     lifecycle: re-derived
+    # ── THE PAGE'S SHAPE, DECLARED ───────────────────────────────────────────────────────────
+    # WHAT A SCHEMA IS FOR YAML, THIS IS FOR MARKDOWN. `validate_schema` holds a descriptor to
+    # mac.schema.json; `check_sample_matches_descriptor` holds a preview's header to its
+    # descriptor; a PAGE was held to nothing. `check_pages_current` re-renders and byte-compares,
+    # which catches a page drifting from its source and CANNOT catch the renderer changing what it
+    # emits — the comparator and the renderer are the same code, so they agree by construction.
+    #
+    # Measured: the cardinality this bundle MEASURES and stores in the descriptor stopped appearing
+    # on the page and nothing objected, because no declaration said it should. The decision was
+    # inherited from a rationale written about the columns TABLE CELL ("the crow's feet are the
+    # diagram's job") — sound for a cell beside a diagram, not sound for a section read on its own.
+    #
+    # ASSERT LITTLE AND TRUE. A shape rule that cries wolf gets ignored, and is then worse than
+    # nothing. These are the two failures that actually happened — a mapping printed as a Python
+    # repr, and a measured fact silently dropped. Nothing else is governed.
+    shape:
+      sections:
+        - {heading: Columns, required: always}
+        - {heading: Foreign keys, required: when_a_column_has_references}
+        - {heading: Registers, required: when_a_column_has_a_register}
+      lines:
+        Foreign keys: '^- `[^`]+` → `[^`.]+\.[^`]+` \([a-z]+:[a-z]+, [a-z]+:[a-z]+\)$'
+      # the same rule in words, so a refusal is readable by somebody who does not read regex
+      line_forms:
+        Foreign keys: '- `column` → `relation.column` (child:parent, child:parent)'
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
-    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+    checkers:
+      - {tool: tools/check_pages_current.py, rejects: [STALE]}
+      - {tool: tools/check_page_shape.py, rejects: [SECTION_MISSING, LINE_MALFORMED, UNGOVERNED_SECTION]}
 
   plane_overview:
     what: one page over ALL of the landing plane — what was landed, how big, what is keyed

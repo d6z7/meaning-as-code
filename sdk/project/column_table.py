@@ -125,14 +125,42 @@ def register_name(col: dict) -> str:
 
 
 def fk_section(cols) -> list:
-    """`## Foreign keys` — one line per column pointing at another relation, or [] if none."""
+    """`## Foreign keys` — one line per column pointing at another relation, or [] if none.
+
+    THE SHAPE IS DECLARED, not decided here: `guardrails/data/sources.yaml#relation_page.shape`
+    states the line form and `tools/check_page_shape.py` holds the DELIVERED page to it. Change
+    this and the gate refuses until the declaration changes too — which is the point. Operator,
+    2026-09-29: "the question is if you can do it EVERY TIME".
+
+    THE CARDINALITY IS ON THE LINE, and it is not decoration. It was measured, it is stored on the
+    descriptor, and it disappeared from the page without anybody deciding: the rationale for
+    omitting it was written about the columns TABLE CELL — "the crow's feet are the diagram's job,
+    and a table that printed `many:one` in a reference column would be restating the picture badly"
+    — which is sound for a cell beside a diagram and not sound for a section read on its own. A
+    person reading this page has no diagram in front of them, and `many:one` against `one:one` is
+    the difference between a join that can multiply rows and one that cannot.
+
+    A REFERENCE IS A SIBLING OF THE ROLE, NOT A PROPERTY OF IT (operator ruling). A column can be
+    part of the primary key AND point at a parent — `sales.OrderKey` is PK1 and references
+    `orders.OrderKey` — so filtering on `role == "foreign_key"` dropped three real references from
+    three pages. The test is whether the column CARRIES a reference.
+    """
     out = []
     for c in cols or []:
-        if not isinstance(c, dict) or str(c.get("role")) != "foreign_key":
+        if not isinstance(c, dict):
             continue
         rel, tgt = _ref_parts(c)
-        if rel:
-            out.append(f"- `{c.get('name')}` → `{rel}.{tgt}`" if tgt else f"- `{c.get('name')}` → `{rel}`")
+        if not rel:
+            continue
+        r = c.get("references")
+        card = (r or {}).get("cardinality") if isinstance(r, dict) else None
+        part = (r or {}).get("participation") if isinstance(r, dict) else None
+        target = f"{rel}.{tgt}" if tgt else rel
+        line = f"- `{c.get('name')}` → `{target}`"
+        if isinstance(card, dict) and isinstance(part, dict):
+            line += (f" ({card.get('child')}:{card.get('parent')}, "
+                     f"{part.get('child')}:{part.get('parent')})")
+        out.append(line)
     return ["", "## Foreign keys", ""] + out if out else []
 
 

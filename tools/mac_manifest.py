@@ -475,17 +475,22 @@ def _plane_stems(root, plane) -> list:
 
 
 def _have_for(root, path_pattern: str, plane: str, stems: list) -> list:
-    """Which of `stems` actually have this kind's file, for this plane."""
+    """Which members of the population actually have this kind's file.
+
+    THE WHOLE TOKEN SPAN IS THE SLOT, first `{` to last `}` — the same rule `_tokenless` uses, and
+    for the same reason. Splitting on the FIRST token left the rest as a literal suffix: for
+    `{marker}_{relation}_{column}.lookup.csv` it looked for
+    `data/lookups/<member>_{relation}_{column}.lookup.csv` and found nothing, reporting 0 of 24
+    over a directory holding all twenty-four.
+    """
     out = []
     for branch in str(path_pattern or "").split("|"):
         b = branch.strip().replace("{plane}", plane)
         if "{" not in b:
             continue
-        head, _, tail = b.partition("{")
-        _tok, _, ext = tail.partition("}")
+        head, tail = b[: b.index("{")], b[b.rindex("}") + 1:]
         for s in stems:
-            f = pathlib.Path(root) / f"{head}{s}{ext}"
-            if f.is_file() and s not in out:
+            if (pathlib.Path(root) / f"{head}{s}{tail}").is_file() and s not in out:
                 out.append(s)
     return sorted(out)
 
@@ -526,9 +531,21 @@ def _resolve_population(root, pop: dict, plane: str) -> tuple:
         return sorted(set(out)), ""
     if "{plane}" in frm or f"data/{plane}" in frm:
         return _plane_stems(root, plane), ""
-    if frm.startswith("data/"):
-        d = frm.split("/")[1]
-        return _plane_stems(root, d), ""
+    if frm.startswith("data/") or "/" in frm:
+        # COUNT THE GLOB THE DECLARATION NAMES, not `<dir>/*.yaml`. `data/lookups/*.lookup.csv`
+        # was read as `data/lookups/*.yaml`, returned nothing, and `register_page` reported
+        # `1 of 0` — one file present against an empty population, which the EMPTY rule then
+        # correctly refused to call a pass. The denominator was simply never counted.
+        hits = sorted(root.glob(frm)) if any(c in frm for c in "*?[") else []
+        if hits:
+            # THE MEMBER IS WHAT THE PATH'S SLOT HOLDS, which is the stem — `contoso5_x_y`, not
+            # `contoso5_x_y.lookup.csv`. Returning the whole filename made `{register}.lookup.md`
+            # look for `contoso5_x_y.lookup.csv.lookup.md`.
+            suffix = frm.split("*")[-1] if "*" in frm else ""
+            return [p.name[: -len(suffix)] if suffix and p.name.endswith(suffix) else p.stem
+                    for p in hits], ""
+        d = frm.split("/")[1] if frm.startswith("data/") else None
+        return (_plane_stems(root, d), "") if d else ([], f"`{frm}` matched nothing")
     return [], f"`population.from: {frm}` names no countable set this projector understands"
 
 
@@ -574,7 +591,10 @@ def checklist(root, part: str, kinds: dict) -> list:
                 if any(h.is_file() for h in hits):
                     have = [_SELF]
                     break
-        elif "{relation}" in path:
+        elif "{" in path:
+            # ANY token is a slot. Keying on the literal `{relation}` sent every kind whose slot is
+            # named otherwise — `{finding_id}`, `{register}` — down the single-file branch, where
+            # "the glob matched something" reads as 1 of 13.
             have = _have_for(root, path, plane, want)
         elif "{plane}" in path:
             have = [plane] if (root / path.replace("{plane}", plane)).is_file() else []
@@ -594,6 +614,7 @@ def checklist(root, part: str, kinds: dict) -> list:
                     break
         items.append({
             "id": name,
+            "optional": (pop.get("empty_is") == "OK"),
             "what": str(k.get("what") or name),
             "of": pop.get("of") or "—",
             "where": path.replace("{plane}", plane),
@@ -721,3 +742,33 @@ def bom(root, framework, phase=None) -> dict:
                        "undeclared": len(undeclared), "other_phase": len(other_phase),
                        "files_claimed": sum(r["files"] for r in present),
                        "files_undeclared": sum(r["files"] for r in undeclared)}}
+
+
+def declared_items(framework) -> dict:
+    """{name -> the FULL declaration}, guardrails and mac_artifacts merged, `owner` injected.
+
+    `declared_everywhere` returns only what the BOM needs — path, phase, optional. The checklist
+    needs the whole item: its `what`, its `population`, its `lifecycle`. Two readers wanting
+    different slices of one fact is fine; two readers wanting DIFFERENT SOURCES is not, and that is
+    what happened when the phase-1 kinds moved into guardrails/ and this function did not exist:
+    `_projected_checklist` went on reading `declared_kinds` — mac_artifacts.yaml alone — and a
+    delivery that owes 29 items reported a checklist of 6, all of them leftovers. It said `6 of 6
+    complete` over a bundle whose entire landing plane was outside its view.
+    """
+    out = {}
+    for topic, spec in load_guardrails(framework).items():
+        if topic == "«broken»" or not isinstance(spec, dict):
+            continue
+        tph = spec.get("phase")
+        tph = [tph] if isinstance(tph, str) else (tph or [])
+        for name, item in (spec.get("delivers") or {}).items():
+            it = dict(item)
+            it.setdefault("phase", tph)
+            it["_owner"] = f"guardrails/{topic}"
+            out[name] = it
+    for name, item in (declared_kinds(framework) or {}).items():
+        if name not in out:
+            it = dict(item)
+            it["_owner"] = "mac_artifacts.yaml"
+            out[name] = it
+    return out
