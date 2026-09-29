@@ -97,7 +97,6 @@ metadata:  # REQUIRED
   source: <…>  # REQUIRED · string
   version: <…>  # string
   schema_version: <…>  # REQUIRED · string
-  benchmark_baseline: <…>  # string
   status: <…>  # enum: production | draft | prototype
   owner: <…>  # string
   confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
@@ -107,7 +106,6 @@ metadata:  # REQUIRED
 concept:  # REQUIRED
   name: <…>  # REQUIRED · string · PascalCase ontology id — the single canonical identifier.
   label: <…>  # string
-  german: <…>  # string
   class: <…>  # REQUIRED · enum: entity | event | measure | enumeration | reference | grouping | meta · The closed seven-class vocabulary
   definition: <…>  # string
   semantics:  # The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).  # closed: only keys above
@@ -124,8 +122,6 @@ concept:  # REQUIRED
       note: <…>  # string
     measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a…
   notes: <…>  # string
-  grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
-  related_axis: <…>  # string
   identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above
     kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | sme_pending · mac.concept.identity.<term> — how the canonical identity is established.
     canonical_key: <…>  # string · the column/expression that IS the identity (omit for sme_pending;…
@@ -136,8 +132,6 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
   no_probe_guarantee: <…>  # string · What an agent needs ONLY, to use this concept without probing the data;…
   resolution: <…>  # string|object · How identity / name→code resolves (a join, not a probe)
   default_reading: <…>  # string|object · The default aggregation / role / perspective to assume when the…
-  answer_rules: <…>  # string|object · Binding constraints on answering — which definition to use, what to…
-  axis_handling: <…>  # string|object · How to treat time / orthogonal axes for this concept
   rules:  # v0.1.6: typed behavioural rules (promoted from an applied pilot,…
     - <item>
       id: <…>  # REQUIRED · string · stable dotted id, e.g
@@ -171,15 +165,12 @@ values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set 
       note: <…>  # string
       open_question: <…>  # string
       from: <…>  # string|array · raw source attribute(s) this value was conformed from (a list when…
-  unmapped:  # the orphan-quarantine bucket — how raw values outside the closed set…  # open: extra keys allowed
-  canonicalization: <…>  # string|object · how raw spellings/duplicates were conformed to the canonical codes.
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
     note: <…>  # string
   aliases:  # v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a…  # closed: only keys above
-    scope_key: <…>  # string · the dimension/column whose value selects a Tier-1 scope_relative row…
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
@@ -193,35 +184,15 @@ properties:  # Intrinsic PRIMITIVE attributes — each a cross-class PropertyIte
     type: <…>  # string · the primitive datatype (string/int/date/...)
     required: <…>  # boolean
     doc: <…>  # string
-    german: <…>  # string
     value_domain: <…>  # string · (optional) an enumeration this property's values must belong to
-
-attributes:  # EAV / enum-constrained attributes — each an AttributeItem
-  - <item>  # $defs.AttributeItem
-    name: <…>  # REQUIRED · string
-    value_domain: <…>  # string · the enumeration the attribute's values belong to
-    eav_attribute: <…>  # string
-    column: <…>  # string
-    confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
-    note: <…>  # string
-
-subclasses: [ ... ]  # is-a hierarchy (e.g
-
-instances: [ ... ]
 
 members:  # one of: array | object · v0.5 grouping template — how a grouping rolls up its leaf
   over: <…>  # REQUIRED · string · the leaf concept this groups (region over country, category over…
-  member_source:  # open: extra keys allowed
-    kind: <…>  # enum: rule | enumerated
-    rule: <…>  # string|object · (rule) how membership is computed — a FK / transitive walk
   definitions:  # (enumerated) the named member sets — each an explicit list or a derived…
     - <item>
-      namespace: <…>  # string · disambiguator (brand / 'standard' / 'political') — kills same-code…
       code: <…>  # REQUIRED · string|number
       label: <…>  # string
-      brand: <…>  # string
       members: [ ... ]  # (explicit) the leaf codes in this set
-      derived_rule: <…>  # string|object · (derived) how this set's members are computed
       confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
@@ -229,21 +200,10 @@ members:  # one of: array | object · v0.5 grouping template — how a grouping 
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
     note: <…>  # string
 
-members_resolution: <…>  # string|object
-
-enumerations: [ ... ]  # list of enum sub-blocks when a concept carries several coded columns.
-
-related_concepts: [ ... ]
-
 lifecycle:  # (event class) the state machine: phases group states, in sequence
-  phase_sequence: [ ... ]
   phases: [ ... ]
-  phase_closure: <…>
-  states: <…>
   boundary: <…>
   note: <…>  # string
-
-individual_kpis: [ ... ]  # (measure catalogue) concrete measures, each referencing a measure_type…
 
 derived_by_rule: <…>  # string · marks a concept whose value is produced by a rule; the formula lives in…
 
@@ -255,8 +215,6 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
       key: <…>  # string|array · primary / join key column(s)
       columns:  # one of: array | object · THE COLUMN MAP — everything about one column, ON the column  # open: extra keys allowed
   table: <…>  # string · LEGACY, and still accepted: the single relation this concept queries
-  tables: [ ... ]
-  primary_tables: [ ... ]
   schema: <…>  # string
   key_column: <…>  # string
   code_column: <…>  # string
@@ -264,10 +222,7 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
   join_rule: <…>  # string
   discriminator: <…>  # string · THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a…
   snapshot_rule: <…>  # string
-  family_resolution: <…>  # string
   row_count: <…>  # integer|string
-  used_in: <…>  # array|string
-  serves_from: <…>  # string|array · v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is…
   grain: <…>  # string · v0.5 PROMOTED to core: the committed leaf grain — one row = one ..
   grounds_column: <…>  # string · (naming contract) a physical column name as a VALUE, never a key.
   field_roles:  # v0.1.7: the WHITELIST of grounded columns that carry ontology meaning,…  # open: extra keys allowed
@@ -284,7 +239,6 @@ constraints:
     assert: <…>  # REQUIRED · string
     severity: <…>  # enum: ERROR | WARNING | INFORMATIONAL
     machine_executable: <…>  # boolean
-    sql_assertion: <…>  # string
     open_question: <…>  # string
     notes: <…>  # string
 
@@ -317,7 +271,7 @@ open_questions:
 
 - **event** — requires `lifecycle`
 - **measure** — requires `concept.semantics.measure_type`; requires `concept.semantics.axis_kinds`; requires `concept.semantics`
-- **enumeration** — requires `values`; forbids `enumerations`
+- **enumeration** — requires `values`
 - **grouping** — requires `members`
 
 ### RulesFile
@@ -348,15 +302,11 @@ rules:  # REQUIRED
     render_kind: <…>  # REQUIRED · enum: sql_expression | sql_view | derived_set | spark_udf | spec_only
     template: <…>  # string
     view_ref: <…>  # string
-    usage_template: <…>  # string
     requires_join: <…>  # string
-    relative_template: <…>  # string
     applied_as: <…>  # string
     closure: <…>
-    disambiguation: <…>
     validated_against: <…>  # array|string
     conditions: <…>
-    edge_cases: <…>
     inspectable: <…>  # boolean
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     cross_references: <…>  # array|string
@@ -421,13 +371,8 @@ edges:  # REQUIRED
         params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
         applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
         note: <…>  # string
-      multilingual:  # scope-free NL surfaces by language that trigger this relation — the…  # closed: only keys above
-        de: [ ... ]
-        en: [ ... ]
-        syn: [ ... ]
     conditions: <…>
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
-    federation_concept_id: <…>  # string
     notes: <…>  # string
     cross_references: <…>  # array|string
 ```
@@ -525,7 +470,6 @@ produces:  # REQUIRED · the single dataset this pipeline emits — the seam the
   relation: <…>  # REQUIRED · string · the produced dataset relation (schema.name)
   sql_file: <…>  # string · the executable transform (the SELECT / CREATE VIEW) realizing this…
   grain: <…>  # string
-  serves_ontology: <…>  # string · pointer to the consuming concept/ontology file (documentation only)
 
 inputs:  # REQUIRED · EVERY relation this transform reads, each typed by `kind`
   - <item>

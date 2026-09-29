@@ -558,6 +558,19 @@ bundle must reach the start before anything is allowed to run.
   - **`ProfileFile.columns[].singletons`** — values held by exactly one row, measured by
     `mac_profile.py/6` in one GROUPING SETS scan for near-unique non-key columns; the measurement a
     `never_axis: privacy` ruling cites through `DQ-IDENTIFYING-<relation>-<column>`.
+  - **The v0.5 content model left the schema** (operator ruling: "everything will be dropped, this is R&D"; then
+    "yes" to retire what nobody reads and implement the new grammar). `tools/check_declarations_read.py`
+    traced every declaration to its reader: 68 keys of the initial release — `attributes`/EAV,
+    `instances`, `individual_kpis`, `enumerations`, `members.member_source`/`definitions[].*`,
+    `values.aliases.*.multilingual`/`scope_key`/`canonicalization`/`unmapped`, `german`, `subclasses`,
+    `related_concepts`, `grounding.tables`/`primary_tables`/`used_in`/`family_resolution`/`serves_from`,
+    `lifecycle.states`/`phase_sequence`/`phase_closure`, `contract.answer_rules`/`axis_handling`,
+    `rules[].usage_template`/`relative_template`/`edge_cases`/`disambiguation`, `produces.serves_ontology`
+    — were read by no line of the runtime and, for 31 of them, by nothing on either side. 41 keys and one
+    conditional are gone; the documentary ones (a member's `meaning`, a `closure_why`, a change's
+    `rationale`, an open question) stay, because people read them. NOT version-bumped: the bundles that
+    carried a retired key are the disposable examples and were stripped. The audit is a gate in the
+    runner, so a key nobody reads cannot return unnoticed.
   - **The reader caught up.** mac-runtime loads `rulings` (label_of, finer_than, never_axis with readers;
     scoped_by loaded) and several measure columns that compose one quantity under `semantics.unit`; the
     first bundle on the column standard (contoso5, 17 concepts) could not load there before. One fixture

@@ -115,9 +115,6 @@
             "schema_version": {
               "type": "string"
             },
-            "benchmark_baseline": {
-              "type": "string"
-            },
             "status": {
               "$ref": "#/$defs/status"
             },
@@ -157,9 +154,6 @@
             "label": {
               "type": "string"
             },
-            "german": {
-              "type": "string"
-            },
             "class": {
               "enum": [
                 "entity",
@@ -179,13 +173,6 @@
               "$ref": "#/$defs/semantics"
             },
             "notes": {
-              "type": "string"
-            },
-            "grounded_by": {
-              "type": "string",
-              "description": "(enumerations) the discriminator column the values come from."
-            },
-            "related_axis": {
               "type": "string"
             },
             "identity": {
@@ -236,20 +223,6 @@
             "$ref": "#/$defs/PropertyItem"
           }
         },
-        "attributes": {
-          "type": "array",
-          "description": "EAV / enum-constrained attributes — each an AttributeItem. Distinct from 'properties' (primitive).",
-          "items": {
-            "$ref": "#/$defs/AttributeItem"
-          }
-        },
-        "subclasses": {
-          "type": "array",
-          "description": "is-a hierarchy (e.g. measure Flow/Stock/Target)."
-        },
-        "instances": {
-          "type": "array"
-        },
         "members": {
           "description": "grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).",
           "oneOf": [
@@ -261,41 +234,19 @@
             }
           ]
         },
-        "members_resolution": {
-          "type": [
-            "string",
-            "object"
-          ]
-        },
-        "enumerations": {
-          "type": "array",
-          "description": "list of enum sub-blocks when a concept carries several coded columns."
-        },
-        "related_concepts": {
-          "type": "array"
-        },
         "lifecycle": {
           "type": "object",
           "description": "(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.",
           "properties": {
-            "phase_sequence": {
-              "type": "array"
-            },
             "phases": {
               "type": "array"
             },
-            "phase_closure": {},
-            "states": {},
             "boundary": {},
             "note": {
               "type": "string"
             }
           },
           "additionalProperties": false
-        },
-        "individual_kpis": {
-          "type": "array",
-          "description": "(measure catalogue) concrete measures, each referencing a measure_type + own semantics."
         },
         "derived_by_rule": {
           "type": "string",
@@ -323,7 +274,7 @@
       "additionalProperties": false,
       "allOf": [
         {
-          "$comment": "v0.5 per-class template — enumeration: the value set lives in `values:` (one concept = one set); the `enumerations:` plural wrapper is only for non-enumeration concepts carrying several coded columns.",
+          "$comment": "v0.5 per-class template — enumeration: the value set lives in `values:` (one concept = one set). The `enumerations:` plural wrapper of the v0.5 content model was RETIRED 2026-09-29 with the rest of that model (no reader on either side); the `not: required` clause that policed it went with it.",
           "if": {
             "properties": {
               "concept": {
@@ -338,12 +289,7 @@
           "then": {
             "required": [
               "values"
-            ],
-            "not": {
-              "required": [
-                "enumerations"
-              ]
-            }
+            ]
           }
         },
         {
@@ -877,9 +823,6 @@
               "conditions": {},
               "confidence": {
                 "$ref": "#/$defs/confidence"
-              },
-              "federation_concept_id": {
-                "type": "string"
               },
               "notes": {
                 "type": "string"
@@ -2134,18 +2077,45 @@
     "MigrationDecisionsFile": {
       "type": "object",
       "description": "<bundle>/migration_decisions.yaml — the judgements behind a bundle's move to the column standard, keyed <Concept>.<column>: a role (and identity, measure, rulings) or an explicit `exclude`, each with `because`. Read by tools/mac_migrate_concepts.py --decisions. AI proposes it (--propose-decisions); a person ratifies it; it is kept so the migration is reproducible and arguable. Added 2026-09-29.",
-      "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$"},
+      "propertyNames": {
+        "pattern": "^[A-Za-z][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$"
+      },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["because"],
+        "required": [
+          "because"
+        ],
         "properties": {
-          "role": {"enum": ["key", "dimension", "measure", "period", "housekeeping"]},
-          "identity": {"enum": ["canonical", "part", "reference"]},
-          "measure": {"type": "object"},
-          "rulings": {"type": "object"},
-          "exclude": {"const": true},
-          "because": {"type": "string", "minLength": 1}
+          "role": {
+            "enum": [
+              "key",
+              "dimension",
+              "measure",
+              "period",
+              "housekeeping"
+            ]
+          },
+          "identity": {
+            "enum": [
+              "canonical",
+              "part",
+              "reference"
+            ]
+          },
+          "measure": {
+            "type": "object"
+          },
+          "rulings": {
+            "type": "object"
+          },
+          "exclude": {
+            "const": true
+          },
+          "because": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -2153,28 +2123,89 @@
       "type": "object",
       "additionalProperties": false,
       "description": "acceptance/standing_failures.yaml — the reds run_framework_gates.sh may carry for THIS bundle, each with an owner, a since, a reason and what makes it green. Read by tools/gate_register.py before every run (mac.gate_failures/1). Declared in guardrails/unfiled.yaml as `standing_failures` (authored-once: it is the decision to carry a red, not a measurement). Added 2026-09-29 — it was routed by location to PropertiesFile and refused the same hour it was declared.",
-      "required": ["spec_version", "scope", "declared", "standing", "entries"],
+      "required": [
+        "spec_version",
+        "scope",
+        "declared",
+        "standing",
+        "entries"
+      ],
       "properties": {
-        "spec_version": {"const": "mac.gate_failures/1"},
-        "scope": {"type": "string", "pattern": "^bundle:[A-Za-z0-9_./-]+$", "description": "a bundle register carries bundle:<name>; repository-level reds live in the framework's tools/framework_gate_failures.yaml, never here"},
-        "declared": {"type": "string", "format": "date"},
-        "review_by": {"type": "string", "format": "date"},
-        "standing": {"type": "integer", "minimum": 0, "description": "MUST equal the number of entries — two statements of one size cannot drift"},
+        "spec_version": {
+          "const": "mac.gate_failures/1"
+        },
+        "scope": {
+          "type": "string",
+          "pattern": "^bundle:[A-Za-z0-9_./-]+$",
+          "description": "a bundle register carries bundle:<name>; repository-level reds live in the framework's tools/framework_gate_failures.yaml, never here"
+        },
+        "declared": {
+          "type": "string",
+          "format": "date"
+        },
+        "review_by": {
+          "type": "string",
+          "format": "date"
+        },
+        "standing": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "MUST equal the number of entries — two statements of one size cannot drift"
+        },
         "entries": {
           "type": "object",
-          "propertyNames": {"pattern": "^check_[a-z0-9_]+\\.py$"},
+          "propertyNames": {
+            "pattern": "^check_[a-z0-9_]+\\.py$"
+          },
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["kind", "owner", "since", "reason", "expected"],
+            "required": [
+              "kind",
+              "owner",
+              "since",
+              "reason",
+              "expected"
+            ],
             "properties": {
-              "kind": {"enum": ["fail", "could-not-run"]},
-              "class": {"enum": ["subject-absent-by-design", "cannot-open"], "description": "required with kind: could-not-run"},
-              "owner": {"enum": ["operator", "platform", "data-plane", "unknown"]},
-              "since": {"type": "string", "format": "date"},
-              "reason": {"type": "string", "minLength": 1, "description": "the gate's own last line"},
-              "expected": {"type": "string", "minLength": 1, "description": "what makes it green"},
-              "record": {"type": "string"}
+              "kind": {
+                "enum": [
+                  "fail",
+                  "could-not-run"
+                ]
+              },
+              "class": {
+                "enum": [
+                  "subject-absent-by-design",
+                  "cannot-open"
+                ],
+                "description": "required with kind: could-not-run"
+              },
+              "owner": {
+                "enum": [
+                  "operator",
+                  "platform",
+                  "data-plane",
+                  "unknown"
+                ]
+              },
+              "since": {
+                "type": "string",
+                "format": "date"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "description": "the gate's own last line"
+              },
+              "expected": {
+                "type": "string",
+                "minLength": 1,
+                "description": "what makes it green"
+              },
+              "record": {
+                "type": "string"
+              }
             }
           }
         }
@@ -2392,9 +2423,6 @@
         "doc": {
           "type": "string"
         },
-        "german": {
-          "type": "string"
-        },
         "value_domain": {
           "type": "string",
           "description": "(optional) an enumeration this property's values must belong to"
@@ -2606,20 +2634,13 @@
               "view_ref": {
                 "type": "string"
               },
-              "usage_template": {
-                "type": "string"
-              },
               "requires_join": {
-                "type": "string"
-              },
-              "relative_template": {
                 "type": "string"
               },
               "applied_as": {
                 "type": "string"
               },
               "closure": {},
-              "disambiguation": {},
               "validated_against": {
                 "type": [
                   "array",
@@ -2627,7 +2648,6 @@
                 ]
               },
               "conditions": {},
-              "edge_cases": {},
               "inspectable": {
                 "type": "boolean"
               },
@@ -3119,10 +3139,6 @@
             },
             "grain": {
               "type": "string"
-            },
-            "serves_ontology": {
-              "type": "string",
-              "description": "pointer to the consuming concept/ontology file (documentation only)"
             }
           },
           "additionalProperties": false
@@ -3393,10 +3409,6 @@
       "type": "object",
       "description": "v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a canonical value code. Tier 1 (scope_relative, optional) — the SAME surface means a different code UNDER a different scope value (named by scope_key); Tier 2 (multilingual) — scope-free de/en/syn surfaces. A surface resolving to >1 code ⇒ ASK; a token outside the closed set ⇒ ASK (offer the set); never a silent bind/drop. Each map key MUST be a declared values.items[].code (enforced by check_shapes, not expressible in pure JSON Schema).",
       "properties": {
-        "scope_key": {
-          "type": "string",
-          "description": "the dimension/column whose value selects a Tier-1 scope_relative row (e.g. 'region', 'channel'); omitted for multilingual-only enums."
-        },
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
           "description": "the canon that realizes the resolution — mac.canon.alias_resolve."
@@ -3406,48 +3418,7 @@
           "description": "canonical code → its alias tiers.",
           "additionalProperties": {
             "type": "object",
-            "properties": {
-              "stored": {
-                "type": [
-                  "string",
-                  "number"
-                ],
-                "description": "the byte-exact served value when it differs from the code (else the code is emitted verbatim)."
-              },
-              "multilingual": {
-                "type": "object",
-                "description": "scope-free surfaces by language.",
-                "properties": {
-                  "de": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "en": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  },
-                  "syn": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                },
-                "additionalProperties": false
-              },
-              "scope_relative": {
-                "$ref": "#/$defs/aliasScopeMap",
-                "description": "domain-neutral Tier-1: scope value → the surfaces that, under that scope, mean this code. The GENERIC name the engine core reads."
-              },
-              "brand_relative": {
-                "$ref": "#/$defs/aliasScopeMap",
-                "description": "an authoring alias of scope_relative (the key name is historical; loader-bridged to scope_relative); same shape. Use scope_relative for non-brand scopes."
-              }
-            },
+            "properties": {},
             "additionalProperties": false
           }
         }
@@ -3571,9 +3542,6 @@
         "machine_executable": {
           "type": "boolean"
         },
-        "sql_assertion": {
-          "type": "string"
-        },
         "open_question": {
           "type": "string"
         },
@@ -3607,20 +3575,6 @@
             "object"
           ],
           "description": "The default aggregation / role / perspective to assume when the question is silent. Was aggregation_contract."
-        },
-        "answer_rules": {
-          "type": [
-            "string",
-            "object"
-          ],
-          "description": "Binding constraints on answering — which definition to use, what to emit, what to refuse. Was answer_contract."
-        },
-        "axis_handling": {
-          "type": [
-            "string",
-            "object"
-          ],
-          "description": "How to treat time / orthogonal axes for this concept. Was time_contract / two_axes_contract (the structural part stays in semantics)."
         },
         "rules": {
           "type": "array",
@@ -3867,18 +3821,6 @@
             "additionalProperties": true
           }
         },
-        "unmapped": {
-          "type": "object",
-          "description": "the orphan-quarantine bucket — how raw values outside the closed set are surfaced (never silently dropped). Part of the value-domain conformance story.",
-          "additionalProperties": true
-        },
-        "canonicalization": {
-          "type": [
-            "string",
-            "object"
-          ],
-          "description": "how raw spellings/duplicates were conformed to the canonical codes."
-        },
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
           "description": "v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check)."
@@ -4056,12 +3998,6 @@
           "description": "LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding — use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale.",
           "type": "string"
         },
-        "tables": {
-          "type": "array"
-        },
-        "primary_tables": {
-          "type": "array"
-        },
         "schema": {
           "type": "string"
         },
@@ -4084,27 +4020,11 @@
         "snapshot_rule": {
           "type": "string"
         },
-        "family_resolution": {
-          "type": "string"
-        },
         "row_count": {
           "type": [
             "integer",
             "string"
           ]
-        },
-        "used_in": {
-          "type": [
-            "array",
-            "string"
-          ]
-        },
-        "serves_from": {
-          "type": [
-            "string",
-            "array"
-          ],
-          "description": "v0.5 PROMOTED to core: the serving-view .sql file(s) this concept is served from (a string, or a list when several views back one concept)."
         },
         "grain": {
           "type": "string",
@@ -4145,25 +4065,6 @@
           "type": "string",
           "description": "the leaf concept this groups (region over country, category over product)"
         },
-        "member_source": {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "enum": [
-                "rule",
-                "enumerated"
-              ]
-            },
-            "rule": {
-              "type": [
-                "string",
-                "object"
-              ],
-              "description": "(rule) how membership is computed — a FK / transitive walk"
-            }
-          },
-          "additionalProperties": true
-        },
         "definitions": {
           "type": "array",
           "description": "(enumerated) the named member sets — each an explicit list or a derived rule",
@@ -4173,10 +4074,6 @@
               "code"
             ],
             "properties": {
-              "namespace": {
-                "type": "string",
-                "description": "disambiguator (brand / 'standard' / 'political') — kills same-code collisions (one brand's 'VE' vs another brand's 'VE')"
-              },
               "code": {
                 "type": [
                   "string",
@@ -4186,19 +4083,9 @@
               "label": {
                 "type": "string"
               },
-              "brand": {
-                "type": "string"
-              },
               "members": {
                 "type": "array",
                 "description": "(explicit) the leaf codes in this set"
-              },
-              "derived_rule": {
-                "type": [
-                  "string",
-                  "object"
-                ],
-                "description": "(derived) how this set's members are computed"
               },
               "confidence": {
                 "$ref": "#/$defs/confidence"
@@ -4266,31 +4153,6 @@
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
           "description": "the canon that realizes the resolution — mac.canon.relation_alias_resolve (a deterministic token→relation resolver)."
-        },
-        "multilingual": {
-          "type": "object",
-          "description": "scope-free NL surfaces by language that trigger this relation — the SAME shape as aliasBlock's multilingual (de/en/syn lists of surface strings).",
-          "properties": {
-            "de": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "en": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "syn": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "additionalProperties": false
         }
       },
       "additionalProperties": false

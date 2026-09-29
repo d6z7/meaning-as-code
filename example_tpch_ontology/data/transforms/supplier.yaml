@@ -12,7 +12,6 @@ produces:
   relation: tpch.supplier
   sql_file: data/transforms/supplier.sql
   grain: one row per s_suppkey
-  serves_ontology: ontology/concepts/party/supplier.yaml
 inputs:
 - relation: tpch_raw.supplier_raw
   kind: raw_source

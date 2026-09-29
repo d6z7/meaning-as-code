@@ -30,13 +30,11 @@ concept:
 
 # ── lifecycle: the canonical event state machine (phases group states, in sequence) ──
 lifecycle:
-  phase_sequence: [CHECKOUT, FULFILMENT, CLOSED]     # ordered macro-phases
   boundary: "PAID is the CHECKOUT → FULFILMENT boundary (money taken, fulfilment can begin)"
   phases:
     - { name: CHECKOUT,   meaning: "Order created and (maybe) paid.",          states: [PLACED, PAID] }
     - { name: FULFILMENT, meaning: "Goods moving to the customer.",            states: [SHIPPED, DELIVERED] }
     - { name: CLOSED,     meaning: "Terminal outcomes.",                       states: [RETURNED, CANCELLED] }
-  phase_closure: closed
   note: >
     Happy path PLACED→PAID→SHIPPED→DELIVERED. CANCELLED can occur from PLACED/PAID (before shipping);
     RETURNED only after DELIVERED. The state vocabulary itself is the OrderStatus enumeration.

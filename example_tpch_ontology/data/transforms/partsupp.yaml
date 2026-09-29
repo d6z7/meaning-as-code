@@ -12,7 +12,6 @@ produces:
   relation: tpch.partsupp
   sql_file: data/transforms/partsupp.sql
   grain: one row per partsupp
-  serves_ontology: ontology/concepts/part/partsupp.yaml
 inputs:
 - relation: tpch_raw.partsupp_raw
   kind: raw_source

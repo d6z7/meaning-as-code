@@ -47,7 +47,18 @@ FRAMEWORK_FILES = ("TransformFile",)
 META_KEYS = {"metadata", "governance", "version", "schema_version", "status", "owner", "provenance",
              "last_reviewed", "change_log", "generated_by", "observed", "source", "label", "definition",
              "doc", "description", "note", "notes", "purpose", "x-", "$comment", "why", "examples",
-             "measured_at", "measured_by", "date", "by", "change", "change_type"}
+             "measured_at", "measured_by", "date", "by", "change", "change_type",
+             # FOR PEOPLE, NOT THE RUNTIME (ruled 2026-09-29 with the v0.5 retirement): a member's meaning, a
+             # closure's why, a change's rationale, an approval status, an open question's priority and
+             # cross-references, a lifecycle's phases and boundary — read by the SME and the projector.
+             "meaning", "closure_why", "rationale", "approval_status", "priority", "cross_references", "boundary",
+             "phases", "profiled_via", "lifecycle", "enforced_by",
+             # FRAMEWORK-SIDE by design: evidence pointers and edge planning are what gates read
+             "verified_by", "blocked_by", "becomes_an_edge_when", "business_relation_minted_as", "measured_reference",
+             "reference_id", "planned_edges"}
+#: acceptance-side terms of a runtime vocabulary, and the one authoring-side common rule
+FRAMEWORK_TERMS = {"outcome_class.COMMIT_PENDING", "outcome_class.ENUMERATE", "outcome_class.MODEL_PROPERTY",
+                   "outcome_class.DEFER", "outcome_class.ENGINE_ERR", "mac.authoring.reference_markup"}
 
 
 # ── the declarations ──────────────────────────────────────────────────────────────────────────
@@ -164,9 +175,9 @@ def audit(runtime: pathlib.Path, family: str | None = None) -> dict:
         for ns, terms in vocabulary_terms(vocab).items():
             if ns == "canon":
                 continue  # audited below, by the canon's own family
-            side = fw_files if ns in FRAMEWORK_SIDE else files
             rows = []
             for t in terms:
+                side = fw_files if (ns in FRAMEWORK_SIDE or f"{ns}.{t}" in FRAMEWORK_TERMS) else files
                 pats = literal_readers(t) if len(t) > 2 else [re.compile(rf"""["']{re.escape(t)}["']""")]
                 hit = find(side, pats)
                 other = None if hit else find(fw_files if side is files else files, pats)
@@ -178,7 +189,8 @@ def audit(runtime: pathlib.Path, family: str | None = None) -> dict:
         for r in rules.get("rules") or []:
             rid = str(r.get("id"))
             fam = rid.rsplit(".", 1)[0]
-            hit = find(files, literal_readers(rid)) or find(files, literal_readers(fam))
+            side = fw_files if rid in FRAMEWORK_TERMS else files
+            hit = find(side, literal_readers(rid)) or find(side, literal_readers(fam))
             rows.append({"family": "rules", "kind": "mac_rules.yaml", "declaration": rid, "key": rid, "reader": hit})
         report["rules:mac_rules.yaml"] = rows
     # 4. the query grammar: operations and declaration states
@@ -265,7 +277,9 @@ def _era(family: str, markers: list[str], text: str, date: str) -> str:
     if vers and max(vers) >= NEW_GRAMMAR_FLOOR or (date and date >= "2026-09-26"):
         return "6 COLUMN STANDARD (new grammar, 0.1.14+)"
     if date == INITIAL_RELEASE:
-        return "2 v0.5 CONTENT MODEL (old grammar, initial release)"
+        # after the 2026-09-29 retirement, what remains from the initial release is CURRENT grammar
+        # that has always lacked a reader (the fold law's own terms; a grounding's snapshot rule)
+        return "2 INITIAL RELEASE, STILL CURRENT — unread"
     return "7 MID-ERA (0.1.6..0.1.13, field-anchoring / two-plane)"
 
 

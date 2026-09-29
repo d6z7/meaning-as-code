@@ -12,7 +12,6 @@ produces:
   relation: tpch.orders
   sql_file: data/transforms/orders.sql
   grain: one row per o_orderkey
-  serves_ontology: ontology/concepts/order/orders.yaml
 inputs:
 - relation: tpch_raw.orders_raw
   kind: raw_source

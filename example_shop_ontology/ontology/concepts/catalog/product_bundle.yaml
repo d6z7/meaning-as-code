@@ -41,8 +41,6 @@ concept:
 # named in params.
 members:
   over: Product                   # the leaf this groups
-  member_source:
-    kind: enumerated              # named member sets (not a FK rule) — but single-homed in the register, not inline
   realized_by:
     udf: mac.canon.grouping_from_register
     applied_as: member_set

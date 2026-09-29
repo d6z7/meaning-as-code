@@ -29,12 +29,10 @@ concept:
       A NULL l_receiptdate means the line has not been received yet (still in flight), not unknown.
 
 lifecycle:
-  phase_sequence: [IN_FLIGHT, CLOSED]
   boundary: "RECEIPT (l_receiptdate present) is the IN_FLIGHT → CLOSED boundary."
   phases:
     - { name: IN_FLIGHT, meaning: "Shipped, not yet received (l_linestatus = O).", states: [SHIPPED] }
     - { name: CLOSED,    meaning: "Received; may then be returned (l_linestatus = F).", states: [RECEIVED, RETURNED] }
-  phase_closure: closed
   note: >
     States derive from l_linestatus (O in-flight / F fulfilled) and l_returnflag (R). Happy path
     SHIPPED → RECEIVED; RETURNED only after receipt.

@@ -45,9 +45,6 @@ edges:
     resolved_by: "ontology/rules.yaml#rules.related_products"   # the rule that computes the relation set
     aliases:
       realized_by: { udf: mac.canon.relation_alias_resolve, applied_as: predicate_injection }
-      multilingual:
-        en: [related products, sibling products, same category]
-        de: [verwandte Produkte, gleiche Kategorie]
     notes: "Two products are related iff they share a non-NULL category (symmetric self-relation, not a stored FK)."
     confidence: C
 

@@ -40,12 +40,7 @@ values:
     realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
     map:
       AUTOMOBILE:
-        multilingual:
-          en: [auto, automotive, "car sector", vehicles]
       BUILDING:
-        multilingual:
-          en: [construction, "building sector"]
-
 grounding:
   kind: sql_table
   schema: tpch

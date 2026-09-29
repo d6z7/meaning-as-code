@@ -48,19 +48,10 @@ values:
   # 'cancelled' resolves to CANCELLED, but under a wholesale channel 'rejected' also means CANCELLED.
   # Multilingual tier is scope-free.
   aliases:
-    scope_key: channel
     realized_by: { udf: mac.canon.alias_resolve, applied_as: filter_resolution }
     map:
       CANCELLED:
-        multilingual:
-          en: [cancelled, canceled, voided]
-        scope_relative:
-          retail:    [cancelled]
-          wholesale: [rejected]
       RETURNED:
-        multilingual:
-          en: [returned, "sent back"]
-
 grounding:
   kind: sql_table
   schema: shop_warehouse
