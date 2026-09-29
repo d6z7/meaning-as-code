@@ -177,18 +177,42 @@ But there is also a **live undeclared path**, and `check_registers_reachable.py`
 
 So the header must not be renamed on its own. Sequence:
 
-| # | step | risk |
-|---|---|---|
-| a | `check_one_register_per_dimension` counts by value set | none — no artifact changes |
-| b | operator rules the 1 collision and 5 unsettled names | none |
-| c | declare the bindings that currently resolve through the undeclared path | none — additive |
-| d | cut by value set into the confirmed names, **old files kept** | none — additive |
-| e | repoint descriptors; `check_registers_reachable` must show nothing lost | reversible |
-| f | delete the 23 redundant files | after (e) is green |
-| g | `searchable: like` for the 16, **with its consumer** | new declaration |
+| # | step | risk | status |
+|---|---|---|---|
+| a | `check_one_register_per_dimension` counts by value set | none — no artifact changes | **done** — 48/25/23 on contoso5, 213/114/99 estate-wide |
+| b | operator rules the 1 collision and 5 unsettled names | none | **superseded** — the cutter resolves them mechanically, see below |
+| c | declare the bindings that currently resolve through the undeclared path | none — additive | **done for the attach list** — `<stem>.lookup.yaml`, read by `mac_descriptors` and `check_register_membership`; the CSV header itself is untouched, so nothing that resolved through it has moved |
+| d | cut by value set into the confirmed names | none — additive | **done** — 48 → 25 |
+| e | repoint descriptors; nothing lost | reversible | **done** — 48 attach points over 25 files; value sets 25 → 25, 0 lost, 0 with fewer labels |
+| f | delete the 23 redundant files | after (e) is green | **done** — the re-cut produces 25 |
+| g | `searchable: like` for the 16, **with its consumer** | new declaration | **done** — `mac_descriptors` → `mac.schema.json` → the relation page prints `search: like` |
 
-Steps (a)–(b) are cheap and I would do them next. (c) is the one that must not be skipped: it is the
-same defect as `renames-break-readers-silently`, and skipping it breaks resolution with no error.
+**(b) did not need a ruling after all.** The naming question dissolved once the identity moved to the
+value set: a notion claimed by exactly one set is usable as a name, and a notion claimed by TWO is
+not — every claimant then falls back to its own cut site, which is unique by construction. So
+`state` resolves to `contoso5_state` and `contoso5_customer_state` mechanically, with no authored
+map and no name that moves when an unrelated relation is added. The one judgement left is cosmetic.
+
+**What (c) still owes.** Renaming the CSV's first header field to the literal `code` — the last of
+the seven column names that is not invariant. It is not done and the guardrail says so where the
+kind is declared. Four readers take it today (`mac_descriptors`, `check_register_membership`,
+`check_registers_reachable`, `check_one_register_per_dimension`) plus the runtime's undeclared path,
+and `check_registers_reachable` states that renaming it "breaks a live behaviour with no error".
+
+**Two things the work itself taught, both worth keeping:**
+
+- **A gate found none of the three real defects.** The name collision that silently dropped four
+  state codes was found by seeding it deliberately; the lost `AU,Australia` label was found by
+  diffing the re-cut bundle against a backup. Gates hold what is already understood — a diff against
+  the previous state is what finds what is not.
+- **The closed schema earned its keep twice in one hour**, on a kind that had no definition at the
+  start of it: it refused `searchable` until the key was declared, then caught the producer writing
+  the member LIST where an integer was declared.
+
+**Other bundles are not migrated.** contoso2/3/4 and estate/estate2 still hold 99 redundant copies between
+them, and the gate now refuses them. They are cut, not re-cut: the migration needs each bundle's
+warehouse, because labels are re-derived at cut time and a connectionless cut would silently flatten
+`AU,Australia` to `AU,AU` — the very regression above, estate-wide.
 
 ## What I am NOT proposing
 
