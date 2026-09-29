@@ -226,12 +226,24 @@ def identity_property(name: str, rel: str, ident: str,
 
 
 def measured_key(root: pathlib.Path, rel: str) -> list[str]:
-    """The relation's MEASURED grain, from the measurement plane. Empty when nothing measured it."""
-    f = root / "data" / "profiles" / f"{rel.split('.')[-1]}.yaml"
-    if not f.exists():
-        return []
-    d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
-    return list((d.get("identity_evidence") or {}).get("key") or [])
+    """The relation's MEASURED grain. ONE READER, borrowed, so three tools cannot disagree.
+
+    IT READ THE PROFILE ALONE, which is where the SOURCES plane keeps its key and only
+    `mac_admit_identity` ever writes. The SERVED plane keeps it on the DESCRIPTOR
+    (`columns[].role == primary_key`, measured by `mac_descriptors`) — mac_import's stage table
+    says both halves out loud, and this was the THIRD reader in this estate to know only one of
+    them. `check_grain_declaration` was the second, fixed the same day.
+
+    AND THE COST HERE WAS A FALSE RED, not a missing check. An empty result makes the NOT_GRAIN
+    guard unable to fire, so a uniqueness test ships for a concept that keys on something the
+    relation does not identify a row by — exactly the case that guard exists to skip. Measured
+    2026-09-29 on contoso5: Brand, ProductCategory and Order each failed `key_grain` (11, 8 and
+    61,071 keys holding more than one row) for declaring a COARSER grain than their host relation,
+    which is what they are FOR. Three reds that were the reader's fault, not the model's.
+    """
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+    from check_grain_declaration import _measured_key
+    return list(_measured_key(str(root), rel.split(".")[-1]) or [])
 
 
 def value_column(root: pathlib.Path, rel: str, declared: list[str], ident: str) -> tuple[str | None, str]:
