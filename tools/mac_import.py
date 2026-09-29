@@ -867,6 +867,13 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # that does not write it.
         {"name": "conformance", "part": "both", "always": True, "d": "D1 D2",
          "cmd": [_tool("check_artifact_conformance.py"), str(root)]},
+        # THE MANIFEST'S OWN ACCEPTANCE TEST, and it runs on every delivery deliberately. It seeds
+        # each of the five losses of 2026-09-28 as a mutant and asserts a named invariant refuses
+        # it. It needs no bundle and no warehouse — it is a guard on the GUARD. `NAME-MATCHES`
+        # shipped as a tautology and reported PASS over two deliberately-broken files for as long
+        # as it existed; nothing in the estate would have noticed if this had gone the same way.
+        {"name": "manifest-acceptance", "part": "both", "always": True, "d": "D1",
+         "cmd": [_tool("check_manifest_catches_yesterday.py")]},
         {"name": "delivery-check", "part": "both", "always": True,
          "produces": "acceptance/delivery_consistency_runs.json", "d": "D7c",
          "cmd": [_tool("check_delivery_consistency.py"), str(root)]},
