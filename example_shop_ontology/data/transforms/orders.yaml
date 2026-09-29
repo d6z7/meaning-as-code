@@ -5,11 +5,9 @@
 
 metadata:
   pipeline: orders
-  source: SHOP
   layer: data-transformation
   schema_version: '0.1.9'
-  status: verified
-  owner: example-team
+  status: measured
 
 produces:
   relation: shop_warehouse.orders          # the seam: data/datasets/orders.yaml — what the Order concept binds to

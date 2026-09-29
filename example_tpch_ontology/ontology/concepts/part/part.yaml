@@ -4,7 +4,7 @@ metadata:
   concept: Part
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -15,7 +15,6 @@ concept:
   class: entity
   identity:
     kind: fk_name
-    canonical_key: p_partkey
   definition: >
     A catalogue item that can be ordered. Identified by p_partkey, classified by brand and type. Sold
     through one or more suppliers (see PartSupp) and bought on order lines.
@@ -32,10 +31,30 @@ properties:
 
 grounding:
   kind: sql_table
-  table: part
   schema: tpch
-  key_column: p_partkey
-
+  sources:
+  - relation: part
+    key:
+    - p_partkey
+    columns:
+      p_partkey:
+        role: key
+        identity: canonical
+      p_name:
+        role: dimension
+      p_mfgr:
+        role: dimension
+      p_brand:
+        role: dimension
+      p_type:
+        role: dimension
+      p_size:
+        role: dimension
+      p_retailprice:
+        role: measure
+        measure:
+          type: mac.concept.column.measure_type.intensive
+          unit: currency (account currency)
 governance:
   last_reviewed: 2026-06-17
   change_log:

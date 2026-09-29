@@ -5,7 +5,7 @@ metadata:
   concept: MarketSegment
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.10'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -48,10 +48,17 @@ values:
 
 grounding:
   kind: sql_table
-  table: customer
   schema: tpch
+  sources:
+  - relation: customer
+    columns:
+      c_custkey:
+        role: key
+        identity: reference
+      c_mktsegment:
+        role: key
+        identity: canonical
   grounds_column: c_mktsegment
-
 governance:
   last_reviewed: 2026-06-18
   change_log:

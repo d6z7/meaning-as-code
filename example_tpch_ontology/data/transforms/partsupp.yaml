@@ -5,11 +5,9 @@
 # without a producer, `partsupp` had none, and the graph showed it unrelated to its input.
 metadata:
   pipeline: partsupp
-  source: TPCH
   layer: data-transformation
   schema_version: 0.1.14
-  status: verified
-  owner: example-team
+  status: measured
 produces:
   relation: tpch.partsupp
   sql_file: data/transforms/partsupp.sql

@@ -11,8 +11,8 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `customer_id` | string | primary_key |
-| `email` | string | value |
-| `created_at` | timestamp | value |
+| column | type | role | reference |
+|---|---|---|---|
+| `customer_id` | string | PK |  |
+| `email` | string | value |  |
+| `created_at` | timestamp | value |  |

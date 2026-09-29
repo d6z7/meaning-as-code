@@ -36,8 +36,8 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "measure_type.members.Flow.additivity.categorical",
-          "line": 93,
+          "path": "concept.column.measure_type.terms.flow.additivity.categorical",
+          "line": 299,
           "value": "mac.concept.aggregation_effect.additive"
         },
         {
@@ -62,8 +62,8 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "measure_type.members.Flow.additivity.categorical",
-          "line": 93,
+          "path": "concept.column.measure_type.terms.flow.additivity.categorical",
+          "line": 299,
           "value": "mac.concept.aggregation_effect.additive"
         },
         {
@@ -88,8 +88,8 @@
       "sites": [
         {
           "file": "\u00abframework\u00bb/mac_vocabulary.yaml",
-          "path": "measure_type.members.Flow.additivity.time",
-          "line": 92,
+          "path": "concept.column.measure_type.terms.flow.additivity.time",
+          "line": 298,
           "value": "mac.concept.aggregation_effect.additive"
         },
         {

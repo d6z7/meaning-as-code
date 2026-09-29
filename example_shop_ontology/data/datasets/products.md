@@ -11,12 +11,9 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `sku` | string | primary_key |
-| `name` | string | value |
-| `category_id` | string | foreign_key |
-| `list_price` | decimal | value |
-
-## Foreign keys
-- `category_id` → `categories.category_id`
+| column | type | role | reference |
+|---|---|---|---|
+| `sku` | string | PK |  |
+| `name` | string | value |  |
+| `category_id` | string | FK |  |
+| `list_price` | decimal | value |  |

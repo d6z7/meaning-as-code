@@ -5,7 +5,7 @@ metadata:
   concept: OrderStatus
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.10'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -63,10 +63,17 @@ values:
 
 grounding:
   kind: sql_table
-  table: orders
   schema: shop_warehouse
-  grounds_column: status         # the discriminator column carrying the code (if materialised)
-
+  sources:
+  - relation: orders
+    columns:
+      order_id:
+        role: key
+        identity: reference
+      status:
+        role: key
+        identity: canonical
+  grounds_column: status
 governance:
   last_reviewed: 2026-06-05
   change_log:

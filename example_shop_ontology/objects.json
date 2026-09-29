@@ -7,17 +7,133 @@
     "source": 1
   },
   "er_model": {
+    "accounting_error": "",
+    "artifact_directory": "data/sources",
+    "components": [
+      [
+        "orders_raw"
+      ]
+    ],
     "counts": {
+      "ambiguous": 0,
       "business": 0,
-      "cardinality_conflicts": 0,
-      "concept_edges": 2,
-      "entities": 7,
-      "isolated_entities": 3,
-      "physical": 2,
-      "relationships": 2,
-      "side_inferred": 2,
-      "with_cardinality": 2
+      "candidates_rejected": 0,
+      "components": 1,
+      "concept_edges": 0,
+      "concept_edges_total": 0,
+      "concept_edges_undrawable": 0,
+      "dangling": 0,
+      "disproved": 0,
+      "entities": 1,
+      "isolated_entities": 1,
+      "not_proved": 0,
+      "physical": 0,
+      "proved": 0,
+      "references_declared": 0,
+      "relationships": 0,
+      "with_cardinality": 0
     },
+    "descriptor_plane": "data/sources",
+    "duplicate_ids": [],
+    "entities": [
+      {
+        "columns": [
+          {
+            "description": null,
+            "key": true,
+            "name": "order_id",
+            "role": "primary_key",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": true,
+            "name": "customer_id",
+            "role": "foreign_key",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "status",
+            "role": "discriminator",
+            "type": "string"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "gross_cents",
+            "role": "value",
+            "type": "bigint"
+          },
+          {
+            "description": null,
+            "key": false,
+            "name": "placed_at",
+            "role": "value",
+            "type": "timestamp"
+          }
+        ],
+        "id": "orders_raw",
+        "keys": [],
+        "relation": "orders_raw",
+        "stem": "orders_raw",
+        "title": "orders_raw"
+      }
+    ],
+    "evidence_artifact": "data/references",
+    "physical_plane": "sources",
+    "plane": "physical",
+    "relationships": [],
+    "unknown_cardinalities": [],
+    "unrealised_edges": []
+  },
+  "er_model_served": {
+    "accounting_error": "",
+    "artifact_directory": "data/datasets",
+    "components": [
+      [
+        "categories"
+      ],
+      [
+        "customers"
+      ],
+      [
+        "orders"
+      ],
+      [
+        "product_bundles"
+      ],
+      [
+        "products"
+      ],
+      [
+        "refunds"
+      ],
+      [
+        "shipping_carriers"
+      ]
+    ],
+    "counts": {
+      "ambiguous": 0,
+      "business": 0,
+      "candidates_rejected": 0,
+      "components": 7,
+      "concept_edges": 0,
+      "concept_edges_total": 0,
+      "concept_edges_undrawable": 0,
+      "dangling": 0,
+      "disproved": 0,
+      "entities": 7,
+      "isolated_entities": 7,
+      "not_proved": 0,
+      "physical": 0,
+      "proved": 0,
+      "references_declared": 0,
+      "relationships": 0,
+      "with_cardinality": 0
+    },
+    "descriptor_plane": "data/datasets",
     "duplicate_ids": [],
     "entities": [
       {
@@ -48,6 +164,7 @@
         "keys": [
           "category_id"
         ],
+        "relation": "categories",
         "stem": "categories",
         "title": "categories"
       },
@@ -79,6 +196,7 @@
         "keys": [
           "customer_id"
         ],
+        "relation": "customers",
         "stem": "customers",
         "title": "customers"
       },
@@ -145,6 +263,7 @@
         "keys": [
           "order_id"
         ],
+        "relation": "orders",
         "stem": "orders",
         "title": "orders"
       },
@@ -153,15 +272,17 @@
           {
             "description": null,
             "key": true,
+            "key_position": 1,
             "name": "bundle_code",
-            "role": "composite_key_part",
+            "role": "primary_key",
             "type": "string"
           },
           {
             "description": null,
             "key": true,
+            "key_position": 2,
             "name": "product",
-            "role": "composite_key_part",
+            "role": "primary_key",
             "type": "string"
           },
           {
@@ -184,6 +305,7 @@
           "bundle_code",
           "product"
         ],
+        "relation": "product_bundles",
         "stem": "product_bundles",
         "title": "product_bundles"
       },
@@ -222,6 +344,7 @@
         "keys": [
           "sku"
         ],
+        "relation": "products",
         "stem": "products",
         "title": "products"
       },
@@ -260,6 +383,7 @@
         "keys": [
           "refund_id"
         ],
+        "relation": "refunds",
         "stem": "refunds",
         "title": "refunds"
       },
@@ -284,306 +408,17 @@
         "keys": [
           "code"
         ],
+        "relation": "shipping_carriers",
         "stem": "shipping_carriers",
         "title": "shipping_carriers"
       }
     ],
-    "relationships": [
-      {
-        "dangling": [],
-        "from": {
-          "cardinality": "0..N",
-          "columns": [
-            "customer_id"
-          ],
-          "concept": "Order",
-          "crow": {
-            "label": "0..N",
-            "max": "many",
-            "min": "zero"
-          },
-          "entity": "orders"
-        },
-        "id": "order__placed_by__customer",
-        "join_rule": "orders.customer_id = customers.customer_id",
-        "level": "physical",
-        "realized_by": [
-          {
-            "edge_id": "order__placed_by__customer",
-            "from_concept": "Order",
-            "to_concept": "Customer",
-            "type": "foreign_key"
-          }
-        ],
-        "side_inferred": true,
-        "to": {
-          "cardinality": "1",
-          "columns": [
-            "customer_id"
-          ],
-          "concept": "Customer",
-          "crow": {
-            "label": "1",
-            "max": "one",
-            "min": "one"
-          },
-          "entity": "customers"
-        },
-        "type": "foreign_key"
-      },
-      {
-        "dangling": [],
-        "from": {
-          "cardinality": "0..N",
-          "columns": [
-            "category_id"
-          ],
-          "concept": "Product",
-          "crow": {
-            "label": "0..N",
-            "max": "many",
-            "min": "zero"
-          },
-          "entity": "products"
-        },
-        "id": "product__belongs_to__category",
-        "join_rule": "products.category_id = categories.category_id",
-        "level": "physical",
-        "realized_by": [
-          {
-            "edge_id": "product__belongs_to__category",
-            "from_concept": "Product",
-            "to_concept": "Category",
-            "type": "foreign_key"
-          }
-        ],
-        "side_inferred": true,
-        "to": {
-          "cardinality": "0..1",
-          "columns": [
-            "category_id"
-          ],
-          "concept": "Category",
-          "crow": {
-            "label": "0..1",
-            "max": "one",
-            "min": "zero"
-          },
-          "entity": "categories"
-        },
-        "type": "foreign_key"
-      }
-    ],
-    "unknown_cardinalities": []
-  },
-  "lineage_graph": {
-    "counts": {
-      "concept": 8,
-      "concepts_multi_grounded": 0,
-      "dataset": 7,
-      "edges": 9,
-      "lookup": 0,
-      "source": 1
-    },
-    "edges": [
-      {
-        "from": "ds:categories",
-        "kind": "grounds",
-        "to": "con:category"
-      },
-      {
-        "from": "ds:customers",
-        "kind": "grounds",
-        "to": "con:customer"
-      },
-      {
-        "from": "ds:orders",
-        "kind": "grounds",
-        "to": "con:order"
-      },
-      {
-        "from": "ds:orders",
-        "kind": "grounds",
-        "to": "con:order_status"
-      },
-      {
-        "from": "ds:orders",
-        "kind": "grounds",
-        "to": "con:revenue"
-      },
-      {
-        "from": "ds:product_bundles",
-        "kind": "grounds",
-        "to": "con:product_bundle"
-      },
-      {
-        "from": "ds:products",
-        "kind": "grounds",
-        "to": "con:product"
-      },
-      {
-        "from": "ds:shipping_carriers",
-        "kind": "grounds",
-        "to": "con:shipping_carrier"
-      },
-      {
-        "from": "src:orders_raw",
-        "kind": "feeds",
-        "to": "ds:orders"
-      }
-    ],
-    "nodes": [
-      {
-        "id": "src:orders_raw",
-        "issues": 0,
-        "kind": "source",
-        "ref": "orders_raw",
-        "relation": "shop_raw.orders_raw",
-        "title": "orders_raw"
-      },
-      {
-        "id": "ds:categories",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "categories",
-        "relation": "shop_warehouse.categories",
-        "title": "categories",
-        "transform": null
-      },
-      {
-        "id": "ds:customers",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "customers",
-        "relation": "shop_warehouse.customers",
-        "title": "customers",
-        "transform": null
-      },
-      {
-        "id": "ds:orders",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "orders",
-        "relation": "shop_warehouse.orders",
-        "title": "orders",
-        "transform": "orders"
-      },
-      {
-        "id": "ds:product_bundles",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "product_bundles",
-        "relation": "shop_warehouse.product_bundles",
-        "title": "product_bundles",
-        "transform": null
-      },
-      {
-        "id": "ds:products",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "products",
-        "relation": "shop_warehouse.products",
-        "title": "products",
-        "transform": null
-      },
-      {
-        "id": "ds:refunds",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "refunds",
-        "relation": "shop_warehouse.refunds",
-        "title": "refunds",
-        "transform": null
-      },
-      {
-        "id": "ds:shipping_carriers",
-        "issues": 0,
-        "kind": "dataset",
-        "ref": "shipping_carriers",
-        "relation": "shop_warehouse.shipping_carriers",
-        "title": "shipping_carriers",
-        "transform": null
-      },
-      {
-        "class": "grouping",
-        "id": "con:category",
-        "kind": "concept",
-        "ref": "category",
-        "rules": 0,
-        "title": "Category"
-      },
-      {
-        "class": "entity",
-        "id": "con:customer",
-        "kind": "concept",
-        "ref": "customer",
-        "rules": 0,
-        "title": "Customer"
-      },
-      {
-        "class": "event",
-        "id": "con:order",
-        "kind": "concept",
-        "ref": "order",
-        "rules": 2,
-        "title": "Order"
-      },
-      {
-        "class": "enumeration",
-        "id": "con:order_status",
-        "kind": "concept",
-        "ref": "order_status",
-        "rules": 0,
-        "title": "Order Status"
-      },
-      {
-        "class": "reference",
-        "id": "con:product",
-        "kind": "concept",
-        "ref": "product",
-        "rules": 0,
-        "title": "Product"
-      },
-      {
-        "class": "grouping",
-        "id": "con:product_bundle",
-        "kind": "concept",
-        "ref": "product_bundle",
-        "rules": 0,
-        "title": "Product Bundle"
-      },
-      {
-        "class": "measure",
-        "id": "con:revenue",
-        "kind": "concept",
-        "ref": "revenue",
-        "rules": 1,
-        "title": "Revenue"
-      },
-      {
-        "class": "enumeration",
-        "id": "con:shipping_carrier",
-        "kind": "concept",
-        "ref": "shipping_carrier",
-        "rules": 0,
-        "title": "Shipping Carrier"
-      }
-    ],
-    "orphans": {
-      "concepts_grounded_in_nothing": [],
-      "datasets_bound_by_no_concept": [
-        "refunds"
-      ],
-      "datasets_with_no_input": [
-        "categories",
-        "customers",
-        "product_bundles",
-        "products",
-        "refunds",
-        "shipping_carriers"
-      ],
-      "sources_feeding_nothing": []
-    }
+    "evidence_artifact": "data/references_served",
+    "physical_plane": "served",
+    "plane": "physical",
+    "relationships": [],
+    "unknown_cardinalities": [],
+    "unrealised_edges": []
   },
   "objects": [
     {
@@ -634,6 +469,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/categories.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/categories.yaml",
         "sql": null,
@@ -666,6 +502,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/customers.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/customers.yaml",
         "sql": null,
@@ -707,10 +544,11 @@
       ],
       "key": "data:dataset:orders",
       "kind": "dataset",
-      "lineage": true,
+      "lineage": false,
       "paths": {
         "cleaning": "data/transforms/orders.md",
         "doc": "data/datasets/orders.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/orders.yaml",
         "sql": "data/transforms/orders.sql",
@@ -729,8 +567,7 @@
         "doc",
         "schema",
         "cleaning",
-        "sql",
-        "lineage"
+        "sql"
       ]
     },
     {
@@ -748,6 +585,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/product_bundles.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/product_bundles.yaml",
         "sql": null,
@@ -780,6 +618,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/products.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/products.yaml",
         "sql": null,
@@ -807,6 +646,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/refunds.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/refunds.yaml",
         "sql": null,
@@ -839,6 +679,7 @@
       "paths": {
         "cleaning": null,
         "doc": "data/datasets/shipping_carriers.md",
+        "profile": null,
         "sample": null,
         "schema": "data/datasets/shipping_carriers.yaml",
         "sql": null,
@@ -863,9 +704,10 @@
       "id": "orders_raw",
       "key": "data:source:orders_raw",
       "kind": "source",
-      "lineage": true,
+      "lineage": false,
       "paths": {
         "doc": "data/sources/orders_raw.md",
+        "profile": null,
         "sample": null,
         "schema": "data/sources/orders_raw.yaml"
       },
@@ -875,8 +717,7 @@
       "title": "orders_raw",
       "views": [
         "doc",
-        "schema",
-        "lineage"
+        "schema"
       ]
     },
     {
@@ -893,10 +734,16 @@
       "joins": {
         "in": [
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "0..1"
+            },
             "concept": "product",
+            "edge_id": "product__belongs_to__category",
             "join_rule": "products.category_id = categories.category_id",
             "on": "category_id",
-            "title": "Product"
+            "title": "Product",
+            "verified_by": null
           }
         ],
         "out": []
@@ -904,6 +751,7 @@
       "key": "ontology:concept:category",
       "kind": "concept",
       "lineage": false,
+      "name": "Category",
       "paths": {
         "doc": "ontology/concepts/category.md",
         "schema": "ontology/concepts/catalog/category.yaml"
@@ -916,7 +764,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -933,10 +782,16 @@
       "joins": {
         "in": [
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "1"
+            },
             "concept": "order",
+            "edge_id": "order__placed_by__customer",
             "join_rule": "orders.customer_id = customers.customer_id",
             "on": "customer_id",
-            "title": "Order"
+            "title": "Order",
+            "verified_by": null
           }
         ],
         "out": []
@@ -944,6 +799,7 @@
       "key": "ontology:concept:customer",
       "kind": "concept",
       "lineage": false,
+      "name": "Customer",
       "paths": {
         "doc": "ontology/concepts/customer.md",
         "schema": "ontology/concepts/customer/customer.yaml"
@@ -956,7 +812,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -976,16 +833,23 @@
         "in": [],
         "out": [
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "1"
+            },
             "concept": "customer",
+            "edge_id": "order__placed_by__customer",
             "join_rule": "orders.customer_id = customers.customer_id",
             "on": "customer_id",
-            "title": "Customer"
+            "title": "Customer",
+            "verified_by": null
           }
         ]
       },
       "key": "ontology:concept:order",
       "kind": "concept",
       "lineage": false,
+      "name": "Order",
       "no_probe_guarantee": "Everything needed to read an order's state and its revenue-eligibility is on the orders row \u2014 the lifecycle is which `*_at` timestamps are present, not a separate column. No warehouse probe needed.\n",
       "paths": {
         "doc": "ontology/concepts/order.md",
@@ -1029,7 +893,8 @@
         "doc",
         "schema",
         "rules",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1052,6 +917,7 @@
       "key": "ontology:concept:order_status",
       "kind": "concept",
       "lineage": false,
+      "name": "OrderStatus",
       "paths": {
         "doc": "ontology/concepts/order_status.md",
         "schema": "ontology/concepts/order/order_status.yaml"
@@ -1064,7 +930,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1081,30 +948,49 @@
       "joins": {
         "in": [
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "0..N"
+            },
             "concept": "product",
+            "edge_id": "product__related__product",
             "join_rule": null,
             "on": null,
-            "title": "Product"
+            "title": "Product",
+            "verified_by": null
           }
         ],
         "out": [
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "0..1"
+            },
             "concept": "category",
+            "edge_id": "product__belongs_to__category",
             "join_rule": "products.category_id = categories.category_id",
             "on": "category_id",
-            "title": "Category"
+            "title": "Category",
+            "verified_by": null
           },
           {
+            "cardinality": {
+              "from": "0..N",
+              "to": "0..N"
+            },
             "concept": "product",
+            "edge_id": "product__related__product",
             "join_rule": null,
             "on": null,
-            "title": "Product"
+            "title": "Product",
+            "verified_by": null
           }
         ]
       },
       "key": "ontology:concept:product",
       "kind": "concept",
       "lineage": false,
+      "name": "Product",
       "paths": {
         "doc": "ontology/concepts/product.md",
         "schema": "ontology/concepts/catalog/product.yaml"
@@ -1117,7 +1003,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1138,6 +1025,7 @@
       "key": "ontology:concept:product_bundle",
       "kind": "concept",
       "lineage": false,
+      "name": "ProductBundle",
       "paths": {
         "doc": "ontology/concepts/product_bundle.md",
         "schema": "ontology/concepts/catalog/product_bundle.yaml"
@@ -1150,7 +1038,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1173,6 +1062,7 @@
       "key": "ontology:concept:revenue",
       "kind": "concept",
       "lineage": false,
+      "name": "Revenue",
       "no_probe_guarantee": "Everything needed to answer \"revenue\" is here. Use NET revenue (rule net_revenue = gross \u2212 refunds); never SUM(orders.gross_amount) on its own. No probe of the warehouse is needed to discover the refunds join \u2014 the rule encodes it. If you find yourself wanting to probe, this concept is incomplete: fix it.\n",
       "paths": {
         "doc": "ontology/concepts/revenue.md",
@@ -1189,10 +1079,10 @@
           "confidence": null,
           "id": "revenue.net_of_refunds",
           "kind": "aggregation",
-          "never": "summing gross_amount alone \u2014 that is gross, not net revenue",
+          "never": "summing `{gross_amount}` alone \u2014 that is gross, not net revenue",
           "scope": null,
-          "subject": "net = SUM(gross_amount) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0",
-          "then": "net = SUM(gross_amount) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0",
+          "subject": "net = SUM(`{gross_amount}`) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0",
+          "then": "net = SUM(`{gross_amount}`) minus the order's summed refunds (rule net_revenue); an absent refund counts as 0",
           "when": "computing revenue from orders"
         }
       ],
@@ -1201,7 +1091,8 @@
         "doc",
         "schema",
         "rules",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1222,6 +1113,7 @@
       "key": "ontology:concept:shipping_carrier",
       "kind": "concept",
       "lineage": false,
+      "name": "ShippingCarrier",
       "paths": {
         "doc": "ontology/concepts/shipping_carrier.md",
         "schema": "ontology/concepts/order/shipping_carrier.yaml"
@@ -1234,7 +1126,8 @@
       "views": [
         "doc",
         "schema",
-        "chain"
+        "chain",
+        "describe"
       ]
     },
     {
@@ -1286,6 +1179,7 @@
       ]
     },
     {
+      "concept.rule": "exclusion",
       "id": "rules/order.revenue.paid_only",
       "key": "ontology:rule:rules/order.revenue.paid_only",
       "kind": "rule",
@@ -1297,13 +1191,13 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "concept.rule": "exclusion",
       "title": "order.revenue.paid_only",
       "views": [
         "doc"
       ]
     },
     {
+      "concept.rule": "resolution",
       "id": "rules/order.state.from_timestamps",
       "key": "ontology:rule:rules/order.state.from_timestamps",
       "kind": "rule",
@@ -1315,13 +1209,13 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "concept.rule": "resolution",
       "title": "order.state.from_timestamps",
       "views": [
         "doc"
       ]
     },
     {
+      "concept.rule": "aggregation",
       "id": "rules/revenue.net_of_refunds",
       "key": "ontology:rule:rules/revenue.net_of_refunds",
       "kind": "rule",
@@ -1333,7 +1227,6 @@
       "plane": "ontology",
       "quality": [],
       "relation": null,
-      "concept.rule": "aggregation",
       "title": "revenue.net_of_refunds",
       "views": [
         "doc"

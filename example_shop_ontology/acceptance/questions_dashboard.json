@@ -1,8 +1,8 @@
 {
   "schema": "mac.questions_dashboard/4",
-  "generated_at": "2026-09-12T21:52:28Z",
+  "generated_at": "2026-09-29T18:59:25Z",
   "bundle": "meaning-as-code/example_shop_ontology",
-  "ontology_fingerprint": "b175932ad2d4c14d",
+  "ontology_fingerprint": "21d227907f17daf7",
   "acceptance_fingerprint": "e3b0c44298fc1c14",
   "flag_ids": [
     "outcome",
@@ -50,9 +50,16 @@
     "errors": []
   },
   "ontology_rules": {
-    "total": 0,
-    "concepts": 0,
+    "total": 3,
+    "concepts": 8,
     "errors": []
+  },
+  "estate_vocabulary": {
+    "group": "kpi_surface_name",
+    "register": "registers/estate_terms.txt",
+    "present": true,
+    "terms": 3,
+    "reduced_scope": null
   },
   "stats": {
     "total": 0,

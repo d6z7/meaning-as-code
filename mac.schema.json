@@ -2131,6 +2131,55 @@
       },
       "additionalProperties": false
     },
+    "MigrationDecisionsFile": {
+      "type": "object",
+      "description": "<bundle>/migration_decisions.yaml — the judgements behind a bundle's move to the column standard, keyed <Concept>.<column>: a role (and identity, measure, rulings) or an explicit `exclude`, each with `because`. Read by tools/mac_migrate_concepts.py --decisions. AI proposes it (--propose-decisions); a person ratifies it; it is kept so the migration is reproducible and arguable. Added 2026-09-29.",
+      "propertyNames": {"pattern": "^[A-Za-z][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$"},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["because"],
+        "properties": {
+          "role": {"enum": ["key", "dimension", "measure", "period", "housekeeping"]},
+          "identity": {"enum": ["canonical", "part", "reference"]},
+          "measure": {"type": "object"},
+          "rulings": {"type": "object"},
+          "exclude": {"const": true},
+          "because": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "StandingFailuresFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "acceptance/standing_failures.yaml — the reds run_framework_gates.sh may carry for THIS bundle, each with an owner, a since, a reason and what makes it green. Read by tools/gate_register.py before every run (mac.gate_failures/1). Declared in guardrails/unfiled.yaml as `standing_failures` (authored-once: it is the decision to carry a red, not a measurement). Added 2026-09-29 — it was routed by location to PropertiesFile and refused the same hour it was declared.",
+      "required": ["spec_version", "scope", "declared", "standing", "entries"],
+      "properties": {
+        "spec_version": {"const": "mac.gate_failures/1"},
+        "scope": {"type": "string", "pattern": "^bundle:[A-Za-z0-9_./-]+$", "description": "a bundle register carries bundle:<name>; repository-level reds live in the framework's tools/framework_gate_failures.yaml, never here"},
+        "declared": {"type": "string", "format": "date"},
+        "review_by": {"type": "string", "format": "date"},
+        "standing": {"type": "integer", "minimum": 0, "description": "MUST equal the number of entries — two statements of one size cannot drift"},
+        "entries": {
+          "type": "object",
+          "propertyNames": {"pattern": "^check_[a-z0-9_]+\\.py$"},
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "owner", "since", "reason", "expected"],
+            "properties": {
+              "kind": {"enum": ["fail", "could-not-run"]},
+              "class": {"enum": ["subject-absent-by-design", "cannot-open"], "description": "required with kind: could-not-run"},
+              "owner": {"enum": ["operator", "platform", "data-plane", "unknown"]},
+              "since": {"type": "string", "format": "date"},
+              "reason": {"type": "string", "minLength": 1, "description": "the gate's own last line"},
+              "expected": {"type": "string", "minLength": 1, "description": "what makes it green"},
+              "record": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
     "PropertiesFile": {
       "type": "object",
       "description": "v0.1.14: WAREHOUSE INVARIANTS — the L2 (execution-validated) evidence. Each property carries SQL that RUNS against the warehouse and asserts a fact the ontology's rules DEPEND on. This is not corpus testing (no questions, no answers) and no local check replaces it: an `examples`-style test exercises a canon in memory, while these ask whether the DATA still satisfies the assumption. An additivity property on <dataset> asserts a year decomposes into exactly 12 month-end buckets with no hidden roll-up row — if that stopped being true, every canon would still pass and every yearly figure would be silently inflated.",

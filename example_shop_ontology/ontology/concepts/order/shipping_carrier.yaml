@@ -8,7 +8,7 @@ metadata:
   concept: ShippingCarrier
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.10'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -48,10 +48,16 @@ values:
 
 grounding:
   kind: sql_table
-  table: shipping_carriers        # the register is the authoritative grounding target for the code
   schema: shop_warehouse
-  grounds_column: code            # the code column the value domain is read from
-
+  sources:
+  - relation: shipping_carriers
+    columns:
+      code:
+        role: key
+        identity: canonical
+      label:
+        role: dimension
+  grounds_column: code
 governance:
   last_reviewed: 2026-07-14
   change_log:

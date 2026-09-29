@@ -125,6 +125,24 @@ delivers:
                  "entries.{gate}.since", "entries.{gate}.reason", "entries.{gate}.expected"]}
     checkers: [{tool: tools/gate_register.py, role: "--check: spec, scope, owner, dates, standing == entries; --self-test 22/22"}]
 
+  migration_decisions:
+    what: the judgements behind a bundle's move to the column standard — per column, a role or an explicit exclusion, each with its because
+    phase: [datasets]
+    belongs_to: ontology.concepts   # move here when the topic takes authored inputs
+    path: migration_decisions.yaml
+    naming: fixed
+    population: {of: one register, from: «this artifact», empty_is: OK}
+    lifecycle: authored-once
+    # PROPOSED BY THE TOOL, RATIFIED BY A PERSON. `attribute` was never a role but several judgements
+    # in one slot, and a legacy whitelist served every descriptor column while the map form serves what
+    # it names — so a migration that guessed would either invent rulings or narrow the served set
+    # silently. The tool refuses instead, and this file is where the person answers.
+    producers: [{tool: tools/mac_migrate_concepts.py, role: proposes every entry from the descriptor (--propose-decisions); a person ratifies}]
+    consumers:
+      - {tool: tools/mac_migrate_concepts.py, role: migrates a concept only where every column is decided,
+         reads: ["{Concept.column}.role", "{Concept.column}.identity", "{Concept.column}.measure", "{Concept.column}.rulings", "{Concept.column}.exclude"]}
+    checkers: [{tool: tools/validate_schema.py, role: "MigrationDecisionsFile: a role from the vocabulary, an identity from the vocabulary, a because on every entry"}]
+
 watch:
   record: acceptance/guardrail_runs.json
   written_by: tools/check_guardrails.py

@@ -5,7 +5,7 @@ metadata:
   concept: ReturnFlag
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -40,10 +40,20 @@ values:
 
 grounding:
   kind: sql_table
-  table: lineitem
   schema: tpch
+  sources:
+  - relation: lineitem
+    columns:
+      l_orderkey:
+        role: key
+        identity: part
+      l_linenumber:
+        role: key
+        identity: part
+      l_returnflag:
+        role: key
+        identity: canonical
   grounds_column: l_returnflag
-
 governance:
   last_reviewed: 2026-06-18
   change_log:

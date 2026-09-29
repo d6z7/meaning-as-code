@@ -95,6 +95,8 @@ def _pick_def(path, layout=None):
         # would arrive as "carries no MAC definition" and a bundle would have to
         # declare its own governance artifact out of scope to go green.
         'data_plane_approval.yaml': 'DataPlaneApprovalFile',
+        'standing_failures.yaml': 'StandingFailuresFile',
+        'migration_decisions.yaml': 'MigrationDecisionsFile',
     }
     if base in _BY_BASE:
         return _BY_BASE[base]
@@ -221,7 +223,7 @@ except VersionLineError as _e:      # never raise at import: mac_checks_structur
 UNVERSIONED_DEFS = {
     'PropertiesFile', 'InterventionLedgerFile', 'VanillaDeltaFile', 'DataQualityRegisterFile',
     'ImpurityResolutionMapFile', 'KnowledgeSectionsFile', 'PhaseFile', 'ShapesFile', 'ProtoSqlFile',
-    'ProjectFile', 'DataPlaneApprovalFile',
+    'ProjectFile', 'DataPlaneApprovalFile', 'StandingFailuresFile', 'MigrationDecisionsFile',
 }
 
 
@@ -302,7 +304,7 @@ def enumerate_bundle(root, layout=None):
     # THIRD TIME FOR THIS EXACT HALF. The note above records the first two; adding
     # `ValueRegisterFile` to $defs and routing it in `_pick_def` left all 25 register descriptors in
     # the "carries no MAC definition" bucket, because nothing collected them. Both halves, always.
-    for pat in ('acceptance/*.yaml', 'interventions/ledger.yaml',
+    for pat in ('acceptance/*.yaml', 'interventions/ledger.yaml', 'migration_decisions.yaml',
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
                 'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',

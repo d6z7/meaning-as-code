@@ -4,7 +4,7 @@ metadata:
   concept: Supplier
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -15,7 +15,6 @@ concept:
   class: entity
   identity:
     kind: fk_name
-    canonical_key: s_suppkey
   definition: >
     A party that supplies parts. Identified by s_suppkey and located in one Nation (see edges). The
     supply side — which supplier provides a part, at what cost, is captured by PartSupp.
@@ -30,10 +29,25 @@ properties:
 
 grounding:
   kind: sql_table
-  table: supplier
   schema: tpch
-  key_column: s_suppkey
-
+  sources:
+  - relation: supplier
+    key:
+    - s_suppkey
+    columns:
+      s_suppkey:
+        role: key
+        identity: canonical
+      s_name:
+        role: dimension
+      s_nationkey:
+        role: key
+        identity: reference
+      s_acctbal:
+        role: measure
+        measure:
+          type: mac.concept.column.measure_type.stock
+          unit: currency (account currency)
 governance:
   last_reviewed: 2026-06-17
   change_log:

@@ -6,6 +6,7 @@ tags:
 - SHOP
 - grouping
 - confidence:C
+resource: table://categories
 ---
 
 A grouping of products into a browsable hierarchy — e.g. Electronics > Phones, Home > Kitchen. A Category is not a sellable thing (that is Product, a reference); it is the roll-up level used to aggregate revenue and browse the catalogue. Categories nest (a category may have a parent category).
@@ -14,10 +15,24 @@ A grouping of products into a browsable hierarchy — e.g. Electronics > Phones,
 
 - **Identity** — fk_name
 - **Version** — 1.0
-- **Schema version** — 0.1.9
+- **Schema version** — 0.1.16
 - **Status** — production
 - **Owner** — example-team
 - **Last reviewed** — 2026-06-05
+
+## Grounded in
+
+- `categories` — key `['category_id']`
+
+## Fields
+
+| column | type | role | grounded in | description | joins → |
+|---|---|---|---|---|---|
+| `category_id` | string | — | `categories` | — | — |
+| `name` | string | — | `categories` | display name (e.g. 'Phones') | — |
+| `parent_id` | string | — | `categories` | — | — |
+
+_Declared per column, over 3 columns: description 1 of 3 · type 3 of 3 · joins → 0 of 3. An em dash is a column for which nothing is declared._
 
 ## Relationships
 

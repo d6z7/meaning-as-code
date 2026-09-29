@@ -5,13 +5,11 @@
 
 metadata:
   table: orders_raw
-  source: SHOP
   schema_version: '0.1.9'
-  status: verified
+  status: measured
   kind: raw_source              # rides in the open metadata block; distinguishes raw input from produced output
   external: true                # upstream-owned; we observe it, we do not maintain it
   observed: 2026-06-19          # date this schema was last probed (DESCRIBE) — the drift anchor
-  owner: example-team
 
 table:
   name: orders_raw

@@ -1,0 +1,406 @@
+# migration_decisions.yaml — the judgements behind this bundle's move to the column standard.
+# RATIFIED 2026-09-29 by the modeller from TPC-H's own definitions; every entry says why. `exclude`
+# is a ratified narrowing: the concept does not serve the column. Read by
+# tools/mac_migrate_concepts.py --decisions; kept so the migration is reproducible and arguable.
+Customer.c_custkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Customer.c_nationkey:
+  role: key
+  identity: reference
+  because: names a Nation
+Customer.c_name:
+  role: dimension
+  because: the customer's name
+Customer.c_mktsegment:
+  role: dimension
+  because: the segment; MarketSegment is the enumeration over it
+Customer.c_acctbal:
+  role: measure
+  measure:
+    type: stock
+    unit: currency (account currency)
+  because: a balance is a level, not a flow
+Customer.c_phone:
+  exclude: true
+  because: identifying free text; no finding measures it, so it is not served rather than served unguarded
+Customer.c_comment:
+  exclude: true
+  because: free text
+MarketSegment.c_mktsegment:
+  role: key
+  identity: canonical
+  because: the code IS the enumeration's identity
+MarketSegment.c_custkey:
+  role: key
+  identity: reference
+  because: the row carrying the code
+MarketSegment.c_nationkey:
+  exclude: true
+  because: not the enumeration's to serve
+MarketSegment.c_name:
+  exclude: true
+  because: not the enumeration's to serve
+MarketSegment.c_acctbal:
+  exclude: true
+  because: not the enumeration's to serve
+MarketSegment.c_phone:
+  exclude: true
+  because: not the enumeration's to serve
+MarketSegment.c_comment:
+  exclude: true
+  because: not the enumeration's to serve
+Nation.n_nationkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Nation.n_regionkey:
+  role: key
+  identity: reference
+  because: names a Region
+Nation.n_name:
+  role: dimension
+  because: the nation's name
+Nation.n_comment:
+  exclude: true
+  because: free text
+Region.r_regionkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Region.r_name:
+  role: dimension
+  because: the region's name
+Region.r_comment:
+  exclude: true
+  because: free text
+Part.p_partkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Part.p_name:
+  role: dimension
+  because: the part's name
+Part.p_mfgr:
+  role: dimension
+  because: the manufacturer
+Part.p_brand:
+  role: dimension
+  because: the brand
+Part.p_type:
+  role: dimension
+  because: the type
+Part.p_size:
+  role: dimension
+  because: a small integer TPC-H queries filter on as a category
+Part.p_retailprice:
+  role: measure
+  measure:
+    type: intensive
+    unit: currency (account currency)
+  because: 'a per-unit price: an average, never a total'
+Part.p_comment:
+  exclude: true
+  because: free text
+Supplier.s_suppkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Supplier.s_nationkey:
+  role: key
+  identity: reference
+  because: names a Nation
+Supplier.s_name:
+  role: dimension
+  because: the supplier's name
+Supplier.s_acctbal:
+  role: measure
+  measure:
+    type: stock
+    unit: currency (account currency)
+  because: a balance is a level
+Supplier.s_phone:
+  exclude: true
+  because: identifying free text; not served
+Supplier.s_comment:
+  exclude: true
+  because: free text
+PartSupp.ps_partkey:
+  role: key
+  identity: part
+  because: one column of the composite identity (ps_partkey, ps_suppkey)
+PartSupp.ps_suppkey:
+  role: key
+  identity: part
+  because: one column of the composite identity
+PartSupp.ps_supplycost:
+  role: measure
+  measure:
+    type: intensive
+    unit: currency (account currency)
+  because: a per-unit cost
+PartSupp.ps_availqty:
+  exclude: true
+  because: a second measure in a different unit needs its own concept; not served here
+PartSupp.ps_comment:
+  exclude: true
+  because: free text
+Orders.o_orderkey:
+  role: key
+  identity: canonical
+  because: the canonical key
+Orders.o_custkey:
+  role: key
+  identity: reference
+  because: names a Customer
+Orders.o_orderdate:
+  role: period
+  because: THE reporting date of an order
+Orders.o_totalprice:
+  role: measure
+  measure:
+    type: flow
+    unit: currency (account currency)
+  because: the order's amount
+Orders.o_orderstatus:
+  role: dimension
+  because: the status; OrderStatus is the enumeration over it
+Orders.o_orderpriority:
+  role: dimension
+  because: the priority code
+Orders.o_comment:
+  exclude: true
+  because: free text
+OrderStatus.o_orderstatus:
+  role: key
+  identity: canonical
+  because: the code IS the enumeration's identity
+OrderStatus.o_orderkey:
+  role: key
+  identity: reference
+  because: the row carrying the code
+OrderStatus.o_custkey:
+  exclude: true
+  because: not the enumeration's to serve
+OrderStatus.o_orderdate:
+  exclude: true
+  because: not the enumeration's to serve
+OrderStatus.o_totalprice:
+  exclude: true
+  because: not the enumeration's to serve
+OrderStatus.o_orderpriority:
+  exclude: true
+  because: not the enumeration's to serve
+OrderStatus.o_comment:
+  exclude: true
+  because: not the enumeration's to serve
+LineItem.l_orderkey:
+  role: key
+  identity: part
+  because: one column of the composite identity (l_orderkey, l_linenumber); the order it belongs to is an edge
+LineItem.l_linenumber:
+  role: key
+  identity: part
+  because: one column of the composite identity
+LineItem.l_partkey:
+  role: key
+  identity: reference
+  because: names a Part
+LineItem.l_suppkey:
+  role: key
+  identity: reference
+  because: names a Supplier
+LineItem.l_quantity:
+  role: measure
+  measure:
+    type: flow
+    unit: units
+  because: 'the line''s quantity: the one measure the event carries; the amounts are Revenue''s'
+LineItem.l_extendedprice:
+  exclude: true
+  because: Revenue owns the amounts; an event carries no measure of its own beyond its quantity
+LineItem.l_discount:
+  exclude: true
+  because: Revenue owns it
+LineItem.l_tax:
+  exclude: true
+  because: Revenue owns it
+LineItem.l_shipdate:
+  role: period
+  because: THE date TPC-H reports lines by
+LineItem.l_commitdate:
+  role: dimension
+  because: a lifecycle date
+LineItem.l_receiptdate:
+  role: dimension
+  because: a lifecycle date; received iff it is set
+LineItem.l_returnflag:
+  role: dimension
+  because: the flag; ReturnFlag is the enumeration over it
+LineItem.l_linestatus:
+  role: dimension
+  because: the status; LineStatus is the enumeration over it
+LineItem.l_shipmode:
+  role: dimension
+  because: the ship mode
+LineItem.l_comment:
+  exclude: true
+  because: free text
+Revenue.l_orderkey:
+  role: key
+  identity: part
+  because: the line's composite identity, shared with LineItem
+Revenue.l_linenumber:
+  role: key
+  identity: part
+  because: the line's composite identity
+Revenue.l_partkey:
+  role: key
+  identity: reference
+  because: names a Part
+Revenue.l_suppkey:
+  role: key
+  identity: reference
+  because: names a Supplier
+Revenue.l_extendedprice:
+  role: measure
+  measure:
+    type: flow
+    unit: currency (account currency)
+  because: the gross line amount the revenue composes from
+Revenue.l_discount:
+  role: measure
+  measure:
+    type: intensive
+    unit: fraction
+  because: a rate, never summed; net of discount is the composition
+Revenue.l_tax:
+  role: measure
+  measure:
+    type: intensive
+    unit: fraction
+  because: a rate
+Revenue.l_quantity:
+  role: measure
+  measure:
+    type: flow
+    unit: units
+  because: the quantity
+Revenue.l_shipdate:
+  role: period
+  because: THE date TPC-H reports revenue by
+Revenue.l_commitdate:
+  role: dimension
+  because: a lifecycle date
+Revenue.l_receiptdate:
+  role: dimension
+  because: a lifecycle date
+Revenue.l_returnflag:
+  role: dimension
+  because: revenue is sliced by it
+Revenue.l_linestatus:
+  role: dimension
+  because: revenue is sliced by it
+Revenue.l_shipmode:
+  role: dimension
+  because: revenue is sliced by it
+Revenue.l_comment:
+  exclude: true
+  because: free text
+LineStatus.l_linestatus:
+  role: key
+  identity: canonical
+  because: the code IS the enumeration's identity
+LineStatus.l_orderkey:
+  role: key
+  identity: part
+  because: the row carrying the code
+LineStatus.l_linenumber:
+  role: key
+  identity: part
+  because: the row carrying the code
+LineStatus.l_partkey:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_suppkey:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_quantity:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_extendedprice:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_discount:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_tax:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_returnflag:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_shipdate:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_commitdate:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_receiptdate:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_shipmode:
+  exclude: true
+  because: not the enumeration's to serve
+LineStatus.l_comment:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_returnflag:
+  role: key
+  identity: canonical
+  because: the code IS the enumeration's identity
+ReturnFlag.l_orderkey:
+  role: key
+  identity: part
+  because: the row carrying the code
+ReturnFlag.l_linenumber:
+  role: key
+  identity: part
+  because: the row carrying the code
+ReturnFlag.l_partkey:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_suppkey:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_quantity:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_extendedprice:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_discount:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_tax:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_linestatus:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_shipdate:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_commitdate:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_receiptdate:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_shipmode:
+  exclude: true
+  because: not the enumeration's to serve
+ReturnFlag.l_comment:
+  exclude: true
+  because: not the enumeration's to serve

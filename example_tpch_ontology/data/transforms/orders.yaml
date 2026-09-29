@@ -5,11 +5,9 @@
 # without a producer, `orders` had none, and the graph showed it unrelated to its input.
 metadata:
   pipeline: orders
-  source: TPCH
   layer: data-transformation
   schema_version: 0.1.14
-  status: verified
-  owner: example-team
+  status: measured
 produces:
   relation: tpch.orders
   sql_file: data/transforms/orders.sql

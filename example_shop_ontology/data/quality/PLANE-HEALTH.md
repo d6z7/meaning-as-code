@@ -20,16 +20,6 @@ The structural health of this source's data plane — the same numbers the gates
 
 ⚠️ **6** dataset(s) with no transformation: `categories`, `customers`, `product_bundles`, `products`, `refunds`, `shipping_carriers`
 
-## Lineage coverage
-
-How many of each served view's columns descend from an upstream column. Computed columns (pivots, aggregates, literals) legitimately have no single parent, so <100% is normal — **0% is the alarm**: it means the transform's inputs are mis-declared and the lineage silently collapsed.
-
-| dataset | covered | of | coverage | |
-|---|---|---|---|---|
-| `orders` | 4 | 8 | 50% | 🟢 |
-
-**Overall — 4/8 columns (50%) trace to an upstream column.**
-
 ## Change protocol — autodiscovery vs manual
 
 | | count |

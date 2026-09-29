@@ -4,13 +4,11 @@
 
 metadata:
   table: lineitem_raw
-  source: TPCH
   schema_version: '0.1.9'
-  status: verified
+  status: measured
   kind: raw_source
   external: true
   observed: 2026-06-19
-  owner: example-team
 
 table:
   name: lineitem_raw
@@ -20,7 +18,7 @@ table:
 
 columns:
   - { name: l_orderkey,      type: integer, role: foreign_key }
-  - { name: l_linenumber,    type: integer, role: composite_key_part }
+  - { name: l_linenumber,    type: integer, role: primary_key, key_position: 1 }
   - { name: l_partkey,       type: integer, role: foreign_key }
   - { name: l_suppkey,       type: integer, role: foreign_key }
   - { name: l_quantity,      type: decimal, role: value }

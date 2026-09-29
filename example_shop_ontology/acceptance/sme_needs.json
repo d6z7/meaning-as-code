@@ -1,0 +1,13 @@
+{
+  "counts": {
+    "candidates": 0,
+    "groups": 0,
+    "oracle_files": 0,
+    "rows": 0,
+    "with_sme_fields": 0
+  },
+  "findings": [],
+  "format": "mac.sme-needs/1",
+  "needs": [],
+  "state": "absent"
+}

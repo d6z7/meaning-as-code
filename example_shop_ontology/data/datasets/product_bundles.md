@@ -11,9 +11,9 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `bundle_code` | string | composite_key_part |
-| `product` | string | composite_key_part |
-| `label` | string | value |
-| `featured` | boolean | value |
+| column | type | role | reference |
+|---|---|---|---|
+| `bundle_code` | string | PK1 |  |
+| `product` | string | PK2 |  |
+| `label` | string | value |  |
+| `featured` | boolean | value |  |

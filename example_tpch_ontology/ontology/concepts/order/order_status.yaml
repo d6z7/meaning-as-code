@@ -5,7 +5,7 @@ metadata:
   concept: OrderStatus
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -35,10 +35,17 @@ values:
 
 grounding:
   kind: sql_table
-  table: orders
   schema: tpch
+  sources:
+  - relation: orders
+    columns:
+      o_orderkey:
+        role: key
+        identity: reference
+      o_orderstatus:
+        role: key
+        identity: canonical
   grounds_column: o_orderstatus
-
 governance:
   last_reviewed: 2026-06-18
   change_log:

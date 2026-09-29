@@ -2,12 +2,8 @@
 
 metadata:
   table: partsupp
-  source: TPCH
-  version: '1.0'
   schema_version: '0.1.9'
-  status: verified
-  owner: example-team
-  confidence: C
+  status: measured
 
 table:
   name: partsupp
@@ -16,8 +12,8 @@ table:
   description: "One row per (part, supplier) pair — the associative table reifying which suppliers stock which parts, with availability and cost. Grounding target for the PartSupp associative entity."
 
 columns:
-  - { name: ps_partkey,   type: integer, role: composite_key_part }
-  - { name: ps_suppkey,   type: integer, role: composite_key_part }
+  - { name: ps_partkey,   type: integer, role: primary_key, key_position: 1 }
+  - { name: ps_suppkey,   type: integer, role: primary_key, key_position: 2 }
   - { name: ps_availqty,  type: integer, role: value }
   - { name: ps_supplycost, type: decimal, role: value }
   - { name: ps_comment,   type: string,  role: value }

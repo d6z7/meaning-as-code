@@ -1,11 +1,7 @@
 metadata:
   table: customer_raw
-  source: TPCH
-  version: '1.0'
   schema_version: 0.1.14
-  status: verified
-  owner: example-team
-  confidence: C
+  status: measured
 table:
   name: customer_raw
   schema: tpch_raw

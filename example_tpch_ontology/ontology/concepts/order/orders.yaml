@@ -4,7 +4,7 @@ metadata:
   concept: Orders
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -15,7 +15,6 @@ concept:
   class: entity
   identity:
     kind: fk_name
-    canonical_key: o_orderkey
   definition: >
     The header of a customer order: who placed it (one Customer), when, its total price and status. The
     parent of one or more LineItems. Modelled as an entity (a header record); the fulfilment lifecycle
@@ -33,10 +32,29 @@ properties:
 
 grounding:
   kind: sql_table
-  table: orders
   schema: tpch
-  key_column: o_orderkey
-
+  sources:
+  - relation: orders
+    key:
+    - o_orderkey
+    columns:
+      o_orderkey:
+        role: key
+        identity: canonical
+      o_custkey:
+        role: key
+        identity: reference
+      o_orderstatus:
+        role: dimension
+      o_totalprice:
+        role: measure
+        measure:
+          type: mac.concept.column.measure_type.flow
+          unit: currency (account currency)
+      o_orderdate:
+        role: period
+      o_orderpriority:
+        role: dimension
 governance:
   last_reviewed: 2026-06-17
   change_log:

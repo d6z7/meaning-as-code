@@ -1,16 +1,30 @@
 ---
 type: Doc
 title: SME questions — ontology
-description: 1 concept sign-offs awaiting SME
+description: 0 questions and 0 sign-off requests the model and its tests put to an SME
 tags:
 - SHOP
 - sme-questions
 ---
 
-The open **SME sign-offs** the ontology surfaces — 1 questions, one per concept needing ratification (confirm a concept or rule, an aggregation rule, an enum domain, an identity key). Prioritised by severity; each links to its concept. Projected from ontology_quality.json, so it stays in sync.
+What the model and its tests ask a subject-matter expert: **0 question(s)** and **0 sign-off request(s)**, 0 row(s) in all. Consolidated from the register (model conditions and change-record `sme` blocks), concept open-question fields and test oracles flagged needs-SME; projected from ontology_quality.json and acceptance/sme_needs.json, so it stays in sync.
 
-## Medium priority — 1 question(s)
+Conversation status is not part of this projection; it lives in the bundle's SME question ledger.
 
-| ask | concept | kind | status |
-|---|---|---|---|
-| Is “Shipping Carrier” a CLOSED set? If so, what are all its valid values? | [Shipping Carrier](concepts/shipping_carrier.md) | enumeration | closed |
+Rows by origin: none
+
+## Questions — 0
+
+None.
+
+## Sign-offs — 0
+
+None.
+
+## Findings — 0 (not questions)
+
+None.
+
+## Operator items — 0 (not SME questions)
+
+None.

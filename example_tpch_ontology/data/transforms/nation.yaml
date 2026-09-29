@@ -5,11 +5,9 @@
 # without a producer, `nation` had none, and the graph showed it unrelated to its input.
 metadata:
   pipeline: nation
-  source: TPCH
   layer: data-transformation
   schema_version: 0.1.14
-  status: verified
-  owner: example-team
+  status: measured
 produces:
   relation: tpch.nation
   sql_file: data/transforms/nation.sql

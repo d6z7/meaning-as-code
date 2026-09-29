@@ -8,15 +8,15 @@ tags:
 - SHOP
 - source
 - lifecycle:draft
-- confidence:C
+- confidence:Q
 ---
 
 ## Columns
 
-| column | type | role | confidence |
+| column | type | role | reference |
 |---|---|---|---|
-| `order_id` | string | primary_key |  |
-| `customer_id` | string | foreign_key |  |
+| `order_id` | string | PK |  |
+| `customer_id` | string | FK |  |
 | `status` | string | discriminator |  |
 | `gross_cents` | bigint | value |  |
 | `placed_at` | timestamp | value |  |

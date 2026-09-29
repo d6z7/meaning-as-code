@@ -1,11 +1,7 @@
 metadata:
   table: nation_raw
-  source: TPCH
-  version: '1.0'
   schema_version: 0.1.14
-  status: verified
-  owner: example-team
-  confidence: C
+  status: measured
 table:
   name: nation_raw
   schema: tpch_raw

@@ -11,11 +11,8 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `category_id` | string | primary_key |
-| `name` | string | value |
-| `parent_id` | string | foreign_key |
-
-## Foreign keys
-- `parent_id` → `categories.category_id`
+| column | type | role | reference |
+|---|---|---|---|
+| `category_id` | string | PK |  |
+| `name` | string | value |  |
+| `parent_id` | string | FK |  |

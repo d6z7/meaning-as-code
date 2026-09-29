@@ -5,7 +5,7 @@ metadata:
   concept: Customer
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -16,7 +16,6 @@ concept:
   class: entity                   # a structured thing with identity, that other concepts reference
   identity:
     kind: fk_name
-    canonical_key: customer_id
   definition: >
     A person (or business) who can place orders in the shop. Identified by customer_id. The root party
     of the ordering process; an Order is placed_by exactly one Customer.
@@ -33,10 +32,19 @@ properties:
 
 grounding:
   kind: sql_table
-  table: customers
   schema: shop_warehouse
-  key_column: customer_id
-
+  sources:
+  - relation: customers
+    key:
+    - customer_id
+    columns:
+      customer_id:
+        role: key
+        identity: canonical
+      email:
+        role: dimension
+      created_at:
+        role: dimension
 governance:
   last_reviewed: 2026-06-05
   change_log:

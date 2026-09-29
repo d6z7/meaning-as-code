@@ -5,7 +5,7 @@ metadata:
   concept: Product
   source: SHOP
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -16,7 +16,6 @@ concept:
   class: reference                # a dimension entity, identified by a key, that orders point at
   identity:
     kind: fk_name
-    canonical_key: sku
   definition: >
     A sellable item in the catalogue, identified by sku. Orders reference products; products roll up
     into a Category (see grouping). The leaf of the catalogue hierarchy.
@@ -33,10 +32,25 @@ properties:
 
 grounding:
   kind: sql_table
-  table: products
   schema: shop_warehouse
-  key_column: sku
-
+  sources:
+  - relation: products
+    key:
+    - sku
+    columns:
+      sku:
+        role: key
+        identity: canonical
+      name:
+        role: dimension
+      category_id:
+        role: key
+        identity: reference
+      list_price:
+        role: measure
+        measure:
+          type: mac.concept.column.measure_type.intensive
+          unit: currency (account currency)
 governance:
   last_reviewed: 2026-06-05
   change_log:

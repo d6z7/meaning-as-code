@@ -1,0 +1,67 @@
+{
+  "edges": [
+    {
+      "cardinality_from": "0..N",
+      "cardinality_to": "1",
+      "confidence": "C",
+      "edge_id": "order__placed_by__customer",
+      "from": "Order",
+      "join_rule": "orders.customer_id = customers.customer_id",
+      "level": "physical",
+      "notes": "The most-traversed join \u2014 every per-customer aggregation goes through it.",
+      "proof": {
+        "detail": null,
+        "state": "unproved"
+      },
+      "realisation": "join_rule",
+      "realized_by": "data/datasets/orders.yaml#foreign_keys (customer_id -> customers.customer_id)",
+      "resolved_by": null,
+      "to": "Customer",
+      "type": "foreign_key",
+      "verified_by": null
+    },
+    {
+      "cardinality_from": "0..N",
+      "cardinality_to": "0..1",
+      "confidence": "C",
+      "edge_id": "product__belongs_to__category",
+      "from": "Product",
+      "join_rule": "products.category_id = categories.category_id",
+      "level": "physical",
+      "notes": null,
+      "proof": {
+        "detail": null,
+        "state": "unproved"
+      },
+      "realisation": "join_rule",
+      "realized_by": "data/datasets/products.yaml#foreign_keys (category_id -> categories.category_id)",
+      "resolved_by": null,
+      "to": "Category",
+      "type": "foreign_key",
+      "verified_by": null
+    },
+    {
+      "cardinality_from": "0..N",
+      "cardinality_to": "0..N",
+      "confidence": "C",
+      "edge_id": "product__related__product",
+      "from": "Product",
+      "join_rule": null,
+      "level": "business",
+      "notes": "Two products are related iff they share a non-NULL category (symmetric self-relation, not a stored FK).",
+      "proof": {
+        "detail": null,
+        "state": "unproved"
+      },
+      "realisation": "resolved_by",
+      "realized_by": null,
+      "resolved_by": "ontology/rules.yaml#rules.related_products",
+      "to": "Product",
+      "type": "shared_attribute",
+      "verified_by": null
+    }
+  ],
+  "measured": 0,
+  "total": 3,
+  "unproved": 3
+}

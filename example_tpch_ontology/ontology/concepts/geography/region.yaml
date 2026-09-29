@@ -5,7 +5,7 @@ metadata:
   concept: Region
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -16,7 +16,6 @@ concept:
   class: entity
   identity:
     kind: fk_name
-    canonical_key: r_regionkey
   definition: >
     A top-level geographic grouping of nations (TPC-H regions: AFRICA, AMERICA, ASIA, EUROPE,
     MIDDLE EAST). The root of the geography hierarchy — a Nation belongs to exactly one Region, and
@@ -31,10 +30,17 @@ properties:
 
 grounding:
   kind: sql_table
-  table: region
   schema: tpch
-  key_column: r_regionkey
-
+  sources:
+  - relation: region
+    key:
+    - r_regionkey
+    columns:
+      r_regionkey:
+        role: key
+        identity: canonical
+      r_name:
+        role: dimension
 governance:
   last_reviewed: 2026-06-17
   change_log:

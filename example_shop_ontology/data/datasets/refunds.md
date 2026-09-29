@@ -11,12 +11,9 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `refund_id` | string | primary_key |
-| `order_id` | string | foreign_key |
-| `refund_amount` | decimal | value |
-| `refunded_at` | timestamp | value |
-
-## Foreign keys
-- `order_id` → `orders.order_id`
+| column | type | role | reference |
+|---|---|---|---|
+| `refund_id` | string | PK |  |
+| `order_id` | string | FK |  |
+| `refund_amount` | decimal | value |  |
+| `refunded_at` | timestamp | value |  |

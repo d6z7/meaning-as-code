@@ -4,7 +4,7 @@ metadata:
   concept: PartSupp
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -31,10 +31,23 @@ properties:
 
 grounding:
   kind: sql_table
-  table: partsupp
   schema: tpch
-  key_column: ps_partkey   # composite (ps_partkey, ps_suppkey); the leading key part is named here
-
+  sources:
+  - relation: partsupp
+    key:
+    - ps_partkey
+    columns:
+      ps_partkey:
+        role: key
+        identity: part
+      ps_suppkey:
+        role: key
+        identity: part
+      ps_supplycost:
+        role: measure
+        measure:
+          type: mac.concept.column.measure_type.intensive
+          unit: currency (account currency)
 governance:
   last_reviewed: 2026-06-17
   change_log:

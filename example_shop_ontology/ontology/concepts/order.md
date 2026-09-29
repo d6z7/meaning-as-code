@@ -6,6 +6,7 @@ tags:
 - SHOP
 - event
 - confidence:C
+resource: table://orders
 rule_pages:
 - rules/order.state.from_timestamps.md
 - rules/order.revenue.paid_only.md
@@ -17,7 +18,7 @@ A purchase a customer places: one or more products bought in a single checkout. 
 
 - **Identity** — fk_name
 - **Version** — 1.0
-- **Schema version** — 0.1.9
+- **Schema version** — 0.1.16
 - **Status** — production
 - **Owner** — example-team
 - **Last reviewed** — 2026-06-05
@@ -30,14 +31,24 @@ A purchase a customer places: one or more products bought in a single checkout. 
 Everything needed to read an order's state and its revenue-eligibility is on the orders row — the lifecycle is which `*_at` timestamps are present, not a separate column. No warehouse probe needed.
 ```
 
+## Grounded in
+
+- `orders` — key `['order_id']`
+
 ## Fields
 
-| column | role | grounded in | description | joins → |
-|---|---|---|---|---|
-| `order_id` | key | — |  |  |
-| `customer_id` | key | — |  | [Customer](customer.md) |
-| `status` | dimension | — |  |  |
-| `gross_amount` | measure | — |  |  |
+| column | type | role | grounded in | description | joins → |
+|---|---|---|---|---|---|
+| `order_id` | string | — | `orders` | — | — |
+| `customer_id` | string | — | `orders` | — | [Customer](customer.md) |
+| `status` | string | — | `orders` | — | — |
+| `gross_amount` | decimal | — | `orders` | — | — |
+| `placed_at` | timestamp | — | `orders` | — | — |
+| `paid_at` | timestamp | — | `orders` | — | — |
+| `shipped_at` | timestamp | — | `orders` | — | — |
+| `delivered_at` | timestamp | — | `orders` | — | — |
+
+_Declared per column, over 8 columns: description 0 of 8 · type 8 of 8 · joins → 1 of 8. An em dash is a column for which nothing is declared._
 
 ## Relationships
 

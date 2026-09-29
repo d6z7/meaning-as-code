@@ -5,7 +5,7 @@ metadata:
   concept: Nation
   source: TPCH
   version: '1.0'
-  schema_version: '0.1.9'
+  schema_version: '0.1.16'
   status: production
   owner: example-team
   confidence: C
@@ -16,7 +16,6 @@ concept:
   class: entity
   identity:
     kind: fk_name
-    canonical_key: n_nationkey
   definition: >
     A country (TPC-H has 25). The middle level of the geography hierarchy: a Nation belongs to one
     Region (see edges) and is the nation of customers and suppliers. The grain at which most geography
@@ -32,10 +31,20 @@ properties:
 
 grounding:
   kind: sql_table
-  table: nation
   schema: tpch
-  key_column: n_nationkey
-
+  sources:
+  - relation: nation
+    key:
+    - n_nationkey
+    columns:
+      n_nationkey:
+        role: key
+        identity: canonical
+      n_name:
+        role: dimension
+      n_regionkey:
+        role: key
+        identity: reference
 governance:
   last_reviewed: 2026-06-17
   change_log:

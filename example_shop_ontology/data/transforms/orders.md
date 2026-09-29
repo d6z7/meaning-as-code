@@ -29,19 +29,3 @@ Produces `shop_warehouse.orders` · grain: one row per order_id
 
 ## SQL realization
 Realized by `orders.sql` (a deployed `CREATE VIEW`) — open it with the **SQL** button in the header, or in the Source browser.
-
-## Lineage (column-level)
-
-`shop_warehouse.orders` · kinds: const · passthrough · transform
-
-| output column | ← from | rule | kind |
-|---|---|---|---|
-| `status` | `orders_raw.status` | status-canonicalize | passthrough |
-| `gross_cents` | `orders_raw.gross_cents` | amount-to-decimal | transform |
-| `order_id` | `orders_raw.order_id` | None | passthrough |
-| `customer_id` | `orders_raw.customer_id` | None | passthrough |
-| `placed_at` | `orders_raw.placed_at` | None | passthrough |
-| `paid_at` | _literal per branch_ |  | const |
-| `shipped_at` | _literal per branch_ |  | const |
-| `delivered_at` | _literal per branch_ |  | const |
-| `gross_amount` | _literal per branch_ |  | const |

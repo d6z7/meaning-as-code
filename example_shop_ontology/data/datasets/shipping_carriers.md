@@ -11,7 +11,7 @@ tags:
 
 ## Columns
 
-| column | type | role |
-|---|---|---|
-| `code` | string | primary_key |
-| `label` | string | value |
+| column | type | role | reference |
+|---|---|---|---|
+| `code` | string | PK |  |
+| `label` | string | value |  |
