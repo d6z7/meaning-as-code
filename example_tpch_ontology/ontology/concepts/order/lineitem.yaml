@@ -67,7 +67,7 @@ contract:
     - id: lineitem.state.received_iff_receiptdate
       kind: mac.concept.rule.resolution
       when:  "deciding whether a line has been received (the IN_FLIGHT → CLOSED boundary)"
-      then:  "a line is received iff l_receiptdate IS NOT NULL; l_linestatus = F confirms fulfilment"
+      then:  "a line is received iff `{l_receiptdate}` IS NOT NULL; `{l_linestatus}` = F confirms fulfilment"
       why:   "the lifecycle state is read from which dates are present, not a free-text column"
       binds: [l_receiptdate, l_linestatus]
 

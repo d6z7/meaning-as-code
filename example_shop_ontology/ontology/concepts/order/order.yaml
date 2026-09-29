@@ -86,14 +86,14 @@ contract:
     - id: order.state.from_timestamps
       kind: mac.concept.rule.resolution
       when: "deciding an order's lifecycle state (placed / paid / shipped / delivered)"
-      then: "read it from which timestamps are present — paid iff paid_at IS NOT NULL, shipped iff shipped_at IS NOT NULL, delivered iff delivered_at IS NOT NULL (furthest-reached state wins)"
-      never: "treating a NULL shipped_at as 'shipped at an unknown time' — NULL means not yet shipped"
+      then: "read it from which timestamps are present — paid iff `{paid_at}` IS NOT NULL, shipped iff `{shipped_at}` IS NOT NULL, delivered iff `{delivered_at}` IS NOT NULL (furthest-reached state wins)"
+      never: "treating a NULL `{shipped_at}` as 'shipped at an unknown time' — NULL means not yet shipped"
       why: "the state is derived from the presence of the timestamp columns, not stored as free text"
       binds: [paid_at, shipped_at, delivered_at]
     - id: order.revenue.paid_only
       kind: mac.concept.rule.exclusion
       when: "counting an order toward revenue"
-      then: "include it only if it is paid (paid_at IS NOT NULL)"
+      then: "include it only if it is paid (`{paid_at}` IS NOT NULL)"
       never: "counting a PLACED-but-unpaid order as revenue"
       why: "revenue recognizes paid orders only — an unpaid order is a pending checkout, not earnings"
       binds: [paid_at]
