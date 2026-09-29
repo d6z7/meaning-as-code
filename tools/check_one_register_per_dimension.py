@@ -117,6 +117,18 @@ def main(argv: list[str] | None = None) -> int:
         print(f"SKIP: {lookups} holds no .lookup.csv")
         return 0
 
+    # A BUNDLE IS AN INDEPENDENT UNIT AND TWO GENERATIONS MAY COEXIST (operator, 2026-09-29).
+    # `mac_lookups` writes a `<stem>.lookup.yaml` beside every register it cuts under the value-set
+    # policy, so their presence is the bundle's own statement of which generation it is at — the
+    # artifact saying so, not a flag somebody remembered to set.
+    #
+    # WHY THIS IS NOT A WAY TO GO QUIET. The redundant count is printed either way, in the same
+    # words, so the debt is never invisible; what changes is only whether it FAILS this bundle. A
+    # bundle that has not adopted the policy is not in breach of it, and four bundles turning red
+    # for a policy they predate is how a gate becomes one nobody reads — the same failure as a gate
+    # that reports PASS over the wrong denominator, from the other side.
+    adopted = any(lookups.glob("*.lookup.yaml"))
+
     by_domain: dict[tuple[str, str], list[str]] = defaultdict(list)
     by_members: dict[frozenset, list[str]] = defaultdict(list)
     unreadable: list[str] = []
@@ -138,9 +150,19 @@ def main(argv: list[str] | None = None) -> int:
         f"registers: {len(files)}   distinct VALUE SETS: {len(by_members)}   "
         f"redundant copies: {redundant}   two-over-one-column: {len(clashes)}"
         + (f"   (unreadable: {len(unreadable)})" if unreadable else "")
+        + f"   [{'value-set policy' if adopted else 'PRE-POLICY, not adopted'}]"
     )
     if not clashes and not copies:
         print("OK — one register per value set, and no column covered twice.")
+        return 0
+    if not adopted and not clashes:
+        # THE DEBT, NAMED AND COUNTED, WITHOUT FAILING A BUNDLE THAT NEVER CLAIMED THE POLICY.
+        print(f"\nMIGRATION DEBT — {redundant} redundant copy(ies) of {len(copies)} value set(s). "
+              f"This bundle has no register descriptor, so it predates the value-set policy and is "
+              f"not in breach of it.")
+        print("  To adopt: restore each column's `values:` from the register it points at, delete "
+              "data/lookups/*, and re-run tools/mac_lookups.py WITH a warehouse connection — "
+              "labels are re-derived at cut time and a connectionless cut flattens them.")
         return 0
 
     if copies:
@@ -181,13 +203,21 @@ def _self_test() -> int:
 
     ok = [0, 0]
 
-    def case(what, files, want):
+    def case(what, files, want, adopted=True):
         ok[0] += 1
         with tempfile.TemporaryDirectory() as tmp:
             look = pathlib.Path(tmp) / "data" / "lookups"
             look.mkdir(parents=True)
             for name, body in files.items():
                 (look / name).write_text(body, encoding="utf-8")
+            # THE BUNDLE'S GENERATION, STATED BY ITS ARTIFACTS. A register descriptor beside the
+            # members is what `mac_lookups` writes under the value-set policy, so writing one here
+            # is how a case says "this bundle has adopted it". Without this every case below was
+            # judged as PRE-POLICY and two refusals silently became passes — which the self-test
+            # caught the moment the generation split landed, and is exactly what it is for.
+            if adopted and files:
+                (look / "x.lookup.yaml").write_text(
+                    "metadata: {kind: value_register, schema_version: '0.1.16'}\n", encoding="utf-8")
             import contextlib
             import io
             buf = io.StringIO()
@@ -223,6 +253,23 @@ def _self_test() -> int:
          {"state_names.lookup.csv": reg("state", ["Alaska", "Arkansas"], view="dim_location"),
           "state_codes.lookup.csv": reg("State", ["AK", "AL"], view="customer")}, 0)
     case("no registers at all is clean", {}, 0)
+
+    # TWO GENERATIONS COEXIST (operator, 2026-09-29): "thes should be independent units and should
+    # coexist if necessary". A bundle cut before the value-set policy carries no register
+    # descriptor, is not in breach of a policy it predates, and must not turn red for it — four
+    # bundles failing a rule they never claimed is how a gate becomes one nobody reads. The COUNT
+    # is printed either way, so the debt is named rather than excused.
+    DUP = {"a.lookup.csv": reg("CurrencyCode", CUR, view="sales"),
+           "b.lookup.csv": reg("currency_code", CUR, view="dim_currency")}
+    case("MUTANT the same duplication in a PRE-POLICY bundle is reported, not failed",
+         DUP, 0, adopted=False)
+    case("...and the identical bundle WITH a register descriptor is refused",
+         DUP, 1, adopted=True)
+    # THE PRE-POLICY PATH IS NOT A BLANKET EXCUSE. Two registers over ONE column was a defect long
+    # before the value-set policy and stays one whatever generation the bundle is at.
+    case("two registers over one column is refused even PRE-POLICY",
+         {"rich.lookup.csv": reg("Country", ["DE", "FR"], view="customer"),
+          "poor.lookup.csv": reg("Country", ["DE", "FR", "GB"], view="customer")}, 1, adopted=False)
 
     print(("PASS" if ok[1] == ok[0] else "FAIL")
           + f": check_one_register_per_dimension self-test — {ok[1]}/{ok[0]} case(s), run through "

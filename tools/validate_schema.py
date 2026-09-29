@@ -46,6 +46,31 @@ def _load_yaml_str_dates(path):
         return yaml.load(fh, Loader=_Loader)
 
 
+def _is_value_register(path) -> bool:
+    """Is this `.lookup.yaml` MAC's register descriptor, or somebody else's artifact?
+
+    THE SUFFIX IS NOT THE DISCRIMINATOR, and claiming it as one broke a bundle. `ValueRegisterFile`
+    was routed by basename when it landed, which is how every other definition here is routed — and
+    `estate/estate` carries TEN `*.lookup.yaml` of a completely different kind: `authoritative_register`,
+    with `realized_into`, `canon` and `provenance`, written against schema_version 0.1.13. Routing
+    them to the new definition produced 50 errors on a bundle that had none of them, and the files
+    had not changed.
+
+    Two artifacts may share a suffix. They may not share a definition. So the DOCUMENT decides:
+    `metadata.kind: value_register` is the const the definition already requires, which makes it
+    exactly the discriminator CONFORMANCE §6 describes for `connection.yaml` — "the DISCRIMINATOR
+    that makes this definition safe to apply". Anything else falls through untouched and is treated
+    precisely as it was before this definition existed.
+    """
+    try:
+        import yaml as _y
+        with open(path, encoding='utf-8') as fh:
+            doc = _y.safe_load(fh) or {}
+        return str(((doc or {}).get('metadata') or {}).get('kind') or '') == 'value_register'
+    except Exception:  # noqa: BLE001 - an unreadable file is not claimed by this definition
+        return False
+
+
 def _pick_def(path, layout=None):
     p = path.replace(os.sep, '/')
     # basename-EXACT: only the canonical ontology files are Rules/Edges docs. A data-plane
@@ -111,7 +136,7 @@ def _pick_def(path, layout=None):
     # the page (.md) and only this suffix is a MAC document. Unrouted it landed in the "carries no
     # MAC definition" bucket — 25 files reading as undeclared debt rather than as a shape the
     # validator had not been taught, which is the same misreading the note on references/ describes.
-    if base.endswith('.lookup.yaml'):
+    if base.endswith('.lookup.yaml') and _is_value_register(path):
         return 'ValueRegisterFile'
     if layout is not None and getattr(layout, 'sources', None) and d == str(layout.sources):
         return 'TableFile'
@@ -280,10 +305,15 @@ def enumerate_bundle(root, layout=None):
     for pat in ('acceptance/*.yaml', 'interventions/ledger.yaml',
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
-                'data/lookups/*.lookup.yaml',
                 'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',
                 'governance/*.yaml', 'governance/protosql/*.yaml'):
         files += [f for f in glob.glob(os.path.join(root, pat)) if not _skipped(f)]
+    # COLLECTED BY THE SAME DISCRIMINATOR THAT ROUTES THEM. A pattern glob here would pull in every
+    # `*.lookup.yaml` including another kind entirely (see `_is_value_register`), and a collected
+    # file that this definition does not claim falls through to the ConceptFile default — which is
+    # worse than leaving it undefined. Collection and routing must agree, or one of them is lying.
+    files += [f for f in glob.glob(os.path.join(root, 'data/lookups/*.lookup.yaml'))
+              if not _skipped(f) and _is_value_register(f)]
     # DEDUPE BY REALPATH, not by spelling. `set(files)` deduped the STRING, so a file reachable
     # through two globs under a RELATIVE root arrived twice — once absolute (the layout globs build
     # from layout.descriptors, which is absolute) and once relative (the pattern globs build from
