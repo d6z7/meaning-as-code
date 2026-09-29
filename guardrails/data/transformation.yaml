@@ -31,7 +31,7 @@ delivers:
     population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
     lifecycle: authored-once
     # WHO DECIDED THIS SHAPE is declared in the .sql banner and lifted onto the descriptor:
-    # `mac.transform.driven_by` is one of passthrough | proposed | ruled (mac_vocabulary.yaml),
+    # `mac.transform.driven_by` is a term of mac_vocabulary.yaml#transform.driven_by (read there, not restated),
     # and `mac.transform.because` names the finding behind a proposal or a ruling. Absent is
     # UNDECLARED — nobody recorded it — never `ruled`.
     #

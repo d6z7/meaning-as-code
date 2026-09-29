@@ -28,6 +28,7 @@ columns:
       register:     common | legal | long | short | code
       scoped_by:    <string>
       # `never_axis` REQUIRES `evidence`
+      # `register` REQUIRES `label_of`
 ```
 
 **4 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
@@ -47,7 +48,7 @@ columns:
 
 > What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
 
-- **`canonical`** — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` or `resolved_axis` rather than nominating a column that does not identify.
+- **`canonical`** — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.
 - **`part`** — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
 - **`reference`** — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
 

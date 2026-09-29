@@ -79,12 +79,29 @@ ask lands in `sme_routed_to_data` (the data register carries it).
 
 from __future__ import annotations
 
-RULE_KINDS = ["resolution", "aggregation", "default", "ambiguity", "exclusion", "guarantee"]
 _SEV = {"high": 0, "medium": 1, "low": 2}
 
 import re as _re
 from collections import Counter as _Counter
 from pathlib import Path
+
+
+def rule_kinds(repo_root: Path | None = None) -> list[str]:
+    """The terms of mac.concept.rule, READ from mac_vocabulary.yaml (their one home) in declaration
+    order — or [] when the vocabulary cannot be read, which the dashboard then shows as a rule-kind
+    total of 0 rather than as a hand-typed list. The literal that stood here until 2026-09-29 was
+    a second home for the same six words; it agreed by luck, and nothing would have said otherwise."""
+    try:
+        import yaml as _yaml
+
+        vocab = (repo_root or Path(__file__).resolve().parents[2]) / "mac_vocabulary.yaml"
+        doc = _yaml.safe_load(vocab.read_text(encoding="utf-8")) or {}
+        return [str(k) for k in ((doc.get("concept.rule") or {}).get("terms") or {})]
+    except Exception:  # noqa: BLE001 — an unreadable vocabulary yields no kinds, not a guessed list
+        return []
+
+
+RULE_KINDS = rule_kinds()
 
 # ── SME catalogue vocabulary. Each set is closed and lives here once; the collector and the
 #    read-time join import it rather than restating it. ────────────────────────────────────────

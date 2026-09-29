@@ -383,9 +383,19 @@ def fold_plane(fold: dict, vocab: dict) -> dict:
     here, because this law is literally indexed by two vocabularies. The grid selects; the lanes
     then show what one cell does.
     """
-    member_to_cell = {"Flow": ("event", "extensive"), "Stock": ("observation", "extensive"),
-                      "Intensive": ("event", "intensive"), "Precomputed": ("precomputed", "extensive"),
-                      "Target": ("plan", "extensive")}
+    # THE MEMBER EACH CELL REPLACES, keyed by the vocabulary's OWN spelling and held to it. Until
+    # 2026-09-29 the keys were `Flow`/`Stock`/… — the retired capitalised `mac.MeasureType` spelling
+    # that raises KeyError in the runtime's fold-law drift test (check_column_planes.py says so) — and
+    # although `vocab` was passed in, this plane never consulted it, so a renamed or added term could
+    # not fail here. Now a map that is not exactly the vocabulary's terms is a failure with both sides.
+    member_to_cell = {"flow": ("event", "extensive"), "stock": ("observation", "extensive"),
+                      "intensive": ("event", "intensive"), "precomputed": ("precomputed", "extensive"),
+                      "target": ("plan", "extensive")}
+    declared = set(vocab["concept.column.measure_type"])
+    if set(member_to_cell) != declared:
+        raise Fail(f"fold plane: member_to_cell is keyed {sorted(member_to_cell)} but "
+                   f"mac_vocabulary.yaml#concept.column.measure_type declares {sorted(declared)} — "
+                   f"the map must carry exactly the vocabulary's terms")
     cell_to_member = {f"{g}|{k}": m for m, (g, k) in member_to_cell.items()}
 
     decls = [("quantity_kind", "column", "what kind of number this is — one word from five"),
@@ -429,7 +439,7 @@ def fold_plane(fold: dict, vocab: dict) -> dict:
         ]
         if key in cell_to_member:
             detail.append({"t": "this cell replaces", "v":
-                           f"<code>mac.MeasureType.{cell_to_member[key]}</code> — the old member is this "
+                           f"<code>mac.concept.column.measure_type.{cell_to_member[key]}</code> — the member is this "
                            f"(relation fact, column fact) PAIR, which is the split the new law argues for"})
         callouts = []
         if guard:
@@ -526,6 +536,12 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
     key_of = {"label_of": "rulings.label_of", "finer_than": "rulings.finer_than",
               "scoped_by": "placement.scoped_by", "never_axis": "rulings.never_axis"}
 
+    # THE VOCABULARY DRIVES THE LOOP and the rows above are keyed by hand. A term the vocabulary
+    # declares and no row names is a FINDING that carries the term, not a KeyError three frames deep.
+    unrowed = [t for t in vocab["concept.column.ruling"] if t not in tests or t not in key_of]
+    if unrowed:
+        raise Fail(f"rulings plane: mac_vocabulary.yaml#concept.column.ruling declares {unrowed} and "
+                   f"this plane has no `tests`/`key_of` row for it — add the row")
     cases = {}
     for term, spec in vocab["concept.column.ruling"].items():
         k = keys.get(key_of[term], {})

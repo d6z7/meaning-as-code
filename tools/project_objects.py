@@ -248,6 +248,24 @@ def _framework_version() -> tuple[str, dict, str]:
     return text.strip() or "unknown", _input("framework:VERSION", "framework", True, True, 1), text
 
 
+# THE VOCABULARY IS A FRAMEWORK INPUT SINCE 2026-09-29: sdk/project/vocabulary.py stopped restating
+# the closed vocabularies and reads mac_vocabulary.yaml at run time (CONFORMANCE §2.1), so this seam
+# now OPENS a framework-side data file it never listed. The seam gate's audit trace said so the same
+# hour ("1 of 2 framework-side DATA files this run opened are declared by no `framework:` input"),
+# which is the gate doing its job: a read that changes every answer and moves no cache key.
+def _framework_vocabulary() -> tuple[dict, str]:
+    """(its `inputs[]` entry, its raw text) for mac_vocabulary.yaml, declared like VERSION."""
+    p = ROOT / "mac_vocabulary.yaml"
+    if not p.exists():
+        return _input("framework:mac_vocabulary.yaml", "framework", False, None, None), ""
+    try:
+        text = p.read_text(encoding="utf-8")
+    except OSError:
+        return _input("framework:mac_vocabulary.yaml", "framework", True, False, None), ""
+    parsed, _why = _yaml_parses(p)
+    return _input("framework:mac_vocabulary.yaml", "framework", True, parsed, None), text
+
+
 def _code_id(version_text: str) -> str:
     """A digest of the CODE THAT ANSWERED: this file plus every framework-side module this run
     actually loaded, plus the framework inputs (§3).
@@ -355,8 +373,10 @@ def _envelope(
     and `local` is the one block that may carry an absolute path, which the host drops.
     """
     version, version_input, version_text = _framework_version()
+    vocab_input, vocab_text = _framework_vocabulary()
     declared = list(inputs or [])
     declared.append(version_input)
+    declared.append(vocab_input)
     return {
         "envelope": ENVELOPE,
         "mode": MODE,
@@ -375,7 +395,7 @@ def _envelope(
         ),
         "inputs": declared,
         "partial": list(partial or []),
-        "seam": _seam_stamp(version, version_text),
+        "seam": _seam_stamp(version, version_text + vocab_text),
         "subject": None,
         "derived_at": _iso_now(),
         "aux": dict(aux or {}),

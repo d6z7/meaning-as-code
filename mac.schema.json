@@ -190,7 +190,7 @@
             },
             "identity": {
               "type": "object",
-              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / resolved_axis / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one.",
+              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one. `resolved_axis` was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 (0 of 62 concepts used it); the enum below is landed FROM that vocabulary by tools/check_vocabulary_parity.py --write and is not edited by hand.",
               "properties": {
                 "kind": {
                   "enum": [
@@ -199,14 +199,13 @@
                     "namespace_code",
                     "fk_name",
                     "composite",
-                    "resolved_axis",
                     "sme_pending"
                   ],
                   "description": "mac.concept.identity.<term> — how the canonical identity is established."
                 },
                 "canonical_key": {
                   "type": "string",
-                  "description": "the column/expression that IS the identity (omit for resolved_axis / sme_pending)."
+                  "description": "the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28)."
                 },
                 "note": {
                   "type": "string"
@@ -2938,7 +2937,7 @@
                   "delivery_axis",
                   "unknown"
                 ],
-                "description": "v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytical roles (dimension/measure/attribute) are mapped down to this during projection; they do NOT enter the schema. 'unknown' is forbidden in production-status files (enforced separately). v0.1.14 (C1): 'delivery_axis' added — a column that splits ROWS without splitting FIGURES, measured by mac_admit_identity.py. This does NOT reopen DECISION 4: the barred roles are the ontology's ANALYTICAL ones (dimension/measure/attribute), whereas the enum already carries identity-participation roles (primary_key, foreign_key, composite_key_part) and 'delivery_axis' is the measured COMPLEMENT of composite_key_part. A column left 'unknown' while the admission test reports it COLLAPSIBLE is the residue awaiting a human ruling — and 'unknown' is already forbidden in production-status files, so no new gate is needed."
+                "description": "v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytical roles (mac_vocabulary.yaml#concept.column.role: key/dimension/measure/period/housekeeping — `attribute` is retired) are mapped down to this during projection; they do NOT enter the schema. 'unknown' is forbidden in production-status files (enforced separately). v0.1.14 (C1): 'delivery_axis' added — a column that splits ROWS without splitting FIGURES, measured by mac_admit_identity.py. This does NOT reopen DECISION 4: the barred roles are the ontology's ANALYTICAL ones (the five of mac_vocabulary.yaml#concept.column.role), whereas the enum already carries identity-participation roles (primary_key, foreign_key, composite_key_part) and 'delivery_axis' is the measured COMPLEMENT of composite_key_part. A column left 'unknown' while the admission test reports it COLLAPSIBLE is the residue awaiting a human ruling — and 'unknown' is already forbidden in production-status files, so no new gate is needed."
               },
               "searchable": {
                 "type": "string",
@@ -3989,6 +3988,9 @@
                           "dependentRequired": {
                             "never_axis": [
                               "evidence"
+                            ],
+                            "register": [
+                              "label_of"
                             ]
                           }
                         }
@@ -4283,9 +4285,9 @@
         },
         "measure_type": {
           "type": "string",
-          "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
           "pattern": "^mac\\.concept\\.column\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$",
-          "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.concept.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and check_vocabulary_parity does not yet read patterns, so this one had to be found by a bundle failing. Extending the parity gate to patterns is owed."
+          "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.concept.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and at the time check_vocabulary_parity did not read patterns, so this one had to be found by a bundle failing. The parity gate has read patterns since 2026-09-27 (PATTERNS in tools/check_vocabulary_parity.py) and this slot is one of the three it holds to the vocabulary's namespace."
         }
       },
       "additionalProperties": false

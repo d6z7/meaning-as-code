@@ -47,7 +47,11 @@ def _cr_fragments(text):
 # data-dimension register (thousands of rows) does not bloat the self-contained HTML — its caption stays honest.
 REGISTER_PREVIEW_CAP = 200
 
-# ASK / COMMIT / REFUSE : the decision lane derived from a rule's kind (the closed MAC rule-kind vocabulary)
+# THE DECISION LANE derived from a rule's kind (mac.concept.rule). ASK / COMMIT / REFUSE are the three
+# mac.outcome_class terms a rule's kind projects onto; INVARIANT (a `guarantee` — it decides nothing)
+# and OTHER (a kind this map does not know — see decision_of) are LANE LABELS of this projection and
+# NOT outcome_class terms: mac_vocabulary.yaml#outcome_class declares neither, and nothing downstream
+# may read them as an engine outcome.
 DECISION = {
     "mac.concept.rule.ambiguity":   "ASK",
     "mac.concept.rule.resolution":  "COMMIT",
@@ -718,6 +722,7 @@ def build_model(root):
     governance = parse_governance(root)
     relations = parse_data_plane(root, concepts)
 
+    # lane tallies — INVARIANT / OTHER are lane labels of DECISION above, not outcome_class terms
     lanes = {"ASK": 0, "COMMIT": 0, "REFUSE": 0, "INVARIANT": 0, "OTHER": 0}
     for c in concepts:
         for r in c["rules"]:

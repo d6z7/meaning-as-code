@@ -135,6 +135,29 @@ def _r_invented_vocabulary(rel, text, spec, topics):
             if bad else None)
 
 
+def _closed_terms(convention: dict) -> set | None:
+    """A convention's closed set. A LIST is the set itself; a «reference» string defers to `owner:`,
+    which names the vocabulary block — `mac_vocabulary.yaml#<block>` — and the terms are read from
+    there, the one home. guardrails/data/sources.yaml carried a copy of relation.column.role until
+    2026-09-29; `set()` of the reference string that replaced it would have been a set of characters,
+    and every role a stranger."""
+    closed = convention.get("closed")
+    if isinstance(closed, list):
+        return set(closed)
+    owner = str(convention.get("owner") or "")
+    if not owner.startswith("mac_vocabulary.yaml#"):
+        return None
+    try:
+        import yaml
+
+        vf = pathlib.Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
+        body = (yaml.safe_load(vf.read_text(encoding="utf-8")) or {}).get(owner.split("#", 1)[1]) or {}
+    except Exception:                                                     # noqa: BLE001
+        return None
+    terms = body.get("terms") if body.get("terms") is not None else body.get("members")
+    return set(terms or {}) or None
+
+
 def _r_invented_column_role(rel, text, spec, topics):
     """A data-plane column `role` outside the closed set — and ONLY on the data plane.
 
@@ -154,7 +177,7 @@ def _r_invented_column_role(rel, text, spec, topics):
     for t in topics.values():
         for c in (t.get("conventions") or []) if isinstance(t, dict) else []:
             if "role a data-plane column" in str(c.get("what", "")):
-                closed = set(c.get("closed") or [])
+                closed = _closed_terms(c)
     if not closed:
         return None
     bad = sorted({m for m in re.findall(r"^\s*role:\s*([A-Za-z_][\w]*)\s*$", text, re.M)}

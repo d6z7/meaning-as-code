@@ -5,12 +5,25 @@ confidence C/I/Q, class enumeration, …) all over the concepts; their meaning l
 + the author prompt. This projects a single glossary (vocabulary.json), grouped by namespace, with a
 plain-language meaning per term AND how many times each is actually used in this source's ontology.
 
-DETERMINISTIC + IDEMPOTENT (no LLM). Meanings are curated here (the grammar's closed sets are the
-source of truth for WHICH terms exist; this adds the WHAT-they-mean)."""
+DETERMINISTIC + IDEMPOTENT (no LLM). WHERE THE TERMS COME FROM, in two kinds:
+
+  * A group the framework CLOSES in mac_vocabulary.yaml — field roles (concept.column.role), rule
+    kinds (concept.rule), identity kinds (concept.identity), aggregation effect
+    (concept.aggregation_effect), diagnostic codes — is READ from there: both WHICH terms exist and
+    WHAT they mean. Until 2026-09-29 the first four were curated here as a second copy, and the copy
+    had drifted every way a copy can: it still listed `attribute` (retired) and lacked `period` and
+    `housekeeping`; it listed `resolved_axis` (retired 2026-09-28); and its "additivity" group was the
+    binary `additive | non-additive` scale the vocabulary replaced at v0.1.15 with three terms —
+    so every glossary this projector wrote, the public example bundles included, taught terms the
+    schema refuses.
+  * A group with NO vocabulary home — concept class, the two confidence scales, edge level — is
+    curated below (CURATED). Those are the only meanings this file still owns.
+"""
 
 from __future__ import annotations
 
 from collections import Counter
+from pathlib import Path
 
 # The field-role namespace is a SOURCE fact, not a method fact: every source defines its own
 # (`<source>.field_role.dimension`), which is what the note below has always said. It was nonetheless
@@ -19,47 +32,9 @@ from collections import Counter
 # the ontology it is projecting; this placeholder stands only when the ontology declares no field role.
 FIELD_ROLE_NS = "<source>.field_role.*"
 
-# group, namespace, note, [(term, meaning)]  — the curated glossary.
-VOCAB = [
-    (
-        "Field roles",
-        FIELD_ROLE_NS,
-        "What each column DOES in a concept's grounding (source-namespaced — every source defines its own).",
-        [
-            ("key", "An identity / join column — how a row is identified and how relations join."),
-            ("dimension", "A filterable, group-by attribute — you slice and pivot the data by it."),
-            (
-                "attribute",
-                "Display-only detail — carried for context, not a key and not aggregated.",
-            ),
-            ("measure", "An additive numeric fact — the number you sum / average."),
-        ],
-    ),
-    (
-        "Rule kinds",
-        "mac.concept.rule.*",
-        "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
-        [
-            (
-                "resolution",
-                "How to resolve / interpret a value — routing, canonicalisation, which column to trust.",
-            ),
-            (
-                "aggregation",
-                "How a measure rolls up across an axis (sum / average / not-additive).",
-            ),
-            ("default", "The assumption to apply when something isn't specified in the question."),
-            (
-                "ambiguity",
-                "How to handle a genuinely ambiguous case (which reading wins, or refuse).",
-            ),
-            ("exclusion", "Rows or values to exclude / filter out of an answer."),
-            (
-                "guarantee",
-                "An invariant the data is guaranteed to hold — relied on without re-checking.",
-            ),
-        ],
-    ),
+# group, namespace, note, [(term, meaning)] — the groups NO framework vocabulary declares. Anything
+# that has a block in mac_vocabulary.yaml does not belong here; see FRAMEWORK below.
+CURATED = [
     (
         "Concept class",
         "class",
@@ -101,38 +76,6 @@ VOCAB = [
         ],
     ),
     (
-        "Identity kind",
-        "concept.identity.kind",
-        "How a concept's rows are uniquely identified (MAC-core).",
-        [
-            ("iso", "An ISO standard code (e.g. iso2 / iso3 for country)."),
-            ("code", "A plain coded key."),
-            (
-                "namespace_code",
-                "A code namespaced by another dimension (e.g. a region-scoped store code).",
-            ),
-            ("fk_name", "Identity via a foreign-key name."),
-            (
-                "composite",
-                "Identity is the composite of several columns (typical for fact / KPI grain).",
-            ),
-            ("resolved_axis", "Identity resolved along an axis at query time."),
-            ("sme_pending", "Identity not yet decided — needs an SME."),
-        ],
-    ),
-    (
-        "Additivity",
-        "concept.semantics.additivity",
-        "Per axis, whether a measure can be summed (MAC-core; only these two values exist).",
-        [
-            ("additive", "Can be summed across this axis (e.g. volume over time)."),
-            (
-                "non-additive",
-                "Cannot be summed across this axis (a stock, or unlike KPI types together).",
-            ),
-        ],
-    ),
-    (
         "Edge level",
         "edges[].level",
         "The stage a relationship lives at (MAC-core).",
@@ -144,12 +87,94 @@ VOCAB = [
     ),
 ]
 
+# group, namespace shown, note, vocabulary block — the groups mac_vocabulary.yaml CLOSES. The terms and
+# their meanings are read from the block at build time; nothing here names a term.
+FRAMEWORK = [
+    (
+        "Field roles",
+        FIELD_ROLE_NS,
+        "What each column DOES in a concept's grounding (source-namespaced — every source defines its "
+        "own; the closed term set is mac.concept.column.role).",
+        "concept.column.role",
+    ),
+    (
+        "Rule kinds",
+        "mac.concept.rule.*",
+        "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
+        "concept.rule",
+    ),
+    (
+        "Identity kind",
+        "concept.identity.kind",
+        "How a concept's rows are uniquely identified (MAC-core; mac.concept.identity).",
+        "concept.identity",
+    ),
+    (
+        "Additivity",
+        "concept.semantics.additivity",
+        "Per axis, how a measure may be folded (MAC-core; the closed set is "
+        "mac.concept.aggregation_effect — three terms, replacing the binary additive | non-additive "
+        "scale at v0.1.15).",
+        "concept.aggregation_effect",
+    ),
+]
+
+#: The order the glossary renders in — stable across the 2026-09-29 change of source.
+_GROUP_ORDER = [
+    "Field roles", "Rule kinds", "Concept class", "Concept confidence", "Rule confidence",
+    "Identity kind", "Additivity", "Edge level",
+]
+
 
 def _strip(v):
     return str(v or "").split(".")[-1]
 
 
-def _diagnostic_taxonomy() -> list:
+def _vocabulary_file() -> Path | None:
+    """The first readable mac_vocabulary.yaml: this checkout's own, then a sibling `meaning-as-code`
+    checkout, then the platform's vendored copy under sdk/grammar."""
+    root = Path(__file__).resolve().parents[2]
+    for f in (root / "mac_vocabulary.yaml",
+              root.parent / "meaning-as-code" / "mac_vocabulary.yaml",
+              root / "sdk" / "grammar" / "mac_vocabulary.yaml"):
+        if f.exists():
+            return f
+    return None
+
+
+def _vocabulary() -> dict:
+    """mac_vocabulary.yaml as a dict, or {} — and a printed line saying so, because a glossary with
+    four empty groups must not look like a framework with no terms."""
+    try:
+        import yaml
+
+        f = _vocabulary_file()
+        if f is None:
+            raise FileNotFoundError("no mac_vocabulary.yaml beside this checkout")
+        return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    except Exception as exc:  # noqa: BLE001 — a projection must not break on an unreadable framework
+        print(f"  vocabulary: mac_vocabulary.yaml unavailable ({type(exc).__name__}: {exc}); the "
+              f"framework-governed groups render empty")
+        return {}
+
+
+def _terms(vocab: dict, block: str) -> list[tuple[str, str]]:
+    """[(term, one-line meaning)] for a vocabulary block, in declaration order. A term's body is a bare
+    string (concept.column.role) or a map carrying `description` / `definition` / `doc`
+    (concept.column.measure_type, diagnostic_code) — the registry uses both, deliberately."""
+    body = vocab.get(block) or {}
+    t = body.get("terms") if body.get("terms") is not None else body.get("members")
+    if not isinstance(t, dict):
+        return []
+    out = []
+    for term, meaning in t.items():
+        if isinstance(meaning, dict):
+            meaning = meaning.get("description") or meaning.get("definition") or meaning.get("doc") or ""
+        out.append((str(term), " ".join(str(meaning or "").split())))
+    return out
+
+
+def _diagnostic_taxonomy(vocab: dict) -> list:
     """The compiler's closed diagnostic taxonomy, READ from mac_vocabulary.yaml#diagnostic_code.
 
     IT BELONGS HERE, not on the Compiler Report. The report answers "what is wrong with THIS bundle";
@@ -159,34 +184,22 @@ def _diagnostic_taxonomy() -> list:
 
     Curated meanings are not duplicated: the vocabulary carries each code's `kind` and `description`,
     so this reads them. A fourth hand-maintained copy is the exact defect check_vocabulary_drift exists
-    to catch — and the taxonomy moved INTO the vocabulary this evening for the same reason.
+    to catch — and the taxonomy moved INTO the vocabulary for the same reason.
     """
-    try:
-        from pathlib import Path  # NOT imported at module level in this file
+    terms = (vocab.get("diagnostic_code") or {}).get("terms") or {}
+    return [
+        (code, f"{(m or {}).get('kind', '')} — {(m or {}).get('description', '')}")
+        for code, m in terms.items()
+    ]
 
-        import yaml
 
-        for base in (
-            Path(__file__).resolve().parents[2].parent / "meaning-as-code",
-            Path(__file__).resolve().parents[2] / "sdk" / "grammar",
-        ):
-            f = base / "mac_vocabulary.yaml"
-            if f.exists():
-                terms = (
-                    (yaml.safe_load(f.read_text(encoding="utf-8")) or {}).get("diagnostic_code")
-                    or {}
-                ).get("terms") or {}
-                return [
-                    (code, f"{m.get('kind', '')} — {m.get('description', '')}")
-                    for code, m in terms.items()
-                ]
-    except Exception as exc:
-        # NARROW THE SILENCE. A bare `pass` here hid a NameError (Path was never imported in this
-        # module) and the taxonomy simply rendered as absent — a missing section looks identical to
-        # "this framework has no codes". A projection must not break on an unreadable framework, but
-        # it must SAY so rather than quietly show less.
-        print(f"  vocabulary: diagnostic taxonomy unavailable ({type(exc).__name__}: {exc})")
-    return []
+def glossary(vocab: dict) -> list:
+    """[(group, namespace, note, [(term, meaning)])] in render order — framework groups from the
+    vocabulary, the rest curated."""
+    by_name = {g: (g, ns, note, terms) for g, ns, note, terms in CURATED}
+    for g, ns, note, block in FRAMEWORK:
+        by_name[g] = (g, ns, note, _terms(vocab, block))
+    return [by_name[g] for g in _GROUP_ORDER]
 
 
 def build(concepts: dict, ont_edges: list | None = None) -> dict:
@@ -205,14 +218,16 @@ def build(concepts: dict, ont_edges: list | None = None) -> dict:
         con = c.get("concept") or {}
         classes[con.get("class")] += 1
         mconf[(c.get("metadata") or {}).get("confidence")] += 1
-        idkind[(con.get("identity") or {}).get("kind")] += 1
+        # identity kinds and fold effects may be written bare or `mac.`-qualified; the glossary's
+        # terms are bare, so the count is keyed bare too
+        idkind[_strip((con.get("identity") or {}).get("kind"))] += 1
         for role in ((c.get("grounding") or {}).get("field_roles") or {}).values():
             field_roles[_strip(role)] += 1
             prefix = str(role or "").rpartition(".")[0]
             if prefix:
                 field_role_ns.add(f"{prefix}.*")
         for ax in ((con.get("semantics") or {}).get("additivity") or {}).values():
-            additiv[ax] += 1
+            additiv[_strip(ax)] += 1
         for r in (c.get("contract") or {}).get("rules") or []:
             rule_kinds[_strip(r.get("kind"))] += 1
             rconf[r.get("confidence")] += 1
@@ -228,8 +243,9 @@ def build(concepts: dict, ont_edges: list | None = None) -> dict:
         "Edge level": edge_levels,
     }
     groups = []
-    vocab = list(VOCAB)
-    _dx = _diagnostic_taxonomy()
+    vocabulary = _vocabulary()
+    vocab = glossary(vocabulary)
+    _dx = _diagnostic_taxonomy(vocabulary)
     if _dx:
         vocab.append(
             (

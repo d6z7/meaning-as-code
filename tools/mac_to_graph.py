@@ -89,9 +89,12 @@ def main():
         if src: name = str(src).lower(); break
 
     # --- self-consistency check (the rigor analog of OSI schema-validation) ---
-    # keyless-by-design kinds (mac.concept.identity) legitimately have no single-column key — a fact grain,
-    # a pinned/resolved axis, or an unresolved SME identity — so they are NOT flagged.
-    KEYLESS_KINDS = {"composite", "resolved_axis", "sme_pending"}
+    # keyless-by-design kinds (mac.concept.identity) legitimately have no single-column key — a fact grain
+    # or an unresolved SME identity — so they are NOT flagged. `resolved_axis` ("a pinned/resolved axis")
+    # was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 — 0 of 62 concepts used it —
+    # and the schema enum no longer admits it, so a concept spelling it fails validate_schema before it
+    # reaches this check.
+    KEYLESS_KINDS = {"composite", "sme_pending"}
     problems = []
     for n in N.values():
         if not n["key"] and n.get("concept.identity") not in KEYLESS_KINDS:

@@ -113,7 +113,7 @@ concept.column.role:
 # ===========================================================================
 # mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
 # narrower than `mac.concept.identity`, which is per CONCEPT and says how identity is ESTABLISHED
-# (iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending). The two answer
+# (iso · code · namespace_code · fk_name · composite · sme_pending). The two answer
 # different questions and both are needed: the concept says identity is a composite; these say
 # WHICH columns compose it.
 #
@@ -131,7 +131,7 @@ concept.column.identity:
     canonical: >
       THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
       discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-      says so through `mac.concept.identity.composite` or `resolved_axis` rather than nominating a
+      says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
       column that does not identify.
     part: >
       ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
@@ -322,7 +322,7 @@ concept.column.measure_type:
 # mac.concept.identity — HOW a concept's canonical identity is established. Every concept declares
 # `concept.identity.kind: mac.concept.identity.<term>`; `concept.identity.canonical_key` (when one is
 # exposed) names the column/expression that IS the identity. Domain-neutral: an applied ontology picks
-# the kind that fits. The three "keyless-by-design" kinds (composite, resolved_axis, sme_pending) let a
+# the kind that fits. The two "keyless-by-design" kinds (composite, sme_pending) let a
 # concept declare it legitimately has no single-column key — so the contract never forces a fake one.
 # ===========================================================================
 concept.identity:

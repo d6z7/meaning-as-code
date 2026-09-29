@@ -38,16 +38,18 @@ import sys
 import textwrap
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import check_vocabulary_parity as parity  # noqa: E402 — the ONE home of the slot -> vocabulary table
 
-#: (page, title, JSON path to the object, governing vocabulary per key, prose). The slot->vocabulary map
-#: has no other home in the repo — the parity gate declares three pairs, this declares the rest — so
-#: adding a governed slot is one line and the page cannot drift from it.
-SLOTS = (
+#: (page, title, JSON path to the object, prose). WHICH KEYS A PAGE'S OBJECT GOVERNS, AND BY WHICH
+#: VOCABULARY, IS NOT DECLARED HERE: it is derived from check_vocabulary_parity.PAIRS — the one home of
+#: the slot -> vocabulary table — so a slot the parity gate checks is a slot this page documents, and
+#: the two cannot drift. Until 2026-09-29 this file carried its own `governs` map beside PAIRS ("the
+#: parity gate declares three pairs, this declares the rest"): two tables of one fact.
+PAGES = (
     ("column_map", "The column map — everything about one column, on the column",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties"],
-     {"role": "concept.column.role", "identity": "concept.column.identity",
-      "rulings.register": "name_register"},
      "Keyed by column name; each value is that column's flags, or `null` to serve the column and say "
      "nothing more. This is the CONCEPT plane's view of a column — what a query may do with it. The "
      "relation's own physical shape is a different slot (see the data plane) and the two routinely "
@@ -57,7 +59,6 @@ SLOTS = (
 
     ("relation_column", "The relation's column — the data plane's physical shape",
      ["$defs", "TableFile", "properties", "columns", "items"],
-     {"role": "relation.column.role"},
      "One entry per column of a described relation, in data/sources (a raw landing) or data/datasets (a "
      "served relation). This is what the relation IS, MEASURED from the warehouse rather than declared "
      "by a person — which is why it is a different slot from the concept plane's column map and why the "
@@ -69,19 +70,18 @@ SLOTS = (
      "for reading — CONFORMANCE.md §2.4."),
 )
 
+#: (page, title, path, {key -> vocabulary block}, prose) — the shape `render` reads. The governs map
+#: is DERIVED, per page, from the parity table.
+SLOTS = tuple((page, title, path, parity.governs_under(path), prose)
+              for page, title, path, prose in PAGES)
+
 
 def dig(doc, path):
-    cur = doc
-    for step in path:
-        cur = cur[step]
-    return cur
+    return parity.dig(doc, path)
 
 
 def terms_of(vocab: dict, block: str) -> list:
-    b = vocab.get(block) or {}
-    t = b.get("terms") if b.get("terms") is not None else b.get("members")
-    names = list(t) if isinstance(t, dict) else [(x.get("term") if isinstance(x, dict) else x) for x in (t or [])]
-    return [str(n) for n in names if n]
+    return parity.terms_of(vocab, block)
 
 
 def _cell(s: str, width: int = 92) -> str:

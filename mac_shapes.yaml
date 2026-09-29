@@ -65,7 +65,7 @@ shapes:
   # CANONICAL IDENTITY (v0.1.11): every concept declares HOW it is identified (concept.identity.kind ∈
   # mac.concept.identity), so disambiguation is uniform and machine-checkable. WARN-FIRST during migration —
   # promote to error once all conformant ontologies declare it. The keyless-by-design kinds
-  # (composite / resolved_axis / sme_pending) satisfy this without inventing a fake key.
+  # (composite / sme_pending) satisfy this without inventing a fake key; `resolved_axis` was retired 2026-09-28.
   - id: concept-declares-identity
     description: every concept should declare concept.identity.kind (mac.concept.identity)
     target: concept

@@ -52,6 +52,20 @@ def _effects() -> dict:
 EFFECT = _effects()
 
 
+def _identity_kinds() -> list[str]:
+    """mac.concept.identity's terms, read from the vocabulary in declaration order. The manual's
+    Dimensions footnote rendered a hand-typed list until 2026-09-29 and still named `resolved_axis`,
+    retired the day before — a footnote documenting a term the enum refuses."""
+    try:
+        return [str(k) for k in ((yaml.safe_load(MAC_VOCAB.read_text(encoding="utf-8")) or {})
+                                 .get("concept.identity") or {}).get("terms") or {}]
+    except Exception:
+        return []
+
+
+IDENTITY_KINDS = _identity_kinds()
+
+
 def load(p: Path):
     try:
         return yaml.safe_load(p.read_text(encoding="utf-8")) or {}
@@ -213,7 +227,7 @@ def to_markdown(root: Path, model: dict) -> str:
         ik = (d.get("identity") or {}).get("kind") or "—"
         L.append(f"| **{d['name']}** | {d['class']} | {ik} | {key} | {rel} | {n} | {vlist} |")
     L.append("\n_`*` = closed enumeration (exactly these values; anything else is `__unmapped__`)._")
-    L.append("_Identity = `mac.concept.identity`: iso · code · namespace_code · fk_name · composite · resolved_axis · sme_pending._")
+    L.append("_Identity = `mac.concept.identity`: " + (" · ".join(IDENTITY_KINDS) or "«vocabulary unreadable»") + "._")
     return "\n".join(L) + "\n"
 
 

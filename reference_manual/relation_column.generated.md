@@ -23,14 +23,15 @@ columns:
     name:         <string>      # REQUIRED
     notes:        <string>
     nullable:     <boolean>
-    references:   <string>
+    references:   <any>
     register:     <string>
     role:         primary_key | foreign_key | value | discriminator      # REQUIRED
+    searchable:   like
     type:         <string>
     values:       <array>
 ```
 
-**12 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
+**13 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
 
 ## PARAMETERS
 
@@ -43,11 +44,12 @@ columns:
 | `name` | string | **yes** | — |  |
 | `notes` | string | no | — |  |
 | `nullable` | boolean | no | — |  |
-| `references` | string | no | — | The parent this foreign_key column points at, as `relation.column`. Written by mac_descript… |
+| `references` | any | no | — | The parent this column points at. TWO SHAPES, both read by one resolver (`mac_project.colum… |
 | `register` | string | no | — | Path to the register that holds this column's members, relative to the bundle root. Written… |
 | `role` | enum | **yes** | `primary_key`<br>`foreign_key`<br>`value`<br>`discriminator`<br>*from* `mac.relation.column.role` | v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytica… |
+| `searchable` | string | no | `like` | HOW A VALUE IN THIS COLUMN IS RESOLVED when no register can hold it. The operator, 2026-09-… |
 | `type` | string | no | — |  |
-| `values` | array | no | — | the column's observed value DOMAIN, for a column small enough to enumerate. Measured, then … |
+| `values` | array | no | — | TRANSIENT — the measured bounded domain, on its way to a register. NOT A HOME. `mac_profile… |
 
 ## TERM MEANINGS
 

@@ -342,11 +342,15 @@ delivers:
 
 conventions:
   - what: the role a data-plane column may carry
-    closed: [primary_key, foreign_key, value, discriminator]
+    closed: «whatever mac_vocabulary.yaml#relation.column.role declares»
     owner: mac_vocabulary.yaml#relation.column.role
     note: >-
-      the MEASURED plane's vocabulary. The authored/analytical roles (key, dimension, measure,
-      period, housekeeping) are a different vocabulary on a different plane and are NOT ruled here.
+      the MEASURED plane's vocabulary, and NOT restated here: tools/check_guardrails.py resolves
+      `owner` and reads the terms from the vocabulary, the way common.yaml already defers every
+      `mac.*` token. Until 2026-09-29 this item carried a copy of the four terms and, in this note,
+      a copy of the analytical five — two second homes in one convention. The authored/analytical
+      roles are a different vocabulary on a different plane (mac_vocabulary.yaml#concept.column.role)
+      and are NOT ruled here.
 
   - what: a landed relation's name
     closed: «the warehouse's own»
@@ -394,7 +398,7 @@ refuses:
   - id: INVENTED-COLUMN-ROLE
     when: writing a data-plane column `role` outside the closed set
     why: the vocabulary is closed, and closed means closed
-    instead: use one of primary_key | foreign_key | value | discriminator
+    instead: use a term mac_vocabulary.yaml#relation.column.role declares — the refusal names them
 
   - id: TRANSIENT-AT-DELIVERY
     when: a delivered landed descriptor still carries `values:` on a column

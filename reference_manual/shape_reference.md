@@ -127,8 +127,8 @@ concept:  # REQUIRED
   grounded_by: <…>  # string · (enumerations) the discriminator column the values come from.
   related_axis: <…>  # string
   identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above
-    kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | resolved_axis | sme_pending · mac.concept.identity.<term> — how the canonical identity is established.
-    canonical_key: <…>  # string · the column/expression that IS the identity (omit for resolved_axis /…
+    kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | sme_pending · mac.concept.identity.<term> — how the canonical identity is established.
+    canonical_key: <…>  # string · the column/expression that IS the identity (omit for sme_pending;…
     note: <…>  # string
     counts_as: <…>  # string · The column one INSTANCE of this concept is counted by, when that is not…
 

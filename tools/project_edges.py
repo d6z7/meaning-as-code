@@ -193,7 +193,25 @@ def _identity() -> tuple:
         "parsed": version is not None,
         "count": None,
     }
-    _IDENTITY = (stamp, finput)
+    # THE VOCABULARY IS A SECOND FRAMEWORK INPUT since 2026-09-29: sdk/project/vocabulary.py reads
+    # mac_vocabulary.yaml at run time instead of restating it (CONFORMANCE §2.1), and the seam gate's
+    # trace caught the undeclared read the same hour. Declared and digested like VERSION.
+    vocab_p = ROOT / "mac_vocabulary.yaml"
+    try:
+        vraw = vocab_p.read_bytes()
+    except OSError:
+        vraw = None
+    h2 = hashlib.sha256(h.digest())
+    h2.update(vraw if vraw is not None else b"<no mac_vocabulary.yaml>")
+    stamp["code_id"] = "sha256:" + h2.hexdigest()[:16]
+    vinput = {
+        "path": "framework:mac_vocabulary.yaml",
+        "role": "framework",
+        "present": vraw is not None,
+        "parsed": vraw is not None,
+        "count": None,
+    }
+    _IDENTITY = (stamp, [finput, vinput])
     return _IDENTITY
 
 
@@ -293,7 +311,7 @@ def _bad_request(reason: str, root) -> dict:
     return _envelope(
         status="bad_request", reason=reason, result=[],
         counts={"returned": 0, "declared": 0},
-        inputs=[_identity()[1]], partial=[], aux=_aux(), root=root,
+        inputs=list(_identity()[1]), partial=[], aux=_aux(), root=root,
     )
 
 
@@ -312,7 +330,7 @@ def derive(root: Path) -> tuple:
     # cannot say why it is empty.
     ont_edges, parse_error = load_ont_edges(concepts_dir)
     rec = _measurement_record(root)
-    finput = _identity()[1]
+    finputs = list(_identity()[1])
 
     def inputs(spine_parsed, spine_count):
         return [
@@ -320,7 +338,7 @@ def derive(root: Path) -> tuple:
              "parsed": spine_parsed, "count": spine_count},
             {"path": _MEASUREMENTS, "role": "attribute", "present": rec["present"],
              "parsed": rec["parsed"], "count": rec["count"]},
-            finput,
+            *finputs,
         ]
 
     if not spine_present:

@@ -3,7 +3,7 @@
 
 A canon exists in three places and nothing has ever compared them:
 
-  1. mac_vocabulary.yaml#canon.members    — what the framework DEFINES
+  1. mac_vocabulary.yaml#canon.terms      — what the framework DEFINES
   2. reference_manual/canon/*.md          — what the manual DESCRIBES
   3. mac_runtime.canon.IMPLEMENTED        — what the runtime HONOURS
 
@@ -59,7 +59,11 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     block = (yaml.safe_load(vocab_file.read_text(encoding="utf-8")) or {}).get("canon") or {}
-    defined = set(block.get("members") or {})
+    # `terms:` is the vocabulary's key; `members:` is the older spelling some checkouts still carry.
+    # Reading only `members` is how this gate reported "0 undescribed, 19 undefined" on a tree where
+    # all 19 are defined — a wrong key reads as an empty vocabulary, which reads as a manual full of
+    # canons nobody defined.
+    defined = set(block.get("terms") if block.get("terms") is not None else block.get("members") or {})
     described = {p.stem for p in pages_dir.glob("*.md")}
 
     try:

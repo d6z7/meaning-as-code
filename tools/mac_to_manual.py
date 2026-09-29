@@ -106,6 +106,11 @@ def _register_total(concept):
 
 # ── token producers — each returns a markdown block filled from the model alone ──
 
+# DECISION LANES, NOT OUTCOMES. COMMIT / ASK / REFUSE are the three mac.outcome_class terms a rule's
+# kind projects onto (mac_to_explorer.DECISION). INVARIANT and OTHER are NOT outcome_class terms — they
+# are this rendering's two extra buckets: `guarantee` rules, which decide nothing, and a kind the
+# projection does not know. Read them as lane labels; a reader who takes them for outcomes would look
+# for them in mac_vocabulary.yaml#outcome_class and find neither.
 LANE_ORDER = ["COMMIT", "ASK", "REFUSE", "INVARIANT", "OTHER"]
 LANE_GLOSS = {
     "COMMIT":    "resolve and answer (disclosing any assumed default)",
