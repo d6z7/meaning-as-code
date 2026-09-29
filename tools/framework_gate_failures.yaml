@@ -72,8 +72,8 @@ entries:
     expected: "a runner convention for flag-driven gates, or a default subject in the gate; its --self-test is 4/4"
   check_declarations_read.py:
     kind: fail
-    owner: platform
+    owner: operator
     since: 2026-09-29
-    reason: "119 of 453 declarations the framework admits have no reader in the runtime: all 9 common rules (mac_rules.yaml), 14 of 19 canon members, 9 not_expressible shapes, a register's `attached`, axis_kind.categorical, measure_type.stock; 68 are read by nothing on either side"
-    expected: "the objective of 2026-09-29 — every declaration read at answer time by the runtime, or retired from the schema; the list this gate prints is the work"
+    reason: "1 of 373 declarations has no reader in the runtime: mac.canon.relation_alias_resolve — its page needs edges to carry alias surfaces and mac.schema.json#relationAliasBlock has no surfaces slot, so there is nothing for a runtime to read. Was 119 of 453 at 09:00 the same day (all 9 common rules, 14 canon members, 9 not_expressible shapes, `attached`, two vocabulary terms); the v0.5 keys were retired, the rest were given readers (mac-platform 36b9d21, f4803a5, 1baab17)"
+    expected: "an operator ruling: give relationAliasBlock a surfaces slot the runtime can read, or retire relation_alias_resolve from the canon"
     record: STRATEGY.md
