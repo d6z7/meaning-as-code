@@ -220,7 +220,32 @@ def _measured(root, stem):
     if not p.exists():
         return None
     d = (yaml.safe_load(p.read_text(encoding="utf-8")) or {}).get("identity_evidence") or {}
-    return {"cell_key": d.get("key"), "key": d.get("key")} if d.get("key") else None
+    if d.get("key"):
+        return {"cell_key": d.get("key"), "key": d.get("key")}
+
+    # THE SERVED PLANE KEEPS ITS MEASURED KEY ON THE DESCRIPTOR, not on the profile, and
+    # mac_import's own stage table says so: "SERVED key from the DESCRIPTOR (columns[].role ==
+    # primary_key), which mac_descriptors measures ... SOURCES key from the PROFILE's
+    # identity_evidence, which only mac_admit_identity writes". Reading the profile alone made
+    # this gate refuse every served relation in a bundle whose identity was never admitted —
+    # measured 2026-09-29 on contoso5: "no measured key, but concept:gross_revenue grounds a
+    # MEASURE on it", over a descriptor declaring order_key PK1 and line_number PK2.
+    #
+    # IT IS NOT A WEAKER SOURCE. `mac_descriptors` assigns `primary_key` only where it MEASURED
+    # uniqueness — one column unique and non-null over every row, or a tuple unique where no
+    # single member is — so the key is verified either way. What differs is which plane records
+    # it, and a gate that knows only one of the two homes reports an absence that is not there.
+    dp = _pl.Path(root) / "data" / "datasets" / f"{stem}.yaml"
+    if dp.exists():
+        doc = yaml.safe_load(dp.read_text(encoding="utf-8")) or {}
+        pk = [c for c in (doc.get("columns") or [])
+              if isinstance(c, dict) and c.get("role") == "primary_key"]
+        if pk:
+            pk.sort(key=lambda c: c.get("key_position") or 0)
+            names = [str(c.get("name")) for c in pk if c.get("name")]
+            if names:
+                return {"cell_key": names, "key": names}
+    return None
 
 
 def _measured_key(root, stem):
