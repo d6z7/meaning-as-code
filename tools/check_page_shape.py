@@ -263,9 +263,65 @@ def _self_test() -> int:
          any(i["verdict"] == NA and "no line pattern" in i["note"]
              for i in check_page("p.md", GOOD,
                                  {"sections": [{"heading": "Columns", "required": "always"}]}, {})))
+
+    # ── the COLUMNS table: role and reference must agree ──────────────────────────────────────
+    # THE PATTERN IS READ FROM THE GUARDRAIL, NOT RESTATED HERE. A self-test that carries its own
+    # copy of the rule proves the copy, not the rule — and the one time a pattern in this estate
+    # was written down twice, the second copy was double-escaped and refused three correct pages
+    # within four minutes. If the declaration is unreadable that is itself a failure, so it is a
+    # case rather than an exception.
+    import yaml
+    try:
+        _g = yaml.safe_load((pathlib.Path(__file__).resolve().parents[1]
+                             / "guardrails/data/sources.yaml").read_text())
+        _sh = _g["delivers"]["relation_page"]["shape"]
+        COLS = {"sections": [{"heading": "Columns", "required": "always"}],
+                "lines": {"Columns": _sh["lines"]["Columns"]},
+                "line_selectors": {"Columns": _sh["line_selectors"]["Columns"]},
+                "line_forms": {"Columns": _sh["line_forms"]["Columns"]}}
+    except Exception as exc:                                    # pragma: no cover - a red case
+        COLS = None
+        case(f"the Columns rule is readable from its guardrail ({exc})", False)
+
+    if COLS:
+        def _page(*rows):
+            return ("## Columns\n\n| column | type | role | reference |\n|---|---|---|---|\n"
+                    + "\n".join(rows) + "\n")
+
+        def _bad(text):
+            return any(i["verdict"] == VIOLATION and "LINE_MALFORMED" in i["note"]
+                       for i in check_page("p.md", text, COLS, WITH_REF))
+
+        case("a plain key, a plain value and a plain FK all HOLD",
+             not _bad(_page("| `order_key` | integer | PK1 |  |",
+                            "| `rate` | decimal | value |  |",
+                            "| `order_date` | timestamp | FK | → `dim_date.date_day` |")))
+        # THE ROW THIS ESTATE SHIPPED THIS MORNING. contoso5/data/datasets/v_contoso5_fx_rate.md,
+        # and five more like it: the key position was printed and the reference, which the cell to
+        # its right showed with an arrow, was not named. Once `FK` prints for the 17 columns whose
+        # role IS `foreign_key`, its absence on the other 6 asserts something false.
+        case("MUTANT a key column that references a parent without naming FK is REFUSED",
+             _bad(_page("| `date_day` | timestamp | PK1 | → `dim_date.date_day` |")))
+        case("MUTANT the same lie told the other way — FK with no reference — is REFUSED",
+             _bad(_page("| `order_date` | timestamp | FK |  |")))
+        case("a key column that names BOTH holds",
+             not _bad(_page("| `date_day` | timestamp | PK1 · FK | → `dim_date.date_day` |")))
+        case("a register beside the arrow does not disturb the rule",
+             not _bad(_page("| `from_currency` | string | PK2 · FK | "
+                            "→ `dim_currency.currency_code` · register: `v_x_from_currency` |")))
+        case("a register with NO arrow needs no FK",
+             not _bad(_page("| `status` | string | value | register: `v_x_status` |")))
+        # WITHOUT THE SELECTOR THIS RULE EATS ITS OWN TABLE. The header row carries the word
+        # `reference` and no arrow, the `|---|` rule carries neither; both are structure, not data,
+        # and a bullet-shaped default selector would have judged neither while a bare `^\|` would
+        # have judged both. The selector requires the backtick that opens a column name.
+        case("the header row and the |---| rule are structure, not data, and are not judged",
+             not _bad(_page("| `rate` | decimal | value |  |")))
+
     print(("PASS" if ok[1] == ok[0] else "FAIL")
-          + f": check_page_shape self-test — {ok[1]}/{ok[0]} case(s), including the two failures "
-            f"this gate was written for: a mapping rendered as a repr, and a measured fact dropped.")
+          + f": check_page_shape self-test — {ok[1]}/{ok[0]} case(s), including the three failures "
+            f"this gate was written for: a mapping rendered as a repr, a measured fact dropped, "
+            f"and a key column that referenced a parent without saying so.")
     return 0 if ok[1] == ok[0] else 1
 
 

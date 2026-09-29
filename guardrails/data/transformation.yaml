@@ -119,7 +119,13 @@ delivers:
       lines_like: guardrails/data/sources.yaml#relation_page
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
-    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+    # `check_page_shape` WAS ALREADY JUDGING THIS KIND and was not named here. Its runner selects
+    # every item that declares `shape.sections`, so this page has been held since the shape landed
+    # while its own declaration said only `check_pages_current` — a declaration that understates
+    # what runs is the same defect as one that overstates it, read from the other side.
+    checkers:
+      - {tool: tools/check_pages_current.py, rejects: [STALE]}
+      - {tool: tools/check_page_shape.py, rejects: [SECTION_MISSING, LINE_MALFORMED, UNGOVERNED_SECTION]}
 
   served_plane_overview:
     what: one page over ALL of the served plane — what is served, how big, what is keyed

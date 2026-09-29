@@ -39,12 +39,43 @@ _ABBREV = {"primary_key": "PK", "foreign_key": "FK"}
 
 
 def role_cell(col: dict) -> str:
-    """`PK1` / `PK` / `FK` / the term. Position appended only where one is declared."""
-    role = str((col or {}).get("role") or "")
+    """`PK1` / `PK` / `FK` / `PK1 · FK` / the term. Position appended only where one is declared.
+
+    A REFERENCE IS A SIBLING OF THE ROLE, NOT A PROPERTY OF IT — the same operator ruling that
+    `fk_section` below carries, applied at the second site, which was missed when the first was
+    fixed. `role` is a closed single-value vocabulary and a column that is both part of the key and
+    a reference can only choose one term for it; identity wins, and the reference fact then had
+    nowhere to appear in this column.
+
+    THE ABSENCE OF A TOKEN IS READ AS A FACT. `FK` prints here for the 17 columns whose role IS
+    `foreign_key`, so for the 6 that are keys AND reference a parent its absence says "not a foreign
+    key", which is false. Measured 2026-09-29 across contoso5's 32 descriptors: 23 columns carry a
+    reference, 17 print `FK`, 6 printed `PK1`/`PK2`/`PK3` alone —
+
+        v_contoso5_fx_rate.date_day / .from_currency / .to_currency   (all three key parts)
+        currencyexchange.Date, orderrows.OrderKey, sales.OrderKey
+
+    The reference column beside this one always showed the arrow, so the fact was on the page
+    IMPLICITLY. That is not the same as being stated: a reader scanning one column got a wrong
+    answer from it. `·` is the separator this table already uses to join two facts in one cell
+    (`reference_cell`), not a new convention introduced here.
+
+    NOT A YAML CHANGE. The descriptor states both facts already, each in its own typed field:
+    `role: primary_key` + `key_position: 1` + `references:`. `PK1 · FK` is a DISPLAY composition of
+    two declared fields, the way `PK1` is already a composition of `role` and `key_position`, and it
+    is assembled here rather than stored so that no consumer has to do string surgery on a
+    vocabulary token to learn either fact (CONFORMANCE 2.4).
+    """
+    c = col or {}
+    role = str(c.get("role") or "")
     short = _ABBREV.get(role, role)
-    pos = (col or {}).get("key_position")
+    pos = c.get("key_position")
     if role == "primary_key" and pos:
-        return f"{short}{pos}"
+        short = f"{short}{pos}"
+    # The test is whether the column CARRIES a reference, never whether its role names one — that is
+    # the filter that dropped three references from three pages in `fk_section`.
+    if role != "foreign_key" and _ref_parts(c)[0]:
+        short = f"{short} · FK" if short else "FK"
     return short
 
 

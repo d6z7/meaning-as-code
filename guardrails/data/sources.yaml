@@ -203,9 +203,28 @@ delivers:
         - {heading: Registers, required: when_a_column_has_a_register}
       lines:
         Foreign keys: '^- `[^`]+` → `[^`.]+\.[^`]+` \([a-z]+:[a-z]+, [a-z]+:[a-z]+\)$'
-      # the same rule in words, so a refusal is readable by somebody who does not read regex
+        # THE ROLE CELL AND THE REFERENCE CELL MUST AGREE. `role` is a closed SINGLE-value
+        # vocabulary, so a column that is both part of the key and a reference can put only one
+        # term there — identity wins, and `FK` then had nowhere to appear. Measured 2026-09-29 over
+        # contoso5's 32 descriptors: 23 columns carry a reference, 17 printed `FK`, and 6 printed
+        # `PK1`/`PK2`/`PK3` alone (fx_rate's three key parts, currencyexchange.Date,
+        # orderrows.OrderKey, sales.OrderKey). The arrow was in the cell beside them, so the fact
+        # was on the page IMPLICITLY — but once `FK` prints for 17 columns its ABSENCE on the other
+        # 6 is read as a fact, and that fact is false.
+        #
+        # This is a BICONDITIONAL and both halves are on the row, so no cross-reference is needed:
+        # the role cell names FK if and only if the reference cell carries an arrow. It therefore
+        # also catches the opposite lie — `FK` claimed with an empty reference cell.
+        Columns: '^\| `[^`]+` \| [^|]+ \| (?:[^|]*\bFK\b[^|]* \| [^|]*→[^|]*|(?![^|]*\bFK\b)[^|]* \| (?![^|]*→)[^|]*)\|$'
+      # WHICH LINES EACH PATTERN JUDGES. `Foreign keys` is a bullet list and takes the `^- `
+      # default; `Columns` is a TABLE, and its selector deliberately requires the backtick that
+      # opens a column name so the header row and the `|---|` rule are not judged as data.
+      line_selectors:
+        Columns: '^\| `'
+      # the same rules in words, so a refusal is readable by somebody who does not read regex
       line_forms:
         Foreign keys: '- `column` → `relation.column` (child:parent, child:parent)'
+        Columns: '| `column` | type | role | reference | — where the role says FK exactly when the reference cell has an arrow'
     producers: [{tool: sdk/project/project_data.py, role: renders}]
     consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
     checkers:
