@@ -609,7 +609,22 @@ def _stages(root: pathlib.Path) -> list[dict]:
         # promotion carried the flag — which the manifest gate could not see while it unioned
         # `always` across every writer of a glob. A descriptor measured from the warehouse is
         # `re-derived` by declaration, and one writer willing to skip is all a stale artifact needs.
-{"name": "descriptors-datasets", "part": "datasets", "always": True, "produces": "data/datasets/*.yaml",
+        # APPLY BEFORE MEASURING, because the served plane does not exist until something makes
+        # it. Operator, 2026-09-29: "you apply sql ... always !!! all communication to the data and
+        # DB goes through you."
+        #
+        # THE CHAIN HAD A HOLE IN THE MIDDLE. `transform_sql` declared its applier as "«the
+        # warehouse», role: build.sh applies it" — a bundle-local shell script outside the
+        # pipeline — so GENERATE -> APPLY -> MEASURE was only ever two thirds wired. Measured
+        # 2026-09-29: a regenerated bundle carried eight `.sql` describing eight views that were
+        # never created, while the warehouse still held the eight whose `.sql` had been deleted.
+        # Ten files, eight views, and the delivery reported 39 of 39 complete over the mismatch.
+        #
+        # `always`, because its output is the WAREHOUSE and no file on disk records whether the
+        # views match the statements that claim to create them. There is nothing to resume on.
+        {"name": "apply-transforms", "part": "datasets", "always": True, "d": "D2",
+         "cmd": [_tool("mac_apply_transforms.py"), str(root)]},
+        {"name": "descriptors-datasets", "part": "datasets", "always": True, "produces": "data/datasets/*.yaml",
          "d": "D2", "cmd": [_tool("mac_descriptors.py"), str(root), "--plane", "datasets"]},
         # `mac_profile` takes ONE relation, so this stage is one call per descriptor — the tool's
         # own signature, not a loop invented here.
