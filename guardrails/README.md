@@ -78,3 +78,15 @@ defect is a flat glob over a grouped directory; the worst instance ships an empt
 **A KIND BELONGS TO EXACTLY ONE FILE.** Moving one between topics is a MOVE, never a copy — which
 is why no precedence rule exists anywhere in this tree, and why `bom.conflicts` must stay empty.
 I have made that mistake twice; the gate caught it both times.
+
+
+## The record behind this tree
+
+| document | what it holds |
+|---|---|
+| `decisions/PROTOCOL-2026-09-29_guardrails.md` | **the state of the art** — the concluding structure, the four axes, the nine refusals with the event behind each, what is owed, and the rulings that stand |
+| `decisions/PROPOSED-2026-09-29_guardrails.md` | the design rationale |
+| `decisions/PROPOSED-2026-09-29_delivery-manifest.md` | SUPERSEDED, and kept: it is the measured record of what not having any of this cost |
+
+Read the PROTOCOL first. It is written so that a session which has never seen this tree can pick it
+up without re-deriving why it is shaped this way — which is the failure the tree exists to end.
