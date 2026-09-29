@@ -19,7 +19,7 @@ status: PROPOSED 2026-09-29
 delivers:
   sme_questions_page:
     what: the SME sign-off surface — every open question the register raises, with its closed answer set
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/SME-QUESTIONS.md
     naming: fixed
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
@@ -36,6 +36,32 @@ delivers:
     checkers: []
 
   # ── THE REFERENCE PLANE — what an ask-agent is told to read ──────────────────────────────────
+
+  sme_thread_log:
+    what: the trilateral SME conversation per question — comments, disposition, and the action taken
+    phase: [sources, datasets]
+    path: data/quality/sme_threads.json
+    naming: fixed
+    population: {of: one store, from: «this artifact», empty_is: OK}
+    covers: every question the register raises
+    lifecycle: authored-once
+    # WRITTEN BY THE CONSOLE, BY A PERSON, NOT BY AN IMPORT — which is why it is optional. Declared
+    # `phase: sources` in the old registry, it reported ABSENT on every delivery: a shortfall that
+    # was never a shortfall.
+    #
+    # AND IT IS ONE OF TWO COMPETING STORES. A complete design exists for
+    # `governance/sme-questions.yaml` (PROPOSED 2026-09-17, schema mutant-tested 47 of 47, an
+    # implementation in sdk/project/sme_questions.py) and is UNWIRED; this file came from the
+    # 2026-09-22 console ruling with a different lifecycle (OPEN/ANSWERED/ACTED/CLOSED against
+    # draft/out_for_discussion/answered/applied). Reconciling two operator rulings is not an
+    # agent's call — standing ruling O3: a separate job. Declared here so the conflict is COUNTED.
+    producers: [{tool: mac-console/console_api.py, role: appends comments and dispositions}]
+    consumers:
+      - {tool: mac-console/console_api.py, role: serves one plane's threads,
+         reads: ["data", "ontology", "{qid}.comments", "{qid}.status", "{qid}.action"]}
+      - {tool: mac-console/ui/src/components/sme/SMEThread.jsx, role: renders each question as a thread,
+         reads: ["{qid}.status", "{qid}.comments", "comments[].author", "comments[].text"]}
+    checkers: []
 
 watch:
   record: acceptance/guardrail_runs.json

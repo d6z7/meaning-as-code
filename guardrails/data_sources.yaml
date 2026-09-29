@@ -42,7 +42,7 @@ delivers:
 
   profile:
     what: the measurement — row counts, distincts, nulls, and the identity evidence behind a key
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/profiles/{relation}.yaml
     naming: the relation's stem, verbatim
     population: {of: every landed relation, from: data/sources/*.yaml, empty_is: EMPTY}
@@ -112,7 +112,7 @@ delivers:
 
   preview_run_record:
     what: the previews' provenance — which engine cut them, at what limit and order, what was refused
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/samples/samples.run.json
     naming: fixed
     population: {of: one record for the plane, from: «this artifact», empty_is: EMPTY}
@@ -125,7 +125,7 @@ delivers:
 
   register:
     what: a value DOMAIN cut from one column — its members, with a label and a search key
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/lookups/{marker}_{relation}_{column}.lookup.csv
     naming: >-
       marker, relation and column — the register IS its (relation, column). The marker is omitted
@@ -148,7 +148,7 @@ delivers:
 
   register_page:
     what: the browsable page for one value register — its members, with the constants lifted above the table
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/lookups/{register}.lookup.md
     naming: the register's own stem, verbatim — one page per .lookup.csv
     population: {of: every register cut on this plane, from: data/lookups/*.lookup.csv, empty_is: EMPTY}
@@ -186,7 +186,7 @@ delivers:
 
   data_sanity_suite:
     what: the data-sanity properties, PROJECTED from the measured profile — nobody authors these
-    phase: [sources]
+    phase: [sources, datasets]
     path: acceptance/data_sanity_generated.yaml
     naming: fixed
     population: {of: one suite, from: «this artifact», empty_is: EMPTY}
@@ -200,7 +200,7 @@ delivers:
 
   suite_run_record:
     what: the current state of a suite — per case, overwritten every run
-    phase: [sources]
+    phase: [sources, datasets]
     path: acceptance/data_sanity_generated_runs.json | acceptance/delivery_consistency_runs.json | acceptance/register_membership_runs.json | acceptance/manifest_runs.json
     naming: "{suite}_runs.json — the suite it records, never a date"
     population: {of: one record per suite that ran, from: «this artifact», empty_is: EMPTY}
@@ -218,7 +218,7 @@ delivers:
 
   dated_run_record:
     what: one suite run, append-only — the copy that makes the trend independent of git
-    phase: [sources]
+    phase: [sources, datasets]
     path: acceptance/runs/{utc}-{suite}.json
     naming: "{UTC}-{suite}.json — the instant it ran, so two runs never collide"
     population: {of: one per run, from: «this artifact», empty_is: EMPTY}

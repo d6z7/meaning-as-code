@@ -18,7 +18,7 @@ status: PROPOSED 2026-09-29
 delivers:
   data_quality_register:
     what: what is WRONG on the landing plane and who must rule on it
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/data_quality_register.yaml
     naming: fixed
     population: {of: one register, from: «this artifact», empty_is: EMPTY}
@@ -32,7 +32,7 @@ delivers:
 
   dq_finding_page:
     what: one page per registered data-quality finding — what was measured, how it is handled, what it costs
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/DQ-{id}.md
     naming: "DQ-{TYPE}-{SUBJECT}, uppercase — the finding's own id, never renamed"
     population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
@@ -44,7 +44,7 @@ delivers:
 
   dq_issues_overview:
     what: the register at a glance — every finding with its severity and resolution coverage
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/0-issues-overview.md
     naming: fixed — the leading 0 sorts it first in the directory a person browses
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
@@ -55,7 +55,7 @@ delivers:
 
   dq_dashboard:
     what: the register joined to the resolution map — the only structured artifact the console's quality page reads
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/dq_dashboard.json
     naming: fixed
     population: {of: one dashboard, from: «this artifact», empty_is: EMPTY}
@@ -70,7 +70,7 @@ delivers:
 
   plane_health_page:
     what: the delivery's own health — what was landed, what is described, what is measured, what is not
-    phase: [sources]
+    phase: [sources, datasets]
     path: data/quality/PLANE-HEALTH.md
     naming: fixed
     population: {of: one page, from: «this artifact», empty_is: EMPTY}
@@ -83,7 +83,7 @@ delivers:
 
   known_issue_page:
     what: one page per finding, in the plane an ask-agent reads — the trap it must not fall into
-    phase: [sources]
+    phase: [sources, datasets]
     path: references/known_issues/DQ-{id}.md
     naming: the finding's own id, verbatim
     population: {of: every finding in the register, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: EMPTY}
@@ -95,7 +95,7 @@ delivers:
 
   known_issues_index:
     what: the register at a glance for an ask-agent — severity and coverage per finding
-    phase: [sources]
+    phase: [sources, datasets]
     path: references/known_issues/index.md
     naming: fixed
     population: {of: one page, from: «this artifact», empty_is: EMPTY}

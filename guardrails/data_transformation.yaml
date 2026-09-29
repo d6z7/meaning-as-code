@@ -1,0 +1,251 @@
+# guardrails/data_transformation.yaml — WHAT WE DECIDED TO SERVE, AND WHY.
+#
+# Phase 2. The served plane: an AUTHORED statement of what this warehouse should look like to
+# somebody asking questions of it, and everything measured about the result.
+#
+# IT CONSUMES PHASE 1, and that is the whole reason it is a separate delivery. Operator,
+# 2026-09-29: "second phase shold create transformation and based on sme answers and findings."
+# A transform is a judgement — which relation is the fact of record, which key is canonical, what
+# an inverted date window means — and those judgements are answered in `data_quality`'s findings
+# and `sme_questions`' rulings. Building the served plane before they are answered is guessing.
+#
+# THE ONE AUTHORED ARTIFACT IN THE DATA PLANE lives here: `transform_sql`. Everything else in both
+# phases is measured or projected. That is why this topic carries the grain and identity rules —
+# they are the only place a person's decision enters the data plane, and the only place it can be
+# wrong in a way no measurement catches.
+#
+# WHAT IT DOES NOT RULE: the landing plane (`data_sources`), the findings (`data_quality`), the
+# ontology. UNSPECIFIED IS NOT RULED.
+
+spec_version: mac.guardrail/1
+topic: data_transformation
+status: PROPOSED 2026-09-29
+
+delivers:
+
+  transform_sql:
+    what: the AUTHORED statement that produces one served relation — the only authored artifact in the data plane
+    phase: [datasets]
+    path: data/transforms/{relation}.sql
+    naming: the served relation it produces
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: authored-once
+    producers:
+      - {tool: «a person», role: authors}
+      - {tool: tools/mac_passthrough.py, role: generates a 1:1 layer where no judgement is needed}
+    consumers:
+      - {tool: tools/mac_sample.py, role: takes the SELECT under the DDL head as the preview's body, reads: ["«whole document»"]}
+      - {tool: «the warehouse», role: build.sh applies it, reads: ["«whole document»"]}
+    checkers:
+      - {tool: tools/check_transform_sql_extracted.py, rejects: [dangling-sql_file, inline-sql-with-no-pointer]}
+      - {tool: tools/check_bundle_isolation.py, rejects: [ESCAPES, NAMES_ANOTHER_BUNDLE]}
+
+  transform_descriptor:
+    what: what a transform CONSUMES and PRODUCES, measured from the view definition the engine stored
+    phase: [datasets]
+    path: data/transforms/{relation}.yaml
+    naming: the served relation it produces
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_transforms.py, role: measures from the warehouse}]
+    consumers:
+      - {tool: sdk/project/project_data.py, role: renders the transform page and the chain,
+         reads: ["produces.relation", "produces.sql_file", "inputs[].relation", "inputs[].kind"]}
+      - {tool: tools/mac_sample.py, role: the authority on the served relation's name and body,
+         reads: ["produces.relation", "produces.sql_file"]}
+    checkers:
+      - {tool: tools/check_relation_identity.py, rejects: [produces.relation-disagrees-with-the-other-four-homes]}
+
+  transform_page:
+    what: the page a person opens to read what one transform does and why
+    phase: [datasets]
+    path: data/transforms/{relation}.md
+    naming: the transform's stem, verbatim
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: sdk/project/objects.py, role: carries it as the dataset's cleaning path, reads: ["«path only»"]}]
+    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+
+  served_descriptor:
+    what: what a served relation LEAVES — the promotion's contract with everything downstream
+    phase: [datasets]
+    path: data/datasets/{relation}.yaml
+    naming: >-
+      the CLOSED role table — tools/check_served_name_distinct.py owns the spelling and publishes
+      it in its own refusal, derived from the bundle. Run it, read the refusal, use the name it
+      hands you. A copy here would be a second home and would not move when the gate moves.
+    population: {of: every served relation, from: the warehouse's served schema, empty_is: EMPTY}
+    lifecycle: re-derived
+    transient: [values]
+    producers:
+      - {tool: tools/mac_descriptors.py, role: measures, args: "--plane datasets"}
+      - {tool: tools/mac_profile.py, role: adds the measured value domains}
+      - {tool: tools/mac_lookups.py, role: cuts those domains out into registers}
+    consumers:
+      - {tool: sdk/project/er_model.py, role: draws the served ER and its crow's feet,
+         reads: ["table.name", "columns[].name", "columns[].references.to", "columns[].references.cardinality"]}
+      - {tool: tools/mac_import.py, role: the lineage-coverage denominator, reads: ["columns[].name", "table.name"]}
+    checkers:
+      - {tool: tools/check_served_name_distinct.py, rejects: [served-name-not-distinct-from-a-landing, role-outside-the-closed-table]}
+      - {tool: tools/check_grain_declaration.py, rejects: [a-served-relation-with-no-declared-grain-or-key]}
+      - {tool: tools/check_schema_isolation.py, rejects: [a-source-literal-in-a-descriptor]}
+
+  served_relation_page:
+    what: the page a person opens to read one served relation
+    phase: [datasets]
+    path: data/datasets/{relation}.md
+    naming: the descriptor's stem, verbatim
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: mac-console/console_api.py, role: serves it, reads: ["«whole document»"]}]
+    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+
+  served_plane_overview:
+    what: one page over ALL of the served plane — what is served, how big, what is keyed
+    phase: [datasets]
+    path: data/datasets/index.md
+    naming: fixed
+    population: {of: one page, from: «this artifact», empty_is: EMPTY}
+    covers: every served relation
+    lifecycle: re-derived
+    producers: [{tool: sdk/project/project_data.py, role: renders}]
+    consumers: [{tool: mac-console/console_api.py, role: lists and serves it, reads: ["«whole document»"]}]
+    checkers: [{tool: tools/check_pages_current.py, rejects: [STALE]}]
+
+  served_preview:
+    what: a seeded sample of one served relation, for a reviewer to look at
+    phase: [datasets]
+    path: data/samples/{relation}.sample.csv
+    naming: >-
+      the relation's stem with NO `.src.` marker — the two planes share a directory and a 1:1
+      passthrough bundle shares the stem, so the plane must be in the name and the landing is the
+      one that carries the marker
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_sample.py, role: draws, args: "--plane datasets"}]
+    consumers: [{tool: sdk/project/objects.py, role: offers the Sample tab, reads: ["«path only»"]}]
+    checkers:
+      - {tool: tools/check_sample_matches_descriptor.py,
+         rejects: [HEADER_DRIFT, RAGGED, ORPHAN, SUFFIX_CROSSED, EMPTY_PREVIEW, MISSING_PREVIEW]}
+
+  served_reference_measurement:
+    what: the measured references of one SERVED relation, with the evidence behind each verdict
+    phase: [datasets]
+    path: data/references_served/{relation}.yaml
+    naming: the relation's stem, verbatim
+    population: {of: every served relation, from: data/datasets/*.yaml, empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_references.py, role: measures, args: "--plane served"}]
+    consumers:
+      - {tool: tools/mac_descriptors.py, role: promotes a real identity reference onto the column,
+         reads: ["references[].verdict", "references[].parent_key_role", "references[].cardinality", "references[].participation"]}
+      - {tool: sdk/project/er_model.py, role: the served ER line's proof channel,
+         reads: ["evidence.orphan_rows", "evidence.parent_distinct", "cardinality", "participation"]}
+    checkers:
+      - {tool: tools/check_physical_references.py,
+         rejects: [EVIDENCE_MISSING, ADMISSION_MISSING, ENDPOINT_UNRESOLVED, COLUMN_UNDECLARED,
+                   PARTICIPATION_MISSING, AMBIGUITY_HIDDEN, DANGLING_INVENTED, UNMEASURED_RELATION]}
+
+  served_reference_run_record:
+    what: the served reference measurement's provenance — its denominators and every pruned pair
+    phase: [datasets]
+    path: data/references_served/references.run.json
+    naming: fixed
+    population: {of: one record for the plane, from: «this artifact», empty_is: EMPTY}
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_references.py, role: records the served run}]
+    consumers: [{tool: mac-console/ingest_progress.py, role: the references step's clock, reads: [measured_at]}]
+    checkers: []
+
+  column_lineage:
+    what: where every served column came from — a source column, a transformation of one, or an expression
+    phase: [datasets]
+    path: data/lineage/lineage.json
+    naming: fixed
+    population: {of: one graph, from: «this artifact», empty_is: EMPTY}
+    covers: every served relation, and every served COLUMN
+    lifecycle: re-derived
+    # ONE ARTIFACT, TWO PRODUCERS, DISJOINT OWNERSHIP — declared in sdk/project/lineage_graph.py
+    # #OWNERSHIP and enforced by its merge(). Each replaces only the node and edge kinds it owns,
+    # so re-measuring a warehouse cannot delete a bundle's ontology chain. There were THREE homes
+    # for this graph on 2026-09-28, disagreeing on the node id scheme.
+    producers:
+      - {tool: tools/mac_lineage.py, role: measures the warehouse — relation edges and column origins}
+      - {tool: sdk/project/lineage_graph.py, role: folds in registers, concepts and the orphan register}
+    consumers:
+      - {tool: mac-console/console_api.py, role: the Lineage pane, both halves,
+         reads: ["columns[].view", "columns[].column", "columns[].source_relation", "columns[].source_column", nodes, edges]}
+      - {tool: tools/check_lineage_coverage.py, role: scores column coverage,
+         reads: ["columns[].view", "columns[].column", "columns[].source_column"]}
+    checkers:
+      - {tool: tools/check_lineage_coverage.py, rejects: [dataset-declaring-no-columns, coverage-zero-against-a-declared-parent]}
+
+  impurity_resolution_map:
+    what: the cross-link from a registered defect to the transform that dissolves it, with the guarantee it establishes
+    phase: [datasets]
+    path: data/quality/impurity_resolution_map.yaml
+    naming: fixed
+    population: {of: every finding a transform claims to treat, from: "data/quality/data_quality_register.yaml#issues[]", empty_is: OK}
+    lifecycle: authored-once
+    # THE JOIN BETWEEN THE TWO PHASES, and the reason `data_quality` is phase 2's input rather than
+    # its by-product: a transform that dissolves a defect says so HERE, against the finding's id.
+    producers: [{tool: «a person», role: authors}]
+    consumers:
+      - {tool: sdk/project/project_data.py, role: joins each issue to its resolution,
+         reads: ["resolutions[].finding_id", "resolutions[].coverage", "resolutions[].resolving_transforms", "resolutions[].guarantee"]}
+      - {tool: sdk/project/objects.py, role: the TREATS panel on every dataset page,
+         reads: ["resolutions[].finding_id", "resolutions[].coverage", "resolutions[].guarantee"]}
+    checkers:
+      - {tool: tools/check_dq_resolution_sync.py,
+         rejects: [resolution-dangling, resolution-transform-missing, coverage-invalid,
+                   resolves-unregistered, resolves-unlinked, impurity-unregistered]}
+
+conventions:
+  - what: a served relation's name
+    closed: [view, fact, dimension, meta]
+    owner: mac.schema.json#serving.naming + tools/check_served_name_distinct.py
+    note: >-
+      the role table is CLOSED and the prefixes are DECLARED — `v` + marker for a view or fact,
+      `dim` for a dimension, `meta` for meta. Nothing else is a role: a leading `d`, `f`, `b`,
+      `stg`, `raw` or `tmp` names a pipeline STAGE or an abbreviation, and each is refused with the
+      member it should have been. Measured 2026-09-28: an invented `d_`/`f_`/`b_` scheme survived
+      being designed, built, measured, committed and reported before anything objected.
+
+  - what: the five homes of one served relation's name
+    closed: «they must agree»
+    owner: tools/check_relation_identity.py
+    note: >-
+      the descriptor's file stem, its `table.name`, the physical view, the transform's
+      `produces.relation`, and any register's `source_view`. Four are checked offline; the physical
+      view is not, deliberately — say "five places, four of them checked offline".
+
+refuses:
+
+  - id: INVENTED-SERVED-ROLE
+    when: writing a served descriptor whose name does not begin with a declared role prefix
+    why: >-
+      the role table is closed and the gate that owns it publishes the convention in its own
+      refusal. Inventing a prefix is how a whole served model was built, measured, committed and
+      reported before anything objected.
+    instead: run tools/check_served_name_distinct.py, read the refusal, use the name it hands you
+
+  - id: SERVED-NAME-COLLIDES-WITH-A-LANDING
+    when: writing a served descriptor whose stem equals a landed relation's
+    why: >-
+      lineage then renders `source -> dataset` as a self-loop, and every reader that keys on the
+      stem cannot tell the two planes apart
+    instead: give the served relation its own name under the closed role table
+
+  - id: TRANSFORM-WITHOUT-A-FINDING
+    when: authoring a transform that claims to treat a defect no register entry declares
+    why: >-
+      a guarantee with no finding behind it is a promise nothing keeps. Phase 2 exists to act on
+      phase 1's findings, so a claim must name the finding it acts on.
+    instead: raise the finding in data/quality/data_quality_register.yaml first, then cite its id
+
+watch:
+  record: acceptance/guardrail_runs.json
+  written_by: tools/check_guardrails.py
+  console: Quality -> Manifest

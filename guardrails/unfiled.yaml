@@ -15,7 +15,7 @@ status: PROPOSED 2026-09-29
 delivers:
   usage_guardrails:
     what: the routing table and per-concept playbooks — the FIRST document an ask-agent must read
-    phase: [sources]
+    phase: [sources, datasets]
     belongs_to: reference   # move here when that topic exists
     path: references/usage_guardrails.md
     naming: fixed
@@ -32,7 +32,7 @@ delivers:
 
   questions_dashboard:
     what: the question corpus's read view — every oracle-relative verdict, derived once
-    phase: [sources]
+    phase: [sources, datasets]
     belongs_to: testing   # move here when that topic exists
     path: acceptance/questions_dashboard.json
     naming: fixed
@@ -47,7 +47,7 @@ delivers:
 
   suite_history_log:
     what: the append-only trend log — one deduped row per (suite, run_at, commit)
-    phase: [sources]
+    phase: [sources, datasets]
     belongs_to: testing   # move here when that topic exists
     path: acceptance/suite_history.jsonl
     naming: fixed
@@ -65,7 +65,7 @@ delivers:
 
   semantic_diagnostics:
     what: what the model says twice, and what disagrees — restated and contradicting facts
-    phase: [sources]
+    phase: [sources, datasets]
     belongs_to: ontology   # move here when that topic exists
     path: ontology/diagnostics.json
     naming: fixed
@@ -79,6 +79,21 @@ delivers:
       - {tool: mac-console/ui/src/views/ObjectsView.jsx, role: the diagnostics pane,
          reads: ["stats.facts", "stats.restated", "findings[].severity", "findings[].subject", "findings[].sites[].file"]}
     checkers: []
+
+  ontology_conformance_suite:
+    what: the conformance suite RENDERED from the concepts — markers, never literals
+    phase: [datasets]
+    belongs_to: ontology   # move here when that topic exists
+    path: acceptance/ontology_generated.yaml
+    naming: fixed
+    population: {of: one suite, from: «this artifact», empty_is: OK}
+    covers: every concept the ontology declares
+    lifecycle: re-derived
+    producers: [{tool: tools/mac_generate_ontology_tests.py, role: renders from the concepts}]
+    consumers:
+      - {tool: "tools/run_suite.py", role: "executes it", reads: ["properties[].id", "properties[].sql", "properties[].assertion"]}
+    checkers:
+      - {tool: "tools/check_vacuous_assertions.py", rejects: [LITERAL-ONLY, NEVER-ZERO, CONSTANT, ABSENT, UNRESOLVED]}
 
 watch:
   record: acceptance/guardrail_runs.json
