@@ -1,0 +1,111 @@
+metadata:
+  concept: NetRevenue
+  source: CONTOSO5
+  version: '1.0'
+  schema_version: 0.1.16
+  status: draft
+  owner: operator
+  confidence: I
+  provenance: authored
+concept:
+  name: NetRevenue
+  label: Net Revenue
+  class: measure
+  definition: >
+
+    What Contoso actually charged: quantity times the discounted price, per sale, summed. Read from
+    the rows: 681.72 net against 717.60 gross on one sale — the gap is the discount.
+
+
+    THE DEFAULT READING OF "REVENUE", and it is after discount. [[GrossRevenue]] is the same
+    figure before it. Answering one when a question meant the other moves every derived figure —
+    margin most of all — in a direction somebody will like.
+
+
+    IT IS IN USD. The sale's `currency_code` names what the customer paid in, not what this is
+    stated in; conversion goes through [[ExchangeRate]] at the sale's own order date.
+  semantics:
+    measure_type: mac.concept.column.measure_type.flow
+    unit: USD
+    axis_kinds:
+      order_date: mac.concept.axis_kind.time
+      delivery_date: mac.concept.axis_kind.time
+      customer_key: mac.concept.axis_kind.categorical
+      store_key: mac.concept.axis_kind.categorical
+      product_key: mac.concept.axis_kind.categorical
+      currency_code: mac.concept.axis_kind.categorical
+grounding:
+  sources:
+    - relation: v_contoso5_sales_line
+      key:
+        - order_key
+        - line_number
+      columns:
+        order_key:
+          role: key
+          identity: part
+        line_number:
+          role: key
+          identity: part
+        net_amount:
+          role: measure
+          measure:
+            type: mac.concept.column.measure_type.flow
+            unit: USD
+        net_price:
+          role: measure
+          measure:
+            type: mac.concept.column.measure_type.intensive
+            unit: USD
+        order_date:
+          role: period
+        delivery_date:
+          role: dimension
+        customer_key:
+          role: key
+          identity: reference
+        store_key:
+          role: key
+          identity: reference
+        product_key:
+          role: key
+          identity: reference
+        currency_code:
+          role: dimension
+  grain: one row per sale (order_key, line_number)
+contract:
+  rules:
+    - id: net_revenue.aggregation.never_from_unit_prices
+      subject: NetRevenue
+      kind: mac.concept.rule.aggregation
+      confidence: P
+      scope: CONTOSO5
+      binds:
+        - net_amount
+        - net_price
+      when: revenue is asked for over any set of sales
+      then: sum `{net_amount}` — it is already quantity x `{net_price}` on the row
+      never: >
+        sum or average `{net_price}`
+      why: >
+        a per-unit level added across sales is a number that still looks like money and understates the
+        true total on every row with quantity above one
+    - id: net_revenue.default.revenue_means_net
+      subject: NetRevenue
+      kind: mac.concept.rule.default
+      confidence: P
+      scope: CONTOSO5
+      binds:
+        - net_amount
+      when: a question says "revenue" or "sales" without saying net or gross
+      then: >
+        answer with `{net_amount}` and say NET — it is after discount; the figure before discount is
+        [[GrossRevenue]]
+      never: >
+        pick one silently
+      why: >
+        the gap between net and gross is the discount, so the wrong choice moves every derived
+        figure by exactly the amount somebody wanted to see
+governance:
+  owner: operator
+  last_reviewed: '2026-09-29'

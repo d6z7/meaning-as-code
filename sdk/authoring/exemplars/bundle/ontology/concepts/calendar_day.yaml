@@ -1,0 +1,76 @@
+metadata:
+  concept: CalendarDay
+  source: CONTOSO5
+  version: '1.0'
+  schema_version: 0.1.16
+  status: draft
+  owner: operator
+  confidence: I
+  provenance: authored
+concept:
+  name: CalendarDay
+  label: Calendar Day
+  class: reference
+  identity:
+    kind: iso
+    note: >-
+      The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity is
+      established. A calendar date is its own identity under the ISO calendar; `date_key` is an attribute, not the key.
+  definition: >
+
+    One day, with the parts of it a question names: year, quarter, month, weekday. 4,018 days,
+    2016-01-01 onward.
+
+
+    A2: a keyed dimension that facts point at → `reference`. Every date in the bundle points here
+    — a sale twice, a rate once — so "last March" means one thing everywhere.
+
+
+    NAMES RESOLVE THROUGH `data/lookups/contoso5_year_month.lookup.csv` and
+    `data/lookups/contoso5_year_quarter.lookup.csv` — a question says "January 2016" or "Q1 2016",
+    and those are the registers that turn the words into the day set.
+grounding:
+  sources:
+    - relation: dim_date
+      key:
+        - date_day
+      columns:
+        date_day:
+          role: key
+          identity: canonical
+        date_key:
+          role: housekeeping
+        year:
+          role: dimension
+        year_quarter:
+          role: dimension
+          rulings:
+            finer_than: year
+        year_month:
+          role: dimension
+          rulings:
+            finer_than: year_quarter
+        month_name:
+          role: dimension
+        day_of_week:
+          role: dimension
+  grain: one row per calendar day (date_day)
+contract:
+  rules:
+    - id: calendar_day.aggregation.month_name_does_not_sort
+      subject: CalendarDay
+      kind: mac.concept.rule.aggregation
+      confidence: P
+      scope: CONTOSO5
+      binds:
+        - month_name
+        - year_month
+      when: a monthly series is asked for
+      then: group by `{year_month}`, which orders correctly and keeps years apart
+      never: >
+        group by `{month_name}`
+      why: >
+        twelve values with no year merge every January into one row and sort alphabetically
+governance:
+  owner: operator
+  last_reviewed: '2026-09-29'

@@ -98,7 +98,7 @@ _EFFORT = "medium"
 _REGION = os.environ.get("AWS_REGION")
 _PROFILE = os.environ.get("AWS_PROFILE")
 _GLUE_REGION = os.environ.get("MAC_GLUE_REGION") or _REGION
-_EXEMPLAR = _REPO / "sdk" / "authoring" / "exemplars" / "geography" / "country.yaml"
+_EXEMPLAR = authoring.EXEMPLAR   # ONE home: the round-trip fixture bundle (sdk/authoring/authoring.py)
 _MANIFEST_SIDECAR = ".harvest_manifest.yaml"  # reproducibility ledger; NOT served/hashed/published
 
 

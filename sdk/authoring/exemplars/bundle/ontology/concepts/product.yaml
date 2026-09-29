@@ -1,0 +1,102 @@
+metadata:
+  concept: Product
+  source: CONTOSO5
+  version: '1.0'
+  schema_version: 0.1.16
+  status: draft
+  owner: operator
+  confidence: I
+  provenance: authored
+concept:
+  name: Product
+  label: Product
+  class: reference
+  semantics:
+    unit: USD
+  identity:
+    kind: fk_name
+    note: >-
+      The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity is
+      established. A surrogate `product_key` annotated by `product_name` and `product_code`, both 1:1 with it and neither the identity.
+  definition: >
+
+    A thing Contoso sells, at the level the shelf knows it: a SKU. 2,517 of them. Read from the
+    rows — "Contoso 4G MP3 Player E400 Green" and "... E400 Orange" are two product keys — so a
+    product here is a colour variant of a model, and the name carries brand, capacity, type, model
+    and colour all at once.
+
+
+    A2: a keyed dimension that facts point at → `reference`. Not `entity`: it has no life of its
+    own in this data beyond being sold.
+
+
+    ITS PRICES ARE LIST, NOT SOLD. `list_price` and `list_cost` are the catalogue; what a sale
+    actually charged is on [[Sale]]. Revenue from list price is the revenue Contoso would have had
+    if nobody ever discounted.
+
+
+    IT IS NOT ITS BRAND, CATEGORY OR COLOUR. Those are words a question uses and they will be
+    lifted to concepts of their own once the centre's direct needs are grounded — MODELLING-LOG
+    entry 6. Here they are the columns those concepts will be computed from.
+grounding:
+  sources:
+    - relation: dim_product
+      key:
+        - product_key
+      columns:
+        product_key:
+          role: key
+          identity: canonical
+        product_code:
+          role: dimension
+          rulings:
+            label_of: product_key
+            register: code
+        product_name:
+          role: dimension
+          rulings:
+            label_of: product_key
+            register: common
+        manufacturer:
+          role: dimension
+          rulings:
+            label_of: brand
+            register: legal
+        brand:
+          role: dimension
+        color:
+          role: dimension
+        category_name:
+          role: dimension
+        sub_category_name:
+          role: dimension
+        list_cost:
+          role: measure
+          measure:
+            type: mac.concept.column.measure_type.intensive
+            unit: USD
+        list_price:
+          role: measure
+          measure:
+            type: mac.concept.column.measure_type.intensive
+            unit: USD
+  grain: one row per product (product_key)
+contract:
+  rules:
+    - id: product.ambiguity.list_price_is_not_revenue
+      subject: Product
+      kind: mac.concept.rule.ambiguity
+      confidence: P
+      scope: CONTOSO5
+      binds:
+        - list_price
+        - list_cost
+      when: a question asks what a product sold for, or what it earned
+      then: read the amounts on [[NetRevenue]] and [[GrossRevenue]] — they are what was charged
+      never: >
+        multiply `{list_price}` by the quantity sold
+      why: >
+        the difference is every discount ever given, and the result is always too high
+governance:
+  owner: operator
+  last_reviewed: '2026-09-29'

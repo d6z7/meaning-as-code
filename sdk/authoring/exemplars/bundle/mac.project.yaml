@@ -1,0 +1,14 @@
+# The COLUMN STANDARD, as a bundle: four concepts on the current grammar, copied from contoso5 at
+# f23eec8 (2026-09-29). ONE HOME for two jobs — the composer's exemplar (sdk/cli/harvest.py shows
+# product.yaml to the model as the shape to imitate) and the round-trip fixture (tests/
+# test_column_roundtrip.py here; packages/mac-runtime/tests/test_column_roundtrip.py in the
+# platform, on a hermetic copy checked against these bytes). What the composer emits, the reader
+# loads — and this is the file both are held to.
+spec_version: mac.container/1
+metadata:
+  project: sdk/authoring/exemplars/bundle
+  data_domain: example
+  dataset: contoso5
+  label: The column standard — exemplar and round-trip fixture
+planes:
+  ontology: ontology

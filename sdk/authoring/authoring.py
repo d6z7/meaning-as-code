@@ -37,6 +37,53 @@ _ROOT = Path(__file__).resolve().parent.parent
 from sdk.grammar.resolve import load_schema as _load_schema  # ONE schema home
 
 SCHEMA = _load_schema()
+
+# ── THE EXEMPLAR IS THE FIXTURE, and the fixture is a bundle on the current standard ────────────
+# `exemplars/geography/country.yaml` was shown to the model as "the SHAPE to match" while carrying
+# schema_version 0.1.13, a flat `columns:` list, a `field_roles` block and `identity.canonical_key`
+# beside the key — every one of them forbidden by the prompt three lines above it. It validated,
+# because the flat list is kept legal, and no test ever loaded what the composer wrote. The
+# exemplar now lives in a bundle that tests/test_column_roundtrip.py validates, runs through this
+# module's own gates, and (when the platform is beside this repo) loads with the runtime parser.
+EXEMPLAR_BUNDLE = _ROOT / "authoring" / "exemplars" / "bundle"
+EXEMPLAR = EXEMPLAR_BUNDLE / "ontology" / "concepts" / "product.yaml"
+
+
+# ── CLOSED VOCABULARIES ARE READ, NEVER RE-LISTED (CONFORMANCE §2.1) ────────────────────────────
+# The prompt used to carry identity kinds, rule kinds, roles and measure types typed by hand, and
+# one of them (`resolved_axis`) had been retired for a day while the prompt still taught it. The
+# lists below are rendered from mac_vocabulary.yaml at import, the way `schema_generation()` renders
+# the version, so a term the vocabulary drops disappears from the prompt in the same change.
+def _vocabulary() -> dict:
+    for parent in Path(__file__).resolve().parents:
+        cand = parent / "mac_vocabulary.yaml"
+        if cand.is_file():
+            return yaml.safe_load(cand.read_text(encoding="utf-8")) or {}
+    raise FileNotFoundError("mac_vocabulary.yaml above sdk/authoring/authoring.py")
+
+
+def vocabulary_terms(namespace: str) -> list[str]:
+    """The terms of one closed vocabulary block, in declared order — e.g. `concept.identity`."""
+    block = _vocabulary().get(namespace) or {}
+    terms = block.get("terms") or block.get("members") or {}
+    return list(terms.keys() if isinstance(terms, dict) else terms)
+
+
+def _term_glosses(namespace: str) -> str:
+    block = _vocabulary().get(namespace) or {}
+    lines = []
+    for term, body in (block.get("terms") or {}).items():
+        gloss = body if isinstance(body, str) else (body.get("definition") or body.get("description") or "")
+        first = str(gloss).strip().split(". ")[0].rstrip(".")
+        lines.append(f"    {term:<12} {first}")
+    return "\n".join(lines)
+
+
+def concept_classes() -> list[str]:
+    """The schema's concept classes, minus `meta` — that class is the runtime's own meaning plane,
+    never authored for a source."""
+    enum = SCHEMA["$defs"]["ConceptFile"]["properties"]["concept"]["properties"]["class"]["enum"]
+    return [c for c in enum if c != "meta"]
 _CF = dict(SCHEMA["$defs"]["ConceptFile"])
 _CF["$defs"] = SCHEMA["$defs"]
 _CONCEPT_VALIDATOR = jsv.validator_for(SCHEMA)(_CF)
@@ -45,20 +92,17 @@ _CONCEPT_VALIDATOR = jsv.validator_for(SCHEMA)(_CF)
 # vocabularies (that's how the misses happened). For any enum error we first reconcile
 # spelling generically (underscore/hyphen/case) against the schema's real values, then
 # fall back to this small SEMANTIC map for genuine near-misses (not mere spelling).
+# 2026-09-29: five key-shaped guesses (surrogate/primary_key/pk/id/natural_key -> code) were
+# removed — a key's KIND cannot be told from the word "id", which is exactly why the runtime parser
+# refuses to guess it; and `semi_additive -> non-additive` mapped onto a scale the schema retired
+# (aggregation_effect is additive | average | none), so the entry could never apply.
 _SEMANTIC = {
-    "surrogate": "code",
-    "primary_key": "code",
-    "pk": "code",
-    "id": "code",
-    "natural_key": "code",
     "compound": "composite",
     "namespace": "namespace_code",
     "foreign_key": "fk_name",
     "fk": "fk_name",
     "I": "P",
     "Q": "P",  # rule confidence scale C/P/R
-    "semi_additive": "non-additive",
-    "semi-additive": "non-additive",  # only additive/non-additive exist
 }
 
 SYS_PROMPT = """You are a MAC ontology author. MAC models a data source as CONCEPT files (YAML). Author ONE concept for the business notion named below.
@@ -71,7 +115,7 @@ A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and re
 
 Shape of a concept file:
 - metadata: {concept, source, version, schema_version: '{SCHEMA_GENERATION}', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
-- concept: {name, label, class, identity?, definition}   # class is EXACTLY one of: entity | event | measure | enumeration | reference | grouping ; identity.kind ∈ iso|code|namespace_code|fk_name|composite|resolved_axis|sme_pending
+- concept: {name, label, class, identity?, definition}   # class is EXACTLY one of: {CLASSES} ; identity.kind ∈ {IDENTITY_KINDS}
 - grounding: {sources: [{relation, key, columns: {<col>: {role, identity?, measure?}}}], grain: "one row per ..."}
   EVERYTHING ABOUT A COLUMN GOES ON THE COLUMN. `columns` is a MAP keyed by column name, not a list of
   names, and it is the ONLY place a column's facts are declared:
@@ -90,11 +134,11 @@ Shape of a concept file:
   composite key; `reference` marks a foreign key. Several columns may carry `measure:` when they compose
   ONE quantity (Quantity x NetPrice); then `semantics.unit` on the concept states the composed unit.
   DO NOT WRITE A `field_roles:` BLOCK. It is PROJECTED from these roles — writing both gives one fact
-  two homes that can drift, and `check_column_spec` reports a concept that declares both. Do not write
+  two homes that can drift, and check_delivery_consistency's ONE-HOME invariant reports both. Do not write
   the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
   DO NOT WRITE `identity.canonical_key` under `concept:` when a column carries `identity: canonical` —
   same reason: the key is a column fact, and declared twice the two can disagree.
-- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.concept.rule.resolution|guarantee|exclusion|ambiguity, confidence, scope: ACME, binds: [<cols>], when, then, never}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
+- contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.concept.rule.<{RULE_KINDS}>, confidence, scope: ACME, binds: [<cols>], when, then, never, why}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
 CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and schema-enforced:
@@ -107,19 +151,15 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 - a FACT / KPI / measure table (numeric values you aggregate) → class: measure, and you MUST add a `concept.semantics:` block:
       semantics:
         purpose: <one line>
-        measure_type: mac.concept.column.measure_type.<flow|stock|intensive|precomputed|target>
+        measure_type: mac.concept.column.measure_type.<{MEASURE_TYPES}>
         axis_kinds: {<axis>: mac.concept.axis_kind.<time|categorical>, ...}   # one entry per aggregation axis
   DO NOT WRITE AN `additivity:` BLOCK. How the measure folds along each axis is DERIVED from
   (measure_type x axis_kind) by the law in mac_vocabulary.yaml. Writing it out would state the same
   fact twice — and because you would be authoring both the premise and the conclusion, the two can
   drift: a concept once declared `Target` and wrote `geography: additive`, which the law forbids, and
   a value anchor summed that measure across models for weeks on the strength of it.
-  CHOOSE THE TYPE CAREFULLY — it is the whole claim:
-    Flow        accrues per period and accumulates (units sold in a period)         -> sums over time
-    Stock       a level read at a point in time (inventory on hand)                 -> read at period end
-    Intensive   meaningful only as an average (a duration, an age, a rate)          -> never summed
-    Precomputed exists ONLY at the grains it was computed for; locate the row and read it
-    Target      a planning target, not an observed quantity                         -> not foldable
+  CHOOSE THE TYPE CAREFULLY — it is the whole claim (mac_vocabulary.yaml#concept.column.measure_type):
+{MEASURE_TYPE_GLOSSES}
 - an EVENT table (rows that track a lifecycle / state transitions) → class: event, and you MUST add a TOP-LEVEL `lifecycle:` block using ONLY these keys (any other key is schema-rejected):
       lifecycle:
         phases: [<phase name>, ...]        # optional siblings: phase_sequence, states, boundary, note — and NOTHING else
@@ -134,7 +174,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 
 Authoring rules:
 - Ground on the REAL table and columns provided. NEVER invent a column that isn't in the schema.
-- Give every meaningful column a role from mac.concept.column.role: key (identity/join), dimension (filterable, groupable), measure (numeric payload, folded as its measure_type allows), period (THE reporting date when a relation carries several), housekeeping (pipeline bookkeeping — validity windows, load stamps — never offered to a question). `attribute` is not a role.
+- Give every meaningful column a role from mac.concept.column.role — {ROLES}: key (identity/join), dimension (filterable, groupable), measure (numeric payload, folded as its measure_type allows), period (THE reporting date when a relation carries several), housekeeping (pipeline bookkeeping — validity windows, load stamps — never offered to a question). `attribute` is not a role.
 - identity.canonical_key is a SINGLE column name (a string). If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), set identity.kind: composite and OMIT canonical_key entirely — NEVER set canonical_key to a list.
 - Write a precise 2-4 sentence definition anchored in the schema + context.
 - WHERE MAC HAS A CANON FOR A RULE SHAPE, BIND — DO NOT WRITE THE CLAUSES. Supply
@@ -179,7 +219,16 @@ Authoring rules:
 # SUBSTITUTED AT IMPORT, because SYS_PROMPT is a plain literal passed straight to the model: a
 # `{SCHEMA_GENERATION}` placeholder left in it would reach the author verbatim, which is worse than the
 # stale `0.1.13` it replaced.
-SYS_PROMPT = SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
+SYS_PROMPT = (
+    SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
+    .replace("{CLASSES}", " | ".join(concept_classes()))
+    .replace("{IDENTITY_KINDS}", "|".join(vocabulary_terms("concept.identity")))
+    .replace("{RULE_KINDS}", "|".join(vocabulary_terms("concept.rule")))
+    .replace("{ROLES}", " | ".join(vocabulary_terms("concept.column.role")))
+    .replace("{MEASURE_TYPES}", "|".join(vocabulary_terms("concept.column.measure_type")))
+    .replace("{MEASURE_TYPE_GLOSSES}", _term_glosses("concept.column.measure_type"))
+)
+assert "{" + "CLASSES}" not in SYS_PROMPT and "resolved_axis" not in SYS_PROMPT
 
 PLAN_PROMPT = """You are a MAC ontology architect. You are given EVERY produced relation of one data source, plus SME context. Propose the BUSINESS NOTIONS this source should expose as MAC concepts.
 
