@@ -26,7 +26,9 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import io
 import re
+import tokenize
 import sys
 
 import yaml
@@ -115,19 +117,38 @@ def vocabulary_terms(v: dict) -> dict[str, list[str]]:
 
 
 # ── the trace ─────────────────────────────────────────────────────────────────────────────────
+def strip_comments(text: str) -> list[str]:
+    """The file's lines with every Python COMMENT token blanked, line numbers kept.
+
+    A `#` inside a string literal is not a comment: `"mac_rules.yaml#mac.authoring.reference_markup"`
+    is a citation, and the naive `split("#")` that stood here read it as one and reported the
+    rule's own enforcer as no reader (MEASURED 2026-09-29). tokenize knows the difference; on a
+    file tokenize cannot read, the naive cut stands."""
+    lines = text.splitlines()
+    try:
+        toks = list(tokenize.generate_tokens(io.StringIO(text).readline))
+    except (tokenize.TokenError, SyntaxError, IndentationError):
+        return [ln.split("#", 1)[0] for ln in lines]
+    for tok in toks:
+        if tok.type == tokenize.COMMENT:
+            (row, col), (_, end) = tok.start, tok.end
+            ln = lines[row - 1]
+            lines[row - 1] = ln[:col] + " " * (end - col) + ln[end:]
+    return lines
+
+
 def load_runtime(runtime: pathlib.Path, label: str = "runtime") -> list[tuple[str, list[str]]]:
     files = []
     for p in sorted(runtime.rglob("*.py")):
         if "__pycache__" in p.parts or p.name.startswith("test_") or p.name in ("check_declarations_read.py",):
             continue
-        files.append((f"{label}:{p.relative_to(runtime).as_posix()}", p.read_text(encoding="utf-8", errors="replace").splitlines()))
+        files.append((f"{label}:{p.relative_to(runtime).as_posix()}", strip_comments(p.read_text(encoding="utf-8", errors="replace"))))
     return files
 
 
 def find(files, patterns: list[re.Pattern]) -> str | None:
     for rel, lines in files:
-        for i, ln in enumerate(lines, 1):
-            s = ln.split("#", 1)[0]
+        for i, s in enumerate(lines, 1):
             for rx in patterns:
                 if rx.search(s):
                     return f"{rel}:{i}"
