@@ -70,6 +70,10 @@ if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
   usage
   exit 0
 fi
+if [ "${1:-}" = "--self-test" ]; then
+  # The runner's own verdict logic lives in gate_register.py (pure, so every branch is reachable).
+  exec python3 "$HERE/gate_register.py" --self-test
+fi
 
 if [ "${1:-}" = "" ]; then
   usage >&2
@@ -83,6 +87,12 @@ if [ ! -d "$BUNDLE_ROOT" ]; then
   exit 2
 fi
 BUNDLE_ROOT="$(cd "$BUNDLE_ROOT" && pwd)"
+
+# THE STANDING-FAILURE REGISTER IS READ FIRST, so a malformed or ownerless register costs 0 s, not
+# 110 s, and exits 2 (could-not-run) rather than turning every declared red into an undeclared one.
+FRAMEWORK_REGISTER="$HERE/framework_gate_failures.yaml"
+BUNDLE_REGISTER="$BUNDLE_ROOT/acceptance/standing_failures.yaml"
+python3 "$HERE/gate_register.py" --check "$FRAMEWORK_REGISTER" "$BUNDLE_REGISTER" || exit 2
 
 # Portable per-invocation timeout. macOS carries neither `timeout` (GNU coreutils) nor a guarantee
 # of `gtimeout` (brew coreutils); a runner that hangs forever because ONE checker hangs is worse
@@ -118,7 +128,16 @@ run_capped() {
 # be one whose subject is the repository; anything else belongs on the bundle path. And drift stays
 # visible in both directions: a gate NOT listed here that refuses a bundle root still exits 2 and
 # still fails this suite, so nothing is quietly forgiven by omission.
-REPO_SUBJECT_GATES=(check_protocol.py)
+# 2026-09-29: seven more, MEASURED bare rather than assumed. The header above once claimed moving
+# them would make the suite greener; run bare, five of the eight that refused a bundle root were
+# FAILING (canon_documented, projection_field_parity, query_grammar, topology, vocabulary_parity)
+# and two PASS (guard_scope, wiki_citations). Could-not-run had hidden five reds. `check_guardrails`
+# needs a flag the runner has no convention for and stays declared in the register as cannot-open.
+# `check_dangling_references` judges THIS repository's documents against THIS repository's baseline;
+# handed a bundle root it reported 58 new and 35 stale — a calling-convention miss, not a finding.
+REPO_SUBJECT_GATES=(check_protocol.py check_canon_documented.py check_projection_field_parity.py
+  check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
+  check_wiki_citations.py check_dangling_references.py)
 
 repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
   local n="$1" g
@@ -142,6 +161,7 @@ declare -a NOTES
 declare -a NO_SELFTEST
 
 T0=$(date +%s)
+RAW_TSV="$(mktemp)"   # gate<TAB>verdict<TAB>last line — what gate_register.py reconciles at the end
 
 for checker in "$HERE"/check_*.py; do
   name="$(basename "$checker")"
@@ -192,6 +212,7 @@ for checker in "$HERE"/check_*.py; do
   fi
 
   printf '  %-42s %s\n' "$name" "$verdict"
+  printf '%s\t%s\t%s\n' "$name" "$verdict" "$last_run" >>"$RAW_TSV"
   rm -f "$out_run" "$out_st"
 done
 
@@ -215,18 +236,15 @@ if [ -n "${NO_SELFTEST:-}" ] && [ "${#NO_SELFTEST[@]}" -gt 0 ]; then
   done
 fi
 
-echo
-if [ "$FAIL" -eq 0 ] && [ "$CNR" -eq 0 ]; then
-  echo "PASS: run_framework_gates — ${PASS}/${TOTAL} green over ${BUNDLE_ROOT}," \
-       "$((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this repository;" \
-       "self-test arm ${ST_PASS}/${ST_DECL} green over ${ST_DECL} declaring one of ${TOTAL}" \
-       "(${ST_NONE} declare none — named above, judged on the bundle run alone)" \
-       "($((T1 - T0))s)"
-  exit 0
-fi
-echo "FAIL: run_framework_gates — ${PASS}/${TOTAL} green, ${FAIL} failing, ${CNR} could-not-run" \
-     "over ${BUNDLE_ROOT}, $((TOTAL - REPO_SUBJ)) judged the bundle and ${REPO_SUBJ} judged this" \
-     "repository; self-test arm ${ST_PASS}/${ST_DECL} green, ${ST_FAIL} failing, ${ST_CNR}" \
-     "could-not-run, over ${ST_DECL} declaring one of ${TOTAL} (${ST_NONE} declare none — named" \
-     "above, judged on the bundle run alone) ($((T1 - T0))s)"
-exit 1
+# THE VERDICT IS THE REGISTER'S, NOT THE COUNT'S. Exit 1 fires only on NEWS — a red nobody
+# declared, a declaration that outlived its red, a declared kind that is not what happened. A PASS
+# line may carry standing failures, but every one is printed above it with an owner; it can never
+# say a bare PASS. The counters this script kept are handed over so no denominator moves.
+python3 "$HERE/gate_register.py" --reconcile "$RAW_TSV" \
+  --registers "$FRAMEWORK_REGISTER" "$BUNDLE_REGISTER" --bundle "$BUNDLE_ROOT" \
+  --counts PASS=$PASS FAIL=$FAIL CNR=$CNR TOTAL=$TOTAL REPO_SUBJ=$REPO_SUBJ \
+          BUNDLE_JUDGED=$((TOTAL - REPO_SUBJ)) ST_PASS=$ST_PASS ST_DECL=$ST_DECL ST_FAIL=$ST_FAIL \
+          ST_CNR=$ST_CNR ST_NONE=$ST_NONE SECS=$((T1 - T0))
+rc=$?
+rm -f "$RAW_TSV"
+exit $rc

@@ -104,6 +104,27 @@ delivers:
     checkers:
       - {tool: "tools/check_vacuous_assertions.py", rejects: [LITERAL-ONLY, NEVER-ZERO, CONSTANT, ABSENT, UNRESOLVED]}
 
+  standing_failures:
+    what: the reds the framework gate runner may carry for THIS bundle — each with an owner, a since, a reason, and what makes it green
+    phase: [sources, datasets]
+    belongs_to: testing   # move here when that topic exists
+    path: acceptance/standing_failures.yaml
+    naming: fixed
+    population: {of: one register, from: «this artifact», empty_is: OK}
+    lifecycle: authored-once
+    # WRITTEN BY A PERSON, FROM A REAL RUN, AND NEVER RE-DERIVED: it is the decision to carry a red,
+    # not a measurement of one. A red nobody declared is NEWS and the runner exits 1; a declared red
+    # that has gone green is STALE and the runner exits 1; a register with no owner, a scope other
+    # than bundle:<name>, or a `standing` that disagrees with its own entry count is refused before
+    # a single gate runs (exit 2). Repository-level reds live in tools/framework_gate_failures.yaml,
+    # never here — one fact, one home, and the scope rule is enforced, not advised.
+    producers: [{tool: tools/gate_register.py, role: refuses a malformed register; a person writes the entries}]
+    consumers:
+      - {tool: tools/run_framework_gates.sh, role: reads it before every run and reconciles every verdict against it at the end,
+         reads: ["scope", "standing", "entries.{gate}.kind", "entries.{gate}.class", "entries.{gate}.owner",
+                 "entries.{gate}.since", "entries.{gate}.reason", "entries.{gate}.expected"]}
+    checkers: [{tool: tools/gate_register.py, role: "--check: spec, scope, owner, dates, standing == entries; --self-test 22/22"}]
+
 watch:
   record: acceptance/guardrail_runs.json
   written_by: tools/check_guardrails.py

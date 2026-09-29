@@ -1,0 +1,72 @@
+# tools/framework_gate_failures.yaml — the reds run_framework_gates.sh may carry, BY GATE, whose
+# subject is THIS REPOSITORY. Read by tools/gate_register.py before every run.
+#
+# REMOVE AN ENTRY WHEN ITS GATE GOES GREEN — the runner fails as STALE if you do not.
+# An entry with no owner is refused (exit 2). A bundle's own reds live with the bundle, in
+# <bundle>/acceptance/standing_failures.yaml (scope: bundle:<name>), never here.
+#
+# AUTHORED FROM A REAL RUN (2026-09-29, over contoso5: 57/79 green) — every `reason` is the gate's
+# own last line, every `since` is the first record we have, and an owner is `unknown` where the
+# output gives no basis. Nothing here is a guess about a gate nobody ran.
+spec_version: mac.gate_failures/1
+scope: repo
+declared: 2026-09-29
+review_by: 2026-12-29
+standing: 9
+entries:
+  check_protocol.py:
+    kind: fail
+    owner: operator
+    since: 2026-09-13
+    reason: "240 code-bearing commits examined over the DECLARED range 599b6c1..d5f8a9b, 34 covered, 206 orphaned over 59 entries; floor SET of 9 shas, 0 cleared"
+    expected: "every orphan is a subset of the floor set in tools/protocol_floor.txt — the backfill lands, or the operator rules a new BASE"
+  check_artifact_conformance.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "self-test 26/27: 'the REAL registry holds its own rules' fails — 27 registered structured kinds declare no shape, so validate_schema cannot route them"
+    expected: "every registered structured kind names a schema definition, or moves to a guardrail topic and the registry reaches zero (PROTOCOL-2026-09-29_guardrails Part 6)"
+    record: decisions/PROTOCOL-2026-09-29_guardrails.md
+  check_artifact_has_producer.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "27 defects over 40 families: 20 registered-derived families name no command that reaches their producer, 2 in-plane families are unregistered"
+    expected: "each registered-derived kind declares the command that produces it; the 2 in-plane families are registered or declared out of scope"
+  check_projection_field_parity.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "self-test 2 of 7 assertion groups failed; run bare: 9 defects over 3 pairs"
+    expected: "the projected fields and their declarations agree on all 3 pairs; self-test 7/7"
+  check_query_grammar.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "3 disagreements between grammar/query_grammar.yaml and the runtime (DRIFT R2 'sum')"
+    expected: "0 disagreements — the grammar is the declaration and the runtime reads it"
+  check_topology.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "over 5 capabilities with a marker checked over 1183 tracked files, 16 declared homes: the credential plan appears in tools/mac_references.py and tools/mac_sample.py outside its declared home"
+    expected: "every capability marker sits in a home TOPOLOGY.md's table declares"
+  check_vocabulary_parity.py:
+    kind: fail
+    owner: operator
+    since: 2026-09-27
+    reason: "2 of 12 governed slots disagree with the vocabulary: TableFile.columns.role (schema-only audit, delivery_axis, unknown) and DQ issue status (schema rejected, waived vs vocabulary wont_fix)"
+    expected: "the operator rules each slot; tools/check_vocabulary_parity.py --write lands the ruling"
+  check_seam_contract.py:
+    kind: fail
+    owner: platform
+    since: 2026-09-29
+    reason: "objects seam: 17 of 87 opened bundle files (profiles, lineage) are named by no inputs[] entry, and corrupting them changes nothing (DEGRADE_UNSIGNALLED); 2 of 3 seams conform"
+    expected: "3 of 3 seams conform — the 17 inputs declared and a missing one signalled"
+  check_guardrails.py:
+    kind: could-not-run
+    class: cannot-open
+    owner: platform
+    since: 2026-09-29
+    reason: "takes --framework / --propose / --inspect / --self-test and refuses a bare bundle root; the runner has one calling convention"
+    expected: "a runner convention for flag-driven gates, or a default subject in the gate; its --self-test is 4/4"
