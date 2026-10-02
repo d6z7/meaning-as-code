@@ -332,6 +332,33 @@ def _load_answer(acc: Path, qid: str):
     return doc if isinstance(doc, dict) else None
 
 
+def _load_reference(acc: Path, qid: str):
+    """The APPROVED answer, or None where nobody approved one.
+
+    `acceptance/reference/<id>.yaml` is the plane guardrails/strategy.yaml stage 9 names: "the SME
+    approves the answer; pass/fail is the only verdict, and the approved number is the reference".
+    It reaches `flags.evaluate` the way the oracle and the anchor do — resolved here, graded there,
+    so the evaluator stays pure.
+
+    WHY IT WAS MISSING, measured 2026-09-30: the board read the oracle and the anchors plane and not
+    this one, so RC01 — run, read and approved at 11, answered 11 — projected as `unproven` with
+    "no independent anchor for this question". The approval was on disk and no square could show it.
+
+    Unreadable is treated as absent, for `_load_answer`'s reason: one bad document must not blank
+    the column for every other question.
+    """
+    if not _io.is_safe_qid(qid):
+        return None
+    p = acc / "reference" / f"{qid}.yaml"
+    if not p.is_file():
+        return None
+    try:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return doc if isinstance(doc, dict) else None
+
+
 # --------------------------------------------------------------------------- #
 # Capture-derived row glyphs (Process A: what the engine DID — no oracle involved)
 # --------------------------------------------------------------------------- #
@@ -457,6 +484,7 @@ def build(bundle: Path) -> dict:
         answer = _load_answer(acc, qid)
         anchor = index["graded"].get(qid)
         advisory = index["advisory"].get(qid, [])
+        reference = _load_reference(acc, qid)
 
         ev = _flags.evaluate(
             corpus_row=q,
@@ -467,6 +495,15 @@ def build(bundle: Path) -> dict:
             advisory_anchors=advisory,
             acceptance_fingerprint=acc_fp,
             concept_rules=ont_rules["rules"],
+            reference=reference,
+            # BOTH FINGERPRINTS REACH THE EVALUATOR. The ontology one was computed here for
+            # the dashboard header and never compared against a capture -- see
+            # flags._warnings. A board that grades this morning's answers against this
+            # evening's declarations must say so.
+            ontology_fingerprint=ont_fp,
+            # THE BUNDLE ITSELF, so the grader can read its naming registers: a code and its label
+            # are one answer, and `name_register` declares which -- see acceptance/registers.py.
+            bundle_root=str(bundle),
         )
 
         sql = _sql_statements(answer)
@@ -493,12 +530,29 @@ def build(bundle: Path) -> dict:
                 "sql_count": len(sql),
                 "captured_at": answer.get("captured_at") if isinstance(answer, dict) else None,
                 # --- what flags.evaluate ruled: copied straight through, nothing added ------------
-                "verdict": ev["verdict"],
+                #
+                # `verdict` IS NOT PUBLISHED. Operator, 2026-10-02: "we do not want to have 2
+                # different KPI mechanisms". This document carried THREE -- the two flags
+                # (`manual` + `ontology` -> `score`), the eight-word verdict vocabulary
+                # (`proven | routed | unproven | failed | error | unrun | no-oracle | oracle-error`
+                # -> `by_verdict`) and the four graded flags (`flags` -> `by_flag`) -- and the board
+                # header counted the SECOND while the rows showed the FIRST. Measured the same day:
+                # 37 proven / 19 routed / 9 failed on screen against 35 pass / 11 fail from the
+                # producer. The operator read one scoreboard and I reported the other.
+                #
+                # The ruling is older than that: "pass/fail is the only verdict ... the 8-verdict
+                # vocabulary was invented here and replaced a working pass/fail". It is gone.
+                #
+                # `flags` SURVIVES AS DETAIL AND NEVER AS A KPI -- operator, 2026-10-01: "internal
+                # flags how far did you go you can show on the detail pge". It is per question, on
+                # that page, and is rolled up nowhere.
                 "flags": ev["flags"],
                 "warnings": ev["warnings"],
                 "assertion_counts": ev["assertion_counts"],
                 "anchor_id": ev["anchor_id"],
                 "advisory_anchor_ids": ev["advisory_anchor_ids"],
+                # --- the two flags the dashboard leads with (see `_two_flags`) --------------------
+                **_two_flags(reference, ev["flags"], answer),
                 # --- the three files the detail page reads through the generic file endpoint ------
                 # Null means "there is no such file", which is exactly what the page must render; a
                 # path to a file that does not exist would be a 404 the operator has to interpret.
@@ -521,7 +575,6 @@ def build(bundle: Path) -> dict:
         # renders on an unchanged client instead of silently dropping a bucket.
         "flag_ids": list(_flags.FLAG_IDS),
         "flag_states": list(_flags.FLAG_STATES),
-        "verdicts": list(_flags.VERDICTS),
         "run_statuses": list(_grade.RUN_STATUSES),
         "warning_codes": list(_flags.WARNING_CODES),
         "anchors": _anchor_summary(index),
@@ -556,6 +609,135 @@ def build(bundle: Path) -> dict:
     acc.mkdir(parents=True, exist_ok=True)
     _io.atomic_write(acc / "questions_dashboard.json", json.dumps(dash, indent=2) + "\n")
     return dash
+
+
+# --------------------------------------------------------------------------- #
+# THE TWO FLAGS A READER ACTUALLY ASKS FOR
+# --------------------------------------------------------------------------- #
+#
+# OPERATOR RULING, 2026-10-01: "the status flags are meaningless as they are all of apparent same
+# value/importance, whereby i am interested only if the test did pass or not ... on the dashboard
+# side i expect to see two flags: the first is if the manual answer found, the second is if the
+# correct ontology answer has been found".
+#
+# WHY THE EXISTING HEADER CANNOT ANSWER THAT. It carries three vocabularies at once -- 6 run
+# statuses, 8 verdicts, 4 flags x 5 states -- about 26 numbers rendered at equal weight, and the one
+# that reads as success does not mean what a reader assumes. MEASURED on the worked bundle, the same
+# projection these counts come from:
+#
+#   by_verdict.proven = 26          but only 32 of 83 questions have a MANUAL answer at all,
+#                                   and 6 of the passing value flags were graded against a DERIVED
+#                                   anchor with no person involved.
+#   the truth against a person:     20 agree, 1 disagrees, 6 did not answer,
+#                                   5 the grader cannot compare.
+#
+# So `proven` can mean "agrees with a number the tool derived itself". These two flags separate the
+# human's answer from the tool's, and they are computed HERE, in the producer, because the board
+# "renders stats verbatim and computes no verdict of its own" -- one producer per claim is why the
+# screen and the export cannot disagree.
+#
+# THE SECOND FLAG HAS THREE STATES AND NOT TWO, deliberately. `ungradeable` is OUR debt, not a
+# question's result: five approved answers are SHAPES (`{rows: 8, cols: [...]}`) and `_flag_value`
+# grades scalar targets only. Counting those as failures would blame the corpus for a gap in the
+# grader; counting them as passes would be a lie. They are named, separately, so the number stays
+# visible until the grader can compare a shape.
+_UNGRADEABLE = ("is a dict", "only scalar")
+
+
+def _two_flags(reference, flags: list, answer: dict | None = None) -> dict:
+    """`manual` and `ontology`: did a person answer this, and did the ontology get that answer?
+
+    Reads the `value` flag that `sdk.acceptance.flags` already computed -- this adds no second
+    judgement, only the reading a dashboard needs.
+
+    AND IT REPORTS WHAT THE ENGINE DID, with or without a reference. Operator, 2026-10-02:
+    "STORE-07 ... has been run ... but there is no trace on the dashboard of it. thus i need you to
+    at least put executed in ontology answer column if it came to the conclusion. or other denied or
+    something." Measured on STORE-07: `run_status: executed`, five stages `ok`, answer "Store: 14",
+    `result.value: 14.0` -- and the ontology column read only "no manual answer exists for this
+    question", because `agrees` is a GRADE and a grade needs something to grade against. So a
+    question that ran, answered, and was never approved looked identical to one that never ran.
+    `outcome` and `value` are the engine's own facts and are reported either way; `agrees` stays
+    null, because nothing was compared.
+    """
+    expected = (reference or {}).get("expected")
+    found = reference is not None and expected is not None
+    value = next((f for f in flags or [] if f.get("id") == "value"), None) or {}
+    state, why = value.get("state"), str(value.get("reason") or "")
+
+    if not found:
+        agrees, detail = None, "no manual answer exists for this question"
+    elif state == "pass":
+        agrees, detail = "yes", why or "the ontology's answer agrees with the approved one"
+    elif state == "fail":
+        agrees, detail = "no", why
+    elif any(token in why for token in _UNGRADEABLE):
+        agrees, detail = "ungradeable", why
+    else:
+        # Everything else with a manual answer present means the engine produced nothing to grade --
+        # a refusal or a clarification. From the side of the person who asked, that is not an
+        # inapplicable check: it is the answer not being found.
+        agrees, detail = "no", why or "the engine produced no answer to compare"
+
+    return {
+        "manual": {
+            "found": found,
+            "expected": expected,
+            "approved_by": (reference or {}).get("approved_by"),
+            "approved_at": (reference or {}).get("approved_at"),
+            # APPROVED HERE, OR INHERITED. 31 of this bundle's 32 references carry `cloned_from`
+            # another bundle and one was approved on this plane. A number approved against a
+            # different served view is evidence, not proof, and a reader must be able to see which.
+            "approved_here": bool((reference or {}).get("approved_here")),
+            "cloned_from": (reference or {}).get("cloned_from"),
+            "note": (reference or {}).get("note"),
+        },
+        "ontology": {
+            "agrees": agrees,
+            "why": detail,
+            # WHAT THE ENGINE DID, independent of grading: `executed` with a figure, or `refused` /
+            # `clarified` / `error` with the reason. A reader looking at the ontology column wants to
+            # know whether the engine reached a conclusion before they ask whether it was the right
+            # one, and those are two questions.
+            **_engine_outcome(answer),
+        },
+    }
+
+
+#: `route` as a capture records it -> the word the board shows. `wiki+athena` means the plan ran.
+_ROUTE_OUTCOME = {
+    "wiki+athena": "executed",
+    "refusal": "refused",
+    "clarification": "clarified",
+}
+
+
+def _engine_outcome(answer: dict | None) -> dict:
+    """`{outcome, value, headline}` from the capture — the engine's own account of itself.
+
+    Nothing here grades. `outcome` is the capture's route read through `_ROUTE_OUTCOME`, narrowed to
+    `error` when the capture records one, and `unrun` when there is no capture at all -- which is the
+    state that was previously indistinguishable from "ran but never approved".
+    """
+    if not answer:
+        return {"outcome": "unrun", "value": None, "headline": None}
+    if answer.get("error"):
+        return {"outcome": "error", "value": None, "headline": str(answer.get("error"))[:200]}
+    result = answer.get("result") or {}
+    route = str(answer.get("route") or "")
+    outcome = _ROUTE_OUTCOME.get(route) or (route or "unrun")
+    value = result.get("value")
+    if value is None:
+        rows = result.get("sample_rows")
+        # A TABLE ANSWER HAS NO SCALAR, and reporting None for it reads as "produced nothing" --
+        # which is how a `rank`/`limit` answer came to show `no_value` on the detail page.
+        if isinstance(rows, list) and rows:
+            value = f"{result.get('rows')} row(s)" if len(rows) > 1 else rows[0]
+    return {
+        "outcome": outcome,
+        "value": value,
+        "headline": answer.get("answer") if isinstance(answer.get("answer"), str) else None,
+    }
 
 
 def _anchor_summary(index: dict) -> dict:
@@ -593,51 +775,62 @@ def _stats(rows: list) -> dict:
     operator nothing about the corpus. Each bucket below is zero-filled across its full vocabulary
     so a state that is absent today renders as an explicit 0 rather than vanishing from the board.
 
-    TWO DENOMINATORS, BOTH EXPLICIT, AND THEY ARE NOT THE SAME NUMBER.
-        ``by_run_status`` and ``by_verdict`` are censuses of the whole corpus and sum to ``total``.
-        ``by_flag`` is a census of the questions that were actually EVALUATED and sums to
-        ``by_verdict``'s four gradeable buckets (proven + routed + unproven + failed) — which is
-        why that total is present in the same block and needs no separate key.
+    ONE SCOREBOARD. Operator, 2026-10-02: "we do not want to have 2 different KPI mechanisms".
+        This block emitted THREE: ``score`` (the two flags), ``by_verdict`` (eight verdict words)
+        and ``by_flag`` (four graded flags). The board header counted the SECOND while the rows
+        showed the FIRST, and on the same dashboard they read 37 proven / 19 routed / 9 failed
+        against 35 pass / 11 fail. Two rollups of one corpus is one too many, whichever is right.
 
-        A row short-circuited by the precondition ladder (unrun, error, no-oracle, oracle-error)
-        carries three ``na`` flags reading "not evaluated: <verdict>". Counting those would put 72
-        contentless ``na``s into the ``value`` bucket on the reference corpus and bury the 14 that
-        carry the finding that actually matters — questions that ran correctly and have no anchor
-        capable of proving their number. The ladder rows are already counted, once, in
-        ``by_verdict``; counting them twice tells nobody anything new.
+        ``score`` is the scoreboard and sums to ``total``. ``manual_answers`` says how many
+        questions have something to be graded against, which is ``score``'s own denominator.
 
-        Membership is decided by the ``outcome`` flag, not by a second list of verdict names:
-        ``outcome`` is the one check available on every graded row and is documented never to be
-        ``na`` when an oracle and a capture both exist (§4.3.2). So ``outcome != "na"`` IS
-        "this row reached the checks", with no vocabulary to keep in step.
+        ``by_run_status`` STAYS, and is not a second KPI: `executed | refused | clarified | error`
+        is what the ENGINE DID, a fact about the run, not a judgement of it -- which is exactly why
+        a question with no approved answer now shows its outcome on the row instead of an em-dash.
+
+        THE PER-QUESTION ``flags`` SURVIVE AND ARE ROLLED UP NOWHERE. Operator, 2026-10-01:
+        "internal flags how far did you go you can show on the detail pge". They are detail, on that
+        page; a header census of them (`by_flag`) was a KPI by another name.
     """
     by_run = dict.fromkeys(_grade.RUN_STATUSES, 0)
-    by_verdict = dict.fromkeys(_flags.VERDICTS, 0)
-    by_flag = {fid: dict.fromkeys(_flags.FLAG_STATES, 0) for fid in _flags.FLAG_IDS}
     by_warning = dict.fromkeys(_flags.WARNING_CODES, 0)
     warnings_total = 0
     anchored = 0
+    # THE SCOREBOARD -- four numbers, and each is read against `total` in this same block.
+    #
+    # It leads the dashboard because the operator asked for exactly two flags and only these answer
+    # them. The buckets below it stay: they say HOW FAR a question got, which the detail page shows.
+    # This says WHETHER IT PASSED, which is the only thing a reader wants from a list of 83.
+    score = {"pass": 0, "fail": 0, "ungradeable": 0, "no_manual_answer": 0}
+    manual = {"found": 0, "approved_here": 0, "cloned_in": 0}
 
     for r in rows:
         by_run[r["run_status"]] = by_run.get(r["run_status"], 0) + 1
-        by_verdict[r["verdict"]] = by_verdict.get(r["verdict"], 0) + 1
-        states = {f["id"]: f["state"] for f in r["flags"]}
-        if states.get("outcome") != "na":  # see the docstring: this row reached the checks
-            for f in r["flags"]:
-                bucket = by_flag.setdefault(f["id"], dict.fromkeys(_flags.FLAG_STATES, 0))
-                bucket[f["state"]] = bucket.get(f["state"], 0) + 1
         for w in r["warnings"]:
             by_warning[w["code"]] = by_warning.get(w["code"], 0) + 1
             warnings_total += 1
         if r["anchor_id"]:
             anchored += 1
+        m, o = r.get("manual") or {}, r.get("ontology") or {}
+        if m.get("found"):
+            manual["found"] += 1
+            if m.get("approved_here"):
+                manual["approved_here"] += 1
+            elif m.get("cloned_from"):
+                manual["cloned_in"] += 1
+            score[{"yes": "pass", "no": "fail", "ungradeable": "ungradeable"}[o["agrees"]]] += 1
+        else:
+            score["no_manual_answer"] += 1
 
     return {
         "total": len(rows),
         "run": len(rows) - by_run.get("unrun", 0),
+        # THE TWO FLAGS, FIRST. `score` sums to `total`; `manual.found` is `score`'s first three
+        # buckets added together, and `approved_here` + `cloned_in` says how much of the human
+        # evidence was approved on THIS bundle's served plane rather than inherited from another.
+        "score": score,
+        "manual_answers": manual,
         "by_run_status": by_run,
-        "by_verdict": by_verdict,
-        "by_flag": by_flag,
         "by_warning": by_warning,
         "warnings_total": warnings_total,
         "anchored_questions": anchored,
@@ -693,10 +886,10 @@ def _summary_lines(dash: dict) -> list:
         f"questions: {total}   run: {s['run']} of {total}   "
         f"anchored: {s['anchored_questions']} of {total}   "
         f"corpus warnings: {s['warnings_total']}",
-        "  verdict: " + counts(s["by_verdict"]),
+        # ONE SCOREBOARD HERE TOO. This printed `verdict:` and `flags:` censuses -- the two
+        # rollups removed on 2026-10-02 -- so the terminal said one thing and the board another.
+        "  score:   " + counts(s["score"]) + f"   (of {s['manual_answers']['found']} approved)",
         "  run:     " + counts(s["by_run_status"]),
-        "  flags:   "
-        + "   ".join(f"{fid}[{counts(s['by_flag'][fid])}]" for fid in dash["flag_ids"]),
         "  warnings:" + " " + counts(s["by_warning"]),
         f"  anchors: {a['graded']} graded  {a['advisory']} advisory  {a['unlinked']} unlinked  "
         f"of {a['total']}" + (f"   errors: {len(a['errors'])}" if a["errors"] else ""),

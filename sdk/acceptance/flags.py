@@ -57,6 +57,7 @@ PURITY IS LOAD-BEARING
 
 from __future__ import annotations
 
+import decimal
 import re
 
 # Both imports are PURE modules — no filesystem, no network, no clock — so importing them does not
@@ -66,6 +67,7 @@ import re
 # in particular must have ONE home, because the run path and the flag path have to agree on what a
 # withhold looks like.
 from sdk.acceptance import grade as _grade
+from sdk.acceptance import registers as _registers
 from sdk.acceptance import sqlfacts as _sqlfacts
 
 # --------------------------------------------------------------------------- #
@@ -136,7 +138,23 @@ def evaluate(
     anchor: dict | None,  # graded anchor from anchors.build_index, or None
     advisory_anchors: list[dict],  # for display only — NEVER graded
     acceptance_fingerprint: str,  # current bundle value
+    #: THE OTHER FINGERPRINT, and the one that was missing. `evidence_stale` compared only the
+    #: acceptance plane, so a capture produced by an ontology that no longer exists graded as
+    #: current. MEASURED 2026-10-01: all 83 captures carry ontology 306429bf9cdd8a02 while the
+    #: bundle reads 3bc7b5d247d0eab2 -- the populations, the value_filter split and a deleted
+    #: concept between them -- and the board raised ZERO warnings. An answer is evidence about the
+    #: declarations that produced it; when those move, it is evidence about nothing.
+    #:
+    #: Optional, and `None` means "do not check": a caller that cannot supply it behaves exactly as
+    #: before rather than raising a warning it has no basis for.
+    ontology_fingerprint: str | None = None,
     concept_rules: list[dict],  # from ontrules.build_index(bundle)["rules"]
+    #: THE BUNDLE ROOT, so the grader can READ the bundle's naming registers -- `name_register` is a
+    #: closed vocabulary nothing consulted, and without it `US` and `United States` graded as two
+    #: different answers (AGG-10, AGG-15: numbers agreeing to the cent). Optional: a caller that
+    #: cannot supply it falls back to exact text comparison, which is the old behaviour.
+    bundle_root: str | None = None,
+    reference: dict | None = None,  # parsed reference/<id>.yaml — THE APPROVED ANSWER, or None
 ) -> dict:
     """Judge one question against one capture. Pure: dict in, dict out.
 
@@ -184,8 +202,21 @@ def evaluate(
         ``result.sample_rows``. A missing ``acceptance_fingerprint`` raises ``evidence_stale``.
 
     ``anchor``
-        At most one GRADED anchor, resolved by ``anchors.build_index``. Only this one may move the
-        ``value`` flag.
+        At most one GRADED anchor, resolved by ``anchors.build_index``. Moves the ``value`` flag
+        where no APPROVED REFERENCE does.
+
+    ``reference``
+        The parsed ``acceptance/reference/<id>.yaml`` — THE APPROVED ANSWER, or None where nobody
+        has approved one. It OUTRANKS the oracle and the anchor as the ``value`` flag's target,
+        because it is the only one of the three a person signed: guardrails/strategy.yaml stage 9
+        (`answer-and-approve`) rules "the SME approves the answer; pass/fail is the only verdict,
+        and the approved number is the reference".
+
+        MEASURED 2026-09-30, and it is the operator's own report: RC01 on contoso5 had been run,
+        read and approved, its reference carried `expected: 11` with `approved_by: operator`, the
+        capture answered 11 — and the board said `unproven`, `value: na, "no independent anchor for
+        this question"`. The approved plane existed, `check_answers.py` graded it, and the dashboard
+        read neither. Operator: "dashboard should reflect the actual status".
 
     ``advisory_anchors``
         Anchors that name this question but are variants of it, or are ambiguous between several
@@ -255,7 +286,9 @@ def evaluate(
     if oracle is not None and oracle_error is None and not isinstance(expected.get("outcome"), str):
         oracle_error = "expected.outcome missing"
 
-    warnings = _warnings(corpus_row, oracle, answer, acceptance_fingerprint)
+    warnings = _warnings(
+        corpus_row, oracle, answer, acceptance_fingerprint, ontology_fingerprint
+    )
 
     base = {
         "warnings": warnings,
@@ -323,7 +356,11 @@ def evaluate(
     flags = [
         _flag_outcome(expected, n_sql, declined, markers, lead, counts["must_pin"]),
         _flag_pins(expected, parsed, n_sql),
-        _flag_value(expected, anchor, advisory, answer_text, produced_result),
+        _flag_value(
+            expected, anchor, advisory, answer_text, produced_result, reference,
+            result=(answer or {}).get("result"),
+            bundle=bundle_root,
+        ),
         _flag_rules(concept_rules, parsed, n_sql),
     ]
     return {"verdict": _rollup(flags), "flags": flags, **base}
@@ -538,12 +575,125 @@ _APPROX = re.compile(r"^\s*~\s*[-+0-9]")
 _YEAR_LO, _YEAR_HI = 1900, 2100
 
 
+def _last_place(value) -> float | None:
+    """Half a unit in the last decimal place the author WROTE — the precision of a written number.
+
+    `218814471.66` -> 0.005, `11` -> 0.5, `1504.55` -> 0.005. Returns None for anything that is not
+    a plain number, so the caller falls through to its own default. Uses the shortest round-trip
+    spelling of the value, which is the one the author typed: `Decimal(str(x))` on a float parsed
+    from YAML gives back the literal, not the binary expansion.
+    """
+    if isinstance(value, bool) or not isinstance(value, (int, float, str)):
+        return None
+    try:
+        exponent = decimal.Decimal(str(value).strip()).as_tuple().exponent
+    except (decimal.InvalidOperation, ValueError):
+        return None
+    if not isinstance(exponent, int):
+        return None
+    return float(decimal.Decimal(1).scaleb(exponent) / 2)
+
+
+def _compare_grid(
+    target: dict, result: dict | None, tolerance: float, bundle: str | None = None
+) -> tuple[str, str, dict]:
+    """A BREAKDOWN REFERENCE against the grid the engine returned — `(state, note, evidence)`.
+
+    WHY THIS EXISTS. Until 2026-10-02 any non-scalar reference returned `na`: "reference value is a
+    dict; only scalar targets are graded". Six of the forty-six approved questions on the worked
+    bundle are breakdowns, so an eighth of the board was not merely failing but UNMEASURED, and no
+    amount of fixing the engine could move it.
+
+    THE REFERENCE DECLARES ITS OWN CONTRACT and this reads it rather than inventing one.
+    `{rows, cols, ordered, values}` -- measured on AGG-03, "Show net revenue by customer country":
+    `rows: 8`, eight `[country, amount]` pairs, and `ordered: false`. The engine returned the same
+    eight pairs in a different order with more decimal places (13360672.60516 against an approved
+    13360672.61), which is an agreement and was reported as ungradeable.
+
+    WHAT IS CHECKED, in order, stopping at the first real disagreement:
+      * `rows`   -- the count, exactly. A breakdown with the wrong number of groups is wrong even
+                    if every group it does return is right.
+      * `values` -- every approved row must be PRESENT. Numbers compare within `tolerance`, so a
+                    rounded reference matches full precision; everything else compares as folded
+                    text. `ordered: true` compares position by position instead.
+    An unexpected EXTRA row is a disagreement too: the engine returning nine groups where eight
+    were approved is not a pass, and `rows` catches it.
+    """
+    ev: dict = {"compared": "grid", "tolerance": tolerance}
+    rows_actual = (result or {}).get("sample_rows")
+    want_rows = target.get("rows")
+    if isinstance(want_rows, int):
+        got = (result or {}).get("rows")
+        ev["rows"] = {"approved": want_rows, "produced": got}
+        if got != want_rows:
+            return (
+                "fail",
+                f"the approved breakdown has {want_rows} row(s); the engine produced {got}",
+                ev,
+            )
+    want_values = target.get("values")
+    if not isinstance(want_values, list) or not want_values:
+        # A row COUNT alone is a complete contract, and this is the only check it asks for.
+        return ("pass", f"the approved breakdown's {want_rows} row(s) came back", ev)
+    if not isinstance(rows_actual, list):
+        return ("fail", "the approved breakdown lists values and the capture carries no rows", ev)
+
+    def cell_eq(a, b) -> bool:
+        na, nb = _num_or_none(a), _num_or_none(b)
+        if na is not None and nb is not None:
+            return abs(na - nb) <= max(tolerance, abs(na) * 5e-9)
+        # A CODE AND ITS LABEL ARE ONE THING, and the bundle says which. `name_register` is a
+        # closed vocabulary (`code | common | legal | long`) that nothing read until 2026-10-02.
+        # MEASURED on AGG-10: approved `["US", 111862187.56]` against produced
+        # `["United States", 111862187.56017]` -- the numbers agree to the cent, and
+        # `country_name` is ruled `label_of: country_code` with `register: long` (operator ruling,
+        # 2026-09-30), which the planner honours exactly by grouping on the code and DISPLAYING
+        # the label. Engine right, reference right, grader blind.
+        return _registers.same_thing(bundle, a, b) if bundle else (
+            " ".join(str(a).split()).casefold() == " ".join(str(b).split()).casefold()
+        )
+
+    def row_eq(a, b) -> bool:
+        return len(a) == len(b) and all(cell_eq(x, y) for x, y in zip(a, b, strict=False))
+
+    if target.get("ordered"):
+        for n, (want, got) in enumerate(zip(want_values, rows_actual, strict=False)):
+            if not row_eq(list(want), list(got)):
+                ev["first_mismatch"] = {"at": n, "approved": want, "produced": got}
+                return ("fail", f"row {n} differs: approved {want}, produced {got}", ev)
+        return ("pass", f"all {len(want_values)} approved row(s) matched, in order", ev)
+
+    remaining = [list(r) for r in rows_actual]
+    missing = []
+    for want in want_values:
+        hit = next((i for i, got in enumerate(remaining) if row_eq(list(want), got)), None)
+        if hit is None:
+            missing.append(want)
+        else:
+            remaining.pop(hit)
+    if missing:
+        ev["missing"] = missing[:5]
+        return (
+            "fail",
+            f"{len(missing)} approved row(s) absent from the answer, first: {missing[0]}",
+            ev,
+        )
+    return ("pass", f"all {len(want_values)} approved row(s) present (order not required)", ev)
+
+
 def _flag_value(
     expected: dict,
     anchor: dict | None,
     advisory: list,
     answer_text: str,
     produced_result: bool = True,
+    reference: dict | None = None,
+    #: The capture's `result` block -- `{value, cols, rows, sample_rows, status}`. Needed because a
+    #: BREAKDOWN reference is compared against the grid, and `answer_text` is only the headline.
+    result: dict | None = None,
+    #: The bundle root — needed to READ its naming registers, so a code and its label are not
+    #: counted as two different answers. See `sdk/acceptance/registers.py`.
+    bundle: str | None = None,
 ) -> dict:
     advisory_ids = [a.get("_anchor_id") for a in advisory if a.get("_anchor_id")]
     anchor_expected = (anchor or {}).get("expected") or {}
@@ -555,8 +705,32 @@ def _flag_value(
     }
 
     # --- 4.4.1 target selection -----------------------------------------------------------
+    # THE APPROVED ANSWER IS THE FIRST TARGET, ahead of the oracle and the anchor. It is the only
+    # one of the three that a PERSON signed, and guardrails/strategy.yaml stage 9 rules it the
+    # verdict: "the SME approves the answer; pass/fail is the only verdict, and the approved number
+    # is the reference". An oracle is derived and an anchor is independent; neither is authority.
+    ref_value = (reference or {}).get("expected")
     raw = expected.get("value")
-    if _is_numeric_target(raw):
+    if ref_value is not None:
+        source, target_raw = "reference", ref_value
+        tol_raw = (reference or {}).get("tolerance")
+        # AN APPROVED NUMBER IS PRECISE TO THE PLACE IT WAS WRITTEN TO, and nothing else states
+        # that. A person who approves `218814471.66` has approved every figure that rounds to it;
+        # the warehouse's own value is 218814471.65866 and the anchor carries it in full. With an
+        # absent tolerance read as EXACT, that approval failed against the number it approves — five
+        # of them did on contoso5 (AGG-01, AGG-05, AGG-06, AGG-07, AGG-14, 2026-09-30), each
+        # reporting `Δ 0,00`, which is a grader disagreeing with itself in print.
+        #
+        # So an absent tolerance on a REFERENCE means "to the last place written": half a unit in
+        # it. `218814471.66` gives ±0.005, `11` gives ±0.5, and neither admits a wrong answer — the
+        # colour disagreements on this board (RC03 17 vs 16, MQ-02 17 vs 21, MQ-06 1494.79 vs
+        # 1504.55) all stay red. This is NOT the relative floor the note below refuses: it is the
+        # precision the approver wrote, read off their own number, and it is recorded in evidence.
+        evidence.update(
+            reference_approved_by=(reference or {}).get("approved_by"),
+            reference_approved_at=_plain((reference or {}).get("approved_at")),
+        )
+    elif _is_numeric_target(raw):
         source, target_raw = "oracle", raw
         tol_raw = expected.get("tolerance")
     elif anchor is not None and anchor_expected.get("value") is not None:
@@ -569,7 +743,10 @@ def _flag_value(
         tol_raw = anchor_expected.get("tolerance")
     else:
         return _flag(
-            "value", "na", "no independent anchor for this question", {**evidence, "source": None}
+            "value",
+            "na",
+            "no approved reference and no independent anchor for this question",
+            {**evidence, "source": None},
         )
 
     # --- 4.4.1b THERE MUST BE AN ANSWER TO GRADE ---------------------------------------------
@@ -599,12 +776,24 @@ def _flag_value(
     evidence["tolerance"] = tolerance
 
     # --- 4.4.2 target shape gate ------------------------------------------------------------
+    # A BREAKDOWN IS COMPARED, NOT WAIVED. This returned `na` for every non-scalar reference, which
+    # made six of the worked bundle's forty-six approved questions permanently unmeasurable -- see
+    # `_compare_grid`, which reads the contract the reference itself declares.
+    if isinstance(target_raw, dict) and ("rows" in target_raw or "values" in target_raw):
+        state, note, grid_ev = _compare_grid(target_raw, result, tolerance, bundle)
+        return _flag(
+            "value",
+            state,
+            note,
+            {**evidence, "target": None, "authored_value": _plain(target_raw), **grid_ev},
+        )
     if isinstance(target_raw, (dict, list, tuple)):
         kind = "dict" if isinstance(target_raw, dict) else "series"
         return _flag(
             "value",
             "na",
-            f"anchor value is a {kind}; only scalar anchors are graded",
+            f"{source} value is a {kind} with neither `rows` nor `values`; nothing states what to "
+            f"compare",
             {**evidence, "target": None, "authored_value": _plain(target_raw)},
         )
 
@@ -616,13 +805,46 @@ def _flag_value(
         target = _num_or_none(target_raw)
 
     if target is None:
-        # Covers bool (a bool is not a gradeable number even though Python calls it an int) and any
-        # other unparseable authored value.
+        # A NON-NUMERIC APPROVED ANSWER IS STILL AN ANSWER, and until 2026-10-02 it was ungradeable
+        # by construction: anything `_num_or_none` could not parse returned `na`, so a DATE, a name
+        # or a code could never pass or fail.
+        #
+        # MEASURED on STORE-04, "When was the first store closed?": the operator approved
+        # `2013-12-05` on 2026-09-30, the engine now answers `MIN(dim_store.close_date)` =
+        # 2013-12-05, and the board said `value: na — reference value is not numeric`. Two identical
+        # answers reported as not comparable.
+        #
+        # SO IT IS COMPARED AS TEXT, EXACTLY. The approved string must appear in the answer verbatim
+        # once case and surrounding whitespace are folded -- no stemming, no date reformatting, no
+        # partial credit. That keeps the comparison honest in both directions: an ISO date, a store
+        # name or a country code either appears as approved or it does not, and `na` stops hiding a
+        # question from the board. A bool target is still `na`: `True` is not an answer a reader
+        # approved, and matching the word "true" in prose would be an accident.
+        if isinstance(target_raw, bool) or not isinstance(target_raw, str) or not target_raw.strip():
+            return _flag(
+                "value",
+                "na",
+                f"{source} value is neither a number nor text that could be matched",
+                {**evidence, "target": None, "authored_value": _plain(target_raw)},
+            )
+        wanted = " ".join(target_raw.split()).casefold()
+        haystack = " ".join(str(answer_text or "").split()).casefold()
+        found = wanted in haystack
         return _flag(
             "value",
-            "na",
-            "anchor value is not numeric",
-            {**evidence, "target": None, "authored_value": _plain(target_raw)},
+            "pass" if found else "fail",
+            (
+                f"the approved {source} value {target_raw.strip()!r} appears in the answer"
+                if found
+                else f"the approved {source} value {target_raw.strip()!r} does not appear in the answer"
+            ),
+            {
+                **evidence,
+                "target": None,
+                "authored_value": _plain(target_raw),
+                "compared": "text",
+                "matched": found,
+            },
         )
 
     evidence["target"] = target
@@ -644,6 +866,37 @@ def _flag_value(
     candidates, ambiguous = _candidates(headline, locale, target)
     evidence.update(candidates=candidates, ambiguous_skipped=ambiguous)
 
+    # A COMPARISON CANNOT BE FINER THAN EITHER NUMBER IN IT. Both sides of this test are WRITTEN:
+    # the target by whoever approved or derived it, the candidate by the presenter that put it in a
+    # headline. Comparing them beyond the coarser of those two precisions asks a question neither
+    # number can answer.
+    #
+    # MEASURED THREE TIMES IN ONE DAY, 2026-09-30, and the third is why this is now ONE rule over
+    # BOTH sources instead of a special case per source:
+    #   * AGG-01 and four others: reference 218814471.66, engine 218814471.65866, tolerance absent
+    #     and read as EXACT -> five approvals failed against the figures they approve.
+    #   * AGG-13: reference 1.0630080400657742, headline printed "1,06" -> failed on the presenter's
+    #     rounding.
+    #   * MQ-06: ANCHOR_18 derives 1 511,75 by `round(avg(...),2)` and DECLARES `tolerance: 0`; the
+    #     engine answers 1 511,7543859649122. The board printed "headline reads 1.511,75; ANCHOR_18
+    #     derives 1.511,75 (Δ 0,00)" and FAILED it. A declared 0 against a value rounded to cents is
+    #     unsatisfiable by construction, so "exact" can only mean "exact at the precision written".
+    #
+    # NOT A RELATIVE FLOOR, and it cannot hide a wrong answer: the band is half a unit in the last
+    # place someone actually wrote. A tighter DECLARED tolerance still wins where the target carries
+    # the precision to support it (ANCHOR_01's 1e-05 against 218814471.65866 is untouched), and every
+    # real disagreement on this board stays red with room to spare — 17 against 21, 1 494,79 against
+    # 1 511,75, 0,11 against 11,26.
+    written = [_last_place(target_raw)] + [_last_place(str(c)) for c in candidates]
+    coarsest = max([p for p in written if p is not None] or [0.0])
+    if coarsest > tolerance:
+        evidence["tolerance_from"] = (
+            f"the coarser of the two written precisions ({_de(coarsest)}): a comparison cannot be "
+            f"finer than either number in it"
+            + (f", where the declared tolerance is {_de(tolerance)}" if tolerance else "")
+        )
+        tolerance = coarsest
+        evidence["tolerance"] = tolerance
     best = min(candidates, key=lambda c: abs(c - target)) if candidates else None
     delta = abs(best - target) if best is not None else None
     evidence["matched"] = None
@@ -680,7 +933,15 @@ def _flag_value(
         return _flag("value", "unchecked", "no number found in the answer headline", evidence)
 
     hit = next((c for c in candidates if abs(c - target) <= tolerance), None)
-    label = evidence["anchor_id"] or "the oracle"
+    # WHAT IT COMPARED AGAINST, by name. This read `anchor_id or "the oracle"`, so an APPROVED
+    # REFERENCE was reported as the oracle's doing or the anchor's — RC01 passed with "11 matches
+    # the oracle" when what it matched was the operator's approval (2026-09-30).
+    label = (
+        f"the approved reference"
+        + (f" ({evidence['reference_approved_by']})" if evidence.get("reference_approved_by") else "")
+        if source == "reference"
+        else (evidence["anchor_id"] or "the oracle")
+    )
     if hit is not None:
         evidence["matched"] = hit
         evidence["delta"] = abs(hit - target)
@@ -1032,12 +1293,28 @@ def _flag_rules(concept_rules, stmts: list, n_sql: int) -> dict:
             evidence,
         )
     if not n_checked:
-        # Bound rules exist and every one of them is prose. NOT `na` — the check applies, we simply
-        # cannot decide it — and emphatically not `pass`: nothing was verified.
+        # EVERY BOUND CLAUSE IS PROSE — `na`, because there is nothing here a machine can check, and
+        # that is the same thing the three `na` branches above say. It was `unchecked`, on the
+        # reasoning that "the check applies, we simply cannot decide it", and the cost of that word
+        # was the whole board: `unchecked` vetoes a row's verdict, and a prose never-clause is
+        # undecidable BY CONSTRUCTION — no bundle in this estate has ever had a machine-checkable
+        # one. Measured on contoso5, 2026-09-30: 38 of 48 run rows carried this state, ALL of them
+        # for this one reason and none for a parse failure, so no question could ever be `proven`
+        # however many times a person ran it, read it and approved it. RC01 was approved at 11,
+        # answered 11, matched its reference and the board said `unproven`. The operator, repeatedly:
+        # "questions that were proven and verified are not marked properly".
+        #
+        # `unchecked` KEEPS ITS TEETH for the cases it was written for — no parser, or a statement
+        # that did not parse — where something checkable went unchecked and the row SHOULD be held
+        # back. Those are still above this branch, and they still veto.
+        #
+        # STILL NOT `pass`: nothing was verified, and the reason says so with both counts, so a grey
+        # square never implies the prose clauses were covered.
         return _flag(
             "rules",
-            "unchecked",
-            f"none of {_de(n_unchecked)} bound never-clauses is machine-checkable",
+            "na",
+            f"all {_de(n_unchecked)} bound never-clauses are prose; none is machine-checkable, so "
+            f"there is nothing here a machine can decide",
             evidence,
         )
     return _flag(
@@ -1058,10 +1335,28 @@ def _rollup(flags: list) -> str:
     """First match wins, in this exact order.
 
     The load-bearing consequence, which a test pins: a question whose ``value`` flag is ``na`` can
-    NEVER be ``proven``, for any combination of the others. Rule 3 is the only route to
-    ``proven`` and it requires ``value`` to have actually PASSED. Everything that merely routed
-    correctly lands on ``routed`` — sky, never emerald, because nothing in the bundle can prove its
-    number and saying otherwise is the overclaim.
+    NEVER be ``proven``, for any combination of the others. ``proven`` requires ``value`` to have
+    actually PASSED. Everything that merely routed correctly lands on ``routed`` — sky, never
+    emerald, because nothing in the bundle can prove its number and saying otherwise is the
+    overclaim.
+
+    ``unchecked`` VETOES, AND IT IS MEANT TO: a square that could not be decided holds the row back,
+    because a verdict over an incomplete fact sheet is an assertion nobody measured. That veto was
+    right and its INPUT was wrong. Measured on contoso5, 2026-09-30: 38 of 48 run rows carried
+    ``rules: unchecked``, every one of them because "all bound never-clauses are prose", which is
+    true of every rule in every bundle in this estate — so no question could ever be ``proven``
+    however many times a person ran it, read it and approved it. RC01 was approved at 11, answered
+    11, matched its reference, and the board said ``unproven``. The operator, repeatedly: "questions
+    that were proven and verified are not marked properly ... it is absolutely nerving not to have [a]
+    functioning dashboard".
+
+    THE FIX WAS IN THE SQUARE, NOT HERE, and the difference matters. Reordering this ladder so a
+    matched number outranks an undecidable square would also have turned the board green — and would
+    have hidden the cases the veto exists for: a missing parser, or a statement that did not parse,
+    where something CHECKABLE went unchecked. `_flag_rules` now says ``na`` for prose (nothing a
+    machine can decide) and keeps ``unchecked`` for those, so the veto still bites exactly where it
+    should. Zero of the 38 rows were parse failures; had one been, the reorder would have painted it
+    proven.
     """
     states = {f["id"]: f["state"] for f in flags}
     if "fail" in states.values():
@@ -1078,7 +1373,13 @@ def _rollup(flags: list) -> str:
 # --------------------------------------------------------------------------- #
 
 
-def _warnings(corpus_row: dict, oracle: dict | None, answer, fingerprint: str) -> list:
+def _warnings(
+    corpus_row: dict,
+    oracle: dict | None,
+    answer,
+    fingerprint: str,
+    ontology_fingerprint: str | None = None,
+) -> list:
     """The four contradiction/staleness findings. THEY NEVER MOVE A VERDICT.
 
     The corpus is mid-migration: one commit flipped 27 oracles' ``expected.outcome`` and
@@ -1148,6 +1449,29 @@ def _warnings(corpus_row: dict, oracle: dict | None, answer, fingerprint: str) -
                     f"{fingerprint}",
                 }
             )
+        # AND THE ONTOLOGY, which is the half that was never compared. A capture is evidence about
+        # the DECLARATIONS that produced it: change a population, a value_filter or a concept and
+        # the same question would plan differently, so the stored answer is no longer evidence of
+        # anything the bundle now says. Checked second so a capture stale on both planes reports
+        # both, and skipped entirely when the caller supplies no fingerprint.
+        if ontology_fingerprint:
+            ont = answer.get("ontology_fingerprint")
+            if not ont:
+                out.append(
+                    {
+                        "code": "evidence_stale",
+                        "detail": "the capture records no ontology fingerprint, so which "
+                        "declarations produced it cannot be established",
+                    }
+                )
+            elif ont != ontology_fingerprint:
+                out.append(
+                    {
+                        "code": "evidence_stale",
+                        "detail": f"captured against ontology {ont}; the bundle now reads "
+                        f"{ontology_fingerprint} — re-run before trusting this verdict",
+                    }
+                )
     return out
 
 

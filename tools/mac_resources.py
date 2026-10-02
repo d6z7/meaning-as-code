@@ -111,7 +111,7 @@ DERIVED: tuple[dict, ...] = (
      "producer": "projector"},
     {"glob": "ontology/SME-QUESTIONS.md", "by": "sdk.project.objects:184", "kind": "read-view",
      "producer": "projector"},
-    {"glob": "knowledge/*.md", "by": "sdk.project.knowledge:115", "kind": "read-view",
+    {"glob": "knowledge/*.md", "by": "sdk.project.knowledge:123", "kind": "read-view",
      "producer": "projector"},
     {"glob": "references/*.md", "by": "sdk.project.references:133", "kind": "read-view",
      "producer": "projector"},

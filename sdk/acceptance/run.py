@@ -52,7 +52,9 @@ from pathlib import Path
 import yaml
 
 from sdk.acceptance import anchors as _anchors
+from sdk.acceptance import approve as _approve
 from sdk.acceptance import bundleio as _io
+from sdk.acceptance import history as _history
 from sdk.acceptance import flags as _flags
 from sdk.acceptance import grade as _grade
 from sdk.acceptance import ontrules as _ontrules
@@ -254,6 +256,18 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
             "ontology_fingerprint": fp,
             "acceptance_fingerprint": acc_fp,
             "engine": {
+                # WAS A MODEL ASKED, OR WAS THE READING REPLAYED? This block is a WHITELIST -- it
+                # rebuilds the engine record from named keys rather than copying the caller's --
+                # which is right, and it meant a new fact the caller declared was silently
+                # dropped. MEASURED 2026-10-02: a corpus run with `MAC_ASK_ENGINE=replay` serves
+                # every reading from `acceptance/intents/` and calls no model, takes 5.4s against
+                # 32.4 minutes, and overwrote the same 83 captures stamped `provider:
+                # claude_code, effort: max` -- the provenance of a run that did not happen. The
+                # other keys stay as they are: they say what the frozen readings were taken
+                # under, which is what makes a stale plane diagnosable. Absent on a live run, so
+                # captures already committed read unchanged.
+                **({"interpret": eng["interpret"]} if eng.get("interpret") else {}),
+                **({"recordings": eng["recordings"]} if eng.get("recordings") else {}),
                 "provider": provider,
                 "model": model,
                 "effort": effort,
@@ -315,6 +329,17 @@ def op_grade_batch(bundle: Path, payload: dict) -> dict:
         ran.append(qid)
 
     dash = _q.build(bundle)
+    # THE HISTORY IS WRITTEN BY THE RUN, because nothing else can know a run happened.
+    #
+    # Operator, 2026-10-02: "we need per unit test the history of fails or passes", after
+    # "you fix one bug somewhere but induce 2-3 new somewhere else". Every board that day was
+    # reported as a TOTAL, and a total that improves hides any number of questions breaking:
+    # +3 fixed and -2 broken reads as +1. One append-only record per question per run makes a
+    # flip attributable instead of merely visible -- see `sdk/acceptance/history.py`.
+    try:
+        _history.append(bundle, dash, interpret=(eng.get("interpret") or None))
+    except Exception as exc:  # noqa: BLE001 - a history that cannot be written must not fail a run
+        print(json.dumps({"warning": f"history not written: {type(exc).__name__}: {exc}"}))
     return {"ok": True, "ran": ran, "rejected": rejected, "dashboard": dash}
 
 
@@ -548,7 +573,14 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="Question Lighthouse orchestrator (grade-batch / upsert / patch / explain)"
     )
-    ap.add_argument("--op", required=True, choices=["grade-batch", "upsert", "patch", "explain"])
+    ap.add_argument(
+        "--op",
+        required=True,
+        # `approve` WRITES THE APPROVED PLANE, which had no writer at all until 2026-10-02 -- see
+        # sdk/acceptance/approve.py. It re-projects, because a reference the board cannot see is a
+        # reference the operator will approve again.
+        choices=["grade-batch", "upsert", "patch", "explain", "approve"],
+    )
     ap.add_argument("--bundle", required=True, help="path to the <domain>/<dataset> bundle dir")
     ap.add_argument("--input", required=True, help="path to the JSON payload")
     ap.add_argument(
@@ -560,6 +592,12 @@ def main(argv=None) -> int:
     try:
         if a.op == "grade-batch":
             out = op_grade_batch(bundle, payload)
+        elif a.op == "approve":
+            out = _approve.approve(bundle, payload)
+            # THE BOARD MUST SEE IT. A reference is the only plane the verdict is computed from, so
+            # an approval that does not re-project leaves the question reading exactly as it did --
+            # which is how a question edit appeared not to save on the same day.
+            out["dashboard"] = _q.build(bundle)
         elif a.op == "upsert":
             out = op_upsert(bundle, payload, full_replace=a.__dict__["full_replace"])
         elif a.op == "patch":
@@ -578,6 +616,14 @@ def main(argv=None) -> int:
                 )
             )
             return 0
+    except ValueError as e:
+        # A REFUSAL, NOT A CRASH. `approve` raises ValueError for the one thing it must refuse: an
+        # already-approved value changed with no `superseded_reason`. Unhandled, that reached the
+        # HTTP layer as a 500 with a raw traceback -- measured 2026-10-02 -- which tells the
+        # operator nothing about what it wanted. Same convention as `Refused` below: the last stdout
+        # line is the JSON the caller parses.
+        print(json.dumps({"ok": False, "error": str(e)}, ensure_ascii=False))
+        return 2
     except Refused as e:
         # The wiki parses the LAST stdout line as JSON and maps a falsy `ok` to HTTP 500 with this
         # message; a bare traceback on stderr would surface as "produced no JSON" and tell the

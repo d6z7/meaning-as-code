@@ -124,7 +124,16 @@ def atomic_write(path: Path, text: str, *, encoding: str = "utf-8") -> Path:
 # The authored acceptance plane: what a capture is judged AGAINST. Deliberately excludes
 # answers/ (evidence, not authority) and questions_dashboard.json (a derived build artefact) —
 # either would make the fingerprint move every time it is written and prove nothing.
-_FINGERPRINT_TREES = ("oracle", "anchors")
+#
+# `reference` ADDED 2026-10-01, and its absence was a hole in exactly the thing this hash is for.
+# A reference file IS the authority a capture is judged against -- its own header says so: "THE
+# APPROVED ANSWER. A person ran the query, read the number and said yes. PASS or FAIL, nothing
+# else." MEASURED the day it was found: fourteen approved answers were written to this bundle and
+# the fingerprint did not move (b9167f36ed15449f before and after), so every capture still read as
+# judged against the plane it was actually judged against -- while the oracle for fourteen
+# questions had changed underneath it. The board reported 25 pass / 16 fail with no `evidence_stale`
+# anywhere, which is the one warning that exists to prevent precisely that.
+_FINGERPRINT_TREES = ("oracle", "anchors", "reference")
 
 
 def acceptance_fingerprint(bundle: Path) -> str:
