@@ -39,27 +39,18 @@ is the only way "the operator had to ask" stops happening.
 from __future__ import annotations
 
 import argparse
+import os
 import pathlib
 import subprocess
 import sys
 import time
 
 HERE = pathlib.Path(__file__).resolve().parent
-#: The billed authoring lives in the SDK and keeps its one home; this file calls it, never reimplements.
-#: WHERE THE BILLED AUTHORING STAGE IS LOOKED FOR, LIVE REPOSITORY FIRST.
-#:
-#: It used to look in `archive-mac-wiki` FIRST, and that repository is FROZEN — its own
-#: pre-commit hook refuses writes: "this repository is REFERENCE ONLY ... all 391 files migrated to
-#: mac-platform. It is kept to see how something was made and to scavenge an idea from."
-#:
-#: So the one stage that spends money routed to a dead checkout, and preferred it over the live one.
-#: That is also WHY the two copies of harvest.py drifted 415 lines apart: the frozen one stopped at
-#: migration and the live one kept moving. Reordering is the fix; `_sdk_root` also SKIPS a root whose
-#: hook declares it frozen, so restoring the old order by accident cannot silently re-point the stage.
-SDK_ROOTS = [
-    pathlib.Path("/Users/<operator>/dev/meaning-as-code"),
-    pathlib.Path("/Users/<operator>/dev/archive-mac-wiki"),
-]
+#: WHERE THE BILLED AUTHORING STAGE IS LOOKED FOR: THIS checkout, then $MAC_SDK_ROOTS. It used to
+#: prefer a reference-only checkout nobody may write to, and the two copies of harvest.py drifted
+#: 415 lines apart; order is the fix, and `_sdk_root` SKIPS a frozen root so it cannot recur.
+SDK_ROOTS = [HERE.parent, *(pathlib.Path(p) for p in
+                            os.environ.get("MAC_SDK_ROOTS", "").split(os.pathsep) if p.strip())]
 
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════

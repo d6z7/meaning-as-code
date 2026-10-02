@@ -77,6 +77,23 @@ def runtime_root(explicit: str | None) -> pathlib.Path:
     raise Fail("no runtime found — pass --runtime <path to mac_runtime>")
 
 
+def provenance(root: pathlib.Path) -> str:
+    """WHERE the measurement was taken, with nobody's home directory in it.
+
+    THIS PAGE IS PUBLISHED. `str(root)` put an absolute `/Users/<someone>/dev/...` into the rendered
+    HTML twice (`runtime.root`, `permissions.measured.measured_from`) and check_mac_public found
+    both. The fact the page owes a reader is WHICH PACKAGE was measured, never whose disk it sat on,
+    so the path is reported relative to the repo's parent, then to $HOME, and otherwise by name
+    alone — every branch is a path that cannot carry an account name.
+    """
+    for base, prefix in ((ROOT.parent, ""), (pathlib.Path.home(), "~/")):
+        try:
+            return prefix + str(root.relative_to(base))
+        except ValueError:
+            continue
+    return root.name
+
+
 def runtime_facts(root: pathlib.Path) -> dict:
     """OperationKind, Intent, FilterOp and the planner's read counts — as TEXT, never imported."""
     tree = ast.parse((root / "models.py").read_text(encoding="utf-8"))
@@ -105,7 +122,7 @@ def runtime_facts(root: pathlib.Path) -> dict:
         "branched_by_name": sorted(named & set(enums["OperationKind"])),
         "non_fold_ops": non_fold,
         "planner_reads": {f: len(re.findall(rf"\.{f}\b", planner)) for f in intent_fields},
-        "root": str(root),
+        "root": provenance(root),
     }
 
 
@@ -209,7 +226,7 @@ def measure_permissions(root: pathlib.Path) -> dict:
         "period_reads": len(re.findall(r"\.period\b", planner)),
         "resolver_field_roles_mentions": key_reads,
         "resolver_role_value_reads": value_reads,
-        "measured_from": str(root),
+        "measured_from": provenance(root),
     }
 
 
@@ -517,11 +534,20 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
     keys = {k["key"]: k for k in effects["keys"]}
     tests = {
         "label_of": ("a = b = pairs",
-                     "whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso "
-                     "and Contoso AG are one company in two registers; Northwind AG and Contoso are two "
-                     "companies, and that pair would be one-to-many — a key pointing at a parent."),
+                     "whether the two names denote ONE thing or two. 1:1 gets you to the door. "
+                     "Contoso and Contoso, Ltd are one company in two registers; Fabrikam Group "
+                     "and Contoso are two companies, and that pair would be one-to-many — a key "
+                     "pointing at a parent."),
         "finer_than": ("pairs = a, and a > b", None),
         "scoped_by": ("pairs > a AND pairs > b", None),
+        # THE ONE RULING NO MEASUREMENT CAN PRODUCE A CANDIDATE FOR, and the plane should say so
+        # rather than omit it: SQL guarantees no row order without ORDER BY, so nothing in the data
+        # bears on the order a reader expects.
+        "sort": ("none — no constellation bears on it",
+                 "the order a reader expects. Measured 2026-10-02: an 88-row breakdown passed and "
+                 "failed on alternate runs with the data unchanged, because the grader compared "
+                 "against the capture's first 50 and WHICH 50 depended on unordered output. The "
+                 "data cannot say which order is meant; only a person can."),
         "never_axis": ("cardinality approaches the row count",
                        "whether the identification MATTERS. The ratio is a measurement; that grouping "
                        "on it names individuals is a judgement, and the ruling must carry the DQ id "
@@ -534,7 +560,8 @@ def rulings_plane(effects: dict, vocab: dict) -> dict:
                      "within and many across is the signature.",
     }
     key_of = {"label_of": "rulings.label_of", "finer_than": "rulings.finer_than",
-              "scoped_by": "placement.scoped_by", "never_axis": "rulings.never_axis"}
+              "scoped_by": "placement.scoped_by", "never_axis": "rulings.never_axis",
+              "sort": "rulings.sort"}
 
     # THE VOCABULARY DRIVES THE LOOP and the rows above are keyed by hand. A term the vocabulary
     # declares and no row names is a FINDING that carries the term, not a KeyError three frames deep.

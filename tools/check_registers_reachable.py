@@ -32,6 +32,9 @@ import argparse
 import pathlib
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -54,7 +57,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        sys.path.insert(0, "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src")
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.ontology import OntologyIndex
         from mac_runtime.resolver.registers import load_registers
     except ImportError as exc:

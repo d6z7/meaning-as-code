@@ -36,7 +36,8 @@ import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -67,7 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     described = {p.stem for p in pages_dir.glob("*.md")}
 
     try:
-        sys.path.insert(0, MAC_RUNTIME_SRC)
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.canon import IMPLEMENTED
         honoured = {name.rsplit(".", 1)[-1] for name in IMPLEMENTED}
     except ImportError as exc:

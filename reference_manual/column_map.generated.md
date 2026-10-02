@@ -14,11 +14,14 @@ host's row key.
 ```yaml
 columns:
   <column-name>:
+    axis_kind:    <string>
     identity:     canonical | part | reference
     measure:
       additivity:   <object>
+      canonical:    <boolean>
       type:         <string>
       unit:         <string>
+    register:     <string>
     role:         key | dimension | measure | period | housekeeping
     rulings:
       evidence:     <string>
@@ -27,18 +30,21 @@ columns:
       never_axis:   <string>
       register:     common | legal | long | short | code
       scoped_by:    <string>
+      sort:         asc | desc | none
       # `never_axis` REQUIRES `evidence`
       # `register` REQUIRES `label_of`
 ```
 
-**4 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
+**6 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
 
 ## PARAMETERS
 
 | key | type | required | choices | comment |
 |---|---|---|---|---|
+| `axis_kind` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. … |
 | `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; … |
 | `measure` | object | no | — | The measure facts -> concept.semantics.measure_type / unit / additivity. SEVERAL COLUMNS MA… |
+| `register` | string | no | — | THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (… |
 | `role` | string | no | `key`<br>`dimension`<br>`measure`<br>`period`<br>`housekeeping`<br>*from* `mac.concept.column.role` | projects to grounding.field_roles[<column>], which the planner reads to place a predicate. … |
 | `rulings` | object | no | — | AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot estab… |
 
@@ -56,18 +62,18 @@ columns:
 
 > The analytical role of a column — where a query may use it, and the default guardrail.
 
-- **`key`** — IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and what the fact joins on.
-- **`dimension`** — A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY…
-- **`measure`** — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-- **`period`** — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
-- **`housekeeping`** — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when…
+- **`key`** — {'query_use': ['identity'], 'definition': 'IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) c…
+- **`dimension`** — {'query_use': ['axis', 'extremum'], 'definition': "A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example:…
+- **`measure`** — {'query_use': ['aggregate', 'extremum'], 'definition': 'A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `Sa…
+- **`period`** — {'query_use': ['axis', 'extremum', 'period_binding'], 'definition': 'THE COLUMN A QUESTION\'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.\n'}
+- **`housekeeping`** — {'query_use': [], 'definition': 'PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — w…
 
 ### `rulings.register` — `mac.name_register`  ·  CLOSED
 
 > Which register a name belongs to, when one thing carries several names.
 
 - **`common`** — The name people use. 'Contoso', 'Germany', 'Monday'.
-- **`legal`** — The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'.
+- **`legal`** — The name in a trade or statutory register. 'Contoso, Ltd'.
 - **`long`** — The unabbreviated form of a coded name. 'United Kingdom' for GB.
 - **`short`** — The abbreviated form. 'Mon' for Monday, 'Jan' for January.
 - **`code`** — A machine identifier standing for the name. 'GB', 'DE', a numeric key.

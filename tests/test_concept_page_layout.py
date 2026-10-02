@@ -34,6 +34,8 @@ import pytest
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import _neighbours  # noqa: E402  — one home for the checkouts beside this repository
 
 from sdk.project.concept_page_content import (  # noqa: E402
     FIELDS_COLUMNS,
@@ -43,14 +45,16 @@ from sdk.project.concept_page_content import (  # noqa: E402
 )
 
 EXEMPLARS = Path(__file__).resolve().parents[1] / "sdk/authoring/exemplars/bundle/ontology/concepts"
-WORKED = Path("/Users/<operator>/dev/archive-sources/example/contoso5/ontology/concepts")
+#: DISCOVERED, NOT NAMED — the estate checkout's name is an identity this public repo must not
+#: carry. `$MAC_WORKED_BUNDLES` overrides; a machine with none runs on the exemplars alone.
+WORKED = [b / "ontology" / "concepts" for b in _neighbours.worked_bundles()]
 
 
 def _pages() -> list[tuple[str, str]]:
     """(name, rendered body) for every concept this machine can reach. Both bundles, because the
     claim is about the RENDERER and a layout that held on one bundle only would not be a layout."""
     out: list[tuple[str, str]] = []
-    for root in (EXEMPLARS, WORKED):
+    for root in (EXEMPLARS, *WORKED):
         if not root.exists():
             continue
         for f in sorted(root.glob("*.yaml")):

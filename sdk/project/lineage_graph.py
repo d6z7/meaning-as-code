@@ -156,8 +156,8 @@ def merge(doc: dict, producer: str, nodes: list, edges: list, fallback_nodes=(),
     # owner supplied none. It exists for exactly one case and it is not hypothetical: a bundle that
     # binds a warehouse this machine cannot reach (an Athena connector without credentials) never
     # gets a measurement, and without this the projector could contribute `grounds` edges whose
-    # dataset endpoints no producer had ever created. Measured 2026-09-28 on contoso1 and estate2 —
-    # the two bundles in the console that are NOT duckdb — the lineage view went blank the moment
+    # dataset endpoints no producer had ever created. Measured 2026-09-28 on the two bundles in
+    # the console that are NOT duckdb — the lineage view went blank the moment
     # `objects.json#lineage_graph` was retired, because the one artifact had nothing in it. A
     # census the bundle can state about itself is always available; the measurement is not.
     have = {n["id"] for n in doc["nodes"]}

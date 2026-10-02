@@ -184,7 +184,7 @@ def _escapes(line: str, root: pathlib.Path,
 
     A PATH TO THE FRAMEWORK IS NOT A BUNDLE BORDER, and getting that wrong was the last false
     positive: this bundle's `build.sh` calls
-    `/Users/<operator>/meaning-as-code/tools/mac_descriptors.py`, which is the PLATFORM — every bundle uses
+    `<somewhere>/meaning-as-code/tools/mac_descriptors.py`, which is the PLATFORM — every bundle uses
     it by definition, and a rule that forbade it would forbid being a bundle at all.
 
     So the test is not "does this path leave the root" but "does it land in ANOTHER BUNDLE": a
@@ -262,13 +262,15 @@ def _self_test() -> int:
         ("an absolute path inside the bundle       -> fine",
          f'path: "{root}/data/x.parquet"', False),
         ("an absolute path outside the bundle      -> ESCAPES",
-         'path: "/Users/<operator>/other/x.parquet"', True),
+         'path: "/opt/other/x.parquet"', True),
         ("prose mentioning .. mid-sentence         -> fine", "see the note above ... and below", False),
     ]
     cases.append(("`../brand.md` from ontology/concepts/rules  -> fine (lands inside)",
                   "applies_to: ../brand.md", False))
+    #: THE REAL framework path, derived — a literal one would be an identity leak in a public repo
+    #: and would stop exercising the FRAMEWORK_ROOT branch the day the checkout moved.
     cases.append(("an absolute path into the FRAMEWORK          -> fine",
-                  "python3 /Users/<operator>/dev/meaning-as-code/tools/mac_descriptors.py x", False))
+                  f"python3 {FRAMEWORK_ROOT}/tools/mac_descriptors.py x", False))
     cases.append(('a shell variable then a slash                -> fine',
                   'for f in "$DATA"/transforms/*.sql; do', False))
     here = root / "ontology" / "concepts" / "rules"

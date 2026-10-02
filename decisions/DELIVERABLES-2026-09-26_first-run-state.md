@@ -129,7 +129,7 @@ descriptors and profiles a relation.
 **This section used to present three options and quote a withheld-stage instruction as if it were a
 legitimate ruling. The operator deleted both, 2026-09-26:**
 
-> this is all wrong: *"estate/estate is exactly 20 concepts from 20 datasets — what the chained stage
+> this is all wrong: *"[one bundle] is exactly 20 concepts from 20 datasets — what the chained stage
 > produces when nobody is looking."*
 >
 > **datasets DO NEVER MATCH CONCEPTS 1:1**
@@ -169,7 +169,7 @@ whose notions genuinely align with its relations is legitimate; arriving there w
 not.
 
 Measured on the two real bundles: contoso 21 concepts over 6 datasets with 4 relations backing
-several notions; estate2 22 over 13 with 3 shared and 13 relations declined. Both pass.
+several notions; a second bundle 22 over 13 with 3 shared and 13 relations declined. Both pass.
 
 ---
 

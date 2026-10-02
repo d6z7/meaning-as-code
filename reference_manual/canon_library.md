@@ -43,7 +43,7 @@ pages described canons the vocabulary did not define.
 
 > The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
-*`mac.canon` · 20 terms · open — a bundle may add its own*
+*`mac.canon` · 21 terms · open — a bundle may add its own*
 
 #### `mac.canon.composite_key_guard`
 
@@ -203,6 +203,21 @@ is a column combination rather than a stored value — `closed` IS `close_date I
 |---|---|
 | `serves` | competing_definitions |
 | `needs_sqlglot` | False |
+
+#### `mac.canon.ratio_select`
+
+WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which
+ROWS a concept has. Both map a word a reader says to a declared body, and both were prose.
+`params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the
+numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over
+its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance,
+for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a question
+naming neither must ASK, with both names offered, which is the resolution ladder's third rung.
+MEASURED on the worked bundle 2026-10-02: Discount's percentage is over GrossRevenue (5.93%) and
+not NetRevenue (6.30%) on the same money; Margin names TWO -- margin % over NetRevenue (55.91%)
+and markup % over SalesCost (126.79%), a factor of 2.27 on the same profit. `Intent.denominator`
+has always carried the choice and the planner has always read it, so a model's guess went
+straight through and nothing declared which was meant.
 
 #### `mac.canon.alias_resolve`
 

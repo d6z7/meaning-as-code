@@ -360,7 +360,7 @@ concept.column.ruling:
       is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
       named column and DISPLAY this one: a question asking in these words gets answered in them,
       never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
-      the world calls it, "Contoso AG" is what the register calls it, and they are one company under
+      the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under
       two naming registers. NOT a parent: had the column meant the OWNING company it would be
       one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
     finer_than: >
@@ -411,7 +411,7 @@ name_register:
   description: Which register a name belongs to, when one thing carries several names.
   terms:
     common: "The name people use. 'Contoso', 'Germany', 'Monday'."
-    legal:  "The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'."
+    legal:  "The name in a trade or statutory register. 'Contoso, Ltd'."
     long:   "The unabbreviated form of a coded name. 'United Kingdom' for GB."
     short:  "The abbreviated form. 'Mon' for Monday, 'Jan' for January."
     code:   "A machine identifier standing for the name. 'GB', 'DE', a numeric key."

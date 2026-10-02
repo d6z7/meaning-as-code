@@ -41,7 +41,8 @@ import collections
 import pathlib
 import sys
 
-MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"SKIP: {root.name} has no ontology/concepts/ yet")
         return 0
     try:
-        sys.path.insert(0, MAC_RUNTIME_SRC)
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.ontology import OntologyIndex
     except ImportError as exc:
         print(f"REFUSED: cannot import what this gate needs ({exc})")

@@ -373,13 +373,13 @@ const DATA = {
       {
        "id": "field:subject",
        "label": "subject",
-       "meta": "9 planner reads",
+       "meta": "12 planner reads",
        "faint": false
       },
       {
        "id": "field:operation",
        "label": "operation",
-       "meta": "7 planner reads",
+       "meta": "12 planner reads",
        "faint": false
       },
       {
@@ -421,13 +421,13 @@ const DATA = {
       {
        "id": "field:period",
        "label": "period",
-       "meta": "18 planner reads",
+       "meta": "19 planner reads",
        "faint": false
       },
       {
        "id": "field:ordering",
        "label": "ordering",
-       "meta": "4 planner reads",
+       "meta": "5 planner reads",
        "faint": false
       },
       {
@@ -437,9 +437,21 @@ const DATA = {
        "faint": false
       },
       {
+       "id": "field:also",
+       "label": "also",
+       "meta": "6 planner reads",
+       "faint": false
+      },
+      {
+       "id": "field:compare",
+       "label": "compare",
+       "meta": "6 planner reads",
+       "faint": false
+      },
+      {
        "id": "field:denominator",
        "label": "denominator",
-       "meta": "5 planner reads",
+       "meta": "12 planner reads",
        "faint": false
       },
       {
@@ -773,6 +785,160 @@ const DATA = {
       },
       "outcome": "COMMIT",
       "alt_outcome": null
+     },
+     "min": {
+      "id": "min",
+      "label": "min",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:min",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the earliest or smallest value a column holds"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column whose role declares the `extremum` use (mac.concept.column.query_use)</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: MIN(<column>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the subject names a CONCEPT rather than a column, and that concept declares more than one column admitting an extremum -- then it ASKS which, naming them. Measured on STORE-04: with the subject left as `Store` the answer was 665.0, MIN(square_metres), for a question asking when the first store closed.\n"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "WHAT MADE THIS NECESSARY. \"When was the first store closed?\" has one proper answer, a DATE, and no shape here could carry it: the nearest was `rank` + `ordering` + `limit: 1` with the date as a SLICE, which answers with a ROW -- `Contoso Store Rhode Island · 2013-12-05 · 1` against an approved `2013-12-05`. The gap was not in `not_expressible` either, so nothing refused and the question was silently answered in a different shape, which is the one outcome declared gaps exist to prevent.\n"
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: min",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "max": {
+      "id": "max",
+      "label": "max",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:max",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the latest or largest value a column holds"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column whose role declares the `extremum` use (mac.concept.column.query_use)</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: MAX(<column>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "as `min` -- a concept declaring several admitting columns is asked about, not guessed"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: max",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
      },
      "list": {
       "id": "list",
@@ -1112,7 +1278,7 @@ const DATA = {
         "kind": "note",
         "h": "Note.",
         "p": [
-         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
+         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a measure with NO rule contributes SUM of its declared measure column, which is what a bare total of it emits; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. THE RULE-LESS MEASURE WAS MISSING FROM THIS SENTENCE AND FROM THE RUNTIME UNTIL 2026-09-30: every such denominator refused with \"declares neither a derivation rule nor an identity.canonical_key, so there is no number to divide by\", on concepts the same planner sums correctly as a numerator (measured on ADV-01 and AGG-12). The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
         ]
        }
       ],
@@ -1545,6 +1711,160 @@ const DATA = {
       "outcome": "COMMIT",
       "alt_outcome": null
      },
+     "min": {
+      "id": "min",
+      "label": "min",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:min",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the earliest or smallest value a column holds"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column whose role declares the `extremum` use (mac.concept.column.query_use)</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: MIN(<column>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "the subject names a CONCEPT rather than a column, and that concept declares more than one column admitting an extremum -- then it ASKS which, naming them. Measured on STORE-04: with the subject left as `Store` the answer was 665.0, MIN(square_metres), for a question asking when the first store closed.\n"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "note",
+        "h": "Note.",
+        "p": [
+         "WHAT MADE THIS NECESSARY. \"When was the first store closed?\" has one proper answer, a DATE, and no shape here could carry it: the nearest was `rank` + `ordering` + `limit: 1` with the date as a SLICE, which answers with a ROW -- `Contoso Store Rhode Island · 2013-12-05 · 1` against an approved `2013-12-05`. The gap was not in `not_expressible` either, so nothing refused and the question was silently answered in a different shape, which is the one outcome declared gaps exist to prevent.\n"
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "operation: min",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
+     "max": {
+      "id": "max",
+      "label": "max",
+      "badge": "BRANCHES",
+      "drift": false,
+      "edges": [
+       {
+        "from": "sel:max",
+        "to": "slot:SELECT",
+        "kind": "own"
+       },
+       {
+        "from": "field:subject",
+        "to": "slot:FROM",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:GROUP BY",
+        "kind": "base"
+       },
+       {
+        "from": "field:slices",
+        "to": "slot:SELECT",
+        "kind": "base"
+       },
+       {
+        "from": "field:filters",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:period",
+        "to": "slot:WHERE",
+        "kind": "base"
+       },
+       {
+        "from": "field:join_filters",
+        "to": "slot:JOIN",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "asks",
+        "v": "the latest or largest value a column holds"
+       },
+       {
+        "t": "requires — what must be DECLARED",
+        "v": "<code>a column whose role declares the `extremum` use (mac.concept.column.query_use)</code>"
+       },
+       {
+        "t": "contributes to the skeleton",
+        "v": "<code>select: MAX(<column>)</code>"
+       },
+       {
+        "t": "refuses when",
+        "v": "as `min` -- a concept declaring several admitting columns is asked about, not guessed"
+       },
+       {
+        "t": "runtime branches",
+        "v": "<code>non_fold_ops</code>"
+       }
+      ],
+      "callouts": [],
+      "self_node": {
+       "label": "operation: max",
+       "sub": "branches in the runtime — the planner tests for this word by name, so the edge starts here",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": "REFUSE"
+     },
      "list": {
       "id": "list",
       "label": "list",
@@ -1888,7 +2208,7 @@ const DATA = {
         "kind": "note",
         "h": "Note.",
         "p": [
-         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
+         "THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism. A measure with a derivation rule contributes that rule's template; a measure with NO rule contributes SUM of its declared measure column, which is what a bare total of it emits; a countable contributes COUNT(DISTINCT <its canonical_key>). So \"per customer\" divides by the customers a bare \"how many customers\" would have counted — one definition of a count, never two that drift. THE RULE-LESS MEASURE WAS MISSING FROM THIS SENTENCE AND FROM THE RUNTIME UNTIL 2026-09-30: every such denominator refused with \"declares neither a derivation rule nor an identity.canonical_key, so there is no number to divide by\", on concepts the same planner sums correctly as a numerator (measured on ADV-01 and AGG-12). The denominator is also JOINED like any other term, so a denominator with no path refuses `no_join_path` naming both ends rather than composing SQL the engine would reject. NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the only honest cell."
         ]
        }
       ],
@@ -2062,10 +2382,10 @@ const DATA = {
     }
    },
    "counts": {
-    "operations": 9,
-    "branch_claimed": 4,
-    "branch_measured": 7,
-    "fields": 13,
+    "operations": 11,
+    "branch_claimed": 6,
+    "branch_measured": 9,
+    "fields": 15,
     "filter_ops": 8,
     "slots": 7
    }
@@ -4033,14 +4353,14 @@ const DATA = {
         "kind": "warn",
         "h": "What measurement cannot tell you.",
         "p": [
-         "whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent."
+         "whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso, Ltd are one company in two registers; Fabrikam Group and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent."
         ]
        },
        {
         "kind": "bad",
         "h": "Frontier.",
         "p": [
-         "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso AG are one company in two registers. Northwind AG and Contoso are two companies."
+         "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso, Ltd are one company in two registers. Fabrikam Group and Contoso are two companies."
         ]
        }
       ],
@@ -4235,6 +4555,90 @@ const DATA = {
       "outcome": "ASK",
       "alt_outcome": null
      },
+     "sort": {
+      "id": "sort",
+      "label": "sort",
+      "badge": "COMMIT",
+      "drift": false,
+      "edges": [
+       {
+        "from": "m:a_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:b_distinct",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "m:pairs",
+        "to": "mid:constellation",
+        "kind": "own"
+       },
+       {
+        "from": "mid:constellation",
+        "to": "mid:person",
+        "kind": "own"
+       },
+       {
+        "from": "mid:person",
+        "to": "mid:ruling",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:COMMIT",
+        "kind": "own"
+       },
+       {
+        "from": "mid:ruling",
+        "to": "out:GATE",
+        "kind": "base"
+       }
+      ],
+      "detail": [
+       {
+        "t": "the constellation that makes it a candidate",
+        "v": "<code>none — no constellation bears on it</code>"
+       },
+       {
+        "t": "what the ruling does",
+        "v": "The order this column's values are presented in when the question states none. `asc` is alphanumeric and is the reading for a NAME, `desc` largest-first for a MAGNITUDE, `none` means never an ordering key. PER COLUMN, never per concept: one breakdown legitimately wants brand asc, country_code asc and net_amount desc at once, which no concept-level flag can express."
+       },
+       {
+        "t": "declared as",
+        "v": "<code>rulings.sort</code> · status <b>implemented</b> · reader planner/sql.py column_sort -> the ORDER BY this column contributes"
+       },
+       {
+        "t": "evidence",
+        "v": "not required — the constellation is the evidence"
+       }
+      ],
+      "callouts": [
+       {
+        "kind": "warn",
+        "h": "What measurement cannot tell you.",
+        "p": [
+         "the order a reader expects. Measured 2026-10-02: an 88-row breakdown passed and failed on alternate runs with the data unchanged, because the grader compared against the capture's first 50 and WHICH 50 depended on unordered output. The data cannot say which order is meant; only a person can."
+        ]
+       },
+       {
+        "kind": "bad",
+        "h": "Frontier.",
+        "p": [
+         "THE ONE RULING WITH NO MEASUREMENT CONSTELLATION, and that is the point rather than a gap: SQL guarantees no row order without ORDER BY, so nothing in the data can establish the order a reader expects — only a person can say it. Measured 2026-10-02 on an 88-row breakdown: the grader compared approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. A column declaring nothing falls to query_grammar.yaml#projection.default_ordering, which reads the column's declared type family; `Intent.ordering` outranks both."
+        ]
+       }
+      ],
+      "self_node": {
+       "label": "ruling: sort",
+       "sub": "a judgement a person makes on top of a measurement — the constellation narrows it to a candidate and stops there",
+       "empty": false
+      },
+      "outcome": "COMMIT",
+      "alt_outcome": null
+     },
      "never_axis": {
       "id": "never_axis",
       "label": "never_axis",
@@ -4327,7 +4731,7 @@ const DATA = {
     }
    },
    "counts": {
-    "words": 4,
+    "words": 5,
     "enforced": 0,
     "designed": 4
    }
@@ -4363,6 +4767,18 @@ const DATA = {
    "effect": "refuse ontology_gap — no register, so a name cannot become a code"
   },
   {
+   "state": "a filter's VALUE is a temporal literal (a day, month, quarter or year, absolute or one of the ten relative phrases) and the term names a date column the served plane measured",
+   "effect": "the built-in calendar reads it into a half-open range and the OPERATOR IS APPLIED TO THE RANGE'S EDGE — `after 2020` is `>= 2021-01-01`, `in 2024` is `>= 2024-01-01 AND < 2025-01-01`. No register is consulted and none is required. The answer discloses the range it read."
+  },
+  {
+   "state": "the term names no ONE date column — a grain word (date, day, month, quarter, year), or no temporal word at all where the VALUE is still a date — and the concept declares several",
+   "effect": "clarify, naming every date column — the resolution ladder's third rung. A concept that declares a `period` column has already ruled which date a question means, and that settles it without asking; Store declares `open_date` and `close_date` and neither is the period, so attributing a closure to an opening is a question only a person can answer. MEASURED: one phrasing of \"which stores closed after 2020\" reached the planner as {term: close_date, value: '2020-12-31'} and another as {term: Store, value: '2020'} — the concept as the term — so the association cannot depend on the word the model chose, only on what the concept declares."
+  },
+  {
+   "state": "the operator is `ne` over a literal coarser than a day",
+   "effect": "refuse disjunctive_filter — `not in 2024` is `< 2024-01-01 OR >= 2025-01-01`, and a filter set is a conjunction (see not_expressible.disjunctive_filter). A single day is expressible and is emitted as `<>`."
+  },
+  {
    "state": "the subject's relation declares a period column",
    "effect": "a period filter binds"
   },
@@ -4375,6 +4791,37 @@ const DATA = {
   "how": "One `slices` entry per column: {term: <concept>, column: <column>}. Any column the concept declares — dimension or attribute. A column named in `ordering.by` is pulled into the SELECT too, which is how \"top 5 by price, shown by name\" needs no new grammar.",
   "on_list": "the slices ARE the projection — SELECT DISTINCT <columns>",
   "on_aggregate": "the slices are the projection AND the GROUP BY. Naming the key beside the display column (ProductKey, ProductName) is the correct form: the key decides the grain and the name rides along, functionally dependent on it. Naming the display column ALONE merges any two members that share one.",
+  "default_ordering": {
+   "when": "Intent.ordering is absent and the answer carries more than one row",
+   "rule": [
+    {
+     "id": "by_aggregate",
+     "case": "the projection includes an AGGREGATE (a measure column)",
+     "order_by": "that aggregate",
+     "direction": "desc",
+     "why": "A breakdown is read largest-first: the question \"by brand and country\" is asked to find where the money is. Descending puts the answer in the first rows, which is also what makes a capped view (the first N rows) the N that matter rather than an arbitrary N.\n"
+    },
+    {
+     "id": "by_slices_label",
+     "case": "no aggregate — the slices alone (a LIST) — and the column's declared type is any family but `number` (mac.column_type)\n",
+     "families": "otherwise",
+     "order_by": "the slice columns, in projection order",
+     "direction": "asc",
+     "why": "A name has no magnitude to rank by, so it is ordered alphanumerically and is therefore stable, diffable and findable by eye. Ascending on every column in the order they are projected, so a multi-column list is grouped the way it is read. A DATE sorts the same way and means chronological, which is the reading a list of dates wants.\n"
+    },
+    {
+     "id": "by_slices_magnitude",
+     "case": "no aggregate — the slices alone (a LIST) — and the column's declared type is the `number` family (mac.column_type)\n",
+     "families": [
+      "number"
+     ],
+     "order_by": "the slice columns, in projection order",
+     "direction": "desc",
+     "why": "Operator's regulation, 2026-10-02: \"in such case where you deliver lists then SORT / if numeric then descending / if string then alfanumeric\". A number IS a magnitude, so it is read largest-first for the same reason an aggregate is -- the first rows are the ones that matter, which is what makes a capped view honest.\nTHIS RULE IS WHY `by_slices` SPLIT IN TWO. It was one rule with `direction: asc`, and its own `why` gave away the assumption: \"a list of NAMES has no magnitude to rank by\". It was written for name columns and applied to every column, so a numeric dimension sorted ascending against the regulation. Splitting it here rather than declaring `rulings.sort` on each numeric column keeps the regulation in ONE place: a per-column ruling would be this universal rule re-typed per column, per bundle, and again for every data source.\n"
+    }
+   ],
+   "never": "This never overrides `Intent.ordering`, and it never adds a LIMIT. Ordering decides the order of the rows; how many come back is `Intent.limit`, which is the reader's to state.\n"
+  },
   "gaps": [
    {
     "id": "no_display_only_column",
@@ -4385,7 +4832,8 @@ const DATA = {
     "id": "identity_column_not_suppressible",
     "what": "asking for one column still returns the concept's identity column beside it",
     "example": "a slice on ProductName yields \"ProductName, ProductCode AS product\"",
-    "why": "the identity is appended by the assembler and no field withholds it"
+    "why": "the identity is appended by the assembler and no field withholds it",
+    "note": "CLOSED 2026-09-29 by the runtime (mac-runtime grammar_reader.CLOSED_GAPS): a LIST that names a column of its own subject gets that column alone — \"countries where we have customers\" is SELECT DISTINCT country, 8 rows, where it was country beside every customer name, 100,793 rows. A slice on ANOTHER concept still lists the subject beside it (\"products by category\"), which is the design, not the gap. Listed until retired."
    },
    {
     "id": "identity_column_duplicated",
@@ -4469,6 +4917,7 @@ const DATA = {
    "example": "the count of orders AND their total value, side by side",
    "why": "Intent carries ONE subject; `denominator` is a second only to divide by",
    "measured": "208 questions",
+   "note": "CLOSED 2026-09-30 by `Intent.also` (mac-runtime models.MeasureRef), on the operator's ruling: \"this is absolutely standard question or ask and such situation will repeat multiple times — the framework must be able to generate complex queries too ... go and do it right\". An answer is N AGGREGATES OVER ONE ROW SET: the same FROM, WHERE, GROUP BY and period, one SELECT column per measure, each aggregating the way its own subject would. `subject` is the first of them, so every reader that knows only about `subject` is unchanged.\nWHAT MADE IT URGENT rather than merely large. \"Compare gross vs net revenue by brand\" reached the planner with the second measure filed as a `denominator`, so the only computable thing was a QUOTIENT — 1.06 per brand, a plausible number answering a question nobody asked. The gap was not just refusing 208 questions; on this shape it was one fix away from answering them wrongly.\nTHE SHAPE IS STILL DETECTED, and deliberately: `EXPRESSED_BY` means \"never refuse\", and a field being ABLE to carry a second measure is not evidence that a given question's intent did. A question naming two measures with neither `also` nor a denominator has dropped one in silence, and that is what the detector is for. Wiring it as expressed-and-never-refused removed the protection, and this repository's own reconciliation test caught it in one run.\nSTILL NOT EXPRESSIBLE: arithmetic BETWEEN the columns. \"The difference between gross and net\" is a third measure a bundle declares, not something a question composes here. Listed until the entry is retired.",
    "sole": 208,
    "stale": null
   },
@@ -4479,15 +4928,6 @@ const DATA = {
    "why": "FilterOp has eight comparison operators and none matches a pattern",
    "measured": "205 questions. Note this is resolution's job in MAC — a register resolves a name to a code offline — so some of these are a REGISTER gap in the bundle rather than a grammar gap",
    "sole": 205,
-   "stale": null
-  },
-  {
-   "id": "multi_key_ordering",
-   "what": "ORDER BY more than one key",
-   "example": "rank by score descending, then by name",
-   "why": "OrderingSpec carries a single `by`",
-   "measured": "60 questions. The cheapest entry in this list to close",
-   "sole": 60,
    "stale": null
   },
   {
@@ -4651,13 +5091,16 @@ const DATA = {
   },
   "concept.column.ruling": {
    "label_of": {
-    "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso AG\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have."
+    "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso, Ltd\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have."
    },
    "finer_than": {
     "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName` carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a colliding code space instead — see `scoped_by`, and measure before you rule."
    },
    "scoped_by": {
     "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect."
+   },
+   "sort": {
+    "description": "THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND NEVER PER CONCEPT -- operator ruling, 2026-10-02: \"it must be sort per column and not concept\" -- because one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at the same time. NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 (\"net revenue by brand and customer country for 2024\"), an 88-row breakdown -- the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. An ordering is also what makes a truncated view honest: the first N rows of a descending measure are the N that matter. A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's own words, \"top 5 by price\" -- outranks both."
    },
    "never_axis": {
     "description": "THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row."
@@ -4702,10 +5145,17 @@ const DATA = {
   },
   "concept.aggregation_effect": {
    "additive": {
-    "description": "SUM is correct across this axis."
+    "description": "SUM is correct across this axis.",
+    "folds_with": [
+     "sum",
+     "average"
+    ]
    },
    "average": {
-    "description": "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+    "description": "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything.",
+    "folds_with": [
+     "average"
+    ]
    },
    "none": {
     "description": "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
@@ -5109,20 +5559,17 @@ const DATA = {
    }
   },
   "measured": {
-   "group_roles": [
-    "dimension",
-    "period"
-   ],
+   "group_roles": [],
    "filter_roles": [
     "dimension",
     "key"
    ],
    "refusal_role": null,
    "period_gate": true,
-   "period_reads": 18,
-   "resolver_field_roles_mentions": 2,
+   "period_reads": 19,
+   "resolver_field_roles_mentions": 6,
    "resolver_role_value_reads": 0,
-   "measured_from": "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src/mac_runtime"
+   "measured_from": "mac-platform/packages/mac-runtime/src/mac_runtime"
   },
   "verified": {
    "key": {
@@ -5144,7 +5591,7 @@ const DATA = {
      "declared": "no",
      "runtime": "no",
      "agrees": true,
-     "reader": "the planner's groupable tuple ('dimension', 'period')",
+     "reader": "the planner's groupable tuple ()",
      "why": "it is what COUNT(DISTINCT) counts, not what you count BY"
     }
    },
@@ -5165,9 +5612,9 @@ const DATA = {
     },
     "group": {
      "declared": "yes",
-     "runtime": "yes",
-     "agrees": true,
-     "reader": "the planner's groupable tuple ('dimension', 'period')",
+     "runtime": "no",
+     "agrees": false,
+     "reader": "the planner's groupable tuple ()",
      "why": "GROUP BY Gender is legitimate — this is the categorical axis"
     }
    },
@@ -5190,7 +5637,7 @@ const DATA = {
      "declared": "no",
      "runtime": "no",
      "agrees": true,
-     "reader": "the planner's groupable tuple ('dimension', 'period')",
+     "reader": "the planner's groupable tuple ()",
      "why": "folded as its MeasureType allows; never an axis"
     }
    },
@@ -5206,14 +5653,14 @@ const DATA = {
      "declared": "yes",
      "runtime": "yes",
      "agrees": true,
-     "reader": "the period gate — the planner looks the period column up by role and binds Intent.period (18 reads)",
+     "reader": "the period gate — the planner looks the period column up by role and binds Intent.period (19 reads)",
      "why": "it is what a question's period binds to"
     },
     "group": {
      "declared": "undeclared",
-     "runtime": "yes",
+     "runtime": "no",
      "agrees": null,
-     "reader": "the planner's groupable tuple ('dimension', 'period')",
+     "reader": "the planner's groupable tuple ()",
      "why": "the vocabulary says nothing — and the planner does allow it"
     }
    },
@@ -5236,7 +5683,7 @@ const DATA = {
      "declared": "no",
      "runtime": "no",
      "agrees": true,
-     "reader": "the planner's groupable tuple ('dimension', 'period')",
+     "reader": "the planner's groupable tuple ()",
      "why": "grouping sales by a load stamp is meaningless"
     }
    }
@@ -5247,6 +5694,8 @@ const DATA = {
    "count",
    "sum",
    "average",
+   "min",
+   "max",
    "list",
    "rank",
    "compare",
@@ -5270,6 +5719,8 @@ const DATA = {
    "define",
    "exists",
    "list",
+   "max",
+   "min",
    "ratio",
    "sum"
   ],
@@ -5279,7 +5730,7 @@ const DATA = {
    "exists",
    "list"
   ],
-  "root": "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src/mac_runtime"
+  "root": "mac-platform/packages/mac-runtime/src/mac_runtime"
  },
  "drifts": [
   "R2 'sum' claims branches_in_runtime=False and the planner disagrees",
@@ -5288,13 +5739,13 @@ const DATA = {
  ],
  "counts": {
   "planes": 3,
-  "gaps": 10,
+  "gaps": 9,
   "projection_gaps": 3,
   "stale": 3,
-  "cases": 47,
+  "cases": 52,
   "perm_cells": 27,
   "perm_undeclared": 2,
-  "perm_disagree": 0
+  "perm_disagree": 1
  }
 };
 const $ = s => document.querySelector(s);

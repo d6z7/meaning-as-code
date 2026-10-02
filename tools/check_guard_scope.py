@@ -227,10 +227,17 @@ def run(estate: bool) -> int:
     # omitted the key, so "adding a new finding" passed there and was REFUSED on the real file —
     # the predicate was reading the string `null` as a person. A fixture that differs from the
     # producer's real output tests the fixture.
-    real_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                             "..", "archive-sources", "example", "contoso5",
-                             "data", "quality", "data_quality_register.yaml")
-    if os.path.isfile(real_path):
+    # DISCOVERED, NOT NAMED: the estate checkout's own name is an identity a PUBLIC file must
+    # not carry. Imported here, below the fold, so the predicates above stay stdlib-only.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import _neighbours
+    real_path = ""
+    for bundle in reversed(_neighbours.worked_bundles()):
+        cand = os.path.join(bundle, "data", "quality", "data_quality_register.yaml")
+        if os.path.isfile(cand):
+            real_path = cand
+            break
+    if real_path:
         with open(real_path, encoding="utf-8") as fh:
             real = fh.read()
         rl = real.splitlines(True)

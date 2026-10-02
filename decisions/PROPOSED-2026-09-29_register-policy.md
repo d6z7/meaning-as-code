@@ -209,8 +209,8 @@ and `check_registers_reachable` states that renaming it "breaks a live behaviour
   start of it: it refused `searchable` until the key was declared, then caught the producer writing
   the member LIST where an integer was declared.
 
-**Other bundles are not migrated.** contoso2/3/4 and estate/estate2 still hold 99 redundant copies between
-them, and the gate now refuses them. They are cut, not re-cut: the migration needs each bundle's
+**Other bundles are not migrated.** contoso2/3/4 and two further bundles still hold 99 redundant
+copies between them, and the gate now refuses them. They are cut, not re-cut: the migration needs each bundle's
 warehouse, because labels are re-derived at cut time and a connectionless cut would silently flatten
 `AU,Australia` to `AU,AU` — the very regression above, estate-wide.
 

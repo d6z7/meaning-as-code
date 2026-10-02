@@ -54,8 +54,8 @@ than counting it held.
 
 They ARE the test's expected value, so `tests/golden/`. They are rendered from
 `sdk/authoring/exemplars/bundle` because a golden must be reproducible on any machine, and the only
-concept bundles in this repository are the exemplars — a golden cut from a bundle under
-`archive-sources` would freeze a document nobody else can render. The goldens are never read
+concept bundles in this repository are the exemplars — a golden cut from a bundle under a private
+sources repository would freeze a document nobody else can render. The goldens are never read
 back into a page: the rendering keeps one author.
 
 ## Verify / accept

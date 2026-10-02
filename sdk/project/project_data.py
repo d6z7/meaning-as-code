@@ -955,9 +955,9 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         # THREE FIELD GENERATIONS, READ IN ORDER OF PRECISION — and the third is not legacy cruft,
         # it is the only ask a HAND-AUTHORED register carries. Fixing this reader to prefer
         # `ruling`/`needs` (which only `mac_dq_findings` writes) silently blanked every bundle whose
-        # register was written by a person: measured 2026-09-28, estate/estate2 carries `sme_owner` 45
-        # times and `ruling:` zero times, as do archive-estate and mac-ontology-contoso. Dropping
-        # the oldest spelling turned the bug inside out instead of fixing it.
+        # register was written by a person: measured 2026-09-28, one hand-authored bundle carries
+        # `sme_owner` 45 times and `ruling:` zero times, as do two others. Dropping the oldest
+        # spelling turned the bug inside out instead of fixing it.
         q = ((r.get("question") or "").strip()
              or str(i.get("needs") or "").strip()
              or _ask_from_owner(i.get("sme_owner")))

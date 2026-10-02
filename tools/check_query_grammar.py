@@ -35,11 +35,13 @@ import yaml
 HERE = Path(__file__).resolve().parent
 GRAMMAR = HERE.parent / "grammar" / "query_grammar.yaml"
 
+sys.path.insert(0, str(HERE))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
 
 def _runtime_root(explicit: str | None) -> Path | None:
-    """The planner package: --runtime, then $MAC_RUNTIME, then the usual sibling checkout."""
-    for cand in (explicit, os.environ.get("MAC_RUNTIME"),
-                 HERE.parents[1] / "mac-platform/packages/mac-runtime/src/mac_runtime"):
+    """The planner package: --runtime, then $MAC_RUNTIME, then wherever `_neighbours` finds it."""
+    for cand in (explicit, os.environ.get("MAC_RUNTIME"), _neighbours.runtime_package()):
         if cand and Path(cand).is_dir():
             return Path(cand)
     return None

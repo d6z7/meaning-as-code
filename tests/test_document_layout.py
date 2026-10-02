@@ -24,6 +24,8 @@ import pytest
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+import _neighbours  # noqa: E402  — one home for the checkouts beside this repository
 
 from sdk.project import knowledge as K  # noqa: E402
 from sdk.project import layout as L  # noqa: E402
@@ -36,7 +38,9 @@ from tools import check_document_layout as C  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = ROOT / C.FREEZE_BUNDLE
-WORKED = Path("/Users/<operator>/dev/archive-sources/example/contoso5")
+#: DISCOVERED, NOT NAMED — the estate checkout's name is an identity this public repo must not
+#: carry. `$MAC_WORKED_BUNDLES` overrides; a machine with none skips the worked-bundle arm.
+WORKED = _neighbours.worked_bundles()
 
 #: The five headings `sdk/project/knowledge.py` carried as a Python tuple before the migration.
 #: Behaviour identical means THIS list, in THIS order, still comes out of the declaration.
@@ -137,14 +141,15 @@ def test_every_rendered_document_IS_its_declared_layout(rendered) -> None:
 
 def test_the_rules_hold_on_a_WORKED_bundle_too() -> None:
     """A layout that held on the exemplars alone would be a property of four small concepts."""
-    if not WORKED.exists():
+    if not WORKED:
         pytest.skip("no worked bundle reachable on this machine")
     findings = []
-    for artifact, lay in L.layouts(ROOT).items():
-        if lay.renders is None:
-            continue
-        for document, text in lay.render(WORKED).items():
-            findings += C.check_rules(lay, document, text)
+    for bundle in WORKED:
+        for artifact, lay in L.layouts(ROOT).items():
+            if lay.renders is None:
+                continue
+            for document, text in lay.render(bundle).items():
+                findings += C.check_rules(lay, document, text)
     assert not findings, findings
 
 

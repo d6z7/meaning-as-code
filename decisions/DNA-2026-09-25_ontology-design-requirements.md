@@ -222,13 +222,13 @@ StartDT          11 305 distinct over 104 990 rows
 
 The operator's ruling that settles what this IS (BRD-Q1):
 
-> *"Brand is Contoso, known as Contoso. But Manufacturer registered name is Contoso AG. One is what is
-> known to people of the world and the other is what is entered in the trade registers."*
+> *"Brand is Contoso, known as Contoso. But Manufacturer registered name is Contoso, Ltd. One is
+> what is known to people of the world and the other is what is entered in the trade registers."*
 
 **TWO NAMING REGISTERS FOR ONE ENTITY**, not two entities. That is why the 1:1 holds by MEANING
 rather than by luck — every brand has exactly one trade-register entry. Had `Manufacturer` meant
-the OWNING company it would be 1:N (Northwind AG owns Contoso, CTSO and Contoso) and the modelling
-would be the opposite. The distinction between *a thing's other name* and *a thing's parent* is
+the OWNING company it would be 1:N (Fabrikam Group owns Contoso, Northwind and Tailspin) and the
+modelling would be the opposite. The distinction between *a thing's other name* and *a thing's parent* is
 the whole question, and cardinality alone cannot tell you which you have.
 
 `GROUP BY CountryFull` yields exactly the 8 groups `GROUP BY Country` yields. So this is not

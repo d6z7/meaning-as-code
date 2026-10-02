@@ -24,14 +24,14 @@ is not a plane; allow"* — nine directories named `ontology` have no manifest a
 are three different things:
 
 ```
-archive-SystemB/ontology            real meaning plane
-public/estate/ontology                    real meaning plane
-archive/archive-poc/SystemB/…       real meaning plane
+<bundle-repo>/ontology                 real meaning plane
+<bundle-repo>/public/<src>/ontology    real meaning plane
+<archive-repo>/<src>/…                 real meaning plane
 mac-integration-kit/ontology           the method track          (already exempted)
 meaning-as-code/guardrails/ontology    specs ABOUT the plane     (this case)
-archive/terraform/modules/…       a terraform module
-archive/tests/unit/ontology       unit tests
-archive/images/ontology           images
+<infra-repo>/terraform/modules/…       a terraform module
+<infra-repo>/tests/unit/ontology       unit tests
+<infra-repo>/images/ontology           images
 ```
 
 A manifest-absence rule would open the first three to unlock the fifth. **The substring test is

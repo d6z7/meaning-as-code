@@ -39,7 +39,9 @@ import pathlib
 import re
 import sys
 
-MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
 #: THE ORIGINAL, NARROW PATTERN — deliberately back after a measured failure. Broadening it to
 #: catch every rephrasing (see _HISTORICAL_CLAIMS) also made it flag the CORRECTION, because the
 #: corrected unit contains the false claim's own words in order to deny them: "the amount is STORED
@@ -107,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         import duckdb
         import yaml  # noqa: F401
-        sys.path.insert(0, MAC_RUNTIME_SRC)
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.models import ConceptClass
         from mac_runtime.ontology import OntologyIndex
     except ImportError as exc:

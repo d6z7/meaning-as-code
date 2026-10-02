@@ -10,8 +10,8 @@ canon's contract page is [`reference_manual/canon/population_select.md`](../refe
 This record is the decision trail behind them.
 
 **Paths.** `ontology/…`, `data/…` and `acceptance/…` name files of the applied bundle
-(`archive-sources/example/contoso5`). `packages/…` names mac-platform. Bare
-`reference_manual/…`, `sdk/…`, `tools/…` name this repository.
+(`<sources>/example/contoso5`, where `<sources>` is the private bundle-sources repository).
+`packages/…` names mac-platform. Bare `reference_manual/…`, `sdk/…`, `tools/…` name this repository.
 
 ---
 
@@ -303,7 +303,7 @@ Ordered by what I would do next.
    `canons/population_select.py`, `mac-console/trace_losses.py`, `tests/test_planner_predicates.py`,
    `tests/test_param_types.py` are all `??` on `mac-platform@develop`;
    `reference_manual/canon/population_select.md` is `??` on `meaning-as-code@develop`; the three
-   concept files and `edges.yaml` are modified on `archive-sources@master`. The last commit in any
+   concept files and `edges.yaml` are modified on `<sources>@master`. The last commit in any
    of the three repos is 2026-09-29. **This is the item that matters most**: a mechanism that exists
    only in a working tree is one `git checkout` from never having happened.
 2. **THREE EXPORTED PIECES OF THE CANON ARE UNREACHED.** `stray_columns()` and `fold()` have **zero
@@ -396,7 +396,7 @@ mac-platform@develop        ?? planner/{predicates,populations,column_types}.py
                              M planner/{plan,sql,resolve,types}.py · canon.py · canons/__init__.py
 meaning-as-code@develop     ?? reference_manual/canon/population_select.md
                              M mac_vocabulary.yaml · sdk/acceptance/{bundleio,flags}.py
-archive-sources@master  M example/contoso5/ontology/concepts/{store,location,country}.yaml
+<sources>@master             M example/contoso5/ontology/concepts/{store,location,country}.yaml
                              M example/contoso5/ontology/edges.yaml
 ```
 

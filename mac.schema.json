@@ -3961,7 +3961,7 @@
                                 "short",
                                 "code"
                               ],
-                              "description": "WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'Contoso' is the common register, 'Contoso AG' the legal one."
+                              "description": "WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'Contoso' is the common register, 'Contoso, Ltd' the legal one."
                             },
                             "sort": {
                               "type": "string",

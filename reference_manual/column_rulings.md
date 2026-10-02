@@ -31,7 +31,7 @@ SYNOPSIS
 
 > An authored judgement about a column, beyond what measurement can establish.
 
-*`mac.concept.column.ruling` · 4 terms · closed — these are all of them*
+*`mac.concept.column.ruling` · 5 terms · closed — these are all of them*
 
 #### `mac.concept.column.ruling.label_of`
 
@@ -39,7 +39,7 @@ THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The
 column it labels; `register` says WHICH of that thing's names this one is. Group on the named
 column and DISPLAY this one: a question asking in these words gets answered in them, never
 refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what the
-world calls it, "Contoso AG" is what the register calls it, and they are one company under two
+world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under two
 naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many
 and this ruling would be wrong. Cardinality cannot tell you which you have.
 
@@ -61,6 +61,24 @@ state codes are carried by more than one country and 0 collide WITHIN a country,
 State` silently merges three unrelated regions into one row that looks like data. NOT
 `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which
 is the composite identity `mac.canon.composite_key_guard` exists to protect.
+
+#### `mac.concept.column.ruling.sort`
+
+THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
+alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
+reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND NEVER
+PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept" --
+because one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc`
+at the same time. NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO
+row order without ORDER BY, so an unordered answer is not a reading of the question: it is
+whatever the engine happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15
+("net revenue by brand and customer country for 2024"), an 88-row breakdown -- the grader
+compares the approved rows against the capture's first 50, WHICH 50 depended on unordered
+output, and the question passed and failed on alternate runs with the data unchanged. An
+ordering is also what makes a truncated view honest: the first N rows of a descending measure
+are the N that matter. A COLUMN THAT DECLARES NOTHING falls to
+query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice
+columns), and `Intent.ordering` -- the reader's own words, "top 5 by price" -- outranks both.
 
 #### `mac.concept.column.ruling.never_axis`
 
@@ -119,8 +137,8 @@ Two columns, **equal distinct counts and an equal pair count**:
 | Adventure Works | Adventure Works | 192 |
 
 1:1 gets you to the door. **Only a person can say the two names denote one thing.** Contoso and
-Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair
-would be one-to-many — a `key` pointing at a parent, not a label.
+Contoso, Ltd are one company in two registers; Fabrikam Group and Contoso are two companies, and
+that pair would be one-to-many — a `key` pointing at a parent, not a label.
 
 ## What happens without it
 
@@ -212,7 +230,7 @@ The name people use. 'Contoso', 'Germany', 'Monday'.
 
 #### `mac.name_register.legal`
 
-The name in a trade or statutory register. 'Contoso AG', 'Contoso, Ltd'.
+The name in a trade or statutory register. 'Contoso, Ltd'.
 
 #### `mac.name_register.long`
 
@@ -266,9 +284,9 @@ child has exactly one parent:
 
 | `CategoryName` | `SubCategoryName` |
 |---|---|
-| Audio | Bluetooth Headphones |
-| Audio | MP4&MP3 |
-| Audio | Recording Pen |
+| Contosoo | Bluetooth Headphones |
+| Contosoo | MP4&MP3 |
+| Contosoo | Recording Pen |
 | Cameras and camcorders | Camcorders |
 
 **`pairs == finer_distinct` is the whole test.** Higher, and a child has two parents — the roll-up

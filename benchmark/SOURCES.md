@@ -45,8 +45,9 @@ the per-question way of supplying meaning, and the claim MAC has to beat.
 
 ## Where it lives on this machine
 
-`/Users/<operator>/dev/benchmarks/bird/` — OUTSIDE every repository, because 2.0 GB does not belong
-in git and a benchmark corpus is an input, not source.
+`$HOME/dev/benchmarks/bird/` — OUTSIDE every repository, because 2.0 GB does not belong in git
+and a benchmark corpus is an input, not source. `$BIRD_DB` overrides it; that default is
+`bundlegen/regenerate_bird.sh`'s, which is the one home for the path.
 
 ```
 benchmarks/bird/dev.zip                          the download, kept beside its checksum

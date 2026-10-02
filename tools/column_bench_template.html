@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MAC · the column bench</title>
 <script>
-  /* Same mechanism as ask.html and estate.explorer.html (global localStorage 'mac_theme'), so the
-     theme choice carries across every MAC surface. Set before first paint — no flash. */
+  /* Same mechanism as the console's ask.html and its bundle explorer (global localStorage
+     'mac_theme'), so the theme choice carries across every MAC surface. Set before first paint. */
   (function(){ var t = localStorage.getItem('mac_theme') || ((window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light'); document.documentElement.dataset.theme = t; })();
 </script>
 <style>
 /* ---------------------------------------------------------------------------
    PALETTE — the estate's, not a new one. --commit/--ask/--refuse/--invariant are
-   the four colours the console's route column and the estate explorer already use for
+   the four colours the console's route column and its bundle explorer already use for
    COMMIT/ASK/REFUSE/BLOCK, so one outcome reads the same on every MAC surface.
    As a CATEGORICAL SERIES palette this set fails a CVD check (amber↔green ΔE 4.8
    protan). It is used only as a STATUS palette: every chip carries its word, and
@@ -654,7 +654,7 @@ let PROBE = {...PRESETS[0]};
 const BRANCHES = [
   {key: 'rulings.label_of', test: p => p.a === p.b && p.p === p.a,
    test_t: 'a = b = pairs',
-   cant: 'Whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso AG are one company in two registers; Northwind AG and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent, not a label.'},
+   cant: 'Whether the two names denote ONE thing or two. 1:1 gets you to the door. Contoso and Contoso, Ltd are one company in two registers; Fabrikam Group and Contoso are two companies, and that pair would be one-to-many — a key pointing at a parent, not a label.'},
   {key: 'rulings.finer_than', test: p => p.p === p.a && p.a > p.b,
    test_t: 'pairs = a, and a > b',
    cant: null, safe: 'Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count.'},

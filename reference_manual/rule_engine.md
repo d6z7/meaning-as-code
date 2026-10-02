@@ -81,7 +81,7 @@ still read; this bundle simply has no unaskable rows.
 
 ## 3. The authoring surface
 
-Two rules on `Store` (`archive-sources/example/contoso5/ontology/concepts/store.yaml:170-263`),
+Two rules on `Store` (`example/contoso5/ontology/concepts/store.yaml:170-263`, bundle-relative),
 because Store carries **two orthogonal states**:
 
 ```yaml
@@ -375,7 +375,7 @@ populations, under the standing rule *expose the granularity, never narrow silen
 ## 7. The worked bundle, measured
 
 `contoso5.duckdb`, schema `contoso_served`, 2026-10-01, via
-`/Users/<operator>/dev/mac-platform/.venv/bin/python`. **Ten populations across four axes on three
+`mac-platform/.venv/bin/python`. **Ten populations across four axes on three
 concepts** — every one of them lowered through `predicates.parse` + `predicates.lower` and passed
 through the real adapter gate.
 

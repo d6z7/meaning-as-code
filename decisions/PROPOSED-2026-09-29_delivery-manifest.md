@@ -60,7 +60,7 @@ Five deliveries of contoso5 on 2026-09-28. Every one exited 0 and reported its c
 | 2 | the whole DQ assessment | same defect: `dq-suite`, `dq-run`, `dq-findings` carried no `part` |
 | 3 | DQ over the served plane | once tagged, the stages RESUMED on phase 1's output: 0 of 8 served relations assessed, and the register still said eight landings were "consumed by no transformation" — eight transformations later |
 | 4 | the SME questions | the renderer read `issue["sme_owner"]`; no finding has ever carried that key. 7 open questions rendered with a blank ask column, and the console pane stated "Every condition has been ruled" |
-| 5 | contoso1 + estate2 lineage | `objects.json#lineage_graph` was retired and those bundles cannot re-project; the view went blank on two bundles that had worked for months |
+| 5 | lineage on the two non-DuckDB bundles | `objects.json#lineage_graph` was retired and those bundles cannot re-project; the view went blank on two bundles that had worked for months |
 
 **None of these is a forgotten step.** Every one is a missing declaration:
 

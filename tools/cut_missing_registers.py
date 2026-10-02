@@ -35,6 +35,9 @@ import pathlib
 import re
 import sys
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
 #: Above this a domain is an identity, not an enumeration. Mirrors `Vocabulary.VALUE_LIMIT`.
 MAX_MEMBERS = 40
 #: A column with one value tells a question nothing and costs prompt space.
@@ -54,7 +57,7 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     root = pathlib.Path(a.bundle).resolve()
-    sys.path.insert(0, "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src")
+    _neighbours.ensure_runtime_on_path()
     import duckdb
     import yaml
     from mac_runtime.ontology import OntologyIndex

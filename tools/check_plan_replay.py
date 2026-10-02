@@ -38,7 +38,9 @@ import sys
 import yaml
 
 HERE = pathlib.Path(__file__).resolve().parent
-RUNTIME_SRC = HERE.parent.parent / "mac-platform" / "packages" / "mac-runtime" / "src"
+
+sys.path.insert(0, str(HERE))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 
 #: Refusal reasons that depend on a LOADED RESOLVER, not on the ontology. Replaying offline cannot
 #: resolve a name to a code, so these say nothing about a lost capability.
@@ -97,7 +99,7 @@ def _recorded(answers_dir: pathlib.Path) -> list[tuple[str, dict, str]]:
 
 
 def replay(root: pathlib.Path):
-    sys.path.insert(0, str(RUNTIME_SRC))
+    _neighbours.ensure_runtime_on_path()
     from mac_runtime.models import Intent
     from mac_runtime.ontology.index import OntologyIndex
     from mac_runtime.planner.plan import plan
@@ -160,8 +162,10 @@ def main(argv: list[str] | None = None) -> int:
     if not (root / "acceptance" / "answers").is_dir():
         print(f"could not run: no acceptance/answers under {root}")
         return 2
-    if not RUNTIME_SRC.is_dir():
-        print(f"could not run: no runtime at {RUNTIME_SRC}")
+    try:
+        _neighbours.ensure_runtime_on_path()
+    except _neighbours.RuntimeMissing as exc:
+        print(f"could not run: {exc}")
         return 2
 
     planned, refused, discounted, unreadable, n_registers = replay(root)

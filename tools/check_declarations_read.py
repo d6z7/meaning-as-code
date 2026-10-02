@@ -34,7 +34,11 @@ import sys
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-RUNTIME = ROOT.parent / "mac-platform" / "packages" / "mac-runtime" / "src" / "mac_runtime"
+sys.path.insert(0, str(ROOT / "tools"))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
+#: `--runtime` still overrides; the default is wherever the runtime actually is, or nowhere.
+RUNTIME = _neighbours.runtime_package()
 FILES = ("ConceptFile", "EdgesFile", "ValueRegisterFile", "RulesFile", "TransformFile")
 #: WHO IS EXPECTED TO READ WHAT. A concept's keys, the concept vocabularies, the common rules, the
 #: grammar and the canon are read at ANSWER TIME — by the runtime. A gate vocabulary (diagnostic
@@ -429,14 +433,15 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--provenance", action="store_true",
                     help="for every UNREAD declaration: its version marker, first commit, and era (old grammar / new grammar / retired)")
-    ap.add_argument("--runtime", default=str(RUNTIME))
+    ap.add_argument("--runtime", default=str(RUNTIME) if RUNTIME else "")
     ap.add_argument("--family", choices=("schema", "vocabulary", "rules", "grammar", "canon"))
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--list-read", action="store_true", help="also list what IS read, with the first reader")
     a = ap.parse_args(argv)
-    runtime = pathlib.Path(a.runtime)
-    if not runtime.is_dir():
-        print(f"could not run: no runtime at {runtime}")
+    runtime = pathlib.Path(a.runtime) if a.runtime else None
+    if runtime is None or not runtime.is_dir():
+        print(f"could not run: no runtime at {runtime or '—'} — pass --runtime or set "
+              f"${_neighbours.ENV_RUNTIME}")
         return 2
     report = audit(runtime, a.family)
     if a.provenance:

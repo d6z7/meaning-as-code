@@ -496,7 +496,7 @@ def report(rows: list[dict], name: str, dialect: str) -> dict:
     print(f"  reachable   {enc + dec:>5}  {pct(enc + dec):>5.1f} %   UPPER BOUND (see DECLARABLE)")
     print(f"  BLOCKED     {blk:>5}  {pct(blk):>5.1f} %   real grammar gaps")
 
-    print("\n  GRAMMAR ESTATE ONLY — 'sole' = questions this feature ALONE costs us:")
+    print("\n  GRAMMAR SHORTFALLS ONLY — 'sole' = questions this feature ALONE costs us:")
     print(f"    {'feature':<26}{'appears':>9}{'% corpus':>10}{'sole':>7}   declared?")
     for f, n in feat_hits.most_common():
         if f in DECLARABLE:

@@ -51,7 +51,7 @@ def _is_value_register(path) -> bool:
 
     THE SUFFIX IS NOT THE DISCRIMINATOR, and claiming it as one broke a bundle. `ValueRegisterFile`
     was routed by basename when it landed, which is how every other definition here is routed — and
-    `estate/estate` carries TEN `*.lookup.yaml` of a completely different kind: `authoritative_register`,
+    one estate bundle carries TEN `*.lookup.yaml` of a completely different kind: `authoritative_register`,
     with `realized_into`, `canon` and `provenance`, written against schema_version 0.1.13. Routing
     them to the new definition produced 50 errors on a bundle that had none of them, and the files
     had not changed.

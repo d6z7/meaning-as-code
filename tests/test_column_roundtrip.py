@@ -95,9 +95,9 @@ for retired in ("resolved_axis", "role: attribute", "mac.MeasureType", "non-addi
     check(f"prompt carries no retired token: {retired!r}", retired not in P)
 
 # 6. the reader, when it is beside us
-runtime_src = os.path.join(os.path.dirname(ROOT), "mac-platform", "packages", "mac-runtime", "src")
-if os.path.isdir(runtime_src):
-    sys.path.insert(0, runtime_src)
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+if _neighbours.runtime_src() is not None:
+    _neighbours.ensure_runtime_on_path()
     try:
         from mac_runtime.ontology import OntologyIndex  # type: ignore
         ix = OntologyIndex.from_directory(BUNDLE)

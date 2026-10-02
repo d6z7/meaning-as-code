@@ -100,6 +100,10 @@ on the exact value. Never matched against a label, and never aggregated — an i
 summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and
 what the fact joins on.
 
+| field | value |
+|---|---|
+| `query_use` | identity |
+
 #### `mac.concept.column.role.dimension`
 
 A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a
@@ -107,17 +111,29 @@ register states every member, so a non-member is answerable without probing) or 
 resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
 `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
 
+| field | value |
+|---|---|
+| `query_use` | axis, extremum |
+
 #### `mac.concept.column.role.measure`
 
 A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
 once there and never restated per concept. Never filtered on directly: a threshold on a measure
 is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
 
+| field | value |
+|---|---|
+| `query_use` | aggregate, extremum |
+
 #### `mac.concept.column.role.period`
 
 THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
 relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
 `OrderDate` on a line that also carries `DeliveryDate`.
+
+| field | value |
+|---|---|
+| `query_use` | axis, extremum, period_binding |
 
 #### `mac.concept.column.role.housekeeping`
 
@@ -129,6 +145,10 @@ meaningless, and until this term existed it was spelled `attribute`, which reads
 you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING
 TRADITION that already has a word for these columns, rather than for the system that writes
 them: a load stamp is housekeeping whoever keeps the house.
+
+| field | value |
+|---|---|
+| `query_use` |  |
 <!-- END GENERATED:vocabulary-terms:concept.column.role -->
 
 ---

@@ -34,7 +34,7 @@ delivers:
     consumers:
       - {tool: "mac-console/local_ask.py", role: "the instruction to read it FIRST", reads: ["«whole document»"]}
       - {tool: "mac-chat/guardrails_gate.py", role: "MECHANICALLY denies read_page until it is read", reads: ["«path only»"]}
-    # NO CHECKER, and it is measured empty on one bundle: 30 lines on contoso against 645 on estate2,
+    # NO CHECKER, and it is measured empty on one bundle: 30 lines against 645 on a second bundle,
     # because references.py globs concepts FLAT and that bundle files them in groups. The first
     # document the agent reads carries no routing there, and nothing says so.
     checkers: []

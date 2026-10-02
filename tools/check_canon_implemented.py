@@ -39,7 +39,8 @@ import pathlib
 import sys
 from typing import Any
 
-MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 
 
 def _bindings(node: Any, path: str = "") -> list[tuple[str, str]]:
@@ -81,7 +82,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     try:
-        sys.path.insert(0, MAC_RUNTIME_SRC)
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.canon import IMPLEMENTED, KNOWN_UNIMPLEMENTED
     except ImportError as exc:
         print(

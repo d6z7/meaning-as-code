@@ -169,11 +169,19 @@ already lives in each concept's `resolve.*` rules, never in the fold vocabulary.
 
 SUM is correct across this axis.
 
+| field | value |
+|---|---|
+| `folds_with` | sum, average |
+
 #### `mac.concept.aggregation_effect.average`
 
 SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number
 anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the
 two disagree about whether the sum means anything.
+
+| field | value |
+|---|---|
+| `folds_with` | average |
 
 #### `mac.concept.aggregation_effect.none`
 

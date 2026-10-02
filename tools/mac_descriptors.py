@@ -38,10 +38,10 @@ import sys
 from datetime import UTC, datetime
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 import _plugin  # noqa: E402  - same directory; the seam that owns the connection
 
 GENERATOR = "mac_descriptors.py/1"
-MAC_RUNTIME_SRC = "/Users/<operator>/dev/mac-platform/packages/mac-runtime/src"
 
 #: The literal fallback, for an environment without the runtime importable. A FALLBACK, not a second
 #: source of truth — `meaning_plane_tables` prefers the runtime's own definition.
@@ -68,8 +68,7 @@ def meaning_plane_tables() -> frozenset[str]:
     EMITS them — so a ninth relation is excluded the day it is added, with nothing to remember.
     """
     try:
-        if MAC_RUNTIME_SRC not in sys.path:
-            sys.path.insert(0, MAC_RUNTIME_SRC)
+        _neighbours.ensure_runtime_on_path()
         from mac_runtime.meaning_plane import _META_DEFS
         return frozenset(_META_DEFS)
     except Exception:  # noqa: BLE001 - no runtime on the path is not a reason to import the plane

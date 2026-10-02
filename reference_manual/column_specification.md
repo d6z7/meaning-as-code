@@ -192,10 +192,14 @@ the schema refuses. A key is in exactly one of them.
 | `rulings.label_of` | no | — | a column | this column NAMES that one; group there, display here |
 | `rulings.register` | with label_of | `common` | `mac.name_register.*` | which of the thing's names this is (schema: `dependentRequired` on `label_of`) |
 | `rulings.finer_than` | no | — | a column | this column rolls up into that one |
+| `rulings.sort` | no | — | `asc` \| `desc` \| `none` | the order this column's values are presented in when the question states none — `asc` alphanumeric for a NAME, `desc` largest-first for a MAGNITUDE, `none` never an ordering key. Per column, never per concept. |
 | `rulings.never_axis` | no | — | free text — the reason, one line | may not be grouped on; the reason is quoted into the refusal |
 | `rulings.evidence` | **with never_axis** | — | a DQ id | the measurement. Without it, a prohibition is a preference. |
+| `axis_kind` | no | — | `mac.concept.axis_kind.*` | which KIND of aggregation axis this column is — the fold law is stated over kinds, so it is universal |
+| `register` | no | — | a bundle-relative path | the value set this column carries, one virtual table per set |
 | `measure.type` | role: measure | — | `mac.concept.column.measure_type.*` | which folds are legal |
 | `measure.unit` | no | — | free text | what the number is in |
+| `measure.canonical` | no | — | `true` | this column IS the concept's number — what a question about the concept itself folds. Settles the unit where a concept grounds several measure columns. |
 | `measure.additivity` | no | from `measure.type` | per-axis | overrides the type for a named axis |
 
 **PROPOSED — refused by the schema today (`additionalProperties: false`); none of these loads:**
@@ -602,12 +606,13 @@ Q"* get the same answer, and only one of them deserves it.
 
 ### Validation spike — shapes this specification does NOT yet handle
 
-The block above was designed against **one bundle**. A spike against SystemC and estate on 2026-09-25 —
-checking whether the shape *crashes*, not whether those bundles could migrate, since both will be
-re-authored — found three constellations contoso has no equivalent of. **One of them the
-specification cannot express at all.**
+The block above was designed against **one bundle**. A spike against two further real bundles on
+2026-09-25 — called **bundle A** and **bundle B** here, because whose estates they are is not this
+manual's to publish; checking whether the shape *crashes*, not whether those bundles could migrate,
+since both will be re-authored — found three constellations contoso has no equivalent of. **One of
+them the specification cannot express at all.**
 
-#### 1. The measure TYPE is data, not a declaration — `SystemC.kpi`
+#### 1. The measure TYPE is data, not a declaration — bundle A's `kpi`
 
 One concept holds **70 KPIs across six measure types**, served through four conformed views:
 
@@ -624,7 +629,7 @@ same column, and which one a row is comes from `measure_type` **on that row**.
 **`measure.type` on a column cannot say this.** It declares one type per column; here the type
 varies per row.
 
-How SystemC copes today is itself the finding:
+How bundle A copes today is itself the finding:
 
 ```yaml
 semantics:
@@ -645,13 +650,13 @@ Two ways out, and the spike does not choose between them:
 
 #### 2. Several columns of the same kind, and two references to the same concept
 
-`SystemC.checkpoint_events` carries **five date columns**: `actual_ts` plus four planning anchors
-(`eta_first`, `eta_fix`, `src_column`, `eta_depot`).
+Bundle A's `checkpoint_events` carries **five date columns**: `actual_ts` plus four planning
+anchors (`eta_1`, `eta_2`, `eta_3`, `eta_4` here — each a different milestone's estimate).
 
 | | |
 |---|---|
 | expressible | `period: actual_ts`, the four ETAs as dimensions |
-| **not expressible** | *"vehicles late against the ZP8 ETA"* — comparing two dates where neither is *the* period |
+| **not expressible** | *"vehicles late against the `eta_3` anchor"* — comparing two dates where neither is *the* period |
 
 And `from_cp` / `to_cp` both reference the same `Checkpoint` concept in **different roles**.
 `identity: reference` + `references: Checkpoint` cannot tell them apart. This is
@@ -660,7 +665,7 @@ no `role_name`.
 
 #### 3. A concept class contoso does not use
 
-estate declares `meta` eight times, alongside `reference`, `enumeration`, `measure`, `entity` and
+Bundle B declares `meta` eight times, alongside `reference`, `enumeration`, `measure`, `entity` and
 `grouping`. Nothing in this specification is written with `meta` concepts in mind, and the spike did
 not establish what column facts they carry.
 
@@ -668,12 +673,12 @@ not establish what column facts they carry.
 
 - It does **not** say the specification is wrong. Two of the three are expressible with a small
   addition (`role_name`, and splitting or `type_from`).
-- It does **not** say SystemC's current shape must be preserved — it will be re-authored.
-- It is a **first pass** over two bundles by reading declarations, not a proof. estate was surveyed
+- It does **not** say bundle A's current shape must be preserved — it will be re-authored.
+- It is a **first pass** over two bundles by reading declarations, not a proof. Bundle B was surveyed
   only at the level of concept classes.
 
 #### One thing it does say, about `axis_kinds`
 
-SystemC populates `semantics.axis_kinds`; contoso populates it **zero** times; the runtime reads it
+Bundle A populates `semantics.axis_kinds`; contoso populates it **zero** times; the runtime reads it
 **zero** times. A field one bundle fills carefully, another ignores entirely, and nothing consumes —
 which is the defect this specification exists to stop, found in the field it would have inherited.

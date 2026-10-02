@@ -26,8 +26,8 @@ against the same declaration — never a silent pass, and never counted as held 
 WHERE THE GOLDENS LIVE: `tests/golden/<artifact>/<document>.md`, rendered from the in-repo exemplar
 bundle (`sdk/authoring/exemplars/bundle`). Beside the tests because they ARE the test's expected
 value; from the exemplar bundle because a golden must be reproducible on any machine, and the only
-concept bundles in this repository are the exemplars — a golden cut from a bundle under
-`archive-sources` would freeze a document nobody else can render.
+concept bundles in this repository are the exemplars — a golden cut from a private estate
+bundle would freeze a document nobody else can render.
 
 NOT A SECOND HOME FOR THE RENDERING. The goldens are the EXPECTED bytes of a renderer that still
 has one author; they are never read back into a page.
