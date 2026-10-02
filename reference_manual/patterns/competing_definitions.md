@@ -85,6 +85,7 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — the *detection* of ambiguity is deter
 | --- | --- | --- |
 | Detecting the term matches >1 candidate (or 0) | **canon-backed** | [`ambiguity_gate`](../canon/ambiguity_gate.md) |
 | Producing the answer once a definition is pinned | **canon-backed** | the chosen candidate's predicate |
+| Selecting the rows when the term is a STATE the data never stores | **canon-backed** | [`population_select`](../canon/population_select.md) |
 | *Which* definition the user means | **prose-fallback** | the ask — the irreducible interpretation |
 
 ```yaml
@@ -101,6 +102,30 @@ disambiguation:
 
 The gate makes "ask, don't guess" mechanical: >1 candidate unpinned → `ASK`; exactly one → `RESOLVE`. The
 only soft step is the human's choice — which a human would also have had to make.
+
+## The half this pattern does not reach — a state that is a COLUMN COMBINATION
+
+`ambiguity_gate` serves the case where the competing definitions are each a predicate over a stored
+value, and the right move is to ASK. There is a second case, and it needs a DEFAULT rather than a
+question: a business state the data never stores as a value at all. A store is *closed* when
+`close_date IS NOT NULL`; a sale is *online* when its store's `location_code = -1`. No column holds
+either word, so there is no candidate to pin and nothing to be ambiguous about — but there is still
+a reading, and asked unqualified "how many stores?" means the active ones.
+
+That fact has no home on a concept (it does not say what a store *is*) and none on an edge (it joins
+nothing). It is a statement about which rows the concept HAS under a given reading, so it is a rule,
+and the rule's body is [`population_select`](../canon/population_select.md): named populations as
+structured predicates, one marked `default`, and the condition is the rule's own `binds` — a question
+constraining a bound column is making its own statement about the state, so the default steps aside,
+disclosed.
+
+**The two canons must not be swapped, and neither may be spelled as a `value_filter`.** A
+`grounding.value_filter` is the UNASKABLE domain, applied inviolably with nothing disclosing it.
+MEASURED on a worked bundle: `close_date IS NULL` declared there made "how many stores are closed?"
+plan correct SQL and then AND the filter onto it — a conjunction a closed store can never satisfy, 0
+rows against a truth of 9, with every stage green. A predicate a question can legitimately ask the
+other side of is a default reading, never a domain. Refused at authoring time by
+`guardrails/ontology/concepts.yaml#refuses.POPULATION-AS-VALUE-FILTER`.
 
 ## The footgun, concretely
 

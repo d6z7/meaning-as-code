@@ -1,6 +1,6 @@
 ---
 title: The canon library — what makes a declaration executable
-status: 19 defined, 19 described, 3 implemented — check_canon_documented.py holds the three lists together
+status: 20 defined, 20 described, 17 implemented (measured 2026-10-01) — check_canon_documented.py holds the three lists together
 audience: ontology authors binding realized_by; anyone implementing a canon
 ---
 
@@ -22,26 +22,28 @@ the reason a rule written once can serve a dozen bundles.
 
 | list | where | count |
 |---|---|---|
-| **defined** | `mac_vocabulary.yaml#canon.members` | 19 |
-| **described** | `reference_manual/canon/*.md` | 19 |
-| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **3** |
+| **defined** | `mac_vocabulary.yaml#canon.members` | 20 |
+| **described** | `reference_manual/canon/*.md` | 20 |
+| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **17** |
 
 `tools/check_canon_documented.py` compares them. On 2026-09-25 no two agreed:
 `resolve_by_register` — which every name resolution in every bundle goes through, declared by eight
 concepts — was **implemented and undocumented**, while ten canons nothing implements had pages. Two
 pages described canons the vocabulary did not define.
 
-> **Only three canons do anything today.** A declaration naming any of the other sixteen parses,
-> passes every gate, and has no effect. `check_canon_implemented.py` is what makes that visible;
-> before it existed, four concepts bound `grouping_from_register` and silently got nothing.
+> **Seventeen of twenty do something today**, and on 2026-09-25 it was three. A declaration naming
+> one of the remaining three parses, passes every gate, and has no effect.
+> `check_canon_implemented.py` is what makes that visible; before it existed, four concepts bound
+> `grouping_from_register` and silently got nothing. **Check before you bind** — DNA P1: a canon
+> declared and not implemented is a rule that reads as enforced and is not.
 
-## The nineteen
+## The twenty
 
 <!-- BEGIN GENERATED:vocabulary-terms:canon (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
-*`mac.canon` · 19 terms · open — a bundle may add its own*
+*`mac.canon` · 20 terms · open — a bundle may add its own*
 
 #### `mac.canon.composite_key_guard`
 
@@ -180,6 +182,22 @@ LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)
 #### `mac.canon.ambiguity_gate`
 
 resolve a single/pinned candidate, else ASK (⊥) — never guess
+
+| field | value |
+|---|---|
+| `serves` | competing_definitions |
+| `needs_sqlglot` | False |
+
+#### `mac.canon.population_select`
+
+select WHICH ROWS a concept has: named populations as structured predicates (all: of {column,
+op, value|values} over is_null/is_not_null/eq/ne/in/not_in, every value BOUND — never SQL text,
+which assert_bound_params_only refuses) and one optional `default`. THE CONDITION IS THE RULE'S
+OWN `binds`, not a param: a question constraining a bound column is making its own statement
+about that state, so the default steps aside and the answer discloses it. One rule is one AXIS.
+A name is matched EXACTLY, never fuzzily. The unaskable DOMAIN stays on grounding.value_filter;
+a predicate a question can ask the other side of does NOT. The trigger for a business state that
+is a column combination rather than a stored value — `closed` IS `close_date IS NOT NULL`.
 
 | field | value |
 |---|---|

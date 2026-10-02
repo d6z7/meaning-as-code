@@ -413,8 +413,21 @@ question for an issue/PR — not a local invention.
 ## C9. Two orthogonal axes modelled as one
 **Smell:** one concept conflating two independent dimensions (e.g. a tracking variant *and* a reporting
 cycle). **Why wrong:** the cross-product is real; conflating inverts the model (SPEC §8 — a recurring
-footgun). **Fix:** model each axis as its own concept; document the cross-product. Execution validation
-reliably catches the inversion if it slips through.
+footgun). **Fix:** separate the axes — but **a separate axis is not automatically a separate CONCEPT**,
+and this is the correction of 2026-10-01. Where each axis is a DIMENSION the facts point at, lift it:
+its own concept, its own key, its own edge. Where each axis is a **state of the same rows**, it is one
+`population_select` rule per axis on the **one** concept that owns the column, and two rules on one
+concept is the correct shape — not two concepts. **Measured:** a store's trading state (`active` /
+`ended` / `closed` / `restructured`, from `close_date` + `status_annotation`) and its channel
+(`physical` / `online`, from `location_code`) are genuinely orthogonal — the online store is also an
+active store — and the attempt to honour this entry by lifting the channel into its own concept
+produced a concept grounded on the store's **own** relation, declaring the same predicate on the same
+column; its only edge was `type: shared_attribute` with `resolved_by` naming a prose rule, so it
+declared no join key and was never emittable. The concept and the edge were deleted; the predicate now
+lives as an axis on Store, and *"revenue from the online store"* answers through it. **The test:** does
+the axis have rows of its own that something joins to, or is it a reading of rows that already exist?
+A reading is a rule. See `reference_manual/canon/population_select.md` and DNA law 16.
+Execution validation reliably catches the inversion if it slips through.
 
 ---
 

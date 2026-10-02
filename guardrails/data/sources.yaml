@@ -408,6 +408,31 @@ refuses:
   # THE OPERATOR RULED THE POLICY, 2026-09-29: "there only one lookup for one thing that can be
   # attached to multiple targets". These two refusals are the write-time half; the gate's
   # `one-domain-many-registers` is the read-time half over what was already delivered.
+  - id: TEMPORAL-AS-LOOKUP
+    when: cutting a register from a column whose value set is a CALENDAR — a date or timestamp
+      column, or a set of month names, weekday names, quarter labels, or date/month/quarter literals
+    why: >-
+      A REGISTER TURNS A NAME INTO A CODE BY MATCHING IT, AND A DAY IS NOT A NAME. Operator ruling,
+      2026-09-30: "the mechanism for days should be default built in and NOT rely in any moment on
+      lookups", then "remove handling dates and time with lookup tables". Two measurements behind it.
+      THE COST: eight of contoso5's 25 registers existed only for a temporal word — 132 members for
+      `year_month`, 132 for its short form, 44 for `year_quarter`, 12 and 12 for the month names, 7
+      and 7 for the weekdays, 4 for the quarters. 350 rows of lookup for facts the Gregorian calendar
+      states, re-cut every delivery and carried in every prompt. THE WRONG ANSWER: asked "which
+      stores closed after 2020", the resolver matched the TERM `close_date` to the register value
+      `Closed` on a status column at ratio 0.75 and reported it RESOLVED, then looked up `2020-12-31`
+      as a member of Store and refused. One more resolving rung and a question about dates would have
+      been answered by filtering on status, with nothing in the answer saying so.
+    instead: >-
+      nothing — the built-in calendar reads it. The words and literal forms are declared once in
+      mac_vocabulary.yaml#calendar_vocabulary and read by the runtime
+      (mac-platform/packages/mac-runtime/src/mac_runtime/temporal.py), which turns a temporal word or
+      literal into a half-open range and applies the question's operator to its EDGE: "after 2020" is
+      `>= 2021-01-01`. A bundle declares its date columns and nothing else. A FISCAL calendar is the
+      exception and it is a DECLARATION, never a register: a 4-4-5 period or a trading calendar is
+      authored and read, not enumerated as names to match.
+    enforced_by: tools/mac_lookups.py#_calendar_kind
+    proven_by: "self-test: a calendar is NOT a register, and its neighbour still is"
   - id: DOMAIN-CUT-TWICE
     when: cutting a register for a value set this bundle already holds under another name
     why: >-

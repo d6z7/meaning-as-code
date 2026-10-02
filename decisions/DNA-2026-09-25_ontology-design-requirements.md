@@ -385,6 +385,77 @@ difference between an ontology that CLAIMS a domain is closed and one that KNOWS
 
 ---
 
+15. **A DETERMINISTIC CALENDAR IS NEVER SERVED AND NEVER STORED.** Operator ruling,
+   2026-10-01: "date is standard notion and does not need any view ... its function ... date is fully
+   deterministic". A relation keyed on a single date is a calendar dimension — one row per day with no
+   other identity means the year, the quarter, the month name and the weekday are all FUNCTIONS of that
+   day. Declare the date column on the concepts that carry it and serve nothing else; the five grains
+   (day, week, month, quarter, year) and the calendar's words and literal forms are declared once in
+   `mac_vocabulary.yaml#calendar_vocabulary` and read by the runtime. MEASURED, both halves of the same
+   mistake: as a REGISTER it cost 350 rows of lookup over eight registers and answered a question about
+   dates by filtering on status; as a VIEW it served `year_month` as the label "April 2016", so
+   "monthly revenue trend for 2024" committed twelve correct figures in the order April, August,
+   December, February with every gate green — and the concept's own rule instructed that column
+   *"which orders correctly"*, a claim its values contradicted. A trend is about order. The exception
+   is a FISCAL calendar, which is a declaration a bundle authors and a reader reads: a 4-4-5 period or
+   a trading calendar is not derivable from the date and is not a default hidden in a word list.
+   Refused at authoring time by `guardrails/data/transformation.yaml#refuses.TEMPORAL-VIEW-IN-THE-SERVED-PLANE`
+   (axis half) and `guardrails/data/sources.yaml#refuses.TEMPORAL-AS-LOOKUP` (filter half).
+
+---
+
+16. **A BUSINESS STATE IS A RULE WITH A BODY, AND A DEFAULT READING IS NEVER A DOMAIN.** Operator
+   ruling, 2026-10-01: "i will want to have rule act like DB trigger. if the condition is met ... then
+   something should happen ... this must be doable with symbolic language", and then "i believe there is
+   no reason anymore for when then never". A state that is a COLUMN COMBINATION rather than a stored
+   value — a store is *closed* WHEN `close_date IS NOT NULL`, a sale is *online* when its store's
+   `location_code = -1`; no column holds either word — has no home on a concept (it does not say what a
+   store IS) and none on an edge (it joins nothing). It is a statement about which rows the concept HAS
+   under a given reading, so it is a RULE, and a rule's body is a canon: an ordinary `contract.rules[]`
+   entry plus `realized_by: {udf: mac.canon.population_select, params: {…}}`. Nothing was added to the
+   schema to admit it, which is the proof it was already a rule: `ContractRule` is `extra="forbid"` over
+   eight fields and `realized_by` is the only declared door, `canonRef.params` is untyped on purpose,
+   and `mac_vocabulary.yaml#canon` is `closed: false`. THE CONDITION IS THE RULE'S OWN `binds` and not a
+   second list beside it — a question constraining a bound column is making its own statement about that
+   state, so the default steps aside and the answer says so — which also means the condition inherits
+   `rule-binds-grounded` and is checked against the physical layer by a shape that already existed. THE
+   ACTION IS `params.populations`, a name → predicate map with an optional `default`, and every predicate
+   is STRUCTURE, never SQL text: `all:` of `{column, op, value|values}` over six operators, every value
+   BOUND. That is not a preference. MEASURED: `assert_bound_params_only` refuses any raw string literal,
+   so a string-valued predicate written as TEXT plans cleanly and dies at the adapter — there is no slot
+   that accepts SQL text, and that is precisely what makes a predicate safe to show a model. One rule is
+   one AXIS and axes are independent (Store declares two); a named population is matched EXACTLY, never
+   fuzzily, because `activ`→`active` 0.9091 — a typo — sits BETWEEN `neaktivan`→`aktivan` 0.8750 and
+   `inactive`→`active` 0.8571, two antonyms in two languages, so no threshold separates them in any
+   language. And NO `when:`/`then:`/`never:` where a body exists, `why:` stays: measured on this very
+   rule, its `never:` was FALSE for hours after a data fix with no gate catching it, while `why:` carries
+   the one thing no predicate can — who ruled it, when, against what measurement.
+
+   THE HALF THAT COSTS MOST IS THE SECOND. A predicate a question can legitimately ask the other side of
+   is a DEFAULT READING, not a domain, so it belongs in a population and never in
+   `grounding.value_filter`. MEASURED, both clauses of one filter: Store declared
+   `close_date IS NULL AND location_code <> -1` and applied it inviolably, so *how many stores are
+   closed?* planned correct SQL and then had `close_date IS NULL` ANDed onto it — a conjunction a closed
+   store can never satisfy, 0 rows against a truth of 9, with every stage green — while
+   `location_code <> -1` hid the one row carrying 86 790 054,13 of revenue. Store now declares no
+   `value_filter` at all. And ONE FACT MAY NEED ONE POPULATION PER RELATION: the online sentinel is
+   written into three and has three bodies (Store, Location, Country — which is why 8 countries are real
+   and not 9), which are NOT duplicates. The three PROSE statements of it on a `Channel` concept were,
+   and that concept and its edge `order__through__channel` were deleted: the edge was
+   `type: shared_attribute` with `resolved_by` naming a prose rule, so it declared no join key and was
+   never emittable.
+
+   AND THE LAW HAS A DELIVERY HALF, because this one was broken the day the mechanism was built. The
+   operator ruling of 2026-09-30 — "stores that are closed, restructured have close date and are not
+   active anymore; other stores without status ... are ONLY stores currently active" — went into the
+   concept's PROSE and into its POPULATIONS, which shape the model, and never into `acceptance/reference/`,
+   which is the only plane the board grades against. 51 of 83 corpus questions sat ungradeable for weeks
+   against a model that was already right. A ruling that changes a population changes what the correct
+   answer IS, so the reference delta is part of the same act, not a follow-up. See law 10 and P11:
+   writing a thing where it will not be read is the same as not writing it. Refused at authoring time by
+   `guardrails/ontology/concepts.yaml#refuses.POPULATION-AS-VALUE-FILTER` and `#refuses.STATE-AS-PROSE`;
+   the canon's contract is `reference_manual/canon/population_select.md`.
+
 ## PART 3B — PREMISES I MUST NOT NEED TO BE TOLD AGAIN
 
 *Written on the operator's instruction: "you must be able to repeat these premisses next time you

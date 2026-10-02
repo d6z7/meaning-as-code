@@ -62,6 +62,7 @@ import argparse
 import csv
 import io
 import pathlib
+import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -174,6 +175,20 @@ def main(argv: list[str] | None = None) -> int:
         for col in columns:
             name, members = col.get("name"), col.get("values")
             if not name or not members:
+                continue
+            calendar = _calendar_kind(col, members)
+            if calendar:
+                # A CALENDAR IS NOT A REGISTER (operator ruling, 2026-09-30: "remove handling dates
+                # and time with lookup tables"). The words and shapes are declared once in
+                # mac_vocabulary.yaml#calendar_vocabulary and READ by the runtime's built-in
+                # calendar, so cutting them here produces a table nothing should resolve through:
+                # measured on contoso5, eight registers holding 350 rows — 132 for `year_month`,
+                # 44 for `year_quarter`, 12 months, 7 weekdays — every one of them a fact the
+                # Gregorian calendar states. guardrails/data/sources.yaml#TEMPORAL-AS-LOOKUP.
+                skipped.append(
+                    f"{relation}.{name} (a {calendar} — the built-in calendar reads it; "
+                    f"mac_vocabulary.yaml#calendar_vocabulary)"
+                )
                 continue
             if len(members) > a.max_members:
                 skipped.append(f"{relation}.{name} ({len(members)} members — data, not a register)")
@@ -391,6 +406,22 @@ def _self_test() -> int:
                "dim_currency": {"currency_code": CUR}})
     case(f"three columns, one value set -> ONE register named for the notion  (got {got})",
          got == {"tb_currency_code": 5})
+
+    # A CALENDAR IS NOT A REGISTER (operator ruling, 2026-09-30; guardrails TEMPORAL-AS-LOOKUP).
+    # The three shapes that mattered on the worked bundle were all STRING columns, so a type check
+    # alone left every one of them in place: month names, quarter labels and a year-quarter literal.
+    got = cut({"date": {"MonthName": ["January", "February", "March"],
+                        "Quarter": ["Q1", "Q2", "Q3", "Q4"],
+                        "YearQuarter": ["Q1-2016", "Q2-2016"],
+                        "Gender": ["male", "female"]}})
+    case(f"a calendar is NOT a register, and its neighbour still is  (got {got})",
+         got == {"tb_gender": 2})
+
+    # AND THE TEST IS TOTAL: eleven months and one code is not a calendar, and refusing it would
+    # lose the code.
+    got = cut({"date": {"MonthName": ["January", "February", "UNKNOWN"]}})
+    case(f"MUTANT a nearly-calendar set is still a register  (got {got})",
+         got == {"tb_month_name": 3})
 
     # TWO SETS THAT AGREE ON A NOTION MUST NOT SHARE A FILE. This is contoso4's `state`: naming by
     # notion alone cut 2 domains into 1 file and lost four codes with exit 0.
@@ -636,6 +667,68 @@ def _slim_descriptors(root: pathlib.Path, repointed: dict, yaml, planes) -> int:
 
 def _values_of(columns: list, name: str) -> list:
     return next((c.get("values") or [] for c in columns if c.get("name") == name), [])
+
+
+#: The framework's calendar words and shapes, read ONCE per process from the declaration that owns
+#: them. `{}` when the framework cannot be read -- and then nothing is refused as a calendar, which
+#: is the same "absent is a state" rule every other reader here follows: a missing declaration must
+#: not silently turn into a policy.
+_CALENDAR: dict | None = None
+
+
+def _calendar_vocabulary() -> dict:
+    """mac_vocabulary.yaml#calendar_vocabulary.terms, or `{}` if it cannot be read."""
+    global _CALENDAR
+    if _CALENDAR is None:
+        try:
+            import yaml as _yaml
+
+            doc = _yaml.safe_load((HERE.parent / "mac_vocabulary.yaml").read_text(encoding="utf-8"))
+            _CALENDAR = ((doc or {}).get("calendar_vocabulary") or {}).get("terms") or {}
+        except Exception:  # noqa: BLE001 - an unreadable vocabulary refuses nothing
+            _CALENDAR = {}
+    return _CALENDAR
+
+
+_ISO_DATEISH = re.compile(
+    r"^\d{4}(?:[-/]\d{1,2}(?:[-/]\d{1,2})?)?(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)?$"
+)
+_QUARTERISH = re.compile(r"^(?:q[1-4][\s\-/]*\d{0,4}|\d{4}[\s\-/]*q[1-4])$", re.IGNORECASE)
+_MONTHISH = re.compile(r"^(?:[a-z]{3,9}\.?[\s\-/]+\d{4}|\d{4}[\s\-/]+[a-z]{3,9}\.?)$", re.IGNORECASE)
+
+
+def _calendar_kind(col: dict, members: list) -> str | None:
+    """Which calendar this column's value set IS, or None if it is not one.
+
+    THE DECLARED TYPE FIRST, because it is the data plane's own measurement: a `date` or `timestamp`
+    column is a calendar whatever its values look like, and no register may be cut from it.
+
+    THEN THE VALUE SET, because the eight registers this refusal removes were cut from STRING
+    columns: `month_name` holds `January`, `year_quarter` holds `Q1-2016`, `year_month` holds
+    `2016-05`. A type check alone would have left every one of them in place. The test is
+    SET-LEVEL and total -- EVERY member must be a calendar word or a calendar shape -- because a
+    column carrying eleven months and one code is not a calendar, and refusing it would lose the
+    code. Word lists come from the framework's declaration; shapes are matched by form, which is
+    what a shape means.
+    """
+    declared = str(col.get("type") or "").strip().lower()
+    if declared in ("date", "timestamp", "datetime", "timestamptz"):
+        return f"{declared} column"
+    values = [str(m).strip() for m in members if m is not None and str(m).strip()]
+    if not values:
+        return None
+    vocab = _calendar_vocabulary()
+    for term, spec in vocab.items():
+        listed = {str(w).strip().lower() for w in (spec or {}).get("members") or []}
+        if listed and all(v.lower() in listed for v in values):
+            return term
+    if all(_ISO_DATEISH.match(v) for v in values):
+        return "date literal set"
+    if all(_QUARTERISH.match(v) for v in values):
+        return "year_quarter"
+    if all(_MONTHISH.match(v) for v in values):
+        return "year_month"
+    return None
 
 
 def _terser(mine: list | None, theirs: list | None) -> bool:

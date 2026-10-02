@@ -211,7 +211,7 @@ delivers:
     path: data/lineage/lineage.json
     naming: fixed
     population: {of: one graph, from: «this artifact», empty_is: EMPTY}
-    covers: every served relation, and every served COLUMN
+    covers: every served relation, every served COLUMN, and every LANDED relation that feeds nothing
     lifecycle: re-derived
     # ONE ARTIFACT, TWO PRODUCERS, DISJOINT OWNERSHIP — declared in sdk/project/lineage_graph.py
     # #OWNERSHIP and enforced by its merge(). Each replaces only the node and edge kinds it owns,
@@ -223,10 +223,19 @@ delivers:
     consumers:
       - {tool: mac-console/console_api.py, role: the Lineage pane, both halves,
          reads: ["columns[].view", "columns[].column", "columns[].source_relation", "columns[].source_column", nodes, edges]}
-      - {tool: tools/check_lineage_coverage.py, role: scores column coverage,
-         reads: ["columns[].view", "columns[].column", "columns[].source_column"]}
+      - {tool: tools/check_lineage_coverage.py, role: scores column coverage and accounts for orphaned sources,
+         reads: ["columns[].view", "columns[].column", "columns[].source_column", "orphans.sources_feeding_nothing"]}
+    # BOTH ENDS OF THE CHAIN, and the upstream end was measured and unread until 2026-09-30. A landed
+    # relation that no transform consumes is recorded here under `orphans.sources_feeding_nothing`, and
+    # nothing asserted anything about it: contoso5 carried `orderrows` (223,974 rows) and `orders`
+    # (93,470) as orphans from its first delivery, every gate passed green over them, and the loss was
+    # found by a person reading the graph. The gate now requires each one to be ACCOUNTED FOR by an issue
+    # in the DQ register that is ABOUT the orphan condition — naming the relation in passing is not
+    # enough, because DQ-AMBIGREF-CURRENCYCODE merely lists `orders` among two relations and was
+    # credited for it on the first cut. Accounting is the test; the RULING stays with the person the
+    # issue's own `needs` addresses, so an open finding warns and an unaccounted one fails.
     checkers:
-      - {tool: tools/check_lineage_coverage.py, rejects: [dataset-declaring-no-columns, coverage-zero-against-a-declared-parent]}
+      - {tool: tools/check_lineage_coverage.py, rejects: [dataset-declaring-no-columns, coverage-zero-against-a-declared-parent, orphaned-source-unaccounted]}
 
   impurity_resolution_map:
     what: the cross-link from a registered defect to the transform that dissolves it, with the guarantee it establishes
@@ -268,6 +277,32 @@ conventions:
       view is not, deliberately — say "five places, four of them checked offline".
 
 refuses:
+
+  - id: TEMPORAL-VIEW-IN-THE-SERVED-PLANE
+    when: authoring a served relation keyed on a single DATE or TIMESTAMP column — a calendar dimension
+    why: >-
+      A CALENDAR IS A FUNCTION, NOT A RELATION. Operator ruling, 2026-10-01: "date is standard notion
+      and does not need any view ... its function ... date is fully deterministic". One row per day
+      with no other identity means every other column — the year, the quarter, the month name, the
+      weekday — is computed from that day, so the view materialises a function and then has to be
+      kept true. THE COST, MEASURED: contoso5's `dim_date` served `year_month` as the landing's label
+      "April 2016" and `year_quarter` as "Q1-2016". Ordering by either is wrong — the month sorts
+      April, August, December; the quarter puts every Q1 before every Q2. "Monthly revenue trend for
+      Germany in 2024" COMMITTED twelve correct figures in the order April, August, December,
+      February, and every gate in the chain passed green. The concept's own rule instructed grouping
+      by `year_month` "which orders correctly", a claim the served values contradicted. A trend is
+      about order; the answer was wrong in the only dimension the question asked about.
+    instead: >-
+      declare the date column on the concepts that carry it and serve no calendar. The built-in
+      reader (mac-platform/packages/mac-runtime/src/mac_runtime/temporal.py) holds the five grains —
+      day, week, month, quarter, year — and the words and literal forms are declared once in
+      mac_vocabulary.yaml#calendar_vocabulary. This is the AXIS half of the same ruling whose FILTER
+      half is guardrails/data/sources.yaml#refuses.TEMPORAL-AS-LOOKUP: one deterministic calendar,
+      read, never stored. A FISCAL calendar is the exception and it is a DECLARATION a bundle authors
+      — a 4-4-5 period or a trading calendar is read, never served as a dimension and never cut as a
+      register.
+    enforced_by: tools/check_no_temporal_view.py
+    proven_by: "self-test 4/4: a single date key is a calendar; a surrogate key, a composite key holding a date, and a timestamp key are judged on the same one rule"
 
   - id: INVENTED-SERVED-ROLE
     when: writing a served descriptor whose name does not begin with a declared role prefix

@@ -147,6 +147,29 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
             via = resolvers(doc, registry)
             if via:
                 regs = [f"through {n} ({r})" for n, r in via]
+        # A CALENDAR RESOLVES ITSELF — the built-in reads it, and that IS a declaration.
+        #
+        # This check modelled exactly ONE resolve mechanism, a register, and the worked bundle's own
+        # log said so at the time: "a date is self-resolving under ISO, and the gate has no notion of
+        # that ... its own mutant is 'take the register away'". The conclusion drawn then was to cut
+        # registers for the calendar words — `year_month` (132 members), `year_quarter` (44), the
+        # month names, the weekdays — and the operator overturned it on 2026-09-30: "remove handling
+        # dates and time with lookup tables ... refactor our ontology to use built in recognition for
+        # time instead of lookups". Deleting those eight registers then left THIS step reading None,
+        # so the bundle stopped compiling for doing the right thing.
+        #
+        # A temporal column needs no register and cannot have one
+        # (guardrails/data/sources.yaml#TEMPORAL-AS-LOOKUP). The declaration that supplies the step is
+        # the COLUMN'S OWN TYPE plus the framework's `mac_vocabulary.yaml#calendar_vocabulary`, read
+        # by mac-runtime/temporal.py. This is not a waiver: a concept with no register AND no temporal
+        # column still reads None, which is the mutant this check is built on.
+        if not regs and not v.get("items"):
+            calendar = _self_resolving(doc)
+            if calendar:
+                regs = [
+                    f"the built-in calendar ({calendar}; "
+                    f"mac_vocabulary.yaml#calendar_vocabulary, no register)"
+                ]
         path["resolve"] = (", ".join(regs) if regs else
                            (f"values.items ({len(v['items'])} members, in-file)" if v.get("items") else None))
     else:
@@ -165,6 +188,55 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
     if ct.get("default_reading"):
         path["default"] = "contract.default_reading"
     return path
+
+
+#: The declared column types a calendar is measured in — the same set the runtime compares a date
+#: against (mac-runtime/temporal.py TEMPORAL_COLUMN_TYPES). A string column holding date-shaped text
+#: is NOT one: comparing a date to it is lexical and mis-orders without failing.
+_TEMPORAL_TYPES = ("date", "timestamp", "datetime", "timestamptz")
+
+
+def _self_resolving(doc: dict) -> str:
+    """WHY this concept needs no register, from its own declarations — or `""` when it does need one.
+
+    TWO DECLARATIONS, both authored and both already in the vocabulary:
+
+      `identity.kind: iso` — mac_vocabulary.yaml#concept.identity.iso: "a universal external
+        standard code. Identity = the standard code; local names/labels are aliases." A standard is
+        not a bundle's word list: the reader knows it. CalendarDay has declared exactly this since it
+        was written ("a calendar date is its own identity under the ISO calendar") and the step still
+        read None, because this check modelled one mechanism — a register — and the bundle's own log
+        said so at the time.
+
+      a column declaring `type:` temporal, or `role: period` — a bundle saying which column is the
+        date a question means. Either is enough; neither is sniffed from a name.
+
+    NOT A WAIVER. A concept with no register, no inline values, no ISO identity and no declared date
+    column still reads None — the mutant this check rests on.
+    """
+    ident = (doc.get("concept") or {}).get("identity") or {}
+    if str(ident.get("kind") or "").strip().lower() == "iso":
+        return "identity.kind: iso"
+    found = []
+    for src in ((doc.get("grounding") or {}).get("sources") or []):
+        if not isinstance(src, dict):
+            continue
+        columns = src.get("columns")
+        if not isinstance(columns, dict):
+            # THE LEGACY FORM IS A LIST OF NAMES, and it carries no type and no role — 21 concepts
+            # were on it when the column standard landed. A list says nothing about a date, so it
+            # supplies nothing here. Reading it as a mapping raised AttributeError and turned a
+            # clean rejection into an unattributed crash: two of this gate's own mutants caught it
+            # the minute it was written (2026-09-30), which is what they are for.
+            continue
+        for name, spec in columns.items():
+            if not isinstance(spec, dict):
+                continue
+            declared = str(spec.get("type") or "").strip().lower()
+            role = str(spec.get("role") or "").strip().lower().rsplit(".", 1)[-1]
+            if declared in _TEMPORAL_TYPES or role == "period":
+                found.append(str(name))
+    return ", ".join(sorted(set(found)))
 
 
 def check_answerability(root) -> list:

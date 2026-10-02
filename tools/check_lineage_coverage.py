@@ -35,8 +35,28 @@ so this gate is OFFLINE
 and pure-structural: it reads the governed YAML descriptors (data/sources, data/transforms,
 data/datasets) and never touches the warehouse.
 
+THE UPSTREAM END, added 2026-09-30. Everything above is the DOWNSTREAM question — does a served
+dataset explain its columns. The chain has another end, and a relation can fall out of it there: a
+LANDED relation that no transform consumes. `mac_lineage` measures those into
+`orphans.sources_feeding_nothing` and, until this, nothing read the key. MEASURED on contoso5:
+`orderrows` (223,974 rows) and `orders` (93,470) had fed nothing since the plane was first delivered,
+each carried an OPEN finding in the DQ register asking whether it is out of scope, and every gate in
+the chain passed green over both. The loss was found by a person reading the graph, which is the
+definition of untracked.
+
+  [ERROR]  a source feeding nothing that NO issue in the DQ register is ABOUT. Naming the relation in
+           passing does not count: DQ-AMBIGREF-CURRENCYCODE lists `orders` among two relations while
+           asking about a currency code, and the first cut of this check credited it. The issue's text
+           must speak to the orphan condition (ORPHAN_SIGNAL).
+  [WARN]   a source feeding nothing whose issue is OPEN — tracked, awaiting the ruling its own `needs`
+           asks for. Accounting is this gate's test; RULING is the person's, so an open finding never
+           fails here.
+
+This half runs even when the bundle has NO flows, which is where an orphan is likeliest to hide.
+
 Usage:  python3 tools/check_lineage_coverage.py <bundle-root>
-        exit 0 = every served dataset explains at least one column ; exit 1 = an unexplained view.
+        exit 0 = every served dataset explains at least one column AND every orphaned source is
+        accounted for ; exit 1 = an unexplained view, or a source that left the chain unannounced.
 
 Wire into your bundle's offline gate chain (guarded on the two-plane data layout):
     if [ -d "$SOURCE_ROOT/data/transforms" ]; then
@@ -47,8 +67,12 @@ Wire into your bundle's offline gate chain (guarded on the two-plane data layout
 from __future__ import annotations
 
 import argparse
+import json
+import re
 import sys
 from pathlib import Path
+
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mac_lineage import flows as _flows  # noqa: E402
@@ -58,6 +82,56 @@ from mac_lineage import flows as _flows  # noqa: E402
 MAX_COVERAGE_ERROR = 0.0
 # A dataset below this coverage is a WARN: thin lineage, probably an under-declared `consumes` map.
 MIN_COVERAGE_WARN = 0.50
+
+
+#: WHAT MAKES AN ISSUE ABOUT AN ORPHAN, as the raiser words it. `mac_dq_findings.py` writes "consumed by
+#: no transformation" in the title and "never curated; no data/transforms/*.yaml declares it as an input"
+#: in the finding, and asks in `needs` whether the relation is OUT OF SCOPE.
+ORPHAN_SIGNAL = re.compile(r"consumed by no|feeds? nothing|never curated|no data/transforms|out of scope",
+                           re.I)
+
+
+def orphan_rows(root: Path):
+    """One row per RAW SOURCE THAT FEEDS NOTHING: (relation, issue_id, status).
+
+    THE OTHER END OF THE CHAIN. `coverage_rows` asks whether a served dataset explains its columns --
+    the DOWNSTREAM question. This asks the UPSTREAM one: a landed relation that no transform consumes
+    has fallen out of the chain entirely, and a bundle that loses one loses it SILENTLY, because the
+    measured artifact records it in `orphans.sources_feeding_nothing` and nothing read that key.
+    MEASURED on contoso5, 2026-09-30: `orderrows` (223,974 rows) and `orders` (93,470) had fed nothing
+    since the plane was first delivered, both carried an open DQ finding asking for a ruling, and every
+    gate in the chain passed green over them.
+
+    Accounting is the test, never resolution. The gate asks whether a person has been TOLD -- an issue
+    in the DQ register naming the relation -- and leaves the ruling where it belongs, with the person
+    the issue's own `needs` addresses."""
+    lj = root / "data" / "lineage" / "lineage.json"
+    if not lj.is_file():
+        return []
+    orphans = ((json.loads(lj.read_text(encoding="utf-8")) or {}).get("orphans")
+               or {}).get("sources_feeding_nothing") or []
+    reg = root / "data" / "quality" / "data_quality_register.yaml"
+    issues = []
+    if reg.is_file():
+        issues = (yaml.safe_load(reg.read_text(encoding="utf-8")) or {}).get("issues") or []
+    rows = []
+    for rel in sorted(str(o) for o in orphans):
+        rx = re.compile(rf"(?<![A-Za-z0-9_]){re.escape(rel)}(?![A-Za-z0-9_])", re.I)
+        named = [i for i in issues
+                 if rx.search(" ".join(str(i.get(k) or "") for k in ("id", "title", "finding")))]
+        # NAMING A RELATION IS NOT BEING ABOUT IT. First cut took the first issue that mentioned the
+        # relation and credited `orders` to DQ-AMBIGREF-CURRENCYCODE, whose finding merely lists
+        # "2 relation(s) (orders, sales)" while asking about a currency code. That is the same
+        # collision that let a docstring about `values.aliases` certify `edges[].aliases` as read.
+        # The issue must be ABOUT the orphan condition, so the text has to say so.
+        about = [i for i in named
+                 if ORPHAN_SIGNAL.search(" ".join(str(i.get(k) or "") for k in ("title", "finding", "needs")))]
+        hit = about[0] if about else None
+        rows.append({"relation": rel,
+                     "issue": str(hit.get("id")) if hit else None,
+                     "status": str(hit.get("status") or "?") if hit else None,
+                     "mentioned_by": [str(i.get("id")) for i in named] if not hit else []})
+    return rows
 
 
 def coverage_rows(model):
@@ -106,12 +180,45 @@ def main(argv=None) -> int:
     rows = coverage_rows(model)
 
     print(f"── lineage-coverage gate ── {len(rows)} flow(s) under {root} ──\n")
-    if not rows:
-        print("✓ OK — no transform flows in this bundle (no data plane to cover)")
-        return 0
 
     errors: list[str] = []
     warnings: list[str] = []
+
+    # THE UPSTREAM CHECK RUNS EVEN WITH ZERO FLOWS, and that is the whole point. A bundle with no
+    # transforms is the case where a landed relation is MOST likely to have fallen out of the chain,
+    # and the first cut of this section sat after the early return below, so the one shape it was
+    # written for skipped it (MEASURED against a synthetic bundle, 2026-09-30).
+    orphans = orphan_rows(root)
+    if orphans:
+        print(f"  raw source(s) feeding nothing: {len(orphans)}")
+        for o in orphans:
+            if o["issue"] is None:
+                also = (f"; mentioned only by {', '.join(o['mentioned_by'])}, which "
+                        f"{'is' if len(o['mentioned_by']) == 1 else 'are'} about something else"
+                        if o["mentioned_by"] else "")
+                print(f"    {o['relation']:<24s} ← ERROR (no DQ finding is about it; lineage lost silently)")
+                errors.append(f"raw source '{o['relation']}' feeds nothing and no issue in "
+                              f"data/quality/data_quality_register.yaml is ABOUT that{also} — a relation "
+                              f"cannot leave the chain unannounced")
+            elif o["status"] == "open":
+                print(f"    {o['relation']:<24s} ← WARN  ({o['issue']}, open — awaiting a ruling)")
+                warnings.append(f"raw source '{o['relation']}' feeds nothing; {o['issue']} is OPEN and "
+                                f"asks whether the relation is out of scope or a served relation is missing")
+            else:
+                print(f"    {o['relation']:<24s} ok    ({o['issue']}, {o['status']})")
+        print()
+
+    if not rows:
+        for w in warnings:
+            print(f"  [WARN]  {w}")
+        for e in errors:
+            print(f"  [ERROR] {e}")
+        if errors:
+            print(f"\n✗ {len(errors)} raw source(s) left the chain unannounced")
+            return 1
+        print("✓ OK — no transform flows in this bundle (no data plane to cover)"
+              + (f" ({len(warnings)} warning(s) — orphaned source)" if warnings else ""))
+        return 0
 
     for r in rows:
         if r["total"] == 0:

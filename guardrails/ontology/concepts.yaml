@@ -268,3 +268,88 @@ refuses:
       distinct — so a claim that contradicts it is not an opinion, it is wrong. A one:many that is
       really many:many multiplies rows at query time and the answer still looks like an answer.
     instead: read data/references_served/{relation}.yaml, then claim what it found
+
+  - id: STATE-AS-PROSE
+    when: >-
+      stating a business state that is a COLUMN COMBINATION — `closed`, `online`, `active` — in a
+      rule's `when:`/`then:`/`never:`, or in a concept's definition, instead of in a body; or
+      leaving that prose BESIDE a body that already states it
+    why: >-
+      no column holds the word `closed` or `online`. A store is closed WHEN
+      `close_date IS NOT NULL`, which is neither what a store IS (a concept) nor a join (an edge) —
+      it is which rows the concept HAS under a given reading, so it is a rule, and a rule's body is
+      a canon. Prose beside a body is a second home for one fact, and the prose home is the one
+      that rots. MEASURED on the rule this mechanism was built for: its `never:` read
+      "`{status_annotation}` ... is empty on all 58 rows that never closed" — true when written,
+      FALSE for hours after the operator's impurity fix filled one row, corrected by hand only
+      because a human happened to re-read it. No gate caught it, because there is nothing in prose
+      to catch. Operator ruling, 2026-10-01: "i believe there is no reason anymore for when then
+      never".
+    instead: >-
+      declare it as `realized_by: {udf: mac.canon.population_select, params: {...}}` on an ordinary
+      `contract.rules[]` entry — the condition is the rule's own `binds` (already checked
+      cross-file by the `rule-binds-grounded` shape), the action is `params.populations` as `all:`
+      of `{column, op, value|values}` over six operators with every value BOUND, never SQL text.
+      One rule is one AXIS; a concept with two states declares two. Drop `when`/`then`/`never` and
+      keep `why:` — no predicate encodes who ruled it, when, against what measurement. Contract:
+      reference_manual/canon/population_select.md.
+    # NOT ENFORCED, AND IT MUST SAY SO. `check_canon_binding` is the nearest gate and does not
+    # reach this: it reads `realized_by` only in the DICT form (tools/check_canon_binding.py:114,
+    # `isinstance(rb, dict)`), while `canonBinding` is `oneOf [canonRef, array]` and every
+    # population rule written so far uses the LIST form — so all three are skipped, silently. What
+    # is owed is two things in that gate: walk a list binding, and REFUSE a `when`/`then`/`never`
+    # sitting beside a body. Writing `enforced_by` here before that exists is the hatch
+    # `verify_enforced_by` was built to close.
+
+  - id: POPULATION-AS-VALUE-FILTER
+    when: >-
+      declaring a predicate as `grounding.value_filter` when a question could legitimately ask for
+      the rows it removes
+    why: >-
+      `value_filter` is the UNASKABLE domain and is applied inviolably — a question cannot reach
+      past it and nothing discloses that it was applied. A predicate a question can ask the other
+      side of is a DEFAULT READING, and the difference is measured in wrong answers, both clauses
+      of one filter: Store declared `close_date IS NULL AND location_code <> -1`, so "how many
+      stores are closed?" planned CORRECT SQL and then had `close_date IS NULL` ANDed onto it — a
+      conjunction a closed store can never satisfy, 0 rows against a truth of 9, with every stage
+      green — while `location_code <> -1` hid the one row carrying 86 790 054,13 of revenue, 40% of
+      that bundle. Both clauses turned out to be default readings; Store now declares no
+      `value_filter` at all.
+    instead: >-
+      ask whether a question could ask the other side. If it could, it is a population on a
+      `population_select` rule with a declared `default`, and the answer discloses which reading it
+      applied and which the question displaced; an absent `default` is itself a declaration that
+      the axis has no "unless told otherwise" reading. `value_filter` stays for rows no question
+      can ask for — selecting one concept's rows out of a shared or EAV table
+      (MODELLERS_COOKBOOK.md B6). And one fact may need ONE POPULATION PER RELATION: the online
+      sentinel is written into three and has three bodies (Store, Location, Country), which are not
+      duplicates — the three PROSE statements of it on a `Channel` concept were, and that concept
+      and its edge `order__through__channel` were deleted.
+    # NOT ENFORCED, AND IT CANNOT BE BY CONSTRUCTION. Whether a question could legitimately ask the
+    # other side of a predicate is a judgement about the question scope, not about the YAML — a gate
+    # that guessed it would refuse correct models, the same reason NAMEABLE-DIMENSION-NOT-LIFTED
+    # carries no `enforced_by`. What IS mechanically checkable and owed: a `value_filter` whose
+    # columns a corpus question already constrains is a refusal with no judgement in it, and
+    # acceptance/questions.yaml plus the concept's own columns are both already on disk.
+
+  - id: RULING-NOT-IN-THE-REFERENCE-PLANE
+    when: >-
+      taking an operator ruling that changes a concept's populations, grain or default reading
+      without writing the `acceptance/reference/` delta it implies in the same act
+    why: >-
+      a ruling that changes which rows a concept HAS changes what the correct ANSWER is. Populations
+      shape the model; `acceptance/reference/` is the only plane the board grades against. MEASURED,
+      2026-09-30: the ruling that settled Store's trading state ("stores that are closed,
+      restructured have close date and are not active anymore; other stores without status ... are
+      ONLY stores currently active") was written into the concept's prose AND into its populations,
+      and never into the reference plane — so 51 of 83 corpus questions sat ungradeable for weeks
+      against a model that was already right. Writing a thing where it will not be read is the same
+      as not writing it (DNA law 10, P11).
+    instead: >-
+      prepare the reference delta as part of the ruling, not after it — the ontology BLUEPRINT's
+      "Population default, per state axis" entry says what the agent must have ready. The
+      populations' own measured counts are the candidate expected values.
+    # NOT ENFORCED. A reachability gate over (corpus question -> the concepts it names -> that
+    # concept's last ruling date against its reference answer's) is buildable from artifacts
+    # already on disk and does not exist. This entry is the declaration of that debt, not a claim
+    # of cover.

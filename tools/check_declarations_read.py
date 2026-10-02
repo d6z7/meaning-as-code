@@ -152,6 +152,82 @@ def find(files, patterns: list[re.Pattern]) -> str | None:
             for rx in patterns:
                 if rx.search(s):
                     return f"{rel}:{i}"
+
+
+#: HOW FAR FROM THE LEAF THE PARENT'S NAME MAY SIT. Measured 2026-09-30 over all 34 shared leaves:
+#: every genuine reader spells its container within five lines of the key it reads (`attached` 818 ->
+#: `relation` 819; `sources` 304 -> `relation` 307; `edge = Edge(` 942 -> `type=` 945; `for t in
+#: transforms` 395 -> `t.get("rule")` 399), so ten is generous in the direction that avoids a false
+#: UNREAD. Requiring the SAME line instead was measured too: it flips 48 declarations where the window
+#: flips 18, and its extra 30 are almost all false — precision falls from 78% to 56%. A gate whose
+#: list is half wrong is one people learn to skim, so the window is the shipped rule.
+PARENT_WINDOW = 10
+
+#: LEAVES A PARENT-AGNOSTIC WALKER READS BY DESIGN, so the parent rule must not apply to them. This is
+#: not an excuse list: each entry names the reader and why naming a container would be WRONG there.
+#: `realized_by` — `resolver/registers.py#_unhonoured_canons` walks a whole concept document looking
+#: for the key wherever it occurs, and its own docstring says why: "the loader reads canon bindings in
+#: exactly two places ... and an author may put one anywhere the schema allows". A walker that
+#: demanded a container would miss the very case it was written for (contoso declared four bindings
+#: under `members:` that nothing read). MEASURED 2026-09-30: that file never spells `aliases`, so
+#: exempting this leaf cannot re-credit the dead `edges[].aliases`, which is the case the parent rule
+#: exists to catch.
+GENERIC_LEAVES = {
+    "realized_by": "resolver/registers.py#_unhonoured_canons walks the whole document by design",
+}
+
+
+def _parent_of(path: str) -> str | None:
+    """The nearest NAMED ancestor of a declaration path -- what a reader of this key spells nearby.
+
+    `[]` and `*` are structure, not names, so they are dropped rather than treated as ancestors:
+    `grounding.sources[].columns.*.role` has the parent `columns`, not `*`. An early cut kept `*` and
+    the regex became "any line containing an asterisk", which credited two declarations to arithmetic
+    (MEASURED 2026-09-30)."""
+    parts = [seg.replace("[]", "") for seg in path.split(".")]
+    parts = [seg for seg in parts if seg not in ("", "*")]
+    return parts[-2] if len(parts) >= 2 else None
+
+
+def parent_readers(name: str) -> list[re.Pattern]:
+    """Deliberately GENEROUS: `"edges"`, `.edges`, `edge`, `Edge(`, `EdgesFile` and `edge_rows` all
+    count as naming the container. A singular form is accepted because a loop over `sources` binds one
+    `source`. Over-accepting here costs an over-credit, which is the failure the current gate already
+    has; under-accepting invents a finding, which is worse."""
+    stem = name[:-1] if name.endswith("s") and len(name) > 3 else name
+    alt = "|".join(sorted({re.escape(name), re.escape(stem)}, key=len, reverse=True))
+    caps = "|".join(sorted({re.escape(name.capitalize()), re.escape(stem.capitalize())},
+                           key=len, reverse=True))
+    return [
+        re.compile(rf"(?<![A-Za-z])(?:{alt})(?![A-Za-z])", re.I),
+        # A CLASS NAME IS ALSO THE CONTAINER'S NAME. `class ColumnRulings` holds the `rulings` keys and
+        # reads one of them as `Field(alias="register")`; the word-boundary pattern above cannot see
+        # `Rulings` because a letter precedes it. MEASURED 2026-09-30: without this, a pydantic field
+        # whose schema key differs from its attribute name reads as UNREAD, which is a false finding
+        # about correct code.
+        re.compile(rf"[a-z_](?:{caps})(?![a-z])"),
+    ]
+
+
+def find_near(files, leaf: list[re.Pattern], parent: list[re.Pattern],
+              window: int = PARENT_WINDOW) -> str | None:
+    """A reader for a declaration whose LEAF NAME IS NOT UNIQUE: the leaf must be spelled, and the
+    container's own name must be spelled within `window` lines of it, in the same file.
+
+    WHY THIS EXISTS. `find` matches the leaf alone, so two declarations sharing a leaf share one
+    reader and the more obscure of them rides on the popular one's evidence. MEASURED 2026-09-30: of
+    211 schema declarations, 116 leaf names, 34 of those serve more than one path, and 129
+    declarations sit on a shared leaf. `edges[].aliases` was certified by a DOCSTRING about
+    `values.aliases` while `parse_edges` never passes the key at all and the `Edge` model forbids it.
+    Requiring the container's name near the leaf is what separates those two."""
+    for rel, lines in files:
+        for i, s in enumerate(lines, 1):
+            if not any(rx.search(s) for rx in leaf):
+                continue
+            lo, hi = max(0, i - 1 - window), min(len(lines), i + window)
+            near = lines[lo:hi]
+            if any(rx.search(n) for n in near for rx in parent):
+                return f"{rel}:{i}"
     return None
 
 
@@ -178,18 +254,44 @@ def audit(runtime: pathlib.Path, family: str | None = None) -> dict:
         return family is None or f == family
 
     # 1. schema keys, per file kind — the leaf key name is what a reader spells
-    for fk, paths in schema_keys(schema, FILES).items():
+    #
+    # A LEAF NAME IS ONLY EVIDENCE WHEN IT IS UNIQUE. `applied_as` is declared on 15 distinct paths
+    # and one line of `canon_bindings()` credits all fifteen; `edges[].aliases` rode on
+    # `values.aliases` and hid a dead shape for as long as the gate has existed. So the leaves are
+    # counted FIRST, across every file kind, and a declaration sharing its leaf with another must show
+    # its container's name near the reader (`find_near`) instead of the leaf alone (`find`).
+    all_schema = schema_keys(schema, FILES)
+
+    def _in_scope(leaf: str) -> bool:
+        return not (leaf in ("*", "") or leaf in META_KEYS or leaf.startswith("x-"))
+
+    leaf_paths: dict[str, set[str]] = {}
+    for fk, paths in all_schema.items():
+        for path in paths:
+            lf = path.replace("[]", "").rsplit(".", 1)[-1]
+            if _in_scope(lf):
+                leaf_paths.setdefault(lf, set()).add(f"{fk}:{path}")
+    shared = {lf for lf, owners in leaf_paths.items() if len(owners) > 1}
+
+    for fk, paths in all_schema.items():
         if not want("schema"):
             break
         rows = []
         side = fw_files if fk in FRAMEWORK_FILES else files
+        other_side_files = fw_files if side is files else files
         for p in paths:
             leaf = p.replace("[]", "").rsplit(".", 1)[-1]
-            if leaf in ("*", "") or leaf in META_KEYS or leaf.startswith("x-"):
+            if not _in_scope(leaf):
                 continue
-            hit = find(side, key_readers(leaf))
-            other = None if hit else find(fw_files if side is files else files, key_readers(leaf))
-            rows.append({"family": "schema", "kind": fk, "declaration": p, "key": leaf, "reader": hit, "other_side": other})
+            parent = _parent_of(p) if (leaf in shared and leaf not in GENERIC_LEAVES) else None
+            if parent:
+                hit = find_near(side, key_readers(leaf), parent_readers(parent))
+                other = None if hit else find_near(other_side_files, key_readers(leaf), parent_readers(parent))
+            else:
+                hit = find(side, key_readers(leaf))
+                other = None if hit else find(other_side_files, key_readers(leaf))
+            rows.append({"family": "schema", "kind": fk, "declaration": p, "key": leaf, "reader": hit,
+                         "other_side": other, "parent_required": parent})
         report[f"schema:{fk}"] = rows
     # 2. vocabulary terms
     if want("vocabulary"):
