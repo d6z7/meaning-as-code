@@ -1,0 +1,5 @@
+# exemplar_orphan.lookup.csv — a register NOTHING reaches. It exists so the `Used by` section's
+# empty branch is frozen too: a gate that only ever sees the populated case does not hold the other.
+salutation,label,search_key,source_view,source_schema,confidence,note
+Dr.,Dr.,dr.,customer,exemplar,I,measured: 2 members in customer.Salutation
+Mr.,Mr.,mr.,customer,exemplar,I,measured: 2 members in customer.Salutation

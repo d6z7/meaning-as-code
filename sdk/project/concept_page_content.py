@@ -37,6 +37,8 @@ from pathlib import Path
 
 import yaml
 
+from sdk.project import layout as _layout_reader
+
 
 def _edge_joins(concepts_dir: Path, concepts: list) -> dict:
     """{concept.name: {"out":[{title,on,join_rule}], "in":[...]}} projected from ontology/edges.yaml —
@@ -214,7 +216,6 @@ def _relationships_panel(joins: dict, over) -> str:
     if not out and not inn and not over:
         return ""
     lines = [
-        "## Relationships",
         "",
         f"*{len(out)} join(s) out · {len(inn)} in — click a concept to open it.*",
         "",
@@ -285,7 +286,7 @@ def _axes_block(obj: dict) -> list[str]:
     mt = str(sem.get("measure_type") or "").strip()
     axes = sem.get("axis_kinds") or {}
     if not mt and not axes:
-        return []
+        return []   # the CALLER emits the heading; an empty body becomes NOTHING_DECLARED
     law = _fold_law()
     short = mt.rsplit(".", 1)[-1] if mt else ""
     rows = []
@@ -294,7 +295,7 @@ def _axes_block(obj: dict) -> list[str]:
         kshort = kind_s.rsplit(".", 1)[-1]
         eff = (law.get(short) or {}).get(kshort, "")
         rows.append((str(axis), kshort or "—", eff.rsplit(".", 1)[-1] if eff else "—"))
-    out = ["## Axes", ""]
+    out: list[str] = []
     if mt:
         out += [f"Measure type: `{short}` — `{mt}`.", ""]
     if rows:
@@ -339,9 +340,124 @@ def _details_block(obj: dict) -> list[str]:
         rows.append(("Governance owner", str(gov["owner"])))
     if gov.get("last_reviewed"):
         rows.append(("Last reviewed", str(gov["last_reviewed"])))
-    if not rows:
+    return [f"- **{k}** — {v}" for k, v in rows]
+
+
+#: EVERY SECTION, IN ORDER, ALWAYS PRESENT — READ, NOT TYPED, THROUGH ONE LOOKUP. The hand-rolled
+#: loader that stood here read ONE topic file by name and was the second mechanism for one fact
+#: (`knowledge.py` carried a Python tuple); `sdk/project/layout.py` is the reader for both.
+LAYOUT = _layout_reader.layout("concept_page")
+
+#: The headings, in order. Every one `required: always` — asserted by test_concept_page_layout.
+PAGE_SECTIONS: tuple[str, ...] = LAYOUT.sections
+
+#: What an empty section says, declared beside the sections so one sentence serves all of them.
+NOTHING_DECLARED: str = LAYOUT.empty_section_says
+
+#: The Fields table's columns — PER-COLUMN FACTS ONLY. `grounded in` was removed from here on the
+#: operator's standing rule: "i dont want to have column for somehting that applies for the whole
+#: object like grounded-in".
+FIELDS_COLUMNS: tuple[str, ...] = LAYOUT.columns("fields_table_columns")
+
+
+def _section(heading: str, body: list[str]) -> list[str]:
+    """One section, ALWAYS emitted: its heading, then its body or the empty sentence."""
+    return _layout_reader.section(heading, body, NOTHING_DECLARED)
+
+
+def _measure_cell(measure: dict) -> str:
+    """`flow · USD · canonical` — the measure family as one cell.
+
+    ONE COLUMN PER FAMILY, not per leaf: `measure` declares `type`, `unit` and `canonical`, and three
+    columns of which two are empty on 88 % of rows reads worse than one that is empty on 88 % of
+    rows. `canonical` is shown as a word rather than `true`, because what it MEANS is "this is the
+    number the concept IS" and a boolean says nothing about which.
+    """
+    if not isinstance(measure, dict) or not measure:
+        return ""
+    bits = [str(measure.get("type") or "").rsplit(".", 1)[-1], str(measure.get("unit") or "")]
+    if measure.get("canonical"):
+        bits.append("**canonical**")
+    additivity = measure.get("additivity")
+    if isinstance(additivity, dict) and additivity:
+        bits.append(
+            "additivity " + ", ".join(f"{k}={str(v).rsplit('.', 1)[-1]}" for k, v in additivity.items())
+        )
+    return " · ".join(b for b in bits if b)
+
+
+def _rulings_cell(rulings: dict) -> str:
+    """`label_of brand (legal) · sort desc` — the authored judgements as one cell.
+
+    `register` IS NOT A SEPARATE RULING: it says WHICH of a thing's names a `label_of` column is, so
+    it renders in that ruling's parenthesis. `evidence` likewise belongs to the prohibition it
+    evidences -- a `never_axis` without its measurement is a preference, and the page shows them
+    together or the reader cannot tell which it is.
+    """
+    if not isinstance(rulings, dict) or not rulings:
+        return ""
+    out: list[str] = []
+    if rulings.get("label_of"):
+        register = rulings.get("register")
+        out.append(f"label_of `{rulings['label_of']}`" + (f" ({register})" if register else ""))
+    if rulings.get("finer_than"):
+        out.append(f"finer_than `{rulings['finer_than']}`")
+    if rulings.get("scoped_by"):
+        out.append(f"scoped_by `{rulings['scoped_by']}`")
+    if rulings.get("sort"):
+        out.append(f"sort {rulings['sort']}")
+    if rulings.get("never_axis"):
+        evidence = rulings.get("evidence")
+        out.append(
+            f"never_axis: {rulings['never_axis']}" + (f" ({evidence})" if evidence else "")
+        )
+    # ANY RULING THIS FUNCTION DOES NOT KNOW IS STILL SHOWN. A new term in
+    # mac_vocabulary.yaml#concept.column.ruling would otherwise be declared, authored, read by the
+    # planner and INVISIBLE on the page that exists to show it.
+    known = {"label_of", "register", "finer_than", "scoped_by", "sort", "never_axis", "evidence"}
+    out += [f"{k}: {v}" for k, v in rulings.items() if k not in known]
+    return " · ".join(out)
+
+
+def _ordered_by_relation(fields: list[dict], relations: list[str]) -> list[dict]:
+    """``fields`` regrouped so every column of one relation is contiguous, relations in declared
+    order. A column serving several relations is listed under the FIRST that declares it, so no row
+    appears twice -- a duplicated row would double the footer's denominator and read as two columns.
+    """
+    out: list[dict] = []
+    placed: set = set()
+    for relation in relations:
+        for f in fields:
+            if f["column"] in placed:
+                continue
+            if any(rel == relation for rel, _ in f["sources"]):
+                placed.add(f["column"])
+                out.append(f)
+    out += [f for f in fields if f["column"] not in placed]
+    return out
+
+
+def _source_key(source: dict) -> list[str]:
+    """The columns that make ONE ROW of this source unique — the authored `key:`, else DERIVED.
+
+    THE KEY IS A COLUMN FACT, and since 2026-10-02 the runtime derives it: `identity: canonical`, or
+    every `identity: part` column in declaration order. Operator, on seeing both declared at once:
+    "is this not redundancy? you define key by grounding and by the column". The `key:` list is the
+    deprecated spelling and contoso5 no longer carries it -- so a page that read only `key:` lost
+    the grain it used to show ("Grounded in `v_…_sales_line` — key `['order_key','line_number']`"
+    became a bare relation name, and no Fields row was flagged `(key)`).
+
+    THE SAME PRECEDENCE AS THE RUNTIME'S `parser._cell_key`, deliberately: authored first, derived
+    second. A page that disagreed with the planner about the grain would be worse than a blank one.
+    """
+    key = source.get("key")
+    if key:
+        return [key] if isinstance(key, str) else list(key)
+    columns = source.get("columns")
+    if not isinstance(columns, dict):
         return []
-    return ["## Details", ""] + [f"- **{k}** — {v}" for k, v in rows] + [""]
+    canonical = [n for n, b in columns.items() if (b or {}).get("identity") == "canonical"]
+    return canonical or [n for n, b in columns.items() if (b or {}).get("identity") == "part"]
 
 
 def _grounding_fields(grounding: dict) -> list[dict]:
@@ -350,21 +466,50 @@ def _grounding_fields(grounding: dict) -> list[dict]:
     Stable order: each source's columns in declared order, then any field_roles-only column. Each entry
     carries the column's role (from field_roles) and the source relation(s) it belongs to, flagging the
     relation for which the column is the declared key (grounding.sources[].key)."""
-    fr = grounding.get("field_roles") or {}
+    # THE ROLE IS ON THE COLUMN when the MAP form is used, and that is now the standard form.
+    #
+    # MEASURED 2026-10-02, reported by the operator: "the table on cocept page does not show the
+    # role" -- every row of the Fields table rendered `—`. This read `field_roles` ONLY, which is
+    # the LEGACY block form (`field_roles: {order_key: ...}` beside a flat list of column names).
+    # A bundle on the column standard declares `columns: {order_key: {role: key, ...}}` and carries
+    # no `field_roles:` block at all, so there was nothing to read and the column was blank for
+    # every concept of every migrated bundle -- 17 of 17 on contoso5.
+    #
+    # The runtime's parser PROJECTS the map form onto `field_roles`, which is why the planner never
+    # saw this; this tool reads the authored YAML, where the projection has not happened.
+    fr = dict(grounding.get("field_roles") or {})
     srcs = grounding.get("sources") or []
     order: list[str] = []
     seen: set = set()
     src_of: dict = {}  # column -> [(relation_bare, is_key), ...]
+    ident: dict = {}  # column -> its identity part, from the map form
+    extra: dict = {}  # column -> {axis_kind, measure, rulings} as declared
     for s in srcs:
         if not isinstance(s, dict):
             continue
         rel_bare = str(s.get("relation") or "").split(".")[-1]
-        key = s.get("key")
-        for col in s.get("columns") or []:
+        key = _source_key(s)
+        columns = s.get("columns") or []
+        if isinstance(columns, dict):
+            for col, body in columns.items():
+                if not isinstance(body, dict):
+                    continue
+                if body.get("identity"):
+                    ident.setdefault(col, body["identity"])
+                # EVERY OTHER PER-COLUMN FAMILY THE YAML DECLARES, kept whole so the renderer can
+                # format them and this function stays a reader.
+                for family in ("axis_kind", "measure", "rulings", "register"):
+                    if body.get(family) is not None:
+                        extra.setdefault(col, {}).setdefault(family, body[family])
+                # THE AUTHORED BLOCK WINS over the map, since a bundle carrying both is
+                # half-migrated and `field_roles` is the half being retired.
+                if isinstance(body, dict) and body.get("role") and col not in fr:
+                    fr[col] = body["role"]
+        for col in columns:
             if col not in seen:
                 seen.add(col)
                 order.append(col)
-            src_of.setdefault(col, []).append((rel_bare, col == key))
+            src_of.setdefault(col, []).append((rel_bare, col in key))
     for col in fr:  # grounded-role column not listed under any source
         if col not in seen:
             seen.add(col)
@@ -373,6 +518,17 @@ def _grounding_fields(grounding: dict) -> list[dict]:
         {
             "column": col,
             "role": str(fr[col]).split(".")[-1] if col in fr else "",
+            # THE PART THIS COLUMN PLAYS IN THE CONCEPT'S IDENTITY -- canonical | part | reference.
+            # A PER-COLUMN fact, and the one the grain is now derived from, so it replaces the
+            # `grounded in` column that used to sit here.
+            "identity": str(ident.get(col, "")).split(".")[-1],
+            "axis_kind": str((extra.get(col) or {}).get("axis_kind") or "").rsplit(".", 1)[-1],
+            "measure": (extra.get(col) or {}).get("measure") or {},
+            "rulings": (extra.get(col) or {}).get("rulings") or {},
+            # THE VALUE SET THIS COLUMN CARRIES. Shown as the file's BARE NAME: the path is
+            # bundle-relative and identical in every row's prefix, which is the whole-object
+            # repetition the `grounded in` column was removed for.
+            "register": str((extra.get(col) or {}).get("register") or ""),
             "sources": src_of.get(col, []),
         }
         for col in order
@@ -386,6 +542,7 @@ def concept_body(
     bundle: dict[str, str],
     joins: dict | None = None,
     col_desc: dict | None = None,
+    source_table: tuple[str, ...] = (),
 ) -> str:
     """ONE concept page's BODY — every section below the frontmatter, as markdown.
 
@@ -405,31 +562,36 @@ def concept_body(
         c.get("definition", "").strip(),
         "",
     ]  # no body H1 — the read-view renders the frontmatter title
-    parts += _details_block(obj)
+    parts += _section("Details", _details_block(obj))
     # HOW TO ANSWER — the concept's agent-facing playbook (contract.no_probe_guarantee), rendered
     # VERBATIM inside a fence so its numbered steps / SQL / semicolons survive untouched. The single
     # highest-value field for "present AND later answer questions" (the wiki /ask reads this same .md).
     npg = (obj.get("contract") or {}).get("no_probe_guarantee")
-    if npg:
-        parts += [
-            "## How to answer",
-            "",
+    parts += _section(
+        "How to answer",
+        [
             "*What an agent needs ONLY, to answer with this concept — no data probing.*",
             "",
             "```text",
             str(npg).rstrip("\n"),
             "```",
-            "",
         ]
+        if npg
+        else [],
+    )
     # GROUNDED IN — every source relation (not just sources[0]) + its declared key.
     ground_srcs = [s for s in srcs if isinstance(s, dict) and s.get("relation")]
-    if ground_srcs:
-        parts += ["## Grounded in", ""]
-        for s in ground_srcs:
-            parts.append(f"- `{s['relation']}`" + (f" — key `{s['key']}`" if s.get("key") else ""))
-        parts.append("")
-    if grounding.get("grain"):
-        parts += ["## Grain", grounding["grain"].strip(), ""]
+    parts += _section(
+        "Grounded in",
+        [
+            f"- `{g['relation']}`"
+            + (f" — key `{_source_key(g)}`" if _source_key(g) else "")
+            for g in ground_srcs
+        ],
+    )
+    parts += _section(
+        "Grain", [grounding["grain"].strip()] if grounding.get("grain") else []
+    )
     fields = _grounding_fields(grounding)
     if fields:
         # each FK column links to the concept it joins (relative .md -> the viewer navigates it)
@@ -451,6 +613,19 @@ def concept_body(
         # means NOTHING IS DECLARED, and it is the same marker `role` and `grounded in` already use,
         # so one glyph means one thing across the row.
         #
+        # NO COLUMN FOR A WHOLE-OBJECT FACT. Operator, 2026-10-02, having said it several times
+        # before: "i dont want to have column for somehting that applies for the whole object like
+        # grounded-in". `grounded in` repeated the SAME relation on every row of a single-source
+        # concept -- 10 of 10 rows reading `v_contoso5_sales_line` -- which is the relation the
+        # `## Grounded in` section states once, above. Its slot now carries `identity`
+        # (canonical | part | reference), which genuinely varies per column and is what the grain is
+        # derived from. WHERE A CONCEPT IS M:N OVER RELATIONS the relation does vary, and the answer
+        # is a sub-heading per relation below, never a repeated column.
+        #
+        # THIS IS NOT THE RULING BELOW. That one forbids dropping a column because it is EMPTY; this
+        # column was dropped for being REDUNDANT, which is the opposite problem: it carried the same
+        # fact N times instead of none.
+        #
         # A BLANK IS NOT HIDDEN AND A COLUMN IS NEVER DROPPED FOR BEING EMPTY. Operator, on being
         # told an all-empty table might be collapsed into prose: "grid of blanks hints on the error
         # or incompletenes. it is much better then hiding it." They are right — a grid shows WHICH
@@ -458,14 +633,44 @@ def concept_body(
         # constant, and the footer COUNTS the emptiness instead, over its denominator, because an
         # unmeasured absence is the one thing this estate refuses to ship.
         prop_docs = _property_docs(obj)
-        filled = {"description": 0, "type": 0, "joins →": 0}
-        parts += [
-            "## Fields",
-            "",
-            "| column | type | role | grounded in | description | joins → |",
-            "|---|---|---|---|---|---|",
-        ]
-        for f in fields:
+        filled = {
+            "type": 0,
+            "role": 0,
+            "identity": 0,
+            "measure": 0,
+            "rulings": 0,
+            "register": 0,
+            "description": 0,
+            "joins →": 0,
+        }
+        # ONE RELATION PER SUB-HEADING WHERE A CONCEPT HAS SEVERAL, so the relation is stated once
+        # per group instead of once per row. Measured: contoso4's `Currency` grounds
+        # `v_contoso4_sales` (where `CurrencyCode` IS its identity) and
+        # `v_contoso4_currencyexchange` (where the same members appear as FromCurrency/ToCurrency) --
+        # there the relation genuinely varies per column, and a heading says so without a column
+        # that is pure repetition on every single-source concept.
+        relations = [r for r, _ in dict.fromkeys(
+            (rel, None) for f in fields for rel, _ in f["sources"]
+        )]
+        grouped = len(relations) > 1
+        parts += ["## Fields", ""]
+        if not grouped:
+            parts += [
+                "| " + " | ".join(FIELDS_COLUMNS) + " |",
+                "|" + "---|" * len(FIELDS_COLUMNS),
+            ]
+        current = None
+        for f in _ordered_by_relation(fields, relations) if grouped else fields:
+            if grouped:
+                rel = (f["sources"] or [(None, False)])[0][0]
+                if rel != current:
+                    current = rel
+                    parts += [
+                        f"### `{rel}`" if rel else "### (no declared relation)",
+                        "",
+                        "| " + " | ".join(FIELDS_COLUMNS) + " |",
+                        "|" + "---|" * len(FIELDS_COLUMNS),
+                    ]
             col = f["column"]
             meta_col = col_desc.get(col) or {}
             if not isinstance(meta_col, dict):  # a caller passing the old {col: str} shape
@@ -475,19 +680,31 @@ def concept_body(
             ).replace("|", "\\|").replace("\n", " ").strip()
             ctype = str(meta_col.get("type") or "").strip()
             joined = joins_by_col.get(col, "")
-            grounded = (
-                ", ".join(f"`{rel}`{' (key)' if is_key else ''}" for rel, is_key in f["sources"])
-                or "—"
-            )
             if desc:
                 filled["description"] += 1
             if ctype:
                 filled["type"] += 1
+            if f["role"]:
+                filled["role"] += 1
             if joined:
                 filled["joins →"] += 1
+            if f["identity"]:
+                filled["identity"] += 1
+            measure_cell = _measure_cell(f["measure"])
+            rulings_cell = _rulings_cell(f["rulings"])
+            if measure_cell:
+                filled["measure"] += 1
+            if rulings_cell:
+                filled["rulings"] += 1
+            register_cell = (
+                f"`{f['register'].rsplit('/', 1)[-1]}`" if f["register"] else ""
+            )
+            if register_cell:
+                filled["register"] += 1
             parts.append(
-                f"| `{col}` | {ctype or '—'} | {f['role'] or '—'} | {grounded} "
-                f"| {desc or '—'} | {joined or '—'} |"
+                f"| `{col}` | {ctype or '—'} | {f['role'] or '—'} | {f['identity'] or '—'} "
+                f"| {measure_cell or '—'} | {rulings_cell or '—'} "
+                f"| {register_cell or '—'} | {desc or '—'} | {joined or '—'} |"
             )
         parts.append("")
         n = len(fields)
@@ -501,31 +718,38 @@ def concept_body(
             + ". An em dash is a column for which nothing is declared._",
             "",
         ]
-    parts += _axes_block(obj)
+    if not fields:
+        # A CONCEPT THAT GROUNDS NO COLUMNS still gets the section. The branch above builds the
+        # table in place, so this is its else: without it, Fields was the one section that could
+        # still vanish, and a value-domain concept (an enumeration with no relation) rendered a
+        # page with seven headings where every other concept had eight.
+        parts += _section("Fields", [])
+    parts += _section("Axes", _axes_block(obj))
     # Rules are NOT repeated on the Page — they have their own "Rules" view tab now.
     over = (obj.get("members") or {}).get("over") if isinstance(obj.get("members"), dict) else None
     rel = _relationships_panel(joins, over)
-    if rel:
-        parts += [rel]
-    parts += [
-        "## Source of record",
-        f"- Full MAC concept: `{src_path.name}` — open the **YAML** tab for the complete typed definition.",
-    ]
+    parts += _section("Relationships", rel.splitlines() if rel else [])
+    parts += _section(
+        "Source of record",
+        [
+            f"- Full MAC concept: `{src_path.name}` — open the **YAML** tab for the complete "
+            f"typed definition.",
+            *source_table,
+        ],
+    )
     return "\n".join(parts)
 
 
-def concept_sections(name: str, path: Path, obj: dict, inputs: dict) -> str:
-    """ONE concept's page below the frontmatter — the body plus its `## Data` pointer.
+def page_body(name: str, path: Path, obj: dict, inputs: dict, *, source_table: tuple[str, ...] = ()) -> str:
+    """ONE concept's page body — the SURFACE `delivers.concept_page.shape` governs, nothing else.
 
-    `mac_okf.concept_page` is this with the OKF head in front of it, and the live page seam
-    reaches the same text through that call. Writes nothing.
-
-    Moved out of `concept_page` with one word changed — `concept_to_md` became `concept_body`,
-    because the frontmatter is now added by the caller that knows the format.
+    Split out of `concept_sections` so the freeze checker renders what the declaration rules
+    (`tools/check_document_layout.py`) and `concept_sections` adds the `## Data` pointer on top.
+    Not a character of the rendering changed in the split.
     """
     cname = (obj.get("concept") or {}).get("name") or name
     rel_bare = _concept_relation(obj) or name
-    md = concept_body(
+    return concept_body(
         obj,
         path,
         name,
@@ -538,10 +762,41 @@ def concept_sections(name: str, path: Path, obj: dict, inputs: dict) -> str:
         # store relation). The first relation still wins a name collision, which is the same
         # precedence the rest of this builder uses.
         _merged_col_meta(inputs["col_desc"], obj, name, rel_bare),
+        source_table=source_table,
     )
+
+
+def concept_sections(name: str, path: Path, obj: dict, inputs: dict) -> str:
+    """ONE concept's page below the frontmatter. `mac_okf.concept_page` is this with the OKF head in
+    front, and the live page seam reaches the same text through it. Writes nothing.
+
+    THE SOURCE-TABLE POINTER GOES IN `Source of record`, not a section of its own. It used to be
+    appended as `## Data`, which made the page NINE headings on a bundle with a data plane (3 of 17
+    concepts on contoso5) against the eight `delivers.concept_page.shape` declares — a conditional
+    section of exactly the kind the always-present ruling removed, carrying one pointer line next to
+    a section that already holds one.
+    """
+    source_table: tuple[str, ...] = ()
     if (inputs["data_sources"] / f"{name}.yaml").exists():
-        md += f"\n\n## Data\n- Source table: [{name}](../../data/sources/{name}.md)\n"
-    return md
+        source_table = (f"- Source table: [{name}](../../data/sources/{name}.md)",)
+    return page_body(name, path, obj, inputs, source_table=source_table)
+
+
+def documents(root: Path) -> dict[str, str]:
+    """`{concept stem: its page body}` for a whole bundle — the renderer the guardrails declare.
+
+    The enumeration is `mac_okf.load_concepts`'s, repeated here rather than imported: the
+    dependency runs projector -> content (see this module's docstring), never back.
+    """
+    src = Path(root) / "ontology" / "concepts"
+    concepts = []
+    for path in sorted(src.rglob("*.yaml")) if src.is_dir() else []:
+        raw = path.read_text(encoding="utf-8")
+        obj = yaml.safe_load(raw)
+        if isinstance(obj, dict) and "concept" in obj:
+            concepts.append((path.stem, path, obj, raw))
+    inputs = page_inputs(src, concepts)
+    return {name: page_body(name, path, obj, inputs) for name, path, obj, _raw in concepts}
 
 
 def page_inputs(src: Path, concepts: list) -> dict:

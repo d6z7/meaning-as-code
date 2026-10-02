@@ -1,0 +1,6 @@
+# exemplar_mixed.lookup.csv — its per-row metadata VARIES, so no column is constant and the
+# `Cut from` section has nothing to state. It exists so the declared empty sentence is exercised:
+# a marker no document ever renders is a mechanism nobody tested.
+grade,label,search_key,source_view,source_schema,confidence,note
+A,Grade A,grade a,dim_product,exemplar,C,ruled by the operator
+B,Grade B,grade b,v_exemplar_sales,staging,I,measured from the rows

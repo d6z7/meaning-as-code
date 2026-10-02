@@ -1,0 +1,4 @@
+# exemplar_brand.lookup.csv — a register REACHED by a declared column.
+brand,label,search_key,source_view,source_schema,confidence,note
+Contoso,Contoso,contoso,dim_product,exemplar,I,measured: 2 members in dim_product.brand
+Fabrikam,Fabrikam,fabrikam,dim_product,exemplar,I,measured: 2 members in dim_product.brand

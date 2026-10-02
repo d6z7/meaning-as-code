@@ -39,6 +39,155 @@ delivers:
     # document the agent reads carries no routing there, and nothing says so.
     checkers: []
 
+  lookup_page:
+    what: one register's read view — what it holds, where it was cut from, and WHO USES IT
+    phase: [sources]
+    belongs_to: data   # move here when that topic exists
+    path: data/lookups/<register>.lookup.md
+    naming: "{register}.lookup.md"
+    population: {of: one page per register, from: data/lookups/*.lookup.csv, empty_is: OK}
+    lifecycle: re-derived
+    shape:
+      # `Used by` IS THE SECTION THAT DID NOT EXIST. Operator, 2026-10-02: "i also sugget you write
+      # in lookup page whare is the lookup being used / freeze it in the design layout of lookup
+      # page". Measured on contoso5 the same day: of 17 registers, 5 declare a column that points at
+      # them, 7 more are reached because a concept declares the column they were cut from, and 5 are
+      # reached by NOTHING — and the only way to learn which was to run the loader and read its skip
+      # report. A register nothing reaches is dead weight; the page now says so on its own face.
+      #
+      # TWO WAYS OF BEING USED, kept apart on purpose: `declared` is a column carrying `register:`,
+      # `by column name` is the undeclared path still reading it. Collapsing them would hide which
+      # registers are governed and which merely happen to be found.
+      empty_section_says: "_Nothing declared for this section._"
+      sections:
+        - {heading: Cut from, required: always}
+        - {heading: Used by, required: always}
+        - {heading: Members, required: always}
+    producers:
+      - {tool: sdk/project/project_data.py, role: projects every register's page, renders: lookup_documents}
+    consumers:
+      - {tool: "mac-console Sources browser", role: "the Lookups view", reads: ["«whole page»"]}
+    checkers: [tools/check_document_layout.py]
+
+  concept_page:
+    what: one concept's read-view page — derived LIVE from its YAML, never read from disk
+    phase: [concepts]
+    belongs_to: ontology   # move here when that topic exists
+    path: «derived — no file»
+    naming: n/a
+    population: {of: one page, from: ontology/concepts/<stem>.yaml, empty_is: OK}
+    lifecycle: derived-on-request
+    shape:
+      # THE LAYOUT IS THIS LIST, and it is declared here because the renderer kept inventing a new
+      # one. Operator, 2026-10-02: "i cannto stand that you every time invent new layout for the
+      # same document !?!?!? it is either you define mandatory rules for the layout or crate
+      # tempalte that you will only populate." Rules, not a template: a template for this page
+      # would have to carry a conditional table, a two-direction join list and the frontmatter,
+      # which makes it a second program in a templating language and moves the drift rather than
+      # stopping it.
+      #
+      # `required: always` ON EVERY ONE OF THEM, which is the second ruling of the same day: "i want
+      # ALL tabs on the Concept page to ALWAYS be present. if some of them has no content ... then
+      # just inform that no content available". Each section used to carry its own `if` and vanish
+      # when empty, so the page's SHAPE was a function of the bundle's completeness — a concept with
+      # no edges rendered seven sections, one with no grain six, and no two concepts produced the
+      # same document. There was nothing to drift FROM, because there was never one layout.
+      #
+      # It is also the grid-of-blanks ruling one level up: "grid of blanks hints on the error or
+      # incompletenes. it is much better then hiding it." A missing section hides exactly what a
+      # missing column hides — WHICH fact the bundle lacks.
+      empty_section_says: "_No content available — the bundle declares nothing for this section._"
+      sections:
+        - {heading: Details, required: always}
+        - {heading: How to answer, required: always}
+        - {heading: Grounded in, required: always}
+        - {heading: Grain, required: always}
+        - {heading: Fields, required: always}
+        - {heading: Axes, required: always}
+        - {heading: Relationships, required: always}
+        - {heading: Source of record, required: always}
+      # NO COLUMN FOR A WHOLE-OBJECT FACT. Operator, having said it several times: "i dont want to
+      # have column for somehting that applies for the whole object like grounded-in". The Fields
+      # table's `grounded in` column repeated ONE relation on all 10 rows of a single-source
+      # concept — the relation `## Grounded in` states once, above. Its slot carries `identity`
+      # now, which varies per column. Where a concept IS M:N over relations the relation does vary,
+      # and the answer is a sub-heading per relation, never a repeated column.
+      # EVERY PER-COLUMN FACT THE CONCEPT YAML DECLARES, measured 2026-10-02 over 112 declared
+      # columns: role 112, identity 50, axis_kind 39, measure 14 (type+unit, canonical on 3),
+      # rulings 11 (label_of 5, register 5, finer_than 3, never_axis 2, evidence 2, scoped_by 1).
+      # The table showed role and identity only, so THREE fact families carrying 64 declarations
+      # were invisible on the page that exists to show them -- including the ones that decide an
+      # answer (`measure.canonical` picks the column a question folds, `axis_kind` keys the fold
+      # law, `never_axis` refuses a grouping outright).
+      #
+      # COMPOUND FLAGS RENDER AS ONE CELL, dot-separated: `measure` is `flow · USD · canonical`,
+      # `rulings` is `label_of brand (legal) · sort desc`. One column per FAMILY rather than per
+      # leaf, because a column per leaf would be nine mostly-empty columns and the families are how
+      # the YAML groups them.
+      # THE PRE-TRANSITION TABLE WAS `column | type | role | grounded in | description | joins →`,
+      # and this is that table with three changes, each with a reason:
+      #
+      #   `grounded in` REMOVED  — a whole-object fact repeated on every row (operator's standing
+      #                            rule); the relation is stated once under `## Grounded in`.
+      #   `role` FIXED           — it was present and EM-DASHED on every row of every map-form
+      #                            concept, because the renderer read only the legacy `field_roles:`
+      #                            block. It now reads the column's own `role`.
+      #   `identity`, `measure`, `rulings`, `register` ADDED — per-column facts the concept YAML
+      #                            declares and NO section of the page showed.
+      #
+      # `axis kind` IS DELIBERATELY NOT HERE, and a first cut added it. `## Axes` already carries
+      # `| axis | axis kind | fold |` per axis, and it did before the transition -- so a column here
+      # would have duplicated an existing section. Operator, on finding it: "YOU ARE FUCKING
+      # REINVENTING NEW LAYOUT FOR CONCEPT MAIN PAGE ... WHY DONT YOU GO AND LOOK HOW IT LOOKED LIKE
+      # BEFORE TRANSITION". Look first; the stale projected `.md` files are that record.
+      fields_table_columns:
+        - column
+        - type
+        - role
+        - identity
+        - measure
+        - rulings
+        - register
+        - description
+        - "joins →"
+    producers:
+      # `renders` NAMES THE ENTRY POINT THAT CAN BE HELD TO THE SHAPE ABOVE: a callable on this
+      # producer's own module, taking a bundle root and returning {document: markdown}. Declared on
+      # the producer because WHO renders is a producer fact; the module is its `tool:` path.
+      - {tool: sdk/project/concept_page_content.py, role: builds the body from the concept YAML,
+         renders: documents}
+      - {tool: tools/project_concept_page.py, role: the live seam the console calls per request}
+    consumers:
+      - {tool: "mac-console console_api.h_concept_page", role: "the Page tab", reads: ["«markdown»"]}
+    checkers: [tests/test_concept_page_layout.py, tests/test_concept_page_seam.py,
+               tools/check_document_layout.py]
+
+  knowledge_page:
+    what: one concept's knowledge — what the CONFIGURATION states plus the SME-PROVIDED sources
+    phase: [concepts]
+    belongs_to: ontology   # move here when that topic exists
+    path: «derived — no file»
+    naming: n/a
+    population: {of: one page, from: ontology/concepts/<stem>.yaml, empty_is: OK}
+    lifecycle: derived-on-request
+    shape:
+      # THE SAME RULING AS `concept_page`, ON THE SECOND DOCUMENT. These five headings were a
+      # `SECTIONS` tuple in `sdk/project/knowledge.py` — a layout living in code; moved here
+      # verbatim 2026-10-02 (same order, same words, `always` throughout) and now read from here.
+      empty_section_says: "_Nothing declared for this section._"
+      sections:
+        - {heading: What it is, required: always}
+        - {heading: What the configuration states, required: always}
+        - {heading: Rules that govern it, required: always}
+        - {heading: Where its values come from, required: always}
+        - {heading: SME sources, required: always}
+    producers:
+      - {tool: sdk/project/knowledge.py, role: projects the configuration half and the SME half,
+         renders: project}
+    consumers:
+      - {tool: "mac-console", role: "the concept's Knowledge tab", reads: ["«markdown»"]}
+    checkers: [tools/check_document_layout.py, tests/test_document_layout.py]
+
   questions_dashboard:
     what: the question corpus's read view — every oracle-relative verdict, derived once
     phase: [sources, datasets]

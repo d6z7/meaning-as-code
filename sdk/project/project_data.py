@@ -23,6 +23,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from sdk.project import layout as _layout
+
 import yaml
 
 _SEV_ORDER = {"high": 0, "medium": 1, "low": 2}
@@ -208,6 +210,140 @@ def _plane_index(out, plane: str, title: str, docs: dict, label: str) -> int:
                        "parent endpoints and an ER model cannot draw them.", ""]
     (out / plane / "index.md").write_text("\n".join(body) + "\n")
     return len(docs)
+
+
+#: The lookup page's declared layout — `delivers.lookup_page.shape`.
+_LOOKUP_LAYOUT = _layout.layout("lookup_page")
+
+
+def lookup_documents(root) -> dict:
+    """`{register stem: its page body}` — the renderer `delivers.lookup_page` declares.
+
+    PURE. `build_data` writes the real pages; this renders the same three sections from the same
+    inputs so the layout checker and its frozen copies never need a write.
+    """
+    import csv as _csv
+
+    root = Path(root)
+    usage = register_users(root)
+    out: dict = {}
+    for lk in sorted((root / "data" / "lookups").glob("*.lookup.csv")):
+        try:
+            with lk.open(encoding="utf-8-sig", newline="") as handle:
+                rows = [r for r in _csv.reader(handle) if r and not r[0].lstrip().startswith("#")]
+        except Exception:
+            continue
+        hdr, data_rows = (rows[0] if rows else []), rows[1:]
+        constant = {}
+        for i, name in enumerate(hdr):
+            if i == 0:
+                continue
+            vals = {(r[i] if len(r) > i else "") for r in data_rows}
+            if len(vals) == 1:
+                constant[name] = next(iter(vals))
+        shown = [i for i, name in enumerate(hdr) if i == 0 or name not in constant]
+        empty = _LOOKUP_LAYOUT.empty_section_says
+        b = [f"Reference lookup · {len(data_rows)} rows · SSOT: `data/lookups/{lk.name}` (CSV).", ""]
+        b += _layout.section(
+            "Cut from",
+            [f"- **{k}** — `{v}`" for k, v in constant.items() if k != "confidence" and v],
+            empty,
+        )
+        used = usage.get(lk.name) or []
+        b += _layout.section(
+            "Used by",
+            [f"- `{c}.{col}` — {how}" for c, col, how in sorted(used)]
+            # A POSITIVE STATEMENT, NOT THE EMPTY MARKER. "Nothing reaches this register" is a
+            # finding; `empty_section_says` is for a section the bundle declares nothing for. The
+            # layout gate caught the first version wearing the marker's words.
+            or ["- **Nothing reaches this register.** No column declares it and no descriptor "
+                "attaches it, so its members cannot be resolved."],
+            empty,
+        )
+        members = []
+        if hdr:
+            head = [hdr[i] for i in shown]
+            members += ["| " + " | ".join(head) + " |",
+                        "| " + " | ".join(["---"] * len(head)) + " |"]
+            members += ["| " + " | ".join((r[i] if len(r) > i else "") for i in shown) + " |"
+                        for r in data_rows[:200]]
+        b += _layout.section("Members", members, empty)
+        out[lk.stem] = "\n".join(b)
+    return out
+
+
+def register_users(root) -> dict:
+    """`{register filename: [(concept, column, how)]}` — WHO USES EACH LOOKUP.
+
+    Two ways a register is reached, and the page must distinguish them: a column that DECLARES it
+    with `register:`, and a column whose NAME the register was cut from, which the undeclared path
+    still reads. A register neither declares nor matches is reached by nothing, and that is the
+    evidence for deleting it.
+    """
+    import csv as _csv
+
+    root = Path(root)
+    declared: dict = {}
+    by_column: dict = {}
+    relations: dict = {}
+    for f in sorted((root / "ontology" / "concepts").glob("*.yaml")):
+        try:
+            doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        name = ((doc.get("concept") or {}) if isinstance(doc.get("concept"), dict) else {}).get("name")
+        if not name:
+            continue
+        for src in ((doc.get("grounding") or {}).get("sources") or []):
+            if not isinstance(src, dict):
+                continue
+            if src.get("relation"):
+                relations.setdefault(name, str(src["relation"]))
+            if not isinstance(src.get("columns"), dict):
+                continue
+            for column, body in src["columns"].items():
+                body = body if isinstance(body, dict) else {}
+                if body.get("register"):
+                    declared.setdefault(Path(str(body["register"])).name, []).append(
+                        (name, column, "declared")
+                    )
+                by_column.setdefault(str(column).casefold(), []).append((name, column))
+    # THE DESCRIPTOR'S `attached:` IS THE ONE HOME of "which columns carry this set"
+    # (mac.schema.json#ValueRegisterFile.attached), and it is what the runtime's loader reads. A
+    # first cut here matched the CSV's first header against column names instead and disagreed with
+    # the loader on three of 17 registers — a page that contradicts the engine is worse than none.
+    out: dict = {}
+    for lk in sorted((root / "data" / "lookups").glob("*.lookup.csv")):
+        users = list(declared.get(lk.name, []))
+        if not users:
+            descriptor = lk.with_name(lk.name.removesuffix(".lookup.csv") + ".lookup.yaml")
+            attached = []
+            if descriptor.is_file():
+                try:
+                    raw = yaml.safe_load(descriptor.read_text(encoding="utf-8")) or {}
+                except Exception:
+                    raw = {}
+                attached = [
+                    (str(e["relation"]), str(e["column"]))
+                    for e in (raw.get("attached") or [])
+                    if isinstance(e, dict) and e.get("relation") and e.get("column")
+                ]
+            for relation, column in attached:
+                for concept, own_relation in relations.items():
+                    bare = (own_relation or "").rsplit(".", 1)[-1]
+                    if bare and bare == relation.rsplit(".", 1)[-1]:
+                        users.append((concept, column, "by descriptor"))
+            if not attached:
+                try:
+                    with lk.open(encoding="utf-8-sig", newline="") as handle:
+                        rows = [r for r in _csv.reader(handle)
+                                if r and not r[0].lstrip().startswith("#")]
+                except Exception:
+                    rows = []
+                head = rows[0][0].casefold() if rows else ""
+                users = [(c, col, "by column name") for c, col in by_column.get(head, [])]
+        out[lk.name] = sorted(set(users))
+    return out
 
 
 def build_data(data_dir, out_dir=None, lineage=None) -> dict:
@@ -578,6 +714,7 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
     )
     if lookups:
         (out / "lookups").mkdir(exist_ok=True)
+    usage = register_users(root)
     for lk in lookups:
         # Skip a "#" preamble. A register may carry one stating what it is, what generated it and
         # what is known-defective about it; counting those lines as data published a row count 55 too
@@ -621,17 +758,38 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
                     constant[name] = next(iter(vals))
         shown = [i for i, name in enumerate(hdr) if i == 0 or name not in constant]
         b = [f"Reference lookup · {n} rows · SSOT: `data/lookups/{lk.name}` (CSV).", ""]
+        # THREE DECLARED SECTIONS, ALL ALWAYS PRESENT — `delivers.lookup_page.shape`. `Used by` is
+        # the one a reader could not get anywhere else: a register nothing reaches is dead weight,
+        # and until the page said so the only way to know was to run the loader.
         facts = [(k, v) for k, v in constant.items() if k not in DROP_IF_CONSTANT and v]
-        if facts:
-            b += [f"- **{k}** — `{v}`" if len(v) < 60 else f"- **{k}** — {v}" for k, v in facts]
-            b += [""]
+        b += _layout.section(
+            "Cut from",
+            [f"- **{k}** — `{v}`" if len(v) < 60 else f"- **{k}** — {v}" for k, v in facts],
+            _LOOKUP_LAYOUT.empty_section_says,
+        )
+        used = (usage or {}).get(lk.name) or []
+        b += _layout.section(
+            "Used by",
+            [
+                f"- `{concept}.{column}` — {how}"
+                for concept, column, how in sorted(used)
+            ]
+            # A POSITIVE STATEMENT, NOT THE EMPTY MARKER. "Nothing reaches this register" is a
+            # finding; `empty_section_says` is for a section the bundle declares nothing for. The
+            # layout gate caught the first version wearing the marker's words.
+            or ["- **Nothing reaches this register.** No column declares it and no descriptor "
+                "attaches it, so its members cannot be resolved."],
+            _LOOKUP_LAYOUT.empty_section_says,
+        )
+        members: list = []
         if hdr:
             head = [hdr[i] for i in shown]
-            b += ["| " + " | ".join(head) + " |", "| " + " | ".join(["---"] * len(head)) + " |"]
-            b += ["| " + " | ".join((r[i] if len(r) > i else "") for i in shown) + " |"
-                  for r in data_rows[:200]]
+            members += ["| " + " | ".join(head) + " |", "| " + " | ".join(["---"] * len(head)) + " |"]
+            members += ["| " + " | ".join((r[i] if len(r) > i else "") for i in shown) + " |"
+                        for r in data_rows[:200]]
             if n > 200:
-                b += ["", f"_…{n - 200} more rows — open the CSV in the Source browser._"]
+                members += ["", f"_…{n - 200} more rows — open the CSV in the Source browser._"]
+        b += _layout.section("Members", members, _LOOKUP_LAYOUT.empty_section_says)
         lfm = {
             "type": "Lookup",
             "title": lk.stem,

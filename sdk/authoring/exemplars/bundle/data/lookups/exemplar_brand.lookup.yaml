@@ -1,0 +1,5 @@
+metadata:
+  register: exemplar_brand
+  source: EXEMPLAR
+attached:
+  - {relation: dim_product, column: brand}
