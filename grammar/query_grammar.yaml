@@ -66,6 +66,40 @@ operations:
       says so and names `weighted_mean` as the operator that does. This grammar does not yet say
       which one `average` selects, and the answer belongs in the fold plane, not here.
 
+  - name: min
+    asks: the earliest or smallest value a column holds
+    requires:
+      - a column whose role declares the `extremum` use (mac.concept.column.query_use)
+    contributes:
+      select: MIN(<column>)
+    branches_in_runtime: true
+    # NON-FOLDING, AND THAT IS THE POINT. An extremum PICKS a value that exists in the data rather
+    # than combining several, so it answers to no additivity cell and carries NO UNIT. Measured
+    # 2026-10-02: undeclared here, `grammar_reader.operation_folds` took its conservative branch
+    # ("unknown to the grammar -> folds") and the answer read "Store: 2013-12-05 in m2" -- a date
+    # with a floor-area unit, because a fold's unit was attached to a date.
+    branches: [non_fold_ops]
+    refuses_when: >
+      the subject names a CONCEPT rather than a column, and that concept declares more than one
+      column admitting an extremum -- then it ASKS which, naming them. Measured on STORE-04: with
+      the subject left as `Store` the answer was 665.0, MIN(square_metres), for a question asking
+      when the first store closed.
+    note: >
+      WHAT MADE THIS NECESSARY. "When was the first store closed?" has one proper answer, a DATE,
+      and no shape here could carry it: the nearest was `rank` + `ordering` + `limit: 1` with the
+      date as a SLICE, which answers with a ROW --
+      `Contoso Store Rhode Island · 2013-12-05 · 1` against an approved `2013-12-05`. The gap was
+      not in `not_expressible` either, so nothing refused and the question was silently answered in
+      a different shape, which is the one outcome declared gaps exist to prevent.
+  - name: max
+    asks: the latest or largest value a column holds
+    requires:
+      - a column whose role declares the `extremum` use (mac.concept.column.query_use)
+    contributes:
+      select: MAX(<column>)
+    branches_in_runtime: true
+    branches: [non_fold_ops]
+    refuses_when: as `min` -- a concept declaring several admitting columns is asked about, not guessed
   - name: list
     asks: which members exist
     requires: [a column to list — canonical_key, or a named slice column]
@@ -103,9 +137,14 @@ operations:
     emerges_from: Intent.denominator being populated
     note: >-
       THE DENOMINATOR IS AGGREGATED THE WAY ITS OWN SUBJECT WOULD BE, not by a second mechanism.
-      A measure with a derivation rule contributes that rule's template; a countable contributes
-      COUNT(DISTINCT <its canonical_key>). So "per customer" divides by the customers a bare
-      "how many customers" would have counted — one definition of a count, never two that drift.
+      A measure with a derivation rule contributes that rule's template; a measure with NO rule
+      contributes SUM of its declared measure column, which is what a bare total of it emits; a
+      countable contributes COUNT(DISTINCT <its canonical_key>). So "per customer" divides by the
+      customers a bare "how many customers" would have counted — one definition of a count, never
+      two that drift. THE RULE-LESS MEASURE WAS MISSING FROM THIS SENTENCE AND FROM THE RUNTIME
+      UNTIL 2026-09-30: every such denominator refused with "declares neither a derivation rule nor
+      an identity.canonical_key, so there is no number to divide by", on concepts the same planner
+      sums correctly as a numerator (measured on ADV-01 and AGG-12).
       The denominator is also JOINED like any other term, so a denominator with no path refuses
       `no_join_path` naming both ends rather than composing SQL the engine would reject.
       NULLIF guards the zero: a group with no denominator rows has no answer, and NULL is the
@@ -159,6 +198,43 @@ declaration_states:
     effect: the name resolves to a code offline
   - state: a filtered term declares neither
     effect: refuse ontology_gap — no register, so a name cannot become a code
+  # ───────────────────────────────────────────────────────────────────────────────────────────
+  # A DAY IS NOT A NAME. The three states below are the built-in calendar, and they are stated
+  # here because the two above were read as covering EVERY filter: on contoso5, 2026-09-30,
+  # "which stores closed after 2020" arrived as {term: close_date, op: gt, value: '2020-12-31'},
+  # the resolver fuzzy-matched the TERM to the register value `Closed` on status_annotation at
+  # ratio 0.75 and called it resolved, then looked up the DATE as a member of Store and refused
+  # "No known Store matches the value '2020-12-31'". Had the value resolved too, a question about
+  # dates would have been answered by filtering on status with nothing saying so.
+  #
+  # Operator ruling the same day: "the mechanism for days should be default built in and NOT rely
+  # in any moment on lookups". The worked bundle was carrying EIGHT registers for this — 132 rows
+  # for year_month, 132 for its short form, 44 for year_quarter, 12 and 12 for month names, 7 and
+  # 7 for weekdays, 4 for quarters: 350 rows of lookup for facts the Gregorian calendar states.
+  # Read by mac-runtime/temporal.py.
+  # ───────────────────────────────────────────────────────────────────────────────────────────
+  - state: a filter's VALUE is a temporal literal (a day, month, quarter or year, absolute or one
+      of the ten relative phrases) and the term names a date column the served plane measured
+    effect: >-
+      the built-in calendar reads it into a half-open range and the OPERATOR IS APPLIED TO THE
+      RANGE'S EDGE — `after 2020` is `>= 2021-01-01`, `in 2024` is `>= 2024-01-01 AND < 2025-01-01`.
+      No register is consulted and none is required. The answer discloses the range it read.
+  - state: the term names no ONE date column — a grain word (date, day, month, quarter, year), or
+      no temporal word at all where the VALUE is still a date — and the concept declares several
+    effect: >-
+      clarify, naming every date column — the resolution ladder's third rung. A concept that
+      declares a `period` column has already ruled which date a question means, and that settles it
+      without asking; Store declares `open_date` and `close_date` and neither is the period, so
+      attributing a closure to an opening is a question only a person can answer. MEASURED: one
+      phrasing of "which stores closed after 2020" reached the planner as {term: close_date,
+      value: '2020-12-31'} and another as {term: Store, value: '2020'} — the concept as the term —
+      so the association cannot depend on the word the model chose, only on what the concept
+      declares.
+  - state: the operator is `ne` over a literal coarser than a day
+    effect: >-
+      refuse disjunctive_filter — `not in 2024` is `< 2024-01-01 OR >= 2025-01-01`, and a filter set
+      is a conjunction (see not_expressible.disjunctive_filter). A single day is expressible and is
+      emitted as `<>`.
   - state: the subject's relation declares a period column
     effect: a period filter binds
   - state: it does not
@@ -181,6 +257,83 @@ projection:
     (ProductKey, ProductName) is the correct form: the key decides the grain and the name rides
     along, functionally dependent on it. Naming the display column ALONE merges any two members
     that share one.
+  # ---------------------------------------------------------------------------------------------
+  # DEFAULT ORDERING — a list or a breakdown COMES BACK ORDERED, and the order is declared here.
+  #
+  # Operator ruling, 2026-10-02, verbatim: "in such case where you deliver lists then SORT. if
+  # numeric then descending, if string then alfanumeric. dont you dare to hard code this somewhere.
+  # this regulation must be part of the framework."
+  #
+  # WHY IT IS A DECLARATION AND NOT A LINE OF CODE. SQL guarantees NO row order without ORDER BY, so
+  # an unordered answer is not a reading of the question -- it is whatever the engine happened to
+  # emit, and it changes between runs. Measured 2026-10-02 on AGG-15 ("net revenue by brand and
+  # customer country for 2024"), an 88-row breakdown: the grader compares approved rows against the
+  # capture's first 50, and WHICH 50 those are depended on unordered output, so the question passed
+  # and failed on alternate runs with the data unchanged. An ordering is also what makes a truncated
+  # view honest: the first 40 rows of a descending measure are the 40 that matter.
+  #
+  # IT APPLIES ONLY WHERE THE QUESTION SAYS NOTHING. `Intent.ordering` is the reader's own statement
+  # and always wins; this is the "unless told otherwise" reading, in the same sense as a concept's
+  # default population.
+  default_ordering:
+    when: Intent.ordering is absent and the answer carries more than one row
+    rule:
+      # `id` IS WHAT A READER MATCHES ON. A first cut of the reader matched the `case` PROSE and
+      # got it wrong immediately: the list rule's sentence contains the word "aggregate" ("no
+      # aggregate — the slices alone"), so it matched the aggregate branch and overwrote it. A rule
+      # a machine selects needs a stable key, not a sentence that may be re-worded.
+      # `by_aggregate`, NOT `aggregate`: the bare word is a term of
+      # `mac.concept.column.query_use`, and a rule id that collides with a closed vocabulary term
+      # reads as that term at every call site. `tools/census_vocabulary.py` flagged exactly that --
+      # `rule.get("aggregate")` in the planner counted as a string-literal decision against the
+      # vocabulary -- and the gate refused the change. A distinct id is clearer and costs nothing.
+      - id: by_aggregate
+        case: the projection includes an AGGREGATE (a measure column)
+        order_by: that aggregate
+        direction: desc
+        why: >
+          A breakdown is read largest-first: the question "by brand and country" is asked to find
+          where the money is. Descending puts the answer in the first rows, which is also what makes
+          a capped view (the first N rows) the N that matter rather than an arbitrary N.
+      - id: by_slices_label
+        case: >
+          no aggregate — the slices alone (a LIST) — and the column's declared type is any family
+          but `number` (mac.column_type)
+        # WHICH FAMILIES THIS RULE COVERS, declared rather than left to the reader. The `case`
+        # sentence above is for the person reading the file; a reader that parsed it would be
+        # matching prose, and the one that matched prose here before got the aggregate rule wrong
+        # because the list rule's text contains the word "aggregate". `otherwise` means every family
+        # no other rule claims, so a sixth column_type family needs no edit here.
+        families: otherwise
+        order_by: the slice columns, in projection order
+        direction: asc
+        why: >
+          A name has no magnitude to rank by, so it is ordered alphanumerically and is therefore
+          stable, diffable and findable by eye. Ascending on every column in the order they are
+          projected, so a multi-column list is grouped the way it is read. A DATE sorts the same
+          way and means chronological, which is the reading a list of dates wants.
+      - id: by_slices_magnitude
+        case: >
+          no aggregate — the slices alone (a LIST) — and the column's declared type is the `number`
+          family (mac.column_type)
+        families: [number]
+        order_by: the slice columns, in projection order
+        direction: desc
+        why: >
+          Operator's regulation, 2026-10-02: "in such case where you deliver lists then SORT / if
+          numeric then descending / if string then alfanumeric". A number IS a magnitude, so it is
+          read largest-first for the same reason an aggregate is -- the first rows are the ones that
+          matter, which is what makes a capped view honest.
+
+          THIS RULE IS WHY `by_slices` SPLIT IN TWO. It was one rule with `direction: asc`, and its
+          own `why` gave away the assumption: "a list of NAMES has no magnitude to rank by". It was
+          written for name columns and applied to every column, so a numeric dimension sorted
+          ascending against the regulation. Splitting it here rather than declaring `rulings.sort`
+          on each numeric column keeps the regulation in ONE place: a per-column ruling would be
+          this universal rule re-typed per column, per bundle, and again for every data source.
+    never: >
+      This never overrides `Intent.ordering`, and it never adds a LIMIT. Ordering decides the order
+      of the rows; how many come back is `Intent.limit`, which is the reader's to state.
   gaps:
     - id: no_display_only_column
       what: a column shown but NOT grouped by
@@ -272,17 +425,34 @@ not_expressible:
     example: the count of orders AND their total value, side by side
     why: Intent carries ONE subject; `denominator` is a second only to divide by
     measured: 208 questions
+    note: >-
+      CLOSED 2026-09-30 by `Intent.also` (mac-runtime models.MeasureRef), on the operator's ruling:
+      "this is absolutely standard question or ask and such situation will repeat multiple times —
+      the framework must be able to generate complex queries too ... go and do it right". An answer
+      is N AGGREGATES OVER ONE ROW SET: the same FROM, WHERE, GROUP BY and period, one SELECT column
+      per measure, each aggregating the way its own subject would. `subject` is the first of them, so
+      every reader that knows only about `subject` is unchanged.
+
+      WHAT MADE IT URGENT rather than merely large. "Compare gross vs net revenue by brand" reached
+      the planner with the second measure filed as a `denominator`, so the only computable thing was
+      a QUOTIENT — 1.06 per brand, a plausible number answering a question nobody asked. The gap was
+      not just refusing 208 questions; on this shape it was one fix away from answering them wrongly.
+
+      THE SHAPE IS STILL DETECTED, and deliberately: `EXPRESSED_BY` means "never refuse", and a field
+      being ABLE to carry a second measure is not evidence that a given question's intent did. A
+      question naming two measures with neither `also` nor a denominator has dropped one in silence,
+      and that is what the detector is for. Wiring it as expressed-and-never-refused removed the
+      protection, and this repository's own reconciliation test caught it in one run.
+
+      STILL NOT EXPRESSIBLE: arithmetic BETWEEN the columns. "The difference between gross and net"
+      is a third measure a bundle declares, not something a question composes here. Listed until the
+      entry is retired.
   - id: string_match
     what: LIKE / prefix / substring matching
     example: districts whose name starts with 'Riverside'
     why: FilterOp has eight comparison operators and none matches a pattern
     measured: 205 questions. Note this is resolution's job in MAC — a register resolves a name to a
       code offline — so some of these are a REGISTER gap in the bundle rather than a grammar gap
-  - id: multi_key_ordering
-    what: ORDER BY more than one key
-    example: rank by score descending, then by name
-    why: OrderingSpec carries a single `by`
-    measured: 60 questions. The cheapest entry in this list to close
   - id: derived_table
     what: a CTE or a subquery in FROM
     example: any two-step computation gold SQL writes as WITH

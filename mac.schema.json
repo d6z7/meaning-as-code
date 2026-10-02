@@ -3936,6 +3936,10 @@
                             },
                             "additivity": {
                               "type": "object"
+                            },
+                            "canonical": {
+                              "type": "boolean",
+                              "description": "THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity."
                             }
                           }
                         },
@@ -3958,6 +3962,15 @@
                                 "code"
                               ],
                               "description": "WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'Contoso' is the common register, 'Contoso AG' the legal one."
+                            },
+                            "sort": {
+                              "type": "string",
+                              "enum": [
+                                "asc",
+                                "desc",
+                                "none"
+                              ],
+                              "description": "THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: \"it must be sort per column and not concept\"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. MEASURED 2026-10-02 on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged."
                             },
                             "finer_than": {
                               "type": "string",
@@ -3984,6 +3997,14 @@
                               "label_of"
                             ]
                           }
+                        },
+                        "axis_kind": {
+                          "type": "string",
+                          "description": "WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. The fold law is stated over KINDS, not over column names, which is what makes it universal: (measure_type x axis_kind) -> aggregation effect. This replaces concept.semantics.axis_kinds, which was a per-column map parked one level up: its keys WERE column names (47 entries over 37 concepts, measured 2026-10-02) and the planner looked them up by a lowercased CONCEPT name, so not one key could ever match and the declaration was inert. The old slot is DEPRECATED, NEVER DELETED — readers fall back to it, so an unmigrated bundle is unchanged."
+                        },
+                        "register": {
+                          "type": "string",
+                          "description": "THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: \"A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once\" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: \"Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register\" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. Measured 2026-10-02 on contoso5: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them."
                         }
                       }
                     }

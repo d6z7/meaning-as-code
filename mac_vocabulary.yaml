@@ -42,9 +42,30 @@ concept.aggregation_effect:
     fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
     concept's `resolve.*` rules, never in the fold vocabulary.
   terms:
-    additive: "SUM is correct across this axis."
-    average:  "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
-    none:     "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
+    additive:
+      definition: "SUM is correct across this axis."
+      # WHICH OPERATION OF `grammar/query_grammar.yaml#operations` THIS EFFECT PERMITS. Every term's
+      # own prose already named it ("SUM is correct", "the correct fold is a mean", "NO fold is
+      # valid") and no reader could consult a sentence, so two live call sites decided it instead:
+      # `effect == "additive"` in planner/plan.py and canons/additivity_guard.py, which makes
+      # `average` a VIOLATION rather than the AVG the term defines. The operation's SQL stays in the
+      # grammar, where `contributes.select` already holds it -- this names the operation, never the
+      # function, so there is one home for each.
+      #
+      # A LIST, AND `additive` CARRIES TWO. A first cut wrote one operation per term, which says
+      # that an additive measure may only be SUMmed -- and "the average monthly revenue" is a
+      # legitimate question about an additive measure. `average` carries only `average`, because
+      # that is precisely what the term asserts: the sum does not mean anything. So the list is the
+      # set of operations the effect PERMITS, and the question's own operation must be in it.
+      folds_with: [sum, average]
+    average:
+      definition: "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+      folds_with: [average]
+    none:
+      definition: "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
+      # NO `folds_with` IS THE DECLARATION: no operation folds this axis. Stated by ABSENCE rather
+      # than by a `none` value, so a reader asking "which operation?" gets no answer instead of an
+      # answer that must then be special-cased -- the same shape as a population axis with no default.
 
 # ===========================================================================
 # mac.concept.axis_kind — the KIND of an aggregation axis, for additivity purposes.
@@ -77,38 +98,109 @@ concept.axis_kind:
 # too identifying to be an axis, and not business content at all. Judgements are authored and cannot
 # be derived, which is exactly why no generator ever assigned it. They live in `mac.concept.column.ruling`.
 # ===========================================================================
+# ===========================================================================
+# mac.concept.column.query_use — WHERE A QUESTION MAY USE A COLUMN. The machine-readable half of
+# `concept.column.role`, whose own description has always said it states "where a query may use
+# it" — in prose only, which no reader could consult.
+#
+# WHY IT EXISTS, measured 2026-10-02. The runtime decided this for itself in TWENTY places by
+# branching on the role spelled as a string literal: `in ("dimension", "period")` for an axis
+# (twice, each with its own inline copy of the `never_axis` guard), `== "measure"` nine times,
+# `== "period"` three, `("dimension", "key")` twice, `== "housekeeping"` once — plus a third
+# mirror of the five names in `grammar_reader._ROLE_WORDS`. This block's own header had already
+# recorded the same defect at SIX sites in September and fixed only half of it: the NAMES moved to
+# the framework, the BEHAVIOUR stayed in the tuples.
+#
+# WHAT IT COST. `square_metres` is declared `field_role.measure` on Store and the planner resolves
+# it two different ways, yet the interpret prompt never mentioned it — because `measure` is not in
+# the tuple at `interpret/vocabulary.py`. Not a missing feature: a list typed into a function body.
+# Three concepts in one bundle carried such columns and all three were invisible, so "what is the
+# average list price?" could not be asked at all. The first attempt at a fix added a SIXTH
+# hand-written prompt block, which also published `units_ever_here` as aggregatable — a
+# `precomputed` column the fold law forbids summing. A patch beside the tuples, getting it wrong.
+#
+# THE TERMS ARE DERIVED, NOT DESIGNED. There are exactly four because the twenty sites ask exactly
+# four questions, and each answer is already stated in its role's own sentence. Aggregatability is
+# NOT among them and must never be added: `concept.column.measure_type` already declares it per
+# column and per axis kind through `additivity`, which is strictly more precise — a role-level
+# boolean is what made `precomputed` look summable.
+# ===========================================================================
+concept.column.query_use:
+  kind: vocabulary
+  closed: true
+  description: Where a question may use a column — the machine-readable half of concept.column.role.
+  terms:
+    axis: >
+      LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
+      A per-column `rulings.never_axis` still overrides this with its own measurement: the role
+      says the KIND of column may be an axis, the ruling says this ONE may not.
+    aggregate: >
+      A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
+      `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through
+      `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell
+      is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
+      ruling, not this one's.
+    period_binding: >
+      THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a
+      relation carries several, so "sales in March" cannot silently pick the wrong one.
+    extremum: >
+      THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a
+      "when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather
+      than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
+      combining several, so it answers to no additivity cell and is meaningful on a column no law
+      would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
+    identity: >
+      WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved
+      to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never
+      aggregated, an identifier that is summed being a number nobody asked for.
+
 concept.column.role:
   kind: vocabulary
   closed: true
   description: The analytical role of a column — where a query may use it, and the default guardrail.
   terms:
-    key: >
-      IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
-      joins on the exact value. Never matched against a label, and never aggregated — an identifier
-      that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
-      counts and what the fact joins on.
-    dimension: >
-      A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
-      (a register states every member, so a non-member is answerable without probing) or OPEN (names
-      resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
-      `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-    measure: >
-      A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
-      once there and never restated per concept. Never filtered on directly: a threshold on a
-      measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-    period: >
-      THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
-      relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
-      `OrderDate` on a line that also carries `DeliveryDate`.
-    housekeeping: >
-      PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
-      housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
-      absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
-      validity window — when the ROW was written, not when anything happened. Grouping sales by it
-      is meaningless, and until this term existed it was spelled `attribute`, which reads as
-      "a dimension you may not use" rather than "not part of the business at all".
-      NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
-      for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+    key:
+      query_use: [identity]
+      definition: >
+        IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
+        joins on the exact value. Never matched against a label, and never aggregated — an identifier
+        that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
+        counts and what the fact joins on.
+
+    dimension:
+      query_use: [axis, extremum]
+      definition: >
+        A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
+        (a register states every member, so a non-member is answerable without probing) or OPEN (names
+        resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
+        `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
+
+    measure:
+      query_use: [aggregate, extremum]
+      definition: >
+        A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
+        once there and never restated per concept. Never filtered on directly: a threshold on a
+        measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
+
+    period:
+      query_use: [axis, extremum, period_binding]
+      definition: >
+        THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
+        relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
+        `OrderDate` on a line that also carries `DeliveryDate`.
+
+    housekeeping:
+      query_use: []
+      definition: >
+        PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
+        housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
+        absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
+        validity window — when the ROW was written, not when anything happened. Grouping sales by it
+        is meaningless, and until this term existed it was spelled `attribute`, which reads as
+        "a dimension you may not use" rather than "not part of the business at all".
+        NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
+        for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+
 
 # ===========================================================================
 # mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
@@ -204,6 +296,51 @@ relation.column.role:
       type is read from.
 
 # ===========================================================================
+# mac.column_type — WHAT KIND OF VALUE a column holds, physically. The FAMILY, not the warehouse's
+# spelling: `integer`, `bigint`, `double` and `decimal(20,5)` are one kind of thing to every question
+# that has to decide something about them, and a reader that matches the spellings decides it eleven
+# times. Measured across the estate 2026-10-02: 547 declared columns carry 11 distinct spellings.
+#
+# WHY IT IS DECLARED AT ALL. It was not, and the cost was invisible: `mac_runtime/temporal.py`
+# carried `frozenset({"date","timestamp","datetime","timestamptz"})` in code as the only answer to
+# "is this column a date", and because no vocabulary existed the fragility census could not even see
+# it -- there was nothing to compare the literals against. Two of those four spellings occur nowhere
+# in the estate and three that DO occur as numbers (`double`, `bigint`, `decimal(20,5)`) had no home
+# at all, so the first reader to ask "is this a number" would have started a second hidden set.
+#
+# THE SPELLINGS ARE A PAYLOAD, NOT THE TERMS, and that is forced by the data: `decimal(20,5)` and
+# `array<string>` are PARAMETRIC, so no closed set of exact strings can hold them. A reader
+# normalises a spelling by taking the text before `(` or `<`, which is why the parameter never has
+# to be enumerated.
+# ===========================================================================
+column_type:
+  kind: value_domain
+  closed: true
+  description: >
+    The family of value a column holds, with the warehouse spellings that mean it. Closed over
+    FAMILIES; open over spellings, which a bundle's descriptors supply and which are normalised
+    before matching (the text before `(` or `<`).
+  terms:
+    text:
+      definition: "Characters. A NAME, a code, a label -- something read rather than measured."
+      spellings: [string, varchar, char, text, nvarchar, uuid]
+    number:
+      definition: "A magnitude. Something that can be larger or smaller than another of its kind."
+      spellings: [integer, int, bigint, smallint, tinyint, decimal, numeric, double, float, real]
+    temporal:
+      definition: "A point in time. The only family a date literal may be compared against."
+      spellings: [date, timestamp, datetime, timestamptz, time]
+    boolean:
+      definition: "True or false. Two members, so it is never a magnitude and never a name."
+      spellings: [boolean, bool]
+    collection:
+      definition: >
+        Several values in one cell. Never an axis and never an ordering key: GROUP BY over a
+        collection groups by the container, which is not a member of anything a question asked
+        about.
+      spellings: [array, map, struct, row, json]
+
+# ===========================================================================
 # mac.concept.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
 # here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
 # a postcode identifies people, that one geography level is finer than another. This is why they must
@@ -241,6 +378,23 @@ concept.column.ruling:
       `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
       NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
       parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
+    sort: >
+      THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
+      alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
+      reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND
+      NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept"
+      -- because one breakdown legitimately wants `brand asc`, `country_code asc` and
+      `net_amount desc` at the same time.
+      NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without
+      ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine
+      happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by
+      brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved
+      rows against the capture's first 50, WHICH 50 depended on unordered output, and the question
+      passed and failed on alternate runs with the data unchanged. An ordering is also what makes a
+      truncated view honest: the first N rows of a descending measure are the N that matter.
+      A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an
+      aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's
+      own words, "top 5 by price" -- outranks both.
     never_axis: >
       THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
       measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
@@ -261,6 +415,82 @@ name_register:
     long:   "The unabbreviated form of a coded name. 'United Kingdom' for GB."
     short:  "The abbreviated form. 'Mon' for Monday, 'Jan' for January."
     code:   "A machine identifier standing for the name. 'GB', 'DE', a numeric key."
+
+# ===========================================================================
+# mac.calendar_vocabulary — THE WORDS A CALENDAR USES, DECLARED ONCE SO NOTHING CUTS THEM INTO A
+# REGISTER AND NOTHING ENUMERATES THEM IN A BUNDLE.
+#
+# OPERATOR RULING, 2026-09-30: "the mechanism for days should be default built in and NOT rely in
+# any moment on lookups", and then: "remove handling dates and time with lookup tables; remove time
+# related lookups datasets; refactor our ontology to use built in recognition for time instead of
+# lookups".
+#
+# WHAT IT REPLACES, measured on the worked bundle the hour before it was written: EIGHT of 25 value
+# registers existed only to turn a temporal word into a value — 132 members for `year_month`, 132
+# for its short form, 44 for `year_quarter`, 12 and 12 for the month names, 7 and 7 for the
+# weekdays, 4 for the quarters. 350 rows of lookup table for facts the Gregorian calendar already
+# states, re-cut on every delivery, monitored by a gate, and carried in every prompt.
+#
+# AND IT REPLACES A WRONG ANSWER, not just a cost. A register turns a NAME into a CODE by matching
+# it; a day is not a name. Asked "which stores closed after 2020", the resolver matched the TERM
+# `close_date` to the register value `Closed` on a status column at ratio 0.75 and reported it as
+# resolved, then looked up `2020-12-31` as a member of Store and refused. Two more rungs of that
+# ladder and a question about dates would have been answered by filtering on status.
+#
+# TWO KINDS OF ENTRY, and the difference is the whole point:
+#   `members:` a CLOSED WORD LIST — there are twelve months and seven weekdays, and no delivery
+#              can add one. A reader matches a word against it.
+#   `shape:`   a LITERAL FORM read by arithmetic, not by matching — `2024-03`, `Q1 2024`,
+#              `2020-12-31`. Enumerating these is what produced 132-row registers for a fact that
+#              is a regular expression and a calendar.
+#
+# READ BY: mac-platform/packages/mac-runtime/src/mac_runtime/temporal.py (the built-in calendar,
+# which recognises these words and shapes) and meaning-as-code/tools/mac_lookups.py (the cutter,
+# which REFUSES to cut a register from a column whose value set is one of them —
+# guardrails/data/sources.yaml#refuses.TEMPORAL-AS-LOOKUP).
+#
+# A FISCAL CALENDAR IS NOT HERE, deliberately. These are the Gregorian words; a fiscal year, a
+# 4-4-5 period or a trading calendar is a DECLARATION a bundle makes and a reader reads, never a
+# default hidden in a word list.
+# ===========================================================================
+calendar_vocabulary:
+  kind: value_domain
+  closed: true
+  description: >
+    The words and literal forms of the Gregorian calendar. A column whose value set is one of these
+    is a calendar, not a register: the built-in reader recognises it and no lookup is cut, carried
+    or monitored for it.
+  terms:
+    month_name:
+      definition: The twelve month names in full.
+      members: [January, February, March, April, May, June, July, August, September, October,
+                November, December]
+    month_short:
+      definition: The three-letter month abbreviations. `Sept` is admitted beside `Sep` because
+        deliveries write both.
+      members: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Sept, Oct, Nov, Dec]
+    weekday_name:
+      definition: The seven weekday names in full.
+      members: [Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday]
+    weekday_short:
+      definition: The three-letter weekday abbreviations.
+      members: [Mon, Tue, Tues, Wed, Thu, Thur, Thurs, Fri, Sat, Sun]
+    quarter_label:
+      definition: A quarter of a year, unqualified by which year.
+      members: [Q1, Q2, Q3, Q4]
+    iso_date:
+      definition: A day. `2020-12-31`, with an optional time this estate's served dates do not
+        carry (every date column measured on the worked bundle is midnight).
+      shape: YYYY-MM-DD
+    year:
+      definition: A year as four digits. Half-open over twelve months when compared.
+      shape: YYYY
+    year_month:
+      definition: A month of a named year. `2024-03`, `March 2024`, `Mar 2024`.
+      shape: YYYY-MM
+    year_quarter:
+      definition: A quarter of a named year. `Q1 2024`, `2024-Q1`.
+      shape: Qn YYYY
 
 # ===========================================================================
 # mac.binding_mode — HOW a question binds a dimension: the ROLE a referenced dimension plays in the query.
@@ -896,6 +1126,57 @@ canon:
     hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
     ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
+    # ADDED 2026-10-01, operator ruling: "rule act like DB trigger. if the condition is met ...
+    # then something should happen ... this must be doable with symbolic language and having null or
+    # not null test is good first step".
+    #
+    # WHAT IT IS FOR. A business state is often a COLUMN COMBINATION, not a stored value: a store is
+    # closed WHEN `close_date IS NOT NULL`. That fact has no home on a concept or an edge -- it is a
+    # statement about which rows the concept HAS under a given reading, which is a rule. This canon
+    # is the body of such a rule: named populations, each a structured predicate, one marked default,
+    # and the columns the whole set is a statement ABOUT.
+    #
+    # WHY IT IS NOT `exclusion_filter`. That one disposes of reliably-identifiable junk and is never
+    # overridable -- it is the DOMAIN. A population is a DEFAULT READING, and a question that makes
+    # its own statement about the same columns displaces it. Conflating them is how
+    # `close_date IS NULL` came to be ANDed onto a question about closed stores: measured on
+    # contoso5, 0 rows against a truth of 9.
+    #
+    # PARAMS: `populations` (name -> predicate, the `all:` form) and `default` (which name applies
+    # when the question says nothing; ABSENT is a declaration that the axis has no "unless told
+    # otherwise" reading). THE CONDITION IS NOT A PARAM. It is the RULE'S OWN `binds`, and this
+    # entry said `about` for the hours between the ruling and the build — corrected 2026-10-01
+    # against mac_runtime/canons/population_select.py, whose signature takes `binds`. The
+    # correction is the point of the mechanism applied to its own registry: a second list beside
+    # `binds` would be a second home for the condition, it would NOT inherit the
+    # `rule-binds-grounded` shape that resolves bound columns against the physical layer, and
+    # `canonRef.params` being untyped means an `about:` an author wrote would be accepted and
+    # SILENTLY IGNORED.
+    population_select:
+      serves: competing_definitions
+      needs_sqlglot: false
+      doc: "select WHICH ROWS a concept has: named populations as structured predicates (all: of
+        {column, op, value|values} over is_null/is_not_null/eq/ne/in/not_in, every value BOUND —
+        never SQL text, which assert_bound_params_only refuses) and one optional `default`. THE
+        CONDITION IS THE RULE'S OWN `binds`, not a param: a question constraining a bound column is
+        making its own statement about that state, so the default steps aside and the answer
+        discloses it. One rule is one AXIS. A name is matched EXACTLY, never fuzzily. The unaskable
+        DOMAIN stays on grounding.value_filter; a predicate a question can ask the other side of
+        does NOT. The trigger for a business state that is a column combination rather than a
+        stored value — `closed` IS `close_date IS NOT NULL`."
+    ratio_select: >
+      WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which
+      ROWS a concept has. Both map a word a reader says to a declared body, and both were prose.
+      `params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the
+      numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over
+      its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance,
+      for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a
+      question naming neither must ASK, with both names offered, which is the resolution ladder's
+      third rung. MEASURED on the worked bundle 2026-10-02: Discount's percentage is over
+      GrossRevenue (5.93%) and not NetRevenue (6.30%) on the same money; Margin names TWO --
+      margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on
+      the same profit. `Intent.denominator` has always carried the choice and the planner has always
+      read it, so a model's guess went straight through and nothing declared which was meant.
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
     relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
     enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
