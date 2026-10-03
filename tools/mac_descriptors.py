@@ -387,10 +387,21 @@ def cut_registers(root: pathlib.Path) -> dict:
             doc = _yaml.safe_load(y.read_text(encoding="utf-8")) or {}
             csv_rel = ((doc.get("register") or {}).get("csv")
                        or f"data/lookups/{y.stem.replace('.lookup', '')}.lookup.csv")
+            # THE DESCRIPTOR POINTS AT THE REGISTER'S DECLARATION, NOT AT ITS DATA FILE.
+            # Operator ruling, 2026-10-03. Every binding in the estate named the .csv, so the 17
+            # `.lookup.yaml` descriptors had NO inbound declaration anywhere — `eg_v_orphan`
+            # reported 17 of 17 — while seven tools including the runtime resolver read them. The
+            # register declaration is the authority on the value set (`attached` is, in the
+            # runtime's own words, "the one home of which columns carry this set"); the .csv is
+            # what it describes. A declaration depending on a data file inverts that.
+            #
+            # `csv_rel` is still read above and still fills `claimed` below: that set dedupes the
+            # raw CSV scan, which keys on the file name.
+            yaml_rel = f"data/lookups/{y.name}"
             for att in doc.get("attached") or []:
                 rel, col = (att or {}).get("relation"), (att or {}).get("column")
                 if rel and col:
-                    out[(str(rel), str(col))] = str(csv_rel)
+                    out[(str(rel), str(col))] = yaml_rel
             claimed.add(pathlib.Path(csv_rel).name)
     except Exception as exc:  # noqa: BLE001 - an unreadable descriptor falls back to the CSV scan
         print(f"  register descriptors unreadable, falling back to source_view: {exc}")
