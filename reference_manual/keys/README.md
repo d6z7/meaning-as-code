@@ -10,8 +10,8 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 |---|---|
 | levels | 34 |
 | keys | 200 |
-| described in the schema | **118 of 200** (59%) |
-| **gaps — admitted and unexplained** | **82** |
+| described in the schema | **200 of 200** (100%) |
+| **gaps — admitted and unexplained** | **0** |
 | vocabularies | 23, 144 terms |
 | examples | 103 |
 
@@ -19,40 +19,40 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 
 Indented by nesting. The label is the key; the page it opens is that key's level.
 
-- [**a concept file**](concept/README.md) — its 12 top-level keys, **3 unexplained**
-  - [`concept:`](concept/concept/README.md) — 7 keys, **3 unexplained**
-    - [`identity:`](concept/concept/identity.md) — 4 keys, **1 unexplained**
-    - [`semantics:`](concept/concept/semantics/README.md) — 8 keys, **3 unexplained**
-      - [`additivity:`](concept/concept/semantics/additivity.md) — 1 key, **1 unexplained**
-      - [`axis_kinds:`](concept/concept/semantics/axis_kinds.md) — 1 key, **1 unexplained**
-      - [`realized_by:`](concept/concept/semantics/realized_by.md) — 8 keys, **2 unexplained**
-  - [`constraints:`](concept/constraints.md) — 5 keys, **5 unexplained**
+- [**a concept file**](concept/README.md) — its 12 top-level keys
+  - [`concept:`](concept/concept/README.md) — 7 keys
+    - [`identity:`](concept/concept/identity.md) — 4 keys
+    - [`semantics:`](concept/concept/semantics/README.md) — 8 keys
+      - [`additivity:`](concept/concept/semantics/additivity.md) — 1 key
+      - [`axis_kinds:`](concept/concept/semantics/axis_kinds.md) — 1 key
+      - [`realized_by:`](concept/concept/semantics/realized_by.md) — 8 keys
+  - [`constraints:`](concept/constraints.md) — 5 keys
   - [`contract:`](concept/contract/README.md) — 4 keys
-    - [`rules:`](concept/contract/rules/README.md) — 14 keys, **2 unexplained**
-      - [`realized_by:`](concept/contract/rules/realized_by.md) — 8 keys, **2 unexplained**
-  - [`governance:`](concept/governance/README.md) — 4 keys, **3 unexplained**
-    - [`change_log:`](concept/governance/change_log.md) — 5 keys, **4 unexplained**
-  - [`grounding:`](concept/grounding/README.md) — 17 keys, **9 unexplained**
-    - [`field_roles:`](concept/grounding/field_roles.md) — 1 key, **1 unexplained**
-    - [`realized_by:`](concept/grounding/realized_by.md) — 8 keys, **2 unexplained**
-    - [`sources:`](concept/grounding/sources/README.md) — 3 keys, **1 unexplained**
+    - [`rules:`](concept/contract/rules/README.md) — 14 keys
+      - [`realized_by:`](concept/contract/rules/realized_by.md) — 8 keys
+  - [`governance:`](concept/governance/README.md) — 4 keys
+    - [`change_log:`](concept/governance/change_log.md) — 5 keys
+  - [`grounding:`](concept/grounding/README.md) — 17 keys
+    - [`field_roles:`](concept/grounding/field_roles.md) — 1 key
+    - [`realized_by:`](concept/grounding/realized_by.md) — 8 keys
+    - [`sources:`](concept/grounding/sources/README.md) — 3 keys
       - [`columns:`](concept/grounding/sources/columns/README.md) — 1 key
         - [`<name>`](concept/grounding/sources/columns/each/README.md) — 6 keys
-          - [`measure:`](concept/grounding/sources/columns/each/measure.md) — 4 keys, **3 unexplained**
+          - [`measure:`](concept/grounding/sources/columns/each/measure.md) — 4 keys
           - [`rulings:`](concept/grounding/sources/columns/each/rulings.md) — 7 keys
-  - [`lifecycle:`](concept/lifecycle.md) — 3 keys, **3 unexplained**
+  - [`lifecycle:`](concept/lifecycle.md) — 3 keys
   - [`members:`](concept/members/README.md) — 3 keys
-    - [`definitions:`](concept/members/definitions.md) — 4 keys, **2 unexplained**
-    - [`realized_by:`](concept/members/realized_by.md) — 8 keys, **2 unexplained**
-  - [`metadata:`](concept/metadata.md) — 9 keys, **6 unexplained**
-  - [`open_questions:`](concept/open_questions.md) — 9 keys, **9 unexplained**
-  - [`properties:`](concept/properties.md) — 5 keys, **3 unexplained**
-  - [`values:`](concept/values/README.md) — 5 keys, **2 unexplained**
+    - [`definitions:`](concept/members/definitions.md) — 4 keys
+    - [`realized_by:`](concept/members/realized_by.md) — 8 keys
+  - [`metadata:`](concept/metadata.md) — 9 keys
+  - [`open_questions:`](concept/open_questions.md) — 9 keys
+  - [`properties:`](concept/properties.md) — 5 keys
+  - [`values:`](concept/values/README.md) — 5 keys
     - [`aliases:`](concept/values/aliases/README.md) — 2 keys
-      - [`map:`](concept/values/aliases/map.md) — 1 key, **1 unexplained**
-      - [`realized_by:`](concept/values/aliases/realized_by.md) — 8 keys, **2 unexplained**
-    - [`items:`](concept/values/items.md) — 7 keys, **4 unexplained**
-    - [`realized_by:`](concept/values/realized_by.md) — 8 keys, **2 unexplained**
+      - [`map:`](concept/values/aliases/map.md) — 1 key
+      - [`realized_by:`](concept/values/aliases/realized_by.md) — 8 keys
+    - [`items:`](concept/values/items.md) — 7 keys
+    - [`realized_by:`](concept/values/realized_by.md) — 8 keys
 
 ## The vocabularies and the predefined types
 
@@ -87,38 +87,3 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
   - [`test_status`](vocabulary/test_status.md) — 7 terms, closed
   - `transform`
     - [`driven_by`](vocabulary/transform/driven_by.md) — 3 terms, closed
-
-## The gaps, by level
-
-Each is a key the schema admits and does not explain. The fix is a description written into `mac.schema.json`; these pages then fill themselves in.
-
-| level | keys with no description |
-|---|---|
-| [`concept`](concept/README.md) | `concept`, `metadata`, `open_questions` |
-| [`concept.concept`](concept/concept/README.md) | `definition`, `label`, `notes` |
-| [`concept.concept.identity`](concept/concept/identity.md) | `note` |
-| [`concept.concept.semantics`](concept/concept/semantics/README.md) | `null_semantics`, `purpose`, `scope` |
-| [`concept.concept.semantics.additivity`](concept/concept/semantics/additivity.md) | `<name>` |
-| [`concept.concept.semantics.axis_kinds`](concept/concept/semantics/axis_kinds.md) | `<name>` |
-| [`concept.concept.semantics.realized_by`](concept/concept/semantics/realized_by.md) | `note`, `note` |
-| [`concept.constraints`](concept/constraints.md) | `assert`, `machine_executable`, `notes`, `open_question`, `severity` |
-| [`concept.contract.rules`](concept/contract/rules/README.md) | `examples`, `status` |
-| [`concept.contract.rules.realized_by`](concept/contract/rules/realized_by.md) | `note`, `note` |
-| [`concept.governance`](concept/governance/README.md) | `approval_status`, `change_log`, `owner` |
-| [`concept.governance.change_log`](concept/governance/change_log.md) | `by`, `change`, `change_type`, `rationale` |
-| [`concept.grounding`](concept/grounding/README.md) | `code_column`, `join_rule`, `key_column`, `note`, `notes`, `row_count`, `schema`, `snapshot_rule`, `value_filter` |
-| [`concept.grounding.field_roles`](concept/grounding/field_roles.md) | `<name>` |
-| [`concept.grounding.realized_by`](concept/grounding/realized_by.md) | `note`, `note` |
-| [`concept.grounding.sources`](concept/grounding/sources/README.md) | `columns` |
-| [`concept.grounding.sources.columns.<name>.measure`](concept/grounding/sources/columns/each/measure.md) | `additivity`, `type`, `unit` |
-| [`concept.lifecycle`](concept/lifecycle.md) | `boundary`, `note`, `phases` |
-| [`concept.members.definitions`](concept/members/definitions.md) | `code`, `label` |
-| [`concept.members.realized_by`](concept/members/realized_by.md) | `note`, `note` |
-| [`concept.metadata`](concept/metadata.md) | `concept`, `owner`, `schema_version`, `source`, `status`, `version` |
-| [`concept.open_questions`](concept/open_questions.md) | `category`, `cross_references`, `id`, `note`, `owner_for_resolution`, `priority`, `question`, `status`, `topic` |
-| [`concept.properties`](concept/properties.md) | `doc`, `name`, `required` |
-| [`concept.values`](concept/values/README.md) | `closure`, `closure_why` |
-| [`concept.values.aliases.map`](concept/values/aliases/map.md) | `<name>` |
-| [`concept.values.aliases.realized_by`](concept/values/aliases/realized_by.md) | `note`, `note` |
-| [`concept.values.items`](concept/values/items.md) | `label`, `meaning`, `note`, `open_question` |
-| [`concept.values.realized_by`](concept/values/realized_by.md) | `note`, `note` |

@@ -6,15 +6,13 @@
 
 v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure ('value_set:' was dropped, DECISION 3). Closure lives HERE, with the values — never in semantics.
 
-> **2 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
 | `aliases` |  | `object` | v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum. | [aliases](aliases/README.md) |
-| `closure` |  | `—` | — gap —<br>**one of:** `closed` · [`open`](../../vocabulary/dq_status.md#open) · `unknown` |  |
-| `closure_why` |  | `string` | — gap — |  |
+| `closure` |  | `—` | WHETHER THIS VALUE SET IS ALL OF THEM. `closed` licenses the engine to answer what is NOT in the set and to refuse a value outside it; `open` forbids both, because absence proves nothing; `unknown` is the honest state before anybody measured. The difference decides whether *which countries do we not sell to* is answerable at all.<br>**one of:** `closed` · [`open`](../../vocabulary/dq_status.md#open) · `unknown` |  |
+| `closure_why` |  | `string` | THE EVIDENCE FOR THE CLOSURE CLAIM — what was measured, when, and against what. A closed set is a promise the engine will act on, so the claim needs a provenance a reviewer can re-run. `closed` with no `closure_why` is an assertion, not a measurement. |  |
 | `items` |  | `list of object` | the value rows — every value has a stable `code`; label/meaning/confidence/from are optional core; per-enum attributes are allowed. | [items](items.md) |
 | `realized_by` |  | `—` | v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check). | [realized_by](realized_by.md) |
 

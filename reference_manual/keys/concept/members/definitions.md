@@ -4,15 +4,13 @@
 
 [concept](../README.md) · [members](README.md) · definitions
 
-> **2 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `code` | **required** | `['string', 'number']` | — gap — |  |
+| `code` | **required** | `['string', 'number']` | The code of one member of this grouping, as the data holds it. The grouping's own value set, so the same rule applies as everywhere else: where a register already carries these values, point at it rather than restating them here. |  |
 | `confidence` |  | `—` | Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.<br>**one of:** `C` · `I` · `Q` |  |
-| `label` |  | `string` | — gap — |  |
+| `label` |  | `string` | How one member of this grouping is shown to a reader, where that differs from its code. |  |
 | `members` |  | `list of array` | (explicit) the leaf codes in this set |  |
 
 ---

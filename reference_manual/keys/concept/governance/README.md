@@ -6,16 +6,14 @@
 
 Housekeeping. APPEND-ONLY — never edit change_log history.
 
-> **3 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `approval_status` |  | `string` | — gap — |  |
-| `change_log` |  | `list of object` | — gap — | [change_log](change_log.md) |
+| `approval_status` |  | `string` | Whether a human has approved this concept as it now stands. It is about the FILE's review, not about whether the model is correct, and it goes stale the moment the file changes — which is what `change_log` and `last_reviewed` exist to make visible. |  |
+| `change_log` |  | `list of object` | WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last. The one place a reader can see whether today's definition is the one a past answer was computed from. Git carries the diff; this carries the REASON, which a diff cannot. | [change_log](change_log.md) |
 | `last_reviewed` |  | `—` | ISO date — string or a YAML-parsed date |  |
-| `owner` |  | `string` | — gap — |  |
+| `owner` |  | `string` | WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a change to it. Distinct from `metadata.owner`, which names who answers for its MEANING; on a small team they are the same person and on a reviewed one they are deliberately not. |  |
 
 ## As it is actually written
 

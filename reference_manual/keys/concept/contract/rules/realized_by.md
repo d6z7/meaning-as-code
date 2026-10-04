@@ -6,8 +6,6 @@
 
 v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
 
-> **2 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Form 1 — v0.1.9: a single canon binding. Names a canon and su
 
 v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
@@ -16,7 +14,7 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 |---|---|---|---|---|
 | `udf` | **required** | `string` | the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable). |  |
 | `applied_as` |  | `string` | how the canon output is used (subquery_wrapper \| predicate_injection \| anomaly_check \| …) — documentation for the consumer. |  |
-| `note` |  | `string` | — gap — |  |
+| `note` |  | `string` | Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why. |  |
 | `params` |  | `object` | the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here. |  |
 
 ## Form 2 — v0.1.9: a single canon binding. Names a canon and su
@@ -27,7 +25,7 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 |---|---|---|---|---|
 | `udf` | **required** | `string` | the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable). |  |
 | `applied_as` |  | `string` | how the canon output is used (subquery_wrapper \| predicate_injection \| anomaly_check \| …) — documentation for the consumer. |  |
-| `note` |  | `string` | — gap — |  |
+| `note` |  | `string` | Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why. |  |
 | `params` |  | `object` | the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here. |  |
 
 ## As it is actually written

@@ -6,15 +6,13 @@
 
 canonical code → its alias tiers.
 
-> **1 key at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `<name>` |  | `object` | — gap — |  |
+| `<name>` |  | `object` | One alias and the value it resolves to, keyed by the alias as a person would type it. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way. |  |
 
 ---
 

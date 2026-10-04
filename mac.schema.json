@@ -104,22 +104,28 @@
           ],
           "properties": {
             "concept": {
-              "type": "string"
+              "type": "string",
+              "description": "The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required."
             },
             "source": {
-              "type": "string"
+              "type": "string",
+              "description": "WHICH DATA SOURCE this ontology is for, as the project declares it (`CONTOSO5`). An ontology is bound to one source — its relations, its columns, its grain — and this is the binding stated in one place. It scopes every rule in the file: a rule's own `scope` defaults to it. Required."
             },
             "version": {
-              "type": "string"
+              "type": "string",
+              "description": "The CONCEPT's version, bumped by whoever changes its meaning. Not the schema's version and not the bundle's: it answers \"has this notion changed since I last read it\". Measured on the worked bundle: 16 concepts at 1.0 and one at 1.1, which is what a version looks like when it is maintained rather than stamped."
             },
             "schema_version": {
-              "type": "string"
+              "type": "string",
+              "description": "Which generation of mac.schema.json this file is written against. It is what lets a reader know a key's absence is a vintage rather than an omission, and what a migration selects on. Stamp the schema's own `version`, not a guess. Required."
             },
             "status": {
-              "$ref": "#/$defs/status"
+              "$ref": "#/$defs/status",
+              "description": "How far this concept has been taken, from the closed set below. It is a claim about REVIEW, not about correctness: `draft` says nobody has signed it off, and a draft concept still answers questions. Gates read it to decide what may be relied on, so leaving a finished concept at `draft` understates the bundle and marking an unreviewed one `production` overstates it."
             },
             "owner": {
-              "type": "string"
+              "type": "string",
+              "description": "WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down."
             },
             "confidence": {
               "$ref": "#/$defs/confidence"
@@ -138,7 +144,8 @@
               "description": "Free-text note on how the raw source was profiled (e.g. 'catalog metadata + a live column profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp. v0.1.15: this example was previously spelled with two vendor product names — a catalog service and a query engine — and it was, measured, the SINGLE instance-specific token in this entire grammar (one occurrence; no driver or cloud-prefix token appeared anywhere else in this file). It is respelled rather than deleted, because the slot still needs an example; the new spelling says the same thing in nouns that every engine has, which is the test a core-grammar example has to pass. The old nouns are not quoted here on purpose: a note that names what it forbids becomes a register of those names, and this file is published."
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required."
         },
         "concept": {
           "type": "object",
@@ -152,7 +159,8 @@
               "description": "PascalCase ontology id — the single canonical identifier."
             },
             "label": {
-              "type": "string"
+              "type": "string",
+              "description": "The concept's name AS A READER SAYS IT, where that differs from its identifier. `Color` is the key, `Colour` is the label. It is what a projection prints and what an answer calls the thing, so it carries spelling, case and local usage that an identifier cannot."
             },
             "class": {
               "enum": [
@@ -167,13 +175,15 @@
               "description": "The closed seven-class vocabulary. `meta` is the meaning-plane class (epic #86): a concept whose SUBJECT is the model itself, grounded only on the reflected meta_* relations. The two-planes guardrail keys on the meta_ table prefix + MODEL_PROPERTY route, not the class."
             },
             "definition": {
-              "type": "string"
+              "type": "string",
+              "description": "WHAT THIS NOTION IS, in prose, for a person — the one field in the file that a reader with no schema can use. Say what it is, at what grain, READ FROM THE ROWS rather than from the table name, and say what it is NOT where a neighbour could be mistaken for it. It is also the text a model is shown when choosing between two concepts, so a definition that omits the distinction between two readings is how the wrong one gets picked. Measurement belongs here: \"681.72 net against 717.60 gross on one sale\" settles an ambiguity that an adjective cannot."
             },
             "semantics": {
               "$ref": "#/$defs/semantics"
             },
             "notes": {
-              "type": "string"
+              "type": "string",
+              "description": "Working remarks a reader may need and the definition should not carry — an open uncertainty, a measurement that justifies a choice, a thing checked and ruled out. Nothing here is normative: a statement that must hold is a rule with a body, and a statement that must be READ is part of the definition. If a note starts telling the engine what to do, it is in the wrong field."
             },
             "identity": {
               "type": "object",
@@ -195,7 +205,8 @@
                   "description": "the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28)."
                 },
                 "note": {
-                  "type": "string"
+                  "type": "string",
+                  "description": "How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH."
                 },
                 "counts_as": {
                   "type": "string",
@@ -208,7 +219,8 @@
               "additionalProperties": false
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "description": "THE MEANING ITSELF — what this notion IS, independently of where it is stored. Name, label, class, definition, identity, semantics. Nothing in this block names a relation or a column; that is `grounding`, and the separation is the whole point of the framework: the same meaning can be re-grounded on a different warehouse without a word of it changing. Required."
         },
         "contract": {
           "$ref": "#/$defs/contract"
@@ -239,11 +251,15 @@
           "description": "(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.",
           "properties": {
             "phases": {
-              "type": "array"
+              "type": "array",
+              "description": "The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition."
             },
-            "boundary": {},
+            "boundary": {
+              "description": "WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it."
+            },
             "note": {
-              "type": "string"
+              "type": "string",
+              "description": "A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows."
             }
           },
           "additionalProperties": false
@@ -268,7 +284,8 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/openQuestion"
-          }
+          },
+          "description": "WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule."
         }
       },
       "additionalProperties": false,
@@ -2411,17 +2428,20 @@
       ],
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "The property's name as the ontology states it. A property is an INTRINSIC PRIMITIVE attribute of this concept; anything pointing at another concept is an edge, not a property."
         },
         "type": {
           "type": "string",
           "description": "the primitive datatype (string/int/date/...)"
         },
         "required": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether every instance must carry this property. A claim about the NOTION, not about the current rows: a required property that is null in the data is a data-quality finding, and declaring it optional to make the finding go away is how a defect becomes invisible."
         },
         "doc": {
-          "type": "string"
+          "type": "string",
+          "description": "What this property means, for a reader — what it records and at what grain. The one thing a type cannot say: `string` does not distinguish a name from a code from a free-text note."
         },
         "value_domain": {
           "type": "string",
@@ -3419,7 +3439,8 @@
           "additionalProperties": {
             "type": "object",
             "properties": {},
-            "additionalProperties": false
+            "additionalProperties": false,
+            "description": "One alias and the value it resolves to, keyed by the alias as a person would type it. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way."
           }
         }
       },
@@ -3472,7 +3493,8 @@
           "description": "how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer."
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "description": "Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why."
         }
       },
       "additionalProperties": false
@@ -3489,7 +3511,8 @@
           "description": "ISO date — string or a YAML-parsed date"
         },
         "change": {
-          "type": "string"
+          "type": "string",
+          "description": "What changed, in one line — the shape or the statement that moved, not the file's diff."
         },
         "change_type": {
           "enum": [
@@ -3498,13 +3521,16 @@
             "CORRECTION",
             "REMOVAL",
             "REFACTOR"
-          ]
+          ],
+          "description": "What KIND of change this was: a correction, a clarification, a widening, a retirement. It is what lets a reader judge whether an answer computed before it is still valid — a clarification leaves old numbers standing and a correction does not."
         },
         "by": {
-          "type": "string"
+          "type": "string",
+          "description": "Who made the change — the person or seat accountable for it, not the tool that wrote the bytes."
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "WHY the change was made, and against what evidence. The field that stops the same change being undone in six weeks by somebody who could see only the diff."
         }
       },
       "additionalProperties": false
@@ -3530,23 +3556,28 @@
       ],
       "properties": {
         "assert": {
-          "type": "string"
+          "type": "string",
+          "description": "WHAT MUST BE TRUE, stated so a reader can judge it. The condition itself — a uniqueness, a range, a relationship between columns that the schema cannot express. Where it can be executed, say so with `machine_executable` and give the engine a form it can run; an assertion nothing checks is a hope with a colon after it."
         },
         "severity": {
           "enum": [
             "ERROR",
             "WARNING",
             "INFORMATIONAL"
-          ]
+          ],
+          "description": "WHAT FOLLOWS FROM THIS ASSERTION FAILING — whether an answer must be refused, disclosed as suspect, or merely logged. Severity is the difference between a constraint that protects a reader and one that protects a dashboard."
         },
         "machine_executable": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether this assertion can be run as written, or is prose a person must check. Declaring it honestly is what keeps a constraint register from reading as a test suite: a register of twenty assertions of which three execute has three tests and seventeen intentions."
         },
         "open_question": {
-          "type": "string"
+          "type": "string",
+          "description": "What about this assertion is not settled — a threshold nobody has ruled, a case the condition does not cover. Carried beside the assertion so the uncertainty travels with the thing it is about."
         },
         "notes": {
-          "type": "string"
+          "type": "string",
+          "description": "Working remarks about this assertion — what was measured, which rows fail it today, why it is stated this way rather than another."
         }
       },
       "additionalProperties": false
@@ -3638,14 +3669,16 @@
                 "description": "v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose."
               },
               "examples": {
-                "type": "array"
+                "type": "array",
+                "description": "Concrete cases this rule decides, as a reader would say them — the question, and what the rule makes of it. One real example settles an ambiguity that a careful `when:` leaves open, and it is what a reviewer checks the rule against."
               },
               "status": {
                 "type": "string",
                 "enum": [
                   "active",
                   "proposed"
-                ]
+                ],
+                "description": "Where this rule stands — proposed, ruled, retired. A rule the engine applies and a rule awaiting a decision cannot look the same in the file, because the second one changes answers the moment somebody forgets which it was."
               },
               "confidence": {
                 "type": "string",
@@ -3774,10 +3807,12 @@
             "closed",
             "open",
             "unknown"
-          ]
+          ],
+          "description": "WHETHER THIS VALUE SET IS ALL OF THEM. `closed` licenses the engine to answer what is NOT in the set and to refuse a value outside it; `open` forbids both, because absence proves nothing; `unknown` is the honest state before anybody measured. The difference decides whether *which countries do we not sell to* is answerable at all."
         },
         "closure_why": {
-          "type": "string"
+          "type": "string",
+          "description": "THE EVIDENCE FOR THE CLOSURE CLAIM — what was measured, when, and against what. A closed set is a promise the engine will act on, so the claim needs a provenance a reviewer can re-run. `closed` with no `closure_why` is an assertion, not a measurement."
         },
         "items": {
           "type": "array",
@@ -3796,19 +3831,23 @@
                 "description": "the canonical value identifier"
               },
               "label": {
-                "type": "string"
+                "type": "string",
+                "description": "How this value is shown to a reader, where that differs from the code. BANNED IN A CONCEPT: a value set belongs in a register and the column points at it with `register:`, so a label lives in the register's own row. Kept in the schema for bundles not yet migrated."
               },
               "meaning": {
-                "type": "string"
+                "type": "string",
+                "description": "What this value MEANS, where the code does not say it. BANNED IN A CONCEPT for the same reason as its siblings — the register is the one home for a value and everything about it. A meaning written here is invisible to every other column carrying the same set."
               },
               "confidence": {
                 "$ref": "#/$defs/confidence"
               },
               "note": {
-                "type": "string"
+                "type": "string",
+                "description": "A remark about one value — an impurity, a historical spelling, a case that looks like it belongs and does not. BANNED IN A CONCEPT; it belongs on the register's row."
               },
               "open_question": {
-                "type": "string"
+                "type": "string",
+                "description": "An undecided question about one value, carried beside it. BANNED IN A CONCEPT; use the register, and `open_questions` at the concept level for a question about the notion itself."
               },
               "from": {
                 "type": [
@@ -3837,19 +3876,22 @@
       "description": "Housekeeping. APPEND-ONLY — never edit change_log history.",
       "properties": {
         "owner": {
-          "type": "string"
+          "type": "string",
+          "description": "WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a change to it. Distinct from `metadata.owner`, which names who answers for its MEANING; on a small team they are the same person and on a reviewed one they are deliberately not."
         },
         "last_reviewed": {
           "description": "ISO date — string or a YAML-parsed date"
         },
         "approval_status": {
-          "type": "string"
+          "type": "string",
+          "description": "Whether a human has approved this concept as it now stands. It is about the FILE's review, not about whether the model is correct, and it goes stale the moment the file changes — which is what `change_log` and `last_reviewed` exist to make visible."
         },
         "change_log": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/changeLogEntry"
-          }
+          },
+          "description": "WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last. The one place a reader can see whether today's definition is the one a past answer was computed from. Git carries the diff; this carries the REASON, which a diff cannot."
         }
       },
       "additionalProperties": false
@@ -3929,13 +3971,16 @@
                           "description": "The measure facts -> concept.semantics.measure_type / unit / additivity.\n\nSEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before.\n\nTHIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.",
                           "properties": {
                             "type": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all."
                             },
                             "unit": {
-                              "type": "string"
+                              "type": "string",
+                              "description": "WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`."
                             },
                             "additivity": {
-                              "type": "object"
+                              "type": "object",
+                              "description": "PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it."
                             },
                             "canonical": {
                               "type": "boolean",
@@ -4009,7 +4054,8 @@
                       }
                     }
                   }
-                ]
+                ],
+                "description": "WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat list names columns and says nothing about them, and the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list is kept legal so an unmigrated bundle still loads, and `check_column_spec` reports every concept still using it."
               }
             },
             "additionalProperties": true
@@ -4020,32 +4066,39 @@
           "type": "string"
         },
         "schema": {
-          "type": "string"
+          "type": "string",
+          "description": "The database SCHEMA the relation lives in, where the connection does not already pin one. Together with `table` it is the full address of the rows. Leave it out when the project's connection declares the schema, because a second home for it is how a bundle comes to work on one machine only."
         },
         "key_column": {
-          "type": "string"
+          "type": "string",
+          "description": "THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level. Prefer the column fact — `identity: canonical` in the column map — and use this only where there is no column map: declaring it in both places gives one identity two homes that can disagree. The planner reads it alongside `code_column` and `grounds_column` to know which of the relation's columns this concept may be pinned on."
         },
         "code_column": {
-          "type": "string"
+          "type": "string",
+          "description": "The column holding this concept's CODE, where the code is not the identity — a name resolves to it and a question filters on it. Read by the planner as one of the columns this concept may constrain on its own relation; a register's `code` is the value set that fills it."
         },
         "value_filter": {
-          "type": "string"
+          "type": "string",
+          "description": "A PREDICATE THAT NARROWS WHAT THIS CONCEPT IS GROUNDED ON, applied inviolably to every query. Use it only for rows that are NOT the concept — a sentinel, a load artefact. IT IS NOT A DOMAIN IF A QUESTION CAN LEGITIMATELY ASK THE OTHER SIDE OF IT: a default reading belongs in a population rule, which steps aside when the question speaks about it. Measured on the worked bundle: Store declared `close_date IS NULL` here, and *how many stores are closed?* produced correct SQL that then had that clause ANDed onto it — a conjunction that can never be true, 0 rows against a truth of 9, with every stage green."
         },
         "join_rule": {
-          "type": "string"
+          "type": "string",
+          "description": "HOW THIS RELATION JOINS, in the bundle's own words, where the join is not a plain key equality. It is prose for a reader, not an executable clause: a join the engine must perform is an EDGE with a `join_rule` the assembler can emit. Declared here it documents a relation's own shape — a self-join, a scoped lookup — so the next author does not rediscover it."
         },
         "discriminator": {
           "type": "string",
           "description": "THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a predicate, and no rows are excluded by it. Where one relation is column-per-measure, two concepts read the SAME rows and differ only in which column they read: GrossSalesAmount takes `UnitPrice`, NetSalesAmount takes `NetPrice`, both over all 223 974 lines. Naming it is what makes the pair distinguishable to a reader and to a router; a `value_filter` here would be a fabrication, because nothing is filtered.\n\nDocumented 2026-09-28. It has existed since v0.5 with NO description, which is how a slot becomes the next `attribute`: unread, unexplained, and then used for whatever seems to fit."
         },
         "snapshot_rule": {
-          "type": "string"
+          "type": "string",
+          "description": "HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the bundle's own words. It is PROSE, deliberately: the executable form is a `realized_by: snapshot_collapse` binding, a fragment that binds the relation, or `identity.counts_as` for a count. The runtime quotes it to the reader either way — when a collapse ran, as the rule the collapse honoured; when none did, as the bundle saying its relation holds several rows per member and this query read every one of them."
         },
         "row_count": {
           "type": [
             "integer",
             "string"
-          ]
+          ],
+          "description": "HOW MANY ROWS THE RELATION HELD WHEN IT WAS MEASURED. A number, or a string where the count is approximate or qualified. It is evidence, not a constraint: nothing enforces it, and its job is to let a reader see at a glance whether a grain claim is plausible — 2,517 products against 104,990 customers says more about a model than either sentence about it."
         },
         "grain": {
           "type": "string",
@@ -4059,14 +4112,17 @@
           "type": "object",
           "description": "v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.",
           "additionalProperties": {
-            "type": "string"
+            "type": "string",
+            "description": "The role of one column, keyed by column name, in the shape that PRECEDED the column map. The planner reads it to place a predicate. Authored bundles declare `role` on the column instead and let this project from it — a role written in both places gives one fact two homes that can disagree."
           }
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "description": "One remark about the GROUNDING — why this relation and not another, what a column name does not say, a measurement that justified the choice. About where the rows are, never about what the concept means; that is `concept.definition`."
         },
         "notes": {
-          "type": "string"
+          "type": "string",
+          "description": "Longer working remarks about the grounding, where one `note` will not hold them. Nothing here is normative — a statement the engine must honour is a rule, a ruling, or a column fact."
         },
         "realized_by": {
           "$ref": "#/$defs/canonBinding",
@@ -4099,10 +4155,12 @@
                 "type": [
                   "string",
                   "number"
-                ]
+                ],
+                "description": "The code of one member of this grouping, as the data holds it. The grouping's own value set, so the same rule applies as everywhere else: where a register already carries these values, point at it rather than restating them here."
               },
               "label": {
-                "type": "string"
+                "type": "string",
+                "description": "How one member of this grouping is shown to a reader, where that differs from its code."
               },
               "members": {
                 "type": "array",
@@ -4130,13 +4188,16 @@
       ],
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "A stable handle for this question, so a decision record, a rule or a conversation can cite it and still mean this one after the list is reordered."
         },
         "topic": {
-          "type": "string"
+          "type": "string",
+          "description": "WHAT THE QUESTION IS ABOUT, in a few words — the column, the axis, the reading. What a reader scans to find whether their own uncertainty is already recorded."
         },
         "question": {
-          "type": "string"
+          "type": "string",
+          "description": "THE QUESTION ITSELF, asked so that an answer would be a decision. 'Does revenue mean net or gross here' can be answered; 'revenue is unclear' cannot, and is how an open question outlives every chance to close it."
         },
         "status": {
           "enum": [
@@ -4144,25 +4205,31 @@
             "PARTIAL",
             "RESOLVED",
             "NEEDS_SME_CONFIRMATION"
-          ]
+          ],
+          "description": "Where this question stands — open, asked, answered, withdrawn. A question answered in a meeting and still reading `open` is the state this field exists to prevent."
         },
         "owner_for_resolution": {
-          "type": "string"
+          "type": "string",
+          "description": "WHO CAN ACTUALLY DECIDE THIS — usually a subject-matter expert, not the ontology's author. Naming them is what turns an open question into a request; without it the question is addressed to nobody and waits forever."
         },
         "priority": {
-          "type": "string"
+          "type": "string",
+          "description": "How much this question costs while it stays open — which questions it blocks, which answers are provisional until it is settled. It is what ranks a list of questions somebody has to actually work through."
         },
         "category": {
-          "type": "string"
+          "type": "string",
+          "description": "What KIND of question this is: a missing declaration, a ruling only a person can make, a framework limit, a data defect. The classification decides who it goes to, and getting it wrong is how a question sits with an engineer for a month when it needed one sentence from the business."
         },
         "note": {
-          "type": "string"
+          "type": "string",
+          "description": "Context a reader of the question needs — what has already been measured, what was tried, which readings are still on the table."
         },
         "cross_references": {
           "type": [
             "array",
             "string"
-          ]
+          ],
+          "description": "Where else this question bears — the rules, columns, concepts or findings its answer would change. It is what makes the cost of leaving it open visible, and the checklist for what to revisit when it closes."
         }
       },
       "additionalProperties": false
@@ -4183,10 +4250,12 @@
       "description": "The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).",
       "properties": {
         "purpose": {
-          "type": "string"
+          "type": "string",
+          "description": "WHAT THIS CONCEPT IS FOR — the question it exists to answer. Where `definition` says what the notion IS, this says why the ontology carries it, which is what tells a later reader whether a proposed change serves it or quietly replaces it."
         },
         "scope": {
-          "type": "string"
+          "type": "string",
+          "description": "WHAT THIS CONCEPT COVERS AND WHAT IT LEAVES OUT, stated as a boundary. The population, the period, the part of the business. An answer is only as true as its scope, and an unstated scope is read as `everything` by whoever quotes the number next."
         },
         "additivity": {
           "type": "object",
@@ -4201,7 +4270,8 @@
           "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^mac\\.concept\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$"
+            "pattern": "^mac\\.concept\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$",
+            "description": "What kind of aggregation axis one column is, keyed by column name — DEPRECATED, and measured inert: its keys are column names while the planner looked them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key could ever match. Declare `axis_kind` on the column instead. Kept because readers still fall back to it, so an unmigrated bundle is unchanged."
           }
         },
         "unit": {
@@ -4209,7 +4279,8 @@
           "description": "The unit of the measure this concept IS — 'USD', 'units', 'square_metres'. For a COMPOSED measure (several columns carrying `measure`) this is the unit of the composition and is REQUIRED, because the factor units differ and nothing may pick one: `Quantity x NetPrice` is USD though its factors are `units` and `USD`. With a single measure column it projects from that column's `measure.unit`. It is prose, deliberately: a unit carries what a reader must know to trust a number, and the one measured case where it was WRONG (an amount claimed in the order's own currency when it is stored in USD) was caught by a sentence, not by a token."
         },
         "null_semantics": {
-          "type": "string"
+          "type": "string",
+          "description": "WHAT A MISSING VALUE MEANS HERE — not loaded, genuinely zero, or not applicable. The three are indistinguishable in the rows and lead to three different answers: a sparse fact read as zero understates a total, and read as unknown refuses a question it could have answered. Where the reading changes the SQL, bind the `densify` canon; this is the statement a reader needs regardless."
         },
         "realized_by": {
           "$ref": "#/$defs/canonBinding",

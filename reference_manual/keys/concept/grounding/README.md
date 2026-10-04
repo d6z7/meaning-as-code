@@ -6,29 +6,27 @@
 
 Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.
 
-> **9 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `code_column` |  | `string` | — gap — |  |
+| `code_column` |  | `string` | The column holding this concept's CODE, where the code is not the identity — a name resolves to it and a question filters on it. Read by the planner as one of the columns this concept may constrain on its own relation; a register's `code` is the value set that fills it. |  |
 | `discriminator` |  | `string` | THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a predicate, and no rows are excluded by it. Where one relation is column-per-measure, two concepts read the SAME rows and differ only in which column they read: GrossSalesAmount takes `UnitPrice`, NetSalesAmount takes `NetPrice`, both over all 223 974 lines. Naming it is what makes the pair distinguishable to a reader and to a router; a `value_filter` here would be a fabrication, because nothing is filtered. Documented 2026-09-28. It has existed since v0.5 with NO description, which is how a slot becomes the next `attribute`: unread, unexplained, and then used for whatever seems to fit. |  |
 | `field_roles` |  | `object` | v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules. | [field_roles](field_roles.md) |
 | `grain` |  | `string` | v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class. |  |
 | `grounds_column` |  | `string` | (naming contract) a physical column name as a VALUE, never a key. |  |
-| `join_rule` |  | `string` | — gap — |  |
-| `key_column` |  | `string` | — gap — |  |
+| `join_rule` |  | `string` | HOW THIS RELATION JOINS, in the bundle's own words, where the join is not a plain key equality. It is prose for a reader, not an executable clause: a join the engine must perform is an EDGE with a `join_rule` the assembler can emit. Declared here it documents a relation's own shape — a self-join, a scoped lookup — so the next author does not rediscover it. |  |
+| `key_column` |  | `string` | THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level. Prefer the column fact — `identity: canonical` in the column map — and use this only where there is no column map: declaring it in both places gives one identity two homes that can disagree. The planner reads it alongside `code_column` and `grounds_column` to know which of the relation's columns this concept may be pinned on. |  |
 | `kind` |  | `string` | Grounding adapter (pluggable): sql_table \| api \| file \| graph. |  |
-| `note` |  | `string` | — gap — |  |
-| `notes` |  | `string` | — gap — |  |
+| `note` |  | `string` | One remark about the GROUNDING — why this relation and not another, what a column name does not say, a measurement that justified the choice. About where the rows are, never about what the concept means; that is `concept.definition`. |  |
+| `notes` |  | `string` | Longer working remarks about the grounding, where one `note` will not hold them. Nothing here is normative — a statement the engine must honour is a rule, a ruling, or a column fact. |  |
 | `realized_by` |  | `—` | v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter. | [realized_by](realized_by.md) |
-| `row_count` |  | `['integer', 'string']` | — gap — |  |
-| `schema` |  | `string` | — gap — |  |
-| `snapshot_rule` |  | `string` | — gap — |  |
+| `row_count` |  | `['integer', 'string']` | HOW MANY ROWS THE RELATION HELD WHEN IT WAS MEASURED. A number, or a string where the count is approximate or qualified. It is evidence, not a constraint: nothing enforces it, and its job is to let a reader see at a glance whether a grain claim is plausible — 2,517 products against 104,990 customers says more about a model than either sentence about it. |  |
+| `schema` |  | `string` | The database SCHEMA the relation lives in, where the connection does not already pin one. Together with `table` it is the full address of the rows. Leave it out when the project's connection declares the schema, because a second home for it is how a bundle comes to work on one machine only. |  |
+| `snapshot_rule` |  | `string` | HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the bundle's own words. It is PROSE, deliberately: the executable form is a `realized_by: snapshot_collapse` binding, a fragment that binds the relation, or `identity.counts_as` for a count. The runtime quotes it to the reader either way — when a collapse ran, as the rule the collapse honoured; when none did, as the bundle saying its relation holds several rows per member and this query read every one of them. |  |
 | `sources` |  | `list of object` | v0.5 agnostic source binding — the relation(s) this concept queries, each with its key + the columns it uses. A view and a base table are IDENTICAL here (query target only); a view's lineage lives on its Physical descriptor (`derived_from`), never here. | [sources](sources/README.md) |
 | `table` |  | `string` | LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding — use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale. |  |
-| `value_filter` |  | `string` | — gap — |  |
+| `value_filter` |  | `string` | A PREDICATE THAT NARROWS WHAT THIS CONCEPT IS GROUNDED ON, applied inviolably to every query. Use it only for rows that are NOT the concept — a sentinel, a load artefact. IT IS NOT A DOMAIN IF A QUESTION CAN LEGITIMATELY ASK THE OTHER SIDE OF IT: a default reading belongs in a population rule, which steps aside when the question speaks about it. Measured on the worked bundle: Store declared `close_date IS NULL` here, and *how many stores are closed?* produced correct SQL that then had that clause ANDed onto it — a conjunction that can never be true, 0 rows against a truth of 9, with every stage green. |  |
 
 ## As it is actually written
 

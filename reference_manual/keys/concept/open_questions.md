@@ -4,21 +4,19 @@
 
 [concept](README.md) · open_questions
 
-> **9 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `id` | **required** | `string` | — gap — |  |
-| `question` | **required** | `string` | — gap — |  |
-| `category` |  | `string` | — gap — |  |
-| `cross_references` |  | `['array', 'string']` | — gap — |  |
-| `note` |  | `string` | — gap — |  |
-| `owner_for_resolution` |  | `string` | — gap — |  |
-| `priority` |  | `string` | — gap — |  |
-| `status` |  | `—` | — gap —<br>**one of:** `OPEN` · `PARTIAL` · `RESOLVED` · `NEEDS_SME_CONFIRMATION` |  |
-| `topic` |  | `string` | — gap — |  |
+| `id` | **required** | `string` | A stable handle for this question, so a decision record, a rule or a conversation can cite it and still mean this one after the list is reordered. |  |
+| `question` | **required** | `string` | THE QUESTION ITSELF, asked so that an answer would be a decision. 'Does revenue mean net or gross here' can be answered; 'revenue is unclear' cannot, and is how an open question outlives every chance to close it. |  |
+| `category` |  | `string` | What KIND of question this is: a missing declaration, a ruling only a person can make, a framework limit, a data defect. The classification decides who it goes to, and getting it wrong is how a question sits with an engineer for a month when it needed one sentence from the business. |  |
+| `cross_references` |  | `['array', 'string']` | Where else this question bears — the rules, columns, concepts or findings its answer would change. It is what makes the cost of leaving it open visible, and the checklist for what to revisit when it closes. |  |
+| `note` |  | `string` | Context a reader of the question needs — what has already been measured, what was tried, which readings are still on the table. |  |
+| `owner_for_resolution` |  | `string` | WHO CAN ACTUALLY DECIDE THIS — usually a subject-matter expert, not the ontology's author. Naming them is what turns an open question into a request; without it the question is addressed to nobody and waits forever. |  |
+| `priority` |  | `string` | How much this question costs while it stays open — which questions it blocks, which answers are provisional until it is settled. It is what ranks a list of questions somebody has to actually work through. |  |
+| `status` |  | `—` | Where this question stands — open, asked, answered, withdrawn. A question answered in a meeting and still reading `open` is the state this field exists to prevent.<br>**one of:** `OPEN` · `PARTIAL` · `RESOLVED` · `NEEDS_SME_CONFIRMATION` |  |
+| `topic` |  | `string` | WHAT THE QUESTION IS ABOUT, in a few words — the column, the axis, the reading. What a reader scans to find whether their own uncertainty is already recorded. |  |
 
 ---
 

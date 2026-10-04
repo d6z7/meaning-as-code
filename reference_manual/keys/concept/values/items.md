@@ -4,8 +4,6 @@
 
 [concept](../README.md) · [values](README.md) · items
 
-> **4 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
@@ -13,10 +11,10 @@
 | `code` | **required** | `['string', 'number']` | the canonical value identifier |  |
 | `confidence` |  | `—` | Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.<br>**one of:** `C` · `I` · `Q` |  |
 | `from` |  | `['string', 'array']` | raw source attribute(s) this value was conformed from (a list when several raw spellings map to one code) |  |
-| `label` |  | `string` | — gap — |  |
-| `meaning` |  | `string` | — gap — |  |
-| `note` |  | `string` | — gap — |  |
-| `open_question` |  | `string` | — gap — |  |
+| `label` |  | `string` | How this value is shown to a reader, where that differs from the code. BANNED IN A CONCEPT: a value set belongs in a register and the column points at it with `register:`, so a label lives in the register's own row. Kept in the schema for bundles not yet migrated. |  |
+| `meaning` |  | `string` | What this value MEANS, where the code does not say it. BANNED IN A CONCEPT for the same reason as its siblings — the register is the one home for a value and everything about it. A meaning written here is invisible to every other column carrying the same set. |  |
+| `note` |  | `string` | A remark about one value — an impurity, a historical spelling, a case that looks like it belongs and does not. BANNED IN A CONCEPT; it belongs on the register's row. |  |
+| `open_question` |  | `string` | An undecided question about one value, carried beside it. BANNED IN A CONCEPT; use the register, and `open_questions` at the concept level for a question about the notion itself. |  |
 
 ---
 

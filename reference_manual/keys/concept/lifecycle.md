@@ -6,15 +6,13 @@
 
 (event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.
 
-> **3 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `boundary` |  | `—` | — gap — |  |
-| `note` |  | `string` | — gap — |  |
-| `phases` |  | `list of array` | — gap — |  |
+| `boundary` |  | `—` | WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it. |  |
+| `note` |  | `string` | A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows. |  |
+| `phases` |  | `list of array` | The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition. |  |
 
 ## As it is actually written
 

@@ -92,40 +92,40 @@ authoritative in the schema — this is its readable, per-object-type face._
 *discriminator key:* `concept:` · *required:* `metadata`, `concept`
 
 ```yaml
-metadata:  # REQUIRED
-  concept: <…>  # REQUIRED · string
-  source: <…>  # REQUIRED · string
-  version: <…>  # string
-  schema_version: <…>  # REQUIRED · string
+metadata:  # REQUIRED · THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for…
+  concept: <…>  # REQUIRED · string · The concept's name, repeated here so a reader of this block alone knows…
+  source: <…>  # REQUIRED · string · WHICH DATA SOURCE this ontology is for, as the project declares it…
+  version: <…>  # string · The CONCEPT's version, bumped by whoever changes its meaning
+  schema_version: <…>  # REQUIRED · string · Which generation of mac.schema.json this file is written against
   status: <…>  # enum: production | draft | prototype
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THIS MEANING — the person or seat a question about it…
   confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
   provenance: <…>  # enum: harvested | authored | tuned · How this object came to be: harvested = emitted by the harvest…
   profiled_via: <…>  # string · Free-text note on how the raw source was profiled (e.g
 
-concept:  # REQUIRED
+concept:  # REQUIRED · THE MEANING ITSELF — what this notion IS, independently of where it is…
   name: <…>  # REQUIRED · string · PascalCase ontology id — the single canonical identifier.
-  label: <…>  # string
+  label: <…>  # string · The concept's name AS A READER SAYS IT, where that differs from its…
   class: <…>  # REQUIRED · enum: entity | event | measure | enumeration | reference | grouping | meta · The closed seven-class vocabulary
-  definition: <…>  # string
+  definition: <…>  # string · WHAT THIS NOTION IS, in prose, for a person — the one field in the file…
   semantics:  # The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).  # closed: only keys above
-    purpose: <…>  # string
-    scope: <…>  # string
+    purpose: <…>  # string · WHAT THIS CONCEPT IS FOR — the question it exists to answer
+    scope: <…>  # string · WHAT THIS CONCEPT COVERS AND WHAT IT LEAVES OUT, stated as a boundary
     additivity:  # Per-dimension aggregation rule — the footgun-preventer  # open: extra keys allowed
     axis_kinds:  # v0.6: map each aggregation axis (the same axis names used in…  # open: extra keys allowed
     unit: <…>  # string · The unit of the measure this concept IS — 'USD', 'units',…
-    null_semantics: <…>  # string
+    null_semantics: <…>  # string · WHAT A MISSING VALUE MEANS HERE — not loaded, genuinely zero, or not…
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
       applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-      note: <…>  # string
+      note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
     measure_type: <…>  # string · v0.6: the measure's additivity class — a reference to a…
-  notes: <…>  # string
+  notes: <…>  # string · Working remarks a reader may need and the definition should not carry —…
   identity:  # The concept's CANONICAL IDENTITY — how it is identified…  # closed: only keys above
     kind: <…>  # REQUIRED · enum: iso | code | namespace_code | fk_name | composite | sme_pending · mac.concept.identity.<term> — how the canonical identity is established.
     canonical_key: <…>  # string · the column/expression that IS the identity (omit for sme_pending;…
-    note: <…>  # string
+    note: <…>  # string · How identity is established in this relation, where `kind` alone does…
     counts_as: <…>  # string · The column one INSTANCE of this concept is counted by, when that is not…
 
 contract:  # string|object · v0.5 NEW core construct (DECISION 0)
@@ -148,62 +148,62 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
         udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
         params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
         applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-        note: <…>  # string
-      examples: [ ... ]
-      status: <…>  # enum: active | proposed
+        note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
+      examples: [ ... ]  # Concrete cases this rule decides, as a reader would say them — the…
+      status: <…>  # enum: active | proposed · Where this rule stands — proposed, ruled, retired
       confidence: <…>  # enum: C | P | R · Assurance factor for the rule: C=confirmed (an…
 
 values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set +…
-  closure: <…>  # enum: closed | open | unknown
-  closure_why: <…>  # string
+  closure: <…>  # enum: closed | open | unknown · WHETHER THIS VALUE SET IS ALL OF THEM
+  closure_why: <…>  # string · THE EVIDENCE FOR THE CLOSURE CLAIM — what was measured, when, and…
   items:  # the value rows — every value has a stable `code`;…
     - <item>
       code: <…>  # REQUIRED · string|number · the canonical value identifier
-      label: <…>  # string
-      meaning: <…>  # string
+      label: <…>  # string · How this value is shown to a reader, where that differs from the code
+      meaning: <…>  # string · What this value MEANS, where the code does not say it
       confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
-      note: <…>  # string
-      open_question: <…>  # string
+      note: <…>  # string · A remark about one value — an impurity, a historical spelling, a case…
+      open_question: <…>  # string · An undecided question about one value, carried beside it
       from: <…>  # string|array · raw source attribute(s) this value was conformed from (a list when…
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-    note: <…>  # string
+    note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
   aliases:  # v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a…  # closed: only keys above
     realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
       udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
       params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
       applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-      note: <…>  # string
+      note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
     map:  # REQUIRED · canonical code → its alias tiers.  # open: extra keys allowed
 
 properties:  # Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem…
   - <item>  # $defs.PropertyItem
-    name: <…>  # REQUIRED · string
+    name: <…>  # REQUIRED · string · The property's name as the ontology states it
     type: <…>  # string · the primitive datatype (string/int/date/...)
-    required: <…>  # boolean
-    doc: <…>  # string
+    required: <…>  # boolean · Whether every instance must carry this property
+    doc: <…>  # string · What this property means, for a reader — what it records and at what…
     value_domain: <…>  # string · (optional) an enumeration this property's values must belong to
 
 members:  # one of: array | object · v0.5 grouping template — how a grouping rolls up its leaf
   over: <…>  # REQUIRED · string · the leaf concept this groups (region over country, category over…
   definitions:  # (enumerated) the named member sets — each an explicit list or a derived…
     - <item>
-      code: <…>  # REQUIRED · string|number
-      label: <…>  # string
+      code: <…>  # REQUIRED · string|number · The code of one member of this grouping, as the data holds it
+      label: <…>  # string · How one member of this grouping is shown to a reader, where that…
       members: [ ... ]  # (explicit) the leaf codes in this set
       confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-    note: <…>  # string
+    note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
 
 lifecycle:  # (event class) the state machine: phases group states, in sequence
-  phases: [ ... ]
-  boundary: <…>
-  note: <…>  # string
+  phases: [ ... ]  # The named phases of this event's life, IN SEQUENCE — each grouping the…
+  boundary: <…>  # WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it…
+  note: <…>  # string · A remark about the lifecycle — a phase the data represents oddly, a…
 
 derived_by_rule: <…>  # string · marks a concept whose value is produced by a rule; the formula lives in…
 
@@ -215,56 +215,56 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
       key: <…>  # string|array · primary / join key column(s)
       columns:  # one of: array | object · THE COLUMN MAP — everything about one column, ON the column  # open: extra keys allowed
   table: <…>  # string · LEGACY, and still accepted: the single relation this concept queries
-  schema: <…>  # string
-  key_column: <…>  # string
-  code_column: <…>  # string
-  value_filter: <…>  # string
-  join_rule: <…>  # string
+  schema: <…>  # string · The database SCHEMA the relation lives in, where the connection does…
+  key_column: <…>  # string · THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the…
+  code_column: <…>  # string · The column holding this concept's CODE, where the code is not the…
+  value_filter: <…>  # string · A PREDICATE THAT NARROWS WHAT THIS CONCEPT IS GROUNDED ON, applied…
+  join_rule: <…>  # string · HOW THIS RELATION JOINS, in the bundle's own words, where the join is…
   discriminator: <…>  # string · THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a…
-  snapshot_rule: <…>  # string
-  row_count: <…>  # integer|string
+  snapshot_rule: <…>  # string · HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the…
+  row_count: <…>  # integer|string · HOW MANY ROWS THE RELATION HELD WHEN IT WAS MEASURED
   grain: <…>  # string · v0.5 PROMOTED to core: the committed leaf grain — one row = one ..
   grounds_column: <…>  # string · (naming contract) a physical column name as a VALUE, never a key.
   field_roles:  # v0.1.7: the WHITELIST of grounded columns that carry ontology meaning,…  # open: extra keys allowed
-  note: <…>  # string
-  notes: <…>  # string
+  note: <…>  # string · One remark about the GROUNDING — why this relation and not another,…
+  notes: <…>  # string · Longer working remarks about the grounding, where one `note` will not…
   realized_by:  # one of: object | array · v0.1.9: a single canon binding  # closed: only keys above
     udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
     params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-    note: <…>  # string
+    note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
 
 constraints:
   - <item>  # $defs.constraintEntry
-    assert: <…>  # REQUIRED · string
-    severity: <…>  # enum: ERROR | WARNING | INFORMATIONAL
-    machine_executable: <…>  # boolean
-    open_question: <…>  # string
-    notes: <…>  # string
+    assert: <…>  # REQUIRED · string · WHAT MUST BE TRUE, stated so a reader can judge it
+    severity: <…>  # enum: ERROR | WARNING | INFORMATIONAL · WHAT FOLLOWS FROM THIS ASSERTION FAILING — whether an answer must be…
+    machine_executable: <…>  # boolean · Whether this assertion can be run as written, or is prose a person must…
+    open_question: <…>  # string · What about this assertion is not settled — a threshold nobody has…
+    notes: <…>  # string · Working remarks about this assertion — what was measured, which rows…
 
 governance:  # Housekeeping
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
   last_reviewed: <…>  # ISO date — string or a YAML-parsed date
-  approval_status: <…>  # string
-  change_log:
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
     - <item>  # $defs.changeLogEntry
       date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
-      change: <…>  # REQUIRED · string
-      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
-      by: <…>  # string
-      rationale: <…>  # string
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 
-open_questions:
+open_questions:  # WHAT IS NOT DECIDED YET, carried IN the concept rather than in a…
   - <item>  # $defs.openQuestion
-    id: <…>  # REQUIRED · string
-    topic: <…>  # string
-    question: <…>  # REQUIRED · string
-    status: <…>  # enum: OPEN | PARTIAL | RESOLVED | NEEDS_SME_CONFIRMATION
-    owner_for_resolution: <…>  # string
-    priority: <…>  # string
-    category: <…>  # string
-    note: <…>  # string
-    cross_references: <…>  # array|string
+    id: <…>  # REQUIRED · string · A stable handle for this question, so a decision record, a rule or a…
+    topic: <…>  # string · WHAT THE QUESTION IS ABOUT, in a few words — the column, the axis, the…
+    question: <…>  # REQUIRED · string · THE QUESTION ITSELF, asked so that an answer would be a decision
+    status: <…>  # enum: OPEN | PARTIAL | RESOLVED | NEEDS_SME_CONFIRMATION · Where this question stands — open, asked, answered, withdrawn
+    owner_for_resolution: <…>  # string · WHO CAN ACTUALLY DECIDE THIS — usually a subject-matter expert, not the…
+    priority: <…>  # string · How much this question costs while it stays open — which questions it…
+    category: <…>  # string · What KIND of question this is: a missing declaration, a ruling only a…
+    note: <…>  # string · Context a reader of the question needs — what has already been…
+    cross_references: <…>  # array|string · Where else this question bears — the rules, columns, concepts or…
 ```
 
 **Per `concept.class` (conditional shape):**
@@ -282,16 +282,16 @@ open_questions:
 metadata:
 
 governance:  # Housekeeping
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
   last_reviewed: <…>  # ISO date — string or a YAML-parsed date
-  approval_status: <…>  # string
-  change_log:
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
     - <item>  # $defs.changeLogEntry
       date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
-      change: <…>  # REQUIRED · string
-      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
-      by: <…>  # string
-      rationale: <…>  # string
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 
 rules:  # REQUIRED
   - <item>
@@ -320,16 +320,16 @@ rules:  # REQUIRED
 metadata:
 
 governance:  # Housekeeping
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
   last_reviewed: <…>  # ISO date — string or a YAML-parsed date
-  approval_status: <…>  # string
-  change_log:
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
     - <item>  # $defs.changeLogEntry
       date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
-      change: <…>  # REQUIRED · string
-      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
-      by: <…>  # string
-      rationale: <…>  # string
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 
 planned_edges:  # v0.1.18: a PROMOTION CANDIDATE, and DELIBERATELY NOT AN EDGE
   - <item>
@@ -370,7 +370,7 @@ edges:  # REQUIRED
         udf: <…>  # REQUIRED · string · the canon name — canonical form `mac.canon.<name>`, resolved by…
         params:  # the per-concept parameters the canon's signature names  # open: extra keys allowed
         applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
-        note: <…>  # string
+        note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
     conditions: <…>
     confidence: <…>  # enum: C | I | Q · Trust tier (pluggable scale; default C/I/Q)
     notes: <…>  # string
@@ -445,16 +445,16 @@ grounded_by_concepts:
     role: <…>  # string · descriptive reverse-pointer role (e.g
 
 governance:  # Housekeeping
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
   last_reviewed: <…>  # ISO date — string or a YAML-parsed date
-  approval_status: <…>  # string
-  change_log:
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
     - <item>  # $defs.changeLogEntry
       date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
-      change: <…>  # REQUIRED · string
-      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
-      by: <…>  # string
-      rationale: <…>  # string
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 ```
 
 ### TransformFile
@@ -495,16 +495,16 @@ transforms:  # the ordered cleansing steps, each dissolving ONE impurity so it n
 open_transforms: [ ... ]  # impurities KNOWN but NOT yet dissolved — carried, not hidden (the…
 
 governance:  # Housekeeping
-  owner: <…>  # string
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
   last_reviewed: <…>  # ISO date — string or a YAML-parsed date
-  approval_status: <…>  # string
-  change_log:
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
     - <item>  # $defs.changeLogEntry
       date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
-      change: <…>  # REQUIRED · string
-      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR
-      by: <…>  # string
-      rationale: <…>  # string
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 ```
 
 ### ProjectFile

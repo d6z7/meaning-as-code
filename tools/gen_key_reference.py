@@ -153,11 +153,16 @@ class Walker:
         props = dict(node.get("properties") or {})
         if props:
             return props, False
-        for holder in ("additionalProperties", "patternProperties"):
-            h = node.get(holder)
-            if isinstance(h, dict) and h:
-                value = h if "properties" in h else list(h.values())[0]
-                return {ANY: value}, True
+        #: `additionalProperties` IS the value's schema; `patternProperties` is a MAP of pattern to
+        #: schema, so only the second needs unwrapping. Conflating them turned
+        #: `additionalProperties: {"type": "string"}` into the string `"string"`, which is not a node
+        #: — so three free-key levels could never carry a description and showed as permanent gaps.
+        h = node.get("additionalProperties")
+        if isinstance(h, dict) and h:
+            return {ANY: h}, True
+        h = node.get("patternProperties")
+        if isinstance(h, dict) and h:
+            return {ANY: list(h.values())[0]}, True
         return {}, False
 
     def type_of(self, resolved, raw):

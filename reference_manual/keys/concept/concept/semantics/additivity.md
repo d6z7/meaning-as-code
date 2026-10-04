@@ -6,15 +6,13 @@
 
 Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.15: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: a target-inventory measure declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.
 
-> **1 key at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `<name>` |  | `—` | — gap — |  |
+| `<name>` |  | `—` | v0.1.15: ONE SCALE. This was a separate BINARY enum (additive \| non-additive) and a LOSSY projection of mac.concept.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.concept.column.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch. | [<name>](additivity/each.md) |
 
 ---
 

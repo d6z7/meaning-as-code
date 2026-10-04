@@ -6,17 +6,15 @@
 
 A data-quality invariant (validation, NOT derivation). The description field is 'assert:', never 'rule:'.
 
-> **5 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `assert` | **required** | `string` | — gap — |  |
-| `machine_executable` |  | `boolean` | — gap — |  |
-| `notes` |  | `string` | — gap — |  |
-| `open_question` |  | `string` | — gap — |  |
-| `severity` |  | `—` | — gap —<br>**one of:** [`ERROR`](../vocabulary/test_status.md#ERROR) · `WARNING` · `INFORMATIONAL` |  |
+| `assert` | **required** | `string` | WHAT MUST BE TRUE, stated so a reader can judge it. The condition itself — a uniqueness, a range, a relationship between columns that the schema cannot express. Where it can be executed, say so with `machine_executable` and give the engine a form it can run; an assertion nothing checks is a hope with a colon after it. |  |
+| `machine_executable` |  | `boolean` | Whether this assertion can be run as written, or is prose a person must check. Declaring it honestly is what keeps a constraint register from reading as a test suite: a register of twenty assertions of which three execute has three tests and seventeen intentions. |  |
+| `notes` |  | `string` | Working remarks about this assertion — what was measured, which rows fail it today, why it is stated this way rather than another. |  |
+| `open_question` |  | `string` | What about this assertion is not settled — a threshold nobody has ruled, a case the condition does not cover. Carried beside the assertion so the uncertainty travels with the thing it is about. |  |
+| `severity` |  | `—` | WHAT FOLLOWS FROM THIS ASSERTION FAILING — whether an answer must be refused, disclosed as suspect, or merely logged. Severity is the difference between a constraint that protects a reader and one that protects a dashboard.<br>**one of:** [`ERROR`](../vocabulary/test_status.md#ERROR) · `WARNING` · `INFORMATIONAL` |  |
 
 ---
 

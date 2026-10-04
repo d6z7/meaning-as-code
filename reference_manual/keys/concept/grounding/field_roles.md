@@ -6,15 +6,13 @@
 
 v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.
 
-> **1 key at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `<name>` |  | `—` | — gap — |  |
+| `<name>` |  | `string` | The role of one column, keyed by column name, in the shape that PRECEDED the column map. The planner reads it to place a predicate. Authored bundles declare `role` on the column instead and let this project from it — a role written in both places gives one fact two homes that can disagree. |  |
 
 ---
 

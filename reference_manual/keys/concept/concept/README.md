@@ -4,7 +4,7 @@
 
 [concept](../README.md) · concept
 
-> **3 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
+THE MEANING ITSELF — what this notion IS, independently of where it is stored. Name, label, class, definition, identity, semantics. Nothing in this block names a relation or a column; that is `grounding`, and the separation is the whole point of the framework: the same meaning can be re-grounded on a different warehouse without a word of it changing. Required.
 
 ## Keys you may write here
 
@@ -12,10 +12,10 @@
 |---|---|---|---|---|
 | `class` | **required** | `—` | The closed seven-class vocabulary. `meta` is the meaning-plane class (epic #86): a concept whose SUBJECT is the model itself, grounded only on the reflected meta_* relations. The two-planes guardrail keys on the meta_ table prefix + MODEL_PROPERTY route, not the class.<br>**one of:** `entity` · `event` · [`measure`](../../vocabulary/concept/column/role.md#measure) · `enumeration` · [`reference`](../../vocabulary/concept/column/identity.md#reference) · `grouping` · `meta` |  |
 | `name` | **required** | `string` | PascalCase ontology id — the single canonical identifier. |  |
-| `definition` |  | `string` | — gap — |  |
+| `definition` |  | `string` | WHAT THIS NOTION IS, in prose, for a person — the one field in the file that a reader with no schema can use. Say what it is, at what grain, READ FROM THE ROWS rather than from the table name, and say what it is NOT where a neighbour could be mistaken for it. It is also the text a model is shown when choosing between two concepts, so a definition that omits the distinction between two readings is how the wrong one gets picked. Measurement belongs here: "681.72 net against 717.60 gross on one sale" settles an ambiguity that an adjective cannot. |  |
 | `identity` |  | `object` | The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one. `resolved_axis` was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 (0 of 62 concepts used it); the enum below is landed FROM that vocabulary by tools/check_vocabulary_parity.py --write and is not edited by hand. | [identity](identity.md) |
-| `label` |  | `string` | — gap — |  |
-| `notes` |  | `string` | — gap — |  |
+| `label` |  | `string` | The concept's name AS A READER SAYS IT, where that differs from its identifier. `Color` is the key, `Colour` is the label. It is what a projection prints and what an answer calls the thing, so it carries spelling, case and local usage that an identifier cannot. |  |
+| `notes` |  | `string` | Working remarks a reader may need and the definition should not carry — an open uncertainty, a measurement that justifies a choice, a thing checked and ruled out. Nothing here is normative: a statement that must hold is a rule with a body, and a statement that must be READ is part of the definition. If a note starts telling the engine what to do, it is in the wrong field. |  |
 | `semantics` |  | `object` | The SINGLE home for interpretive reasoning facts (FRAMEWORK §5). | [semantics](semantics/README.md) |
 
 ## As it is actually written

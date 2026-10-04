@@ -4,8 +4,6 @@
 
 [concept](../../README.md) · [contract](../README.md) · rules
 
-> **2 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
@@ -15,11 +13,11 @@
 | `binds` |  | `list of string` | the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring). |  |
 | `confidence` |  | `string` | Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal).<br>**one of:** `C` · `P` · `R` |  |
 | `enforced_by` |  | `string` | deterministic backstop (e.g. a CP-3 anchor id) |  |
-| `examples` |  | `list of array` | — gap — |  |
+| `examples` |  | `list of array` | Concrete cases this rule decides, as a reader would say them — the question, and what the rule makes of it. One real example settles an ambiguity that a careful `when:` leaves open, and it is what a reviewer checks the rule against. |  |
 | `never` |  | `string` | anti-pattern to avoid (optional) |  |
 | `realized_by` |  | `—` | v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose. | [realized_by](realized_by.md) |
 | `scope` |  | `string` | general \| <SOURCE> (general = framework default; else a source fact) |  |
-| `status` |  | `string` | — gap —<br>**one of:** `active` · [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) |  |
+| `status` |  | `string` | Where this rule stands — proposed, ruled, retired. A rule the engine applies and a rule awaiting a decision cannot look the same in the file, because the second one changes answers the moment somebody forgets which it was.<br>**one of:** `active` · [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) |  |
 | `subject` |  | `string` | v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a few words, read alongside the rule `id`. NOT a restatement of when/then/never (that would be prose); the terse human label shown as the rule's heading in the ontology explorer. Complements `why` (the rationale). Replaces the per-rule PURPOSE authoring comment (history stays in git). |  |
 | `then` |  | `string` | directive — what to do |  |
 | `when` |  | `string` | trigger — the situation the rule applies to |  |

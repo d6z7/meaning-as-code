@@ -10,16 +10,14 @@ SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order
 
 THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.
 
-> **3 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `additivity` |  | `object` | — gap — |  |
+| `additivity` |  | `object` | PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it. |  |
 | `canonical` |  | `boolean` | THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity. |  |
-| `type` |  | `string` | — gap — |  |
-| `unit` |  | `string` | — gap — |  |
+| `type` |  | `string` | WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all. |  |
+| `unit` |  | `string` | WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`. |  |
 
 ---
 

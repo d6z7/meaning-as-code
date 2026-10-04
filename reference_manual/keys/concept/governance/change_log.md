@@ -4,17 +4,15 @@
 
 [concept](../README.md) · [governance](README.md) · change_log
 
-> **4 keys at this level carry no description in `mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
-
 ## Keys you may write here
 
 | key | | type | what it means | goes deeper |
 |---|---|---|---|---|
-| `change` | **required** | `string` | — gap — |  |
-| `change_type` | **required** | `—` | — gap —<br>**one of:** `CREATION` · `ADDITION` · `CORRECTION` · `REMOVAL` · `REFACTOR` |  |
+| `change` | **required** | `string` | What changed, in one line — the shape or the statement that moved, not the file's diff. |  |
+| `change_type` | **required** | `—` | What KIND of change this was: a correction, a clarification, a widening, a retirement. It is what lets a reader judge whether an answer computed before it is still valid — a clarification leaves old numbers standing and a correction does not.<br>**one of:** `CREATION` · `ADDITION` · `CORRECTION` · `REMOVAL` · `REFACTOR` |  |
 | `date` | **required** | `—` | ISO date — string or a YAML-parsed date |  |
-| `by` |  | `string` | — gap — |  |
-| `rationale` |  | `string` | — gap — |  |
+| `by` |  | `string` | Who made the change — the person or seat accountable for it, not the tool that wrote the bytes. |  |
+| `rationale` |  | `string` | WHY the change was made, and against what evidence. The field that stops the same change being undone in six weeks by somebody who could see only the diff. |  |
 
 ---
 
