@@ -416,6 +416,19 @@ def _per_container_names() -> set[str]:
         #: warns as it did before, which is the honest degradation.
         pass
     try:
+        #: `mac_manifest.NOT_DELIVERED` is the third register that already says "one per bundle, and the
+        #: bundle AUTHORS it": `connection.yaml` is listed there as "authored input; the connector seam
+        #: reads it", one line above the `mac.project.yaml` entry. That one line accounts for 27 of the
+        #: remaining warnings. Only CONCRETE basenames are taken — the block also holds `*.duckdb`,
+        #: `data/*.parquet` and `**/.*`, and a wildcard says nothing about how many a bundle has.
+        import mac_manifest as mm
+        for pattern, _reason in getattr(mm, "NOT_DELIVERED", ()) or ():
+            base = str(pattern).rsplit("/", 1)[-1]
+            if base and "*" not in base and "?" not in base:
+                names.add(base)
+    except Exception:                                                     # noqa: BLE001
+        pass
+    try:
         import yaml
         doc = yaml.safe_load((ROOT / "mac_artifacts.yaml").read_text(encoding="utf-8")) or {}
 
