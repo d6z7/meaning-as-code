@@ -1,15 +1,21 @@
-# mac_pointers.prototype.yaml — the POINTER-KIND REGISTRY, prototype.
+# mac_pointers.yaml — the POINTER-KIND CATALOGUE. Framework canon since 2026-10-04.
 #
 # WHAT THIS IS. One row per KIND of declaration-to-declaration pointer, and how each resolves.
-# It replaces the six hardcoded handlers in check_references.py with DATA: a new pointer kind is a
-# ROW, never a code branch. The census measured M = 121 pointer kinds across contoso5 and today's
-# gate understands about 6 — this file is how that number moves.
+# It replaced the hardcoded handlers inside the gates with DATA: a new pointer kind is a ROW, never
+# a code branch.
 #
-# WHY IT IS A "prototype" AND LIVES HERE. At maturity this is `mac_pointers.yaml` in
-# meaning-as-code (contract `mac.pointers/1`), the fifth member of a family that already exists
-# beside mac_vocabulary / mac_rules / mac_shapes / mac_artifacts, with per-source variation as a
-# declared overlay in a bundle's own mac.project.yaml. Neither of those may be written without a
-# per-change operator yes, so the prototype sits in the host and reads the bundle READ-ONLY.
+# IT IS A CATALOGUE, NOT A "REGISTRY", and the word matters here. A REGISTER in this estate is a
+# VALUE SET — data/lookups/*.lookup.yaml, seventeen of them — so calling this a registry put an
+# unrelated meaning one letter away from a load-bearing one, and the same word was being used for
+# three different things: this file, the Estate Graph it feeds (mac.estate_graph/1), and the gate
+# check_pointers. The operator objected and was right. They are named apart now.
+#
+# IT IS NO LONGER A PROTOTYPE, and this paragraph used to explain why it was one. It is the fifth
+# member of the family it always described — beside mac_vocabulary / mac_rules / mac_shapes /
+# mac_artifacts — carrying contract `mac.pointers/1`, with per-source variation available as a
+# declared overlay in a bundle's own mac.project.yaml. It was promoted on the operator's yes; a
+# stale "this is only a prototype" line is exactly the kind of sentence that tells the next reader
+# their change does not count.
 #
 # THE NAME `mac_references` IS TAKEN and deliberately avoided: `mac.references/1` is the contract
 # PROMOTED 2026-10-04 from mac-platform/tools/estate/mac_pointers.prototype.yaml. Until then only
@@ -34,6 +40,34 @@
 # `checkers:` IS THE WHOLE POINT OF VERSION ONE. It names the gate that enforces a kind TODAY, so
 # this file rewrites no gate: it makes the inventory exist. A row with `checkers: []` IS the
 # coverage hole, visible immediately.
+
+# =============================================================================================
+# AUTHORITY — read this before adding a checker, a resolver, or a reference kind anywhere.
+# =============================================================================================
+# THIS FILE IS THE ONE HOME for what a pointer IS in a MAC bundle and how each kind resolves.
+# `tools/mac_pointers.py` is the one implementation. Everything else is a CONSUMER.
+#
+#   adding a reference kind     -> a row in `pointer_kinds` here, with `checkers:` naming who
+#                                  reports it. Never a handler inside a gate.
+#   changing how one resolves   -> tools/mac_pointers.py, so every reader gets the same answer.
+#   widening a gate's remit     -> name that gate in the kind's `checkers:`. The gate reads its
+#                                  own remit from here and needs no edit.
+#
+# WHY THIS IS WRITTEN DOWN. On 2026-10-04 check_references.py was converted from hand-rolling its
+# own resolution to asking this catalogue — and its docstring still told the next reader to
+# "subclass ReferenceChecker and override the hooks to add their own reference kinds". Two tools
+# whose names both claim referential integrity, and nothing saying which was official: an agent
+# following the stale instruction would have created a second, private definition of how a pointer
+# resolves, which is the exact defect this file exists to end. The operator caught it. Subclassing
+# a gate is still right for that gate's OWN questions; it is not how a pointer kind is declared.
+#
+# CONSUMERS TODAY, so a reader can see the shape of "consumer" rather than infer it:
+#   tools/check_references.py            asks about the 4 kinds whose checkers name it
+#   tools/check_transform_sql_extracted  asks about transform_produces_sql
+#   mac-platform/tools/check_pointers.py the gate over every kind; reports coverage with denominators
+#   mac-platform/tools/estate/           the Estate Graph loader — a PROJECTION; no verdict may
+#                                        depend on what it writes
+# =============================================================================================
 
 spec_version: mac.pointers/1
 registry_version: '0.1.0'
@@ -692,7 +726,7 @@ pointer_kinds:
     checkers: []
     note: >
       `ontology/concepts/order.yaml#contract.rules.order.resolution.rate_on_order_date`. The
-      anchor names a RULE inside the concept, which is sub-file identity this prototype resolves
+      anchor names a RULE inside the concept, which is sub-file identity this resolver handles
       only to the file — the rule objects exist once `contract.rules[]` declares a sub_file
       container, which is two lines and the next obvious step.
 

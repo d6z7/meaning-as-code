@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
 """
+check_references.py — a CONSUMER of the pointer catalogue, not the authority on pointers.
+
+WHERE A REFERENCE KIND IS DECLARED, read this before changing anything here. The one home for what
+a pointer IS and how it resolves is `mac_pointers.yaml` (mac.pointers/1), and the one implementation
+of resolution is `tools/mac_pointers.py`. THIS FILE DECIDES NOTHING ABOUT POINTERS. It asks the
+resolver about the kinds the catalogue assigns it — the four whose `checkers:` name this file — and
+adds its own questions on top (application vocabularies, anchors, the layer rules).
+
+  adding a reference kind      -> a ROW in mac_pointers.yaml, with `checkers:` naming who reports it
+  changing how one resolves    -> tools/mac_pointers.py, where every reader gets the same answer
+  widening THIS gate's remit   -> name it in that kind's `checkers:`; nothing here changes
+
+THE PREVIOUS PARAGRAPH SAID THE OPPOSITE and that was dangerous: it told applications to "subclass
+ReferenceChecker and override the hooks to add their own reference kinds". Following that today
+produces a second, private definition of how a pointer resolves — the exact defect the catalogue was
+built to end, re-created by an instruction left standing after the mechanism moved. Subclassing is
+still right for a project's OWN questions; it is not how a reference kind is declared.
+
 check_references.py — generic referential-integrity checker for a YAML ontology built on this framework.
 
 The companion to validate_schema.py: that one checks STRUCTURE (class present, semantics placement,
@@ -11,7 +29,8 @@ validation — see FRAMEWORK.md §8.)
 This module is GENERIC and domain-neutral: it knows only framework constructs (concepts, the four layers,
 edges, rules, grounding, the `ref:`/`#anchor` mechanism). It makes NO assumption about a wrapper root, a
 federation layer, a findings register, or any project naming convention. Applications extend it (subclass
-`ReferenceChecker` and override the hooks) to add their own reference kinds.
+`ReferenceChecker` and override the hooks) to add THEIR OWN QUESTIONS — never to add a reference kind,
+which is a row in mac_pointers.yaml so that every reader of that pointer agrees about it.
 
 Canonical reference syntax it validates (see CONCEPT_SPEC.md §"Reference syntax"):
   - a reference is a path to a file, optionally followed by a `#anchor`:  <relpath>.yaml#<anchor>
