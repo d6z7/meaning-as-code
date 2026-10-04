@@ -6,13 +6,17 @@
 
 v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.
 
-## Keys you may write here
+## Keys
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `<name>` |  | `string` | What kind of aggregation axis one column is, keyed by column name — DEPRECATED, and measured inert: its keys are column names while the planner looked them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key could ever match. Declare `axis_kind` on the column instead. Kept because readers still fall back to it, so an unmigrated bundle is unchanged. |  |
+- [`<name>`](#name) — *string*
+
+### `<name>`
+
+*string* · optional
+
+What kind of aggregation axis one column is, keyed by column name — DEPRECATED, and measured inert: its keys are column names while the planner looked them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key could ever match. Declare `axis_kind` on the column instead. Kept because readers still fall back to it, so an unmigrated bundle is unchanged.
 
 ---
 

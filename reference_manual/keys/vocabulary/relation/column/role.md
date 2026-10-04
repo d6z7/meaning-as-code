@@ -8,12 +8,34 @@ The physical shape of a column in its relation, independent of its analytical ro
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="primary_key"></a>`primary_key` | `mac.relation.column.role.primary_key` | The relation's own identity: one row per distinct value, measured rather than assumed. |
-| <a id="foreign_key"></a>`foreign_key` | `mac.relation.column.role.foreign_key` | A reference to another relation's identity. Whether every value is PRESENT in the parent is a separate measurement — a declared key says the relationship is intended, not that it holds. |
-| <a id="value"></a>`value` | `mac.relation.column.role.value` | A payload column: it carries data, not identity and not a choice of row kind. |
-| <a id="discriminator"></a>`discriminator` | `mac.relation.column.role.discriminator` | A column whose value selects WHICH KIND of row this is — the column a perspective, status or type is read from. |
+- [`primary_key`](#primary-key)
+- [`foreign_key`](#foreign-key)
+- [`value`](#value)
+- [`discriminator`](#discriminator)
+
+### `primary_key`
+
+Write it as `mac.relation.column.role.primary_key`
+
+The relation's own identity: one row per distinct value, measured rather than assumed.
+
+### `foreign_key`
+
+Write it as `mac.relation.column.role.foreign_key`
+
+A reference to another relation's identity. Whether every value is PRESENT in the parent is a separate measurement — a declared key says the relationship is intended, not that it holds.
+
+### `value`
+
+Write it as `mac.relation.column.role.value`
+
+A payload column: it carries data, not identity and not a choice of row kind.
+
+### `discriminator`
+
+Write it as `mac.relation.column.role.discriminator`
+
+A column whose value selects WHICH KIND of row this is — the column a perspective, status or type is read from.
 
 ---
 

@@ -6,16 +6,74 @@
 
 A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `axis_kind` |  | `string` | WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. The fold law is stated over KINDS, not over column names, which is what makes it universal: (measure_type x axis_kind) -> aggregation effect. This replaces concept.semantics.axis_kinds, which was a per-column map parked one level up: its keys WERE column names (47 entries over 37 concepts, measured 2026-10-02) and the planner looked them up by a lowercased CONCEPT name, so not one key could ever match and the declaration was inert. The old slot is DEPRECATED, NEVER DELETED — readers fall back to it, so an unmigrated bundle is unchanged. |  |
-| `identity` |  | `string` | `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree.<br>**one of:** [`canonical`](../../../../../vocabulary/concept/column/identity.md#canonical) · [`part`](../../../../../vocabulary/concept/column/identity.md#part) · [`reference`](../../../../../vocabulary/concept/column/identity.md#reference) |  |
-| `measure` |  | `object` | The measure facts -> concept.semantics.measure_type / unit / additivity. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before. THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing. | [measure](measure.md) |
-| `register` |  | `string` | THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: "A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: "Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. Measured 2026-10-02 on contoso5: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them. |  |
-| `role` |  | `string` | projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.<br>**one of:** [`key`](../../../../../vocabulary/concept/column/role.md#key) · [`dimension`](../../../../../vocabulary/concept/column/role.md#dimension) · [`measure`](../../../../../vocabulary/concept/column/role.md#measure) · [`period`](../../../../../vocabulary/concept/column/role.md#period) · [`housekeeping`](../../../../../vocabulary/concept/column/role.md#housekeeping) |  |
-| `rulings` |  | `object` | AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED, deliberately, and that is the whole point of the block: `role`, `identity` and `measure` beside it are DERIVED from the data, these are RULED by a human, and mac_vocabulary.yaml is explicit that they must not share a slot — "a slot that accepts both silts up, and `attribute` is what that looks like after two years". Keeping them in their own block makes the difference visible in the file rather than only in a vocabulary. ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.column.ruling declared four terms, closed, since v0.5; the column map admitted exactly role/identity/measure with additionalProperties: false; and reference_manual/column_rulings.md documented this very block with a man-page SYNOPSIS. So the vocabulary closed a set, the manual specified the shape, and the schema refused all of it — which is why the reference bundle showed 0 of 20 concepts declaring a ruling and I reported that as missing WORK. It was missing GRAMMAR. Every one of the four had a live case waiting: Manufacturer is a `label_of` Brand, SubCategoryName is `finer_than` CategoryName, State is `scoped_by` Country (40 of 565 codes collide across countries, so GROUP BY State silently merges three regions), and ZipCode is `never_axis` (29 193 of 104 990 values identify exactly one customer). | [rulings](rulings.md) |
+- [`axis_kind`](#axis-kind) — *string*
+- [`identity`](#identity) — *string*
+- [`measure`](#measure) — *object*
+- [`register`](#register) — *string*
+- [`role`](#role) — *string*
+- [`rulings`](#rulings) — *object*
+
+### `axis_kind`
+
+*string* · optional
+
+WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. The fold law is stated over KINDS, not over column names, which is what makes it universal: (measure_type x axis_kind) -> aggregation effect. This replaces concept.semantics.axis_kinds, which was a per-column map parked one level up: its keys WERE column names (47 entries over 37 concepts, measured 2026-10-02) and the planner looked them up by a lowercased CONCEPT name, so not one key could ever match and the declaration was inert. The old slot is DEPRECATED, NEVER DELETED — readers fall back to it, so an unmigrated bundle is unchanged.
+
+### `identity`
+
+*string* · optional · 3 legal values
+
+`canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree.
+
+Legal values:
+
+- [`canonical`](../../../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.
+- [`part`](../../../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
+- [`reference`](../../../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
+
+### `measure`
+
+*object* · optional · [has its own keys →](measure.md)
+
+The measure facts -> concept.semantics.measure_type / unit / additivity.
+
+SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before.
+
+THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.
+
+Its own keys: [`concept.grounding.sources.columns.<name>.measure`](measure.md)
+
+### `register`
+
+*string* · optional
+
+THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: "A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: "Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. Measured 2026-10-02 on contoso5: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.
+
+### `role`
+
+*string* · optional · 5 legal values
+
+projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.
+
+Legal values:
+
+- [`key`](../../../../../vocabulary/concept/column/role.md#key) — IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and what the fact joins on.
+- [`dimension`](../../../../../vocabulary/concept/column/role.md#dimension) — A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
+- [`measure`](../../../../../vocabulary/concept/column/role.md#measure) — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
+- [`period`](../../../../../vocabulary/concept/column/role.md#period) — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
+- [`housekeeping`](../../../../../vocabulary/concept/column/role.md#housekeeping) — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when anything happened. Grouping sales by it is meaningless, and until this term existed it was spelled `attribute`, which reads as "a dimension you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+
+### `rulings`
+
+*object* · optional · [has its own keys →](rulings.md)
+
+AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED, deliberately, and that is the whole point of the block: `role`, `identity` and `measure` beside it are DERIVED from the data, these are RULED by a human, and mac_vocabulary.yaml is explicit that they must not share a slot — "a slot that accepts both silts up, and `attribute` is what that looks like after two years". Keeping them in their own block makes the difference visible in the file rather than only in a vocabulary.
+
+ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.column.ruling declared four terms, closed, since v0.5; the column map admitted exactly role/identity/measure with additionalProperties: false; and reference_manual/column_rulings.md documented this very block with a man-page SYNOPSIS. So the vocabulary closed a set, the manual specified the shape, and the schema refused all of it — which is why the reference bundle showed 0 of 20 concepts declaring a ruling and I reported that as missing WORK. It was missing GRAMMAR. Every one of the four had a live case waiting: Manufacturer is a `label_of` Brand, SubCategoryName is `finer_than` CategoryName, State is `scoped_by` Country (40 of 565 codes collide across countries, so GROUP BY State silently merges three regions), and ZipCode is `never_axis` (29 193 of 104 990 values identify exactly one customer).
+
+Its own keys: [`concept.grounding.sources.columns.<name>.rulings`](rulings.md)
 
 ## As it is actually written
 

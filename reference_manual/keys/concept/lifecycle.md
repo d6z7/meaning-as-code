@@ -6,13 +6,29 @@
 
 (event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `boundary` |  | `—` | WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it. |  |
-| `note` |  | `string` | A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows. |  |
-| `phases` |  | `list of array` | The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition. |  |
+- [`boundary`](#boundary) — *—*
+- [`note`](#note) — *string*
+- [`phases`](#phases) — *list of array*
+
+### `boundary`
+
+*—* · optional
+
+WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it.
+
+### `note`
+
+*string* · optional
+
+A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows.
+
+### `phases`
+
+*list of array* · optional
+
+The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition.
 
 ## As it is actually written
 

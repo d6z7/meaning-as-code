@@ -8,13 +8,51 @@ The family of value a column holds, with the warehouse spellings that mean it. C
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="text"></a>`text` | `mac.column_type.text` | Characters. A NAME, a code, a label -- something read rather than measured.<br>`spellings`: ["string", "varchar", "char", "text", "nvarchar", "uuid"] |
-| <a id="number"></a>`number` | `mac.column_type.number` | A magnitude. Something that can be larger or smaller than another of its kind.<br>`spellings`: ["integer", "int", "bigint", "smallint", "tinyint", "decimal", "numeric", "double", "float", "real"] |
-| <a id="temporal"></a>`temporal` | `mac.column_type.temporal` | A point in time. The only family a date literal may be compared against.<br>`spellings`: ["date", "timestamp", "datetime", "timestamptz", "time"] |
-| <a id="boolean"></a>`boolean` | `mac.column_type.boolean` | True or false. Two members, so it is never a magnitude and never a name.<br>`spellings`: ["boolean", "bool"] |
-| <a id="collection"></a>`collection` | `mac.column_type.collection` | Several values in one cell. Never an axis and never an ordering key: GROUP BY over a collection groups by the container, which is not a member of anything a question asked about.<br>`spellings`: ["array", "map", "struct", "row", "json"] |
+- [`text`](#text)
+- [`number`](#number)
+- [`temporal`](#temporal)
+- [`boolean`](#boolean)
+- [`collection`](#collection)
+
+### `text`
+
+Write it as `mac.column_type.text`
+
+Characters. A NAME, a code, a label -- something read rather than measured.
+
+**spellings:** `string`, `varchar`, `char`, `text`, `nvarchar`, `uuid`
+
+### `number`
+
+Write it as `mac.column_type.number`
+
+A magnitude. Something that can be larger or smaller than another of its kind.
+
+**spellings:** `integer`, `int`, `bigint`, `smallint`, `tinyint`, `decimal`, `numeric`, `double`, `float`, `real`
+
+### `temporal`
+
+Write it as `mac.column_type.temporal`
+
+A point in time. The only family a date literal may be compared against.
+
+**spellings:** `date`, `timestamp`, `datetime`, `timestamptz`, `time`
+
+### `boolean`
+
+Write it as `mac.column_type.boolean`
+
+True or false. Two members, so it is never a magnitude and never a name.
+
+**spellings:** `boolean`, `bool`
+
+### `collection`
+
+Write it as `mac.column_type.collection`
+
+Several values in one cell. Never an axis and never an ordering key: GROUP BY over a collection groups by the container, which is not a member of anything a question asked about.
+
+**spellings:** `array`, `map`, `struct`, `row`, `json`
 
 ---
 

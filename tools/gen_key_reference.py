@@ -208,8 +208,24 @@ class Walker:
             })
 
 
-# ──────────────────────────────────────────────────────────────────────────────────────────────────
-# examples, cut from real concepts
+
+    def prune_children(self) -> None:
+        """Drop a `child` link that names no level, AFTER the whole walk.
+
+        `has_children` is decided before the child is walked, and it is optimistic: a key whose
+        schema carries several branches counts as having children even when none of the branches
+        turns out to hold named keys, so no level is ever created for it. Two links on
+        `semantics/additivity.md` pointed at `additivity/each.md`, a page that was never written —
+        caught by resolving every link from its own directory, not by any gate. The walk cannot
+        know this in advance, so the honest fix is to decide afterwards from what exists.
+        """
+        for level in self.levels.values():
+            for form in level["forms"]:
+                for k in form["keys"]:
+                    if k["child"] and k["child"] not in self.levels:
+                        k["child"] = None
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 def cut_examples(bundle: pathlib.Path, limit_chars: int = 1400):
@@ -278,10 +294,41 @@ def rel(here: str, there: str) -> str:
     return posixpath.relpath(there, posixpath.dirname(here)) or "."
 
 
-def cell(text) -> str:
-    """One table cell: pipes escaped and newlines folded, or a table breaks in half."""
-    s = " ".join(str(text or "").split())
-    return s.replace("|", "\\|")
+def anchor(key: str) -> str:
+    """The heading's own anchor. `<name>` loses its brackets in every renderer, so it is `name`."""
+    return key.strip("<>").replace("_", "-").replace(".", "-").lower()
+
+
+def para(text) -> list[str]:
+    """Paragraphs, UNWRAPPED. Operator, 2026-10-04: "i think you better let the text flow".
+
+    A hard wrap is invisible once a renderer reflows it and visible in every diff, where it turns a
+    one-word edit into a reflowed paragraph. These pages are generated, so nobody edits them by
+    hand — but a diff is how a reviewer sees what a schema change did to the manual.
+    """
+    out = []
+    for block in str(text or "").split("\n\n"):
+        block = " ".join(block.split())
+        if block:
+            out += [block, ""]
+    return out or [""]
+
+
+#: ONE ENTRY PER KEY, NOT ONE ROW. The first cut put every key in a five-column table whose fourth
+#: column was the description, so the longest and most important text on the page got the narrowest
+#: space on it — `measure` is 1,400 characters inside one cell. Operator: "the table where one
+#: column is description is super impractical because it is completely squeezed and not legible",
+#: with the Ansible reference as the shape to follow. A definition list has a second gain the table
+#: could not have at any width: a key's LEGAL VALUES each carry the definition the vocabulary
+#: already holds, so `role` stops being five backticked words and becomes five explanations.
+
+def facts_line(k, here, levels) -> str:
+    bits = [f"*{k['type']}*", "**required**" if k["required"] else "optional"]
+    if k["enum"]:
+        bits.append(f"{len(k['enum'])} legal value" + ("s" if len(k["enum"]) > 1 else ""))
+    if k["child"]:
+        bits.append(f"[has its own keys →]({rel(here, level_page(k['child'], levels))})")
+    return " · ".join(bits)
 
 
 def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_name) -> str:
@@ -289,7 +336,7 @@ def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_n
     segs = path.split(".")
     crumb = []
     for i in range(len(segs)):
-        p = ".".join(segs[:i + 1])
+        p = ".".join(segs[: i + 1])
         crumb.append(segs[i] if i == len(segs) - 1
                      else (f"[{segs[i]}]({rel(here, level_page(p, levels))})"
                            if p in levels else segs[i]))
@@ -298,45 +345,51 @@ def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_n
 
     description = next((f["description"] for f in level["forms"] if f.get("description")), None)
     if description:
-        out += [description.strip(), ""]
+        out += para(description)
 
     n_gap = len(gaps_by_level.get(path, ()))
     if n_gap:
-        out += [f"> **{n_gap} key{'s' if n_gap > 1 else ''} at this level carry no description in "
-                f"`mac.schema.json`.** They are marked `— gap —` below. The place to fix one is the "
-                f"schema, which is its one home; this page is generated and cannot hold the answer.",
-                ""]
+        out += para(f"> **{n_gap} key{'s' if n_gap > 1 else ''} at this level carry no description "
+                    f"in `mac.schema.json`.** The place to fix one is the schema, which is its one "
+                    f"home; this page is generated and cannot hold the answer.")
 
-    for i, form in enumerate(level["forms"], 1):
+    for fi, form in enumerate(level["forms"], 1):
         if len(level["forms"]) > 1:
-            out += [f"## Form {i}" + (f" — {form['label']}" if form["label"] else ""), ""]
+            out += [f"## Form {fi}" + (f" — {form['label']}" if form["label"] else ""), ""]
             if form["description"]:
-                out += [form["description"].strip(), ""]
+                out += para(form["description"])
         else:
-            out += ["## Keys you may write here", ""]
+            out += ["## Keys", ""]
 
         if form["free_key_map"]:
-            out += [f"You choose the names at this level — a column name, an axis name. "
-                    f"`{ANY}` below stands for any one of them.", ""]
+            out += para(f"You choose the names at this level — a column name, an axis name. "
+                        f"`{ANY}` below stands for any one of them.")
 
-        out += ["| key | | type | what it means | goes deeper |",
-                "|---|---|---|---|---|"]
+        #: AT A GLANCE, so a long page is still scannable — and a LIST, not a table: the moment a
+        #: description shares a row with anything it is squeezed again. Required keys first, which
+        #: is the order of the work: an author needs to know what they must write before what they
+        #: may. Operator's call, 2026-10-04.
         for k in form["keys"]:
-            meaning = cell(k["desc"]) if k["desc"] else "— gap —"
+            out.append(f"- [`{k['key']}`](#{anchor(k['key'])}) — *{k['type']}*"
+                       + (" **·** required" if k["required"] else ""))
+        out.append("")
+
+        for k in form["keys"]:
+            out += [f"### `{k['key']}`", "", facts_line(k, here, levels), ""]
+            out += para(k["desc"] or "— no description in the schema —")
             if k["enum"]:
-                values = []
+                out += ["Legal values:", ""]
                 for value, term in k["enum"]:
                     if term and term.get("notion"):
-                        target = rel(here, notion_page(term["notion"], notions))
-                        values.append(f"[`{value}`]({target}#{term['term']})")
+                        link = rel(here, notion_page(term["notion"], notions))
+                        head = f"- [`{value}`]({link}#{term['term']})"
                     else:
-                        values.append(f"`{value}`")
-                meaning += "<br>**one of:** " + " · ".join(values)
-            deeper = (f"[{k['child'].split('.')[-1]}]"
-                      f"({rel(here, level_page(k['child'], levels))})") if k["child"] else ""
-            out.append(f"| `{k['key']}` | {'**required**' if k['required'] else ''} | "
-                       f"`{k['type']}` | {meaning} | {deeper} |")
-        out.append("")
+                        head = f"- `{value}`"
+                    definition = " ".join(str((term or {}).get("definition") or "").split())
+                    out.append(f"{head} — {definition}" if definition else head)
+                out.append("")
+            if k["child"]:
+                out += [f"Its own keys: [`{k['child']}`]({rel(here, level_page(k['child'], levels))})", ""]
 
     example = examples.get(path)
     if example:
@@ -362,29 +415,31 @@ def render_notion(notion, body, levels, notions) -> str:
             "not a new term." if body["closed"] else "**Open** — terms may be added.")
            + f"  ·  {len(body['terms'])} terms", ""]
     if body["description"]:
-        out += [body["description"].strip(), ""]
+        out += para(body["description"])
 
-    out += ["## Terms", "", "| term | write it as | what it means |", "|---|---|---|"]
-    for term, entry in body["terms"].items():
-        extra = entry.get("extra") or {}
-        meaning = cell(entry["definition"]) if entry["definition"] else "— no definition —"
-        if extra:
-            meaning += "<br>" + " · ".join(
-                f"`{k}`: {cell(json.dumps(v) if not isinstance(v, str) else v)}"
-                for k, v in extra.items())
-        out.append(f"| <a id=\"{term}\"></a>`{term}` | `mac.{notion}.{term}` | {meaning} |")
+    out += ["## Terms", ""]
+    for term in body["terms"]:
+        out.append(f"- [`{term}`](#{anchor(term)})")
     out.append("")
+
+    for term, entry in body["terms"].items():
+        out += [f"### `{term}`", "", f"Write it as `mac.{notion}.{term}`", ""]
+        out += para(entry["definition"] or "— no definition in the vocabulary —")
+        for key, value in (entry.get("extra") or {}).items():
+            if isinstance(value, str):
+                pretty = value
+            elif isinstance(value, list):
+                pretty = ", ".join(f"`{v}`" for v in value)
+            else:
+                pretty = f"`{json.dumps(value)}`"
+            out += [f"**{key}:** {pretty}", ""]
 
     takers = []
     for path, level in levels.items():
         for form in level["forms"]:
             for k in form["keys"]:
-                if not k["enum"]:
-                    continue
-                for value, term in k["enum"]:
-                    if (term or {}).get("notion") == notion:
-                        takers.append((path, k["key"]))
-                        break
+                if k["enum"] and any((t or {}).get("notion") == notion for _v, t in k["enum"]):
+                    takers.append((path, k["key"]))
     takers = sorted(set(takers))
     if takers:
         out += ["## Keys that take one of these values", ""]
@@ -513,6 +568,7 @@ def build(root: pathlib.Path, bundle: pathlib.Path | None):
     notions, dotted = harvest_vocabulary(vocab)
     walker = Walker(schema, dotted)
     walker.walk(walker.defs["ConceptFile"], "concept")
+    walker.prune_children()
     examples, read = cut_examples(bundle) if bundle and bundle.is_dir() else ({}, [])
     return schema, notions, walker, examples, read
 
@@ -584,7 +640,7 @@ def check(root: pathlib.Path, out_dir: pathlib.Path, bundle) -> list[str]:
         text = (out_dir / page).read_text(encoding="utf-8") if (out_dir / page).is_file() else ""
         for form in level["forms"]:
             for k in form["keys"]:
-                if f"| `{k['key']}` |" not in text:
+                if f"### `{k['key']}`" not in text:
                     rejects.append(f"[uncovered-key] {path}.{k['key']} — the schema admits this key "
                                    f"and {page} does not list it")
     return rejects
@@ -632,8 +688,11 @@ def self_test(bundle) -> int:
                "a page for no level must reject as orphan-page")
         stray.unlink()
 
-        # uncovered-key — the renderer silently dropping a key the schema admits
-        gutted = "\n".join(ln for ln in keep.splitlines() if not ln.startswith("| `grounding`"))
+        # uncovered-key — the renderer silently dropping a key the schema admits. The mutant
+        # removes the key's own HEADING, which is what the assertion now looks for; it used to
+        # delete a table row, and when the emitter stopped emitting tables the mutant deleted
+        # nothing and the test went green over a reject class it was no longer exercising.
+        gutted = "\n".join(ln for ln in keep.splitlines() if ln.strip() != "### `grounding`")
         target.write_text(gutted + "\n", encoding="utf-8")
         rejects = check(ROOT, out, bundle)
         expect(any(r.startswith("[uncovered-key]") for r in rejects),

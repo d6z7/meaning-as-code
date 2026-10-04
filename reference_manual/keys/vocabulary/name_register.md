@@ -8,13 +8,41 @@ Which register a name belongs to, when one thing carries several names.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="common"></a>`common` | `mac.name_register.common` | The name people use. 'Contoso', 'Germany', 'Monday'. |
-| <a id="legal"></a>`legal` | `mac.name_register.legal` | The name in a trade or statutory register. 'Contoso, Ltd'. |
-| <a id="long"></a>`long` | `mac.name_register.long` | The unabbreviated form of a coded name. 'United Kingdom' for GB. |
-| <a id="short"></a>`short` | `mac.name_register.short` | The abbreviated form. 'Mon' for Monday, 'Jan' for January. |
-| <a id="code"></a>`code` | `mac.name_register.code` | A machine identifier standing for the name. 'GB', 'DE', a numeric key. |
+- [`common`](#common)
+- [`legal`](#legal)
+- [`long`](#long)
+- [`short`](#short)
+- [`code`](#code)
+
+### `common`
+
+Write it as `mac.name_register.common`
+
+The name people use. 'Contoso', 'Germany', 'Monday'.
+
+### `legal`
+
+Write it as `mac.name_register.legal`
+
+The name in a trade or statutory register. 'Contoso, Ltd'.
+
+### `long`
+
+Write it as `mac.name_register.long`
+
+The unabbreviated form of a coded name. 'United Kingdom' for GB.
+
+### `short`
+
+Write it as `mac.name_register.short`
+
+The abbreviated form. 'Mon' for Monday, 'Jan' for January.
+
+### `code`
+
+Write it as `mac.name_register.code`
+
+A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 ## Keys that take one of these values
 

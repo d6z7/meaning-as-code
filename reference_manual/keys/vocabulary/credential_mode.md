@@ -4,21 +4,52 @@
 
 **Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  6 terms
 
-The way a connector OBTAINS its credential, as a closed and BRAND-FREE set. Referenced by mac.schema.json#/$defs/credentialMode, which is the schema-side restatement of this set (the same idiom $defs/confidence and $defs/status already use); this file is the single home.
-WHY BRAND-FREE: the measured set in sdk/authoring/connection.py:48-68 is `aws-chain | profile | secretsmanager | ssm` — four AWS product names doing the work of three ideas, which is one cloud's credential chain promoted into the framework's grammar. A connector may keep its own spellings as ALIASES and report them MAC003 (fact-restated); the framework does not learn them.
-WHY SIX AND NOT FOUR: one resolution mode plus one opaque handle fits password-shaped auth and fails exactly where THE MECHANISM IS THE AUTH and there is no secret to fetch — interactive or browser SSO, mTLS client certificates, Kerberos/GSSAPI. None of those is ambient, named_profile, secret_manager or none, and a set that cannot spell them forces the connector to lie about which mode it is in.
-A NEW MEMBER HERE IS A FRAMEWORK RELEASE, not a bundle's choice. That is the price of `closed`, and it is the point: the alternative is a per-connector credentials schema, and the moment a connector may declare its own credential fields, one of them will be a password field and the structural guarantee that there is nowhere to put a secret is gone.
+The way a connector OBTAINS its credential, as a closed and BRAND-FREE set. Referenced by mac.schema.json#/$defs/credentialMode, which is the schema-side restatement of this set (the same idiom $defs/confidence and $defs/status already use); this file is the single home. WHY BRAND-FREE: the measured set in sdk/authoring/connection.py:48-68 is `aws-chain | profile | secretsmanager | ssm` — four AWS product names doing the work of three ideas, which is one cloud's credential chain promoted into the framework's grammar. A connector may keep its own spellings as ALIASES and report them MAC003 (fact-restated); the framework does not learn them. WHY SIX AND NOT FOUR: one resolution mode plus one opaque handle fits password-shaped auth and fails exactly where THE MECHANISM IS THE AUTH and there is no secret to fetch — interactive or browser SSO, mTLS client certificates, Kerberos/GSSAPI. None of those is ambient, named_profile, secret_manager or none, and a set that cannot spell them forces the connector to lie about which mode it is in. A NEW MEMBER HERE IS A FRAMEWORK RELEASE, not a bundle's choice. That is the price of `closed`, and it is the point: the alternative is a per-connector credentials schema, and the moment a connector may declare its own credential fields, one of them will be a password field and the structural guarantee that there is nowhere to put a secret is gone.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="ambient"></a>`ambient` | `mac.credential_mode.ambient` | The host environment already carries the identity — an instance/task role, an ambient session, an environment chain. Nothing to fetch and nothing to name, so `ref` must be null or absent. |
-| <a id="named_profile"></a>`named_profile` | `mac.credential_mode.named_profile` | A named local profile selects the identity. `ref` is the profile name — a handle, never a secret. |
-| <a id="secret_manager"></a>`secret_manager` | `mac.credential_mode.secret_manager` | The credential is fetched at call time from the deployment's secret manager. `ref` is the path/id in that manager; MAC never resolves it and never sees the value. |
-| <a id="interactive"></a>`interactive` | `mac.credential_mode.interactive` | The human authenticates at connect time — browser SSO, a device code, an MFA prompt. There is no secret to fetch, so `ref` must be null or absent. Unattended answering cannot use this mode, and a host that needs one will fail loudly rather than hang on a prompt nobody can see. |
-| <a id="client_certificate"></a>`client_certificate` | `mac.credential_mode.client_certificate` | A client certificate (mTLS) is the credential. `ref` locates the certificate material in the deployment's own store; the certificate itself never enters the bundle. |
-| <a id="none"></a>`none` | `mac.credential_mode.none` | No credential is required — the engine is local or open. Distinct from the block being ABSENT only in that it says so out loud; both are legal, and absent is the honest spelling when a connector has no credential concept at all. |
+- [`ambient`](#ambient)
+- [`named_profile`](#named-profile)
+- [`secret_manager`](#secret-manager)
+- [`interactive`](#interactive)
+- [`client_certificate`](#client-certificate)
+- [`none`](#none)
+
+### `ambient`
+
+Write it as `mac.credential_mode.ambient`
+
+The host environment already carries the identity — an instance/task role, an ambient session, an environment chain. Nothing to fetch and nothing to name, so `ref` must be null or absent.
+
+### `named_profile`
+
+Write it as `mac.credential_mode.named_profile`
+
+A named local profile selects the identity. `ref` is the profile name — a handle, never a secret.
+
+### `secret_manager`
+
+Write it as `mac.credential_mode.secret_manager`
+
+The credential is fetched at call time from the deployment's secret manager. `ref` is the path/id in that manager; MAC never resolves it and never sees the value.
+
+### `interactive`
+
+Write it as `mac.credential_mode.interactive`
+
+The human authenticates at connect time — browser SSO, a device code, an MFA prompt. There is no secret to fetch, so `ref` must be null or absent. Unattended answering cannot use this mode, and a host that needs one will fail loudly rather than hang on a prompt nobody can see.
+
+### `client_certificate`
+
+Write it as `mac.credential_mode.client_certificate`
+
+A client certificate (mTLS) is the credential. `ref` locates the certificate material in the deployment's own store; the certificate itself never enters the bundle.
+
+### `none`
+
+Write it as `mac.credential_mode.none`
+
+No credential is required — the engine is local or open. Distinct from the block being ABSENT only in that it says so out loud; both are legal, and absent is the honest spelling when a connector has no credential concept at all.
 
 ---
 

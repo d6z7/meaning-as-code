@@ -8,12 +8,42 @@ The disposition of ONE registered data-quality issue — what a human decided ab
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="open"></a>`open` | `mac.dq_status.open` | NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without evidence — it asserts nothing except that the defect is recorded and undispositioned. This is the state that absence was silently standing in for, and naming it is the entire point: an issue is `open` because someone wrote `open`, not because a join missed.<br>`requires`: [] |
-| <a id="accepted"></a>`accepted` | `mac.dq_status.accepted` | A NAMED HUMAN EXAMINED IT AND CHOSE TO LIVE WITH IT. The defect is real, it is not being fixed, and that is a decision on the record rather than an omission. This is the term that makes a FITNESS green legible: a property whose recorded expectation overlaps an accepted issue is GREEN BECAUSE THE DEFECT IS TOLERATED, which is not the same claim as correct.<br>`requires`: ["ruled_by", "reason"] |
-| <a id="resolved"></a>`resolved` | `mac.dq_status.resolved` | THE DEFECT IS GONE, dissolved by a transform that says so. Evidenced by the cross-link in impurity_resolution_map.yaml rather than by a ruling, which is why it requires no `ruled_by`: the evidence is structural and already gate-checked. A `resolved` issue still named by an acceptance-plane `accepted:` block is a REPORTED drift — the test is being excused for a defect that no longer exists.<br>`requires`: [] |
-| <a id="wont_fix"></a>`wont_fix` | `mac.dq_status.wont_fix` | A NAMED HUMAN RULED THAT IT WILL NEVER BE FIXED. Distinct from `accepted`, which tolerates a defect that could still be repaired: `wont_fix` closes the question. Carries the same evidence burden for the same reason — it asserts a ruling, so it must name who ruled.<br>`requires`: ["ruled_by", "reason"] |
+- [`open`](#open)
+- [`accepted`](#accepted)
+- [`resolved`](#resolved)
+- [`wont_fix`](#wont-fix)
+
+### `open`
+
+Write it as `mac.dq_status.open`
+
+NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without evidence — it asserts nothing except that the defect is recorded and undispositioned. This is the state that absence was silently standing in for, and naming it is the entire point: an issue is `open` because someone wrote `open`, not because a join missed.
+
+**requires:** 
+
+### `accepted`
+
+Write it as `mac.dq_status.accepted`
+
+A NAMED HUMAN EXAMINED IT AND CHOSE TO LIVE WITH IT. The defect is real, it is not being fixed, and that is a decision on the record rather than an omission. This is the term that makes a FITNESS green legible: a property whose recorded expectation overlaps an accepted issue is GREEN BECAUSE THE DEFECT IS TOLERATED, which is not the same claim as correct.
+
+**requires:** `ruled_by`, `reason`
+
+### `resolved`
+
+Write it as `mac.dq_status.resolved`
+
+THE DEFECT IS GONE, dissolved by a transform that says so. Evidenced by the cross-link in impurity_resolution_map.yaml rather than by a ruling, which is why it requires no `ruled_by`: the evidence is structural and already gate-checked. A `resolved` issue still named by an acceptance-plane `accepted:` block is a REPORTED drift — the test is being excused for a defect that no longer exists.
+
+**requires:** 
+
+### `wont_fix`
+
+Write it as `mac.dq_status.wont_fix`
+
+A NAMED HUMAN RULED THAT IT WILL NEVER BE FIXED. Distinct from `accepted`, which tolerates a defect that could still be repaired: `wont_fix` closes the question. Carries the same evidence burden for the same reason — it asserts a ruling, so it must name who ruled.
+
+**requires:** `ruled_by`, `reason`
 
 ## Keys that take one of these values
 

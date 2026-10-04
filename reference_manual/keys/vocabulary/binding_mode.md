@@ -8,10 +8,20 @@ The role a question binds a dimension with — restrict (a member-set scope) vs 
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="restrict"></a>`restrict` | `mac.binding_mode.restrict` | A member or member-SET is named as a SCOPE (one value or many, however the set is derived or expanded). It constrains WHERE and does NOT enter GROUP BY; its folded members are disclosed under ASSUMPTIONS, never spread into result rows. Cardinality-agnostic: a set of many members is still one filter. |
-| <a id="partition"></a>`partition` | `mac.binding_mode.partition` | The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter. |
+- [`restrict`](#restrict)
+- [`partition`](#partition)
+
+### `restrict`
+
+Write it as `mac.binding_mode.restrict`
+
+A member or member-SET is named as a SCOPE (one value or many, however the set is derived or expanded). It constrains WHERE and does NOT enter GROUP BY; its folded members are disclosed under ASSUMPTIONS, never spread into result rows. Cardinality-agnostic: a set of many members is still one filter.
+
+### `partition`
+
+Write it as `mac.binding_mode.partition`
+
+The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter.
 
 ---
 

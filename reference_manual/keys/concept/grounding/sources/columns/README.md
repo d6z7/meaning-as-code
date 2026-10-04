@@ -6,13 +6,19 @@
 
 THE COLUMN MAP — everything about one column, ON the column. Keyed by column name; each value is that column's flags. Added v0.1.16, and until then THE STANDARD WAS UNWRITABLE: this slot was `type: array` only, so the map form that mac-runtime's parser accepts and PROJECTS was a conformance error in the core. That is the whole explanation of the measurement in ColumnSpec's own docstring — '21 concepts, 0 using the standard'. A standard the schema refuses cannot be adopted; 19 more were then written the old way before anyone asked why.
 
-## Keys you may write here
+## Keys
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `<name>` |  | `['object', 'null']` | A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence. | [<name>](each/README.md) |
+- [`<name>`](#name) — *['object', 'null']*
+
+### `<name>`
+
+*['object', 'null']* · optional · [has its own keys →](each/README.md)
+
+A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.
+
+Its own keys: [`concept.grounding.sources.columns.<name>`](each/README.md)
 
 ## As it is actually written
 

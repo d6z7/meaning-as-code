@@ -6,14 +6,38 @@
 
 v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `default_reading` |  | `['string', 'object']` | The default aggregation / role / perspective to assume when the question is silent. Was aggregation_contract. |  |
-| `no_probe_guarantee` |  | `string` | What an agent needs ONLY, to use this concept without probing the data; if more is needed, the concept is incomplete (fix it, don't probe). Was 'no_probe_guarantee'. |  |
-| `resolution` |  | `['string', 'object']` | How identity / name→code resolves (a join, not a probe). Was name_contract / resolution_contract / identity_contract. |  |
-| `rules` |  | `list of object` | v0.1.6: typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground. | [rules](rules/README.md) |
+- [`default_reading`](#default-reading) — *['string', 'object']*
+- [`no_probe_guarantee`](#no-probe-guarantee) — *string*
+- [`resolution`](#resolution) — *['string', 'object']*
+- [`rules`](#rules) — *list of object*
+
+### `default_reading`
+
+*['string', 'object']* · optional
+
+The default aggregation / role / perspective to assume when the question is silent. Was aggregation_contract.
+
+### `no_probe_guarantee`
+
+*string* · optional
+
+What an agent needs ONLY, to use this concept without probing the data; if more is needed, the concept is incomplete (fix it, don't probe). Was 'no_probe_guarantee'.
+
+### `resolution`
+
+*['string', 'object']* · optional
+
+How identity / name→code resolves (a join, not a probe). Was name_contract / resolution_contract / identity_contract.
+
+### `rules`
+
+*list of object* · optional · [has its own keys →](rules/README.md)
+
+v0.1.6: typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.
+
+Its own keys: [`concept.contract.rules`](rules/README.md)
 
 ## As it is actually written
 

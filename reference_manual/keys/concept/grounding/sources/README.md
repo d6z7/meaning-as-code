@@ -4,13 +4,31 @@
 
 [concept](../../README.md) · [grounding](../README.md) · sources
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `relation` | **required** | `string` | the table OR view name to query (agnostic — the AI does not care which) |  |
-| `columns` |  | `—` | WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat list names columns and says nothing about them, and the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list is kept legal so an unmigrated bundle still loads, and `check_column_spec` reports every concept still using it. | [columns](columns/README.md) |
-| `key` |  | `['string', 'array']` | primary / join key column(s) |  |
+- [`relation`](#relation) — *string* **·** required
+- [`columns`](#columns) — *—*
+- [`key`](#key) — *['string', 'array']*
+
+### `relation`
+
+*string* · **required**
+
+the table OR view name to query (agnostic — the AI does not care which)
+
+### `columns`
+
+*—* · optional · [has its own keys →](columns/README.md)
+
+WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat list names columns and says nothing about them, and the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list is kept legal so an unmigrated bundle still loads, and `check_column_spec` reports every concept still using it.
+
+Its own keys: [`concept.grounding.sources.columns`](columns/README.md)
+
+### `key`
+
+*['string', 'array']* · optional
+
+primary / join key column(s)
 
 ## As it is actually written
 

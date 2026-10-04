@@ -4,24 +4,119 @@
 
 [concept](../../README.md) · [contract](../README.md) · rules
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `id` | **required** | `string` | stable dotted id, e.g. lineitem.revenue.net_of_discount |  |
-| `kind` | **required** | `string` | a mac.concept.rule.* reference (resolution\|aggregation\|default\|ambiguity\|exclusion\|guarantee) |  |
-| `binds` |  | `list of string` | the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring). |  |
-| `confidence` |  | `string` | Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal).<br>**one of:** `C` · `P` · `R` |  |
-| `enforced_by` |  | `string` | deterministic backstop (e.g. a CP-3 anchor id) |  |
-| `examples` |  | `list of array` | Concrete cases this rule decides, as a reader would say them — the question, and what the rule makes of it. One real example settles an ambiguity that a careful `when:` leaves open, and it is what a reviewer checks the rule against. |  |
-| `never` |  | `string` | anti-pattern to avoid (optional) |  |
-| `realized_by` |  | `—` | v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose. | [realized_by](realized_by.md) |
-| `scope` |  | `string` | general \| <SOURCE> (general = framework default; else a source fact) |  |
-| `status` |  | `string` | Where this rule stands — proposed, ruled, retired. A rule the engine applies and a rule awaiting a decision cannot look the same in the file, because the second one changes answers the moment somebody forgets which it was.<br>**one of:** `active` · [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) |  |
-| `subject` |  | `string` | v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a few words, read alongside the rule `id`. NOT a restatement of when/then/never (that would be prose); the terse human label shown as the rule's heading in the ontology explorer. Complements `why` (the rationale). Replaces the per-rule PURPOSE authoring comment (history stays in git). |  |
-| `then` |  | `string` | directive — what to do |  |
-| `when` |  | `string` | trigger — the situation the rule applies to |  |
-| `why` |  | `string` | one-line rationale |  |
+- [`id`](#id) — *string* **·** required
+- [`kind`](#kind) — *string* **·** required
+- [`binds`](#binds) — *list of string*
+- [`confidence`](#confidence) — *string*
+- [`enforced_by`](#enforced-by) — *string*
+- [`examples`](#examples) — *list of array*
+- [`never`](#never) — *string*
+- [`realized_by`](#realized-by) — *—*
+- [`scope`](#scope) — *string*
+- [`status`](#status) — *string*
+- [`subject`](#subject) — *string*
+- [`then`](#then) — *string*
+- [`when`](#when) — *string*
+- [`why`](#why) — *string*
+
+### `id`
+
+*string* · **required**
+
+stable dotted id, e.g. lineitem.revenue.net_of_discount
+
+### `kind`
+
+*string* · **required**
+
+a mac.concept.rule.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)
+
+### `binds`
+
+*list of string* · optional
+
+the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring).
+
+### `confidence`
+
+*string* · optional · 3 legal values
+
+Assurance factor for the rule: C=confirmed (an operator/SME/evidence-backed judgement), P=proposed (a provisional/unconfirmed reading), R=rejected (structure-in-disguise or superseded — kept only as a tombstone, slated for removal).
+
+Legal values:
+
+- `C`
+- `P`
+- `R`
+
+### `enforced_by`
+
+*string* · optional
+
+deterministic backstop (e.g. a CP-3 anchor id)
+
+### `examples`
+
+*list of array* · optional
+
+Concrete cases this rule decides, as a reader would say them — the question, and what the rule makes of it. One real example settles an ambiguity that a careful `when:` leaves open, and it is what a reviewer checks the rule against.
+
+### `never`
+
+*string* · optional
+
+anti-pattern to avoid (optional)
+
+### `realized_by`
+
+*—* · optional · [has its own keys →](realized_by.md)
+
+v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose.
+
+Its own keys: [`concept.contract.rules.realized_by`](realized_by.md)
+
+### `scope`
+
+*string* · optional
+
+general | <SOURCE> (general = framework default; else a source fact)
+
+### `status`
+
+*string* · optional · 2 legal values
+
+Where this rule stands — proposed, ruled, retired. A rule the engine applies and a rule awaiting a decision cannot look the same in the file, because the second one changes answers the moment somebody forgets which it was.
+
+Legal values:
+
+- `active`
+- [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) — The platform's own suggestion, made from measurements it already holds — row counts, distincts, measured references, duplicate relations, orphans. It is a RECOMMENDATION and not a ruling: `because` names the finding that motivated it, and until a person answers that finding the proposal stands as the reason this transform has the shape it has.
+
+### `subject`
+
+*string* · optional
+
+v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a few words, read alongside the rule `id`. NOT a restatement of when/then/never (that would be prose); the terse human label shown as the rule's heading in the ontology explorer. Complements `why` (the rationale). Replaces the per-rule PURPOSE authoring comment (history stays in git).
+
+### `then`
+
+*string* · optional
+
+directive — what to do
+
+### `when`
+
+*string* · optional
+
+trigger — the situation the rule applies to
+
+### `why`
+
+*string* · optional
+
+one-line rationale
 
 ## As it is actually written
 

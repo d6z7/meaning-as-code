@@ -8,13 +8,41 @@ An authored judgement about a column, beyond what measurement can establish.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="label_of"></a>`label_of` | `mac.concept.column.ruling.label_of` | THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have. |
-| <a id="finer_than"></a>`finer_than` | `mac.concept.column.ruling.finer_than` | THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName` carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a colliding code space instead — see `scoped_by`, and measure before you rule. |
-| <a id="scoped_by"></a>`scoped_by` | `mac.concept.column.ruling.scoped_by` | THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect. |
-| <a id="sort"></a>`sort` | `mac.concept.column.ruling.sort` | THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept" -- because one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at the same time. NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. An ordering is also what makes a truncated view honest: the first N rows of a descending measure are the N that matter. A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's own words, "top 5 by price" -- outranks both. |
-| <a id="never_axis"></a>`never_axis` | `mac.concept.column.ruling.never_axis` | THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row. |
+- [`label_of`](#label-of)
+- [`finer_than`](#finer-than)
+- [`scoped_by`](#scoped-by)
+- [`sort`](#sort)
+- [`never_axis`](#never-axis)
+
+### `label_of`
+
+Write it as `mac.concept.column.ruling.label_of`
+
+THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
+
+### `finer_than`
+
+Write it as `mac.concept.column.ruling.finer_than`
+
+THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName` carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a colliding code space instead — see `scoped_by`, and measure before you rule.
+
+### `scoped_by`
+
+Write it as `mac.concept.column.ruling.scoped_by`
+
+THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
+
+### `sort`
+
+Write it as `mac.concept.column.ruling.sort`
+
+THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept" -- because one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at the same time. NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. An ordering is also what makes a truncated view honest: the first N rows of a descending measure are the N that matter. A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's own words, "top 5 by price" -- outranks both.
+
+### `never_axis`
+
+Write it as `mac.concept.column.ruling.never_axis`
+
+THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row.
 
 ---
 

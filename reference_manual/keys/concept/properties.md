@@ -6,15 +6,43 @@
 
 v0.5 CROSS-CLASS primitive — a concept property. Identical shape wherever `properties:` appears (reference / entity / event / measure): name + type + required + doc. Empirically uniform across 72/72 property items. The Palantir 'property'.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `name` | **required** | `string` | The property's name as the ontology states it. A property is an INTRINSIC PRIMITIVE attribute of this concept; anything pointing at another concept is an edge, not a property. |  |
-| `doc` |  | `string` | What this property means, for a reader — what it records and at what grain. The one thing a type cannot say: `string` does not distinguish a name from a code from a free-text note. |  |
-| `required` |  | `boolean` | Whether every instance must carry this property. A claim about the NOTION, not about the current rows: a required property that is null in the data is a data-quality finding, and declaring it optional to make the finding go away is how a defect becomes invisible. |  |
-| `type` |  | `string` | the primitive datatype (string/int/date/...) |  |
-| `value_domain` |  | `string` | (optional) an enumeration this property's values must belong to |  |
+- [`name`](#name) — *string* **·** required
+- [`doc`](#doc) — *string*
+- [`required`](#required) — *boolean*
+- [`type`](#type) — *string*
+- [`value_domain`](#value-domain) — *string*
+
+### `name`
+
+*string* · **required**
+
+The property's name as the ontology states it. A property is an INTRINSIC PRIMITIVE attribute of this concept; anything pointing at another concept is an edge, not a property.
+
+### `doc`
+
+*string* · optional
+
+What this property means, for a reader — what it records and at what grain. The one thing a type cannot say: `string` does not distinguish a name from a code from a free-text note.
+
+### `required`
+
+*boolean* · optional
+
+Whether every instance must carry this property. A claim about the NOTION, not about the current rows: a required property that is null in the data is a data-quality finding, and declaring it optional to make the finding go away is how a defect becomes invisible.
+
+### `type`
+
+*string* · optional
+
+the primitive datatype (string/int/date/...)
+
+### `value_domain`
+
+*string* · optional
+
+(optional) an enumeration this property's values must belong to
 
 ---
 

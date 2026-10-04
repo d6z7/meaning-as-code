@@ -4,15 +4,51 @@
 
 [concept](../README.md) · [governance](README.md) · change_log
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `change` | **required** | `string` | What changed, in one line — the shape or the statement that moved, not the file's diff. |  |
-| `change_type` | **required** | `—` | What KIND of change this was: a correction, a clarification, a widening, a retirement. It is what lets a reader judge whether an answer computed before it is still valid — a clarification leaves old numbers standing and a correction does not.<br>**one of:** `CREATION` · `ADDITION` · `CORRECTION` · `REMOVAL` · `REFACTOR` |  |
-| `date` | **required** | `—` | ISO date — string or a YAML-parsed date |  |
-| `by` |  | `string` | Who made the change — the person or seat accountable for it, not the tool that wrote the bytes. |  |
-| `rationale` |  | `string` | WHY the change was made, and against what evidence. The field that stops the same change being undone in six weeks by somebody who could see only the diff. |  |
+- [`change`](#change) — *string* **·** required
+- [`change_type`](#change-type) — *—* **·** required
+- [`date`](#date) — *—* **·** required
+- [`by`](#by) — *string*
+- [`rationale`](#rationale) — *string*
+
+### `change`
+
+*string* · **required**
+
+What changed, in one line — the shape or the statement that moved, not the file's diff.
+
+### `change_type`
+
+*—* · **required** · 5 legal values
+
+What KIND of change this was: a correction, a clarification, a widening, a retirement. It is what lets a reader judge whether an answer computed before it is still valid — a clarification leaves old numbers standing and a correction does not.
+
+Legal values:
+
+- `CREATION`
+- `ADDITION`
+- `CORRECTION`
+- `REMOVAL`
+- `REFACTOR`
+
+### `date`
+
+*—* · **required**
+
+ISO date — string or a YAML-parsed date
+
+### `by`
+
+*string* · optional
+
+Who made the change — the person or seat accountable for it, not the tool that wrote the bytes.
+
+### `rationale`
+
+*string* · optional
+
+WHY the change was made, and against what evidence. The field that stops the same change being undone in six weeks by somebody who could see only the diff.
 
 ---
 

@@ -4,14 +4,42 @@
 
 [concept](../README.md) · [members](README.md) · definitions
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `code` | **required** | `['string', 'number']` | The code of one member of this grouping, as the data holds it. The grouping's own value set, so the same rule applies as everywhere else: where a register already carries these values, point at it rather than restating them here. |  |
-| `confidence` |  | `—` | Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.<br>**one of:** `C` · `I` · `Q` |  |
-| `label` |  | `string` | How one member of this grouping is shown to a reader, where that differs from its code. |  |
-| `members` |  | `list of array` | (explicit) the leaf codes in this set |  |
+- [`code`](#code) — *['string', 'number']* **·** required
+- [`confidence`](#confidence) — *—*
+- [`label`](#label) — *string*
+- [`members`](#members) — *list of array*
+
+### `code`
+
+*['string', 'number']* · **required**
+
+The code of one member of this grouping, as the data holds it. The grouping's own value set, so the same rule applies as everywhere else: where a register already carries these values, point at it rather than restating them here.
+
+### `confidence`
+
+*—* · optional · 3 legal values
+
+Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.
+
+Legal values:
+
+- `C`
+- `I`
+- `Q`
+
+### `label`
+
+*string* · optional
+
+How one member of this grouping is shown to a reader, where that differs from its code.
+
+### `members`
+
+*list of array* · optional
+
+(explicit) the leaf codes in this set
 
 ---
 

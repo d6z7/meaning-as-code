@@ -8,13 +8,41 @@ Where a question may use a column — the machine-readable half of concept.colum
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="axis"></a>`axis` | `mac.concept.column.query_use.axis` | LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A per-column `rulings.never_axis` still overrides this with its own measurement: the role says the KIND of column may be an axis, the ruling says this ONE may not. |
-| <a id="aggregate"></a>`aggregate` | `mac.concept.column.query_use.aggregate` | A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's ruling, not this one's. |
-| <a id="period_binding"></a>`period_binding` | `mac.concept.column.query_use.period_binding` | THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. |
-| <a id="extremum"></a>`extremum` | `mac.concept.column.query_use.extremum` | THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a "when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable. |
-| <a id="identity"></a>`identity` | `mac.concept.column.query_use.identity` | WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated, an identifier that is summed being a number nobody asked for. |
+- [`axis`](#axis)
+- [`aggregate`](#aggregate)
+- [`period_binding`](#period-binding)
+- [`extremum`](#extremum)
+- [`identity`](#identity)
+
+### `axis`
+
+Write it as `mac.concept.column.query_use.axis`
+
+LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A per-column `rulings.never_axis` still overrides this with its own measurement: the role says the KIND of column may be an axis, the ruling says this ONE may not.
+
+### `aggregate`
+
+Write it as `mac.concept.column.query_use.aggregate`
+
+A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's ruling, not this one's.
+
+### `period_binding`
+
+Write it as `mac.concept.column.query_use.period_binding`
+
+THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one.
+
+### `extremum`
+
+Write it as `mac.concept.column.query_use.extremum`
+
+THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a "when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
+
+### `identity`
+
+Write it as `mac.concept.column.query_use.identity`
+
+WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated, an identifier that is summed being a number nobody asked for.
 
 ---
 

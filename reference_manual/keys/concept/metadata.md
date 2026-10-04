@@ -6,19 +6,89 @@
 
 THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `concept` | **required** | `string` | The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required. |  |
-| `schema_version` | **required** | `string` | Which generation of mac.schema.json this file is written against. It is what lets a reader know a key's absence is a vintage rather than an omission, and what a migration selects on. Stamp the schema's own `version`, not a guess. Required. |  |
-| `source` | **required** | `string` | WHICH DATA SOURCE this ontology is for, as the project declares it (`CONTOSO5`). An ontology is bound to one source — its relations, its columns, its grain — and this is the binding stated in one place. It scopes every rule in the file: a rule's own `scope` defaults to it. Required. |  |
-| `confidence` |  | `—` | Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.<br>**one of:** `C` · `I` · `Q` |  |
-| `owner` |  | `string` | WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down. |  |
-| `profiled_via` |  | `string` | Free-text note on how the raw source was profiled (e.g. 'catalog metadata + a live column profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp. v0.1.15: this example was previously spelled with two vendor product names — a catalog service and a query engine — and it was, measured, the SINGLE instance-specific token in this entire grammar (one occurrence; no driver or cloud-prefix token appeared anywhere else in this file). It is respelled rather than deleted, because the slot still needs an example; the new spelling says the same thing in nouns that every engine has, which is the test a core-grammar example has to pass. The old nouns are not quoted here on purpose: a note that names what it forbids becomes a register of those names, and this file is published. |  |
-| `provenance` |  | `string` | How this object came to be: harvested = emitted by the harvest (self-documenting); authored/tuned = MANUAL work, which MUST carry an entry in interventions/ledger.yaml (check_intervention_ledger.py).<br>**one of:** `harvested` · `authored` · `tuned` |  |
-| `status` |  | `—` | How far this concept has been taken, from the closed set below. It is a claim about REVIEW, not about correctness: `draft` says nobody has signed it off, and a draft concept still answers questions. Gates read it to decide what may be relied on, so leaving a finished concept at `draft` understates the bundle and marking an unreviewed one `production` overstates it.<br>**one of:** `production` · `draft` · `prototype` |  |
-| `version` |  | `string` | The CONCEPT's version, bumped by whoever changes its meaning. Not the schema's version and not the bundle's: it answers "has this notion changed since I last read it". Measured on the worked bundle: 16 concepts at 1.0 and one at 1.1, which is what a version looks like when it is maintained rather than stamped. |  |
+- [`concept`](#concept) — *string* **·** required
+- [`schema_version`](#schema-version) — *string* **·** required
+- [`source`](#source) — *string* **·** required
+- [`confidence`](#confidence) — *—*
+- [`owner`](#owner) — *string*
+- [`profiled_via`](#profiled-via) — *string*
+- [`provenance`](#provenance) — *string*
+- [`status`](#status) — *—*
+- [`version`](#version) — *string*
+
+### `concept`
+
+*string* · **required**
+
+The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required.
+
+### `schema_version`
+
+*string* · **required**
+
+Which generation of mac.schema.json this file is written against. It is what lets a reader know a key's absence is a vintage rather than an omission, and what a migration selects on. Stamp the schema's own `version`, not a guess. Required.
+
+### `source`
+
+*string* · **required**
+
+WHICH DATA SOURCE this ontology is for, as the project declares it (`CONTOSO5`). An ontology is bound to one source — its relations, its columns, its grain — and this is the binding stated in one place. It scopes every rule in the file: a rule's own `scope` defaults to it. Required.
+
+### `confidence`
+
+*—* · optional · 3 legal values
+
+Trust tier (pluggable scale; default C/I/Q). C confirmed · I inferred · Q needs-SME.
+
+Legal values:
+
+- `C`
+- `I`
+- `Q`
+
+### `owner`
+
+*string* · optional
+
+WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down.
+
+### `profiled_via`
+
+*string* · optional
+
+Free-text note on how the raw source was profiled (e.g. 'catalog metadata + a live column profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp. v0.1.15: this example was previously spelled with two vendor product names — a catalog service and a query engine — and it was, measured, the SINGLE instance-specific token in this entire grammar (one occurrence; no driver or cloud-prefix token appeared anywhere else in this file). It is respelled rather than deleted, because the slot still needs an example; the new spelling says the same thing in nouns that every engine has, which is the test a core-grammar example has to pass. The old nouns are not quoted here on purpose: a note that names what it forbids becomes a register of those names, and this file is published.
+
+### `provenance`
+
+*string* · optional · 3 legal values
+
+How this object came to be: harvested = emitted by the harvest (self-documenting); authored/tuned = MANUAL work, which MUST carry an entry in interventions/ledger.yaml (check_intervention_ledger.py).
+
+Legal values:
+
+- `harvested`
+- `authored`
+- `tuned`
+
+### `status`
+
+*—* · optional · 3 legal values
+
+How far this concept has been taken, from the closed set below. It is a claim about REVIEW, not about correctness: `draft` says nobody has signed it off, and a draft concept still answers questions. Gates read it to decide what may be relied on, so leaving a finished concept at `draft` understates the bundle and marking an unreviewed one `production` overstates it.
+
+Legal values:
+
+- `production`
+- `draft`
+- `prototype`
+
+### `version`
+
+*string* · optional
+
+The CONCEPT's version, bumped by whoever changes its meaning. Not the schema's version and not the bundle's: it answers "has this notion changed since I last read it". Measured on the worked bundle: 16 concepts at 1.0 and one at 1.1, which is what a version looks like when it is maintained rather than stamped.
 
 ## As it is actually written
 

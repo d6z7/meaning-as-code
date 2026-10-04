@@ -8,14 +8,48 @@ What a behavioural rule governs — the rule's type.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="resolution"></a>`resolution` | `mac.concept.rule.resolution` | Identity / matching / scoping of an entity from the question (name, code, key, definition). |
-| <a id="aggregation"></a>`aggregation` | `mac.concept.rule.aggregation` | Measure math — additivity, period bounds, grain (how a measure may be summed/read). |
-| <a id="default"></a>`default` | `mac.concept.rule.default` | What to assume when an axis is unspecified but a safe default exists. |
-| <a id="ambiguity"></a>`ambiguity` | `mac.concept.rule.ambiguity` | An underspecified REQUIRED dimension — ASK, never guess. |
-| <a id="exclusion"></a>`exclusion` | `mac.concept.rule.exclusion` | What to filter out / never include (pseudo-entries, unmapped rows, stale vintages). |
-| <a id="guarantee"></a>`guarantee` | `mac.concept.rule.guarantee` | A fact the consumer INHERITS from the serving view (relied on, not re-derived). |
+- [`resolution`](#resolution)
+- [`aggregation`](#aggregation)
+- [`default`](#default)
+- [`ambiguity`](#ambiguity)
+- [`exclusion`](#exclusion)
+- [`guarantee`](#guarantee)
+
+### `resolution`
+
+Write it as `mac.concept.rule.resolution`
+
+Identity / matching / scoping of an entity from the question (name, code, key, definition).
+
+### `aggregation`
+
+Write it as `mac.concept.rule.aggregation`
+
+Measure math — additivity, period bounds, grain (how a measure may be summed/read).
+
+### `default`
+
+Write it as `mac.concept.rule.default`
+
+What to assume when an axis is unspecified but a safe default exists.
+
+### `ambiguity`
+
+Write it as `mac.concept.rule.ambiguity`
+
+An underspecified REQUIRED dimension — ASK, never guess.
+
+### `exclusion`
+
+Write it as `mac.concept.rule.exclusion`
+
+What to filter out / never include (pseudo-entries, unmapped rows, stale vintages).
+
+### `guarantee`
+
+Write it as `mac.concept.rule.guarantee`
+
+A fact the consumer INHERITS from the serving view (relied on, not re-derived).
 
 ---
 

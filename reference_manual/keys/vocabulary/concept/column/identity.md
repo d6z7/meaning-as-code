@@ -8,11 +8,27 @@ What part a column plays in its concept's identity (per column; see mac.concept.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="canonical"></a>`canonical` | `mac.concept.column.identity.canonical` | THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify. |
-| <a id="part"></a>`part` | `mac.concept.column.identity.part` | ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside. |
-| <a id="reference"></a>`reference` | `mac.concept.column.identity.reference` | A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented. |
+- [`canonical`](#canonical)
+- [`part`](#part)
+- [`reference`](#reference)
+
+### `canonical`
+
+Write it as `mac.concept.column.identity.canonical`
+
+THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.
+
+### `part`
+
+Write it as `mac.concept.column.identity.part`
+
+ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
+
+### `reference`
+
+Write it as `mac.concept.column.identity.reference`
+
+A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
 
 ## Keys that take one of these values
 

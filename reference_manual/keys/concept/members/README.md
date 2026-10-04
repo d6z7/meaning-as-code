@@ -6,13 +6,33 @@
 
 v0.5 grouping template — how a grouping rolls up its leaf. `over` = the leaf concept. Membership is either `member_source.kind: rule` (a FK/derivation, e.g. category over product) or `kind: enumerated` with named `definitions` (e.g. region's brand definitions, each explicit or derived).
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `over` | **required** | `string` | the leaf concept this groups (region over country, category over product) |  |
-| `definitions` |  | `list of object` | (enumerated) the named member sets — each an explicit list or a derived rule | [definitions](definitions.md) |
-| `realized_by` |  | `—` | v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree. | [realized_by](realized_by.md) |
+- [`over`](#over) — *string* **·** required
+- [`definitions`](#definitions) — *list of object*
+- [`realized_by`](#realized-by) — *—*
+
+### `over`
+
+*string* · **required**
+
+the leaf concept this groups (region over country, category over product)
+
+### `definitions`
+
+*list of object* · optional · [has its own keys →](definitions.md)
+
+(enumerated) the named member sets — each an explicit list or a derived rule
+
+Its own keys: [`concept.members.definitions`](definitions.md)
+
+### `realized_by`
+
+*—* · optional · [has its own keys →](realized_by.md)
+
+v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree.
+
+Its own keys: [`concept.members.realized_by`](realized_by.md)
 
 ## Levels under this one
 

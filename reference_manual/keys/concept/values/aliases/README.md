@@ -6,12 +6,26 @@
 
 v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a canonical value code. Tier 1 (scope_relative, optional) — the SAME surface means a different code UNDER a different scope value (named by scope_key); Tier 2 (multilingual) — scope-free de/en/syn surfaces. A surface resolving to >1 code ⇒ ASK; a token outside the closed set ⇒ ASK (offer the set); never a silent bind/drop. Each map key MUST be a declared values.items[].code (enforced by check_shapes, not expressible in pure JSON Schema).
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `map` | **required** | `object` | canonical code → its alias tiers. | [map](map.md) |
-| `realized_by` |  | `—` | the canon that realizes the resolution — mac.canon.alias_resolve. | [realized_by](realized_by.md) |
+- [`map`](#map) — *object* **·** required
+- [`realized_by`](#realized-by) — *—*
+
+### `map`
+
+*object* · **required** · [has its own keys →](map.md)
+
+canonical code → its alias tiers.
+
+Its own keys: [`concept.values.aliases.map`](map.md)
+
+### `realized_by`
+
+*—* · optional · [has its own keys →](realized_by.md)
+
+the canon that realizes the resolution — mac.canon.alias_resolve.
+
+Its own keys: [`concept.values.aliases.realized_by`](realized_by.md)
 
 ## Levels under this one
 

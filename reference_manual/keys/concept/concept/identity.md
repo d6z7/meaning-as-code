@@ -6,14 +6,45 @@
 
 The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one. `resolved_axis` was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 (0 of 62 concepts used it); the enum below is landed FROM that vocabulary by tools/check_vocabulary_parity.py --write and is not edited by hand.
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `kind` | **required** | `—` | mac.concept.identity.<term> — how the canonical identity is established.<br>**one of:** [`iso`](../../vocabulary/concept/identity.md#iso) · [`code`](../../vocabulary/name_register.md#code) · [`namespace_code`](../../vocabulary/concept/identity.md#namespace_code) · [`fk_name`](../../vocabulary/concept/identity.md#fk_name) · [`composite`](../../vocabulary/concept/identity.md#composite) · [`sme_pending`](../../vocabulary/concept/identity.md#sme_pending) |  |
-| `canonical_key` |  | `string` | the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28). |  |
-| `counts_as` |  | `string` | The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane. |  |
-| `note` |  | `string` | How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH. |  |
+- [`kind`](#kind) — *—* **·** required
+- [`canonical_key`](#canonical-key) — *string*
+- [`counts_as`](#counts-as) — *string*
+- [`note`](#note) — *string*
+
+### `kind`
+
+*—* · **required** · 6 legal values
+
+mac.concept.identity.<term> — how the canonical identity is established.
+
+Legal values:
+
+- [`iso`](../../vocabulary/concept/identity.md#iso) — A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases.
+- [`code`](../../vocabulary/name_register.md#code) — A machine identifier standing for the name. 'GB', 'DE', a numeric key.
+- [`namespace_code`](../../vocabulary/concept/identity.md#namespace_code) — A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard.
+- [`fk_name`](../../vocabulary/concept/identity.md#fk_name) — An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity.
+- [`composite`](../../vocabulary/concept/identity.md#composite) — Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key.
+- [`sme_pending`](../../vocabulary/concept/identity.md#sme_pending) — Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules.
+
+### `canonical_key`
+
+*string* · optional
+
+the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28).
+
+### `counts_as`
+
+*string* · optional
+
+The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane.
+
+### `note`
+
+*string* · optional
+
+How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH.
 
 ## As it is actually written
 

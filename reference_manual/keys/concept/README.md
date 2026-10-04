@@ -4,22 +4,114 @@
 
 concept
 
-## Keys you may write here
+## Keys
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `concept` | **required** | `object` | THE MEANING ITSELF — what this notion IS, independently of where it is stored. Name, label, class, definition, identity, semantics. Nothing in this block names a relation or a column; that is `grounding`, and the separation is the whole point of the framework: the same meaning can be re-grounded on a different warehouse without a word of it changing. Required. | [concept](concept/README.md) |
-| `metadata` | **required** | `object` | THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required. | [metadata](metadata.md) |
-| `constraints` |  | `list of object` | A data-quality invariant (validation, NOT derivation). The description field is 'assert:', never 'rule:'. | [constraints](constraints.md) |
-| `contract` |  | `['string', 'object']` | v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional. | [contract](contract/README.md) |
-| `derived_by_rule` |  | `string` | marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it. |  |
-| `governance` |  | `object` | Housekeeping. APPEND-ONLY — never edit change_log history. | [governance](governance/README.md) |
-| `grounding` |  | `object` | Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'. | [grounding](grounding/README.md) |
-| `lifecycle` |  | `object` | (event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed. | [lifecycle](lifecycle.md) |
-| `members` |  | `—` | grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part). | [members](members/README.md) |
-| `open_questions` |  | `list of object` | WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule. | [open_questions](open_questions.md) |
-| `properties` |  | `list of object` | Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties. | [properties](properties.md) |
-| `values` |  | `object` | v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure ('value_set:' was dropped, DECISION 3). Closure lives HERE, with the values — never in semantics. | [values](values/README.md) |
+- [`concept`](#concept) — *object* **·** required
+- [`metadata`](#metadata) — *object* **·** required
+- [`constraints`](#constraints) — *list of object*
+- [`contract`](#contract) — *['string', 'object']*
+- [`derived_by_rule`](#derived-by-rule) — *string*
+- [`governance`](#governance) — *object*
+- [`grounding`](#grounding) — *object*
+- [`lifecycle`](#lifecycle) — *object*
+- [`members`](#members) — *—*
+- [`open_questions`](#open-questions) — *list of object*
+- [`properties`](#properties) — *list of object*
+- [`values`](#values) — *object*
+
+### `concept`
+
+*object* · **required** · [has its own keys →](concept/README.md)
+
+THE MEANING ITSELF — what this notion IS, independently of where it is stored. Name, label, class, definition, identity, semantics. Nothing in this block names a relation or a column; that is `grounding`, and the separation is the whole point of the framework: the same meaning can be re-grounded on a different warehouse without a word of it changing. Required.
+
+Its own keys: [`concept.concept`](concept/README.md)
+
+### `metadata`
+
+*object* · **required** · [has its own keys →](metadata.md)
+
+THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required.
+
+Its own keys: [`concept.metadata`](metadata.md)
+
+### `constraints`
+
+*list of object* · optional · [has its own keys →](constraints.md)
+
+A data-quality invariant (validation, NOT derivation). The description field is 'assert:', never 'rule:'.
+
+Its own keys: [`concept.constraints`](constraints.md)
+
+### `contract`
+
+*['string', 'object']* · optional · [has its own keys →](contract/README.md)
+
+v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional.
+
+Its own keys: [`concept.contract`](contract/README.md)
+
+### `derived_by_rule`
+
+*string* · optional
+
+marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it.
+
+### `governance`
+
+*object* · optional · [has its own keys →](governance/README.md)
+
+Housekeeping. APPEND-ONLY — never edit change_log history.
+
+Its own keys: [`concept.governance`](governance/README.md)
+
+### `grounding`
+
+*object* · optional · [has its own keys →](grounding/README.md)
+
+Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.
+
+Its own keys: [`concept.grounding`](grounding/README.md)
+
+### `lifecycle`
+
+*object* · optional · [has its own keys →](lifecycle.md)
+
+(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.
+
+Its own keys: [`concept.lifecycle`](lifecycle.md)
+
+### `members`
+
+*—* · optional · [has its own keys →](members/README.md)
+
+grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).
+
+Its own keys: [`concept.members`](members/README.md)
+
+### `open_questions`
+
+*list of object* · optional · [has its own keys →](open_questions.md)
+
+WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule.
+
+Its own keys: [`concept.open_questions`](open_questions.md)
+
+### `properties`
+
+*list of object* · optional · [has its own keys →](properties.md)
+
+Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties.
+
+Its own keys: [`concept.properties`](properties.md)
+
+### `values`
+
+*object* · optional · [has its own keys →](values/README.md)
+
+v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure ('value_set:' was dropped, DECISION 3). Closure lives HERE, with the values — never in semantics.
+
+Its own keys: [`concept.values`](values/README.md)
 
 ## Levels under this one
 

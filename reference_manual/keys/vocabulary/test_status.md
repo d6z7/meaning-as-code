@@ -8,15 +8,83 @@ The disposition of ONE property run — what the INSTRUMENT did about the claim,
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="PASS"></a>`PASS` | `mac.test_status.PASS` | THE INSTRUMENT RAN OVER A NON-EMPTY POPULATION AND THE CLAIM HELD. The population part is not decoration: a PASS over zero subjects is the vacuous green this vocabulary's seventh term exists to make unsayable.<br>`gradeable`: true · `requires`: [] |
-| <a id="FAIL"></a>`FAIL` | `mac.test_status.FAIL` | THE INSTRUMENT RAN AND THE CLAIM DID NOT HOLD — a statement ABOUT THE DATA, which is what makes it the one red a reader may act on directly. Today it is also the dumping ground for every run that produced no verdict at all, and that is the defect `VACUOUS` removes.<br>`gradeable`: true · `requires`: [] |
-| <a id="ACCEPTED"></a>`ACCEPTED` | `mac.test_status.ACCEPTED` | THE CLAIM DID NOT HOLD AND A NAMED RULING TOLERATES IT. Green because the defect is tolerated, which is not the same claim as correct — the same distinction `dq_status.accepted` draws one plane over. `run_suite.py` stamps the suite's `accepted:` block onto the result, so the ruling travels WITH the verdict rather than being looked up beside it.<br>`gradeable`: true · `requires`: ["accepted"] |
-| <a id="FROZEN"></a>`FROZEN` | `mac.test_status.FROZEN` | THE CLAIM DID NOT HOLD AND THE FAILURE IS DELIBERATELY PARKED — neither repaired nor ruled acceptable. Distinct from ACCEPTED, which asserts someone judged the finding; FROZEN asserts only that someone decided not to today. NOTE, MEASURED: the `frozen:` block lives on the SUITE and is not copied onto the result, so a FROZEN row carries no on-record evidence of who froze it or when — the asymmetry with ACCEPTED is real, and is recorded here rather than papered over with a `requires` no writer satisfies.<br>`gradeable`: true · `requires`: [] |
-| <a id="ERROR"></a>`ERROR` | `mac.test_status.ERROR` | THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection refused, a timeout. Nothing was judged, so it must never be counted as a finding about the data — `tools/_plugin.py`'s founding rule ("could not run is the one honest answer available, and it is never a finding") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis. Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned nothing, which is evidence, and `null` means nothing was examined.<br>`gradeable`: false · `requires`: ["notes"] |
-| <a id="NOT_RUN"></a>`NOT_RUN` | `mac.test_status.NOT_RUN` | DECLARED, NEVER ATTEMPTED. The honest default for an id the suite declares and the run did not reach, written by `carry_forward` so that a declared property with no result is NOT_RUN rather than ABSENT — absence reads as nothing-to-report, which is the state this term was invented to end. Excluded from `examined` and counted as `skipped`.<br>`gradeable`: false · `requires`: [] |
-| <a id="VACUOUS"></a>`VACUOUS` | `mac.test_status.VACUOUS` | THE INSTRUMENT RAN CLEANLY AND HAD NOTHING TO JUDGE. The query compiled, reached the source and returned — and the population it examined was ZERO, so the claim was neither satisfied nor violated. A property over zero subjects cannot be satisfied vacuously AND CANNOT BE VIOLATED VACUOUSLY EITHER; the runner already says the first half in its own note and then returns FAIL, which asserts the second. DISTINCT FROM `ERROR` (which raised, and has no evidence) and from `NOT_RUN` (which was never attempted): a VACUOUS run has a query, a byte count and a measured zero, and every one of those is actionable — it means the scope, the filter or the fixture is wrong, and the property is currently testing nothing. NOT AN ESCAPE HATCH: `requires` makes the zero NAMEABLE and CHECKABLE rather than asserted, because a status that could be written without evidence would be the cheapest way off a red board — the `corpus: none` failure mode, one plane over. `examined` names the population column the instrument itself reported — the live spellings are all of the form `<subject>_examined` or a bare count of the subject — and its value, which MUST be 0. A non-zero `examined` with a null verdict column is a DIFFERENT instrument defect and is NOT this term (measured live: one property, a non-empty base examined, derived columns null).<br>`gradeable`: false · `requires`: ["examined", "notes"] |
+- [`PASS`](#pass)
+- [`FAIL`](#fail)
+- [`ACCEPTED`](#accepted)
+- [`FROZEN`](#frozen)
+- [`ERROR`](#error)
+- [`NOT_RUN`](#not-run)
+- [`VACUOUS`](#vacuous)
+
+### `PASS`
+
+Write it as `mac.test_status.PASS`
+
+THE INSTRUMENT RAN OVER A NON-EMPTY POPULATION AND THE CLAIM HELD. The population part is not decoration: a PASS over zero subjects is the vacuous green this vocabulary's seventh term exists to make unsayable.
+
+**gradeable:** `true`
+
+**requires:** 
+
+### `FAIL`
+
+Write it as `mac.test_status.FAIL`
+
+THE INSTRUMENT RAN AND THE CLAIM DID NOT HOLD — a statement ABOUT THE DATA, which is what makes it the one red a reader may act on directly. Today it is also the dumping ground for every run that produced no verdict at all, and that is the defect `VACUOUS` removes.
+
+**gradeable:** `true`
+
+**requires:** 
+
+### `ACCEPTED`
+
+Write it as `mac.test_status.ACCEPTED`
+
+THE CLAIM DID NOT HOLD AND A NAMED RULING TOLERATES IT. Green because the defect is tolerated, which is not the same claim as correct — the same distinction `dq_status.accepted` draws one plane over. `run_suite.py` stamps the suite's `accepted:` block onto the result, so the ruling travels WITH the verdict rather than being looked up beside it.
+
+**gradeable:** `true`
+
+**requires:** `accepted`
+
+### `FROZEN`
+
+Write it as `mac.test_status.FROZEN`
+
+THE CLAIM DID NOT HOLD AND THE FAILURE IS DELIBERATELY PARKED — neither repaired nor ruled acceptable. Distinct from ACCEPTED, which asserts someone judged the finding; FROZEN asserts only that someone decided not to today. NOTE, MEASURED: the `frozen:` block lives on the SUITE and is not copied onto the result, so a FROZEN row carries no on-record evidence of who froze it or when — the asymmetry with ACCEPTED is real, and is recorded here rather than papered over with a `requires` no writer satisfies.
+
+**gradeable:** `true`
+
+**requires:** 
+
+### `ERROR`
+
+Write it as `mac.test_status.ERROR`
+
+THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection refused, a timeout. Nothing was judged, so it must never be counted as a finding about the data — `tools/_plugin.py`'s founding rule ("could not run is the one honest answer available, and it is never a finding") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis. Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned nothing, which is evidence, and `null` means nothing was examined.
+
+**gradeable:** `false`
+
+**requires:** `notes`
+
+### `NOT_RUN`
+
+Write it as `mac.test_status.NOT_RUN`
+
+DECLARED, NEVER ATTEMPTED. The honest default for an id the suite declares and the run did not reach, written by `carry_forward` so that a declared property with no result is NOT_RUN rather than ABSENT — absence reads as nothing-to-report, which is the state this term was invented to end. Excluded from `examined` and counted as `skipped`.
+
+**gradeable:** `false`
+
+**requires:** 
+
+### `VACUOUS`
+
+Write it as `mac.test_status.VACUOUS`
+
+THE INSTRUMENT RAN CLEANLY AND HAD NOTHING TO JUDGE. The query compiled, reached the source and returned — and the population it examined was ZERO, so the claim was neither satisfied nor violated. A property over zero subjects cannot be satisfied vacuously AND CANNOT BE VIOLATED VACUOUSLY EITHER; the runner already says the first half in its own note and then returns FAIL, which asserts the second. DISTINCT FROM `ERROR` (which raised, and has no evidence) and from `NOT_RUN` (which was never attempted): a VACUOUS run has a query, a byte count and a measured zero, and every one of those is actionable — it means the scope, the filter or the fixture is wrong, and the property is currently testing nothing. NOT AN ESCAPE HATCH: `requires` makes the zero NAMEABLE and CHECKABLE rather than asserted, because a status that could be written without evidence would be the cheapest way off a red board — the `corpus: none` failure mode, one plane over. `examined` names the population column the instrument itself reported — the live spellings are all of the form `<subject>_examined` or a bare count of the subject — and its value, which MUST be 0. A non-zero `examined` with a null verdict column is a DIFFERENT instrument defect and is NOT this term (measured live: one property, a non-empty base examined, derived columns null).
+
+**gradeable:** `false`
+
+**requires:** `examined`, `notes`
 
 ## Keys that take one of these values
 

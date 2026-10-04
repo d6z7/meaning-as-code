@@ -8,10 +8,20 @@ The additivity-relevant classification of an aggregation axis.
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="time"></a>`time` | `mac.concept.axis_kind.time` | An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it. |
-| <a id="categorical"></a>`categorical` | `mac.concept.axis_kind.categorical` | A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it. |
+- [`time`](#time)
+- [`categorical`](#categorical)
+
+### `time`
+
+Write it as `mac.concept.axis_kind.time`
+
+An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it.
+
+### `categorical`
+
+Write it as `mac.concept.axis_kind.categorical`
+
+A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it.
 
 ---
 

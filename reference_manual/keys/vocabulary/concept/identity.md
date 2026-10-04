@@ -8,14 +8,48 @@ How a concept's canonical identity is established (declared once per concept).
 
 ## Terms
 
-| term | write it as | what it means |
-|---|---|---|
-| <a id="iso"></a>`iso` | `mac.concept.identity.iso` | A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases. |
-| <a id="code"></a>`code` | `mac.concept.identity.code` | A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases. |
-| <a id="namespace_code"></a>`namespace_code` | `mac.concept.identity.namespace_code` | A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard. |
-| <a id="fk_name"></a>`fk_name` | `mac.concept.identity.fk_name` | An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity. |
-| <a id="composite"></a>`composite` | `mac.concept.identity.composite` | Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key. |
-| <a id="sme_pending"></a>`sme_pending` | `mac.concept.identity.sme_pending` | Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules. |
+- [`iso`](#iso)
+- [`code`](#code)
+- [`namespace_code`](#namespace-code)
+- [`fk_name`](#fk-name)
+- [`composite`](#composite)
+- [`sme_pending`](#sme-pending)
+
+### `iso`
+
+Write it as `mac.concept.identity.iso`
+
+A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases.
+
+### `code`
+
+Write it as `mac.concept.identity.code`
+
+A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases.
+
+### `namespace_code`
+
+Write it as `mac.concept.identity.namespace_code`
+
+A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard.
+
+### `fk_name`
+
+Write it as `mac.concept.identity.fk_name`
+
+An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity.
+
+### `composite`
+
+Write it as `mac.concept.identity.composite`
+
+Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key.
+
+### `sme_pending`
+
+Write it as `mac.concept.identity.sme_pending`
+
+Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules.
 
 ## Keys that take one of these values
 

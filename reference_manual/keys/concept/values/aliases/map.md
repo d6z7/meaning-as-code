@@ -6,13 +6,17 @@
 
 canonical code → its alias tiers.
 
-## Keys you may write here
+## Keys
 
 You choose the names at this level — a column name, an axis name. `<name>` below stands for any one of them.
 
-| key | | type | what it means | goes deeper |
-|---|---|---|---|---|
-| `<name>` |  | `object` | One alias and the value it resolves to, keyed by the alias as a person would type it. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way. |  |
+- [`<name>`](#name) — *object*
+
+### `<name>`
+
+*object* · optional
+
+One alias and the value it resolves to, keyed by the alias as a person would type it. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way.
 
 ---
 
