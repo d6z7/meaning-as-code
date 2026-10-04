@@ -1,7 +1,7 @@
 ---
 title: "Canon — refuse_unresolvable_name"
 part_of: reference_manual/canon
-status: NOT IMPLEMENTED AS A CANON — the behaviour exists, built directly by the resolver
+status: SHIPPED — implemented in mac-runtime as a canon (`canons/refuse_unresolvable_name.py`) and honoured today; it was built directly by the resolver when this page was written
 scope: GENERIC — domain-neutral
 ---
 

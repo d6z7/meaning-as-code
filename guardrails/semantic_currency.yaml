@@ -1,0 +1,135 @@
+# guardrails/semantic_currency.yaml — WHAT THIS REPOSITORY STILL CLAIMS THAT IS NO LONGER TRUE.
+#
+# `check_dangling_references.py` asks whether a POINTER resolves. `tools/check_semantic_currency.py`
+# asks whether a CLAIM is still true, and this file declares the ones measured and not yet settled.
+# Operator, 2026-10-04: "many things have changed ... or EVOLVED and it is misleading if we keep them
+# in although they are long retired".
+#
+# MEASURED 2026-10-04, over 93 judged pages of 265 (78 archive, 94 generated), against schema 0.1.16,
+# 496 key and vocabulary names, and the 18 canons `mac_runtime.canon.IMPLEMENTED` names:
+#
+#   14 findings, of which THREE WERE FACTUAL ERRORS AND ARE FIXED, not declared:
+#     reference_manual/canon/alias_resolve.md             said NOT IMPLEMENTED; `canons/alias_resolve.py`
+#                                                         exists and the runtime honours it. The page
+#                                                         had conflated "not implemented" with "no
+#                                                         bundle declares it" — two different facts.
+#     reference_manual/canon/refuse_unresolvable_name.md  said NOT IMPLEMENTED AS A CANON; it is one
+#                                                         now, with its own module.
+#     reference_manual/discipline/PIPELINE_TESTING.md      presented `produces.grain`; the schema calls
+#                                                         it `concept.grounding.grain` and carries no
+#                                                         `produces` block at all.
+#
+#   11 are ONE QUESTION WEARING ELEVEN HATS, declared below and owed to the operator. See `owed:`.
+#
+# WHAT IS NOT JUDGED, AND WHY — neither exemption is a convenience:
+#   an archive      `protocol/` and `decisions/`. `protocol/README.md`: "Append-only. Entries are
+#                   never edited." A record saying `0.1.9` was current was TRUE when written; editing
+#                   it would falsify the record rather than correct it. A decision record states what
+#                   was decided, not what is now the case.
+#   a generated page  the claim is not one its author made, and the fix belongs in its generator.
+#
+# A RATCHET, NOT A LINE LIST. Each entry is a COUNT per (file, class). More than declared is news;
+# fewer prints its own slack and asks for the floor to come down, because a floor above the
+# measurement is not a ratchet, it is headroom. Line numbers were tried first and rejected: a standing
+# entry keyed `CONFORMANCE.md:662` goes red when a paragraph is inserted above it, which fails the
+# gate for a line shift rather than for a claim.
+
+spec_version: mac.guardrail/1
+topic: semantic_currency
+status: PROPOSED 2026-10-04
+
+owed:
+  question: >-
+    SHOULD A DOCUMENT DECLARE A SCHEMA VERSION AT ALL? All 11 entries below are one defect: the version
+    has a second home. `mac.schema.json#version` is the authority and says 0.1.16; four pages declare
+    their own `version:` in frontmatter and seven sentences call a past number "current" or "the next".
+    Bumping all eleven to 0.1.16 fixes nothing structural — they go stale again at 0.1.17, which is how
+    they got here. Three ways out, and this is an operator ruling because it changes what a spec page
+    is allowed to say:
+      A  DROP `version:` from page frontmatter and let the schema be the only home. The prose that
+         needs a generation says it in past tense ("the constraint gate is new in v0.1.6"), which is
+         already how most of CONFORMANCE reads and is never stale.
+      B  GENERATE the line, as `tools/gen_strategy.py` generates STRATEGY.md — the page carries the
+         version because a tool put it there from the schema, so it cannot drift.
+      C  RULE THAT IT IS PROSE, and declare these eleven permanently standing with that reason.
+    Recommended: A for the frontmatter, and rewrite the seven sentences in past tense. It is the only
+    option that removes the second home rather than automating it.
+  note: >-
+    CONCEPT_SPEC.md is the one entry where the stale version is CORRECT. It is a retired redirect stub
+    (`guardrails/document_home.yaml`, genre `redirect_stub`) that described the 0.1.6 generation, and
+    saying so is accurate history. Under option A its `version:` key goes; under C it stays for good.
+
+standing:
+
+  - file: reference_manual/specification/CONFORMANCE.md
+    reject: STALE_VERSION_CLAIMED_CURRENT
+    count: 5
+    owner: operator
+    since: 2026-10-04
+    detail: >-
+      lines 662, 666, 682, 723, 736 — "it rides on the current `0.1.12` generation", "would go out
+      under the next additive number, `0.1.13`", "rides on the current `0.1.14`"
+    why_not_fixed: >-
+      These are the sharpest instances of the owed question above, in the document that defines
+      conformance. Rewriting them in past tense is the fix under option A, and it is a change to the
+      normative spec's prose — exactly the kind this session may not make unasked.
+
+  - file: README.md
+    reject: STALE_VERSION_CLAIMED_CURRENT
+    count: 2
+    owner: operator
+    since: 2026-10-04
+    detail: >-
+      line 165 "enforces files at the current schema_version (0.1.14)"; line 212 "What exists today,
+      at **v0.1.14**"
+    why_not_fixed: >-
+      the repository's front door, and the same owed question. Line 165 is inside a quoted command
+      block, so the fix is to the command's own help text, not only to the prose around it.
+
+  - file: reference_manual/specification/CONFORMANCE.md
+    reject: STALE_FRONTMATTER_VERSION
+    count: 1
+    owner: operator
+    since: 2026-10-04
+    detail: "declares `version: 0.1.14`; the schema is 0.1.16"
+    why_not_fixed: option A deletes this key; option B generates it. Either way, not a hand bump.
+
+  - file: reference_manual/specification/SEAM_CONTRACT.md
+    reject: STALE_FRONTMATTER_VERSION
+    count: 1
+    owner: operator
+    since: 2026-10-04
+    detail: "declares `version: 0.1.14`; the schema is 0.1.16"
+    why_not_fixed: as CONFORMANCE above — one ruling settles all four.
+
+  - file: reference_manual/shape_reference.md
+    reject: STALE_FRONTMATTER_VERSION
+    count: 1
+    owner: operator
+    since: 2026-10-04
+    detail: "declares `version: 0.1.0`; the schema is 0.1.16"
+    why_not_fixed: >-
+      the page is PART generated — `tools/gen_schema_shapes.py` injects one block between markers and
+      the frontmatter is hand-written — so under option B this is the page whose generator would have
+      to grow ownership of the line, and that is a change to the generator's contract.
+
+  - file: CONCEPT_SPEC.md
+    reject: STALE_FRONTMATTER_VERSION
+    count: 1
+    owner: operator
+    since: 2026-10-04
+    detail: "declares `version: 0.1.6`; the schema is 0.1.16"
+    why_not_fixed: >-
+      THE ONE WHERE THE STALE VALUE IS RIGHT. A retired redirect stub describing the 0.1.6 generation
+      is accurately labelled 0.1.6. Listed rather than hidden so the ruling covers it explicitly: the
+      gate cannot tell a correct historical label from a stale claim, and a person must.
+
+watch:
+  what: how many claims this repository makes that contradict its own declarations
+  where: "python3 tools/check_semantic_currency.py  ·  the page it writes is reference_manual/CURRENCY.md"
+  measured_2026-10-04: >-
+    14 findings over 93 judged pages. 3 fixed as factual errors (2 canon statuses, 1 renamed key),
+    11 declared above as one owed ruling about where the version lives. 0 dead keys presented as live
+    after the fix — and the six candidates the first draft reported were all false positives, each now
+    an exemption with a self-test case: a relative key path, `CURRENT` the constant, a typo named as a
+    typo, a hypothetical, a list retired on its last line, and a generated page.
