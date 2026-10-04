@@ -71,6 +71,22 @@ def substantial(sql) -> bool:
     return isinstance(sql, str) and ("\n" in sql or len(sql) > MAX_INLINE)
 
 
+def dangling_sql_targets(root: Path) -> list[str]:
+    """Every `produces.sql_file` naming a file the bundle does not carry.
+
+    THE FRAMEWORK'S ONE RESOLVER, not a rule private to this gate. It reads the AUTHORED YAML, not
+    the emitted graph: a gate that reads the projection agrees with it by construction and could
+    never catch a bug in it ("READ FROM THE SSOT, NOT FROM THE PROJECTION",
+    check_datasets_are_grounded.py). What is shared is HOW a pointer resolves; what is not shared
+    is the question each gate asks on top of it.
+    """
+    import mac_pointers as mp                                        # noqa: PLC0415
+    idx = mp.resolve(root, mp.load_registry())
+    return [f"{r.src_path}#{r.src_locator} : sql_file {r.raw_value!r} — {r.resolution_basis}"
+            for r in idx.refs
+            if r.reference_kind == "transform_produces_sql" and r.resolution == "dangling"]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Transform SQL-extraction gate")
     ap.add_argument("root", help="bundle root (a MAC source container)")
@@ -88,7 +104,17 @@ def main(argv=None) -> int:
         return 0
     tdir = Path(tdir)
 
+    # ── RESOLUTION IS SHARED, THE QUESTION IS NOT ───────────────────────────────────────────
+    # One resolver for the whole estate (meaning-as-code/tools/mac_pointers.py), reading the
+    # authored YAML — NOT the emitted graph, which a gate must never read: it would agree with the
+    # projection by construction and could never catch a bug in it.
+    #
+    # The gate keeps its own question, which is the half no resolver can answer: a SUBSTANTIAL
+    # INLINE SQL BODY WITH NO POINTER AT ALL. There is nothing to resolve there — the finding is
+    # the absence of a pointer, and that is this gate's and nobody else's.
     findings: list[str] = []
+    for _f in dangling_sql_targets(root):
+        findings.append(_f)
     n = 0
     for p in sorted(tdir.glob("*.yaml")):
         n += 1
@@ -104,14 +130,15 @@ def main(argv=None) -> int:
         inline = [(jp, v) for jp, v in walk(doc, "sql") if substantial(v)]
 
         if sql_files:
-            # B. pointer present — every target sibling .sql must exist
-            for jp, v in sql_files:
-                v = v.strip()
-                cand = (root / v) if "/" in v else (tdir / v)
-                if not cand.exists() and not (tdir / Path(v).name).exists():
-                    findings.append(
-                        f"{rel}{jp} : sql_file '{v}' points at a missing sibling .sql "
-                        f"(expected {cand})")
+            # B. POINTER PRESENT — the target must exist, and WHETHER IT DOES IS NOT THIS GATE'S
+            #    QUESTION. It is `transform_produces_sql` in mac_pointers.yaml, resolved once by
+            #    mac_pointers.resolve() for the whole bundle (see `dangling_sql_targets` below).
+            #    This gate used to answer it itself, with a private rule that also accepted a BARE
+            #    filename relative to data/transforms/ — a form the catalogue does not recognise,
+            #    so such a pointer passed here and was invisible to every other reader. Measured on
+            #    contoso5: 8 of 8 sql_file values are root-relative, so nothing changes today and
+            #    the bare form becomes a finding rather than a silent divergence.
+            pass
         elif inline:
             # A. no pointer + a substantial inline body — trapped inline, not extracted
             for jp, v in inline:
