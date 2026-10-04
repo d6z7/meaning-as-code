@@ -4,6 +4,12 @@ genre: protocol
 ---
 # PROTOCOL — 2026-10-01 · the rule engine: a declared rule that fires and selects rows
 
+> **Paths in this document.** `planner/…`, `interpret/…` and `canons/…` are under
+> `mac-platform/packages/mac-runtime/src/mac_runtime/`; `packages/…` is under `mac-platform/`;
+> `data/…` and `ontology/…` are inside the bundle (`example/contoso5`). A `:line` suffix is the
+> line the measurement was read at.
+
+
 **Written because the operator asked for it: "i want one agent to protocol and document ALL what is
 relevant as documentation user manual".** Everything below is measured, quoted, or carries a
 `file:line`. Where a number appears, the command that produced it is nameable. Where I could not
@@ -84,20 +90,20 @@ implemented 17 · OK** with the new member in place.
 | # | ruling | the reason, measured |
 |---|---|---|
 | 1 | **`binds` IS the trigger condition** | the operator struck the redundant `about:`. Reusing `binds` inherits the `rule-binds-grounded` shape (`mac_shapes.yaml:94-99`), which already resolves every bound column against the PHYSICAL layer cross-file |
-| 2 | **one rule is one AXIS**, several per concept, independent | Store has two. Suppression is keyed `(concept, rule_id)` (`plan.py:675-679`); keyed on the concept it silenced both, so "revenue from the online store" would have dropped the active-store default too |
-| 3 | **`default:` is optional and its absence is a declaration** | no default means the axis has no "unless told otherwise" reading; `select()` skips it (`populations.py:222-226`) and a silent question means the whole range |
+| 2 | **one rule is one AXIS**, several per concept, independent | Store has two. Suppression is keyed `(concept, rule_id)` (`planner/plan.py:675-679`); keyed on the concept it silenced both, so "revenue from the online store" would have dropped the active-store default too |
+| 3 | **`default:` is optional and its absence is a declaration** | no default means the axis has no "unless told otherwise" reading; `select()` skips it (`planner/populations.py:222-226`) and a silent question means the whole range |
 | 4 | **a named population matches EXACTLY** | `activ`→`active` 0.9091 sits BETWEEN `neaktivan`→`aktivan` 0.8750 and `inactive`→`active` 0.8571; containment holds for all three. The guard must be structural |
 | 5 | **no `when:`/`then:`/`never:` on a rule that HAS a body** | that rule's own `never:` went FALSE after the impurity fix and no gate caught it. **`why:` stays** — no predicate encodes "a person ruled this, on this date" |
 | 6 | **structure, never SQL text** | `assert_bound_params_only` (`adapters/safety.py:46-53`) refuses any raw string literal, so a string-valued predicate written as text is UNEXECUTABLE: plans clean, dies at the adapter |
 | 7 | **`ne` is `IS DISTINCT FROM`; `not_in` keeps NULLs** | 66 against 67, and 57 against 58, on `dim_store.status_annotation`. A text form ships whichever the author typed |
-| 8 | **a population may only test columns its rule binds** | an unbound column could never displace the default, so the trigger would be blind on the axis it claims to own (`populations.py:186-194`) |
+| 8 | **a population may only test columns its rule binds** | an unbound column could never displace the default, so the trigger would be blind on the axis it claims to own (`planner/populations.py:186-194`) |
 
 ### Where the firing point sits, and why
 
-Step 4d is in `plan.py` **before** `assemble_plan`, not inside it. `assemble_plan` is typed `-> Plan`
+Step 4d is in `planner/plan.py` **before** `assemble_plan`, not inside it. `assemble_plan` is typed `-> Plan`
 and so cannot return a `Clarification` or a `Refusal` — and a population decision may need to ask.
 Deciding it there is what made the old inline per-conjunct override unable to do anything but guess
-(`plan.py:660-662`).
+(`planner/plan.py:660-662`).
 
 ---
 
@@ -147,7 +153,7 @@ close_date IS NULL AND location_code IS DISTINCT FROM -1  -->  57
 ```
 
 The familiar 57 is `active ∧ physical` — **two independent axes each applying its own default**. The
-inline comment at `store.yaml:249` ("57 rows, 57 locations") describes the composition, not the
+inline comment at `data/references/store.yaml:249` ("57 rows, 57 locations") describes the composition, not the
 predicate beside it. This is the cleanest available demonstration of ruling 2, and it is also an
 instance of ruling 5 one level down: a measured count written beside a body, where the body moved.
 
@@ -173,7 +179,7 @@ On `dim_store.status_annotation`, exactly one NULL row — **and that row is the
 | `IS NULL OR … NOT IN (…)` | **58** |
 
 One-row differences, valid SQL, plausible integers, nothing in the answer to mark them. The ruling now
-lives **once**, in `predicates.py:234-247`, with its measurement beside it.
+lives **once**, in `planner/predicates.py:234-247`, with its measurement beside it.
 
 ### The exact-matching measurement
 
@@ -192,12 +198,12 @@ is structural: an exact (case-, space-, underscore-folded) name or nothing.
 | suite | result |
 |---|---|
 | `packages/mac-runtime/tests` (full) | **1246 passed · 11 failed · 2 skipped**, 17 s |
-| `test_planner_predicates.py` + `test_param_types.py` + `test_planner_value_column.py` + `test_planner_declared_default.py` | **75 passed** |
+| `packages/mac-runtime/tests/test_planner_predicates.py` + `packages/mac-runtime/tests/test_param_types.py` + `packages/mac-runtime/tests/test_planner_value_column.py` + `packages/mac-runtime/tests/test_planner_declared_default.py` | **75 passed** |
 | `tools/check_canon_documented.py` | defined 20 · described 20 · implemented 17 · **OK**, exit 0 |
 
-The 11 failures are **not this mechanism**: 9 in `test_temporal_builtin.py` (a separate seam built the
+The 11 failures are **not this mechanism**: 9 in `packages/mac-runtime/tests/test_temporal_builtin.py` (a separate seam built the
 same day — the fixture concept `Sale` does not resolve: *"No measure or derivation rule named 'Sale' is
-known to this pack"*) and 2 schema-golden drifts in `test_models_golden.py` (`AnswerObject`, `Intent`).
+known to this pack"*) and 2 schema-golden drifts in `packages/mac-mcp/tests/test_models_golden.py` (`AnswerObject`, `Intent`).
 Named here rather than counted as green, per *a red gate must stop something*: these are **news**, they
 have no declared owner yet, and they are owed.
 
@@ -233,7 +239,7 @@ the bundle reads `3bc7b5d247d0eab2`.
 One fact now has **three bodies** — Store (`dim_store.location_code`), Location
 (`dim_location.location_code`), Country (`dim_country.country_code`). Those are **not** duplicates: the
 source wrote the sentinel into three relations, and a population selects the rows of the relation it is
-declared on and nothing else (`country.yaml:155-161`). The duplicates were the three *prose*
+declared on and nothing else (`ontology/concepts/country.yaml:155-161`). The duplicates were the three *prose*
 statements on `Channel`.
 
 ### The distinction that keeps being got wrong
@@ -259,7 +265,7 @@ the column. Two live defects passed it:
 | MQ-07 | `v_contoso5_sales_line.store_key = :channel`, `{'channel': 'online'}` | **86 790 054,13** — 40 % of the bundle — reported as `no_value` with `disclosures: []` |
 
 Three decisions inside it, each with a measurement: **bool before numeric** (`isinstance(True, int)` is
-`True` in python — that ordering *is* the RC08 fix, `column_types.py:112-116`); **a float with no
+`True` in python — that ordering *is* the RC08 fix, `planner/column_types.py:112-116`); **a float with no
 fraction is an integer** (`FilterRef.value` is typed with no `int` member, so pydantic turns `630` into
 `630.0`; `630.5` onto an integer column still refuses, `124-132`); and **only a DIRECTLY compared
 column is checked** — the first cut read `HAVING COUNT(DISTINCT orders.order_id) >= :threshold` as a
@@ -281,8 +287,8 @@ the planner fell back to the identity column: `dim_store.store_key = :store`, `{
 
 `ResolvedTerm(concept, candidate)` now carries `.column` and `.identity` through (`resolve.py:137-168`,
 returned at `202` and `211`); `.concept` is what every caller wanted and keeps getting. Read at
-`plan.py:1628-1645` (the `{term: closed, value: true}` case — **narrow on purpose**: only a bool, and
-only when the term matched ON a declared column) and `plan.py:1686-1687` (value's column first, term's
+`planner/plan.py:1628-1645` (the `{term: closed, value: true}` case — **narrow on purpose**: only a bool, and
+only when the term matched ON a declared column) and `planner/plan.py:1686-1687` (value's column first, term's
 second). **The fix is not new machinery; it is not throwing the answer away.**
 
 ### The two staleness fixes
@@ -304,23 +310,23 @@ Ordered by what I would do next.
 
 1. **NOTHING IS COMMITTED.** Every file of this mechanism is **untracked or modified in a working
    tree**: `planner/predicates.py`, `planner/populations.py`, `planner/column_types.py`,
-   `canons/population_select.py`, `mac-console/trace_losses.py`, `tests/test_planner_predicates.py`,
-   `tests/test_param_types.py` are all `??` on `mac-platform@develop`;
+   `canons/population_select.py`, `mac-console/trace_losses.py`, `packages/mac-runtime/tests/test_planner_predicates.py`,
+   `packages/mac-runtime/tests/test_param_types.py` are all `??` on `mac-platform@develop`;
    `reference_manual/canon/population_select.md` is `??` on `meaning-as-code@develop`; the three
    concept files and `edges.yaml` are modified on `<sources>@master`. The last commit in any
    of the three repos is 2026-09-29. **This is the item that matters most**: a mechanism that exists
    only in a working tree is one `git checkout` from never having happened.
 2. **THREE EXPORTED PIECES OF THE CANON ARE UNREACHED.** `stray_columns()` and `fold()` have **zero
    callers** (`grep -rn stray_columns --include '*.py'` finds only the definition and `__all__`), and
-   `population_select`'s `asked=` parameter is **never passed** — `populations.py:230-235` calls it with
+   `population_select`'s `asked=` parameter is **never passed** — `planner/populations.py:230-235` calls it with
    `populations`, `default`, `binds`, `constrained_columns` only. `planner/populations.py`
    re-implements the folding inline at `271-274` and the stray-column check inline at `186-194`, and
    naming goes through `by_name()`. **Two homes for two invariants, inside the mechanism built to
    remove exactly that** — and by the estate's own standing rule, a declaration nobody reads is prose
    with a colon after it. Either the canon's three pieces become the only homes, or they go.
 3. **NO TEST COVERS THE PURE DECISION.** `grep -rn population_select packages/*/tests/*.py` returns
-   **nothing**. `test_planner_predicates.py` (11 tests) covers the predicate language;
-   `test_planner_value_column.py` covers the naming route. The four-row decision table in
+   **nothing**. `packages/mac-runtime/tests/test_planner_predicates.py` (11 tests) covers the predicate language;
+   `packages/mac-runtime/tests/test_planner_value_column.py` covers the naming route. The four-row decision table in
    `canon/population_select.md` is asserted by no test, and neither is the per-axis suppression that a
    wrong key silently broke once already.
 4. **NO GATE HOLDS A POPULATION RULE'S PROSE TO ITS BODY.** `tools/check_canon_binding.py:141-146`
@@ -330,7 +336,7 @@ Ordered by what I would do next.
    is **still uncaught today**. The cheapest form is a shape: *a bodied rule carries no
    `when`/`then`/`never`*, with the mutant that proves it rejects.
 5. **`declared_for()` has zero callers.** Written "for gates and diagnostics"
-   (`populations.py:288-298`); no gate and no diagnostic reads it. A gate over it is the natural home
+   (`planner/populations.py:288-298`); no gate and no diagnostic reads it. A gate over it is the natural home
    for item 4 and for the stray-column invariant.
 6. **THE VOCABULARY ENTRY IS STALE ON THE DAY IT WAS WRITTEN.** `mac_vocabulary.yaml:991-1001` still
    documents a param called **`about`** — *"`about` (the columns this set of populations is a statement
@@ -342,21 +348,21 @@ Ordered by what I would do next.
    been re-run. `reference_manual/README.md:59` also still reads *"only 3 of 19 do anything today"*
    where the gate now reports 17 of 20, and `README.md` has no row for `rule_engine.md`.
 8. **"FIVE OF THE TEN PREDICATES" IS NOW FOUR OF TEN.** `planner/predicates.py:12`,
-   `canon/population_select.md:150` and `tests/test_planner_predicates.py:7` all say five; the figure
-   counted `inactive`, removed the same day (`store.yaml:257-263`). Measured today: **10 populations,
+   `canon/population_select.md:150` and `packages/mac-runtime/tests/test_planner_predicates.py:7` all say five; the figure
+   counted `inactive`, removed the same day (`data/references/store.yaml:257-263`). Measured today: **10 populations,
    4 string-valued, 4 numeric, 2 valueless.** The argument is unchanged and the number is wrong.
-9. **ELEVEN RUNTIME TESTS ARE RED WITH NO DECLARED OWNER.** 9 in `test_temporal_builtin.py`
+9. **ELEVEN RUNTIME TESTS ARE RED WITH NO DECLARED OWNER.** 9 in `packages/mac-runtime/tests/test_temporal_builtin.py`
    (*"No measure or derivation rule named 'Sale' is known to this pack"* — a fixture gap, not this
-   mechanism) and 2 schema goldens in `test_models_golden.py` (`AnswerObject`, `Intent`). Per *a red
+   mechanism) and 2 schema goldens in `packages/mac-mcp/tests/test_models_golden.py` (`AnswerObject`, `Intent`). Per *a red
    gate must stop something*, each needs an owner and a line in the standing-failures register, or a
    fix.
-10. **`binds` RESOLVES AGAINST TWO HOMES, LOWERING AGAINST THREE.** `populations.py:176-178` uses
+10. **`binds` RESOLVES AGAINST TWO HOMES, LOWERING AGAINST THREE.** `planner/populations.py:176-178` uses
     `field_roles | served_columns`; `sql.py:1921-1928` adds `serving_columns`. A column declared only in
     the third would be refused as a `binds` entry while being perfectly lowerable. An asymmetry, not a
     design.
 11. **`select()`'s docstring contradicts its signature.** It says *"Returns `None` when the concept
     declares no population rule"*; it returns `list[Population]` and yields `[]`
-    (`populations.py:217-219`). Also `populations.py:273` is indented six spaces inside a four-space
+    (`planner/populations.py:217-219`). Also `planner/populations.py:273` is indented six spaces inside a four-space
     `for`. Cosmetic, but this is the file that argues prose beside code rots.
 12. **165 `evidence_stale` warnings stand on contoso5** and the board is honest about it for the first
     time. Those captures must be re-run before any verdict on them is quoted — and per

@@ -4,6 +4,12 @@ genre: proposal
 ---
 # PROPOSED — 2026-10-02 · ONE Revenue concept, and the four things that break first
 
+> **Paths in this document.** `planner/…`, `interpret/…` and `canons/…` are under
+> `mac-platform/packages/mac-runtime/src/mac_runtime/`; `packages/…` is under `mac-platform/`;
+> `data/…` and `ontology/…` are inside the bundle (`example/contoso5`). A `:line` suffix is the
+> line the measurement was read at.
+
+
 **Status: PROPOSED.** Per CORE §3 an agent may only write `PROPOSED`; adding or removing a concept is
 the operator's act. Nothing in this record has been applied to `example/contoso5` — the real bundle
 was read-only throughout and every experiment ran on a copy under the session scratchpad.
@@ -82,20 +88,20 @@ and `check_concepts_not_per_table` reports *"OK — the mapping is M:N"*. The op
 
 ## 2 · THE BASELINE, SO THE CLAIM IS FALSIFIABLE
 
-* **Plan digest** (`plan_digest.py`, every measure × every dimension × SUM/AVERAGE over all five
+* **Plan digest** (plan_digest.py — scratch, never committed; every measure × every dimension × SUM/AVERAGE over all five
   example bundles plus `mac-ontology-contoso`): **157 plans → `be8a974dddc5b091`**, byte-identical to
   the hash recorded in `PROPOSED-2026-10-02_column-first-declarations.md` D1. contoso5's share is 98
   of 157: 86 plans, 7 refusals, 5 raises.
-* **KPI probe** (`rev_probe.py`, the 6 concept names + 9 measure column names + `Revenue`, × SUM and
+* **KPI probe** (rev_probe.py — scratch, never committed; the 6 concept names + 9 measure column names + `Revenue`, × SUM and
   AVERAGE, × no-slice and 6 dimensions, plus 8 named-ratio shapes): 232 rows, **194 PLAN / 38 REFUSE**.
-* **`tools/gate.py`, all five planes, console up on :8890 — GATE: CLEAN.**
+* **`mac-platform/tools/gate.py`, all five planes, console up on :8890 — GATE: CLEAN.**
   * `[PASS] UNIT` — platform 1846 passed / 37 skipped / 6 xfailed; mac 384 passed / 1 skipped.
   * `[PASS] FRAGILITY` — 27 string-literal decisions (ceiling 27).
   * `[PASS] FROZEN PLANE` — 0 stale frozen readings.
   * `[PASS] BUNDLE RULES` — no concept carries an inline value list beyond the standing failures.
   * `[PASS] ANSWERS` — **46 approved questions, 36 pass / 10 fail / 0 ungradeable, 0 REGRESSED.**
 
-**One thing the baseline run itself taught, and it belongs in the record.** `tools/gate.py` is not
+**One thing the baseline run itself taught, and it belongs in the record.** `mac-platform/tools/gate.py` is not
 read-only on the bundle: its ANSWERS plane POSTs to the console, which rewrote
 `acceptance/questions_dashboard.json` (content changed — sha `296f042e…` → `97018ca7…`), appended to
 `acceptance/history.jsonl` and re-stamped 46 files under `acceptance/answers/`; then gate.py:183
@@ -137,8 +143,8 @@ Whole-estate, word-boundary matched, binaries excluded.
    `ontology/concepts/*.md`, `ontology/concepts/rules/*.md`, `ontology/samples/*.csv`,
    `ontology/ontology_quality.json`, `references/usage_guardrails.md`, `ontology/concepts/index.md`.
 7. **mac-platform tests: 13 test functions** hard-code the real contoso5 path AND name one of the six
-   — `test_framework_folds_with.py` 4 (one calls `index.get_concept("GrossRevenue")` directly),
-   `test_temporal_builtin.py` 8, `test_planner_value_column.py` 1. On the merged copy
+   — `packages/mac-runtime/tests/test_framework_folds_with.py` 4 (one calls `index.get_concept("GrossRevenue")` directly),
+   `packages/mac-runtime/tests/test_temporal_builtin.py` 8, `packages/mac-runtime/tests/test_planner_value_column.py` 1. On the merged copy
    `get_concept("GrossRevenue")` raises `UnknownConceptError`, so these ERROR rather than fail.
 8. **meaning-as-code needs nothing.** All 34 hits across the six are in its own exemplar bundle,
    golden pages, `mac_vocabulary.yaml` prose and decision records — none reference contoso5.
@@ -146,7 +152,7 @@ Whole-estate, word-boundary matched, binaries excluded.
 **A measured side-finding, unrelated to this proposal but found on the way.** Three rule documents
 under `ontology/concepts/rules/` describe rules that **no longer exist in any YAML**:
 `gross_revenue.aggregation.never_from_unit_prices`, `net_revenue.aggregation.never_from_unit_prices`,
-`sales_cost.aggregation.never_from_unit_costs`. `gross_revenue.yaml` and `sales_cost.yaml` carry
+`sales_cost.aggregation.never_from_unit_costs`. `ontology/concepts/gross_revenue.yaml` and `ontology/concepts/sales_cost.yaml` carry
 `contract: rules:` **null**. The `.md` plane, `compile.json` and `objects.json` still publish all
 three. A reader following the documentation reads a rule the runtime has never heard of.
 
@@ -239,7 +245,7 @@ already name columns) and their ratio denominators restated as COLUMNS rather th
 
 Method: `cp -R` the bundle to the session scratchpad (`revspike/c5base` pristine, `revspike/c5merged`
 edited), load each with `OntologyIndex.from_directory`, plan the same Intents against both, execute
-the resulting SQL against `contoso5.duckdb` read-only with `SET search_path='contoso_served'`. The
+the resulting SQL against `example/contoso5/contoso5.duckdb` read-only with `SET search_path='contoso_served'`. The
 real bundle was never edited.
 
 The merged copy **loads clean**: 17 concepts → 12, 38 edges → 18, 7 measure concepts → 2
@@ -250,7 +256,7 @@ The merged copy **loads clean**: 17 concepts → 12, 38 edges → 18, 7 measure 
 **126 of 126 column-name rows behave identically.** Same verdict, same FROM, same WHERE, same JOIN,
 same GROUP BY, same refusal class. The only textual difference is the result ALIAS.
 
-**And the numbers are identical to the cent.** Both plans executed against `contoso5.duckdb`,
+**And the numbers are identical to the cent.** Both plans executed against `example/contoso5/contoso5.duckdb`,
 2024 period:
 
 | KPI | BEFORE, `subject=<concept>` | AFTER, `subject=<column>` | equal |
@@ -327,7 +333,7 @@ SELECT dim_product.brand,
 FROM … GROUP BY dim_product.brand
 ```
 
-**Executed against `contoso5.duckdb`: no error. 11 rows. Result column names
+**Executed against `example/contoso5/contoso5.duckdb`: no error. 11 rows. Result column names
 `['brand', 'revenue', 'revenue', 'revenue']`.** Three different KPIs delivered under one name. The
 `also` de-duplication at `sql.py:1823` compares `expr + " AS " + alias`, so identical aliases over
 DIFFERENT expressions are not caught. Any consumer that reads a result by column name — the console
@@ -397,7 +403,7 @@ Run on `c5base` (pristine copy) and `c5merged`, same framework, same command:
 | `check_grain_declaration` | OK | OK |
 | `check_no_inline_values` | OK | OK |
 | `check_edge_joins_its_grounding` | **PASS**, 68 predicate sides / 34 joins | **FAIL** — 4 edges join a relation their concept does not bind *(reads `objects.json`, not the YAML — the derived plane was stale)* |
-| `check_dangling_references` | FAIL, 62 new dangling | FAIL, **110** new dangling (**+48**, the deleted `.md` pages still linked from `references/usage_guardrails.md`, `concepts/index.md`, `MODELLING-LOG.md`, `SME-QUESTIONS.md`) |
+| `check_dangling_references` | FAIL, 62 new dangling | FAIL, **110** new dangling (**+48**, the deleted `.md` pages still linked from `references/usage_guardrails.md`, `concepts/index.md`, `ontology/MODELLING-LOG.md`, `SME-QUESTIONS.md`) |
 | `check_question_shape_reachable` | OK, **85** joinable pairs | OK, **30** joinable pairs |
 | `check_answerability` | FAIL, 19 uncovered steps | FAIL, 9 uncovered steps |
 
@@ -427,7 +433,7 @@ rule applies. Extend the one-word-one-ratio invariant across a concept's rules, 
 (`interpret/vocabulary.py:263`) builds `measures` from `klass == MEASURE` and `MeasureTerm` carries
 name/label/definition/ratios — **no column list**. After the merge the model would be offered exactly
 one measure, `Revenue`, and could not name a KPI at all. The precedent is already in the file:
-`DimensionTerm.groupable_columns` puts column names in the prompt and `prompt.py:244` renders them as
+`DimensionTerm.groupable_columns` puts column names in the prompt and `interpret/prompt.py:244` renders them as
 `[columns: …]`. 04 §4's invariant is *no TABLE names*, and `vocabulary.py:15` says `Grounding` is
 never read here — so this is a real design decision for the operator, not a tidy-up, and it is the
 one place where "manage all KPIs from one concept" costs the ontology something: the six definitions
@@ -440,7 +446,7 @@ R4 needs a ruling before code, because it decides whether a measure column can c
 definition of its own. **Only then** the migration, as one commit: 6 concept YAMLs out / 1 in,
 24 edges → 4, 39 intent slots in 36 files retargeted, 10 surviving wiki-links retargeted, every
 derived plane regenerated (`objects.json`, `compile.json`, `edges.json`, `concepts/*.md`,
-`rules/*.md`, `samples/`, `references/`), 13 mac-platform tests updated — with `tools/gate.py`
+`rules/*.md`, `samples/`, `references/`), 13 mac-platform tests updated — with `mac-platform/tools/gate.py`
 showing **0 REGRESSED** over the 46 approved questions as the exit.
 
 **The alternative not taken, and it is cheap.** Everything in §1 that is duplicated is duplicated in
@@ -455,5 +461,5 @@ this one.
 
 The real bundle was read-only for this work. The two experiment copies live under the session
 scratchpad at `revspike/c5base` (pristine) and `revspike/c5merged` (the merge as tested), with
-`rev.PROBE.BEFORE/AFTER.json`, `rev.PROBE2.BEFORE/AFTER.json`, `rev.GATE.BEFORE.txt` and
+rev.PROBE.BEFORE/AFTER.json, rev.PROBE2.BEFORE/AFTER.json, rev.GATE.BEFORE.txt and
 `/tmp/rev.BEFORE.json` as the measurements. They are disposable; the numbers in this record are not.

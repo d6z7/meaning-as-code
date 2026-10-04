@@ -14,7 +14,5 @@ Everything the harvest + reconciliation found for this source: **0 findings** ac
 
 ## All findings
 
-| severity | finding | table | impurity | resolution |
-|---|---|---|---|---|
-
-_Full narrative: [RECONCILIATION](RECONCILIATION.md)._
+| severity | finding | table | impurity | resolution | disposition |
+|---|---|---|---|---|---|

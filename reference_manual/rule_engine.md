@@ -8,6 +8,12 @@ companions: [canon/population_select.md, identity_and_rules.md, column_specifica
 
 # The rule engine
 
+> **Paths in this document.** `planner/…`, `interpret/…` and `canons/…` are under
+> `mac-platform/packages/mac-runtime/src/mac_runtime/`; `packages/…` is under `mac-platform/`;
+> `data/…` and `ontology/…` are inside the bundle (`example/contoso5`). A `:line` suffix is the
+> line the measurement was read at.
+
+
 > A contract rule with an **executable body** acts like a database trigger. Its `binds` is the
 > CONDITION; its body is the ACTION; the action selects **which rows the concept has for this
 > question**. Until 2026-10-01 such a statement could only be prose in a rule's `then:`, and nothing
@@ -173,7 +179,7 @@ close_date IS NULL AND location_code IS DISTINCT FROM -1 -->  57   -- both defau
 
 The sentinel row has **no close date**, so it is an `active` store too. The familiar **57** is not
 what `active` selects — it is `active ∧ physical`, two independent axes each applying its own
-default. The comment at `store.yaml:249` ("57 rows, 57 locations") describes the composition, not
+default. The comment at `data/references/store.yaml:249` ("57 rows, 57 locations") describes the composition, not
 the predicate beside it.
 
 ### R3 — `default:` is optional, and its absence is a declaration
@@ -212,7 +218,7 @@ prose home is the one that rots without anything noticing.
 
 **MEASURED on that very rule.** Its `never:` read *"read `{status_annotation}` as the state. It is
 empty on all 58 rows that never closed"* — true when written, **FALSE** after the impurity fix of
-2026-10-01 filled the Utah row, and no gate caught it (`store.yaml:209-221`). It was corrected by
+2026-10-01 filled the Utah row, and no gate caught it (`data/references/store.yaml:209-221`). It was corrected by
 hand hours later, only because a human re-read it.
 
 > **There is still no gate for this.** `tools/check_canon_binding.py:141-146` compares a rule's prose
@@ -222,7 +228,7 @@ hand hours later, only because a human re-read it.
 
 **`why:` STAYS, and is not redundant.** No predicate encodes *"a person ruled this, on this date,
 against this measurement"*. Prose survives exactly where there is no body: `Country`'s
-`never: report nine countries` was kept for that reason (`country.yaml:143-149`), and so was
+`never: report nine countries` was kept for that reason (`ontology/concepts/country.yaml:143-149`), and so was
 `Location`'s remaining prose.
 
 ### R6 — structure, not SQL text, and this is not a style choice
@@ -246,7 +252,7 @@ adapter. Measured on this bundle today: **10 populations are declared, 4 of them
 the only form that can carry a string.
 
 > The figure "five of ten" in `planner/predicates.py:12` and `canon/population_select.md:150` counted
-> `inactive`, which was removed the same day (`store.yaml:257-263`). Today's measured count is **4 of
+> `inactive`, which was removed the same day (`data/references/store.yaml:257-263`). Today's measured count is **4 of
 > 10**. Recorded rather than edited — the file is another agent's.
 
 There is also **deliberately no slot** that accepts SQL text. A clause carries `column`, `op`, and
@@ -288,12 +294,12 @@ Six operators and no more (`planner/predicates.py:44-47`, `64-67`).
 
 | `op` | value slot | lowers to | source |
 |---|---|---|---|
-| `is_null` | none | `col IS NULL` | `predicates.py:227-228` |
-| `is_not_null` | none | `col IS NOT NULL` | `predicates.py:229-230` |
-| `eq` | `value:` (one) | `col = :p` | `predicates.py:231-232` |
-| `ne` | `value:` (one) | `col IS DISTINCT FROM :p` | `predicates.py:234-237` |
-| `in` | `values:` (list) | `col IN (:p0, :p1, …)` | `predicates.py:238-240` |
-| `not_in` | `values:` (list) | `(col IS NULL OR col NOT IN (:p0, …))` | `predicates.py:241-247` |
+| `is_null` | none | `col IS NULL` | `planner/predicates.py:227-228` |
+| `is_not_null` | none | `col IS NOT NULL` | `planner/predicates.py:229-230` |
+| `eq` | `value:` (one) | `col = :p` | `planner/predicates.py:231-232` |
+| `ne` | `value:` (one) | `col IS DISTINCT FROM :p` | `planner/predicates.py:234-237` |
+| `in` | `values:` (list) | `col IN (:p0, :p1, …)` | `planner/predicates.py:238-240` |
+| `not_in` | `values:` (list) | `(col IS NULL OR col NOT IN (:p0, …))` | `planner/predicates.py:241-247` |
 
 **No `gt/gte/lt/lte`**, no column-to-column comparison, no `expr`, no `sql`, no `function`. Every
 threshold in the worked corpus is in the QUESTION, where `FilterOp` already has them, and a
@@ -374,7 +380,7 @@ populations, under the standing rule *expose the granularity, never narrow silen
 
 ## 7. The worked bundle, measured
 
-`contoso5.duckdb`, schema `contoso_served`, 2026-10-01, via
+`example/contoso5/contoso5.duckdb`, schema `contoso_served`, 2026-10-01, via
 `mac-platform/.venv/bin/python`. **Ten populations across four axes on three
 concepts** — every one of them lowered through `predicates.parse` + `predicates.lower` and passed
 through the real adapter gate.
@@ -406,7 +412,7 @@ Revenue (`SUM(v_contoso5_sales_line.net_amount)`, joined on `store_key`):
 The sentinel is written into **three relations**, each with its own column and its own row:
 `dim_store.location_code = -1`, `dim_location.location_code = -1`, `dim_country.country_code = '--'`.
 A population selects the rows of the relation it is declared on and nothing else, so three relations
-need three bodies (`country.yaml:155-161`).
+need three bodies (`ontology/concepts/country.yaml:155-161`).
 
 What **was** duplicated were the **three prose statements** on a `Channel` concept. That concept and
 its edge `order__through__channel` were deleted on 2026-10-01 — operator ruling: *"if channel has no
@@ -426,23 +432,23 @@ predicate that half-applies is a wrong population reported as a right one
 
 | what you wrote | the refusal says | source |
 |---|---|---|
-| a predicate with no `all:` | *"A predicate is a conjunction: `all: [{column: …, op: …}]`"* | `predicates.py:110-117` |
-| a key beside `all:` | *"a predicate carries `all:` and nothing else"* | `predicates.py:118-124` |
-| `all:` empty or not a list | *"must be a non-empty list of clauses"* | `predicates.py:126-130` |
-| a clause key outside `column`/`op`/`value`/`values` | *"There is deliberately no slot for SQL text"* | `predicates.py:139-148` |
-| no `column` | *"names no column"* | `predicates.py:151` |
-| an operator outside the six | *"A threshold belongs in the question, where the grammar already has one"* | `predicates.py:152-160` |
-| `value:` on a null test | *"is a `<op>` test and takes no value"* | `predicates.py:162-168` |
-| `values:` on `eq`/`ne` | *"takes exactly one `value`, not `values`"* | `predicates.py:169-175` |
-| `value:` on `in`/`not_in` | *"takes `values:` (a list), not a single `value`"* | `predicates.py:176-181` |
-| `values: []` | *"must be a non-empty list"* | `predicates.py:182-186` |
-| a column the relation does not declare (at lowering) | lists the declared set | `predicates.py:219-225` |
-| the canon bound with no `populations:` | *"declares no `populations:` mapping"* | `populations.py:139-143` |
-| `default:` naming an undeclared population | *"which it does not declare. Declared: …"* | `populations.py:148-154` |
-| the canon bound with no `binds:` | *"`binds` is its trigger condition"* | `populations.py:165-171` |
-| a `binds` column the relation does not declare | lists the declared set | `populations.py:179-185` |
-| a population testing a column outside `binds` | *"or a question about those columns could never displace it"* | `populations.py:186-194` |
-| a population name compared with `>`/`<`/`between` | *"A population is a set of rows: a question is either in it or not."* | `plan.py:1579-1588` |
+| a predicate with no `all:` | *"A predicate is a conjunction: `all: [{column: …, op: …}]`"* | `planner/predicates.py:110-117` |
+| a key beside `all:` | *"a predicate carries `all:` and nothing else"* | `planner/predicates.py:118-124` |
+| `all:` empty or not a list | *"must be a non-empty list of clauses"* | `planner/predicates.py:126-130` |
+| a clause key outside `column`/`op`/`value`/`values` | *"There is deliberately no slot for SQL text"* | `planner/predicates.py:139-148` |
+| no `column` | *"names no column"* | `planner/predicates.py:151` |
+| an operator outside the six | *"A threshold belongs in the question, where the grammar already has one"* | `planner/predicates.py:152-160` |
+| `value:` on a null test | *"is a `<op>` test and takes no value"* | `planner/predicates.py:162-168` |
+| `values:` on `eq`/`ne` | *"takes exactly one `value`, not `values`"* | `planner/predicates.py:169-175` |
+| `value:` on `in`/`not_in` | *"takes `values:` (a list), not a single `value`"* | `planner/predicates.py:176-181` |
+| `values: []` | *"must be a non-empty list"* | `planner/predicates.py:182-186` |
+| a column the relation does not declare (at lowering) | lists the declared set | `planner/predicates.py:219-225` |
+| the canon bound with no `populations:` | *"declares no `populations:` mapping"* | `planner/populations.py:139-143` |
+| `default:` naming an undeclared population | *"which it does not declare. Declared: …"* | `planner/populations.py:148-154` |
+| the canon bound with no `binds:` | *"`binds` is its trigger condition"* | `planner/populations.py:165-171` |
+| a `binds` column the relation does not declare | lists the declared set | `planner/populations.py:179-185` |
+| a population testing a column outside `binds` | *"or a question about those columns could never displace it"* | `planner/populations.py:186-194` |
+| a population name compared with `>`/`<`/`between` | *"A population is a set of rows: a question is either in it or not."* | `planner/plan.py:1579-1588` |
 
 ---
 
@@ -460,23 +466,23 @@ about whether the value makes sense for the column. Two live defects passed it:
 
 `fits(value, declared)` answers `True` / `False` / `None` — `None` meaning *the declared type is one
 this module has no opinion about*, which is not a violation, because an opinion without evidence is a
-guess (`column_types.py:99-143`). Two orderings are load-bearing:
+guess (`planner/column_types.py:99-143`). Two orderings are load-bearing:
 
 - **bool before numeric.** `isinstance(True, int)` is `True` in python, so a naive numeric test passes
-  a bool onto an integer key — exactly RC08 (`column_types.py:112-116`).
+  a bool onto an integer key — exactly RC08 (`planner/column_types.py:112-116`).
 - **a float with no fraction is an integer.** `FilterRef.value` is typed `str | float | bool |
   list[str]` with **no `int` member**, so pydantic turns the model's `630` into `630.0` before the
-  planner sees it. `630.5` onto an integer column still refuses (`column_types.py:124-132`).
+  planner sees it. `630.5` onto an integer column still refuses (`planner/column_types.py:124-132`).
 
 Only the **DIRECTLY** compared column is checked — the operand must *be* a column, never contain one.
 The first cut read `HAVING COUNT(DISTINCT orders.order_id) >= :threshold` as a comparison against
-`order_id` and refused a threshold of `10.0` (`column_types.py:180-212`).
+`order_id` and refused a threshold of `10.0` (`planner/column_types.py:180-212`).
 
 It refuses in the **planner**, not the adapter: the planner has the declared types through
 `Grounding.serving_columns[].type`, `ExecutablePlan` carries none; and a question that cannot be
 answered correctly deserves a `Refusal` naming the concept and the column, not an `AdapterError`
-(`column_types.py:24-32`). It fires after the SQL transforms, beside `check_sql_guards`
-(`plan.py:745-757`).
+(`planner/column_types.py:24-32`). It fires after the SQL transforms, beside `check_sql_guards`
+(`planner/plan.py:745-757`).
 
 **`fits()` has one home.** `mac-console/src/mac_console/trace_losses.py:38-47` **imports** it rather
 than keeping a second table, so a trace diagnosis and a planner refusal cannot disagree.
@@ -492,9 +498,9 @@ column to place the predicate on, the planner fell back to the identity column a
 
 `ResolvedTerm(concept, candidate)` now carries `.column` and `.identity` through
 (`resolve.py:159-168`, returned at `resolve.py:202` and `211`). `.concept` is what every existing
-caller wanted and keeps getting. The planner reads them at `plan.py:1628-1645` (the
+caller wanted and keeps getting. The planner reads them at `planner/plan.py:1628-1645` (the
 `{term: closed, value: true}` case, narrow on purpose — **only a bool**, and only when the term
-matched ON a column the concept declares) and at `plan.py:1686-1687` (value's column first, term's
+matched ON a column the concept declares) and at `planner/plan.py:1686-1687` (value's column first, term's
 second). **The fix is not new machinery; it is not throwing the answer away.**
 
 ---
@@ -543,7 +549,7 @@ behaves exactly as before rather than raising a warning it has no basis for
 disagreements**. Two names and two predicates for one set is exactly the drift this mechanism exists
 to remove: the day they stop agreeing, two questions that mean the same thing answer differently and
 nothing says why. `inactive` is a **surface** for `ended`, which is a synonym question and belongs to
-the reader that shows the model the names (`store.yaml:257-263`).
+the reader that shows the model the names (`data/references/store.yaml:257-263`).
 
 ---
 
@@ -559,7 +565,7 @@ the reader that shows the model the names (`store.yaml:257-263`).
   restructured"); that would be a constraint, not a population.
 - **Conjunctions only.** `any:` is a declared gap, not an oversight.
 - **A column declared only in `serving_columns` cannot be bound today.** `_read_all` resolves `binds`
-  against `field_roles | served_columns` (`populations.py:176-178`) while lowering accepts three homes
+  against `field_roles | served_columns` (`planner/populations.py:176-178`) while lowering accepts three homes
   (`sql.py:1921-1928`). An asymmetry, not a design.
 - **Three exported pieces of the canon are unreached by the runtime.** `fold()` and `stray_columns()`
   have **zero callers**, and `population_select`'s `asked=` parameter is never passed:
@@ -568,5 +574,5 @@ the reader that shows the model the names (`store.yaml:257-263`).
   invariants, in the mechanism built to remove exactly that. Recorded in
   [`decisions/PROTOCOL-2026-10-01_rule-engine.md`](../decisions/PROTOCOL-2026-10-01_rule-engine.md).
 - **No test covers the canon directly.** `grep -rn population_select packages/*/tests/*.py` returns
-  nothing; `test_planner_predicates.py` (11 tests) covers the predicate language and
-  `test_planner_value_column.py` the naming route. The pure decision is exercised only through them.
+  nothing; `packages/mac-runtime/tests/test_planner_predicates.py` (11 tests) covers the predicate language and
+  `packages/mac-runtime/tests/test_planner_value_column.py` the naming route. The pure decision is exercised only through them.

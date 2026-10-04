@@ -1,39 +1,4 @@
 # tools/dangling_floor.txt — the dangling references still open when check_dangling_references.py shipped.
 # RATCHET: this file may only shrink. One entry per line, `file:line:target`; an entry matches on file and
 # target (the line is where it was when recorded). Fix the sentence, then delete its line here.
-# Written ratchet: 43 entries.
-example_shop_ontology/data/quality/0-issues-overview.md:20:RECONCILIATION.md
-example_shop_ontology/index.md:10:quality/0-issues-overview.md
-example_shop_ontology/index.md:12:quality/SME-QUESTIONS.md
-example_shop_ontology/index.md:15:sources/orders_raw.md
-example_shop_ontology/index.md:20:datasets/categories.md
-example_shop_ontology/index.md:21:datasets/customers.md
-example_shop_ontology/index.md:22:datasets/orders.md
-example_shop_ontology/index.md:23:datasets/product_bundles.md
-example_shop_ontology/index.md:24:datasets/products.md
-example_shop_ontology/index.md:25:datasets/refunds.md
-example_shop_ontology/index.md:26:datasets/shipping_carriers.md
-example_shop_ontology/ontology/rules/order.revenue.paid_only.md:28:../order.md
-example_shop_ontology/ontology/rules/order.state.from_timestamps.md:28:../order.md
-example_shop_ontology/ontology/rules/revenue.net_of_refunds.md:28:../revenue.md
-example_tpch_ontology/data/quality/0-issues-overview.md:20:RECONCILIATION.md
-example_tpch_ontology/index.md:10:quality/0-issues-overview.md
-example_tpch_ontology/index.md:12:quality/SME-QUESTIONS.md
-example_tpch_ontology/index.md:15:sources/customer_raw.md
-example_tpch_ontology/index.md:16:sources/lineitem_raw.md
-example_tpch_ontology/index.md:17:sources/nation_raw.md
-example_tpch_ontology/index.md:18:sources/orders_raw.md
-example_tpch_ontology/index.md:19:sources/part_raw.md
-example_tpch_ontology/index.md:20:sources/partsupp_raw.md
-example_tpch_ontology/index.md:21:sources/region_raw.md
-example_tpch_ontology/index.md:22:sources/supplier_raw.md
-example_tpch_ontology/index.md:27:datasets/customer.md
-example_tpch_ontology/index.md:28:datasets/lineitem.md
-example_tpch_ontology/index.md:29:datasets/nation.md
-example_tpch_ontology/index.md:30:datasets/orders.md
-example_tpch_ontology/index.md:31:datasets/part.md
-example_tpch_ontology/index.md:32:datasets/partsupp.md
-example_tpch_ontology/index.md:33:datasets/region.md
-example_tpch_ontology/index.md:34:datasets/supplier.md
-example_tpch_ontology/ontology/rules/lineitem.revenue.net_of_discount.md:28:../lineitem.md
-example_tpch_ontology/ontology/rules/lineitem.state.received_iff_receiptdate.md:24:../lineitem.md
+# Written ratchet: 43 entries. Lowered to 0 on 2026-10-04: the bundle-root index links were the projector's own defect, fixed in sdk/project/project_data.py.

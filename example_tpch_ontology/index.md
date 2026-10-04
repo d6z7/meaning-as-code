@@ -7,28 +7,28 @@ title: TPCH data plane
 
 **Resolution scoreboard** — how the recorded impurities are dissolved by the gold transforms: **0 ✓ resolved · 0 ◐ partial · 0 ⚠ open gap**.
 
-📋 **[Issues & inconsistencies — the full overview](quality/0-issues-overview.md)**
+📋 **[Issues & inconsistencies — the full overview](data/quality/0-issues-overview.md)**
 
-❓ **[SME questions — data & data quality](quality/SME-QUESTIONS.md)**
+❓ **[SME questions — data & data quality](data/quality/SME-QUESTIONS.md)**
 
 ## Sources
-- [customer_raw](sources/customer_raw.md)
-- [lineitem_raw](sources/lineitem_raw.md)
-- [nation_raw](sources/nation_raw.md)
-- [orders_raw](sources/orders_raw.md)
-- [part_raw](sources/part_raw.md)
-- [partsupp_raw](sources/partsupp_raw.md)
-- [region_raw](sources/region_raw.md)
-- [supplier_raw](sources/supplier_raw.md)
+- [customer_raw](data/sources/customer_raw.md)
+- [lineitem_raw](data/sources/lineitem_raw.md)
+- [nation_raw](data/sources/nation_raw.md)
+- [orders_raw](data/sources/orders_raw.md)
+- [part_raw](data/sources/part_raw.md)
+- [partsupp_raw](data/sources/partsupp_raw.md)
+- [region_raw](data/sources/region_raw.md)
+- [supplier_raw](data/sources/supplier_raw.md)
 
 ## Data quality (by severity → resolution)
 
 ## Clean datasets
-- [customer](datasets/customer.md)
-- [lineitem](datasets/lineitem.md)
-- [nation](datasets/nation.md)
-- [orders](datasets/orders.md)
-- [part](datasets/part.md)
-- [partsupp](datasets/partsupp.md)
-- [region](datasets/region.md)
-- [supplier](datasets/supplier.md)
+- [customer](data/datasets/customer.md)
+- [lineitem](data/datasets/lineitem.md)
+- [nation](data/datasets/nation.md)
+- [orders](data/datasets/orders.md)
+- [part](data/datasets/part.md)
+- [partsupp](data/datasets/partsupp.md)
+- [region](data/datasets/region.md)
+- [supplier](data/datasets/supplier.md)

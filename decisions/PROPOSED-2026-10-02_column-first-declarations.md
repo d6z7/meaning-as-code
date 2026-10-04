@@ -13,12 +13,18 @@ implemented_by:
 ---
 # IMPLEMENTED — 2026-10-02 · column-first declarations, and what it cost
 
+> **Paths in this document.** `planner/…`, `interpret/…` and `canons/…` are under
+> `mac-platform/packages/mac-runtime/src/mac_runtime/`; `packages/…` is under `mac-platform/`;
+> `data/…` and `ontology/…` are inside the bundle (`example/contoso5`). A `:line` suffix is the
+> line the measurement was read at.
+
+
 **Status: IMPLEMENTED 2026-10-02** — written and shipped the same day; the rulings below are the
 operator's, taken as the work went. Per CORE §3 an agent may only write `PROPOSED`, which is what the
 filename records; the state is in this file's front matter. This record exists so the REASONING lives here and the source stays readable — operator, 2026-10-02:
 *"my problem with inline comments is that they make source lesser readable. i dont mind one line of
 comments ... but i do 20 lines for one line of code."* Measured on the files changed that day:
-`column_facts.py` carried 91 comment lines against 55 of code (1.65:1), `canons/ratio_select.py`
+`mac_runtime/column_facts.py` carried 91 comment lines against 55 of code (1.65:1), `canons/ratio_select.py`
 1.49:1, and 54 blocks of 6+ consecutive comment lines held 662 lines across five files.
 
 **The rule this record serves:** inline comments say WHAT and name the one non-obvious constraint, in
@@ -85,7 +91,7 @@ ontology.
 
 Operator, twice: *"i want a RULE which prohibits creation of values in concepts ... make sure that it
 cannot creap IN."* Measured: 5 concepts inlined **49 values** byte-for-byte identical to 5 lookup
-files, with no reference between them — and `color.yaml` already carried **17** members where its
+files, with no reference between them — and `ontology/concepts/color.yaml` already carried **17** members where its
 register had **16**. One fact, two homes, already disagreeing.
 
 `tools/check_no_inline_values.py` is the gate, wired into `mac-platform/tools/gate.py` as a BUNDLE

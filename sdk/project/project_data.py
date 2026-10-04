@@ -804,6 +804,14 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         c = (resmap.get(iss.get("id")) or {}).get("coverage")
         if c in covc:
             covc[c] += 1
+    #: THE INDEX SITS AT THE BUNDLE ROOT AND ITS TARGETS SIT UNDER THE DATA DIRECTORY, so every link
+    #: below needs that segment. Without it this projector wrote, for EVERY bundle it ever projected,
+    #: an index whose every link resolved to nothing: 28 of the 35 entries in
+    #: `tools/dangling_floor.txt` were this one line's output, across both exemplar bundles. `root` is
+    #: `data_dir.parent`, so the prefix is computed from the pair rather than spelled "data/" — a
+    #: renamed data directory then stays linked instead of breaking the same way again.
+    dp = out.relative_to(root).as_posix()
+    dp = f"{dp}/" if dp and dp != "." else ""
     idx = [
         "---",
         "type: Index",
@@ -817,13 +825,13 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         f"transforms: **{covc['resolved']} ✓ resolved · {covc['partial']} ◐ partial · "
         f"{covc['gap']} ⚠ open gap**.",
         "",
-        "📋 **[Issues & inconsistencies — the full overview](quality/0-issues-overview.md)**",
+        f"📋 **[Issues & inconsistencies — the full overview]({dp}quality/0-issues-overview.md)**",
         "",
-        "❓ **[SME questions — data & data quality](quality/SME-QUESTIONS.md)**",
+        f"❓ **[SME questions — data & data quality]({dp}quality/SME-QUESTIONS.md)**",
         "",
         "## Sources",
     ]
-    idx += [f"- [{s}](sources/{s}.md)" for s in sorted(sources)]
+    idx += [f"- [{s}]({dp}sources/{s}.md)" for s in sorted(sources)]
     idx += ["", "## Data quality (by severity → resolution)"]
     for iss in sorted(
         issues,
@@ -835,13 +843,13 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
         cov = (resmap.get(iss.get("id")) or {}).get("coverage")
         chip = f" — {_COV_CHIP.get(cov, cov)}" if cov else ""
         idx.append(
-            f"- **{iss.get('severity', '?')}** [{iss.get('title', '')}](quality/{iss['_id']}.md){chip}"
+            f"- **{iss.get('severity', '?')}** [{iss.get('title', '')}]({dp}quality/{iss['_id']}.md){chip}"
         )
     idx += ["", "## Clean datasets"]
-    idx += [f"- [{d}](datasets/{d}.md)" for d in sorted(datasets)]
+    idx += [f"- [{d}]({dp}datasets/{d}.md)" for d in sorted(datasets)]
     if lookups:
         idx += ["", "## Reference lookups"]
-        idx += [f"- [{lk.stem}](lookups/{lk.stem}.md)" for lk in lookups]
+        idx += [f"- [{lk.stem}]({dp}lookups/{lk.stem}.md)" for lk in lookups]
     (root / "index.md").write_text("\n".join(idx) + "\n")
 
     # Authored narrative docs (data/quality/RECONCILIATION.md — self-contained, its own frontmatter)
@@ -909,7 +917,12 @@ def build_data(data_dir, out_dir=None, lineage=None) -> dict:
             f"- {_COV_CHIP.get(r.get('coverage'))} [{fid}]({_slug(fid)}.md) — {r.get('guarantee', '')}"
             for fid, r in opens
         ]
-    ov += ["", "_Full narrative: [RECONCILIATION](RECONCILIATION.md)._"]
+    #: THE NARRATIVE IS AUTHORED AND OPTIONAL, so the link is written only when the file is there. The
+    #: comment 60 lines below already says these docs are "served AS-IS ... NOT re-projected here" —
+    #: which means a bundle may simply not have one, and this line linked it unconditionally. Both
+    #: exemplar bundles have no RECONCILIATION.md, so both carried a dead link in a GENERATED page.
+    if (out / "quality" / "RECONCILIATION.md").is_file():
+        ov += ["", "_Full narrative: [RECONCILIATION](RECONCILIATION.md)._"]
     (out / "quality" / "0-issues-overview.md").write_text(
         _fm(
             {
