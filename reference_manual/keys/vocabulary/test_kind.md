@@ -15,4 +15,4 @@ Which question a property answers. The two kinds have OPPOSITE rules about where
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

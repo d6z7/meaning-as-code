@@ -15,4 +15,4 @@ The role a question binds a dimension with — restrict (a member-set scope) vs 
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

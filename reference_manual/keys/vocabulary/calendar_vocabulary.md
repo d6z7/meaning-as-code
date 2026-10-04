@@ -22,4 +22,4 @@ The words and literal forms of the Gregorian calendar. A column whose value set 
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

@@ -34,4 +34,4 @@ The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

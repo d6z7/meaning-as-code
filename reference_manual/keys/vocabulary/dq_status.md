@@ -17,8 +17,8 @@ The disposition of ONE registered data-quality issue — what a human decided ab
 
 ## Keys that take one of these values
 
-- `closure` on [`concept.values`](../concept.values.md)
+- `closure` on [`concept.values`](../concept/values/README.md)
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

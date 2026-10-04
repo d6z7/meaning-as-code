@@ -248,16 +248,29 @@ def cut_examples(bundle: pathlib.Path, limit_chars: int = 1400):
 # rendering
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 
-def slug(path: str) -> str:
-    return path.replace(ANY, ANY_SLUG)
+#: ONE DIRECTORY PER LEVEL, because a menu is built from the FILE TREE. 58 pages named
+#: `concept.grounding.sources.columns.each.measure.md` in one directory give every viewer — the
+#: console's own panel included — 58 flat siblings, which is the defect this reference exists to
+#: end, committed in the filesystem instead of in prose. Nested directories make any file-tree menu
+#: hierarchical with no code in the viewer at all. A level with children owns a directory and is
+#: its `README.md`; a leaf is a file beside its siblings.
+
+def level_page(path: str, levels) -> str:
+    segs = [ANY_SLUG if s == ANY else s for s in path.split(".")]
+    has_children = any(p.startswith(path + ".") for p in levels)
+    return "/".join(segs) + ("/README.md" if has_children else ".md")
 
 
-def level_file(path: str) -> str:
-    return f"{slug(path)}.md"
+def notion_page(notion: str, notions) -> str:
+    segs = ["vocabulary"] + notion.split(".")
+    has_children = any(n.startswith(notion + ".") for n in notions)
+    return "/".join(segs) + ("/README.md" if has_children else ".md")
 
 
-def notion_file(notion: str) -> str:
-    return f"vocabulary/{notion}.md"
+def rel(here: str, there: str) -> str:
+    """A link from one page to another, both keys-relative. Nested pages need `../`."""
+    import posixpath
+    return posixpath.relpath(there, posixpath.dirname(here)) or "."
 
 
 def cell(text) -> str:
@@ -266,13 +279,15 @@ def cell(text) -> str:
     return s.replace("|", "\\|")
 
 
-def render_level(path, level, levels, examples, gaps_by_level, bundle_name) -> str:
+def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_name) -> str:
+    here = level_page(path, levels)
     segs = path.split(".")
     crumb = []
     for i in range(len(segs)):
         p = ".".join(segs[:i + 1])
         crumb.append(segs[i] if i == len(segs) - 1
-                     else (f"[{segs[i]}]({level_file(p)})" if p in levels else segs[i]))
+                     else (f"[{segs[i]}]({rel(here, level_page(p, levels))})"
+                           if p in levels else segs[i]))
 
     out = [BANNER, "", f"# `{path}`", "", " · ".join(crumb), ""]
 
@@ -307,11 +322,13 @@ def render_level(path, level, levels, examples, gaps_by_level, bundle_name) -> s
                 values = []
                 for value, term in k["enum"]:
                     if term and term.get("notion"):
-                        values.append(f"[`{value}`]({notion_file(term['notion'])}#{term['term']})")
+                        target = rel(here, notion_page(term["notion"], notions))
+                        values.append(f"[`{value}`]({target}#{term['term']})")
                     else:
                         values.append(f"`{value}`")
                 meaning += "<br>**one of:** " + " · ".join(values)
-            deeper = f"[{k['child'].split('.')[-1]}]({level_file(k['child'])})" if k["child"] else ""
+            deeper = (f"[{k['child'].split('.')[-1]}]"
+                      f"({rel(here, level_page(k['child'], levels))})") if k["child"] else ""
             out.append(f"| `{k['key']}` | {'**required**' if k['required'] else ''} | "
                        f"`{k['type']}` | {meaning} | {deeper} |")
         out.append("")
@@ -326,14 +343,15 @@ def render_level(path, level, levels, examples, gaps_by_level, bundle_name) -> s
                       if p.startswith(path + ".") and "." not in p[len(path) + 1:])
     if children:
         out += ["## Levels under this one", ""]
-        out += [f"- [`{p}`]({level_file(p)})" for p in children]
+        out += [f"- [`{p.split('.')[-1]}:`]({rel(here, level_page(p, levels))})" for p in children]
         out.append("")
 
-    out += ["---", "", f"[↑ the index](README.md)", ""]
+    out += ["---", "", f"[↑ the whole tree]({rel(here, 'README.md')})", ""]
     return "\n".join(out)
 
 
-def render_notion(notion, body, levels) -> str:
+def render_notion(notion, body, levels, notions) -> str:
+    here = notion_page(notion, notions)
     out = [BANNER, "", f"# `mac.{notion}.<term>`", "",
            ("**Closed** — these are all of them. A value outside this list is a load error, "
             "not a new term." if body["closed"] else "**Open** — terms may be added.")
@@ -365,10 +383,10 @@ def render_notion(notion, body, levels) -> str:
     takers = sorted(set(takers))
     if takers:
         out += ["## Keys that take one of these values", ""]
-        out += [f"- `{k}` on [`{p}`](../{level_file(p)})" for p, k in takers]
+        out += [f"- `{k}` on [`{p}`]({rel(here, level_page(p, levels))})" for p, k in takers]
         out.append("")
 
-    out += ["---", "", "[↑ the index](../README.md)", ""]
+    out += ["---", "", f"[↑ the whole tree]({rel(here, 'README.md')})", ""]
     return "\n".join(out)
 
 
@@ -376,8 +394,9 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
     key_total = sum(len(f["keys"]) for lv in levels.values() for f in lv["forms"])
     described = key_total - len(gaps)
     out = [BANNER, "", "# The key reference", "",
-           "Every key a concept file may write, one page per level. Start at "
-           "[`concept`](concept.md) — the file itself — and walk down: each page lists the keys "
+           "Every key a concept file may write, one page per level, and one DIRECTORY per level so "
+           "that any file-tree menu shows the hierarchy. Start at "
+           f"[`concept`]({level_page('concept', levels)}) — the file itself — and walk down: each page lists the keys "
            "legal at that level, what each means, which are required, the legal values of each, "
            "and the level beneath it.", "",
            f"Generated from `mac.schema.json` **{schema_version}** and `mac_vocabulary.yaml`. "
@@ -420,12 +439,12 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
             # first two rows both read "concept" makes a reader check which is which every time.
             leaf = path.rsplit(".", 1)[-1]
             label = leaf if leaf == ANY else f"{leaf}:"
-            out.append(f"{'  ' * depth}- [`{label}`]({level_file(path)}) — {note}")
+            out.append(f"{'  ' * depth}- [`{label}`]({level_page(path, levels)}) — {note}")
             level_tree(path, depth + 1)
 
     root_keys = sum(len(f["keys"]) for f in levels["concept"]["forms"])
     root_gap = gaps_by_level.get("concept", 0)
-    out.append(f"- [**a concept file**](concept.md) — its {root_keys} top-level keys"
+    out.append(f"- [**a concept file**]({level_page('concept', levels)}) — its {root_keys} top-level keys"
                + (f", **{root_gap} unexplained**" if root_gap else ""))
     level_tree("concept", 1)
     out.append("")
@@ -452,7 +471,7 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
             pad = "  " * depth
             if full in notions:
                 body = notions[full]
-                out.append(f"{pad}- [`{head}`]({notion_file(full)}) — {len(body['terms'])} terms"
+                out.append(f"{pad}- [`{head}`]({notion_page(full, notions)}) — {len(body['terms'])} terms"
                            + (", closed" if body["closed"] else ", open"))
             else:
                 out.append(f"{pad}- `{head}`")
@@ -474,7 +493,7 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
         # their place again. The counts are not repeated here either — the tree carries those, this
         # carries WHICH keys, so neither is a second home for the other.
         for path in sorted(by):
-            out.append(f"| [`{path}`]({level_file(path)}) | "
+            out.append(f"| [`{path}`]({level_page(path, levels)}) | "
                        f"{', '.join('`' + k + '`' for k in sorted(by[path]))} |")
         out.append("")
     return "\n".join(out)
@@ -502,19 +521,30 @@ def pages_for(root: pathlib.Path, bundle: pathlib.Path | None) -> dict[str, str]
     pages = {"README.md": render_index(walker.levels, notions, walker.gaps, examples,
                                       schema["version"], bundle.name if bundle else "none", read)}
     for path, level in walker.levels.items():
-        pages[level_file(path)] = render_level(path, level, walker.levels, examples,
-                                               gaps_by_level, bundle.name if bundle else "none")
+        pages[level_page(path, walker.levels)] = render_level(
+            path, level, walker.levels, notions, examples, gaps_by_level,
+            bundle.name if bundle else "none")
     for notion, body in notions.items():
-        pages[notion_file(notion)] = render_notion(notion, body, walker.levels)
+        pages[notion_page(notion, notions)] = render_notion(notion, body, walker.levels, notions)
     return pages
 
 
 def write(out_dir: pathlib.Path, pages: dict[str, str]) -> int:
-    (out_dir / "vocabulary").mkdir(parents=True, exist_ok=True)
-    for rel, text in pages.items():
-        p = out_dir / rel
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for name, text in pages.items():
+        p = out_dir / name
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text if text.endswith("\n") else text + "\n", encoding="utf-8")
+    #: PRUNE, because renaming a level leaves its old page behind and a stale page in a GENERATED
+    #: tree is indistinguishable from a current one. Only `.md` under this directory is touched, and
+    #: only what this run did not write.
+    wanted = {out_dir / n for n in pages}
+    for old in sorted(out_dir.rglob("*.md")):
+        if old not in wanted:
+            old.unlink()
+    for d in sorted(out_dir.rglob("*"), reverse=True):
+        if d.is_dir() and not any(d.iterdir()):
+            d.rmdir()
     return len(pages)
 
 
@@ -545,13 +575,13 @@ def check(root: pathlib.Path, out_dir: pathlib.Path, bundle) -> list[str]:
     #: to appear, as a table cell, on the page for its own level. Different question, different
     #: evidence, so the two cannot agree by construction.
     for path, level in walker.levels.items():
-        rel = level_file(path)
-        text = (out_dir / rel).read_text(encoding="utf-8") if (out_dir / rel).is_file() else ""
+        page = level_page(path, walker.levels)
+        text = (out_dir / page).read_text(encoding="utf-8") if (out_dir / page).is_file() else ""
         for form in level["forms"]:
             for k in form["keys"]:
                 if f"| `{k['key']}` |" not in text:
                     rejects.append(f"[uncovered-key] {path}.{k['key']} — the schema admits this key "
-                                   f"and {rel} does not list it")
+                                   f"and {page} does not list it")
     return rejects
 
 
@@ -577,7 +607,7 @@ def self_test(bundle) -> int:
         expect(check(ROOT, out, bundle) == [], "a freshly written tree must be clean")
 
         # stale-page
-        target = out / "concept.md"
+        target = out / "concept" / "README.md"
         keep = target.read_text(encoding="utf-8")
         target.write_text(keep.replace("# `concept`", "# `concept` EDITED"), encoding="utf-8")
         expect(any(r.startswith("[stale-page]") for r in check(ROOT, out, bundle)),
@@ -591,7 +621,7 @@ def self_test(bundle) -> int:
         target.write_text(keep, encoding="utf-8")
 
         # orphan-page
-        stray = out / "concept.not_a_level.md"
+        stray = out / "concept" / "not_a_level.md"
         stray.write_text("stray\n", encoding="utf-8")
         expect(any(r.startswith("[orphan-page]") for r in check(ROOT, out, bundle)),
                "a page for no level must reject as orphan-page")

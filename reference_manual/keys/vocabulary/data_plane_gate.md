@@ -30,4 +30,4 @@ WHAT THIS SET DELIBERATELY DOES NOT CONTAIN: a member for "too many issues", for
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

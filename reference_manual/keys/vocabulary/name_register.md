@@ -18,9 +18,9 @@ Which register a name belongs to, when one thing carries several names.
 
 ## Keys that take one of these values
 
-- `kind` on [`concept.concept.identity`](../concept.concept.identity.md)
-- `register` on [`concept.grounding.sources.columns.<name>.rulings`](../concept.grounding.sources.columns.each.rulings.md)
+- `kind` on [`concept.concept.identity`](../concept/concept/identity.md)
+- `register` on [`concept.grounding.sources.columns.<name>.rulings`](../concept/grounding/sources/columns/each/rulings.md)
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

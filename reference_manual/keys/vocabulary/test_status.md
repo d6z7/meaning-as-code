@@ -20,8 +20,8 @@ The disposition of ONE property run — what the INSTRUMENT did about the claim,
 
 ## Keys that take one of these values
 
-- `severity` on [`concept.constraints`](../concept.constraints.md)
+- `severity` on [`concept.constraints`](../concept/constraints.md)
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

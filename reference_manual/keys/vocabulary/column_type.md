@@ -18,4 +18,4 @@ The family of value a column holds, with the warehouse spellings that mean it. C
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)

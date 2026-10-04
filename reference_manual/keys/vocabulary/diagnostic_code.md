@@ -25,4 +25,4 @@ The closed taxonomy of findings the MAC compiler can report.
 
 ---
 
-[↑ the index](../README.md)
+[↑ the whole tree](../README.md)
