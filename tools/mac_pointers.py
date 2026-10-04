@@ -132,6 +132,16 @@ class Ref:
     #: the fix is to re-run the producer, and the artifact says who that is.
     producer: str | None = None
     dst: str | None = None
+    #: THE SOURCE, WHEN THE CARRIER FILE IS NOT IT. Every AUTHORED pointer is written inside the
+    #: thing that depends on the target, so the source is the carrier and needs no field. A
+    #: MEASURED edge is different: data/lineage/lineage.json records that a dataset grounds a
+    #: concept, and the carrier is the lineage artifact, which is neither end.
+    src: str | None = None
+    #: The ENDPOINT KINDS, when they are not the catalogue row's. A measured node declares its own
+    #: kind through `lineage.node_kinds`, and that is the authority — the row's src_kind/dst_kind
+    #: describe the SHAPE of the edge, which is the same thing only when every instance agrees.
+    src_kind: str | None = None
+    dst_kind: str | None = None
 
     @property
     def reference_id(self) -> str:
@@ -161,6 +171,8 @@ class Index:
     oos_pointers: list = field(default_factory=list)
     #: `<relation>.<column>` -> the descriptor declaring it; the target side of the column edges.
     columns: dict = field(default_factory=dict)
+    #: Provenance of the lineage read — what it saw and what it SKIPPED.
+    lineage: dict = field(default_factory=dict)
     concepts: dict[str, str] = field(default_factory=dict)
     relations: dict[str, str] = field(default_factory=dict)
     files_seen: int = 0
@@ -765,6 +777,87 @@ def build_column_index(bundle: Path) -> dict[str, str]:
     return out
 
 
+def lineage_refs(bundle: Path, kinds: dict[str, dict]) -> tuple[list[Ref], dict]:
+    """The MEASURED data chain as references — read, never re-derived.
+
+    `data/lineage/lineage.json` is the one home for that graph by operator ruling, and
+    lineage_graph.py#OWNERSHIP declares a third producer illegal. This READS it and maps node ids
+    onto names using the mapping DECLARED in mac_pointers.yaml#lineage.
+
+    WHY IT IS HERE AND NOT IN THE LOADER. It was in the loader, which meant `resolve()` — the one
+    thing a gate can call — returned ZERO for all six lineage kinds while the graph built from the
+    same bundle held 42. Two readers of one bundle disagreeing by 42 edges, with nothing saying so:
+    `check_pointers` printed `lineage_cuts=0` beside a graph printing 17, and a gate asking the
+    resolver about the data chain got silence indistinguishable from a bundle with no lineage.
+
+    EACH ENDPOINT CARRIES ITS OWN KIND, from `lineage.node_kinds`. A first attempt used the
+    catalogue row's src_kind/dst_kind for both ends and produced four datasets that were really raw
+    sources — the row describes the SHAPE of an edge, the node declares what it IS.
+    """
+    import json as _json                                             # noqa: PLC0415
+    spec = load_lineage_spec()
+    rel = spec.get("artifact") or "data/lineage/lineage.json"
+    art = bundle / rel
+    out: dict = {"artifact": rel, "read": False, "nodes": 0, "edges": 0,
+                 "skipped_node_kinds": {}, "skipped_edge_kinds": {}, "unjoined": []}
+    if not art.is_file():
+        out["why"] = f"{rel} is absent — the data chain is simply not in this graph"
+        return [], out
+    try:
+        doc = _json.loads(art.read_text(encoding="utf-8"))
+    except Exception as exc:                                         # noqa: BLE001
+        out["why"] = f"{rel} is unreadable: {type(exc).__name__}"
+        return [], out
+    want = spec.get("shape")
+    if want is not None and doc.get("shape") != want:
+        out["why"] = (f"shape {doc.get('shape')!r} is not the declared {want!r} — refused rather "
+                      f"than interpreted, as lineage_graph.py's own loader does")
+        return [], out
+
+    nkinds = spec.get("node_kinds") or {}
+    ekinds = spec.get("edge_kinds") or {}
+    out["read"] = True
+    out["measured"] = bool(doc.get("measured"))
+    out["generated_by"] = doc.get("generated_by")
+
+    node: dict[str, tuple[str, str]] = {}      # id -> (kind, ref)
+    for n in doc.get("nodes") or []:
+        nid = str(n.get("id") or "")
+        prefix = nid.split(":", 1)[0] if ":" in nid else ""
+        kind = nkinds.get(prefix)
+        if not kind:
+            out["skipped_node_kinds"][prefix or "?"] = \
+                out["skipped_node_kinds"].get(prefix or "?", 0) + 1
+            continue
+        node[nid] = (kind, str(n.get("ref") or nid.split(":", 1)[-1]))
+        out["nodes"] += 1
+
+    gen = ", ".join(doc.get("generated_by") or []) or "unknown"
+    refs: list[Ref] = []
+    for i, e in enumerate(doc.get("edges") or []):
+        ekind = str(e.get("kind") or "")
+        rule = ekinds.get(ekind)
+        name = f"lineage_{ekind}"
+        if rule is None or name not in kinds:
+            out["skipped_edge_kinds"][ekind or "?"] = \
+                out["skipped_edge_kinds"].get(ekind or "?", 0) + 1
+            continue
+        a, b = node.get(str(e.get("from"))), node.get(str(e.get("to")))
+        if not a or not b:
+            out["unjoined"].append(f"{e.get('from')} -{ekind}-> {e.get('to')}")
+            continue
+        # DIRECTION APPLIED HERE from the declared `invert`, so the emitted reference already reads
+        # "src depends on dst" like every other row and the loader needs no special case.
+        (sk, sref), (dk, dref) = (b, a) if rule.get("invert") else (a, b)
+        refs.append(Ref(name, "measured", rel, f"edges[{i}]",
+                        f"{e.get('from')} -> {e.get('to')}", "resolved",
+                        f"MEASURED by {gen} and read from {rel}#edges[{i}] — not re-derived here; "
+                        f"{str(rule.get('what', '')).strip()}",
+                        producer=gen, dst=dref, src=sref, src_kind=sk, dst_kind=dk))
+        out["edges"] += 1
+    return refs, out
+
+
 def resolve(bundle: Path, kinds: dict[str, dict]) -> Index:
     idx = Index(kinds=kinds)
     idx.concepts, idx.relations = build_name_index(bundle)
@@ -772,6 +865,10 @@ def resolve(bundle: Path, kinds: dict[str, dict]) -> Index:
     idx.carved_out = carved_out()
     idx.files_in_bundle = len(file_population(bundle))
     idx.columns = build_column_index(bundle)
+    # THE MEASURED CHAIN IS PART OF THE ANSWER. Without it `resolve()` reported 0 lineage
+    # references while the graph built from the same bundle held 42.
+    _lin, idx.lineage = lineage_refs(bundle, kinds)
+    idx.refs.extend(_lin)
     for p in scan_population(bundle, kinds, [c["path"] for c in idx.carved_out]):
         if True:
             idx.files_seen += 1
