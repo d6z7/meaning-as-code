@@ -1,0 +1,1295 @@
+# mac_pointers.prototype.yaml — the POINTER-KIND REGISTRY, prototype.
+#
+# WHAT THIS IS. One row per KIND of declaration-to-declaration pointer, and how each resolves.
+# It replaces the six hardcoded handlers in check_references.py with DATA: a new pointer kind is a
+# ROW, never a code branch. The census measured M = 121 pointer kinds across contoso5 and today's
+# gate understands about 6 — this file is how that number moves.
+#
+# WHY IT IS A "prototype" AND LIVES HERE. At maturity this is `mac_pointers.yaml` in
+# meaning-as-code (contract `mac.pointers/1`), the fifth member of a family that already exists
+# beside mac_vocabulary / mac_rules / mac_shapes / mac_artifacts, with per-source variation as a
+# declared overlay in a bundle's own mac.project.yaml. Neither of those may be written without a
+# per-change operator yes, so the prototype sits in the host and reads the bundle READ-ONLY.
+#
+# THE NAME `mac_references` IS TAKEN and deliberately avoided: `mac.references/1` is the contract
+# PROMOTED 2026-10-04 from mac-platform/tools/estate/mac_pointers.prototype.yaml. Until then only
+# one checkout had any of it: a bundle handed to someone else arrived with no pointer catalogue at
+# all, so every claim this file makes was a fact about one machine. It is the framework's now, and
+# ships in the wheel beside mac_vocabulary.yaml and mac.schema.json — the other two files that say
+# what a declaration may contain.
+#
+# IT IS A CATALOGUE OF POINTER KINDS, and that is the word for it. It was called "the registry"
+# for a fortnight and the operator was right to object: a REGISTER in this estate is a VALUE SET
+# (data/lookups/*.lookup.yaml, 17 of them), so "registry" put an unrelated meaning one letter away
+# from a load-bearing one. The three things that name had been covering are now named apart — this
+# catalogue (mac.pointers/1), the Estate Graph it feeds (mac.estate_graph/1), and check_pointers.
+#
+# of the DATA-plane measurer (column-to-column value inclusion, measured by SQL), whose output is
+# `data/references/`. Its header forbids the meaning plane outright — "It never says `concept` and
+# it never says `edge`." Different subject, different name.
+#
+# FIELD VOCABULARY IS BORROWED, NOT INVENTED. `population`, `producers`, `consumers` and
+# `checkers` come from mac_artifacts.yaml, which is already a dependency registry one plane up.
+#
+# `checkers:` IS THE WHOLE POINT OF VERSION ONE. It names the gate that enforces a kind TODAY, so
+# this file rewrites no gate: it makes the inventory exist. A row with `checkers: []` IS the
+# coverage hole, visible immediately.
+
+spec_version: mac.pointers/1
+registry_version: '0.1.0'
+defined_in: meaning-as-code (framework canon, shipped in the wheel)
+
+# ---------------------------------------------------------------------------------------------
+# census -- THE DENOMINATOR, WITH ITS BASIS
+# ---------------------------------------------------------------------------------------------
+# Every coverage claim this registry makes is "N of M kinds", and M lived in TWO files as a bare
+# `121` -- check_pointers.CENSUS_KINDS and pointer_load's build stats. One measurement, two
+# homes, and the pair would have disagreed the first time either was re-measured. Both read it
+# from here now.
+census:
+  pointer_kinds: 121
+  # ------------------------------------------------------------------------------------------
+  # file_population -- WHAT COUNTS AS "A FILE IN THIS BUNDLE", so the untracked side has a
+  # denominator at all.
+  # ------------------------------------------------------------------------------------------
+  # Added 2026-10-03 after the operator asked the console to "enumerate ALL objects that you
+  # track and ALL objects that you dont track", and the second list turned out to be
+  # unbuildable: the graph knew only the 429 files some object kind's glob happened to reach.
+  # MEASURED AT THAT MOMENT: the bundle carries 697 git-tracked files and 425 of them appeared
+  # NOWHERE in the emitted graph -- 61%. The "891 uncovered nodes" headline was itself a slice,
+  # counting unclaimed nodes INSIDE the walked files while saying nothing about the files never
+  # walked. That is precisely the defect this registry exists to end ("enumerate the population,
+  # don't count survivors"), found in the instrument built to find it.
+  #
+  # THE EXCLUSIONS ARE NOT TIDINESS, each one is load-bearing:
+  #   artifacts/   the emitted graph LIVES there. Counting it would make the census describe
+  #                itself and grow by one table per build -- the same self-reference that forced
+  #                the graph into artifacts/ in the first place.
+  #   .git/ etc.   machinery, not bundle content.
+  #
+  # KNOWN SECOND HOME, DECLARED RATHER THAN HIDDEN: `mac_resources.py#tree_hash` holds the same
+  # set as a FUNCTION-LOCAL (`skip = {".git", "__pycache__", "artifacts", ".context",
+  # "node_modules"}`), so it cannot be imported and has to be restated here. If that set changes
+  # in the framework, this list is the thing that goes stale. It is listed in the same shape for
+  # that reason -- a reader comparing the two should be able to do it by eye.
+  file_population:
+    include: '**/*'
+    exclude_dir_named: ['.git', '__pycache__', 'artifacts', '.context', 'node_modules']
+    # DOT ENTRIES ARE EXCLUDED BECAUSE THIS CENSUS IS COMMITTED. `.ontology-unlocked` is the
+    # operator's machine-local unlock marker — archive-sources/.gitignore says of it "MUST
+    # NEVER BE COMMITTED ... a human's deliberate act on ONE machine" — and it was in the first
+    # census run. A row naming it would travel in git to everyone who clones the bundle, and the
+    # census would differ between two machines holding the identical ontology, which breaks the
+    # one property that makes these rows reviewable. Declarations are never dot-prefixed.
+    exclude_dot_entries: true
+    mirrors: 'mac_resources.py#tree_hash (function-local `skip`, not importable)'
+  basis: 'distinct pointer kinds measured across contoso5: 88 in YAML + 33 in JSON'
+  measured_on: '2026-10-02'
+  note: >
+    M COUNTS THE BUNDLE, NOT THE REGISTRY'S AMBITION, and it does NOT shrink when a plane is
+    carved out -- see `carved_out`. A carve-out moves kinds from "registered" to "covered
+    elsewhere"; it does not make the bundle smaller, and a denominator that quietly fell to
+    match the numerator would turn every carve-out into apparent progress.
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# `enumerate:` — WHY A POPULATION MUST BE DECLARED RATHER THAN DISCOVERED
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# Objects were created only when a pointer touched them, so an object NOTHING references could not
+# appear in the graph at all — and `eg_v_orphan`, the view built to report exactly those, could
+# never return a row. A view that cannot see its own subject is worse than absent.
+#
+# This is the same defect as the two before it, one level in: the framework's referential gate
+# indexes 92 of 420 files because it scans the two declared PLANES; this loader's node set was
+# whatever the edges happened to reach. A population that is a side effect of traversal cannot be
+# audited, and the one thing the operator asked for first was "if an object is dropped the system
+# must know all objects upstream and downstream which depend on it" — which requires knowing the
+# objects, not only the edges.
+#
+# `enumerate:` is the glob, relative to `home_layer`, whose matches ARE the kind's complete
+# population. Its presence means the kind is enumerated; its absence means the kind is a target
+# shape only (`declared_file`) or not file-homed (`vocabulary_group`).
+object_kinds:
+  concept:
+    id_template: '{source}:concept/{name}'
+    home_layer: ontology/concepts
+    identity_field: null          # still path-derived. The migration lever is this field.
+    is_root: false
+    # A CONCEPT'S RULES ARE OBJECTS, and `kind: rule` is what lets one file yield two kinds:
+    # a reference at `grounding.sources[0].register` attaches to the CONCEPT, one at
+    # `contract.rules[0].realized_by[0].udf` attaches to the RULE. Chosen by WHERE the reference
+    # sits, not by the file it is in — which is the last place this graph resolved coarser than
+    # the bundle declares.
+    sub_file:
+      - container: contract.rules
+        identity_field: id
+        kind: rule
+    # ENUMERATED: 17 concept files; the `rules/` subdir holds projections, not concepts.
+    enumerate: '*.yaml'
+  column:
+    # THE DATA PLANE'S FINEST GRAIN, and the one the operator asked for directly, 2026-10-03:
+    # "it is important to track also columns?". It was not tracked: 60 columns were declared across
+    # 8 descriptors and NONE had identity, so `concept_binds_column` resolved to the whole CONCEPT
+    # and "what depends on dim_store.store_key" -- the question asked before any schema change --
+    # could not be put at all.
+    #
+    # IDENTITY IS RELATION-QUALIFIED, and that is forced rather than stylistic: those 60 columns
+    # carry only 49 distinct names. `country_code` is declared in FOUR descriptors, `state` in
+    # three, `store_key` / `product_key` / `customer_key` / `location_code` / `currency_code` /
+    # `country_name` in two each. Bare names would merge 11 columns into the 8 they clash with,
+    # and would log 8 entries in `declared_name_collisions` -- a register of real authoring
+    # mistakes, filled with eight non-mistakes.
+    id_template: '{source}:column/{name}'
+    home_layer: data/datasets
+    identity_field: name
+    is_root: false
+  register:
+    id_template: '{source}:register/{name}'
+    home_layer: data/lookups
+    identity_field: null
+    tombstones: true
+    is_root: false
+    # ENUMERATED: the register descriptors, not their .csv or .md twins.
+    enumerate: '*.lookup.yaml'
+  register_artifact:              # the .csv itself — the thing that actually disappears
+    id_template: '{source}:register_artifact/{name}'
+    home_layer: data/lookups
+    identity_field: null
+    is_root: false
+    # ENUMERATED: the value sets themselves — the files that actually disappear.
+    enumerate: '*.lookup.csv'
+  transform:
+    id_template: '{source}:transform/{name}'
+    home_layer: data/transforms
+    identity_field: null
+    is_root: false
+    # ENUMERATED: one per served relation.
+    enumerate: '*.yaml'
+  sql_artifact:
+    id_template: '{source}:sql_artifact/{name}'
+    home_layer: data/transforms
+    file_glob: '*.sql'
+    identity_field: null
+    is_root: true                 # nothing is expected to point AT a .sql but its transform
+    # ENUMERATED: the executable half of each transform.
+    enumerate: '*.sql'
+  resource_descriptor:
+    id_template: '{source}:resource_descriptor/{name}'
+    home_layer: ''                # the bundle ROOT: <name>.mac
+    file_glob: '*.mac'
+    identity_field: null
+    is_root: true
+    # ENUMERATED: the bundle's own resource description.
+    enumerate: '*.mac'
+  declared_file:                  # any artifact addressed purely as a path
+    id_template: '{source}:file/{name}'
+    home_layer: null              # a target kind only; it is never scanned for pointers
+    identity_field: null
+    is_root: false
+  source:                         # a RAW landing the bundle consumes but does not own
+    id_template: '{source}:source/{name}'
+    home_layer: data/sources
+    identity_field: null
+    is_root: false
+    # ENUMERATED: the raw landings it consumes but does not own.
+    enumerate: '*.yaml'
+  dataset:                        # a relation the bundle PRODUCES; the ontology binds here
+    id_template: '{source}:dataset/{name}'
+    home_layer: data/datasets
+    identity_field: null
+    is_root: false
+    # ENUMERATED: the relations this bundle produces.
+    enumerate: '*.yaml'
+    # A DESCRIPTOR'S COLUMNS ARE OBJECTS -- the same two lines that split `contract.rules[]` and
+    # `edges[]`, applied to the grain the data plane is actually changed at. `qualify_by` is the
+    # addition this needed: rule ids and edge_ids are globally unique as authored, column names
+    # are unique only within their relation.
+    sub_file:
+      - container: columns
+        identity_field: name
+        kind: column
+        qualify_by: table.name
+  rule:                           # ONE authored judgement inside a concept's contract
+    id_template: '{source}:rule/{name}'
+    home_layer: ontology/concepts
+    identity_field: id
+    is_root: false
+  edge:                           # a declared relationship between two concepts
+    id_template: '{source}:edge/{name}'
+    home_layer: ontology
+    identity_field: edge_id
+    is_root: true                 # an edge ASSERTS a relationship; nothing points back at one,
+                                  # so an edge with no inbound reference is normal and not an
+                                  # orphan. (This comment used to cite the generated
+                                  # test suites as the sibling case; they were carved out on
+                                  # 2026-10-03 — see `carved_out` — so `edge` now carries the
+                                  # is_root rationale on its own.)
+    # ENUMERATED: edges.yaml holds them as a list, so the sub_file mechanism gives each its own
+    # object — the same two lines that split a generated suite into properties.
+    enumerate: 'edges.yaml'
+    sub_file:
+      container: edges
+      identity_field: edge_id
+  '*':                            # ANY CARRIER — declared, not special-cased
+    # eg_reference_kind.src_kind has a foreign key to this table, and the build refused until the
+    # wildcard was a row like any other. Keeping the key and declaring the wildcard is the better
+    # trade: the carrier-agnostic rows are then VISIBLE in the loaded registry rather than being a
+    # magic string the loader understands and the data does not. Only `framework_term` and
+    # `framework_contract_id` use it, and only because their VALUE shape self-identifies.
+    id_template: '{source}:*/{name}'
+    # THE POPULATION OF A CARRIER-AGNOSTIC KIND IS THE WHOLE BUNDLE, and it is declared here
+    # because it was previously PARASITIC. `home_layer: null` made scan_population skip this kind
+    # entirely, so `framework_term` and `framework_contract_id` -- whose own `population:` says
+    # "any declaration" -- were only ever resolved in directories some OTHER kind happened to
+    # walk. Measured: 228 framework_term and 84 framework_contract_id references in contoso5 came
+    # from acceptance/ files, which were in the walk solely because a now-removed acceptance kind
+    # was homed there with a default recursive *.yaml glob. Carving that kind out would have
+    # silently taken 312 framework edges with it -- a cost nobody asked for, invisible in every
+    # count, and attributable to the wrong change.
+    #
+    # `**/*` is recursive from the bundle root in Python's glob and matches depth 0 too.
+    home_layer: ''
+    file_glob: ['**/*.yaml', '**/*.yml', '**/*.mac']
+    identity_field: null
+    is_root: false
+  framework_contract:             # a versioned wire/format contract the framework owns
+    id_template: '{source}:framework_contract/{name}'
+    home_layer: null
+    identity_field: null
+    is_root: false
+  tool:                           # a producer that WRITES an artifact
+    id_template: '{source}:tool/{name}'
+    home_layer: null              # it lives in the framework, not the bundle
+    identity_field: null
+    is_root: false
+  framework_term:                 # a closed term the FRAMEWORK owns, e.g. mac.canon.*
+    id_template: '{source}:framework_term/{name}'
+    home_layer: null              # it lives in the wheel, not the bundle
+    identity_field: null
+    is_root: false
+  vocabulary_group:               # a closed value set declared in the bundle's vocabulary
+    id_template: '{source}:vocabulary_group/{name}'
+    home_layer: ontology
+    identity_field: null
+    is_root: false
+
+pointer_kinds:
+
+  # ---------------------------------------------------------------- the constitutional pointer
+  - reference_kind: register_pointer_path
+    what: >
+      A concept column delegating its value set to a register, written as a root-relative path to
+      the register's .csv. The canonical, machine-readable form.
+    src_kind: concept
+    dst_kind: register_artifact
+    carrier: value
+    key_pattern: 'register|csv'
+    value_shape: path
+    # DECLARED, so this row and register_pointer_declaration are mutually exclusive by
+    # construction rather than by one of them happening to omit a field.
+    value_suffix: '.csv'
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'every `register:`/`csv:` scalar whose value contains a "/" and ends .csv'
+    producers: [mac_lookups.py, mac_descriptors.py]
+    consumers: [planner (offline name resolution)]
+    checkers: []                  # <- THE HOLE. check_references.py's regex ends
+                                  #    \.(?:yaml|yml|md), so a .csv target is invisible to it;
+                                  #    check_lookups.py reads contract.no_probe_guarantee, a key
+                                  #    this bundle never uses, so it passes on a population of 0.
+    note: >
+      Measured: deleting a .csv named by five live pointers of this kind left the referential gate
+      byte-identically green (0/0/0, exit 0), and renaming one was invisible to all 86 gates —
+      because register population is a directory glob (lookups.glob("*.lookup.csv")) rather than a
+      declaration read. A declaration with producers and no consumer gate.
+
+  - reference_kind: register_pointer_prose
+    what: >
+      The same binding, named only inside a prose scalar as a backticked path. Not a style problem:
+      3 of the 8 register bindings reachable from contoso5's ontology plane exist ONLY this way,
+      and store.yaml carries no `register:` key at all.
+    src_kind: concept
+    dst_kind: register_artifact
+    carrier: prose
+    key_pattern: '*'              # any string scalar; the backticked path is the pointer
+    value_shape: path
+    value_suffix: '.csv'          # the artifact form; the .yaml form is the row below
+    resolver: by_path
+    cardinality: many
+    required: false               # WARNING, not ERROR: prose is not a contract. The finding is
+                                  # that it is load-bearing, which is what makes it promotable.
+    invert: false
+    case_fold: false
+    population: 'backticked data/lookups/*.csv inside any string scalar in ontology/concepts'
+    producers: [a human writing a definition]
+    consumers: []
+    checkers: []
+    note: >
+      check_dangling_references.py scans 119 md + 0 py docstrings and does not read YAML at all,
+      so it cannot see these. Promoting one of these to register_pointer_path is a one-line edit
+      per concept and is what makes the binding checkable.
+
+  - reference_kind: register_kind_token
+    what: >
+      The SAME `register:` key carrying a closed-vocabulary token (long | code | common | legal)
+      rather than a pointer. Registered so the resolver does not mistake it for a dangling path —
+      and so the real defect becomes visible instead.
+    src_kind: concept
+    dst_kind: vocabulary_group
+    carrier: value
+    key_pattern: 'register'
+    value_shape: kind_token
+    resolver: by_dotted_term
+    resolver_arg: 'mac_vocabulary.yaml#name_register'
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'every `register:` scalar with no "/" that is not a register stem'
+    producers: [a human authoring a concept]
+    consumers: []
+    checkers: []
+    note: >
+      CORRECTED 2026-10-02, AND THE ERROR IS WORTH KEEPING ON THE RECORD. This row first carried
+      `resolver_arg: ontology/vocabulary.json#register_kind` -- a vocabulary I INVENTED -- and the
+      gate therefore reported five false positives, calling a correctly-authored bundle's most
+      load-bearing key "an undeclared closed vocabulary". The vocabulary exists and always did:
+      mac_vocabulary.yaml#name_register, closed, terms common | legal | long | short | code, and
+      mac_vocabulary.yaml#concept.column.ruling documents the pairing outright -- "`register` says
+      WHICH of that thing's names this one is." All five contoso5 values are valid members.
+      The bundle was right and the reader was wrong, which is the exact failure this whole design
+      is against: a declaration that exists and is not read. It was caught only because a dangling
+      verdict here must carry the BASIS that judged it -- the basis named a file, and the file was
+      wrong. A bare red line would have been believed.
+
+  - reference_kind: register_self_declaration
+    what: >
+      A register descriptor's own `register.csv` — the register naming its artifact. Not a
+      cross-object dependency in the same sense, but it is the one pointer that makes the artifact
+      addressable, and it dangles identically when the .csv is renamed.
+    src_kind: register
+    dst_kind: register_artifact
+    carrier: value
+    key_pattern: 'register.csv'
+    value_shape: path
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'data/lookups/*.lookup.yaml -> register.csv'
+    producers: [mac_lookups.py]
+    consumers: [mac_descriptors.py]
+    checkers: []
+
+  # ---------------------------------------------------------------- declared, 0 here, kept honest
+  - reference_kind: register_pointer_file_key
+    what: 'The `register_file:` spelling of register_pointer_path.'
+    src_kind: concept
+    dst_kind: register_artifact
+    carrier: value
+    key_pattern: 'register_file'
+    value_shape: path
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'every `register_file:` scalar'
+    producers: []
+    consumers: []
+    checkers: []
+    note: >
+      ZERO occurrences in contoso5; the census found the spelling elsewhere in the estate. Declared
+      anyway, because a registry that only lists what one bundle happens to use cannot report that
+      a seventh spelling has appeared. A kind with a population of 0 is a fact, not a gap — and
+      the gate prints it as 0 rather than omitting the row.
+
+  # ---------------------------------------------------------------- the only CROSS-REPO pointer
+  - reference_kind: framework_term
+    what: >
+      A bundle declaration naming a term from one of the FRAMEWORK's closed vocabularies.
+    src_kind: '*'                 # carrier-agnostic: the VALUE identifies itself
+    dst_kind: framework_term
+    carrier: value
+    key_pattern: '*'
+    value_shape: framework_term
+    resolver: by_framework_term
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'any `mac.<namespace>.<term>` token in any declaration'
+    producers: [a human authoring a declaration, and several mac_*.py generators]
+    consumers: [the compiler, the planner]
+    checkers: [check_references.py]
+    note: >
+      THE ONLY POINTER HERE THAT CROSSES A REPOSITORY. Everything else in this registry resolves
+      inside one bundle; this one depends on `mac_vocabulary.yaml`, which lives in meaning-as-code
+      and changes on ITS release cycle. A term retired or renamed there breaks every bundle that
+      used it, and nothing in the estate connects the two — you find out when something fails.
+      Measured on contoso5: 13 distinct terms over 101 `mac.*` occurrences, all 13 currently
+      resolving. `eg_build.mac_version` records WHICH framework a verdict was taken against, so a
+      green reading is attributable to a version rather than to "the framework".
+
+      AND IT IS THE GAP THAT MADE MIGRATION LOSSY. check_references.py checks these and this
+      registry did not, so retiring the old gate would have dropped ~84 occurrences of the one
+      dependency that spans repositories. With this row the new gate is a superset on every class
+      that has content in this bundle.
+
+      `src_kind: '*'` is used HERE AND NOWHERE ELSE, and the reason is the value shape: a key name
+      cannot say what wrote it, but `mac.<ns>.<term>` looks like nothing else, so one row covers
+      every carrier instead of one row per plane.
+
+  - reference_kind: framework_contract_id
+    what: 'A declaration stating which versioned framework contract it is written to.'
+    src_kind: '*'
+    dst_kind: framework_contract
+    carrier: value
+    key_pattern: '*'
+    value_shape: framework_contract
+    resolver: by_id
+    cardinality: one
+    required: false
+    invert: false
+    case_fold: false
+    population: 'any `mac.<name>/<version>` token — spec_version, contract'
+    producers: [mac_resources.py, mac_references.py, and the seam tooling]
+    consumers: ['a host validating a payload it was handed']
+    checkers: []
+    note: >
+      `mac.references/1`, `mac.container/1`, `mac.seam/1`. Registered as its OWN kind because it
+      shares the `mac.` prefix with a vocabulary term and is not one: resolving it against a
+      vocabulary would report a correct declaration as an unknown term. One prefix, three shapes —
+      the third being `mac.schema.json`, a framework FILE — and only the value shape separates them.
+
+  # ---------------------------------------------------------------- slice 4: closing the gap
+  # Authored from the measured gap, not from imagination: after the bundle's OWN out_of_scope
+  # ruling is honoured, 369 nodes in 12 keys remain, and these rows are one per key.
+
+  - reference_kind: descriptor_relation
+    what: 'A descriptor or the manifest naming a relation.'
+    src_kind: dataset
+    dst_kind: dataset
+    carrier: value
+    key_pattern: 'relation'
+    value_shape: relation_name
+    resolver: by_relation_name
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: true
+    population: 'data/datasets/*.yaml -> any `relation` scalar'
+    producers: [mac_descriptors.py]
+    consumers: [the planner]
+    checkers: [check_relation_identity.py]
+
+  - reference_kind: descriptor_table_name
+    what: "A dataset descriptor naming the relation it describes."
+    src_kind: dataset
+    dst_kind: dataset
+    carrier: value
+    key_pattern: 'table.name'
+    value_shape: relation_name
+    resolver: by_relation_name
+    cardinality: one
+    required: false
+    invert: false
+    case_fold: true
+    population: 'data/datasets/*.yaml -> table.name'
+    producers: [mac_descriptors.py]
+    consumers: [check_relation_identity.py]
+    checkers: [check_relation_identity.py]
+
+  - reference_kind: descriptor_register
+    what: >
+      A DESCRIPTOR delegating a column to a register — the same binding as register_pointer_path,
+      written in the data plane rather than in a concept.
+    src_kind: dataset
+    dst_kind: register_artifact
+    carrier: value
+    key_pattern: 'register'
+    value_shape: path
+    value_suffix: '.csv'          # the artifact form; the declaration form is the row below
+    resolver: by_path
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: 'data/datasets/*.yaml -> columns[].register'
+    producers: [mac_descriptors.py]
+    consumers: [the planner]
+    checkers: []
+
+  - reference_kind: artifact_generated_by
+    what: 'An artifact naming the tool that wrote it.'
+    src_kind: dataset
+    dst_kind: tool
+    carrier: value
+    key_pattern: 'generated_by'
+    value_shape: tool_id
+    resolver: by_id
+    cardinality: one
+    required: false
+    invert: false
+    case_fold: false
+    population: 'any descriptor -> metadata.generated_by'
+    producers: [every mac_*.py that writes a descriptor]
+    consumers: [check_pages_current.py]
+    checkers: []
+    note: >
+      THE EDGE THAT WOULD HAVE CAUGHT THE 22. Every one of the stale pointers this bundle carried
+      on 2026-10-01 sat in a GENERATED artifact whose producer had not been re-run. With the tool
+      as an object, "if this producer changes, which artifacts are stale" is one query rather than
+      a thing discovered a month later.
+
+  - reference_kind: concept_binds_column
+    what: "A rule naming the columns of its own concept's grounding that it binds."
+    src_kind: concept
+    # REPOINTED FROM `concept` TO `column` on 2026-10-03. It resolved to the whole concept because
+    # a column had no identity to point at, which made the edge true and useless: 32 references
+    # saying "this rule depends on that concept" where the available fact was "this rule depends on
+    # THAT COLUMN of it". Dropping a column is the change this edge exists to answer for.
+    dst_kind: column
+    # THE TARGET NAME IS ALREADY CANONICAL, declared because `_canon_name` drops a final dotted
+    # segment -- right for `brand.yaml` -> `brand`, ruinous for `dim_product.brand`, which would
+    # become `dim_product` and join the DATASET object. That is the id-join defect this loader has
+    # shipped three times; declaring the shape is what stops the fourth.
+    dst_name: canonical
+    carrier: value
+    key_pattern: 'binds'
+    value_shape: column_name
+    resolver: by_column_in_grounding
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: 'ontology/concepts/*.yaml -> contract.rules[].binds[]'
+    producers: [a human authoring a rule]
+    consumers: [the planner, impact analysis]
+    checkers: [check_rule_reference_basis.py]
+    note: >
+      check_rule_reference_basis.py calls `binds:` "the machine-readable one: it is what a reader
+      filters, projects and IMPACT-ANALYSES on, so a column missing from it is invisible to every
+      consumer that does not read English." It is also the first pointer here whose target is a
+      position INSIDE the carrier rather than another file.
+
+  - reference_kind: manifest_glob
+    what: 'A manifest glob claiming a population exists.'
+    src_kind: resource_descriptor
+    dst_kind: declared_file
+    carrier: value
+    key_pattern: 'glob'
+    value_shape: glob
+    resolver: by_glob_nonempty
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: '<name>.mac -> any `glob` scalar'
+    producers: [mac_resources.py]
+    consumers: ['a host opening the bundle']
+    checkers: []
+    note: >
+      The inverse of planes_empty_assertion: that one claims a glob matches NOTHING, this one
+      claims it matches SOMETHING. A glob matching nothing is a promise to a consumer that cannot
+      be kept, exactly as a dangling path is.
+
+  - reference_kind: bom_undeclared_class
+    what: 'A bill-of-materials entry naming an artifact CLASS by template, not an instance.'
+    src_kind: resource_descriptor
+    dst_kind: declared_file
+    carrier: value
+    key_pattern: 'class'
+    value_shape: template
+    resolver: declared_not_a_pointer
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: '<name>.mac -> bom.phases.*.undeclared[].class'
+    producers: [mac_resources.py]
+    consumers: ['a reader of the BOM']
+    checkers: []
+    note_short: 'a {stem} template names a class of artifact, not one file'
+    note: >
+      `acceptance/anchors/{stem}.yaml` is a PATTERN. Declaring it not-a-pointer is an answer, not
+      an omission: it moves the node out of "nobody has looked at this" and into "someone decided",
+      which is the only difference a coverage number can see.
+
+  - reference_kind: concept_source_marker
+    what: "A concept naming the source it belongs to."
+    src_kind: concept
+    dst_kind: framework_term
+    carrier: value
+    key_pattern: 'source'
+    value_shape: marker
+    resolver: by_id
+    cardinality: one
+    required: false
+    invert: false
+    case_fold: true
+    population: 'ontology/concepts/*.yaml -> metadata.source'
+    producers: [a human authoring a concept]
+    consumers: [the compiler]
+    checkers: []
+
+  # ---------------------------------------------------------------- slice 3: the declared chain
+  # These seven carry the chain the ontology ASSERTS, beside the one lineage MEASURES. Both are
+  # wanted: the bundle's own lineage artifact keeps `disagreements.claimed_not_measured` precisely
+  # because a claim and a measurement are different authorities, and until now this graph held
+  # only the measured half for the data chain and nothing at all for edges.
+
+  - reference_kind: edge_verified_by
+    what: 'An edge pointing at the measurement that proves its cardinality claim.'
+    src_kind: edge
+    dst_kind: declared_file
+    carrier: value
+    key_pattern: 'verified_by'
+    value_shape: anchored_path
+    resolver: by_anchor
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'ontology/edges.yaml -> edges[].verified_by'
+    producers: [mac_measure_edges.py]
+    consumers: [the ER projector]
+    checkers: [check_references.py]
+    note: >
+      `evidence/edge_measurements.json#<edge_id>` — a path AND an anchor. mac_measure_edges.py
+      names this exact staleness class itself: "a column renamed, a concept re-grounded, an anchor
+      left pointing at a rule that moved."
+
+  - reference_kind: edge_resolved_by
+    what: 'An edge whose join predicate lives in a concept RULE rather than in the edge.'
+    src_kind: edge
+    dst_kind: concept
+    carrier: value
+    key_pattern: 'resolved_by'
+    value_shape: anchored_path
+    resolver: by_anchor
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'ontology/edges.yaml -> edges[].resolved_by'
+    producers: [a human authoring an edge]
+    consumers: [the planner]
+    checkers: []
+    note: >
+      `ontology/concepts/order.yaml#contract.rules.order.resolution.rate_on_order_date`. The
+      anchor names a RULE inside the concept, which is sub-file identity this prototype resolves
+      only to the file — the rule objects exist once `contract.rules[]` declares a sub_file
+      container, which is two lines and the next obvious step.
+
+  - reference_kind: edge_endpoint_concept
+    what: 'An edge naming the concepts it joins.'
+    src_kind: edge
+    dst_kind: concept
+    carrier: value
+    key_pattern: 'concept'
+    value_shape: concept_name
+    resolver: by_concept_name
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: true
+    population: 'ontology/edges.yaml -> edges[].endpoints.{from,to}.concept'
+    producers: [a human authoring an edge]
+    consumers: [the planner, the ER projector]
+    checkers: [check_references.py]
+
+  - reference_kind: transform_input_descriptor
+    what: 'A transform naming the raw source descriptor it consumes.'
+    src_kind: transform
+    dst_kind: source
+    carrier: value
+    key_pattern: 'descriptor'
+    value_shape: path
+    resolver: by_path
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: 'data/transforms/*.yaml -> inputs[].descriptor'
+    producers: [mac_transforms.py]
+    consumers: [build.sh, the lineage projector]
+    checkers: [check_references.py]
+    note: >
+      THE DECLARED TWIN of lineage `feeds`, which is MEASURED. Holding both is what makes a
+      claimed-vs-measured disagreement visible at all — the bundle's own lineage artifact keeps
+      that distinction for the same reason.
+
+  - reference_kind: transform_produces_relation
+    what: 'A transform naming the served relation it produces.'
+    src_kind: transform
+    dst_kind: dataset
+    carrier: value
+    key_pattern: 'produces.relation'
+    value_shape: schema_relation
+    resolver: by_relation_name
+    cardinality: one
+    required: true
+    invert: true                  # the DATASET depends on the transform that makes it
+    case_fold: true
+    population: 'data/transforms/*.yaml -> produces.relation'
+    producers: [mac_transforms.py]
+    consumers: [the ontology plane, which binds to datasets]
+    checkers: [check_ontology_grounds_on_datasets.py]
+
+  - reference_kind: concept_grounding_relation
+    what: 'A concept naming the served relation it is grounded on.'
+    src_kind: concept
+    dst_kind: dataset
+    carrier: value
+    key_pattern: 'relation'
+    value_shape: relation_name
+    resolver: by_relation_name
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: true
+    population: 'ontology/concepts/*.yaml -> grounding.sources[].relation'
+    producers: [a human authoring a concept]
+    consumers: [the planner]
+    checkers: [check_ontology_grounds_on_datasets.py, check_relation_identity.py]
+    note: >
+      THE DECLARED TWIN of lineage `grounds`. check_relation_identity.py checks this same name in
+      FIVE places at once — "a half-done rename cannot agree with itself across five homes" — and
+      this row is the edge that lets a drop be traced rather than only refused.
+
+  # RETIRED 2026-10-03: concept_realized_by_udf.
+  # It claimed `contract.rules[].realized_by[].udf` and resolved it against mac_vocabulary#canon.
+  # The general `framework_term` row below subsumes it completely and resolves it BETTER — it
+  # reads both of the framework's term homes, where this row knew only one. The ambiguity gate
+  # caught the overlap on all 6 nodes and refused the whole verdict rather than letting two rows
+  # silently claim one node, which is what that gate is for.
+  #
+  # KEPT AS A COMMENT, NOT DELETED SILENTLY: a registry that quietly loses a row is a registry
+  # nobody can audit. One general row replacing one specific row is the direction this design
+  # wants — the opposite of the row-per-carrier growth the spike measured.
+
+  - reference_kind: transform_produces_sql
+    what: 'A transform descriptor naming the .sql that produces its relation.'
+    src_kind: transform
+    dst_kind: sql_artifact
+    carrier: value
+    key_pattern: 'produces.sql_file'
+    value_shape: path
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: true                  # the RELATION depends on the sql, not the other way round
+    case_fold: false
+    population: 'data/transforms/*.yaml -> produces.sql_file'
+    producers: [mac_transforms.py]
+    consumers: [build.sh]
+    checkers: [check_transform_sql_extracted.py]
+    note: >
+      THE ONE KIND WITH A WORKING CHECKER, and therefore the model to generalise: of 86 gates,
+      check_transform_sql_extracted was one of only 3 that changed verdict when two .sql files
+      were deleted, and the only one that named both files and the exact key. Registered so the
+      inventory is complete, not because the hole is here. build.sh:57 globs transforms/*.sql,
+      so it cannot notice a deletion -- a deleted transform silently serves fewer relations.
+
+  - reference_kind: resource_declared_path
+    what: >
+      The bundle's own resource description (<name>.mac) listing every artifact it ships, each as
+      {id, kind, plane, path}. The manifest a HOST reads to learn what the bundle contains.
+    src_kind: resource_descriptor
+    dst_kind: declared_file
+    carrier: value
+    key_pattern: 'resources[].path'
+    value_shape: path
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: '<name>.mac -> resources[].path'
+    producers: [mac_resources.py]
+    consumers: ['a host opening the bundle']
+    checkers: []
+    note: >
+      MEASURED: 12 of 66 declared resource paths do not exist -- 18%. One dataset, one transform,
+      one profile and NINE phantom lookup .csv ids, all left by the dim_date removal of
+      2026-10-01. This is the manifest a host reads to learn what the bundle IS, so every one of
+      the twelve is a promise to a consumer that cannot be kept, and nothing reports it.
+
+  - reference_kind: concept_grounds_column
+    what: >
+      A CONCEPT NAMING THE COLUMNS IT IS GROUNDED ON, carried as the KEYS of
+      `grounding.sources[].columns` rather than as values.
+    src_kind: concept
+    dst_kind: column
+    dst_name: canonical
+    # THE FIRST map_key ROW IN THIS REGISTRY, and the carrier that had no reader. The census
+    # counted seven carriers and this resolver read two; `walk` yields scalars, so a pointer
+    # written as a map key was invisible to it. That hid 112 concept-to-column edges in contoso5
+    # -- the densest real dependency in the data plane, and the reason a column showed 0
+    # dependents the day columns got identity.
+    carrier: map_key
+    key_pattern: 'grounding.sources[].columns'
+    # A MAP KEY IS LOCALLY UNIQUE AT BEST. `store_key` is a key under two relations, so the kind
+    # declares which SIBLING of the map makes it global -- `relation`, giving `dim_store.store_key`
+    # and matching the descriptor`s own sub_file naming so the two join.
+    qualify_sibling: relation
+    value_shape: column_name
+    resolver: by_column_in_descriptor
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: 'ontology/concepts/*.yaml -> grounding.sources[].columns (the KEYS)'
+    producers: [a human authoring a concept's grounding]
+    consumers: [the planner, the compiler, impact analysis]
+    checkers: []
+    note: >
+      IT IS A CROSS-FILE CHECK, which `concept_binds_column` is not: that one verifies a rule
+      against its own concept's grounding and never leaves the file. This one asks the DESCRIPTOR
+      whether the column exists, so a column renamed or dropped in the data plane dangles every
+      concept grounded on it. Measured when it was added: 112 of 112 resolve, so it refuses
+      nothing that ships -- and a rename tomorrow is news rather than silence.
+  - reference_kind: register_attached_column
+    what: >
+      A register naming the COLUMNS whose values ARE its set -- `attached[].column`, qualified by
+      the sibling `relation`.
+    src_kind: register
+    dst_kind: column
+    dst_name: canonical
+    carrier: value
+    key_pattern: 'attached[].column'
+    # THE COLUMN NAME ALONE IS NOT GLOBAL: `country_code` is attached under four relations in
+    # contoso5. The qualifier is the sibling `relation`, the same declared field the map_key pass
+    # uses, so one rule covers both carriers.
+    qualify_sibling: relation
+    value_shape: column_name
+    resolver: by_column_in_descriptor
+    cardinality: many
+    required: true
+    # THE REFERENCE IS WRITTEN ON THE REGISTER, THE DEPENDENCY RUNS THE OTHER WAY -- the
+    # same shape as `transform produces.relation`, and for the same reason. A column's
+    # values ARE the register's set, so dropping the register leaves the column with no
+    # declared domain; the register does not need the column in order to exist.
+    #
+    # WITHOUT THIS THE GRAPH CYCLED, 22 times. The descriptor says "this column uses that
+    # register" and the register says "that column carries my values" -- ONE fact recorded
+    # from both ends. Modelled as two forward edges that is column -> register -> column,
+    # and the loader reported every one. A cycle in configuration is a finding; this one
+    # was mine.
+    invert: true
+    case_fold: false
+    population: 'data/lookups/*.lookup.yaml -> attached[].{relation,column}'
+    producers: [mac_lookups.py]
+    consumers: [mac_runtime/resolver/registers.py, the planner]
+    checkers: [check_register_membership.py, check_one_register_per_dimension.py]
+    note: >
+      THE RUNTIME ALREADY CALLS THIS THE ONE HOME -- `registers.py` says of the register
+      descriptor: "its `attached` list is the one home of 'which columns carry this set'
+      (mac.schema.json#ValueRegisterFile.attached)". 40 attachments over 40 distinct
+      relation.column in contoso5, and NONE of them was an edge until columns got identity on
+      2026-10-03. This is the data-plane half of the value-set binding: the concept says which
+      register a column delegates to, and the register says which columns carry it.
+
+  - reference_kind: descriptor_register_declaration
+    what: >
+      A DESCRIPTOR delegating a column to the register's DECLARATION -- the data-plane twin of
+      register_pointer_declaration.
+    src_kind: dataset
+    dst_kind: register
+    carrier: value
+    key_pattern: 'register'
+    value_shape: path
+    value_suffix: '.yaml'
+    resolver: by_path
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: 'data/datasets/*.yaml + data/sources/*.yaml -> columns[].register (.yaml form)'
+    producers: [mac_descriptors.py]
+    consumers: [the compiler, the planner, mac_runtime/resolver/registers.py]
+    checkers: []
+    note: >
+      THIS IS THE ROW THAT ACTUALLY CLEARS THE ORPHANS. 10 of the 17 register declarations are
+      bound from NO concept at all -- they are attached only to raw-plane columns, so the only
+      declaration that can reach them is a descriptor's. Repointing the five authored concept
+      keys moved 7; this moves the rest.
+
+  - reference_kind: register_pointer_prose_declaration
+    what: >
+      The register's DECLARATION named inside a prose scalar as a backticked path -- the prose
+      twin of register_pointer_declaration.
+    src_kind: concept
+    dst_kind: register
+    carrier: prose
+    key_pattern: '*'
+    value_shape: path
+    value_suffix: '.yaml'
+    resolver: by_path
+    cardinality: many
+    required: false               # prose is not a contract; a stale mention is a WARNING
+    invert: false
+    case_fold: false
+    population: 'ontology/concepts/*.yaml -> any prose scalar naming a register .lookup.yaml'
+    producers: [a human authoring a concept]
+    consumers: [a reader]
+    checkers: []
+    note: >
+      THE PROSE MOVED WITH THE BINDING. 7 of contoso5's register references live only inside a
+      sentence -- "NAMES RESOLVE THROUGH `...`" -- and leaving those pointed at the .csv while the
+      machine-readable key moved to the .yaml would have split one fact across two targets, which
+      is the drift this registry exists to find rather than to create.
+
+  - reference_kind: register_pointer_declaration
+    what: >
+      A concept column delegating its value set to the register's DECLARATION -- the
+      `.lookup.yaml` -- rather than to the .csv the declaration describes.
+    src_kind: concept
+    dst_kind: register
+    carrier: value
+    key_pattern: 'register|csv'
+    value_shape: path
+    # THE DISCRIMINATOR. `register_pointer_path` claims the .csv form and this claims the .yaml
+    # one; they are otherwise the same row, so without a suffix test both would claim every node
+    # and the registry would be AMBIGUOUS -- its own worst finding.
+    value_suffix: '.yaml'
+    resolver: by_path
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'ontology/concepts/*.yaml -> grounding..register (the .yaml form)'
+    producers: [a human authoring a concept]
+    consumers: [the compiler, the planner]
+    checkers: []
+    note: >
+      OPERATOR RULING, 2026-10-03: a concept should depend on the register's DECLARATION, not on
+      the data file it describes. Measured at the time: all 51 register bindings pointed at the
+      .csv, so the 17 register descriptors had no inbound declaration at all -- `eg_v_orphan`
+      reported 17 of 17, while SEVEN tools including the runtime resolver read them. Pointing at
+      the declaration makes the chain concept -> register -> csv, turns a .csv rename into one
+      edit instead of 51, and brings `attached` into reach (see register_attached_column).
+
+      BOTH FORMS ARE REGISTERED ON PURPOSE while the estate migrates: 12 of the bindings are
+      AUTHORED in concepts and can move today; 22 are written by mac_descriptors.py and 17 by
+      mac_lookups.py, so those move when the framework does. A flag day across two repositories
+      is not a migration, it is an outage.
+  - reference_kind: sub_object_declared_in
+    what: >
+      A SUB-FILE OBJECT AND THE FILE THAT DECLARES IT. Injected from the `sub_file` declaration,
+      never authored.
+    src_kind: '*'                 # rule, column, edge -- the mechanism is generic over kinds
+    dst_kind: '*'
+    carrier: value
+    key_pattern: '<injected from sub_file>'
+    value_shape: stem
+    resolver: by_id
+    cardinality: one
+    required: true
+    invert: false
+    case_fold: false
+    population: 'every object created by an object_kind`s `sub_file` container'
+    producers: [pointer_load.py]
+    consumers: [the impact query, eg_v_orphan]
+    checkers: []
+    note: >
+      THE CHAIN BROKE AT EVERY SUB-FILE BOUNDARY AND NOTHING SAID SO. `sub_file` gave rules,
+      edges and columns their own objects with a `home_path`, and no EDGE to the file that
+      declares them -- so measured on contoso5 the instant columns arrived: 0 of 24 rules were
+      reachable from their concept and 0 of 60 columns from their dataset. `impact
+      concept/product` had therefore never once reported product's own rules among the things
+      that break, which is the single question this whole graph exists to answer.
+
+      DIRECTION: the sub-object DEPENDS ON its file, so dropping the file puts every item it
+      declares in the downstream closure. A column outlives its descriptor in no sense at all.
+
+      It is DERIVED, not authored, which is why it is `required: true` with no checker: a missing
+      one is a loader defect, not a bundle defect, and the self-test asserts the count equals the
+      number of sub-file objects.
+  - reference_kind: planes_empty_assertion
+    what: >
+      A declaration asserting a glob matches NOTHING. Not a pointer -- the inverse: the claim is
+      absence, and the finding is presence.
+    src_kind: resource_descriptor
+    dst_kind: declared_file
+    carrier: value
+    key_pattern: 'planes_empty'
+    value_shape: path_or_glob
+    resolver: by_glob_empty
+    cardinality: many
+    required: true
+    invert: false
+    case_fold: false
+    population: '<name>.mac -> planes_empty[]'
+    producers: [mac_resources.py]
+    consumers: ['a host deciding whether to render a plane']
+    checkers: []
+    note: >
+      MEASURED FALSE: contoso5.mac asserts ontology/concepts/**/*.yaml, ontology/rules.yaml and
+      ontology/edges.yaml are all empty. Two of the three are not. A declaration that is actively
+      wrong is worse than a missing one, because a host that trusts it renders nothing and reports
+      no error. `by_glob_empty` is a DELIBERATE seventh resolver, added for this class rather than
+      smuggled in: an assertion of absence cannot be expressed by any of the six.
+
+  - reference_kind: lineage_feeds
+    what: 'a source feeds a dataset, so the DATASET depends on the source.'
+    src_kind: dataset
+    dst_kind: source
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == feeds'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind feeds'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+  - reference_kind: lineage_cuts
+    what: 'a dataset cuts a register, so the REGISTER depends on the dataset.'
+    src_kind: register
+    dst_kind: dataset
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == cuts'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind cuts'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+  - reference_kind: lineage_grounds
+    what: 'a dataset grounds a concept, so the CONCEPT depends on the dataset.'
+    src_kind: concept
+    dst_kind: dataset
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == grounds'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind grounds'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+  - reference_kind: lineage_derives_from
+    what: 'a dataset derived from another dataset.'
+    src_kind: dataset
+    dst_kind: dataset
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == derives_from'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind derives_from'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+  - reference_kind: lineage_seeded_by
+    what: 'a register seeded by a relation.'
+    src_kind: register
+    dst_kind: dataset
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == seeded_by'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind seeded_by'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+  - reference_kind: lineage_claims
+    what: 'a DESCRIPTOR CLAIM, not a measurement.'
+    src_kind: dataset
+    dst_kind: source
+    carrier: measured
+    key_pattern: 'data/lineage/lineage.json#edges[].kind == claims'
+    value_shape: dotted_id
+    resolver: by_id
+    cardinality: many
+    required: false
+    invert: false
+    case_fold: false
+    population: 'data/lineage/lineage.json -> edges[] of kind claims'
+    producers: [mac_lineage.py, sdk.project.lineage_graph]
+    consumers: [the Impact query]
+    checkers: [check_lineage_coverage.py, check_datasets_are_grounded.py]
+    note: >
+      INGESTED, never re-derived (see the `lineage:` block). `required: false` because a MISSING
+      lineage edge is not a dangling pointer — it is a plane that has not been measured, which the
+      bundle's own orphan register already reports with an owner. `invert: false` here because the
+      direction is applied once at ingest, from the declared mapping.
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# TOMBSTONES — A DROP IS A DECLARED EVENT, OR IT IS A SILENT BREAK
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# Nothing in this estate can tell a DELETE from a RENAME: both surface as "this name no longer
+# resolves", and no baseline or snapshot over bundle declarations exists. A tombstone is the
+# DECLARED half of that discriminator — the measured half is the per-object content hash diffed
+# across two builds (eg_v_changed).
+#
+# WITHOUT THIS BLOCK, `eg_v_retired_referenced` — the repoint worklist, the view that answers "the
+# presentation layer must update upstream objects so they no longer depend on a deleted one" —
+# could never return a row, because nothing ever loaded a tombstone. That is the same defect as
+# eg_v_orphan not being able to see its own subject, and it is the half of the operator's original
+# question that was still undelivered.
+#
+# contoso5 has NO tombstones, and its `superseded_by` keys are something else entirely: they sit in
+# `data/references/*.yaml` with `direction: superseded_by_identity`, meaning one measured reference
+# supersedes another. Not a retirement. The file is read when present and absent otherwise.
+# ---------------------------------------------------------------------------------------------
+# carved_out -- PLANES THIS REGISTRY DELIBERATELY DOES NOT TRACK, AND WHAT COVERS THEM INSTEAD
+# ---------------------------------------------------------------------------------------------
+# A carve-out is a THIRD state, and the whole point is that it is not either of the other two:
+#
+#   out-of-scope  the BUNDLE rules it outside framework scope (mac.project.yaml#conformance)
+#   carved-out    the REGISTRY tracked it, could keep tracking it, and chose not to -- because
+#                 another mechanism fits the artifact better
+#   uncovered     nobody covers it and the registry owes it
+#
+# Deleting the four rows without this block would have left acceptance in the THIRD state while
+# reading like the second, and six months from now the only evidence of a deliberate decision
+# would have been an absence. An absence is not a declaration.
+carved_out:
+  - path: 'acceptance/*_generated.yaml'
+    # SCOPED TO THE TWO GENERATED SUITES, NOT TO `acceptance/**`. The plane holds things this
+    # carve-out makes no claim about: `standing_failures.yaml` is the gate-failure register and
+    # stays UNCOVERED on purpose, because it is a debt and not a generated artifact; the question
+    # corpus under answers/, reference/ and anchors/ is already out of scope by the bundle's own
+    # ruling. Widening this glob would have swallowed all three and reported a debt as a decision.
+    decided: '2026-10-03'
+    decided_by: operator
+    covered_by: tools/check_suites_current.py
+    removed_object_kinds: [generated_property]
+    removed_reference_kinds:
+      - generated_property_source
+      - generated_property_validates_concept
+      - generated_property_validates_relation
+    reason: >
+      REFERENTIAL INTEGRITY IS THE WRONG MECHANISM FOR A GENERATED ARTIFACT. These suites are
+      rendered from the declarations they point at, so a stale pointer in one is never a fact
+      about the suite -- it is one fact about the PRODUCER not having been re-run, reported once
+      per pointer. Measured on the contoso5 of 2026-10-01: this registry found 22 separate
+      dangling pointers there, every one true, every one a symptom of that single cause.
+      check_suites_current.py re-runs the producer each suite names in its own `generated_by` and
+      byte-compares, so it reports the cause once and prints the command that fixes it.
+      Drift-against-regeneration is also the estate's existing precedent for generated files --
+      check_pages_current.py and `mac_resources.py --check` both work this way.
+    measured_before_removing: >
+      THE CARVE-OUT ORPHANS NOTHING, established before the rows came out rather than hoped for
+      afterwards, and measured at BOTH scopes because the first scope was the wrong one.
+
+      Of the four removed kinds: references whose TARGET is a `generated_property` = 0, and
+      non-acceptance objects whose upstream closure contains one = 0. A pure LEAF -- 112 objects
+      and 271 references pointing OUT at 75 declarations, nothing pointing back.
+
+      Of the acceptance PLANE as a whole, which is the number that nearly made this change wrong:
+      5 references do point in, all from `contoso5.mac#resources[].path` at acceptance FILES
+      (`declared_file` nodes, which the manifest creates and which survive untouched), and 1
+      non-acceptance object depends on one. Those 5 remain resolved after the change -- verified,
+      not assumed. The plane also carried 228 `framework_term` and 84 `framework_contract_id`
+      references, and losing those was the real risk here: they are not acceptance testing at all,
+      they are framework vocabulary usage that happens to sit in acceptance files. See the
+      `'*'` object kind, whose population had to be DECLARED before this carve-out was safe.
+
+      The question corpus (answers/, reference/, anchors/ -- 748 coverage rows over 136 files) was
+      already out-of-scope by the bundle's own ruling, and `standing_failures.yaml` is a gate
+      register rather than a generated artifact, so it stays UNCOVERED on purpose.
+    reversible: >
+      A LEAF IS RE-ADDABLE BY CONSTRUCTION. Restoring these four rows re-derives the 112 objects
+      and 271 references with no other row touched, which is what makes this a scoping decision
+      and not a loss. The removed rows are in git at the commit that carries this block.
+
+tombstones:
+  artifact: governance/tombstones.yaml
+  spec_version: mac.tombstones/1
+  # Required per entry. `superseded_by` MAY be null — a drop with no successor is a legitimate
+  # declaration and a different fact from a migration, which is why the field is nullable rather
+  # than omitted.
+  required: [retired_at, reason]
+
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# LINEAGE — INGESTED, NEVER RE-DERIVED
+# ══════════════════════════════════════════════════════════════════════════════════════════════
+# The bundle's data chain is already measured and already has ONE home. Three homes for this one
+# graph were collapsed into `data/lineage/lineage.json` by operator ruling — "why there are two
+# lineage artfifacts? there should be only one --- SSOT", "its one too many !!!" — and
+# sdk/project/lineage_graph.py#OWNERSHIP declares a THIRD PRODUCER ILLEGAL.
+#
+# So this block does not produce lineage. It READS it, and the mapping it needs is DECLARED here
+# rather than hardcoded in the loader, for the same reason every pointer kind is: a join written
+# in code is a join nobody can audit. The Estate Graph is not a bundle artifact at all (it is
+# printed and projected, never written into the bundle), so ingesting cannot make it the fourth
+# home.
+lineage:
+  artifact: data/lineage/lineage.json
+  shape: 2                        # `load()` discards any other shape outright
+  # Node ids are prefixed; `ref` carries the canonical name, which is the join to object ids.
+  node_kinds:
+    src: source
+    ds: dataset
+    con: concept
+    lk: register                  # the lineage `lookup` node IS the register descriptor,
+                                  # not its .csv — the .csv hangs off it by
+                                  # register_self_declaration, so the chain extends through both
+  # EVERY lineage edge is written PRODUCER -> CONSUMER, and every dependency edge in this graph
+  # means "src depends on dst", so all three invert. Uniformly — which is worth stating, because
+  # a reader who assumes one of them points the other way gets the closure backwards.
+  edge_kinds:
+    feeds:   {invert: true, what: 'a source feeds a dataset, so the DATASET depends on the source'}
+    cuts:    {invert: true, what: 'a dataset cuts a register, so the REGISTER depends on the dataset'}
+    grounds: {invert: true, what: 'a dataset grounds a concept, so the CONCEPT depends on the dataset'}
+    # Declared and not yet seen on this bundle. Listed so a kind appearing later is INGESTED
+    # rather than silently dropped, and so a reader can see the vocabulary is closed at six.
+    derives_from: {invert: true, what: 'a dataset derived from another dataset'}
+    seeded_by:    {invert: true, what: 'a register seeded by a relation'}
+    claims:       {invert: true, what: 'a DESCRIPTOR CLAIM, not a measurement — kept distinct so
+                                        "the engine says so" stays distinguishable from
+                                        "a descriptor says so"'}
+
+# SPELLINGS OF ONE IDEA, recorded so the count is honest: register · register_file · csv ·
+# paths.data · paths.register · glob: data/lookups/*.csv · rule: <Concept>.<column>.register.
+# Five are covered above (two as one kind). `paths.*` and `glob:` are PROJECTION keys in
+# objects.json, not declarations, and belong to a later packet over the projection plane.

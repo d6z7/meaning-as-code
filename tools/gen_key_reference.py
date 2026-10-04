@@ -394,26 +394,71 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
            f"{sum(len(n['terms']) for n in notions.values())} terms |",
            f"| examples | {len(examples)} |", ""]
 
-    out += ["## The levels", "", "| level | keys | gaps |", "|---|---|---|"]
     gaps_by_level: dict[str, int] = {}
     for g in gaps:
         gaps_by_level[g["level"]] = gaps_by_level.get(g["level"], 0) + 1
-    for path in sorted(levels):
-        n_keys = sum(len(f["keys"]) for f in levels[path]["forms"])
-        n_gap = gaps_by_level.get(path, 0)
-        out.append(f"| [`{path}`]({level_file(path)}) | {n_keys} | "
-                   f"{'**' + str(n_gap) + '**' if n_gap else ''} |")
+
+    #: THE INDEX IS THE MENU, SO IT IS NESTED. A flat list of 34 dotted paths is the defect this
+    #: whole reference exists to end, one level up: a reader scanning
+    #: `concept.grounding.sources.columns.<name>.rulings` beside `concept.values.aliases.map` has
+    #: to parse both strings to learn they are not siblings. Indentation carries the nesting, so
+    #: the LAST segment is the label and the full path is the link's own text on arrival.
+    out += ["## The levels", "",
+            "Indented by nesting. The label is the key; the page it opens is that key's level.", ""]
+
+    def level_tree(parent: str, depth: int):
+        kids = sorted(p for p in levels
+                      if p.startswith(parent + ".") and "." not in p[len(parent) + 1:])
+        for path in kids:
+            n_keys = sum(len(f["keys"]) for f in levels[path]["forms"])
+            n_gap = gaps_by_level.get(path, 0)
+            note = f"{n_keys} key" + ("s" if n_keys != 1 else "")
+            if n_gap:
+                note += f", **{n_gap} unexplained**"
+            # The label is the YAML key as it is actually typed, colon and all — `grounding:` —
+            # because the root is the FILE and `concept:` is one block inside it, and a tree whose
+            # first two rows both read "concept" makes a reader check which is which every time.
+            leaf = path.rsplit(".", 1)[-1]
+            label = leaf if leaf == ANY else f"{leaf}:"
+            out.append(f"{'  ' * depth}- [`{label}`]({level_file(path)}) — {note}")
+            level_tree(path, depth + 1)
+
+    root_keys = sum(len(f["keys"]) for f in levels["concept"]["forms"])
+    root_gap = gaps_by_level.get("concept", 0)
+    out.append(f"- [**a concept file**](concept.md) — its {root_keys} top-level keys"
+               + (f", **{root_gap} unexplained**" if root_gap else ""))
+    level_tree("concept", 1)
     out.append("")
 
     out += ["## The vocabularies and the predefined types", "",
             "A value like `mac.concept.column.measure_type.flow` is the notion "
-            "`concept.column.measure_type` and the term `flow`. Each page lists every term of one "
-            "notion and every key that accepts it.", "",
-            "| notion | terms | closed |", "|---|---|---|"]
-    for notion in sorted(notions):
-        body = notions[notion]
-        out.append(f"| [`mac.{notion}`]({notion_file(notion)}) | {len(body['terms'])} | "
-                   f"{'yes' if body['closed'] else 'no'} |")
+            "`concept.column.measure_type` and the term `flow`. The dotted name is a hierarchy, so "
+            "this is indented by it: only the leaves are pages, and a page lists every term of one "
+            "notion and every key that accepts it.", "", "- `mac`"]
+
+    #: Intermediate segments — `concept`, `concept.column` — are PATH and not notions, so they are
+    #: plain text. Linking them would promise a page that does not exist.
+    def notion_tree(prefix: str, depth: int):
+        seen: dict[str, bool] = {}
+        for notion in sorted(notions):
+            if prefix and not notion.startswith(prefix + "."):
+                continue
+            rest = notion[len(prefix) + 1:] if prefix else notion
+            head = rest.split(".", 1)[0]
+            if head in seen:
+                continue
+            seen[head] = True
+            full = f"{prefix}.{head}" if prefix else head
+            pad = "  " * depth
+            if full in notions:
+                body = notions[full]
+                out.append(f"{pad}- [`{head}`]({notion_file(full)}) — {len(body['terms'])} terms"
+                           + (", closed" if body["closed"] else ", open"))
+            else:
+                out.append(f"{pad}- `{head}`")
+            notion_tree(full, depth + 1)
+
+    notion_tree("", 1)
     out.append("")
 
     if gaps:
@@ -424,7 +469,11 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
         by: dict[str, list[str]] = {}
         for g in gaps:
             by.setdefault(g["level"], []).append(g["key"])
-        for path in sorted(by, key=lambda p: (-len(by[p]), p)):
+        # ORDERED LIKE THE TREE ABOVE, not by size. A worklist sorted biggest-first is a second
+        # sequence over the same set, and a reader who has just walked the tree then has to find
+        # their place again. The counts are not repeated here either — the tree carries those, this
+        # carries WHICH keys, so neither is a second home for the other.
+        for path in sorted(by):
             out.append(f"| [`{path}`]({level_file(path)}) | "
                        f"{', '.join('`' + k + '`' for k in sorted(by[path]))} |")
         out.append("")
