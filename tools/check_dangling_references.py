@@ -265,8 +265,14 @@ def _resolve(root: Path, citing: Path, target: str) -> Path | None:
     return None
 
 
+_PER_CONTAINER: set[str] = set()
+
+
 def scan(root: Path, index: dict[str, list[Path]] | None = None):
     """Returns (findings, unlocated, counts). `index` maps basename -> every file with that name."""
+    global _PER_CONTAINER
+    if not _PER_CONTAINER:
+        _PER_CONTAINER = _per_container_names()
     if index is None:
         index = defaultdict(list)
         for dp, dns, fns in os.walk(root):
@@ -350,8 +356,14 @@ def scan(root: Path, index: dict[str, list[Path]] | None = None):
                         else:
                             findings.append(Finding(rel, lineno, t, "R3", "ERROR", "no file of this name anywhere in the tree"))
                     elif len(hits) > 1:
-                        findings.append(Finding(rel, lineno, t, "R3", "WARNING",
-                                                f"ambiguous — {len(hits)} files carry this name"))
+                        if t in _PER_CONTAINER:
+                            unlocated.append(Finding(
+                                rel, lineno, t, "R3", "UNLOCATED",
+                                f"per-container — {len(hits)} containers each carry one, declared by "
+                                f"tools/mac_resources.py or sdk/container/spec.py"))
+                        else:
+                            findings.append(Finding(rel, lineno, t, "R3", "WARNING",
+                                                    f"ambiguous — {len(hits)} files carry this name"))
         counts[kind] += 1
 
     for p in _md_files(root):
@@ -361,6 +373,65 @@ def scan(root: Path, index: dict[str, list[Path]] | None = None):
     for p in _guardrail_files(root):
         judge(p, _lines_guardrail(p), "guardrails")
     return findings, unlocated, counts
+
+
+# ---------------------------------------------------------------- per-container resources, DECLARED
+#: A FILE EVERY CONTAINER HAS ONE OF IS NOT AN AMBIGUOUS REFERENCE. MEASURED 2026-10-04: of 141
+#: WARNINGs, 76 named such a file — 32 `mac.project.yaml` (which `sdk/container/spec.py` DEFINES as
+#: "a directory whose root `mac.project.yaml` is the manifest", so every container has exactly one) and
+#: 44 a resource `tools/mac_resources.py` already declares as produced per bundle. Over the in-scope
+#: trees `mac.project.yaml` resolved to 20 files with 20 distinct contents: 11 generated BIRD bundles,
+#: 2 exemplars, 1 authoring exemplar, 5 platform fixtures and contoso5. Nothing is redundant there and
+#: no sentence can be made less ambiguous — "the bundle's manifest" is what the citation means.
+#:
+#: READ FROM THE REGISTER, NEVER LISTED HERE. `mac_resources` already says which files a bundle carries
+#: and who produces them; a second list in this gate would be a second home for that fact and would go
+#: stale the first time a resource is added. The container manifest comes from the container spec for
+#: the same reason.
+_CONTAINER_MANIFEST = "mac.project.yaml"
+
+
+def _per_container_names() -> set[str]:
+    """Basenames a container/bundle has ONE of, from the declarations that already say so."""
+    names = {_CONTAINER_MANIFEST}
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        import mac_resources as mr
+        for block in ("DERIVED", "AUTHORED", "NOT_DECLARED"):
+            for item in getattr(mr, block, ()) or ():
+                g = (item or {}).get("glob") or ""
+                base = g.rsplit("/", 1)[-1]
+                if base and "*" not in base:
+                    names.add(base)
+        #: PLANES is a tuple of (plane, glob, kind) TRIPLES, not dicts — reading only the dict blocks
+        #: missed `ontology/rules.yaml` and `ontology/edges.yaml`, which are the plane-level declarations
+        #: a bundle has exactly one of, and left 16 warnings standing about them.
+        for row in getattr(mr, "PLANES", ()) or ():
+            g = row[1] if len(row) > 1 else ""
+            base = str(g).rsplit("/", 1)[-1]
+            if base and "*" not in base:
+                names.add(base)
+    except Exception:                                                     # noqa: BLE001
+        #: A register that cannot be imported must not silently shrink the exemption: the gate then
+        #: warns as it did before, which is the honest degradation.
+        pass
+    try:
+        import yaml
+        doc = yaml.safe_load((ROOT / "mac_artifacts.yaml").read_text(encoding="utf-8")) or {}
+
+        def walk(n):
+            if isinstance(n, dict):
+                for k, v in n.items():
+                    if k in ("path", "glob") and isinstance(v, str) and "*" not in v:
+                        names.add(v.rsplit("/", 1)[-1])
+                    walk(v)
+            elif isinstance(n, list):
+                for x in n:
+                    walk(x)
+        walk(doc)
+    except Exception:                                                     # noqa: BLE001
+        pass
+    return names
 
 
 # ---------------------------------------------------------------- the baseline
