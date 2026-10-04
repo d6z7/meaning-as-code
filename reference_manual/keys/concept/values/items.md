@@ -12,7 +12,6 @@
 - [`label`](#label) — *string*
 - [`meaning`](#meaning) — *string*
 - [`note`](#note) — *string*
-- [`open_question`](#open-question) — *string*
 
 ### `code`
 
@@ -55,12 +54,6 @@ What this value MEANS, where the code does not say it. BANNED IN A CONCEPT for t
 *string* · optional
 
 A remark about one value — an impurity, a historical spelling, a case that looks like it belongs and does not. BANNED IN A CONCEPT; it belongs on the register's row.
-
-### `open_question`
-
-*string* · optional
-
-An undecided question about one value, carried beside it. BANNED IN A CONCEPT; use the register, and `open_questions` at the concept level for a question about the notion itself.
 
 ---
 

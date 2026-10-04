@@ -731,7 +731,7 @@ def build_model(root):
         lanes[r["decision"]] += 1
 
     preferred = ["metadata", "concept", "identity", "members", "values", "grounding",
-                 "contract", "edges", "governance", "open_questions"]
+                 "contract", "edges", "governance"]
     seen = []
     for c in concepts:
         for s in c["slots_present"]:

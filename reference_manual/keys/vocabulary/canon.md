@@ -78,7 +78,7 @@ Write it as `mac.canon.refuse_measure_no_row`
 
 **doc:** RENDER canon — a measure has no row for the resolved scope; emit the refusal clauses
 
-**params_from:** `{"label": "concept.label", "null_is_real": "concept.semantics.null_semantics"}`
+**params_from:** `{"label": "concept.label"}`
 
 ### `resolve_by_register`
 

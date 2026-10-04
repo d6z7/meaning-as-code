@@ -775,7 +775,6 @@ def build_capabilities(b: Bundle, fw: Framework) -> list:
         ("contract.rules[].subject", "v0.1.13 rule headline (rendered by mac_to_explorer / mac_to_manual)"),
         ("grounding.serves_from", "v0.5 PROMOTE — the serving view(s) a concept is answered from"),
         ("grounding.grain", "v0.5 PROMOTE — the committed leaf grain, one row = one …"),
-        ("concept.semantics.null_semantics", "what an absent value MEANS, rather than what it looks like"),
         ("values.aliases", "the auditable surface→code trigger vocabulary (aliasBlock)"),
         ("edges[].aliases", "v0.1.12 relationAliasBlock — the surface→RELATION trigger vocabulary"),
         ("edges[].resolved_by", "v0.1.12 — the rule computing a shared_attribute relation's set"),

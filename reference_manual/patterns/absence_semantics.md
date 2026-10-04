@@ -39,7 +39,7 @@ true**, because the fact is about the world, not the rows.
 > **The question** (what the data can't tell you): *What does a missing row mean — genuine zero, not-loaded,
 > or structurally-untracked?*
 >
-> **The answer** (the fact we supply): *It cannot be read from the data; `null_semantics` **declares** it per
+> **The answer** (the fact we supply): *It cannot be read from the data; a `densify` binding **carries** it per
 > concept. Then the behaviour follows deterministically — genuine-zero → densify to the full grid and
 > `COALESCE` 0; not-loaded → exclude and flag (never impute 0); structurally-untracked → drop from the
 > denominator.*
@@ -65,7 +65,7 @@ prior_art:
     Open-world by default — absence means "unknown", never "zero/false". The opposite default from
     relational, and equally silent about which the modeller actually meant.
 mac_expression: >
-  `semantics.null_semantics` DECLARES, per concept, what an absent row means: `genuine_zero` /
+  A `mac.canon.densify` binding CARRIES, per concept, what an absent row means: `genuine_zero` /
   `not_loaded` / `structurally_untracked`. The query behaviour then follows deterministically — genuine_zero
   → densify against the complete grid and COALESCE 0; not_loaded → exclude AND flag incompleteness (never
   impute 0); structurally_untracked → exclude from the denominator. The skeleton flag decides; a canon
@@ -81,8 +81,8 @@ projects_to:
 antipattern: >
   `AVG` over present rows when absence means zero (overstates); `COALESCE 0` when absence means not-loaded
   (understates / fabricates data); treating structurally-untracked cells as zero (pollutes denominators).
-status: scattered   # semantics.null_semantics exists; never named as a pattern, and the densify/exclude behaviour was not canonized
-canon_ref: [shape_reference.md (ConceptFile; semantics.null_semantics), FRAMEWORK.md §5 (semantics)]
+status: scattered   # the reading is carried by a densify binding; never named as a pattern
+canon_ref: [canon/densify.md, FRAMEWORK.md §5 (semantics)]
 ```
 
 ## The determinism border
@@ -91,15 +91,15 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — another case where a **skeleton flag 
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Which meaning a missing row has | **skeleton** | `semantics.null_semantics` (declared, not guessed) |
+| Which meaning a missing row has | **canon body** | a `densify` binding (declared, not guessed) |
 | `genuine_zero` → densify to the grid + `COALESCE 0` | **canon-backed** | [`densify`](../canon/densify.md) |
 | `structurally_untracked` → drop from the denominator | **canon-backed** | [`exclusion_filter`](../canon/exclusion_filter.md) (restrict the grid) |
 | `not_loaded` → exclude **and flag** (never impute 0) | **partly canon / data** | exclude + a completeness caveat (the *register* edge of [`impurity_disposition`](impurity_disposition.md)) |
-| interpretative remainder | **minimal** | once `null_semantics` is declared, the behaviour follows |
+| interpretative remainder | **minimal** | once `densify` is bound, the behaviour follows |
 
 ```yaml
 semantics:
-  null_semantics: genuine_zero      # the skeleton fact that decides everything below
+  realized_by: [{udf: mac.canon.densify}]   # the body that decides everything below
   realized_by:
     udf: densify
     params: { fact: daily_sales, measure: units, keys: [sale_date, store_id, product_id],
@@ -117,7 +117,7 @@ WHERE store_id='S1' AND product_id='P-100' AND sale_date BETWEEN DATE '2026-03-0
 ```
 
 ```sql
--- GROUNDED (null_semantics = genuine_zero): densify to the full grid, COALESCE absent days to 0, then AVG
+-- GROUNDED (densify bound): LEFT JOIN the full grid, COALESCE absent days to 0, then AVG
 SELECT AVG(units) FROM (
   SELECT g.sale_date, COALESCE(f.units, 0) AS units
   FROM (SELECT sale_date FROM calendar WHERE sale_date BETWEEN DATE '2026-03-01' AND DATE '2026-03-31') g
@@ -127,4 +127,4 @@ SELECT AVG(units) FROM (
 ```
 
 Same query, two answers differing ~15×. The difference is one declared fact — *what a missing row means* —
-that the data could not provide and `null_semantics` does.
+that the data could not provide and the binding does.

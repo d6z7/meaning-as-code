@@ -11,7 +11,6 @@ A data-quality invariant (validation, NOT derivation). The description field is 
 - [`assert`](#assert) — *string* **·** required
 - [`machine_executable`](#machine-executable) — *boolean*
 - [`notes`](#notes) — *string*
-- [`open_question`](#open-question) — *string*
 - [`severity`](#severity) — *—*
 
 ### `assert`
@@ -31,12 +30,6 @@ Whether this assertion can be run as written, or is prose a person must check. D
 *string* · optional
 
 Working remarks about this assertion — what was measured, which rows fail it today, why it is stated this way rather than another.
-
-### `open_question`
-
-*string* · optional
-
-What about this assertion is not settled — a threshold nobody has ruled, a case the condition does not cover. Carried beside the assertion so the uncertainty travels with the thing it is about.
 
 ### `severity`
 

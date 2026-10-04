@@ -32,7 +32,7 @@ compiled into the served artifact and hashed with it, while the ledger changes w
 posts a message; and "overdue" depends on the moment it is read. The join of catalogue and ledger
 is a read-time view (`sdk.project.sme_questions`), never a projected file.
 
-    {"key": "concept:store#open_questions[oq1]",   the ORIGIN KEY (below) — what a ledger files
+    {"key": "concept:store#measure_type",          the ORIGIN KEY (below) — what a ledger files
      "origin": "concept-field",                     register | concept-field | oracle
      "kind": "question",                            question | sign_off — counted apart everywhere
      "plane": "ontology",
@@ -48,10 +48,6 @@ is a read-time view (`sdk.project.sme_questions`), never a projected file.
 
 ORIGIN KEYS — ids only, never file paths, so moving a file orphans nothing:
 
-    concept:<concept>#open_questions[<id>]          a concept's open_questions[] entry
-    concept:<concept>#values[<code>].open_question  a value-level open question
-    concept:<concept>#enumerations[<name>].values[<code>].open_question
-    concept:<concept>#constraints[<i>].open_question
     concept:<concept>#identity                      identity awaiting an SME (no key)
     concept:<concept>#confidence                    concept confidence below confirmed   sign_off
     concept:<concept>#enumeration                   the value set is not resolved
@@ -121,7 +117,6 @@ SME_BLOCK_KEYS = {"ask_kind", "owner_role", "ask", "plane"}
 CLOSED_CHANGE_STATUSES = {"withdrawn", "superseded", "ratified", "closed"}
 CLOSING_MARKERS = ("withdrawn_by", "superseded_by", "ratified_by")
 DATA_PLANE_OBJECT_KINDS = {"dataset", "transform", "lookup", "source"}
-RESOLVED_OPEN_QUESTION = {"resolved", "closed", "withdrawn"}
 DOUBTFUL_CONFIDENCE = {"I", "Q"}
 CHANGE_RECORD = "interventions/ledger.yaml"
 
@@ -422,62 +417,15 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
             "concept.semantics.measure_type",
         )
 
-    oqs = doc.get("open_questions")
-    if oqs is not None and not isinstance(oqs, list):
-        findings.append(
-            sme_finding(
-                "sme-block-invalid",
-                "medium",
-                stem,
-                "open_questions is not a list, so its questions cannot be read",
-                f"open_questions is a {type(oqs).__name__}.",
-                concept=stem,
-                source=src("open_questions"),
-            )
-        )
-        oqs = []
-    for i, oq in enumerate(oqs or []):
-        oid = str((oq or {}).get("id") or "").strip() if isinstance(oq, dict) else ""
-        text = (oq or {}).get("question") if isinstance(oq, dict) else None
-        if not oid or not isinstance(text, str) or not text.strip():
-            findings.append(
-                sme_finding(
-                    "sme-block-invalid",
-                    "medium",
-                    f"{stem}.open_questions[{i}]",
-                    "an open question without an id or without text",
-                    "Nothing is invented in its place; give the entry an `id` and its `question`.",
-                    concept=stem,
-                    source=src(f"open_questions[{i}]"),
-                )
-            )
-            continue
-        status = str(oq.get("status") or "").strip()
-        if status.lower() in RESOLVED_OPEN_QUESTION:
-            continue
-        add(
-            f"concept:{key_fragment(stem)}#open_questions[{key_fragment(oid)}]",
-            "question",
-            text.strip(),
-            f"open_questions[id={oid}]",
-            origin="concept-field",
-            owner_role=oq.get("owner_for_resolution"),
-            declared_priority=oq.get("priority"),
-            declared_status=status or None,
-        )
-
+    #: THE CONCEPT NO LONGER CARRIES A QUESTION. `open_questions[]`, `values[].open_question` and
+    #: `constraints[].open_question` are gone from the schema: nothing wrote them in any bundle, and
+    #: the only runtime reader was a projection built from them. The SME ledger OUTSIDE `ontology/`
+    #: is the home for an unresolved question, which is where it was ruled to live — so this
+    #: harvester keeps the findings it can derive (a value doubtful and unexplained) and stops
+    #: looking for a question filed in the concept.
     unasked = []
     for frag, pointer, it in _value_items(doc):
-        oq = it.get("open_question")
-        if isinstance(oq, str) and oq.strip():
-            add(
-                f"concept:{key_fragment(stem)}#{frag}.open_question",
-                "question",
-                oq.strip(),
-                f"{pointer}.open_question",
-                origin="concept-field",
-            )
-        elif it.get("confidence") in DOUBTFUL_CONFIDENCE:
+        if it.get("confidence") in DOUBTFUL_CONFIDENCE:
             unasked.append(str(it.get("code", it.get("value"))))
     if unasked:
         # WHY A FINDING AND NOT A QUESTION: nobody wrote the question. Inventing its text is the
@@ -488,23 +436,13 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
                 "low",
                 stem,
                 f"{len(unasked)} value(s) not confirmed and no question recorded",
-                "Values at confidence I or Q with no `open_question`: " + ", ".join(unasked) + ".",
+                "Values at confidence I or Q, with nothing recorded about the doubt: "
+                + ", ".join(unasked) + ".",
                 concept=stem,
                 source=src("values"),
             )
         )
 
-    for i, c in enumerate(doc.get("constraints") or []):
-        oq = c.get("open_question") if isinstance(c, dict) else None
-        if isinstance(oq, str) and oq.strip():
-            # Keyed by position: a constraint has no id. Reordering constraints re-keys the question.
-            add(
-                f"concept:{key_fragment(stem)}#constraints[{i}].open_question",
-                "question",
-                oq.strip(),
-                f"constraints[{i}].open_question",
-                origin="concept-field",
-            )
     return rows, findings
 
 

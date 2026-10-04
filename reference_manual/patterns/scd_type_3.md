@@ -53,7 +53,7 @@ prior_art:
   rdf: >
     A separate "previous value" property; the bound is not expressed.
 mac_expression: >
-  Two `properties:` — `category` (current) and `previous_category` (prior) — plus a `semantics.scope` fact
+  Two `properties:` — `category` (current) and `previous_category` (prior) — plus a scope stated in the concept's `definition`
   stating history depth = 1 (older changes not retained). Contrast `scd_type_2`, which keeps FULL history as
   an as-of axis; SCD-3 is deliberately lossy. No new structure.
 why_better: >
@@ -67,7 +67,7 @@ antipattern: >
   Reading `previous_category` as "the history"; computing a change-count or a multi-step trajectory from a
   one-step column.
 status: scattered   # properties + scope express it; the depth-bound is the fact that needs stating
-canon_ref: [shape_reference.md (ConceptFile; properties, semantics.scope)]
+canon_ref: [shape_reference.md (ConceptFile; properties)]
 ```
 
 ## The determinism border
@@ -75,7 +75,7 @@ canon_ref: [shape_reference.md (ConceptFile; properties, semantics.scope)]
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Current and prior values | **skeleton** | two `properties:` |
-| History depth = 1 (older gone) | **skeleton** | `semantics.scope` |
+| History depth = 1 (older gone) | **prose** | the concept's `definition` |
 | A deeper-history question | **prose-fallback → ⊥** | abstain (the scope fact triggers it) |
 
 No behavioural canon — the discipline is *declaring the limit* so the agent does not fabricate beyond it.

@@ -59,7 +59,7 @@ prior_art:
 mac_expression: >
   An `event` concept with a `lifecycle:` (the milestones as ordered phases/states), the date columns as
   `properties:`, and the lags (e.g. delivered_at − placed_at) as derived `measure`s. A NULL milestone is
-  `null_semantics: not_loaded`-like → "not yet reached" (a lifecycle fact); completed-duration measures
+  an absence reading of `not_loaded` → "not yet reached" (a lifecycle fact); completed-duration measures
   exclude rows that haven't reached the end milestone, and SAY they do. No new structure (`event` + `measure`).
 why_better: >
   The pipeline's states, the meaning of an unreached milestone, and the survivorship of a lag average all
@@ -72,8 +72,8 @@ projects_to:
 antipattern: >
   Averaging a lag over all rows (errors / drops in-flight silently); reporting completed-only durations as
   "all orders" without disclosing survivorship; treating an unreached milestone as missing data.
-status: scattered   # event lifecycle + measures + null_semantics express it; never named as a pattern
-canon_ref: [FRAMEWORK.md §5 (event lifecycle), shape_reference.md (ConceptFile; lifecycle, null_semantics), patterns/absence_semantics.md]
+status: scattered   # event lifecycle + measures + the absence reading express it; never named as a pattern
+canon_ref: [FRAMEWORK.md §5 (event lifecycle), shape_reference.md (ConceptFile; lifecycle), canon/densify.md, patterns/absence_semantics.md]
 ```
 
 ## The determinism border
@@ -81,7 +81,7 @@ canon_ref: [FRAMEWORK.md §5 (event lifecycle), shape_reference.md (ConceptFile;
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | The milestone pipeline / states | **skeleton** | `event` `lifecycle:` |
-| A NULL milestone = not-yet-reached | **skeleton** | `null_semantics` (→ [absence_semantics](absence_semantics.md)) |
+| A NULL milestone = not-yet-reached | **canon body** | a densify binding (→ [absence_semantics](absence_semantics.md)) |
 | A completed-duration average excludes in-flight rows | **canon-backed** | a `WHERE end_milestone IS NOT NULL` guard (reuses the exclusion idea) |
 | interpretative remainder | **minimal** | once the end-milestone requirement is stated |
 

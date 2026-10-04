@@ -15,7 +15,6 @@ concept
 - [`grounding`](#grounding) — *object*
 - [`lifecycle`](#lifecycle) — *object*
 - [`members`](#members) — *—*
-- [`open_questions`](#open-questions) — *list of object*
 - [`properties`](#properties) — *list of object*
 - [`values`](#values) — *object*
 
@@ -89,14 +88,6 @@ grouping rollup (over + member sets — see groupingMembers) OR a legacy contain
 
 Its own keys: [`concept.members`](members/README.md)
 
-### `open_questions`
-
-*list of object* · optional · [has its own keys →](open_questions.md)
-
-WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule.
-
-Its own keys: [`concept.open_questions`](open_questions.md)
-
 ### `properties`
 
 *list of object* · optional · [has its own keys →](properties.md)
@@ -123,7 +114,6 @@ Its own keys: [`concept.values`](values/README.md)
 - [`lifecycle:`](lifecycle.md)
 - [`members:`](members/README.md)
 - [`metadata:`](metadata.md)
-- [`open_questions:`](open_questions.md)
 - [`properties:`](properties.md)
 - [`values:`](values/README.md)
 

@@ -7,9 +7,9 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 # Canon — `densify`
 
-> A **transform** canon for `null_semantics = genuine_zero`: it `LEFT JOIN`s a sparse fact onto the complete
+> A **transform** canon for a missing row that means GENUINE ZERO: it `LEFT JOIN`s a sparse fact onto the complete
 > **grid** of cells that *should* exist and `COALESCE`s the measure to 0, so absent cells count as zero
-> rather than vanish. The skeleton `null_semantics` flag selects it; this canon executes it. Single-homed here.
+> rather than vanish. BINDING IT IS THE DECLARATION — there is no separate flag to select it, because a flag that selected a body was a second home for one decision. Single-homed here.
 
 ## Serves
 
@@ -31,9 +31,9 @@ measure whose missing rows mean a real zero and must be counted as such in avera
 CANON = "densify"
 
 def densify(fact, measure, *, keys, grid, dialect="trino"):
-    """For null_semantics == genuine_zero: LEFT JOIN `fact` onto the complete `grid` of cells and COALESCE
+    """Where a missing row means genuine zero: LEFT JOIN `fact` onto the complete `grid` of cells and COALESCE
     the measure to 0, so absent cells count as zero (not excluded). `keys` are the join columns; `grid` is a
-    relation enumerating every cell that SHOULD exist. Realizes null_semantics=genuine_zero."""
+    relation enumerating every cell that SHOULD exist. Realizes the genuine-zero reading."""
     on = " AND ".join(f"g.{k} = f.{k}" for k in keys)
     sel_keys = ", ".join(f"g.{k}" for k in keys)
     return (f"SELECT {sel_keys}, COALESCE(f.{measure}, 0) AS {measure} "
@@ -44,7 +44,7 @@ def densify(fact, measure, *, keys, grid, dialect="trino"):
 
 ```yaml
 semantics:
-  null_semantics: genuine_zero
+  realized_by: [{udf: mac.canon.densify}]
   realized_by:
     udf: densify
     params: { fact: daily_sales, measure: units, keys: [sale_date, store_id, product_id],

@@ -11,10 +11,7 @@ The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).
 - [`additivity`](#additivity) — *object*
 - [`axis_kinds`](#axis-kinds) — *object*
 - [`measure_type`](#measure-type) — *string*
-- [`null_semantics`](#null-semantics) — *string*
 - [`purpose`](#purpose) — *string*
-- [`realized_by`](#realized-by) — *—*
-- [`scope`](#scope) — *string*
 - [`unit`](#unit) — *string*
 
 ### `additivity`
@@ -39,31 +36,11 @@ Its own keys: [`concept.concept.semantics.axis_kinds`](axis_kinds.md)
 
 v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.
 
-### `null_semantics`
-
-*string* · optional
-
-WHAT A MISSING VALUE MEANS HERE — not loaded, genuinely zero, or not applicable. The three are indistinguishable in the rows and lead to three different answers: a sparse fact read as zero understates a total, and read as unknown refuses a question it could have answered. Where the reading changes the SQL, bind the `densify` canon; this is the statement a reader needs regardless.
-
 ### `purpose`
 
 *string* · optional
 
 WHAT THIS CONCEPT IS FOR — the question it exists to answer. Where `definition` says what the notion IS, this says why the ontology carries it, which is what tells a later reader whether a proposed change serves it or quietly replaces it.
-
-### `realized_by`
-
-*—* · optional · [has its own keys →](realized_by.md)
-
-the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero.
-
-Its own keys: [`concept.concept.semantics.realized_by`](realized_by.md)
-
-### `scope`
-
-*string* · optional
-
-WHAT THIS CONCEPT COVERS AND WHAT IT LEAVES OUT, stated as a boundary. The population, the period, the part of the business. An answer is only as true as its scope, and an unstated scope is read as `everything` by whoever quotes the number next.
 
 ### `unit`
 
@@ -89,7 +66,6 @@ unit: USD
 
 - [`additivity:`](additivity.md)
 - [`axis_kinds:`](axis_kinds.md)
-- [`realized_by:`](realized_by.md)
 
 ---
 

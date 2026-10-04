@@ -47,7 +47,7 @@ GENERATOR = "mac_descriptors.py/1"
 #: source of truth — `meaning_plane_tables` prefers the runtime's own definition.
 _MEANING_PLANE_FALLBACK = frozenset({
     "meta_concept", "meta_field_role", "meta_contract_rule", "meta_rule_binding",
-    "meta_edge", "meta_open_question", "meta_constraint", "meta_dataset",
+    "meta_edge", "meta_constraint", "meta_dataset",
 })
 
 

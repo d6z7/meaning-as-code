@@ -78,7 +78,7 @@ mac_expression: >
                                  as a caveat the consumer inherits (the number is "clean to within X").
     (c) not separable w/o SME  → BLOCK: abstain on the affected question and escalate (NEEDS_SME) rather
                                  than return a confident wrong (or falsely-clean) number.
-  HONEST LIMIT: today the framework gives only PARTIAL tooling for this — `open_questions` + rules +
+  HONEST LIMIT: today the framework gives only PARTIAL tooling for this — the SME ledger + rules +
   scope/closure honesty (MODELLERS_COOKBOOK B8). A first-class CURATION LAYER and a typed data-quality
   register are DEFERRED until the impurity catalogue is large enough to design the abstraction from pattern
   rather than from a handful of cases. This is the known frontier, not a finished primitive.
@@ -96,7 +96,7 @@ antipattern: >
   data inside the concept DEFINITION instead of recording the disposition; treating an undecidable case as if
   it were decidable (skipping the block/escalate option).
 status: gap   # the disposition SHAPE is described; the curation layer + typed DQ register are not yet framework primitives
-canon_ref: [MODELLERS_COOKBOOK.md B8 (curation-layer scope note), shape_reference.md (ConceptFile; open_questions / scope / closure)]
+canon_ref: [MODELLERS_COOKBOOK.md B8 (curation-layer scope note), shape_reference.md (ConceptFile; closure)]
 ```
 
 ## The determinism border

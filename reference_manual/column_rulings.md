@@ -56,9 +56,9 @@ colliding code space instead — see `scoped_by`, and measure before you rule.
 
 THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
 filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
-Corse in France, Como in Italy and Colorado in the United States. Measured on contoso: 40 of 563
-state codes are carried by more than one country and 0 collide WITHIN a country, so `GROUP BY
-State` silently merges three unrelated regions into one row that looks like data. NOT
+Corse in France, Como in Italy and Colorado in the United States. measured on a worked bundle:
+40 of 563 state codes are carried by more than one country and 0 collide WITHIN a country, so
+`GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT
 `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which
 is the composite identity `mac.canon.composite_key_guard` exists to protect.
 

@@ -1268,7 +1268,7 @@ def _why(root: pathlib.Path, d: dict, a) -> str:
                 "python -m sdk.cli.harvest --content-root <root> --mode project")
     if d["id"] == "D5":
         return ("the SME ledger is projected from the questions the ONTOLOGY raises "
-                "(concept open_questions + the data-quality register), so it is empty until D4 "
+                "(the SME ledger + the data-quality register), so it is empty until D4 "
                 "exists and the register has been reconciled.")
     if d["id"] in ("D8a", "D8b") and not _matches(root, "ontology/concepts/**/*.yaml"):
         return ("the ontology suite is RENDERED from the concepts, so it declares 0 cases and "

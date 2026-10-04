@@ -55,7 +55,7 @@ prior_art:
     rdfs:subClassOf — native and clean; subtype properties have domains on the subclass.
 mac_expression: >
   Model the supertype as the concept and the subtypes via `subclasses:` (is-a). Common attributes sit on the
-  supertype; subtype-only attributes are documented on their subclass, with `null_semantics:
+  supertype; subtype-only attributes are documented on their subclass, with the absence reading carried by a densify binding (`
   structurally_untracked` for rows of other subtypes. The `kind` column is the discriminator (an
   `enumeration`). No new structure — `entity` + `subclasses` already express it.
 why_better: >
@@ -69,8 +69,8 @@ projects_to:
 antipattern: >
   Treating the supertype as homogeneous (averaging subtype-only columns across all rows); or splitting into
   unrelated concepts and losing the shared identity.
-status: scattered   # subclasses + null_semantics express it; never named as a pattern — a "six suffice" confirmation
-canon_ref: [FRAMEWORK.md §5 (subclasses / is-a), shape_reference.md (ConceptFile; subclasses, null_semantics)]
+status: scattered   # subclasses + a densify binding express it; never named as a pattern
+canon_ref: [FRAMEWORK.md §5 (subclasses / is-a), canon/densify.md]
 ```
 
 ## The determinism border
@@ -80,7 +80,7 @@ A **structural** pattern: skeleton decides, no behavioural canon.
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | The is-a hierarchy | **skeleton** | `subclasses:` on the concept |
-| A subtype column is N/A (not unknown) for other subtypes | **skeleton** | `null_semantics: structurally_untracked` (→ [absence_semantics](absence_semantics.md)) |
+| A subtype column is N/A (not unknown) for other subtypes | **canon body** | a densify binding, `structurally_untracked` (→ [absence_semantics](absence_semantics.md)) |
 | Scoping a subtype-only query to its subtype | **skeleton** | the `kind` discriminator |
 | interpretative remainder | **none** | structural |
 

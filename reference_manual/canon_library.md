@@ -80,7 +80,7 @@ RENDER canon — a measure has no row for the resolved scope; emit the refusal c
 |---|---|
 | `serves` | exclusion_no_evidence |
 | `needs_sqlglot` | False |
-| `params_from` | label: concept.label · null_is_real: concept.semantics.null_semantics |
+| `params_from` | label: concept.label |
 
 #### `mac.canon.resolve_by_register`
 

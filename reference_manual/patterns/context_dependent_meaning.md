@@ -71,7 +71,7 @@ prior_art:
 mac_expression: >
   A scoped resolution rule (`mac.concept.rule.resolution`) on the concept: identity/scoping MUST include the
   parent — resolve a size by (brand, size_code), NEVER by size_code alone. The rule is typed (when → then →
-  never), `binds` the columns it governs, and is enforced; the concept's `semantics.scope` states that the
+  never), `binds` the columns it governs, and is enforced; the concept's `definition` states that the
   code is parent-relative.
 why_better: >
   "This code is meaningless without its parent" becomes a FIRST-CLASS, typed, checkable fact instead of
@@ -87,7 +87,7 @@ antipattern: >
   Equality on the bare code; treating a context-dependent code as a single global enumeration; pushing the
   parent-scoping into a comment instead of a typed resolution rule.
 status: clean   # mac.concept.rule.resolution + scoped resolution + binds support this directly
-canon_ref: [mac_vocabulary.yaml (rule_kind.resolution), shape_reference.md (ConceptFile; semantics.scope), query_rules (resolve.by_semantic_identity)]
+canon_ref: [mac_vocabulary.yaml (rule_kind.resolution), query_rules (resolve.by_semantic_identity)]
 ```
 
 ## The determinism border

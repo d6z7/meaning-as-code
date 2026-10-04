@@ -91,7 +91,7 @@ each is a direct answer to a failing in §2:
 And — decisively for the agent consumer — the framework makes the classic **footguns explicit** that the
 alternatives leave to tribal knowledge: a measure's per-axis **additivity** (a stock is non-additive over
 time), a value set's **closure** (closed / open / unknown), what an **absent row** means
-(`null_semantics`). These are exactly the facts that make an LLM guess plausibly-wrong, and here they are
+(bound through `densify`). These are exactly the facts that make an LLM guess plausibly-wrong, and here they are
 *written down, single-homed, and enforced*.
 
 ## 4. What it is honestly NOT

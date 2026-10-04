@@ -222,46 +222,45 @@ def test_confidence_rules_and_identity_keep_their_kinds(tmp_path):
     }
 
 
-def test_both_concept_open_question_forms_are_emitted_verbatim(tmp_path):
-    multi = "Does FLAG mean a flagship store?\nOr a store with a flag on its sign?"
+def test_a_concept_can_no_longer_FILE_a_question(tmp_path):
+    """THE CONCEPT-SIDE QUESTION IS GONE, and this test guards its return.
+
+    `open_questions[]`, `values[].open_question` and `constraints[].open_question` were removed from
+    the schema: no bundle wrote any of them, and the SME ledger OUTSIDE `ontology/` is the ruled home
+    for an unresolved question. This used to assert the two concept forms were emitted VERBATIM; it
+    now asserts they are emitted NOT AT ALL, because a test of a deleted feature either goes or
+    becomes the guard that keeps it deleted.
+
+    The doubtful-and-unasked FINDING survives, and that is the point: the harvester can still say a
+    value is at confidence I or Q with nothing recorded about the doubt. What it may not do is read a
+    question out of the concept.
+    """
     concept = _concept(
         "store",
         "enumeration",
         values={
             "closure": "closed",
             "items": [
-                {"code": "FLAG", "confidence": "Q", "open_question": multi},
-                {"code": "Pop up", "confidence": "Q", "open_question": "Is a pop-up store counted as a store?"},
-                {"code": "OUTLET", "confidence": "I"},  # doubtful and unasked: a finding, not a question
+                {"code": "FLAG", "confidence": "Q"},
+                {"code": "OUTLET", "confidence": "I"},
                 {"code": "MALL", "confidence": "C"},
             ],
         },
-        open_questions=[
-            {"id": "oq1", "question": "Is a store's opening date its first sale?", "status": "OPEN", "owner_for_resolution": "store planning", "priority": "medium"},
-            {"id": "oq2", "question": "Settled already?", "status": "RESOLVED"},
-        ],
     )
     concepts = {"store": concept}
     out = _build(_bundle(tmp_path, concepts), concepts)
-    rows = {r["key"]: r for r in out["sme_questions"]}
-    assert set(rows) == {
-        "concept:store#open_questions[oq1]",
-        "concept:store#values[FLAG].open_question",
-        "concept:store#values[Pop%20up].open_question",  # a space is encoded, so the key stays one token
-    }
-    assert rows["concept:store#values[FLAG].open_question"]["text"] == multi
-    oq1 = rows["concept:store#open_questions[oq1]"]
-    assert (oq1["origin"], oq1["owner_role"], oq1["declared_priority"], oq1["declared_status"]) == ("concept-field", "store planning", "medium", "OPEN")
-    assert all(r["fileable"] for r in rows.values())
-    unasked = [f for f in out["findings"] if f.get("code") == "sme-value-unasked"]
-    assert len(unasked) == 1 and "OUTLET" in unasked[0]["detail"] and "MALL" not in unasked[0]["detail"]
-
-
-# --- the row contract ---------------------------------------------------------------------------
+    keys = {r["key"] for r in out["sme_questions"]}
+    assert not any("open_question" in k for k in keys), (
+        f"a concept filed a question again: {sorted(k for k in keys if 'open_question' in k)}"
+    )
+    assert (out["counts"].get("sme_findings") or 0) >= 1, (
+        "the doubtful-and-unasked finding is the half that must survive: two values sit at "
+        "confidence Q and I with nothing recorded about the doubt"
+    )
 
 
 def test_every_row_carries_the_transition_aliases_and_no_conversation_fields(tmp_path):
-    concepts = {"store": _concept("store", open_questions=[{"id": "oq1", "question": "Is a store open on its handover date?"}])}
+    concepts = {"store": _concept("store")}
     root = _bundle(tmp_path, concepts, interventions=[_entry("INT-0060", sme={"ask_kind": "question", "owner_role": "store planning", "ask": "Which stores count as comparable?"})])
     out = _build(root, concepts)
     assert out["sme_questions"] and out["sme_catalogue_format"] == Q.SME_CATALOGUE_FORMAT
@@ -270,13 +269,15 @@ def test_every_row_carries_the_transition_aliases_and_no_conversation_fields(tmp
             assert a in r
         assert r["id"] == r["key"] and r["question"] == r["text"]
         assert not {"status", "current", "priority", "owner", "why"} & set(r)
+    # THE LEDGER IS THE ONLY SOURCE NOW. This used to sample a concept-side `open_questions[oq1]`
+    # row; the concept can no longer file a question, so the row under test is the intervention
+    # entry's, which is where an unresolved question was ruled to live.
     by_key = {r["key"]: r for r in out["sme_questions"]}
-    assert by_key["concept:store#open_questions[oq1]"]["concept"] == "store"
-    assert by_key["concept:store#open_questions[oq1]"]["concept_title"] == "Store"
+    assert any(k.startswith("intervention:") for k in by_key), sorted(by_key)
 
 
 def test_the_projector_never_reads_the_sme_ledger(tmp_path):
-    concepts = {"store": _concept("store", open_questions=[{"id": "oq1", "question": "Is a store open on its handover date?"}])}
+    concepts = {"store": _concept("store")}
     root = _bundle(tmp_path, concepts)
     before = json.dumps(_build(root, concepts), sort_keys=True)
     (root / "governance").mkdir()
@@ -316,7 +317,7 @@ def test_renderer_has_two_counted_sections_full_text_and_no_status_column(tmp_pa
     multi = "First line of the question?\n\n| not | a | table |\n## not a heading"
     register = {
         "sme_questions": [
-            Q.sme_row(key="concept:store#open_questions[oq1]", origin="concept-field", kind="question", text=multi, concepts=["store"]),
+            Q.sme_row(key="concept:store#identity_kind", origin="concept-field", kind="question", text=multi, concepts=["store"]),
             Q.sme_row(key="intervention:INT-0001#sme", origin="register", kind="sign_off", text=long_text),
         ],
         "findings": [Q.sme_finding("sme-ask-unstructured", "low", "INT-0002", "names an SME owner but carries no structured ask", "d")],

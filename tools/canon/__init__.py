@@ -46,9 +46,9 @@ def _require_sqlglot(canon: str):
 # ----------------------------------------------------------------------------- pure canons
 
 def densify(fact, measure, *, keys, grid, dialect="trino"):
-    """For null_semantics == genuine_zero: LEFT JOIN `fact` onto the complete `grid` of cells and COALESCE
+    """Where a missing row means genuine zero: LEFT JOIN `fact` onto the complete `grid` of cells and COALESCE
     the measure to 0, so absent cells count as zero (not excluded). `keys` are the join columns; `grid` is a
-    relation enumerating every cell that SHOULD exist. Realizes null_semantics=genuine_zero."""
+    relation enumerating every cell that SHOULD exist. Realizes the genuine-zero reading."""
     on = " AND ".join(f"g.{k} = f.{k}" for k in keys)
     sel_keys = ", ".join(f"g.{k}" for k in keys)
     return (f"SELECT {sel_keys}, COALESCE(f.{measure}, 0) AS {measure} "

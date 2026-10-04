@@ -59,7 +59,7 @@ def _entry(eid="q.store.opening", status="out_for_discussion", entered=None, thr
         "id": eid, "kind": "question", "plane": "ontology", "title": "When does a store count as open?",
         "question": "Is a store open on its handover date?", "priority": "medium", "status": status,
         "status_history": hist, "thread": thread if thread is not None else ([_ask()] if status != "draft" else []),
-        "origins": origins if origins is not None else [{"key": "concept:store#open_questions[oq1]", "tag": "concept-field", "recorded": STAMP}],
+        "origins": origins if origins is not None else [{"key": "concept:store#identity_kind", "tag": "concept-field", "recorded": STAMP}],
         "rev": 2, "created": STAMP, "owner": {"participant": "sme-1"}, "shepherd": "dev-1",
     }
     e.update(kw)
@@ -83,7 +83,7 @@ def _rows(ov):
 
 
 def test_without_a_ledger_every_candidate_is_an_unfiled_draft_and_the_absence_is_stated(tmp_path):
-    _catalogue(tmp_path, [_row("concept:store#open_questions[oq1]")], [_row("oracle:Q1#needs_sme", origin="oracle")])
+    _catalogue(tmp_path, [_row("concept:store#identity_kind")], [_row("oracle:Q1#needs_sme", origin="oracle")])
     ov = S.overview(tmp_path, as_of=AS_OF)
     assert ov["ledger"]["state"] == "absent"
     assert ov["counts"]["rows"] == 2 and ov["counts"]["not_filed"] == 2 and ov["counts"]["by_status"]["draft"] == 2
@@ -221,14 +221,14 @@ def test_every_open_row_names_a_next_action_with_an_owner(tmp_path):
 
 
 def test_filing_a_candidate_replaces_its_unfiled_row_and_keeps_the_count(tmp_path):
-    rows = [_row("concept:store#open_questions[oq1]"), _row("concept:store#identity", origin="register")]
+    rows = [_row("concept:store#identity_kind"), _row("concept:store#identity", origin="register")]
     _catalogue(tmp_path, rows)
     before = S.overview(tmp_path, as_of=AS_OF)
-    _ledger(tmp_path, [_entry(status="draft")])  # files concept:store#open_questions[oq1]
+    _ledger(tmp_path, [_entry(status="draft")])  # files concept:store#identity_kind
     after = S.overview(tmp_path, as_of=AS_OF)
     assert before["counts"]["rows"] == after["counts"]["rows"] == 2
     assert (after["counts"]["filed"], after["counts"]["not_filed"]) == (1, 1)
-    assert "concept:store#open_questions[oq1]" not in _rows(after)
+    assert "concept:store#identity_kind" not in _rows(after)
     assert _rows(after)["q.store.opening"]["origins"][0]["present"] is True
 
 
@@ -250,7 +250,7 @@ def test_data_plane_entries_are_counted_but_not_listed(tmp_path):
 
 
 def test_an_invalid_ledger_lists_candidates_with_filing_state_unknown(tmp_path):
-    _catalogue(tmp_path, [_row("concept:store#open_questions[oq1]")])
+    _catalogue(tmp_path, [_row("concept:store#identity_kind")])
     bad = _entry()
     bad["status"] = "answered"  # no longer the last event's `to`
     _ledger(tmp_path, [bad])
@@ -288,12 +288,12 @@ def test_an_explicit_schema_is_applied(tmp_path):
 
 
 def test_coherence_findings(tmp_path):
-    _catalogue(tmp_path, [_row("concept:store#open_questions[oq1]"), _row("concept:store#identity", origin="register")])
+    _catalogue(tmp_path, [_row("concept:store#identity_kind"), _row("concept:store#identity", origin="register")])
     answer = {"id": "msg_an0000000001", "kind": "answer", "author": "sme-1", "role": "sme", "channel": "console",
               "at": {"at": "2026-03-05T10:00:00Z", "basis": "live"}, "body": "Handover date.",
               "recorded": dict(STAMP, by="sme-1", role="sme", identity_basis="local-declared")}
     applied = _entry("q.applied", status="applied", outcome={"kind": "no_change_needed", "summary": "s", "refs": [{"path": "x"}], "at": {"at": "2026-03-05", "basis": "recorded"}, "recorded": STAMP})
-    gone = _entry("q.gone", origins=[{"key": "concept:store#values[OLD].open_question", "tag": "concept-field", "recorded": STAMP}], thread=[_ask(), answer])
+    gone = _entry("q.gone", origins=[{"key": "concept:store#values[OLD]", "tag": "concept-field", "recorded": STAMP}], thread=[_ask(), answer])
     twice = _entry("q.twice", status="draft", origins=[{"key": "concept:store#identity", "tag": "register", "recorded": STAMP}])
     twice2 = _entry("q.twice.again", status="draft", origins=[{"key": "concept:store#identity", "tag": "register", "recorded": STAMP}])
     _ledger(tmp_path, [applied, gone, twice, twice2])

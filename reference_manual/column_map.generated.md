@@ -41,9 +41,9 @@ columns:
 
 | key | type | required | choices | comment |
 |---|---|---|---|---|
-| `axis_kind` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. … |
+| `axis_kind` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorica… |
 | `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; … |
-| `measure` | object | no | — | The measure facts -> concept.semantics.measure_type / unit / additivity. SEVERAL COLUMNS MA… |
+| `measure` | object | no | — | THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity excepti… |
 | `register` | string | no | — | THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (… |
 | `role` | string | no | `key`<br>`dimension`<br>`measure`<br>`period`<br>`housekeeping`<br>*from* `mac.concept.column.role` | projects to grounding.field_roles[<column>], which the planner reads to place a predicate. … |
 | `rulings` | object | no | — | AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot estab… |

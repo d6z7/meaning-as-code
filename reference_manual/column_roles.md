@@ -257,9 +257,6 @@ concept:
   semantics:
     purpose: >-
       …
-    null_semantics: >-
-      …
-
 contract:
   default_reading: >-
     …
@@ -308,13 +305,6 @@ grounding:
     Gender:       { role: dimension }
     age_band_5y:  { role: dimension }
 
-open_questions:
-  - id: CUS-Q1
-    topic: versioning
-    question: >-
-      …
-    status: OPEN
-    owner_for_resolution: operator
 ```
 
 **What is NOT in `columns:`, and why.** `type` and measured cardinality come from

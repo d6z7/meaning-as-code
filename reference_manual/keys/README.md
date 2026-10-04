@@ -8,9 +8,9 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 
 | | |
 |---|---|
-| levels | 34 |
-| keys | 200 |
-| described in the schema | **200 of 200** (100%) |
+| levels | 32 |
+| keys | 177 |
+| described in the schema | **177 of 177** (100%) |
 | **gaps — admitted and unexplained** | **0** |
 | vocabularies | 23, 144 terms |
 | examples | 103, from 17 concepts |
@@ -19,14 +19,13 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 
 Indented by nesting. The label is the key; the page it opens is that key's level.
 
-- [**a concept file**](concept/README.md) — its 12 top-level keys
+- [**a concept file**](concept/README.md) — its 11 top-level keys
   - [`concept:`](concept/concept/README.md) — 7 keys
     - [`identity:`](concept/concept/identity.md) — 4 keys
-    - [`semantics:`](concept/concept/semantics/README.md) — 8 keys
+    - [`semantics:`](concept/concept/semantics/README.md) — 5 keys
       - [`additivity:`](concept/concept/semantics/additivity.md) — 1 key
       - [`axis_kinds:`](concept/concept/semantics/axis_kinds.md) — 1 key
-      - [`realized_by:`](concept/concept/semantics/realized_by.md) — 8 keys
-  - [`constraints:`](concept/constraints.md) — 5 keys
+  - [`constraints:`](concept/constraints.md) — 4 keys
   - [`contract:`](concept/contract/README.md) — 4 keys
     - [`rules:`](concept/contract/rules/README.md) — 14 keys
       - [`realized_by:`](concept/contract/rules/realized_by.md) — 8 keys
@@ -45,13 +44,12 @@ Indented by nesting. The label is the key; the page it opens is that key's level
     - [`definitions:`](concept/members/definitions.md) — 4 keys
     - [`realized_by:`](concept/members/realized_by.md) — 8 keys
   - [`metadata:`](concept/metadata.md) — 9 keys
-  - [`open_questions:`](concept/open_questions.md) — 9 keys
   - [`properties:`](concept/properties.md) — 5 keys
   - [`values:`](concept/values/README.md) — 5 keys
     - [`aliases:`](concept/values/aliases/README.md) — 2 keys
       - [`map:`](concept/values/aliases/map.md) — 1 key
       - [`realized_by:`](concept/values/aliases/realized_by.md) — 8 keys
-    - [`items:`](concept/values/items.md) — 7 keys
+    - [`items:`](concept/values/items.md) — 6 keys
     - [`realized_by:`](concept/values/realized_by.md) — 8 keys
 
 ## The vocabularies and the predefined types

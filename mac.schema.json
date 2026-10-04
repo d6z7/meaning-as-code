@@ -279,13 +279,6 @@
         },
         "governance": {
           "$ref": "#/$defs/governance"
-        },
-        "open_questions": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/openQuestion"
-          },
-          "description": "WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule."
         }
       },
       "additionalProperties": false,
@@ -3571,10 +3564,6 @@
           "type": "boolean",
           "description": "Whether this assertion can be run as written, or is prose a person must check. Declaring it honestly is what keeps a constraint register from reading as a test suite: a register of twenty assertions of which three execute has three tests and seventeen intentions."
         },
-        "open_question": {
-          "type": "string",
-          "description": "What about this assertion is not settled — a threshold nobody has ruled, a case the condition does not cover. Carried beside the assertion so the uncertainty travels with the thing it is about."
-        },
         "notes": {
           "type": "string",
           "description": "Working remarks about this assertion — what was measured, which rows fail it today, why it is stated this way rather than another."
@@ -3844,10 +3833,6 @@
               "note": {
                 "type": "string",
                 "description": "A remark about one value — an impurity, a historical spelling, a case that looks like it belongs and does not. BANNED IN A CONCEPT; it belongs on the register's row."
-              },
-              "open_question": {
-                "type": "string",
-                "description": "An undecided question about one value, carried beside it. BANNED IN A CONCEPT; use the register, and `open_questions` at the concept level for a question about the notion itself."
               },
               "from": {
                 "type": [
@@ -4253,10 +4238,6 @@
           "type": "string",
           "description": "WHAT THIS CONCEPT IS FOR — the question it exists to answer. Where `definition` says what the notion IS, this says why the ontology carries it, which is what tells a later reader whether a proposed change serves it or quietly replaces it."
         },
-        "scope": {
-          "type": "string",
-          "description": "WHAT THIS CONCEPT COVERS AND WHAT IT LEAVES OUT, stated as a boundary. The population, the period, the part of the business. An answer is only as true as its scope, and an unstated scope is read as `everything` by whoever quotes the number next."
-        },
         "additivity": {
           "type": "object",
           "description": "Per-dimension aggregation rule — the footgun-preventer. Axis names are DOMAIN-SPECIFIC (a shop: customer, product, time) and any axis name maps to an additivity value. A stock measure is non-additive over time. DERIVED, NOT AUTHORED: writing it states the same fact twice, so the concept authors both the premise and the conclusion and they can drift — a target-inventory measure declared `geography: additive` and an anchor summed it across models for weeks on the strength of it. It stays in the schema so the contradiction check has something to compare against when somebody does write it.",
@@ -4278,14 +4259,6 @@
         "unit": {
           "type": "string",
           "description": "The unit of the measure this concept IS — 'USD', 'units', 'square_metres'. For a COMPOSED measure (several columns carrying `measure`) this is the unit of the composition and is REQUIRED, because the factor units differ and nothing may pick one: `Quantity x NetPrice` is USD though its factors are `units` and `USD`. With a single measure column it projects from that column's `measure.unit`. It is prose, deliberately: a unit carries what a reader must know to trust a number, and the one measured case where it was WRONG (an amount claimed in the order's own currency when it is stored in USD) was caught by a sentence, not by a token."
-        },
-        "null_semantics": {
-          "type": "string",
-          "description": "WHAT A MISSING VALUE MEANS HERE — not loaded, genuinely zero, or not applicable. The three are indistinguishable in the rows and lead to three different answers: a sparse fact read as zero understates a total, and read as unknown refuses a question it could have answered. Where the reading changes the SQL, bind the `densify` canon; this is the statement a reader needs regardless."
-        },
-        "realized_by": {
-          "$ref": "#/$defs/canonBinding",
-          "description": "the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero."
         },
         "measure_type": {
           "type": "string",

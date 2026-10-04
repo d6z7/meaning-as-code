@@ -102,7 +102,7 @@ established foundation, not on our taste:
   the open-world default; `unknown` is honest about not having decided.
 - **resolution / identity** → **equality theory**: when are two coded values the *same* thing (and under what
   scope — see `context_dependent_meaning`).
-- **absence** (`null_semantics`) → **three-valued logic**: the meaning of a missing row — true zero vs
+- **absence** (a `densify` binding) → **three-valued logic**: the meaning of a missing row — true zero vs
   not-loaded vs structurally-untracked — is the meaning of `⊥`, made explicit.
 
 ## 2.5 Completeness — stated as a theorem, honestly

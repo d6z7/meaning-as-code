@@ -22,7 +22,7 @@ A **RENDER canon**: it produces refusal text, not SQL.
 | param | read from |
 |---|---|
 | `label` | `concept.label` |
-| `null_is_real` | `concept.semantics.null_semantics` |
+| `null_is_real` | stated in the binding's own `params` |
 
 `params_from` means these are **not authored on the binding** — they are read from declarations that
 already exist. A binding restating one is asserting a fact with a home: it agrees (harmless
@@ -41,7 +41,7 @@ Three different things, one number:
 | no row matched the scope | `0` or `NULL` — **a fabrication** |
 | the measure is null on matched rows | depends on the engine |
 
-Only the first deserves `0`. `null_semantics` is what distinguishes them, and it is declared on 20
+Only the first deserves `0`. The absence reading is what distinguishes them, and it was declared on 20
 of 21 contoso concepts and **read by nothing** — which is why this canon has a job and no
 implementation.
 

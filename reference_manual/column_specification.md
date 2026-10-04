@@ -393,7 +393,7 @@ planned `GROUP BY ZipCode`. It became `never_axis` + `evidence: DQ-CUSTOMER-02`,
 refusal now cites the measurement.
 
 That is the whole failure mode of this estate in one field, and it is not unique: `contract.resolution`
-is 13 careful paragraphs nothing reads, `null_semantics` is declared on 20 concepts and read by
+is 13 careful paragraphs nothing reads, the absence reading was declared on 20 concepts and read by
 none. **A block designed to end that must not ship with a slot that restarts it.**
 
 So: **the column block has no free-text key** — with one deliberate exception, `never_axis`, whose
@@ -405,7 +405,7 @@ about a column:
 | it changes what the engine does | a **declaration** — find the key, or the key is missing and that is the finding |
 | the reader of an ANSWER must know it | `disclose:` (PROPOSED) — it reaches them, which prose never does |
 | why a ruling was made | `evidence:` — a measurement id, not a paragraph |
-| it is unresolved | `open_questions` — with an id, an owner and a status |
+| it is unresolved | the SME ledger outside `ontology/` — with an id, an owner and a status |
 | it is about the concept, not this column | `concept.definition` |
 
 **The worked case.** An earlier draft of this document wrote:
