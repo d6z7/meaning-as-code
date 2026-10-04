@@ -404,10 +404,21 @@ def _classify(r: Ref, plan: Plan, pinned: dict[str, str], line: str,
         #: A SIBLING REPOSITORY'S PATH IS NOT THIS TREE'S PATH, and three different things look alike
         #: here. Each is answered by what the written prefix actually is, never by a guess.
         if "tests/fixtures/" in r.rel:
-            #: A FIXTURE THAT MUST STAY BYTE-IDENTICAL TO ITS meaning-as-code SIBLING — there is a test
-            #: asserting exactly that, and it has caught this estate four times. The edit belongs to the
-            #: re-copy, not to a second independent rewrite that could drift from it.
-            r.verdict = "mirror — re-copy from the meaning-as-code sibling after the move"
+            #: A SIBLING FIXTURE, AND ITS RELATIONSHIP TO THE ORIGINAL IS UNDECLARED. This branch used to
+            #: say "mirror — re-copy from the sibling" and cite
+            #: `test_the_fixture_is_the_sibling_byte_for_byte` as the authority. MEASURED 2026-10-04,
+            #: that was false in three ways: the test hashes exactly THREE paths (`mac_rules.yaml`,
+            #: `mac_vocabulary.yaml`, `grammar/query_grammar.yaml`) against the meaning-as-code ROOT and
+            #: says nothing about any bundle fixture; the path map below it resolved 22 of 140 fixture
+            #: files and 0 of the 9 that two real tests do assert; and
+            #: `packages/mac-runtime/tests/fixtures/example_shop_ontology/` is not a mirror at all —
+            #: 14 of its 22 common paths already differ from the original on purpose, and its own
+            #: conftest calls it "a hermetic copy ... tests never read the sibling repo".
+            #:
+            #: SO THIS TOOL NO LONGER COPIES ANYTHING THERE. A curated subset overwritten from upstream
+            #: is a changed test fixture, which is not a referential fix and is not this tool's call.
+            r.verdict = ("owed — a sibling fixture whose relationship to the meaning-as-code original "
+                         "is UNDECLARED; a person decides whether this path is held identical")
             return
         if r.prefix.startswith(ROOT.name + "/"):
             r.verdict = f"cross-repo — a path in {repo}, rewritten in that repository's own commit"
@@ -462,7 +473,7 @@ def apply_plan(plan: Plan, refs: list[Ref],
                root: Path = ROOT) -> tuple[int, int, list[str], list[str]]:
     """Rewrite in memory, verify, then write — all or nothing. Moves last, so a failed write moves
     nothing. Returns (files rewritten, pages moved, notes, errors) — a NOTE is what happened, an ERROR
-    is what failed, and conflating them made a successful mirror re-copy report FAIL."""
+    is what failed, and conflating them made an informational note report FAIL."""
     edits: dict[tuple[str, str], list[Ref]] = {}
     for r in refs:
         #: A cross-repo reference with a computed address is written too — leaving it for later is how
@@ -485,26 +496,14 @@ def apply_plan(plan: Plan, refs: list[Ref],
         rroot = ROOT if repo == "meaning-as-code" else SIBLINGS[repo]
         (rroot / rel).write_text(text, encoding="utf-8")
 
-    #: THE MIRRORED FIXTURES, RE-COPIED FROM THEIR SIBLING. `test_the_fixture_is_the_sibling_byte_for_byte`
-    #: asserts these are identical, and this estate has broken it four times by changing one side only.
-    #: The copy happens HERE, in the same pass, so the propagation cannot be forgotten.
-    mirrored = 0
-    for r in refs:
-        if not r.verdict.startswith("mirror"):
-            continue
-        rroot = SIBLINGS.get(r.repo)
-        if rroot is None or "tests/fixtures/" not in r.rel:
-            continue
-        sibling = ROOT / r.rel.split("tests/fixtures/", 1)[1]
-        if sibling.is_file():
-            shutil.copyfile(sibling, rroot / r.rel)
-            mirrored += 1
+    #: NO FIXTURE IS COPIED. The copy that used to live here mapped a fixture path to an upstream one by
+    #: `rel.split("tests/fixtures/", 1)[1]`, which resolved 22 of 140 tracked fixture files and 0 of the
+    #: 9 that two real tests assert — a perfect inversion, able to overwrite only the files nothing
+    #: checks. See the note in `_classify`.
 
     moved = 0
     notes: list[str] = []
     errors: list[str] = []
-    if mirrored:
-        notes.append(f"re-copied {mirrored} mirrored fixture file(s) from their meaning-as-code sibling")
     for old, new in sorted(plan.moves.items()):
         dest = root / new
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -527,13 +526,16 @@ def verify(plan: Plan, pinned: dict[str, str]) -> list[str]:
         for rel in tracked(rroot):
             if rel.endswith(SKIP_SUFFIX) or rel.startswith("protocol/"):
                 continue
-            #: A MIRRORED FIXTURE IS EXEMPT, AND NOT BECAUSE IT IS INCONVENIENT. Its content is OWNED by
-            #: its meaning-as-code sibling and asserted identical to it by
-            #: `test_the_fixture_is_the_sibling_byte_for_byte`, so a repository-relative link inside it
-            #: resolves in the sibling's tree and cannot also resolve here. That was already true before
-            #: any move — the same file carried `../reference_manual/shape_reference.md` — and no gate in
-            #: the sibling repository judges these links. Fixing it would mean making the fixture differ
-            #: from the file it exists to mirror.
+            #: A SIBLING FIXTURE IS EXEMPT BECAUSE ITS LINKS ARE WRITTEN FOR ANOTHER TREE, not because a
+            #: test asserts it. The earlier reason here named
+            #: `test_the_fixture_is_the_sibling_byte_for_byte` over all 140 such files; that test covers
+            #: 3 files and none of them is a fixture bundle. The honest reason is narrower and still
+            #: holds: a repository-relative link inside a copied bundle resolves in the tree it was
+            #: written for, which was already true before any move (the same file carried
+            #: `../reference_manual/shape_reference.md`), and no gate in the sibling repository judges
+            #: these links. What is OWED, and is not this tool's to settle, is a declaration of which
+            #: fixture paths are held identical to their original and which deliberately differ —
+            #: measured: 14 of 22 common paths in the shop fixture already differ.
             if repo != "meaning-as-code" and "tests/fixtures/" in rel:
                 continue
             fp = rroot / rel
