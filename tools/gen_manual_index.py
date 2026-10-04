@@ -332,6 +332,25 @@ def render(root: pathlib.Path) -> str:
     pattern_pages = [p for p in described if p["rel"].startswith("patterns/")]
     artifacts = [p for p in described if not p["rel"].endswith(".md")]
 
+    #: EVERY OTHER SUBDIRECTORY, DISCOVERED RATHER THAN LISTED. The four groups above are the only ones
+    #: this renderer knew, and `canon/` · `patterns/` · `keys/` were spelled out — so when
+    #: meaning-as-code homed thirteen pages into `specification/` · `guides/` · `discipline/`
+    #: (`guardrails/document_home.yaml`), they belonged to NO group and were simply not rendered. Four
+    #: of them vanished from the index entirely; the nine without frontmatter showed up only in the
+    #: "declared unknowns" list, which made the omission look like a status problem. The gate caught it
+    #: because its coverage walk reads the filesystem and not this renderer — which is the whole reason
+    #: that assertion is independent.
+    #:
+    #: GROUPED BY DIRECTORY AND DISCOVERED, so the NEXT directory indexes itself on the day it appears.
+    KNOWN = ("canon/", "patterns/", "keys/")
+    subdirs: dict[str, list[dict]] = {}
+    for d in described:
+        rel = d["rel"]
+        if "/" not in rel or not rel.endswith(".md") or rel.startswith(KNOWN):
+            continue
+        subdirs.setdefault(rel.split("/", 1)[0], []).append(d)
+    subdir_pages = [d for group in subdirs.values() for d in group]
+
     canon = canon_lists(root)
     vocab = vocabulary_lists(root)
     visible = suite_visible_generators(root)
@@ -393,6 +412,8 @@ def render(root: pathlib.Path) -> str:
     A(f"| `reference_manual/canon/` | {len(canon_pages)} | this page, below, beside the canon "
       f"vocabulary and the runtime |")
     A(f"| `reference_manual/patterns/` | {len(pattern_pages)} | this page, below |")
+    for d in sorted(subdirs):
+        A(f"| `reference_manual/{d}/` | {len(subdirs[d])} | this page, below |")
     A(f"| artifacts that are not markdown | {len(artifacts)} | this page, below |")
     A(f"| `reference_manual/keys/` | {len(keys_rel)} | its own generated index, "
       f"[`keys/README.md`](keys/README.md)" + ("" if has_keys_index else " — **ABSENT**") + " |")
@@ -415,6 +436,14 @@ def render(root: pathlib.Path) -> str:
     A("")
     L.extend(page_table(root_pages, visible))
     A("")
+
+    #: One section per discovered directory, in name order — see the KNOWN/subdirs note above.
+    for d in sorted(subdirs):
+        A(f"## `{d}/` — {len(subdirs[d])} page(s)")
+        A("")
+        L.extend(page_table(sorted(subdirs[d], key=lambda x: x["rel"]), visible))
+        A("")
+
     A(f"A generator marked **(no `check_*.py`)** writes a page that no gate in the suite runs. "
       f"`tools/run_framework_gates.sh` discovers gates by globbing `check_*.py`, so a `gen_*.py "
       f"--check` is invisible to it unless a checker delegates; measured over `tools/check_*.py`, "

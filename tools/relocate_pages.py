@@ -87,6 +87,7 @@ REJECTS = (
     "APPEND_ONLY_WRITE",      # a rewrite would edit an append-only record
     "GENERATOR_PATH_STALE",   # a generated member moved; its generator still writes the old path
     "SHAPE_UNGOVERNED",       # the target lands where no shape genre claims it
+    "READER_PATH_STALE",      # a tool JOINS the old path — it will open nothing after the move
 )
 
 
@@ -225,6 +226,28 @@ def build_plan(homes: dict[str, Home], root: Path = ROOT) -> Plan:
                 if new_dir and new_dir not in src:
                     p.reject("GENERATOR_PATH_STALE", tool,
                              f"writes {name}; after the move it must write {p.moves[name]}")
+
+    #: A READER THAT JOINS THE OLD PATH, which GENERATOR_PATH_STALE could never see: it asks only about
+    #: tools a home block names as a `producer`, and the tools that broke were CONSUMERS. Measured on
+    #: the first apply: `check_topology.py` held `ROOT / "TOPOLOGY.md"` and went COULD-NOT-RUN rather
+    #: than FAIL — which the runner counts as WORSE than a red, because a could-not-run hides whatever
+    #: the red would have said. Three gates regressed this way and a grep found them, not the tool.
+    #:
+    #: MATCHED AS A PATH JOIN (`/ "NAME"`), never as a mention. Prose cites `CONFORMANCE.md §5.1` all
+    #: over this repository and those citations stay true — the basename is preserved, so R3 still
+    #: resolves them. A `/ "CONFORMANCE.md"` is a different claim: it is an address being built.
+    for tool_rel in tracked(root, "tools/*.py") + tracked(root, "sdk/**/*.py"):
+        tp = root / tool_rel
+        if not tp.is_file() or tool_rel.endswith("relocate_pages.py"):
+            continue
+        try:
+            src = tp.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for old_name, new_rel in sorted(p.moves.items()):
+            if re.search(r"""/\s*['"]%s['"]""" % re.escape(old_name), src):
+                p.reject("READER_PATH_STALE", tool_rel,
+                         f"""joins `/ "{old_name}"`; after the move the page is at {new_rel}""")
 
     #: Shape governance must survive the move: a page arriving in reference_manual/ that no genre in
     #: guardrails/reference_manual.yaml claims makes check_manual_page_shape report it ungoverned.
@@ -685,7 +708,23 @@ def self_test() -> int:
                   any(f[0] == "GENERATOR_PATH_STALE" for f in p.findings), p.findings))
     shutil.rmtree(t, ignore_errors=True)
 
-    # 7 — SHAPE_UNGOVERNED
+    # 7 — READER_PATH_STALE. A CONSUMER, not a producer: the class GENERATOR_PATH_STALE cannot see,
+    # and the one that actually regressed three gates. The negative is beside it because the rule's
+    # whole precision is that it matches a path JOIN and not a prose citation.
+    t = fixture()
+    (t / "tools").mkdir(exist_ok=True)
+    (t / "tools" / "reader.py").write_text('P = ROOT / "A.md"\n', encoding="utf-8")
+    (t / "tools" / "citer.py").write_text('"""See A.md §5.1 for the rule."""\n', encoding="utf-8")
+    subprocess.run(["git", "-C", str(t), "add", "-A"], capture_output=True)
+    p = run(t, CLEAN)
+    stale = [f for f in p.findings if f[0] == "READER_PATH_STALE"]
+    cases.append(("READER_PATH_STALE on a tool that JOINS the old path",
+                  any(f[1] == "tools/reader.py" for f in stale), p.findings))
+    cases.append(("…and NOT on a tool that only cites the page in prose",
+                  not any(f[1] == "tools/citer.py" for f in stale), [f[1] for f in stale]))
+    shutil.rmtree(t, ignore_errors=True)
+
+    # 8 — SHAPE_UNGOVERNED
     t = fixture()
     (t / "guardrails").mkdir(exist_ok=True)
     (t / "guardrails" / "reference_manual.yaml").write_text(
