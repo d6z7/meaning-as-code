@@ -21,6 +21,10 @@ A column's flags, or null to serve the column and say nothing more. TODAY'S FLAG
 
 WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis_kind) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.
 
+**When you would reach for it.**
+
+THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis_kind) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time.
+
 Examples:
 
 ```yaml
@@ -34,6 +38,10 @@ axis_kind: mac.concept.axis_kind.categorical
 *string* · optional · 3 legal values
 
 `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree.
+
+**When you would reach for it.**
+
+SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's.
 
 Legal values:
 
@@ -56,6 +64,10 @@ identity: part
 *object* · optional · [has its own keys →](measure.md)
 
 THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.
+
+**When you would reach for it.**
+
+THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys.
 
 Examples:
 
@@ -84,6 +96,10 @@ Its own keys: [`concept.grounding.sources.columns.<name>.measure`](measure.md)
 
 THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: "A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: "Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. measured on a worked bundle: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.
 
+**When you would reach for it.**
+
+A QUESTION WILL NAME THE VALUE IN WORDS AND THE COLUMN HOLDS A CODE. Someone asks about Germany and the column says `DE`. Reach for it when the column's values are a closed set a person will speak — a country, a brand, a currency — and especially when THE SAME SET APPEARS ON MORE THAN ONE COLUMN: the register is what makes one name resolve to one code exactly once, instead of each column learning the mapping separately and drifting.
+
 Examples:
 
 ```yaml
@@ -103,6 +119,10 @@ register: data/lookups/<source>_category_name.lookup.yaml
 *string* · optional · 5 legal values
 
 projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.
+
+**When you would reach for it.**
+
+A RELATION HAS MORE THAN ONE KIND OF COLUMN, which is every relation. The moment a question could filter on a column, group by it, or total it, something has to decide which of those three are legal — and the column's NAME cannot, because `Quantity` and `CustomerKey` are both numbers and only one of them may be summed. Declare it on every column you serve: the planner reads it to place a predicate, and an undeclared column is one it has to guess about.
 
 Legal values:
 
@@ -131,6 +151,10 @@ role: period
 *object* · optional · [has its own keys →](rulings.md)
 
 AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED DELIBERATELY, and that is the point of the block: `role`, `identity` and `measure` beside it are DERIVED FROM THE DATA, these are RULED BY A HUMAN, and a slot that accepts both silts up until nobody can tell which kind a value is. Keeping them apart makes the difference visible in the file rather than only in a vocabulary. Each of the four has a live case: a trade-register name is a `label_of` the brand it names; a sub-category is `finer_than` its category; a state code is `scoped_by` its country, where 40 of 565 codes collide across countries so GROUP BY state silently merges three regions; and a postcode is `never_axis`, because 29,193 of 104,990 values identify exactly one customer.
+
+**When you would reach for it.**
+
+SOMETHING TRUE ABOUT THE COLUMN CANNOT BE MEASURED FROM IT. That is the whole test, and it is the one that tells a ruling from a fact: if profiling the rows could establish it, it is not a ruling and does not belong here. The compelling case is two columns that are 1:1 where one is the other's NAME — cardinality is the same in both directions, so nothing in the data says which is the name and which is the thing.
 
 Examples:
 

@@ -28,11 +28,19 @@ The measurement a ruling rests on — a data-quality issue id, or a relation.col
 
 THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`.
 
+**When you would reach for it.**
+
+TWO DIMENSION COLUMNS ARE A HIERARCHY AND THE DATA DOES NOT SAY SO. Every sub-category belongs to exactly one category, so a question about categories can be answered from sub-category rows — but not the reverse. The containment is a business fact; in the rows it looks like two independent dimensions that happen to correlate.
+
 ### `label_of`
 
 *string* · optional
 
 THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have.
+
+**When you would reach for it.**
+
+TWO COLUMNS ARE 1:1 AND ONE OF THEM IS WHAT A PERSON SAYS WHILE THE OTHER IS WHAT THE SYSTEM GROUPS ON. A manufacturer and a brand are 1:1; a question asks about the manufacturer and the answer must group on the brand and print the manufacturer. Cardinality is symmetric, so the data cannot say which direction it goes — and getting it backwards is not an error, it is an answer with the wrong column as its axis.
 
 ### `never_axis`
 
@@ -40,11 +48,19 @@ THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — 
 
 THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)
 
+**When you would reach for it.**
+
+A COLUMN LOOKS LIKE A DIMENSION AND GROUPING BY IT PRODUCES ONE ROW PER INSTANCE. Measured: a postcode where 29,193 of 104,990 values identify exactly one customer. The group-by is legal, it executes, and the answer is a list of customers wearing the shape of a breakdown. Reach for it when a column's distinct count approaches its row count and the column is still a plausible axis by name.
+
 ### `register`
 
 *string* · optional · 5 legal values
 
 WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'a worked bundle' is the common register, 'a worked bundle, Ltd' the legal one.
+
+**When you would reach for it.**
+
+`label_of` IS DECLARED AND THE THING HAS MORE THAN ONE NAME. A company has a trading name and a registered name — both are labels of the same brand, and a question may legitimately use either. Reach for it the moment a second naming column appears for one thing, because then "which name is this" stops being obvious and the resolver needs telling.
 
 Legal values:
 
@@ -60,11 +76,19 @@ Legal values:
 
 THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent.
 
+**When you would reach for it.**
+
+A CODE IS UNIQUE ONLY INSIDE ITS PARENT. The measured case: 40 of 565 state codes collide across countries, so `GROUP BY state` silently merges three regions into one row. It runs, it returns, and the number is wrong — which is why this cannot wait for someone to notice. Reach for it whenever a code's uniqueness depends on a column beside it.
+
 ### `sort`
 
 *string* · optional · 3 legal values
 
 THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: "it must be sort per column and not concept"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. Measured on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged.
+
+**When you would reach for it.**
+
+A QUESTION ASKS FOR AN ORDER AND STATES NONE, so the rows arrive in whatever order the engine happened to emit. SQL guarantees no order without ORDER BY. Measured: an 88-row breakdown passed and failed on alternate runs with the data unchanged, because the grader compared the approved rows against the capture's first 50 and which 50 depended on unordered output. Reach for it on any column a reader will scan — a name wants ascending, a magnitude wants descending, and an identifier wants neither.
 
 Legal values:
 

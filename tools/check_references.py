@@ -311,9 +311,53 @@ class ReferenceChecker:
     def add(self, severity: str, where: str, message: str) -> None:
         self.findings.append(Finding(severity, where, message))
 
+    def _check_shared_kinds(self) -> None:
+        """The pointer kinds this gate is DECLARED to check, resolved by the framework's resolver.
+
+        ITS REMIT IS READ, NOT HARDCODED. mac_pointers.yaml names this file in the `checkers:` of
+        four kinds; those four are what this method covers, so widening its remit is a catalogue
+        edit and never a branch here. That is the same move as the rest of this file's design — it
+        owns no project convention — applied to the thing it had been hand-rolling.
+
+        WHY IT CHANGED. A differential on 2026-10-04 broke each of those four kinds in turn: this
+        gate caught ONE and the shared resolver caught FOUR. Retiring the gate was the obvious
+        conclusion and the wrong one — about sixty files across three repositories name it,
+        including guardrails/strategy.yaml, whose own gate REFUSES an `enforced_by` pointing at a
+        tool that does not exist, and two validate.sh scripts that run it. Deleting it would break
+        every one of those readers to remove a duplication that converting removes just as well.
+
+        IT STILL READS THE AUTHORED YAML. The resolver derives from the bundle, not from the
+        emitted graph: a gate that reads a projection agrees with it by construction and could
+        never catch a bug in it.
+        """
+        try:
+            import mac_pointers as mp                                # noqa: PLC0415
+        except Exception as exc:                                     # noqa: BLE001
+            self.add("WARN", "check_references",
+                     f"the framework's pointer resolver is not importable ({exc}); the four "
+                     f"declared pointer kinds were NOT checked — this is could-not-run, not clean")
+            return
+        try:
+            kinds = mp.load_registry()
+        except Exception as exc:                                     # noqa: BLE001
+            self.add("WARN", "check_references",
+                     f"mac_pointers.yaml could not be read ({exc}); the declared pointer kinds "
+                     f"were NOT checked")
+            return
+        mine = {n for n, k in kinds.items()
+                if "check_references.py" in (k.get("checkers") or [])}
+        if not mine:
+            return
+        idx = mp.resolve(self.root, kinds)
+        for r in idx.refs:
+            if r.reference_kind in mine and r.resolution == "dangling":
+                self.add("ERROR", f"{r.src_path}#{r.src_locator}",
+                         f"{r.reference_kind}: {r.raw_value!r} — {r.resolution_basis}")
+
     def run(self) -> int:
         self._build_index()
         self._resolve()
+        self._check_shared_kinds()
         return self._report()
 
     def _yaml_files(self):
@@ -559,6 +603,10 @@ def main(argv=None) -> int:
     chk = ReferenceChecker(root, scan_subdir=args.scan_subdir)
     chk._build_index()
     chk._resolve()
+    # THE ENTRY POINT CALLS THE STEPS DIRECTLY, not run(). Wiring the shared pass into run() alone
+    # left it dead: the clean bundle passed, a deliberately broken one passed, and the differential
+    # still read 1 of 4 — a conversion that changed nothing while looking done.
+    chk._check_shared_kinds()
 
     if args.update_baseline:
         if not args.baseline:

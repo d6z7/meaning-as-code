@@ -91,9 +91,11 @@ def harvest_vocabulary(vocab: dict):
                 definition = body if isinstance(body, str) else (
                     (body or {}).get("definition") or (body or {}).get("description"))
                 extra = ({k: v for k, v in body.items()
-                          if k not in ("definition", "description")}
+                          if k not in ("definition", "description", "constellation")}
                          if isinstance(body, dict) else {})
-                t = {"notion": path, "term": term, "definition": definition, "extra": extra}
+                constellation = (body or {}).get("constellation") if isinstance(body, dict) else None
+                t = {"notion": path, "term": term, "definition": definition,
+                     "constellation": constellation, "extra": extra}
                 entry["terms"][term] = t
                 dotted[f"mac.{path}.{term}"] = t
                 dotted.setdefault(term, t)
@@ -116,6 +118,11 @@ class Walker:
         self.dotted = dotted
         self.levels: dict[str, dict] = {}
         self.gaps: list[dict] = []
+        #: A KEY WITH NO STATED CONSTELLATION. Counted apart from `gaps` because the two are
+        #: different debts: a gap means nobody said what the key MEANS, this means nobody said what
+        #: would make you reach for it. A key can be perfectly described and still have no reason
+        #: to exist, which is the harder question and the one this list asks.
+        self.unmotivated: list[dict] = []
 
     def deref(self, node, guard: int = 0):
         while isinstance(node, dict) and guard < 16:
@@ -189,15 +196,28 @@ class Walker:
             for key, raw in props.items():
                 res = self.deref(raw)
                 desc = (raw.get("description") if isinstance(raw, dict) else None) or res.get("description")
+                #: THE CONSTELLATION — the situation in the data or the business that COMPELS this
+                #: key, as against what it means once you are using it. Operator, 2026-10-04: "we
+                #: need examples of not only where and how to use it, but also why (what is the
+                #: constellation that will compel us using it) ... we need justification for reason
+                #: for being for each one of these keys". It is a separate field and not a paragraph
+                #: inside `description` so a gate can COUNT the ones that have none: a key that
+                #: cannot state what compels it is a candidate for deletion, and four such keys were
+                #: deleted on the day this was added.
+                constellation = ((raw.get("constellation") if isinstance(raw, dict) else None)
+                                 or res.get("constellation"))
                 enum = res.get("enum") or (raw.get("enum") if isinstance(raw, dict) else None)
                 child = f"{path}.{key}"
                 has_children = bool(self.child_keys(res)[0]) or len(self.shapes(raw)) > 1
                 if not desc:
                     self.gaps.append({"level": path, "key": key})
+                if not constellation:
+                    self.unmotivated.append({"level": path, "key": key})
                 keys.append({
                     "key": key, "required": key in required,
                     "type": self.type_of(res, raw if isinstance(raw, dict) else {}),
                     "desc": desc,
+                    "constellation": constellation,
                     "enum": [(e, self.dotted.get(e)) for e in enum] if enum else None,
                     "child": child if has_children else None,
                 })
@@ -431,6 +451,12 @@ def render_level(path, level, levels, notions, examples, per_key, gaps_by_level,
         for k in form["keys"]:
             out += [f"### `{k['key']}`", "", facts_line(k, here, levels), ""]
             out += para(k["desc"] or "— no description in the schema —")
+            #: WHY, AFTER WHAT. The description says what the key means; this says what situation
+            #: makes you reach for it. Printed as its own labelled block rather than folded into the
+            #: prose, because a reader scanning for "do I need this?" is asking a different question
+            #: from "what does it do?" — and because a block that is absent is visible.
+            if k.get("constellation"):
+                out += ["**When you would reach for it.**", ""] + para(k["constellation"])
             if k["enum"]:
                 out += ["Legal values:", ""]
                 for value, term in k["enum"]:
@@ -507,6 +533,8 @@ def render_notion(notion, body, levels, notions) -> str:
     for term, entry in body["terms"].items():
         out += [f"### `{term}`", "", f"Write it as `mac.{notion}.{term}`", ""]
         out += para(entry["definition"] or "— no definition in the vocabulary —")
+        if entry.get("constellation"):
+            out += ["**When you would reach for it.**", ""] + para(entry["constellation"])
         for key, value in (entry.get("extra") or {}).items():
             if isinstance(value, str):
                 pretty = value
@@ -532,7 +560,8 @@ def render_notion(notion, body, levels, notions) -> str:
     return "\n".join(out)
 
 
-def render_index(levels, notions, gaps, examples, schema_version, bundle_name, concepts_read) -> str:
+def render_index(levels, notions, gaps, unmotivated, examples, schema_version, bundle_name,
+                 concepts_read) -> str:
     key_total = sum(len(f["keys"]) for lv in levels.values() for f in lv["forms"])
     described = key_total - len(gaps)
     out = [BANNER, "", "# The key reference", "",
@@ -552,6 +581,7 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
            f"| described in the schema | **{described} of {key_total}** "
            f"({round(100 * described / max(key_total, 1))}%) |",
            f"| **gaps — admitted and unexplained** | **{len(gaps)}** |",
+           f"| **keys with no stated constellation** | **{len(unmotivated)}** of {key_total} |",
            f"| vocabularies | {len(notions)}, "
            f"{sum(len(n['terms']) for n in notions.values())} terms |",
            f"| examples | {len(examples)}, from {len(concepts_read)} concepts |", ""]
@@ -663,8 +693,9 @@ def pages_for(root: pathlib.Path, bundle: pathlib.Path | None) -> dict[str, str]
     for g in walker.gaps:
         gaps_by_level.setdefault(g["level"], []).append(g["key"])
 
-    pages = {"README.md": render_index(walker.levels, notions, walker.gaps, examples,
-                                      schema["version"], bundle.name if bundle else "none", read)}
+    pages = {"README.md": render_index(walker.levels, notions, walker.gaps, walker.unmotivated,
+                                      examples, schema["version"],
+                                      bundle.name if bundle else "none", read)}
     for path, level in walker.levels.items():
         pages[level_page(path, walker.levels)] = render_level(
             path, level, walker.levels, notions, examples, per_key, gaps_by_level,
@@ -852,8 +883,9 @@ def main(argv=None) -> int:
     key_total = sum(len(f["keys"]) for lv in walker.levels.values() for f in lv["forms"])
     print(f"PASS: gen_key_reference — wrote {n} page(s) to "
           f"{OUT_DIR.relative_to(ROOT)}: {len(walker.levels)} level(s), {len(notions)} vocabular(y/ies), "
-          f"{key_total} key(s) of which {key_total - len(walker.gaps)} described and "
-          f"{len(walker.gaps)} unexplained; {len(examples)} example(s) cut from "
+          f"{key_total} key(s) of which {key_total - len(walker.gaps)} described, "
+          f"{key_total - len(walker.unmotivated)} motivated and {len(walker.unmotivated)} with no "
+          f"stated constellation; {len(examples)} example(s) cut from "
           f"{len(read)} concept(s) in {bundle.name if bundle else 'no bundle'}")
     return 0
 

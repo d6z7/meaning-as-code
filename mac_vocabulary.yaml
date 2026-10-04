@@ -167,6 +167,10 @@ concept.column.role:
         that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
         counts and what the fact joins on.
 
+      constellation: >
+        A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT.
+        Reach for it when the column is what a join lands on or what a distinct count counts —
+        and never let it be summed: an identifier that is totalled is a number nobody asked for.
     dimension:
       query_use: [axis, extremum]
       definition: >
@@ -175,6 +179,11 @@ concept.column.role:
         resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
         `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
 
+      constellation: >
+        A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender =
+        'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of
+        the two is reasonable, the column is probably a key or a measure wearing a dimension's
+        name.
     measure:
       query_use: [aggregate, extremum]
       definition: >
@@ -182,6 +191,11 @@ concept.column.role:
         once there and never restated per concept. Never filtered on directly: a threshold on a
         measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
 
+      constellation: >
+        ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the
+        datatype. The corollary matters as much: a threshold on a measure is a HAVING over the
+        aggregate, never a WHERE over the column, so declaring this also declares where a filter
+        may not go.
     period:
       query_use: [axis, extremum, period_binding]
       definition: >
@@ -189,6 +203,11 @@ concept.column.role:
         relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
         `OrderDate` on a line that also carries `DeliveryDate`.
 
+      constellation: >
+        THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order
+        line with an order date and a delivery date is the compelling case: both are dates, both
+        are plausible, and the question does not say. This names which one is THE reporting date
+        so the choice is not made silently.
     housekeeping:
       query_use: []
       definition: >
@@ -202,6 +221,12 @@ concept.column.role:
         for the system that writes them: a load stamp is housekeeping whoever keeps the house.
 
 
+      constellation: >
+        THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A
+        validity window on a versioned dimension is the case: grouping sales by the row's own
+        start date is meaningless, but nothing in the data says so, and the column is a
+        perfectly good date. Declaring it keeps the column out of a question's reach entirely —
+        its absence from an answer is correct rather than a gap.
 # ===========================================================================
 # mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
 # narrower than `mac.concept.identity`, which is per CONCEPT and says how identity is ESTABLISHED
@@ -220,21 +245,39 @@ concept.column.identity:
   closed: true
   description: What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
   terms:
-    canonical: >
-      THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
-      discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-      says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
-      column that does not identify.
-    part: >
-      ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
-      returns a set where a row was expected, and looks like an answer. Declared on every column of
-      the tuple; the concept declares `mac.concept.identity.composite` alongside.
-    reference: >
-      A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
-      points at is named separately; whether every value is PRESENT in the parent is a measurement,
-      not a declaration, and a reference with no parent relation in the delivery is recorded AS
-      dangling rather than dropped or invented.
+    canonical:
+      definition: >
+        THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
+        discloses that it counted. Exactly one per concept, and a concept that legitimately has none
+        says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
+        column that does not identify.
+      constellation: >
+        EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
+        it: a surrogate key every fact points at, with a human-readable code and a name beside
+        it that are both 1:1 with it. All three look alike in a profile; only this says which
+        one the joins and the counts are about.
+    part:
+      definition: >
+        ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
+        returns a set where a row was expected, and looks like an answer. Declared on every column of
+        the tuple; the concept declares `mac.concept.identity.composite` alongside.
+      constellation: >
+        NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified
+        by its order and its line number — neither is unique alone, and declaring either as the
+        identity would make the grain a lie. Mark each participating column, and the composite
+        is what the concept is keyed on.
+    reference:
+      definition: >
+        A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
+        points at is named separately; whether every value is PRESENT in the parent is a measurement,
+        not a declaration, and a reference with no parent relation in the delivery is recorded AS
+        dangling rather than dropped or invented.
 
+      constellation: >
+        THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale
+        identifies a customer; the sale is identified by something else entirely. Without this
+        the key reads as part of the sale's own identity, and a count of sales becomes a count
+        of customers.
 # ===========================================================================
 # mac.relation.column.role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
 # question may do with it. A column carries BOTH a storage_role and a column.role and they answer
@@ -355,52 +398,77 @@ concept.column.ruling:
   closed: true
   description: An authored judgement about a column, beyond what measurement can establish.
   terms:
-    label_of: >
-      THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
-      is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
-      named column and DISPLAY this one: a question asking in these words gets answered in them,
-      never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
-      the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under
-      two naming registers. NOT a parent: had the column meant the OWNING company it would be
-      one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
-    finer_than: >
-      THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
-      legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
-      carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs
-      over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
-      double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
-      colliding code space instead — see `scoped_by`, and measure before you rule.
-    scoped_by: >
-      THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
-      filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
-      Corse in France, Como in Italy and Colorado in the United States. measured on a worked bundle: 40 of
-      563 state codes are carried by more than one country and 0 collide WITHIN a country, so
-      `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
-      NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
-      parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
-    sort: >
-      THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
-      alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
-      reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND
-      NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept"
-      -- because one breakdown legitimately wants `brand asc`, `country_code asc` and
-      `net_amount desc` at the same time.
-      NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without
-      ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine
-      happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by
-      brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved
-      rows against the capture's first 50, WHICH 50 depended on unordered output, and the question
-      passed and failed on alternate runs with the data unchanged. An ordering is also what makes a
-      truncated view honest: the first N rows of a descending measure are the N that matter.
-      A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an
-      aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's
-      own words, "top 5 by price" -- outranks both.
-    never_axis: >
-      THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
-      measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
-      CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
-      104 990 served customers and is the dominant identifier in the row.
+    label_of:
+      definition: >
+        THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
+        is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
+        named column and DISPLAY this one: a question asking in these words gets answered in them,
+        never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
+        the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under
+        two naming registers. NOT a parent: had the column meant the OWNING company it would be
+        one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
+      constellation: >
+        TWO COLUMNS ARE 1:1 AND ONE IS THE OTHER'S NAME. Cardinality is symmetric so the data
+        cannot say which direction it runs; a person must. Getting it backwards produces an
+        answer with the wrong column as its axis rather than an error.
+    finer_than:
+      definition: >
+        THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
+        legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
+        carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs
+        over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
+        double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
+        colliding code space instead — see `scoped_by`, and measure before you rule.
+      constellation: >
+        TWO DIMENSIONS ARE A HIERARCHY AND THE ROWS SHOW ONLY A CORRELATION. Every sub-category
+        sits in exactly one category, so the coarser question is answerable from the finer rows
+        and not the reverse — a containment that is a business fact, not a measurable one.
+    scoped_by:
+      definition: >
+        THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
+        filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
+        Corse in France, Como in Italy and Colorado in the United States. measured on a worked bundle: 40 of
+        563 state codes are carried by more than one country and 0 collide WITHIN a country, so
+        `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
+        NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
+        parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
+      constellation: >
+        A CODE IS UNIQUE ONLY INSIDE ITS PARENT, AND THE COLLISION IS SILENT. Measured: 40 of
+        565 state codes repeat across countries, so grouping on state merges regions and still
+        returns a plausible table.
+    sort:
+      definition: >
+        THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
+        alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
+        reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND
+        NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept"
+        -- because one breakdown legitimately wants `brand asc`, `country_code asc` and
+        `net_amount desc` at the same time.
+        NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without
+        ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine
+        happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by
+        brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved
+        rows against the capture's first 50, WHICH 50 depended on unordered output, and the question
+        passed and failed on alternate runs with the data unchanged. An ordering is also what makes a
+        truncated view honest: the first N rows of a descending measure are the N that matter.
+        A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an
+        aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's
+        own words, "top 5 by price" -- outranks both.
+      constellation: >
+        THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises
+        none without ORDER BY, so the answer changes between runs on unchanged data — measured,
+        on an 88-row breakdown that passed and failed alternately.
+    never_axis:
+      definition: >
+        THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
+        measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
+        CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
+        104 990 served customers and is the dominant identifier in the row.
 
+      constellation: >
+        GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990
+        postcodes identify a single customer. The query is legal and the result is a customer
+        list pretending to be a breakdown.
 # ===========================================================================
 # mac.name_register — WHICH NAMING REGISTER a `label_of` ruling points at. One thing, several
 # names, each belonging to a different register: the world's, the statute book's, the schedule's.

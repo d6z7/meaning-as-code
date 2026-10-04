@@ -12,6 +12,7 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 | keys | 177 |
 | described in the schema | **177 of 177** (100%) |
 | **gaps — admitted and unexplained** | **0** |
+| **keys with no stated constellation** | **161** of 177 |
 | vocabularies | 23, 144 terms |
 | examples | 103, from 17 concepts |
 
