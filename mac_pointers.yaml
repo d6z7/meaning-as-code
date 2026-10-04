@@ -268,7 +268,13 @@ object_kinds:
     is_root: false
   vocabulary_group:               # a closed value set declared in the bundle's vocabulary
     id_template: '{source}:vocabulary_group/{name}'
-    home_layer: ontology
+    # NOT FILE-HOMED, and this file already said so in prose while declaring the opposite: the
+    # `enumerate` note calls vocabulary_group the example of a kind that "is not file-homed", and
+    # `home_layer: ontology` contradicted it. A vocabulary group is a NAME inside
+    # ontology/vocabulary.json, not a file, so its 4 objects legitimately have no home_path — and
+    # the identity invariant added on 2026-10-04 reported all four the first time it ran. The
+    # declaration was wrong, not the objects.
+    home_layer: null
     identity_field: null
     is_root: false
 
