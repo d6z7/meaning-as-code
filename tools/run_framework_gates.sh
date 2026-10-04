@@ -140,10 +140,17 @@ run_capped() {
 # this repository whose --check the suite can see: the loop above globs `check_*.py`, so the five
 # existing `gen_*.py --check` instruments are invisible to it, which is how shape_reference.md held
 # `schema 0.1.14` against a 0.1.16 schema with nothing red.
+# 2026-10-04: check_manual_index and check_decisions_index, by the same precedent. Their subjects are
+# `reference_manual/README.md` and `decisions/README.md` — two hand-maintained index pages replaced
+# by generated ones, because measured that day the manual index carried three different numbers for
+# one canon count, called 19 pages "written" that call themselves prototypes, and omitted nine of its
+# own pages including both SHIPPED canons; and the decision index's retired table listed six of the
+# seven removals git records. Neither takes a bundle root: one reads this repository's manual, the
+# other this repository's decisions/ and its git history.
 REPO_SUBJECT_GATES=(check_protocol.py check_canon_documented.py check_projection_field_parity.py
   check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
   check_wiki_citations.py check_dangling_references.py check_strategy.py check_declarations_read.py
-  check_key_reference.py)
+  check_key_reference.py check_manual_index.py check_decisions_index.py)
 
 repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
   local n="$1" g
