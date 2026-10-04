@@ -76,7 +76,7 @@ census:
     include: '**/*'
     exclude_dir_named: ['.git', '__pycache__', 'artifacts', '.context', 'node_modules']
     # DOT ENTRIES ARE EXCLUDED BECAUSE THIS CENSUS IS COMMITTED. `.ontology-unlocked` is the
-    # operator's machine-local unlock marker — archive-sources/.gitignore says of it "MUST
+    # operator's machine-local unlock marker — the estate's bundle .gitignore says of it "MUST
     # NEVER BE COMMITTED ... a human's deliberate act on ONE machine" — and it was in the first
     # census run. A row naming it would travel in git to everyone who clones the bundle, and the
     # census would differ between two machines holding the identical ontology, which breaks the
