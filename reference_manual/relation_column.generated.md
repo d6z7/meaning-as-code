@@ -25,7 +25,7 @@ columns:
     nullable:     <boolean>
     references:   <any>
     register:     <string>
-    role:         primary_key | foreign_key | value | discriminator      # REQUIRED
+    role:         primary_key | foreign_key | value | discriminator | audit | delivery_axis      # REQUIRED
     searchable:   like
     type:         <string>
     values:       <array>
@@ -46,7 +46,7 @@ columns:
 | `nullable` | boolean | no | — |  |
 | `references` | any | no | — | The parent this column points at. TWO SHAPES, both read by one resolver (`mac_project.colum… |
 | `register` | string | no | — | Path to the register that holds this column's members, relative to the bundle root. Written… |
-| `role` | enum | **yes** | `primary_key`<br>`foreign_key`<br>`value`<br>`discriminator`<br>*from* `mac.relation.column.role` | v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytica… |
+| `role` | enum | **yes** | `primary_key`<br>`foreign_key`<br>`value`<br>`discriminator`<br>`audit`<br>`delivery_axis`<br>*from* `mac.relation.column.role` | v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytica… |
 | `searchable` | string | no | `like` | HOW A VALUE IN THIS COLUMN IS RESOLVED when no register can hold it. The operator, 2026-09-… |
 | `type` | string | no | — |  |
 | `values` | array | no | — | TRANSIENT — the measured bounded domain, on its way to a register. NOT A HOME. `mac_profile… |
@@ -61,3 +61,5 @@ columns:
 - **`foreign_key`** — A reference to another relation's identity. Whether every value is PRESENT in the parent is a separate measurement — a declared key says the relationship is intended, not that it holds.
 - **`value`** — A payload column: it carries data, not identity and not a choice of row kind.
 - **`discriminator`** — A column whose value selects WHICH KIND of row this is — the column a perspective, status or type is read from.
+- **`audit`** — A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in the business. A load timestamp, a batch id, a validity window on a versioned row. It is physically a payload column, and naming it apart is what keeps it out of a question's reach: grouping a measure by the row's own write ti…
+- **`delivery_axis`** — A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's identity but which the load still keys on — so the key survives as a physical fact without claiming to be the concept's identi…

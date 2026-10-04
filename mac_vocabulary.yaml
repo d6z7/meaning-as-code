@@ -337,6 +337,24 @@ relation.column.role:
     discriminator: >
       A column whose value selects WHICH KIND of row this is — the column a perspective, status or
       type is read from.
+    # `audit` AND `delivery_axis` WERE LEGAL IN THE SCHEMA AND ABSENT HERE, which made this closed
+    # vocabulary a smaller set than the one bundles are validated against — four terms against the
+    # schema's seven, and `tools/check_vocabulary_parity.py` red on the slot since 2026-09-29. Both are
+    # in active use and one of them is written by this framework's own tool, so the vocabulary was the
+    # incomplete half: `tools/mac_admit_identity.py:393` assigns `delivery_axis`, and three runtime
+    # tests declare `{"name": "written_at", "type": "timestamp", "role": "audit"}`. Measured on
+    # contoso5: 115 `value`, 23 `primary_key`, 18 `foreign_key`, and none of these two yet — they are
+    # declared because the producers exist, not because a bundle has reached them.
+    audit: >
+      A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in the
+      business. A load timestamp, a batch id, a validity window on a versioned row. It is physically a
+      payload column, and naming it apart is what keeps it out of a question's reach: grouping a measure
+      by the row's own write time is meaningless, and nothing in the data says so.
+    delivery_axis: >
+      A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
+      question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
+      identity but which the load still keys on — so the key survives as a physical fact without
+      claiming to be the concept's identity.
 
 # ===========================================================================
 # mac.column_type — WHAT KIND OF VALUE a column holds, physically. The FAMILY, not the warehouse's

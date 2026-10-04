@@ -241,7 +241,7 @@ something upstream failed.
 
 > The physical shape of a column in its relation, independent of its analytical role.
 
-*`mac.relation.column.role` · 4 terms · closed — these are all of them*
+*`mac.relation.column.role` · 6 terms · closed — these are all of them*
 
 #### `mac.relation.column.role.primary_key`
 
@@ -260,6 +260,20 @@ A payload column: it carries data, not identity and not a choice of row kind.
 
 A column whose value selects WHICH KIND of row this is — the column a perspective, status or
 type is read from.
+
+#### `mac.relation.column.role.audit`
+
+A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in
+the business. A load timestamp, a batch id, a validity window on a versioned row. It is
+physically a payload column, and naming it apart is what keeps it out of a question's reach:
+grouping a measure by the row's own write time is meaningless, and nothing in the data says so.
+
+#### `mac.relation.column.role.delivery_axis`
+
+A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
+question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
+identity but which the load still keys on — so the key survives as a physical fact without
+claiming to be the concept's identity.
 <!-- END GENERATED:vocabulary-terms:relation.column.role -->
 
 ### Anti-patterns

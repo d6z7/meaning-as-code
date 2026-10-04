@@ -115,7 +115,7 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 
 ## The vocabulary reference
 
-**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **24 notion(s)** holding **144 term(s)**. **24** notion(s) have a chapter; **0** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
+**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **24 notion(s)** holding **146 term(s)**. **24** notion(s) have a chapter; **0** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
 
 | notion | kind | terms | closed | documented in |
 |---|---|---|---|---|
@@ -139,7 +139,7 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 | `mac.dq_status` | vocabulary | 4 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.name_register` | vocabulary | 5 | yes | [`column_rulings.md`](column_rulings.md) |
 | `mac.outcome_class` | vocabulary | 10 | yes | [`refusals_and_findings.md`](refusals_and_findings.md) |
-| `mac.relation.column.role` | vocabulary | 4 | yes | [`column_roles.md`](column_roles.md) |
+| `mac.relation.column.role` | vocabulary | 6 | yes | [`column_roles.md`](column_roles.md) |
 | `mac.test_kind` | vocabulary | 2 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.test_status` | vocabulary | 7 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.transform.driven_by` | vocabulary | 3 | yes | [`data_plane.md`](data_plane.md) |
