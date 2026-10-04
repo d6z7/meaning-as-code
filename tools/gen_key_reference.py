@@ -107,7 +107,18 @@ def harvest_vocabulary(vocab: dict):
                      "constellation": constellation, "extra": extra}
                 entry["terms"][term] = t
                 dotted[f"mac.{path}.{term}"] = t
-                dotted.setdefault(term, t)
+                #: NO BARE-TERM ENTRY. `dotted.setdefault(term, t)` used to map a bare term to
+                #: whichever vocabulary declared it FIRST IN FILE ORDER, and the enum renderer looked
+                #: values up that way. MEASURED 2026-10-04 over the 60 enum values this generator
+                #: publishes: 18 correct, 35 undefined and 7 CARRYING A DEFINITION FROM ANOTHER AXIS.
+                #: The worst was on the page whose whole job is to define the key —
+                #: `reference_manual/keys/concept/concept/identity.md` published `code` as "A machine
+                #: identifier standing for the name. 'GB', 'DE'" (from `name_register`) while
+                #: `concept.identity`, the vocabulary that GOVERNS that slot, defines it as "A closed
+                #: internal code set ... Identity = the code; surface spellings are aliases". Five of
+                #: the six values on that page came from the right vocabulary and one did not, which
+                #: is precisely the kind of wrongness a reader cannot see.
+                #: Enum values are now resolved by `governing_notion` below.
             notions[path] = entry
         for k, v in node.items():
             if k != "terms":
@@ -117,14 +128,43 @@ def harvest_vocabulary(vocab: dict):
     return notions, dotted
 
 
+def governing_notion(enum: list, notions: dict) -> str | None:
+    """Which vocabulary governs a slot whose legal values are `enum` — or None.
+
+    THE TEST IS CONTAINMENT, and it needs no table to maintain. A vocabulary may define a slot's
+    values only if it contains EVERY one of them: a definition shown for `code` is only this key's
+    meaning if the vocabulary it came from admits all six of this key's values. An exact match wins; a
+    single strict superset is accepted (the schema may close a slot tighter than the vocabulary); two
+    candidates or none means the slot is UNGOVERNED and its values are rendered without a definition.
+    Saying nothing is the honest answer — the alternative, which this replaces, was saying something
+    from another axis.
+
+    NOT `check_vocabulary_parity.PAIRS`, though that is the declared home of slot -> vocabulary: it
+    keys slots by JSON-pointer path lists and this generator walks dotted key paths, so using it here
+    would need a second mapping between the two spellings — a new thing to keep true. Containment is
+    derived from the same two declarations the page is already cut from.
+    """
+    vs = {str(e) for e in (enum or [])}
+    if not vs:
+        return None
+    exact = [n for n, e in notions.items() if set(e["terms"]) == vs]
+    if len(exact) == 1:
+        return exact[0]
+    supersets = [n for n, e in notions.items() if vs < set(e["terms"])]
+    return supersets[0] if len(supersets) == 1 else None
+
+
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 # the schema walk
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 class Walker:
-    def __init__(self, schema: dict, dotted: dict):
+    def __init__(self, schema: dict, dotted: dict, notions: dict | None = None):
         self.defs = schema["$defs"]
         self.dotted = dotted
+        #: The vocabularies, for `governing_notion`. Optional so an existing two-argument caller still
+        #: works; without them an enum value simply renders undefined, never misattributed.
+        self.notions = notions or {}
         self.levels: dict[str, dict] = {}
         self.gaps: list[dict] = []
         #: A KEY WITH NO STATED CONSTELLATION. Counted apart from `gaps` because the two are
@@ -182,6 +222,12 @@ class Walker:
             return {ANY: list(h.values())[0]}, True
         return {}, False
 
+    def _enum_entries(self, enum: list):
+        """Each value with the definition of the vocabulary that GOVERNS this slot, or none."""
+        gov = governing_notion(enum, self.notions)
+        terms = (self.notions.get(gov) or {}).get("terms", {}) if gov else {}
+        return [(e, terms.get(e)) for e in enum]
+
     def type_of(self, resolved, raw):
         if isinstance(raw, dict) and raw.get("type") == "array":
             return f"list of {self.deref(raw).get('type') or 'object'}"
@@ -227,7 +273,7 @@ class Walker:
                     "type": self.type_of(res, raw if isinstance(raw, dict) else {}),
                     "desc": desc,
                     "constellation": constellation,
-                    "enum": [(e, self.dotted.get(e)) for e in enum] if enum else None,
+                    "enum": self._enum_entries(enum) if enum else None,
                     "child": child if has_children else None,
                 })
                 self.walk(raw, child, depth + 1)
@@ -688,7 +734,7 @@ def render_index(levels, notions, gaps, unmotivated, examples, schema_version, b
 def build(root: pathlib.Path, bundle: pathlib.Path | None):
     schema, vocab = load(root)
     notions, dotted = harvest_vocabulary(vocab)
-    walker = Walker(schema, dotted)
+    walker = Walker(schema, dotted, notions)
     walker.walk(walker.defs["ConceptFile"], "concept")
     walker.prune_children()
     examples, read, per_key = (cut_examples(bundle) if bundle and bundle.is_dir()

@@ -39,7 +39,7 @@ WHAT FOLLOWS FROM THIS ASSERTION FAILING — whether an answer must be refused, 
 
 Legal values:
 
-- [`ERROR`](../vocabulary/test_status.md#ERROR) — THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection refused, a timeout. Nothing was judged, so it must never be counted as a finding about the data — `tools/_plugin.py`'s founding rule ("could not run is the one honest answer available, and it is never a finding") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis. Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned nothing, which is evidence, and `null` means nothing was examined.
+- `ERROR`
 - `WARNING`
 - `INFORMATIONAL`
 

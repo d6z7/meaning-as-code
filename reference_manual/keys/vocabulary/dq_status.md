@@ -45,10 +45,6 @@ A NAMED HUMAN RULED THAT IT WILL NEVER BE FIXED. Distinct from `accepted`, which
 
 **requires:** `ruled_by`, `reason`
 
-## Keys that take one of these values
-
-- `closure` on [`concept.values`](../concept/values/README.md)
-
 ---
 
 [↑ the whole tree](../README.md)

@@ -44,7 +44,6 @@ THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a
 
 ## Keys that take one of these values
 
-- `class` on [`concept.concept`](../../../concept/concept/README.md)
 - `identity` on [`concept.grounding.sources.columns.<name>`](../../../concept/grounding/sources/columns/each/README.md)
 
 ---

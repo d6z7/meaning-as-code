@@ -22,7 +22,7 @@ mac.concept.identity.<term> — how the canonical identity is established.
 Legal values:
 
 - [`iso`](../../vocabulary/concept/identity.md#iso) — A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases.
-- [`code`](../../vocabulary/name_register.md#code) — A machine identifier standing for the name. 'GB', 'DE', a numeric key.
+- [`code`](../../vocabulary/concept/identity.md#code) — A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases.
 - [`namespace_code`](../../vocabulary/concept/identity.md#namespace_code) — A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard.
 - [`fk_name`](../../vocabulary/concept/identity.md#fk_name) — An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity.
 - [`composite`](../../vocabulary/concept/identity.md#composite) — Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key.

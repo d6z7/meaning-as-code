@@ -46,7 +46,6 @@ A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 ## Keys that take one of these values
 
-- `kind` on [`concept.concept.identity`](../concept/concept/identity.md)
 - `register` on [`concept.grounding.sources.columns.<name>.rulings`](../concept/grounding/sources/columns/each/rulings.md)
 
 ---

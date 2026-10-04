@@ -26,9 +26,9 @@ Legal values:
 
 - `entity`
 - `event`
-- [`measure`](../../vocabulary/concept/column/role.md#measure) — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
+- `measure`
 - `enumeration`
-- [`reference`](../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
+- `reference`
 - `grouping`
 - `meta`
 

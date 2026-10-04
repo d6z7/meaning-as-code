@@ -31,7 +31,7 @@ WHETHER THIS VALUE SET IS ALL OF THEM. `closed` licenses the engine to answer wh
 Legal values:
 
 - `closed`
-- [`open`](../../vocabulary/dq_status.md#open) — NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without evidence — it asserts nothing except that the defect is recorded and undispositioned. This is the state that absence was silently standing in for, and naming it is the entire point: an issue is `open` because someone wrote `open`, not because a join missed.
+- `open`
 - `unknown`
 
 ### `closure_why`

@@ -221,7 +221,7 @@ Where this rule stands — proposed, ruled, retired. A rule the engine applies a
 Legal values:
 
 - `active`
-- [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) — The platform's own suggestion, made from measurements it already holds — row counts, distincts, measured references, duplicate relations, orphans. It is a RECOMMENDATION and not a ruling: `because` names the finding that motivated it, and until a person answers that finding the proposal stands as the reason this transform has the shape it has.
+- `proposed`
 
 ### `subject`
 

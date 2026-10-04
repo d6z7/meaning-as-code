@@ -86,10 +86,6 @@ THE INSTRUMENT RAN CLEANLY AND HAD NOTHING TO JUDGE. The query compiled, reached
 
 **requires:** `examined`, `notes`
 
-## Keys that take one of these values
-
-- `severity` on [`concept.constraints`](../concept/constraints.md)
-
 ---
 
 [↑ the whole tree](../README.md)

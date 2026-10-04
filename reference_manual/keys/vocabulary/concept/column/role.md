@@ -76,7 +76,6 @@ THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. 
 
 ## Keys that take one of these values
 
-- `class` on [`concept.concept`](../../../concept/concept/README.md)
 - `role` on [`concept.grounding.sources.columns.<name>`](../../../concept/grounding/sources/columns/each/README.md)
 
 ---

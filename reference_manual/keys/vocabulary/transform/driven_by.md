@@ -30,10 +30,6 @@ Write it as `mac.transform.driven_by.ruled`
 
 A person decided — an SME or a data scientist — and `because` names what they answered. Nothing regenerates a ruled transform.
 
-## Keys that take one of these values
-
-- `status` on [`concept.contract.rules`](../../concept/contract/rules/README.md)
-
 ---
 
 [↑ the whole tree](../../README.md)

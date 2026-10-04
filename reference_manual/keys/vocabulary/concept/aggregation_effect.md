@@ -34,10 +34,6 @@ Write it as `mac.concept.aggregation_effect.none`
 
 NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say.
 
-## Keys that take one of these values
-
-- `sort` on [`concept.grounding.sources.columns.<name>.rulings`](../../concept/grounding/sources/columns/each/rulings.md)
-
 ---
 
 [↑ the whole tree](../../README.md)
