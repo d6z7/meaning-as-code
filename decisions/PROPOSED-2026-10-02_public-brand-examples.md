@@ -1,3 +1,17 @@
+---
+state: implemented
+genre: proposal
+ruled: 2026-10-02
+implemented_by:
+  - mac_vocabulary.yaml
+  - mac.schema.json
+  - reference_manual/column_effects.yaml
+  - reference_manual/column_rulings.md
+  - reference_manual/column_bench.html
+  - reference_manual/column_map.generated.md
+  - tools/gen_grammar_map.py
+  - tools/column_bench_template.html
+---
 # RECORDED 2026-10-02 — the `label_of` worked example uses fictional marques
 
 Asked for as a proposal; **acted on instead**, on the coordinator's ruling, because the repository

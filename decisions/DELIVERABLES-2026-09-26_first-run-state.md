@@ -1,3 +1,19 @@
+---
+state: recorded
+genre: deliverables
+ruled: 2026-09-26
+paths: bundle-relative
+implemented_by:
+  - tools/mac_import.py
+  - tools/mac_descriptors.py
+  - tools/mac_lookups.py
+  - tools/mac_lineage.py
+  - tools/mac_dq_findings.py
+  - tools/mac_generate_sanity.py
+  - tools/mac_generate_ontology_tests.py
+  - tools/duckdb_seam.py
+  - tools/_plugin.py
+---
 # DELIVERABLES — WHAT ONE IMPORT RUN MUST HAND THE OPERATOR
 
 **Status:** the contract. Written 2026-09-26 from the operator's own list, with the measured state of

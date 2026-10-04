@@ -1,7 +1,21 @@
-# PROPOSED — 2026-10-02 · column-first declarations, and what it cost
+---
+state: implemented
+genre: proposal
+ruled: 2026-10-02
+implemented_by:
+  - tools/check_no_inline_values.py
+  - guardrails/unfiled.yaml
+  - tests/test_concept_page_layout.py
+  - mac-platform#packages/mac-runtime/src/mac_runtime/column_facts.py
+  - mac-platform#packages/mac-runtime/src/mac_runtime/canons/ratio_select.py
+  - mac-platform#packages/mac-runtime/src/mac_runtime/planner/plan.py
+  - mac-platform#packages/mac-runtime/src/mac_runtime/resolver/registers.py
+---
+# IMPLEMENTED — 2026-10-02 · column-first declarations, and what it cost
 
-**Status: PROPOSED.** Per CORE §3 an agent may only write `PROPOSED`; the rulings are the operator's.
-This record exists so the REASONING lives here and the source stays readable — operator, 2026-10-02:
+**Status: IMPLEMENTED 2026-10-02** — written and shipped the same day; the rulings below are the
+operator's, taken as the work went. Per CORE §3 an agent may only write `PROPOSED`, which is what the
+filename records; the state is in this file's front matter. This record exists so the REASONING lives here and the source stays readable — operator, 2026-10-02:
 *"my problem with inline comments is that they make source lesser readable. i dont mind one line of
 comments ... but i do 20 lines for one line of code."* Measured on the files changed that day:
 `column_facts.py` carried 91 comment lines against 55 of code (1.65:1), `canons/ratio_select.py`

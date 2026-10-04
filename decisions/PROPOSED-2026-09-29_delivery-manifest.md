@@ -1,3 +1,8 @@
+---
+state: superseded
+genre: proposal
+superseded_by: PROPOSED-2026-09-29_guardrails.md
+---
 **SUPERSEDED 2026-09-29 by `PROPOSED-2026-09-29_guardrails.md` — kept as the record of WHY; do not build from it.**
 
 # DELIVERY MANIFEST — ONE DECLARATION PER DELIVERED ITEM

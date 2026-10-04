@@ -1,6 +1,16 @@
+---
+state: implemented
+genre: requirement
+ruled: 2026-09-13
+implemented_by:
+  - mac-platform#packages/mac-console/src/mac_console/ui/src/views/ConnectionView.jsx
+  - mac-platform#packages/mac-console/src/mac_console/console_api.py
+  - mac-platform#tests/test_connection_page_connector.py
+---
 # REQUIREMENT — the console's Connection page, under the connector model
 
-**Status:** PROPOSED. Operator-stated, 2026-09-13. Feeds
+**Status:** IMPLEMENTED — all six requirements below are built in the console's Connection page; the
+state is in this file's front matter. Operator-stated, 2026-09-13. Feeds
 `PROPOSED-2026-09-13_connector-plugin-architecture.md`, which is designed-not-enforced (none of its
 four proposed gates exists; the shipped seam is `mac.schema.json#ConnectionFile` + `sdk/connector/`);
 that spec did not cover the UI.

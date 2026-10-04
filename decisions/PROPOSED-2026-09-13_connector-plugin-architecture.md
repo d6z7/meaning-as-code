@@ -1,3 +1,16 @@
+---
+state: proposed
+genre: adr
+enforcement: designed, not enforced
+cited_by:
+  - sdk/connector/__init__.py
+  - sdk/connector/base.py
+  - sdk/gate/engine_noun_floor.txt
+  - sdk/gate/engine_coupling_floor.txt
+  - mac-platform#packages/mac-console/src/mac_console/console_api.py
+  - mac-platform#packages/mac-console/src/mac_console/ui/src/views/ConnectionView.jsx
+  - mac-platform#tests/test_connection_page_connector.py
+---
 # ADR — The connector seam: how MAC reaches data it must not know about
 
 STATUS: **PROPOSED** · DATE: 2026-09-13 · **REVISED 2026-09-13 after adversarial review**

@@ -1,4 +1,17 @@
-# PROPOSED 2026-09-29 — a register is a VALUE SET, and not everything is a register
+---
+state: implemented
+genre: proposal
+ruled: 2026-09-29
+implemented_by:
+  - tools/check_one_register_per_dimension.py
+  - guardrails/data/sources.yaml
+---
+# IMPLEMENTED 2026-09-29 — a register is a VALUE SET, and not everything is a register
+
+**P1 and P6 landed.** `tools/check_one_register_per_dimension.py` now counts by VALUE SET — its
+verdict reads *"N redundant copy(ies) of M value set(s)"* — and prints this record by name to its
+operator (`:186`); `guardrails/data/sources.yaml` carries step (c). The state is in this file's front
+matter.
 
 Operator, 2026-09-29: *"they all show the same thing! lookup policy must be changed in way that
 there only one lookup for one thing that can be attached to multiple targets. and another thing is

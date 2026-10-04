@@ -1,8 +1,22 @@
-# PROPOSED 2026-09-29 — the ontology has a procedure, and nothing makes it reachable
+---
+state: implemented
+genre: proposal
+ruled: 2026-09-29
+enforcement: designed, not enforced
+implemented_by:
+  - guardrails/ontology/concepts.yaml
+  - tools/check_edge_definition.py
+---
+# IMPLEMENTED 2026-09-29 — the ontology has a procedure, and nothing makes it reachable
 
-**Status: PROPOSED — designed, not enforced.** No gate checks anything this record asks for; the
+**Acted on the day it was written; declared, not enforced.** All five proposals below landed in
+`guardrails/ontology/concepts.yaml`, two of them not as written — that file carries the reason on the
+line in each case. What no gate does yet is REFUSE on any of them: `check_guardrails --inspect` prints
+all nine of that topic's refusals under `NOT ENFORCED`, and `tools/check_edge_definition.py`, named
+there as the edge-id convention's owner, checks that an edge is NAMED and that its cardinality is in
+the closed set — not that the id carries a verb; its own clean fixture is `alpha__to__beta`. The
 procedure it names is the DNA checklist (`DNA-2026-09-25_ontology-design-requirements.md`) and the
-ontology skills, and no tool today refuses a draft that skipped them.
+ontology skills.
 
 Operator, after seeing the first draft beside the curated one: *"what is your strategy in creating
 ontology? every time you do it it looks different!?!?!?!?!"*

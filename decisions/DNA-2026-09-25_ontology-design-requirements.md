@@ -1,3 +1,9 @@
+---
+state: recorded
+genre: dna
+ruled: 2026-09-25
+paths: bundle-relative
+---
 # DNA — WHAT EVERY ONTOLOGY DESIGN MUST DECLARE
 
 *Instructions to myself, written 2026-09-25 on the operator's instruction: "YOU must write

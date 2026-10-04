@@ -1,7 +1,24 @@
-# PROPOSED 2026-09-29 — what the ontology guard should ask, and what else it should ask it about
+---
+state: implemented
+genre: proposal
+ruled: 2026-09-29
+implemented_by:
+  - mac-integration-kit#ontology/install/hooks/ontology_guard.py
+  - tools/check_guard_scope.py
+  - guardrails/ontology/concepts.yaml
+---
+# IMPLEMENTED 2026-09-29 — what the ontology guard should ask, and what else it should ask it about
 
 Two changes to `.claude/hooks/ontology_guard.py` (the hook each bundle repository carries; not a file of this repo), which **no agent may write** — including the agent proposing
-this. That is the point of it, and it is why this is a proposal rather than a commit.
+this. That is the point of it, and it is why this was a proposal rather than a commit.
+
+**All three predicates were installed by the operator.** The hook now carries `_is_guardrail_tree`
+(A), `_is_ruled_transform` (B1) and `_dq_dispositions` / `_disposition_changed` (B2), and
+`tools/check_guard_scope.py` holds the first two under test on this side. The state is in this
+file's front matter; the proposal text below is kept as the reasoning, not as a description of what
+is still owed. **The Addendum is the exception and is still open** — measured 2026-10-04, the hook
+carries no `expandvars` and no `unexpanded variable` branch, so an unexpanded `$VAR` in a path is
+still denied as `gate_unreachable`.
 
 ---
 

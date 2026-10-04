@@ -1,3 +1,14 @@
+---
+state: implemented
+genre: ruling
+ruled: 2026-10-02
+implemented_by:
+  - sdk/project/layout.py
+  - tools/check_document_layout.py
+  - tools/check_page_shape.py
+  - tests/test_document_layout.py
+  - tests/golden
+---
 # RULED 2026-10-02 — a projected document's layout is DECLARED and FROZEN
 
 > "i cannto stand that you every time invent new layout for the same document !?!?!? it is either
