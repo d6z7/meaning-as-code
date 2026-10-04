@@ -5,7 +5,7 @@
 #
 # Exit 0 only if all three data-free L1 gates pass. They prove conformance, NOT correctness
 # (a green run does not assert a column exists in a warehouse or a label means what you think) —
-# see ../CONFORMANCE.md for what L1/L2/L3 each guarantee.
+# see ../reference_manual/specification/CONFORMANCE.md for what L1/L2/L3 each guarantee.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

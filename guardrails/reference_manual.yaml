@@ -283,9 +283,90 @@ authored:
     # is now a `>-` folded block and not one word of it changed — which is a frontmatter-only edit,
     # and the kind of defect that stays invisible until something parses every page on purpose.
 
+  # ── GENRE 5 of 5: THE FRAMEWORK'S OWN STATEMENTS — the 13 that arrived from the root ────────────
+  framework_statement_page:
+    what: >-
+      a statement the framework makes about itself — what it is, what conforms, how a question is
+      written, how the work is held, where a capability lives. Relocated out of the repository root by
+      `guardrails/document_home.yaml`, which is where their CLUSTERING is declared.
+    genre: statement
+    # FOUR BRANCHES, ONE GENRE, AND THAT IS THE MEASUREMENT TALKING. The three clusters
+    # (specification · guides · discipline) differ in WHERE a reader looks, not in what the page is
+    # shaped like: measured over all 13, the shape is IDENTICAL on every axis this file can judge.
+    # Declaring three genres with one shape between them would be three homes for one rule — the
+    # defect this estate names most often. `document_home.yaml` answers the home question; this
+    # answers the shape question, once.
+    path: >-
+      reference_manual/specification/*.md | reference_manual/guides/*.md |
+      reference_manual/discipline/*.md | reference_manual/STRATEGY.md
+    naming: the page's own basename, verbatim — they are cited by name across three repositories
+    population: {of: 13 pages over 4 branches, from: «the three cluster directories and STRATEGY.md»,
+                 empty_is: EMPTY}
+    lifecycle: authored
+    shape:
+      # NO SECTIONS, MEASURED AND DELIBERATE. `##` counts over the 13 run from 2 (QUALITY) to 24
+      # (MODELLERS_COOKBOOK) and ZERO headings are shared by all of them — these are 13 different
+      # arguments, and a section list here would be invented. An invented shape is the defect.
+      sections: []
+      extra_sections: allowed
+      # THE ONE RULE THAT STOPS SOMETHING, and it is the operator's own complaint made machine-
+      # checkable: "there is dozens of pages and i dont know what is behind them until i look".
+      # MEASURED: 13 of 13 already carry prose between the H1 and the first `##`. The rule is declared
+      # because the next page must too — a statement that opens straight into a section leaves the
+      # reader to infer what the page is for, which is the whole defect.
+      opens_with: purpose
+      frontmatter:
+        # NOT REQUIRED, AND THE MEASUREMENT IS WHY: 4 of 13 carry frontmatter (CONFORMANCE, FRAMEWORK,
+        # MODELLERS_COOKBOOK, SEAM_CONTRACT), 9 do not. Requiring `title` would make 9 pages red on
+        # day one for a field the H1 already carries — "a rule 54 pages break on day one is a rule
+        # that gets ignored", and this is the same rule at a smaller scale.
+        required: []
+        optional: [title, version, date, status, audience, scope, supersedes, companions, part_of]
+        status_closed: null
+        frontmatter_debt: >-
+          4 of 13 pages carry frontmatter and 9 do not, so neither a required set nor a closed `status`
+          can be declared without inventing one. Owed: a ruling on whether these 13 carry frontmatter
+          at all. Until then the H1 is the title and `opens_with: purpose` is the contract.
+    producers:
+      - {tool: «a person», role: writes and revises the 12 authored statements}
+      - {tool: tools/gen_strategy.py,
+         role: "renders reference_manual/STRATEGY.md from guardrails/strategy.yaml — the only
+                generated page of the 13, and the reason relocate_pages.py checks a generator's own
+                output path before it moves anything"}
+    consumers:
+      - {tool: mac-platform console_api.py,
+         role: "serves them in the documentation window. Before the relocation it reached only FOUR of
+                them, through a hardcoded `_FRAMEWORK_PAGES` tuple synthesised under a fake
+                `framework/` section; the other 11 could not be opened there at all."}
+      - {tool: tools/check_dangling_references.py, role: holds their cross-links, reads: ["«links»"]}
+    checkers: [tools/check_manual_page_shape.py, tools/relocate_pages.py]
+    standing:
+      - page: reference_manual/guides/FOLD_DEVELOPER_MANUAL.md
+        reject: NO_PURPOSE
+        detail: >-
+          the page goes `# title` -> `### subtitle` -> `---` -> `## 1. WHAT THIS FILE IS` with no prose
+          paragraph before the first section
+        owner: operator
+        since: 2026-10-04
+        why_not_fixed: >-
+          THE PAGE DOES SAY WHAT IT IS FOR — in its subtitle: "You have a column, a table or a concept
+          in front of you. This says exactly what to write." The open question is whether a SUBTITLE
+          satisfies `opens_with: purpose` or only a prose paragraph does, and that is a ruling about the
+          declaration, not a defect in this page. `has_purpose` treats `###` as part of the title (which
+          is what makes the other 12 pages pass), so this one is the single page where the two readings
+          disagree. Rule it either way and this entry goes: declare subtitles sufficient, or move the
+          sentence below the rule.
+
 watch:
   what: how much of the manual is governed, and by what
   where: the gate's own last two lines — `python3 tools/check_manual_page_shape.py`
   measured_2026-10-04: >-
-    123 pages: 8 argument · 22 pattern · 20 canon · 58 generated (exempt) · 15 topic · 0 ungoverned.
-    65 judged, 63 held, 2 standing. Before this file: 123 pages and 0 under any declaration.
+    136 pages: 8 argument · 22 pattern · 20 canon · 58 generated (exempt) · 15 topic · 13 statement ·
+    0 ungoverned. 78 judged, 76 held, 2 standing. The 13 statement pages arrived from the repository
+    root in the same change, homed by `guardrails/document_home.yaml`; the root now holds its README
+    and two pinned redirect stubs. Before this file: 123 pages and 0 under any declaration.
+    TWO GATE DEFECTS FELL OUT OF GOVERNING THEM, both in check_manual_page_shape.py and both of the
+    same kind — a rule asserting the opposite of what it declared. `FRONTMATTER_MISSING` refused an
+    absent block even where `required: []`, so a genre with entirely optional frontmatter could never
+    pass (9 pages). `has_purpose` returned on the FIRST line after the title, so an `###` subtitle read
+    as "the page never says what it is for" (4 pages). 13 findings were 13 false ones.

@@ -1,0 +1,209 @@
+# guardrails/document_home.yaml — WHERE A DOCUMENTATION PAGE LIVES.
+#
+# `guardrails/reference_manual.yaml` answers WHAT A PAGE IS SHAPED LIKE and governs 123 pages under
+# `reference_manual/`. This file answers the question beside it — WHERE DOES IT LIVE — over the whole
+# documentation population, because the two defects are different and only one of them had a home.
+#
+# MEASURED 2026-10-04 on this tree: 386 tracked `*.md`. 256 of them are documentation (the rest are
+# bundle content under `example_*_ontology/`, goldens under `tests/`, and five one-off READMEs).
+# 16 sit at the REPOSITORY ROOT with no declaration naming them, which is the operator's complaint
+# verbatim — "there is dozens of pages and i dont know what is behind them until i look".
+#
+# WHY A HOME DECLARATION AND NOT A MOVE LIST. A list of moves is spent the moment it runs. A home per
+# genre is still true afterwards, so `tools/relocate_pages.py --check` can refuse the SEVENTEENTH root
+# page on the day somebody writes it. The moves this file implies are DERIVED from it, never typed.
+#
+# THE MEASUREMENT THAT SHRANK THE JOB. 436 references name the 15 non-README root pages, across 145
+# files in three repositories. That number is not the rewrite surface, and believing it was is what
+# made this phase look dangerous:
+#
+#   340  SURVIVE a change of directory untouched — a bare basename, which
+#        `check_dangling_references` R3 resolves by NAME anywhere in the tree
+#    66  name one of the two REDIRECT STUBS below (and so must not be carried anywhere)
+#    25  carry a path that stops resolving, inside this repository
+#     5  carry a path that stops resolving, in mac-platform or mac-integration-kit
+#
+# So: PRESERVE EVERY BASENAME and 340 of 436 references need no edit at all. That is the whole reason
+# `naming: the page's own basename, verbatim` appears on every block below. A rename would turn a
+# 30-reference job into a 436-reference job and buy nothing a reader can see.
+#
+# WHY THE ROOT PAGES GO UNDER `reference_manual/` AND NOT INTO NEW TOP-LEVEL DIRECTORIES. Measured in
+# mac-platform, `console_api.py`: `_manual_root()` is `reference_manual/` and `_manual_rel()` refuses
+# any path outside it, so a page in a new top-level directory would be invisible in the console's
+# documentation window — the window built to show this tree. Worse, `_FRAMEWORK_PAGES` is a hardcoded
+# tuple of FOUR names (STRATEGY, FRAMEWORK, CONFORMANCE, MODELLERS_COOKBOOK) synthesised under a fake
+# `framework/` section, so ELEVEN of the 16 root pages cannot be reached in that window at all today.
+# Homing them under `reference_manual/` makes the console change a DELETION — the synthetic section
+# and the tuple both go, and the pages appear in the tree because they are in the tree.
+
+spec_version: mac.guardrail/1
+topic: document_home
+status: PROPOSED 2026-10-04
+
+homes:
+
+  # ── THE SPECIFICATION: what the framework IS, and what conforms to it ───────────────────────────
+  framework_specification:
+    what: >-
+      a normative statement of the framework — the shape a bundle must have, the contract a tool must
+      honour, the grammar a question is written in. Read to settle an argument, not to learn.
+    home: reference_manual/specification
+    naming: the page's own basename, verbatim — these pages are cited by name across three repositories
+    members:
+      - FRAMEWORK.md          # what MAC is; the semantics a bundle declares
+      - CONFORMANCE.md        # the strict-syntax contract a bundle is held to
+      - SEAM_CONTRACT.md      # mac.seam/1 — how a framework tool is invoked
+      - QUERY_GRAMMAR.md      # the grammar a question is written in
+      - FOLD_GRAMMAR.md       # the fold law — (measure_type x axis_kind) -> aggregation effect
+    population: {of: 5 named pages, from: «this declaration», empty_is: EMPTY}
+    consumers:
+      - {tool: mac-platform console_api.py, role: serves them in the documentation window}
+      - {tool: tools/check_dangling_references.py, role: holds their cross-links}
+
+  # ── THE GUIDES: how to DO it ────────────────────────────────────────────────────────────────────
+  framework_guide:
+    what: >-
+      a walked procedure — a decision to make, a worked example, an end-to-end trace. Read front to
+      back once, then revisited for the one recipe you need.
+    home: reference_manual/guides
+    naming: the page's own basename, verbatim
+    members:
+      - MODELLERS_COOKBOOK.md     # decision procedures and recipes for a modeller
+      - QUERY_WALKTHROUGH.md      # a question, end to end
+      - FOLD_DEVELOPER_MANUAL.md  # the fold plane, for someone implementing against it
+    population: {of: 3 named pages, from: «this declaration», empty_is: EMPTY}
+
+  # ── THE DISCIPLINE: how the work is HELD ────────────────────────────────────────────────────────
+  framework_discipline:
+    what: >-
+      how this estate holds itself — what is tested, what quality means before a change is offered,
+      where a capability is allowed to live, how a release is cut. Read before changing something.
+    home: reference_manual/discipline
+    naming: the page's own basename, verbatim
+    members:
+      - PIPELINE_TESTING.md   # the testing doctrine and the instruments
+      - QUALITY.md            # the pre-offer change checklist
+      - RELEASING.md          # one version, bumped everywhere, atomically
+      - TOPOLOGY.md           # where each capability lives, and nowhere else
+    population: {of: 4 named pages, from: «this declaration», empty_is: EMPTY}
+
+  # ── THE STANDING STATEMENT ──────────────────────────────────────────────────────────────────────
+  framework_statement:
+    what: the framework's own position, generated from a declaration rather than written
+    home: reference_manual
+    naming: the page's own basename, verbatim
+    members:
+      - STRATEGY.md   # generated from guardrails/strategy.yaml by tools/gen_strategy.py
+    population: {of: 1 named page, from: «this declaration», empty_is: EMPTY}
+    producers: [{tool: tools/gen_strategy.py, role: renders it from guardrails/strategy.yaml}]
+    # IT MOVES, SO ITS GENERATOR'S OUTPUT PATH MOVES WITH IT. A generated page relocated without its
+    # generator is re-written at the old path by the next run — the page comes back and the move is
+    # silently undone. `relocate_pages.py --check` refuses that as GENERATOR_PATH_STALE.
+
+  # ── PINNED: A PAGE THAT MAY NOT MOVE, AND WHY ───────────────────────────────────────────────────
+  repository_entry:
+    what: the page a person lands on, rendered by the forge at the repository root
+    home: «the repository root»
+    may_not_move: true
+    may_not_move_because: >-
+      the forge renders `README.md` at the root and nowhere else. This is not a preference about
+      layout; moving it removes the repository's front door.
+    naming: README.md
+    members: [README.md]
+    population: {of: 1 named page, from: «this declaration», empty_is: EMPTY}
+
+  redirect_stub:
+    what: >-
+      a page with NO CONTENT OF ITS OWN that exists so an old citation still resolves. It carries a
+      pointer to its successor and, where the citations were sectioned, an anchor map.
+    home: «the path it redirects FROM»
+    may_not_move: true
+    may_not_move_because: >-
+      A STUB'S ADDRESS IS ITS ENTIRE FUNCTION. It was left behind at the old path so that a link to
+      the old path resolves; relocating it breaks exactly the citations it was created to serve. This
+      is the rule a mechanical mover would have broken silently, which is why it is written down.
+    naming: the retired page's own basename — the address being redirected from
+    members:
+      - CONCEPT_SPEC.md   # -> reference_manual/keys/** ; "kept only so existing links resolve"
+      - TESTING.md        # -> PIPELINE_TESTING.md Part A, with a §1-§9 anchor map
+    population: {of: 2 named pages, from: «this declaration», empty_is: EMPTY}
+    # MEASURED: 66 of the 436 references name these two. 4 of the 66 are inside `protocol/`, which
+    # `protocol/README.md` declares append-only — "Entries are never edited". TESTING.md's own first
+    # paragraph names that as the reason it still exists. Those 4 are why the stubs stay for good, and
+    # `relocate_pages.py` refuses to write under `protocol/` at all (reject: APPEND_ONLY_WRITE).
+    references: repoint_where_editable
+    references_note: >-
+      A citation that ALREADY says the page is retired ("merged into", "superseded", "was") is making
+      a true historical statement and is left alone — the same judgement `check_dangling_references`
+      R4 makes, read from that module rather than re-implemented here. Measured: 10 such lines.
+
+  # ── HOMES THAT ALREADY HOLD, DECLARED SO THE GATE HAS A DENOMINATOR ─────────────────────────────
+  # NOTHING BELOW MOVES. They are declared because a gate that governs only what it is about to change
+  # prints PASS over a denominator chosen to flatter it — "never quote a gate's PASS without its
+  # denominator". With these blocks the gate's subject is the documentation population, not the diff.
+  session_protocol:
+    what: the raw append-only record of a working session, in a dated directory per day
+    home: protocol/{date}
+    append_only: true
+    append_only_because: >-
+      `protocol/README.md`: "Append-only. Entries are never edited, only superseded by later ones that
+      say so." A rewriter that edits one has falsified the record it exists to be.
+    naming: "{date}/{entry}.md — the ISO date of the session"
+    population: {of: 60 pages over 3 dated directories, from: protocol/**/*.md, empty_is: EMPTY}
+
+  decision_record:
+    what: one decision, with its state and what implements it
+    home: decisions
+    naming: "{GENRE}-{date}_{slug}.md"
+    population: {of: 18 records, from: decisions/*.md, empty_is: EMPTY}
+    checkers: [tools/check_decision_state.py]
+
+  wiki_page:
+    what: the explanatory wiki, clustered by audience
+    home: wiki/{audience}
+    naming: "{audience}/{topic}.md — kebab-case"
+    population: {of: 35 pages over 3 audiences, from: wiki/**/*.md, empty_is: EMPTY}
+    checkers: [tools/check_wiki_citations.py]
+
+  article:
+    what: a long-form piece written outward, for a reader who does not have this repository
+    home: articles
+    naming: "{slug}.md"
+    population: {of: 4 articles, from: articles/*.md, empty_is: EMPTY}
+
+  capability_result:
+    what: >-
+      what a capability MEASURED on its last run — a results table, a sources list. Not prose about the
+      framework; the output of running it.
+    home: «the capability's own directory»
+    may_not_move: true
+    may_not_move_because: >-
+      the capability writes it there and reads it back as its own baseline. Relocating it separates a
+      measurement from the thing measured, and the next run writes the old path again anyway.
+    naming: RESULTS.md | SOURCES.md, beside the capability that produces it
+    members:
+      - benchmark/RESULTS.md
+      - benchmark/SOURCES.md
+      - bundlegen/RESULTS.md
+      - invariants/RESULTS.md
+      - recognition/RESULTS.md
+    population: {of: 5 outputs over 4 capabilities, from: «this declaration», empty_is: EMPTY}
+
+  manual_page:
+    what: every page of the reference manual — shape governed elsewhere, home governed here
+    home: reference_manual
+    naming: declared per genre by guardrails/reference_manual.yaml
+    population: {of: 123 pages, from: reference_manual/**/*.md, empty_is: EMPTY}
+    # ONE SUBJECT, TWO QUESTIONS, TWO FILES, AND NO SECOND HOME FOR EITHER ANSWER: this block says
+    # WHERE, `guardrails/reference_manual.yaml` says WHAT SHAPE. The 13 pages arriving from the root
+    # need a genre there before they are governed for shape — `relocate_pages.py --check` refuses the
+    # move while they would land ungoverned (reject: SHAPE_UNGOVERNED), because
+    # `check_manual_page_shape.py` reports "0 ungoverned" today and that must survive the move.
+
+watch:
+  what: how much of the documentation population sits in a declared home
+  where: "python3 tools/relocate_pages.py --check"
+  measured_2026-10-04: >-
+    256 documentation pages. 240 in a declared home, 16 at the repository root under no declaration —
+    13 of which this file homes, 3 of which it pins where they are. Before this file: 0 pages carried
+    any statement about where they belong.

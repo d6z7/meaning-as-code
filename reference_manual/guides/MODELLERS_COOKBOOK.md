@@ -15,7 +15,7 @@ companions:
 
 > **What this is.** A decision-and-recipe manual for the moment you are *authoring* — when you have a
 > thing in front of you and need to know *where it goes and how to shape it*. It does not re-define the
-> framework; it routes you to the canon. Every rule of truth lives in [FRAMEWORK.md](FRAMEWORK.md) and
+> framework; it routes you to the canon. Every rule of truth lives in [FRAMEWORK.md](../specification/FRAMEWORK.md) and
 > [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this file is the procedure for *applying* them.
 >
 > **What this is NOT.** Not a tutorial (read the canon + `example_shop_ontology/` first), not a spec
@@ -35,7 +35,7 @@ companions:
 4. **Always finish at the validator and then at execution** — Part D. A green validator means
    *well-formed*, not *correct* (FRAMEWORK §8).
 
-Section references like *(FW §6)* point at [FRAMEWORK.md](FRAMEWORK.md); *(SPEC §7)* at
+Section references like *(FW §6)* point at [FRAMEWORK.md](../specification/FRAMEWORK.md); *(SPEC §7)* at
 [reference_manual/shape_reference.md](reference_manual/shape_reference.md).
 
 ---
@@ -479,5 +479,5 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 | done authoring | Part D (validate → execute) |
 
 *All recipes are grounded in `example_shop_ontology/` (synthetic shop). The canon — every definition and
-every key — is [FRAMEWORK.md](FRAMEWORK.md) and [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this cookbook only
+every key — is [FRAMEWORK.md](../specification/FRAMEWORK.md) and [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this cookbook only
 tells you how to apply them.*

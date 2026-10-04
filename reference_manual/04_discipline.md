@@ -12,7 +12,7 @@ build on must earn trust on **two** axes, and the order in which it earns them m
 both, and the self-discipline that keeps the manual honest.*
 
 > **Relationship to the canon (single-homing, A3).** The **correctness gradient** is defined in
-> [`../FRAMEWORK.md`](../FRAMEWORK.md) §8 and [`../MODELLERS_COOKBOOK.md`](../MODELLERS_COOKBOOK.md) Part D;
+> [`specification/FRAMEWORK.md`](specification/FRAMEWORK.md) §8 and [`guides/MODELLERS_COOKBOOK.md`](guides/MODELLERS_COOKBOOK.md) Part D;
 > this chapter summarizes and **references** it (§4.1), then adds what is new here: the **determinism
 > gradient** (§4.2), how the two compose (§4.3), and the manual's own review discipline (§4.4).
 

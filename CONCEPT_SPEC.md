@@ -17,11 +17,11 @@ duplicated). The authoritative, machine-checkable contract remains [`mac.schema.
 
 | Was (`CONCEPT_SPEC §`) | Now |
 | --- | --- |
-| §1 What is a concept? · §2 1-file-1-concept · §3 the layers · §4 the `class:` vocabulary | [`FRAMEWORK.md`](FRAMEWORK.md) + [reference_manual/02_building_blocks.md](reference_manual/02_building_blocks.md) (the canonical definitions; the **per-class shape** is now generated in the Shape Reference) |
+| §1 What is a concept? · §2 1-file-1-concept · §3 the layers · §4 the `class:` vocabulary | [`FRAMEWORK.md`](reference_manual/specification/FRAMEWORK.md) + [reference_manual/02_building_blocks.md](reference_manual/02_building_blocks.md) (the canonical definitions; the **per-class shape** is now generated in the Shape Reference) |
 | **§5 the naming contract** · **§5a reference syntax** | [reference_manual/shape_reference.md](reference_manual/shape_reference.md) — the two hand-written contracts |
 | **§6 predefined keys** · **§7 the rules layer** | [reference_manual/shape_reference.md](reference_manual/shape_reference.md) — the **generated** per-object-type shapes (`ConceptFile` … `TransformFile`), produced from the schema by `tools/gen_schema_shapes.py` |
 | §8 orthogonal axes (footgun) | [reference_manual/patterns/tracking_vintage.md](reference_manual/patterns/tracking_vintage.md) |
-| §9 validation | [`CONFORMANCE.md`](CONFORMANCE.md) |
+| §9 validation | [`CONFORMANCE.md`](reference_manual/specification/CONFORMANCE.md) |
 | §10 what is deferred | [reference_manual/FINDINGS.md](reference_manual/FINDINGS.md) |
 
 > **Looking for "what keys can I use, and where do they go?"** → [the Shape Reference](reference_manual/shape_reference.md).

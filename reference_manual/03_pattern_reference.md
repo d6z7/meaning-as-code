@@ -36,7 +36,7 @@ bidirectional argument that justified "exactly six classes" justifies "these are
 **This first pass covers the novel/non-obvious subset** — the constellations where the expression here is
 *not* a one-liner from the cookbook, or where enumerating exposes a genuine gap in the framework. The
 "clean" patterns (a 1:N FK is a physical edge; a code list is an enumeration) are deferred; they are
-already covered by `../MODELLERS_COOKBOOK.md` Parts A–B.
+already covered by `guides/MODELLERS_COOKBOOK.md` Parts A–B.
 
 ## 3.1 The entry template
 
@@ -114,7 +114,7 @@ Each becomes a file under `patterns/` as it is written; ✅-linked ones exist.
 - [`competing_definitions`](patterns/competing_definitions.md) — one natural-language term, several defensible definitions ("Europe") ⚠️ ✅
 - `required_unspecified` — a required dimension the question left out → ask, never guess ⚠️
 - [`impurity_disposition`](patterns/impurity_disposition.md) — bake-into-view vs register-as-caveat vs block-as-needs-expert 🟡 ✅ **(partial:
-  the query-time edges are canon-backed; the curation-layer + typed DQ-register *primitives* remain deferred — see `../MODELLERS_COOKBOOK.md` B8)**
+  the query-time edges are canon-backed; the curation-layer + typed DQ-register *primitives* remain deferred — see `guides/MODELLERS_COOKBOOK.md` B8)**
 
 > The 🔴 rows are the prize: enumerating systematically is what *surfaces* the framework's holes
 > (associative-entity-with-payload, polymorphic/reification, junk dimension, the curation layer). Those

@@ -113,5 +113,5 @@ verdicts, one model behind them.
 
 *Companions: [meaning-as-code.md](meaning-as-code.md) (the idea) · [positioning.md](positioning.md) (where
 MAC sits among the standards) · [mac-in-the-loop.md](mac-in-the-loop.md) (the question→answer→provenance
-loop) · [FRAMEWORK.md](../FRAMEWORK.md) (the spec). Worked outputs live under each example's
+loop) · [FRAMEWORK.md](../reference_manual/specification/FRAMEWORK.md) (the spec). Worked outputs live under each example's
 `projections/`.*

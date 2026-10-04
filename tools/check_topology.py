@@ -33,7 +33,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TOPOLOGY = ROOT / "TOPOLOGY.md"
+#: HOMED BY `guardrails/document_home.yaml` (genre `framework_discipline`). Pointing this at the old
+#: root path did not make the gate FAIL — it made it COULD-NOT-RUN ("no TOPOLOGY.md"), which the
+#: runner counts as worse than a red because a could-not-run hides whatever the red would have said.
+TOPOLOGY = ROOT / "reference_manual" / "discipline" / "TOPOLOGY.md"
 
 #: capability -> (home path prefix, marker regex, why this marker)
 #: A MARKER is a symbol the capability cannot be implemented without. `class Connector` can be

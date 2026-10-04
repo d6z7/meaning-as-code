@@ -1,6 +1,6 @@
 # Meaning as Code (MAC)
 
-> **The strategy — what the platform is for and the eleven rungs a bundle climbs — is [STRATEGY.md](STRATEGY.md), generated from `guardrails/strategy.yaml` (the one formulation) and held to what exists by `tools/check_strategy.py`. Read it first.**
+> **The strategy — what the platform is for and the eleven rungs a bundle climbs — is [STRATEGY.md](reference_manual/STRATEGY.md), generated from `guardrails/strategy.yaml` (the one formulation) and held to what exists by `tools/check_strategy.py`. Read it first.**
 #### the YAML Ontology Framework
 
 > *Capturing knowledge and meaning in a structured form is an old pursuit — taxonomies and controlled
@@ -124,13 +124,13 @@ six independent verdicts. (Outputs live under each example's `projections/`.)
 | [articles/mac-in-the-loop.md](articles/mac-in-the-loop.md) | **Where MAC sits end-to-end** — the question → interpret → generate SQL → execute → explain-provenance loop; the probabilistic/deterministic split; provenance as a byproduct of meaning-as-code. |
 | [articles/projecting-outward.md](articles/projecting-outward.md) | **One model, six formats** — the exporters as the "projects onto whatever you run" proof: OSI · openCypher · RDF/OWL · SHACL · OKF · Mermaid, each self-validating in its target's own terms. |
 | [reference_manual/data_plane.md](reference_manual/data_plane.md) | **The two-plane layout** — data plane (how the data is made) vs ontology plane (what it means), the seam, the manifest, and the structure-vs-meaning (Option A → B) split. The Foundry separation, vendor-neutral. |
-| **[FRAMEWORK.md](FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
+| **[FRAMEWORK.md](reference_manual/specification/FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [reference_manual/shape_reference.md](reference_manual/shape_reference.md) | The exhaustive key-by-key reference — every object type's shape, **generated from `mac.schema.json`**. (`CONCEPT_SPEC.md` is a retired redirect to it.) |
-| [MODELLERS_COOKBOOK.md](MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
+| [MODELLERS_COOKBOOK.md](reference_manual/guides/MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
 | [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
 | [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.1.14) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
-| [CONFORMANCE.md](CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core contract, and the v0.1.9 change list. |
-| [SEAM_CONTRACT.md](SEAM_CONTRACT.md) | **`mac.seam/1`** — how a framework tool answers a host that may not import it: the CLI shape, the one envelope, the closed failure vocabulary, the cache rule, and the rule that decides when an incomplete answer may be served. Enforced by [tools/check_seam_contract.py](tools/check_seam_contract.py). |
+| [CONFORMANCE.md](reference_manual/specification/CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core contract, and the v0.1.9 change list. |
+| [SEAM_CONTRACT.md](reference_manual/specification/SEAM_CONTRACT.md) | **`mac.seam/1`** — how a framework tool answers a host that may not import it: the CLI shape, the one envelope, the closed failure vocabulary, the cache rule, and the rule that decides when an incomplete answer may be served. Enforced by [tools/check_seam_contract.py](tools/check_seam_contract.py). |
 | [tools/validate_schema.py](tools/validate_schema.py) | The **structural** validator — schema-driven (MAC v0.1.14): checks every model file against `mac.schema.json` (closed vocabulary, required keys, naming contract, edge legality). |
 | [tools/check_references.py](tools/check_references.py) | A **referential** validator — its companion; checks that every cross-file reference resolves (no orphans). Together: well-formed *and* internally whole. |
 | [tools/check_shapes.py](tools/check_shapes.py) | A **constraint** validator (new in v0.1.6) — runs *shapes* (constraints declared as DATA in [mac_shapes.yaml](mac_shapes.yaml)) that the schema can't express, e.g. the relational invariant "the values here ⊆ a set declared there". The third gate: structural + referential + **constraint**. |
@@ -151,7 +151,7 @@ not correctness — you run the queries the model implies and let the data corre
 
 The model is checked by **three** deterministic, data-free gates (no warehouse needed) — **structural**,
 **referential**, then **constraint/shapes**. A clean run means *well-formed and conformant* (L1), not
-*correct*: execution validation (L2) and SME confirmation (L3) still apply — see [CONFORMANCE.md](CONFORMANCE.md).
+*correct*: execution validation (L2) and SME confirmation (L3) still apply — see [CONFORMANCE.md](reference_manual/specification/CONFORMANCE.md).
 
 ```bash
 pip install jsonschema pyyaml      # one-time
@@ -200,7 +200,7 @@ and an inline [Mermaid block](example_shop_ontology/README.md) (generated, rende
 ## What this is not
 
 Not a runtime, not a reasoner, not a W3C standard. It *describes* a domain richly enough that an agent
-can reason and a platform can ingest — it does not run logic itself. See [FRAMEWORK.md §9](FRAMEWORK.md)
+can reason and a platform can ingest — it does not run logic itself. See [FRAMEWORK.md §9](reference_manual/specification/FRAMEWORK.md)
 for the honest trade-offs and when *not* to use it.
 
 ## Status — exploratory
@@ -210,7 +210,7 @@ convention being pressure-tested, not a stable release to build on yet. Read eve
 far, on the cases we've tried,"* not *"proven for yours."*
 
 What exists today, at **v0.1.14**: a machine-checkable schema
-([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](CONFORMANCE.md)), three data-free gates
+([mac.schema.json](mac.schema.json) + [CONFORMANCE.md](reference_manual/specification/CONFORMANCE.md)), three data-free gates
 (structural, referential, constraint/shapes) with negative + layout tests, the two-plane layout
 (data / ontology), and six self-validating projectors (OSI · RDF/OWL · SHACL · openCypher · OKF · Mermaid),
 **exercised on two small worked domains** of different shape. That is enough to show the idea works on
@@ -219,4 +219,4 @@ newer still and openly incomplete: we claim **coverage, not completeness**, and 
 
 The most useful contribution right now is **adversarial testing on new domains** — bring a shape it can't
 model and show where it breaks. (Releasing bumps the one version everywhere at once — see
-[RELEASING.md](RELEASING.md).) Deliberately lighter than a W3C standard; not a platform you buy.
+[RELEASING.md](reference_manual/discipline/RELEASING.md).) Deliberately lighter than a W3C standard; not a platform you buy.

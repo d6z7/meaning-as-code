@@ -6,7 +6,7 @@ new failure mode is found, a new point is added here (do not delete points; supe
 
 > Scope: changes to the MAC framework (`mac.schema.json`, the `tools/`, the conformance/design docs, the
 > worked examples). The companion to [RELEASING.md](RELEASING.md) (the release procedure) and
-> [CONFORMANCE.md](CONFORMANCE.md) (what conformance means). RELEASING covers tag/push; this covers the
+> [CONFORMANCE.md](../specification/CONFORMANCE.md) (what conformance means). RELEASING covers tag/push; this covers the
 > change itself, *before* any release is even discussed.
 
 **Working mode — co-develop with the applied instance.** When a change is driven by an applied ontology,
