@@ -208,21 +208,20 @@ delivers:
     checkers:
       - {tool: tools/check_one_register_per_dimension.py, rejects: [one-domain-many-registers]}
 
-  register_page:
-    what: the browsable page for one value register — its members, with the constants lifted above the table
-    phase: [sources, datasets]
-    path: data/lookups/{register}.lookup.md
-    naming: the register's own stem, verbatim — one page per .lookup.csv
-    population: {of: every register cut on this plane, from: data/lookups/*.lookup.csv, empty_is: EMPTY}
-    lifecycle: re-derived
-    producers: [{tool: sdk/project/project_data.py, role: renders one page per register}]
-    consumers: [{tool: sdk/project/objects.py, role: carries it as the register object's doc path, reads: ["«path only»"]}]
-    # THE LARGEST UNCHECKED CLASS IN THE DELIVERY — 24 files, 17 % of it. `check_pages_current`
-    # covers sources, datasets and transforms and stops. These can go stale, vanish, or desync from
-    # their CSV and every gate stays green.
-    checkers: []
-
-  # ── THE MEASUREMENT OF THE DELIVERY ITSELF ───────────────────────────────────────────────────
+  # `register_page` RETIRED 2026-10-04 — IT WAS A SECOND HOME FOR `data/lookups/*.lookup.md`, already
+  # declared as `delivers.lookup_page` in `guardrails/unfiled.yaml` with the same producer
+  # (`sdk/project/project_data.py`). One artifact, two names, and they had DRIFTED on the field that
+  # decides whether a missing page is a defect: this entry said `empty_is: EMPTY` (absence is a finding)
+  # and the surviving one says `OK` (absence is normal). `mac_manifest.declared_everywhere` turns that
+  # into two claims on one path with opposite `optional`, and a BOM cannot answer "is this owed" twice.
+  #
+  # The survivor was chosen on evidence, not preference: it carries a `shape` (3 sections), a checker
+  # (`tools/check_document_layout.py`, which holds 3 documents against it today) and a `renders:` entry
+  # point that `sdk/project/project_data.py` reads. This entry carried no shape and no checker.
+  #
+  # The conflict was invisible until today because `declared_everywhere`'s detector is keyed by item
+  # NAME, so two names for one path were two claims rather than a conflict. It now also compares
+  # normalised paths — which is what found this.
 
   relation_page:
     what: the page a person opens to read one landed relation

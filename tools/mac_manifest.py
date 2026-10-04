@@ -695,6 +695,29 @@ def declared_everywhere(framework) -> tuple:
                                  "optional": (item.get("population") or {}).get("empty_is") == "OK"})
         seen.setdefault(name, []).append("mac_artifacts.yaml")
     conflicts = {n: w for n, w in seen.items() if len(w) > 1}
+    #: AND THE SAME PATH UNDER TWO NAMES, which the loop above structurally cannot see: `seen` is keyed
+    #: by item NAME, so two names for one artifact are two claims, not a conflict. MEASURED 2026-10-04,
+    #: that is exactly how `data/lookups/*.lookup.md` came to be declared twice —
+    #: `guardrails/data/sources.yaml::register_page` and `guardrails/unfiled.yaml::lookup_page`, one
+    #: artifact, one producer, two names — and the two had already drifted on the field that decides
+    #: whether a missing page is a defect: `empty_is: EMPTY` against `OK`, which this function turns
+    #: into opposite `optional` values for one path. A BOM cannot answer "is this owed" twice.
+    #:
+    #: Normalised because the two spellings differed too: `{register}` against `<register>`.
+    by_path: dict[str, list[str]] = {}
+    for name, c in claims.items():
+        if not c.get("path"):
+            continue
+        #: A SENTINEL IS NOT A PATH. `«derived — no file»` says this artifact has no file at all, so two
+        #: items carrying it are not two homes for one file — they are two items with no file each.
+        #: Counting it made the first run of this check report 2 conflicts, one of them furniture.
+        if str(c["path"]).strip().startswith("«"):
+            continue
+        norm = re.sub(r"[<{][^>}]*[>}]", "*", str(c["path"]))
+        by_path.setdefault(norm, []).append(f"{name} ({c['owner']})")
+    for norm, owners in by_path.items():
+        if len(owners) > 1:
+            conflicts[f"«path» {norm}"] = sorted(owners)
     return claims, conflicts
 
 
