@@ -43,6 +43,8 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+
+import mac_vocab  # noqa: E402  — ONE reader of mac_vocabulary.yaml, fold-agnostic
 import re
 import shutil
 import sys
@@ -391,7 +393,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"COULD NOT RUN: need {VOCAB.name} and {DOCS}", file=sys.stderr)
         return 2
 
-    vocab = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
+    #: FOLD-AGNOSTIC. `mac_vocab.flatten` returns vocabularies keyed by their DOTTED name whether the
+    #: file nests them (`concept: column: role:`) or spells them flat (`concept.column.role:`), so every
+    #: lookup below keeps working and the file's shape stays an authoring choice. Measured 2026-10-04:
+    #: folding the file broke exactly 3 gates of 14, all of them at a dotted-key dict index — 35 modules
+    #: parse this file with their own `yaml.safe_load` and none of them had a reader in between.
+    vocab = mac_vocab.flatten(yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {})
     notions = notions_of(vocab)
     if not notions:
         print(f"COULD NOT RUN: {VOCAB.name} declares no notion of kind {'/'.join(KINDS)}",

@@ -46,6 +46,8 @@ from pathlib import Path
 
 import yaml
 
+import mac_vocab  # noqa: E402  — ONE reader of mac_vocabulary.yaml, fold-agnostic
+
 REQUIRED = ("measure_type", "additivity_time", "additivity_categorical")
 NAME = "check_measure_additivity_registry"
 
@@ -64,7 +66,12 @@ def measure_type_law(vocab_path: Path) -> dict:
     if not vocab_path.is_file():
         raise LawUnavailable(f"framework value domain not found at {vocab_path}")
     try:
-        doc = yaml.safe_load(vocab_path.read_text(encoding="utf-8")) or {}
+        #: FOLD-AGNOSTIC. `mac_vocab.flatten` returns vocabularies keyed by their DOTTED name whether
+        #: the file nests them (`concept: column: role:`) or spells them flat (`concept.column.role:`),
+        #: so every lookup below keeps working and the file's shape stays an authoring choice. Measured
+        #: 2026-10-04: folding the file broke exactly 3 gates of 14, all of them here at a dotted-key
+        #: dict index — 35 modules parse this file with their own `yaml.safe_load` and none had a reader.
+        doc = mac_vocab.flatten(yaml.safe_load(vocab_path.read_text(encoding="utf-8")) or {})
     except Exception as exc:  # noqa: BLE001
         raise LawUnavailable(f"{vocab_path} did not parse: {exc}") from None
     members = (doc.get("concept.column.measure_type") or {}).get("terms") or {}

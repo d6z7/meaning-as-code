@@ -19,344 +19,6 @@ metadata:
             concept.column.role, concept.column.identity, relation.column.role, concept.column.ruling, name_register]
 
 # ===========================================================================
-# mac.concept.aggregation_effect — how a measure may be combined along ONE axis.
-# ===========================================================================
-concept.aggregation_effect:
-  kind: vocabulary
-  closed: true
-  description: >
-    THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set
-    answers one question in one grammar: "how do I fold this measure along this axis?"
-
-    v0.1.15 REPLACED THE PREVIOUS FOUR. They answered the same question in three different grammars —
-    `additive` named a property, `averageable` named a capability, `non_aggregable` named a negated
-    capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a
-    reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale
-    (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was
-    one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules
-    fell into exactly that gap and guarded on a value no register could hold.
-
-    `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: an inventory measure says
-    "READ the level at the END of the period" and a reach measure says "READ as stored ... resolve to the
-    matching pre-computed abstraction level instead of folding". Both READ a stored row and refuse to
-    fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
-    concept's `resolve.*` rules, never in the fold vocabulary.
-  terms:
-    additive:
-      definition: "SUM is correct across this axis."
-      # WHICH OPERATION OF `grammar/query_grammar.yaml#operations` THIS EFFECT PERMITS. Every term's
-      # own prose already named it ("SUM is correct", "the correct fold is a mean", "NO fold is
-      # valid") and no reader could consult a sentence, so two live call sites decided it instead:
-      # `effect == "additive"` in planner/plan.py and canons/additivity_guard.py, which makes
-      # `average` a VIOLATION rather than the AVG the term defines. The operation's SQL stays in the
-      # grammar, where `contributes.select` already holds it -- this names the operation, never the
-      # function, so there is one home for each.
-      #
-      # A LIST, AND `additive` CARRIES TWO. A first cut wrote one operation per term, which says
-      # that an additive measure may only be SUMmed -- and "the average monthly revenue" is a
-      # legitimate question about an additive measure. `average` carries only `average`, because
-      # that is precisely what the term asserts: the sum does not mean anything. So the list is the
-      # set of operations the effect PERMITS, and the question's own operation must be in it.
-      folds_with: [sum, average]
-    average:
-      definition: "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
-      folds_with: [average]
-    none:
-      definition: "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
-      # NO `folds_with` IS THE DECLARATION: no operation folds this axis. Stated by ABSENCE rather
-      # than by a `none` value, so a reader asking "which operation?" gets no answer instead of an
-      # answer that must then be special-cased -- the same shape as a population axis with no default.
-
-# ===========================================================================
-# mac.concept.axis_kind — the KIND of an aggregation axis, for additivity purposes.
-# An applied ontology maps each concrete dimension to one kind; the additivity LAW is stated over kinds,
-# so it is universal (domain-independent).
-# ===========================================================================
-concept.axis_kind:
-  kind: vocabulary
-  closed: true
-  description: The additivity-relevant classification of an aggregation axis.
-  terms:
-    time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
-    categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
-
-# ===========================================================================
-# mac.concept.column.role — WHAT A COLUMN IS, analytically: where a query may use it and the guardrail that
-# follows. ONE role per column, and it is DERIVABLE — cardinality, type and reference structure give
-# it, which is why a generator can assign it unaided over a thousand columns without a human.
-#
-# THIS IS THE FRAMEWORK'S, NOT THE APPLICATION'S, and that is a change. Until 2026-09-25 each bundle
-# declared these terms in its own vocabulary.yaml: TWENTY files defined what `dimension` means, seven
-# of them verbatim copies, and eleven generated ones gave all five terms the same placeholder
-# sentence — "generated role, inferred from column type and name" — because there was nothing to
-# point at. Meanwhile the runtime branched on the bare strings ("measure", "attribute", "dimension")
-# in six places and even guessed among three spellings of `period`. The framework already owned the
-# behaviour; it now owns the names.
-#
-# `attribute` IS DELIBERATELY ABSENT. It was never a role: it was four different JUDGEMENTS filed in
-# the slot where types live — another name for the same thing, a different level of the same thing,
-# too identifying to be an axis, and not business content at all. Judgements are authored and cannot
-# be derived, which is exactly why no generator ever assigned it. They live in `mac.concept.column.ruling`.
-# ===========================================================================
-# ===========================================================================
-# mac.concept.column.query_use — WHERE A QUESTION MAY USE A COLUMN. The machine-readable half of
-# `concept.column.role`, whose own description has always said it states "where a query may use
-# it" — in prose only, which no reader could consult.
-#
-# WHY IT EXISTS, measured 2026-10-02. The runtime decided this for itself in TWENTY places by
-# branching on the role spelled as a string literal: `in ("dimension", "period")` for an axis
-# (twice, each with its own inline copy of the `never_axis` guard), `== "measure"` nine times,
-# `== "period"` three, `("dimension", "key")` twice, `== "housekeeping"` once — plus a third
-# mirror of the five names in `grammar_reader._ROLE_WORDS`. This block's own header had already
-# recorded the same defect at SIX sites in September and fixed only half of it: the NAMES moved to
-# the framework, the BEHAVIOUR stayed in the tuples.
-#
-# WHAT IT COST. `square_metres` is declared `field_role.measure` on Store and the planner resolves
-# it two different ways, yet the interpret prompt never mentioned it — because `measure` is not in
-# the tuple at `interpret/vocabulary.py`. Not a missing feature: a list typed into a function body.
-# Three concepts in one bundle carried such columns and all three were invisible, so "what is the
-# average list price?" could not be asked at all. The first attempt at a fix added a SIXTH
-# hand-written prompt block, which also published `units_ever_here` as aggregatable — a
-# `precomputed` column the fold law forbids summing. A patch beside the tuples, getting it wrong.
-#
-# THE TERMS ARE DERIVED, NOT DESIGNED. There are exactly four because the twenty sites ask exactly
-# four questions, and each answer is already stated in its role's own sentence. Aggregatability is
-# NOT among them and must never be added: `concept.column.measure_type` already declares it per
-# column and per axis kind through `additivity`, which is strictly more precise — a role-level
-# boolean is what made `precomputed` look summable.
-# ===========================================================================
-concept.column.query_use:
-  kind: vocabulary
-  closed: true
-  description: Where a question may use a column — the machine-readable half of concept.column.role.
-  terms:
-    axis: >
-      LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
-      A per-column `rulings.never_axis` still overrides this with its own measurement: the role
-      says the KIND of column may be an axis, the ruling says this ONE may not.
-    aggregate: >
-      A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
-      `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through
-      `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell
-      is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
-      ruling, not this one's.
-    period_binding: >
-      THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a
-      relation carries several, so "sales in March" cannot silently pick the wrong one.
-    extremum: >
-      THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a
-      "when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather
-      than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
-      combining several, so it answers to no additivity cell and is meaningful on a column no law
-      would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
-    identity: >
-      WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved
-      to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never
-      aggregated, an identifier that is summed being a number nobody asked for.
-
-concept.column.role:
-  kind: vocabulary
-  closed: true
-  description: The analytical role of a column — where a query may use it, and the default guardrail.
-  terms:
-    key:
-      query_use: [identity]
-      definition: >
-        IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
-        joins on the exact value. Never matched against a label, and never aggregated — an identifier
-        that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
-        counts and what the fact joins on.
-
-      constellation: >
-        A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT.
-        Reach for it when the column is what a join lands on or what a distinct count counts —
-        and never let it be summed: an identifier that is totalled is a number nobody asked for.
-    dimension:
-      query_use: [axis, extremum]
-      definition: >
-        A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
-        (a register states every member, so a non-member is answerable without probing) or OPEN (names
-        resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
-        `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-
-      constellation: >
-        A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender =
-        'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of
-        the two is reasonable, the column is probably a key or a measure wearing a dimension's
-        name.
-    measure:
-      query_use: [aggregate, extremum]
-      definition: >
-        A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
-        once there and never restated per concept. Never filtered on directly: a threshold on a
-        measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-
-      constellation: >
-        ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the
-        datatype. The corollary matters as much: a threshold on a measure is a HAVING over the
-        aggregate, never a WHERE over the column, so declaring this also declares where a filter
-        may not go.
-    period:
-      query_use: [axis, extremum, period_binding]
-      definition: >
-        THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
-        relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
-        `OrderDate` on a line that also carries `DeliveryDate`.
-
-      constellation: >
-        THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order
-        line with an order date and a delivery date is the compelling case: both are dates, both
-        are plausible, and the question does not say. This names which one is THE reporting date
-        so the choice is not made silently.
-    housekeeping:
-      query_use: []
-      definition: >
-        PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
-        housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
-        absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
-        validity window — when the ROW was written, not when anything happened. Grouping sales by it
-        is meaningless, and until this term existed it was spelled `attribute`, which reads as
-        "a dimension you may not use" rather than "not part of the business at all".
-        NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
-        for the system that writes them: a load stamp is housekeeping whoever keeps the house.
-
-
-      constellation: >
-        THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A
-        validity window on a versioned dimension is the case: grouping sales by the row's own
-        start date is meaningless, but nothing in the data says so, and the column is a
-        perfectly good date. Declaring it keeps the column out of a question's reach entirely —
-        its absence from an answer is correct rather than a gap.
-# ===========================================================================
-# mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
-# narrower than `mac.concept.identity`, which is per CONCEPT and says how identity is ESTABLISHED
-# (iso · code · namespace_code · fk_name · composite · sme_pending). The two answer
-# different questions and both are needed: the concept says identity is a composite; these say
-# WHICH columns compose it.
-#
-# WHY IT IS SEPARATE, and the mistake it corrects. A draft of the column specification invented
-# `canonical | natural | part | reference` for this slot. `part` duplicated `identity_kind.composite`
-# and `natural` was a category error -- a natural key is a statement about the KIND of identity, not
-# about a column's part in it, so it belongs on the concept and nowhere else. What is genuinely
-# per-column is only the three below.
-# ===========================================================================
-concept.column.identity:
-  kind: vocabulary
-  closed: true
-  description: What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
-  terms:
-    canonical:
-      definition: >
-        THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
-        discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-        says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
-        column that does not identify.
-      constellation: >
-        EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
-        it: a surrogate key every fact points at, with a human-readable code and a name beside
-        it that are both 1:1 with it. All three look alike in a profile; only this says which
-        one the joins and the counts are about.
-    part:
-      definition: >
-        ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
-        returns a set where a row was expected, and looks like an answer. Declared on every column of
-        the tuple; the concept declares `mac.concept.identity.composite` alongside.
-      constellation: >
-        NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified
-        by its order and its line number — neither is unique alone, and declaring either as the
-        identity would make the grain a lie. Mark each participating column, and the composite
-        is what the concept is keyed on.
-    reference:
-      definition: >
-        A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
-        points at is named separately; whether every value is PRESENT in the parent is a measurement,
-        not a declaration, and a reference with no parent relation in the delivery is recorded AS
-        dangling rather than dropped or invented.
-
-      constellation: >
-        THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale
-        identifies a customer; the sale is identified by something else entirely. Without this
-        the key reads as part of the sale's own identity, and a count of sales becomes a count
-        of customers.
-# ===========================================================================
-# mac.relation.column.role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
-# question may do with it. A column carries BOTH a storage_role and a column.role and they answer
-# different questions: `CountryCode` is storage `value` and analytically a `dimension`; `StoreKey`
-# is storage `primary_key` and analytically a `key`.
-#
-# DECLARED HERE BECAUSE IT WAS DECLARED NOWHERE. The dataset descriptors have used these five terms
-# all along — 72 columns on contoso alone — and no file in the estate defined them. One of them,
-# `dimension`, collided with the analytical vocabulary and meant something else there.
-# ===========================================================================
-transform.driven_by:
-  kind: vocabulary
-  closed: true
-  description: >
-    WHO DECIDED THE SHAPE of one served relation's transform, and therefore who may change it.
-    Operator ruling, 2026-09-29: the first version is a 1:1 passthrough IF NO OTHER REGULATION
-    APPLIES; where the profiling already shows something, the platform PROPOSES an improvement; and
-    an SME or data scientist drives the change after that — including during concept authoring,
-    depending on what the concepts need. Three drivers at three moments, not three kinds of file.
-    ABSENT IS NOT A FOURTH TERM: a transform carrying no `driven_by` is UNDECLARED — nobody recorded
-    who drove it. Every curated transform in the estate is in that state today, and labelling them
-    `ruled` would assert a ruling that is on no record; the estate's own three-outcome discipline
-    (present / absent / undeclared) rather than a default that flatters the data.
-  terms:
-    passthrough: >
-      The floor. Every column, nothing renamed, derived or dropped — computable from the catalog,
-      so no judgement was exercised and none is claimed. Generated by tools/mac_passthrough.py,
-      which never touches a .sql that already exists.
-    proposed: >
-      The platform's own suggestion, made from measurements it already holds — row counts,
-      distincts, measured references, duplicate relations, orphans. It is a RECOMMENDATION and not
-      a ruling: `because` names the finding that motivated it, and until a person answers that
-      finding the proposal stands as the reason this transform has the shape it has.
-    ruled: >
-      A person decided — an SME or a data scientist — and `because` names what they answered.
-      Nothing regenerates a ruled transform.
-
-relation.column.role:
-  kind: vocabulary
-  closed: true
-  description: The physical shape of a column in its relation, independent of its analytical role.
-  # `composite_key_part` RETIRED 2026-09-27 by operator ruling. It carried key MEMBERSHIP and no
-  # ORDER, so the order of a composite key lived only in the concept plane's `key: [...]` list — a
-  # second home for a fact that belongs to the RELATION. And splitting the key across two terms meant
-  # a consumer asking "what is this relation's key" had to remember both: mac_to_graph.py and
-  # mac_to_shacl.py tested `role == 'primary_key'` and found NO key for the reference bundle's fact
-  # table, whose two key columns both carried the other term. Every key column is now `primary_key`,
-  # and the order travels as the integer `key_position` on the column.
-  terms:
-    primary_key: >
-      The relation's own identity: one row per distinct value, measured rather than assumed.
-    foreign_key: >
-      A reference to another relation's identity. Whether every value is PRESENT in the parent is a
-      separate measurement — a declared key says the relationship is intended, not that it holds.
-    value: >
-      A payload column: it carries data, not identity and not a choice of row kind.
-    discriminator: >
-      A column whose value selects WHICH KIND of row this is — the column a perspective, status or
-      type is read from.
-    # `audit` AND `delivery_axis` WERE LEGAL IN THE SCHEMA AND ABSENT HERE, which made this closed
-    # vocabulary a smaller set than the one bundles are validated against — four terms against the
-    # schema's seven, and `tools/check_vocabulary_parity.py` red on the slot since 2026-09-29. Both are
-    # in active use and one of them is written by this framework's own tool, so the vocabulary was the
-    # incomplete half: `tools/mac_admit_identity.py:393` assigns `delivery_axis`, and three runtime
-    # tests declare `{"name": "written_at", "type": "timestamp", "role": "audit"}`. Measured on
-    # contoso5: 115 `value`, 23 `primary_key`, 18 `foreign_key`, and none of these two yet — they are
-    # declared because the producers exist, not because a bundle has reached them.
-    audit: >
-      A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in the
-      business. A load timestamp, a batch id, a validity window on a versioned row. It is physically a
-      payload column, and naming it apart is what keeps it out of a question's reach: grouping a measure
-      by the row's own write time is meaningless, and nothing in the data says so.
-    delivery_axis: >
-      A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
-      question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
-      identity but which the load still keys on — so the key survives as a physical fact without
-      claiming to be the concept's identity.
-
-# ===========================================================================
 # mac.column_type — WHAT KIND OF VALUE a column holds, physically. The FAMILY, not the warehouse's
 # spelling: `integer`, `bigint`, `double` and `decimal(20,5)` are one kind of thing to every question
 # that has to decide something about them, and a reader that matches the spellings decides it eleven
@@ -400,93 +62,6 @@ column_type:
         collection groups by the container, which is not a member of anything a question asked
         about.
       spellings: [array, map, struct, row, json]
-
-# ===========================================================================
-# mac.concept.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
-# here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
-# a postcode identifies people, that one geography level is finer than another. This is why they must
-# not share a slot with `column.role`, which is derived — a slot that accepts both silts up, and
-# `attribute` is what that looks like after two years.
-#
-# A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
-# `evidence` naming the measurement, so the refusal can cite it rather than assert it.
-# ===========================================================================
-concept.column.ruling:
-  kind: vocabulary
-  closed: true
-  description: An authored judgement about a column, beyond what measurement can establish.
-  terms:
-    label_of:
-      definition: >
-        THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
-        is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
-        named column and DISPLAY this one: a question asking in these words gets answered in them,
-        never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
-        the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under
-        two naming registers. NOT a parent: had the column meant the OWNING company it would be
-        one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
-      constellation: >
-        TWO COLUMNS ARE 1:1 AND ONE IS THE OTHER'S NAME. Cardinality is symmetric so the data
-        cannot say which direction it runs; a person must. Getting it backwards produces an
-        answer with the wrong column as its axis rather than an error.
-    finer_than:
-      definition: >
-        THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
-        legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
-        carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs
-        over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
-        double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
-        colliding code space instead — see `scoped_by`, and measure before you rule.
-      constellation: >
-        TWO DIMENSIONS ARE A HIERARCHY AND THE ROWS SHOW ONLY A CORRELATION. Every sub-category
-        sits in exactly one category, so the coarser question is answerable from the finer rows
-        and not the reverse — a containment that is a business fact, not a measurable one.
-    scoped_by:
-      definition: >
-        THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
-        filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
-        Corse in France, Como in Italy and Colorado in the United States. measured on a worked bundle: 40 of
-        563 state codes are carried by more than one country and 0 collide WITHIN a country, so
-        `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
-        NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
-        parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
-      constellation: >
-        A CODE IS UNIQUE ONLY INSIDE ITS PARENT, AND THE COLLISION IS SILENT. Measured: 40 of
-        565 state codes repeat across countries, so grouping on state merges regions and still
-        returns a plausible table.
-    sort:
-      definition: >
-        THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
-        alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
-        reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND
-        NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept"
-        -- because one breakdown legitimately wants `brand asc`, `country_code asc` and
-        `net_amount desc` at the same time.
-        NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without
-        ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine
-        happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by
-        brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved
-        rows against the capture's first 50, WHICH 50 depended on unordered output, and the question
-        passed and failed on alternate runs with the data unchanged. An ordering is also what makes a
-        truncated view honest: the first N rows of a descending measure are the N that matter.
-        A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an
-        aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's
-        own words, "top 5 by price" -- outranks both.
-      constellation: >
-        THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises
-        none without ORDER BY, so the answer changes between runs on unchanged data — measured,
-        on an 88-row breakdown that passed and failed alternately.
-    never_axis:
-      definition: >
-        THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
-        measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
-        CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
-        104 990 served customers and is the dominant identifier in the row.
-
-      constellation: >
-        GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990
-        postcodes identify a single customer. The query is legal and the result is a customer
-        list pretending to be a breakdown.
 # ===========================================================================
 # mac.name_register — WHICH NAMING REGISTER a `label_of` ruling points at. One thing, several
 # names, each belonging to a different register: the world's, the statute book's, the schedule's.
@@ -594,89 +169,6 @@ binding_mode:
   terms:
     restrict:  "A member or member-SET is named as a SCOPE (one value or many, however the set is derived or expanded). It constrains WHERE and does NOT enter GROUP BY; its folded members are disclosed under ASSUMPTIONS, never spread into result rows. Cardinality-agnostic: a set of many members is still one filter."
     partition: "The question asks to SEE the dimension varied PER-MEMBER (break it down / enumerate / rank it / 'per <axis>' / 'by <axis>' / 'each' / 'which <axis>'). It enters GROUP BY, one row per member — the dimension is a breakdown axis, not a filter."
-
-# ===========================================================================
-# mac.measure_type — the additivity class of a measure (the classic additive / semi-additive /
-# non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
-# over axis_kind (5 types × 2 kinds = 10 universal cells). Each cell references a mac.concept.aggregation_effect term.
-# The count was written as "4 types × 2 kinds = 8" and the table below has listed FIVE members since
-# v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
-# An applied ontology's measures reference these members; they never re-encode the matrix.
-# ===========================================================================
-concept.column.measure_type:
-  kind: value_domain
-  closed: true
-  description: How a measure aggregates — defined once, over axis_kind.
-  terms:
-    flow:
-      definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."
-      additivity:
-        time:        mac.concept.aggregation_effect.additive
-        categorical: mac.concept.aggregation_effect.additive
-    stock:
-      definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
-      additivity:
-        time:        mac.concept.aggregation_effect.none         # a year IS the end-of-period row — resolved, not folded
-        categorical: mac.concept.aggregation_effect.additive
-    intensive:
-      definition: "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM."
-      additivity:
-        time:        mac.concept.aggregation_effect.average
-        categorical: mac.concept.aggregation_effect.average
-    precomputed:
-      definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a measure_type fact; whether you may fold is an axis fact."
-      additivity:
-        time:        mac.concept.aggregation_effect.none
-        categorical: mac.concept.aggregation_effect.none
-    target:
-      definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
-      additivity:
-        time:        mac.concept.aggregation_effect.none
-        categorical: mac.concept.aggregation_effect.none
-
-# ===========================================================================
-# mac.concept.identity — HOW a concept's canonical identity is established. Every concept declares
-# `concept.identity.kind: mac.concept.identity.<term>`; `concept.identity.canonical_key` (when one is
-# exposed) names the column/expression that IS the identity. Domain-neutral: an applied ontology picks
-# the kind that fits. The two "keyless-by-design" kinds (composite, sme_pending) let a
-# concept declare it legitimately has no single-column key — so the contract never forces a fake one.
-# ===========================================================================
-concept.identity:
-  kind: vocabulary
-  closed: true
-  description: How a concept's canonical identity is established (declared once per concept).
-  # `resolved_axis` RETIRED 2026-09-28 by operator ruling ("i rule against for the time being").
-  # It meant "the serving view PINS or collapses this axis, so it is not exposed as a filterable
-  # key" — a real distinction, and one a column map cannot make, since there is no column to flag.
-  # But it was used in 0 of 62 concepts across four bundles, and a term with no delivered case is a
-  # claim about a need nobody has shown. Removed rather than kept 'in case': an unused member of a
-  # CLOSED vocabulary is indistinguishable from a wrong one until someone reaches for it.
-  terms:
-    iso:            "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
-    code:           "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
-    namespace_code: "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
-    fk_name:        "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
-    composite:      "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
-    sme_pending:    "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
-
-# ===========================================================================
-# mac.concept.rule — the closed taxonomy that types every behavioural rule (what the rule governs).
-# A typed rule references its kind (kind: mac.concept.rule.<term>) instead of an inline string, so the set
-# is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
-# is an inherited fact rather than a directive — kept distinct for clarity; prune at a later revision
-# if warranted.)
-# ===========================================================================
-concept.rule:
-  kind: vocabulary
-  closed: true
-  description: What a behavioural rule governs — the rule's type.
-  terms:
-    resolution:  "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
-    aggregation: "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
-    default:     "What to assume when an axis is unspecified but a safe default exists."
-    ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
-    exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
-    guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
 
 # ===========================================================================
 # mac.canon — the canon library: the deterministic, parameterized UDFs a behaviour-bearing slot binds
@@ -1517,3 +1009,537 @@ data_plane_gate:
         an open door. On the console this is the one state that is neither green nor red: it says
         the gate could not judge.
       blocks: true
+
+# ==========================================================================
+# mac.concept.* — FOLDED. These 9 vocabularies were top-level keys spelled with
+# dots (`concept.aggregation_effect:`). The dotted name is still the identity everything
+# uses; the nesting is how a person reads it. `tools/mac_vocab.py` returns the dotted form
+# from either shape, which is what made this an authoring choice instead of an API change.
+# ==========================================================================
+concept:
+
+  # ===========================================================================
+  # mac.concept.aggregation_effect — how a measure may be combined along ONE axis.
+  # ===========================================================================
+  aggregation_effect:
+    kind: vocabulary
+    closed: true
+    description: >
+      THE CORRECT FOLD of a measure along a single axis. Every term names the OPERATION, so the set
+      answers one question in one grammar: "how do I fold this measure along this axis?"
+
+      v0.1.15 REPLACED THE PREVIOUS FOUR. They answered the same question in three different grammars —
+      `additive` named a property, `averageable` named a capability, `non_aggregable` named a negated
+      capability, and `point_in_time` named a POINT IN TIME rather than any operation at all, leaving a
+      reader to infer the fold. Worse, the old set sat beside a second, LOSSY scale
+      (mac.schema.json#additivityAxis: additive | non-additive) whose legacy spelling `non_additive` was
+      one character from `non_aggregable`, in a different scale, meaning something else. Eight <dataset> rules
+      fell into exactly that gap and guarded on a value no register could hold.
+
+      `last`/`point_in_time` MERGED INTO `precomputed`, on the bundles' own evidence: an inventory measure says
+      "READ the level at the END of the period" and a reach measure says "READ as stored ... resolve to the
+      matching pre-computed abstraction level instead of folding". Both READ a stored row and refuse to
+      fold; they differ only in WHICH row, which is a RESOLUTION question and already lives in each
+      concept's `resolve.*` rules, never in the fold vocabulary.
+    terms:
+      additive:
+        definition: "SUM is correct across this axis."
+        # WHICH OPERATION OF `grammar/query_grammar.yaml#operations` THIS EFFECT PERMITS. Every term's
+        # own prose already named it ("SUM is correct", "the correct fold is a mean", "NO fold is
+        # valid") and no reader could consult a sentence, so two live call sites decided it instead:
+        # `effect == "additive"` in planner/plan.py and canons/additivity_guard.py, which makes
+        # `average` a VIOLATION rather than the AVG the term defines. The operation's SQL stays in the
+        # grammar, where `contributes.select` already holds it -- this names the operation, never the
+        # function, so there is one home for each.
+        #
+        # A LIST, AND `additive` CARRIES TWO. A first cut wrote one operation per term, which says
+        # that an additive measure may only be SUMmed -- and "the average monthly revenue" is a
+        # legitimate question about an additive measure. `average` carries only `average`, because
+        # that is precisely what the term asserts: the sum does not mean anything. So the list is the
+        # set of operations the effect PERMITS, and the question's own operation must be in it.
+        folds_with: [sum, average]
+      average:
+        definition: "SUM is MEANINGLESS across this axis (a total of durations, rates or ratios is not a number anyone wants); the correct fold is a mean / median / percentile. Not a weaker `additive` — the two disagree about whether the sum means anything."
+        folds_with: [average]
+      none:
+        definition: "NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say."
+        # NO `folds_with` IS THE DECLARATION: no operation folds this axis. Stated by ABSENCE rather
+        # than by a `none` value, so a reader asking "which operation?" gets no answer instead of an
+        # answer that must then be special-cased -- the same shape as a population axis with no default.
+
+  # ===========================================================================
+  # mac.concept.axis_kind — the KIND of an aggregation axis, for additivity purposes.
+  # An applied ontology maps each concrete dimension to one kind; the additivity LAW is stated over kinds,
+  # so it is universal (domain-independent).
+  # ===========================================================================
+  axis_kind:
+    kind: vocabulary
+    closed: true
+    description: The additivity-relevant classification of an aggregation axis.
+    terms:
+      time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
+      categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+
+  # ===========================================================================
+  # mac.concept.identity — HOW a concept's canonical identity is established. Every concept declares
+  # `concept.identity.kind: mac.concept.identity.<term>`; `concept.identity.canonical_key` (when one is
+  # exposed) names the column/expression that IS the identity. Domain-neutral: an applied ontology picks
+  # the kind that fits. The two "keyless-by-design" kinds (composite, sme_pending) let a
+  # concept declare it legitimately has no single-column key — so the contract never forces a fake one.
+  # ===========================================================================
+  identity:
+    kind: vocabulary
+    closed: true
+    description: How a concept's canonical identity is established (declared once per concept).
+    # `resolved_axis` RETIRED 2026-09-28 by operator ruling ("i rule against for the time being").
+    # It meant "the serving view PINS or collapses this axis, so it is not exposed as a filterable
+    # key" — a real distinction, and one a column map cannot make, since there is no column to flag.
+    # But it was used in 0 of 62 concepts across four bundles, and a term with no delivered case is a
+    # claim about a need nobody has shown. Removed rather than kept 'in case': an unused member of a
+    # CLOSED vocabulary is indistinguishable from a wrong one until someone reaches for it.
+    terms:
+      iso:            "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
+      code:           "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
+      namespace_code: "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
+      fk_name:        "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
+      composite:      "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
+      sme_pending:    "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
+
+  # ===========================================================================
+  # mac.concept.rule — the closed taxonomy that types every behavioural rule (what the rule governs).
+  # A typed rule references its kind (kind: mac.concept.rule.<term>) instead of an inline string, so the set
+  # is enforced and defined once. (`default` could be argued a sub-case of `resolution`, and `guarantee`
+  # is an inherited fact rather than a directive — kept distinct for clarity; prune at a later revision
+  # if warranted.)
+  # ===========================================================================
+  rule:
+    kind: vocabulary
+    closed: true
+    description: What a behavioural rule governs — the rule's type.
+    terms:
+      resolution:  "Identity / matching / scoping of an entity from the question (name, code, key, definition)."
+      aggregation: "Measure math — additivity, period bounds, grain (how a measure may be summed/read)."
+      default:     "What to assume when an axis is unspecified but a safe default exists."
+      ambiguity:   "An underspecified REQUIRED dimension — ASK, never guess."
+      exclusion:   "What to filter out / never include (pseudo-entries, unmapped rows, stale vintages)."
+      guarantee:   "A fact the consumer INHERITS from the serving view (relied on, not re-derived)."
+  column:
+
+    # ===========================================================================
+    # mac.concept.column.role — WHAT A COLUMN IS, analytically: where a query may use it and the guardrail that
+    # follows. ONE role per column, and it is DERIVABLE — cardinality, type and reference structure give
+    # it, which is why a generator can assign it unaided over a thousand columns without a human.
+    #
+    # THIS IS THE FRAMEWORK'S, NOT THE APPLICATION'S, and that is a change. Until 2026-09-25 each bundle
+    # declared these terms in its own vocabulary.yaml: TWENTY files defined what `dimension` means, seven
+    # of them verbatim copies, and eleven generated ones gave all five terms the same placeholder
+    # sentence — "generated role, inferred from column type and name" — because there was nothing to
+    # point at. Meanwhile the runtime branched on the bare strings ("measure", "attribute", "dimension")
+    # in six places and even guessed among three spellings of `period`. The framework already owned the
+    # behaviour; it now owns the names.
+    #
+    # `attribute` IS DELIBERATELY ABSENT. It was never a role: it was four different JUDGEMENTS filed in
+    # the slot where types live — another name for the same thing, a different level of the same thing,
+    # too identifying to be an axis, and not business content at all. Judgements are authored and cannot
+    # be derived, which is exactly why no generator ever assigned it. They live in `mac.concept.column.ruling`.
+    # ===========================================================================
+    # ===========================================================================
+    # mac.concept.column.query_use — WHERE A QUESTION MAY USE A COLUMN. The machine-readable half of
+    # `concept.column.role`, whose own description has always said it states "where a query may use
+    # it" — in prose only, which no reader could consult.
+    #
+    # WHY IT EXISTS, measured 2026-10-02. The runtime decided this for itself in TWENTY places by
+    # branching on the role spelled as a string literal: `in ("dimension", "period")` for an axis
+    # (twice, each with its own inline copy of the `never_axis` guard), `== "measure"` nine times,
+    # `== "period"` three, `("dimension", "key")` twice, `== "housekeeping"` once — plus a third
+    # mirror of the five names in `grammar_reader._ROLE_WORDS`. This block's own header had already
+    # recorded the same defect at SIX sites in September and fixed only half of it: the NAMES moved to
+    # the framework, the BEHAVIOUR stayed in the tuples.
+    #
+    # WHAT IT COST. `square_metres` is declared `field_role.measure` on Store and the planner resolves
+    # it two different ways, yet the interpret prompt never mentioned it — because `measure` is not in
+    # the tuple at `interpret/vocabulary.py`. Not a missing feature: a list typed into a function body.
+    # Three concepts in one bundle carried such columns and all three were invisible, so "what is the
+    # average list price?" could not be asked at all. The first attempt at a fix added a SIXTH
+    # hand-written prompt block, which also published `units_ever_here` as aggregatable — a
+    # `precomputed` column the fold law forbids summing. A patch beside the tuples, getting it wrong.
+    #
+    # THE TERMS ARE DERIVED, NOT DESIGNED. There are exactly four because the twenty sites ask exactly
+    # four questions, and each answer is already stated in its role's own sentence. Aggregatability is
+    # NOT among them and must never be added: `concept.column.measure_type` already declares it per
+    # column and per axis kind through `additivity`, which is strictly more precise — a role-level
+    # boolean is what made `precomputed` look summable.
+    # ===========================================================================
+    query_use:
+      kind: vocabulary
+      closed: true
+      description: Where a question may use a column — the machine-readable half of concept.column.role.
+      terms:
+        axis: >
+          LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
+          A per-column `rulings.never_axis` still overrides this with its own measurement: the role
+          says the KIND of column may be an axis, the ruling says this ONE may not.
+        aggregate: >
+          A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
+          `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through
+          `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell
+          is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
+          ruling, not this one's.
+        period_binding: >
+          THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a
+          relation carries several, so "sales in March" cannot silently pick the wrong one.
+        extremum: >
+          THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a
+          "when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather
+          than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
+          combining several, so it answers to no additivity cell and is meaningful on a column no law
+          would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
+        identity: >
+          WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved
+          to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never
+          aggregated, an identifier that is summed being a number nobody asked for.
+
+    role:
+      kind: vocabulary
+      closed: true
+      description: The analytical role of a column — where a query may use it, and the default guardrail.
+      terms:
+        key:
+          query_use: [identity]
+          definition: >
+            IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
+            joins on the exact value. Never matched against a label, and never aggregated — an identifier
+            that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
+            counts and what the fact joins on.
+
+          constellation: >
+            A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT.
+            Reach for it when the column is what a join lands on or what a distinct count counts —
+            and never let it be summed: an identifier that is totalled is a number nobody asked for.
+        dimension:
+          query_use: [axis, extremum]
+          definition: >
+            A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
+            (a register states every member, so a non-member is answerable without probing) or OPEN (names
+            resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
+            `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
+
+          constellation: >
+            A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender =
+            'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of
+            the two is reasonable, the column is probably a key or a measure wearing a dimension's
+            name.
+        measure:
+          query_use: [aggregate, extremum]
+          definition: >
+            A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
+            once there and never restated per concept. Never filtered on directly: a threshold on a
+            measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
+
+          constellation: >
+            ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the
+            datatype. The corollary matters as much: a threshold on a measure is a HAVING over the
+            aggregate, never a WHERE over the column, so declaring this also declares where a filter
+            may not go.
+        period:
+          query_use: [axis, extremum, period_binding]
+          definition: >
+            THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
+            relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
+            `OrderDate` on a line that also carries `DeliveryDate`.
+
+          constellation: >
+            THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order
+            line with an order date and a delivery date is the compelling case: both are dates, both
+            are plausible, and the question does not say. This names which one is THE reporting date
+            so the choice is not made silently.
+        housekeeping:
+          query_use: []
+          definition: >
+            PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
+            housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
+            absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
+            validity window — when the ROW was written, not when anything happened. Grouping sales by it
+            is meaningless, and until this term existed it was spelled `attribute`, which reads as
+            "a dimension you may not use" rather than "not part of the business at all".
+            NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
+            for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+
+
+          constellation: >
+            THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A
+            validity window on a versioned dimension is the case: grouping sales by the row's own
+            start date is meaningless, but nothing in the data says so, and the column is a
+            perfectly good date. Declaring it keeps the column out of a question's reach entirely —
+            its absence from an answer is correct rather than a gap.
+    # ===========================================================================
+    # mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
+    # narrower than `mac.concept.identity`, which is per CONCEPT and says how identity is ESTABLISHED
+    # (iso · code · namespace_code · fk_name · composite · sme_pending). The two answer
+    # different questions and both are needed: the concept says identity is a composite; these say
+    # WHICH columns compose it.
+    #
+    # WHY IT IS SEPARATE, and the mistake it corrects. A draft of the column specification invented
+    # `canonical | natural | part | reference` for this slot. `part` duplicated `identity_kind.composite`
+    # and `natural` was a category error -- a natural key is a statement about the KIND of identity, not
+    # about a column's part in it, so it belongs on the concept and nowhere else. What is genuinely
+    # per-column is only the three below.
+    # ===========================================================================
+    identity:
+      kind: vocabulary
+      closed: true
+      description: What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
+      terms:
+        canonical:
+          definition: >
+            THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
+            discloses that it counted. Exactly one per concept, and a concept that legitimately has none
+            says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
+            column that does not identify.
+          constellation: >
+            EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
+            it: a surrogate key every fact points at, with a human-readable code and a name beside
+            it that are both 1:1 with it. All three look alike in a profile; only this says which
+            one the joins and the counts are about.
+        part:
+          definition: >
+            ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
+            returns a set where a row was expected, and looks like an answer. Declared on every column of
+            the tuple; the concept declares `mac.concept.identity.composite` alongside.
+          constellation: >
+            NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified
+            by its order and its line number — neither is unique alone, and declaring either as the
+            identity would make the grain a lie. Mark each participating column, and the composite
+            is what the concept is keyed on.
+        reference:
+          definition: >
+            A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
+            points at is named separately; whether every value is PRESENT in the parent is a measurement,
+            not a declaration, and a reference with no parent relation in the delivery is recorded AS
+            dangling rather than dropped or invented.
+
+          constellation: >
+            THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale
+            identifies a customer; the sale is identified by something else entirely. Without this
+            the key reads as part of the sale's own identity, and a count of sales becomes a count
+            of customers.
+
+    # ===========================================================================
+    # mac.concept.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
+    # here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
+    # a postcode identifies people, that one geography level is finer than another. This is why they must
+    # not share a slot with `column.role`, which is derived — a slot that accepts both silts up, and
+    # `attribute` is what that looks like after two years.
+    #
+    # A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
+    # `evidence` naming the measurement, so the refusal can cite it rather than assert it.
+    # ===========================================================================
+    ruling:
+      kind: vocabulary
+      closed: true
+      description: An authored judgement about a column, beyond what measurement can establish.
+      terms:
+        label_of:
+          definition: >
+            THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
+            is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
+            named column and DISPLAY this one: a question asking in these words gets answered in them,
+            never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
+            the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under
+            two naming registers. NOT a parent: had the column meant the OWNING company it would be
+            one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
+          constellation: >
+            TWO COLUMNS ARE 1:1 AND ONE IS THE OTHER'S NAME. Cardinality is symmetric so the data
+            cannot say which direction it runs; a person must. Getting it backwards produces an
+            answer with the wrong column as its axis rather than an error.
+        finer_than:
+          definition: >
+            THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
+            legitimate axes and an answer must DISCLOSE which level it used. Example: `SubCategoryName`
+            carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 distinct pairs
+            over 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
+            double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
+            colliding code space instead — see `scoped_by`, and measure before you rule.
+          constellation: >
+            TWO DIMENSIONS ARE A HIERARCHY AND THE ROWS SHOW ONLY A CORRELATION. Every sub-category
+            sits in exactly one category, so the coarser question is answerable from the finer rows
+            and not the reverse — a containment that is a business fact, not a measurable one.
+        scoped_by:
+          definition: >
+            THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN THE NAMED COLUMN, so it may not be grouped or
+            filtered on alone — the scope column must travel with it. Example: `State` carries 'CO' for
+            Corse in France, Como in Italy and Colorado in the United States. measured on a worked bundle: 40 of
+            563 state codes are carried by more than one country and 0 collide WITHIN a country, so
+            `GROUP BY State` silently merges three unrelated regions into one row that looks like data.
+            NOT `finer_than`: nothing here is a level of anything. It is one code space reused per
+            parent, which is the composite identity `mac.canon.composite_key_guard` exists to protect.
+          constellation: >
+            A CODE IS UNIQUE ONLY INSIDE ITS PARENT, AND THE COLLISION IS SILENT. Measured: 40 of
+            565 state codes repeat across countries, so grouping on state merges regions and still
+            returns a plausible table.
+        sort:
+          definition: >
+            THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is
+            alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the
+            reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND
+            NEVER PER CONCEPT -- operator ruling, 2026-10-02: "it must be sort per column and not concept"
+            -- because one breakdown legitimately wants `brand asc`, `country_code asc` and
+            `net_amount desc` at the same time.
+            NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without
+            ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine
+            happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 ("net revenue by
+            brand and customer country for 2024"), an 88-row breakdown -- the grader compares the approved
+            rows against the capture's first 50, WHICH 50 depended on unordered output, and the question
+            passed and failed on alternate runs with the data unchanged. An ordering is also what makes a
+            truncated view honest: the first N rows of a descending measure are the N that matter.
+            A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an
+            aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's
+            own words, "top 5 by price" -- outranks both.
+          constellation: >
+            THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises
+            none without ORDER BY, so the answer changes between runs on unchanged data — measured,
+            on an 88-row breakdown that passed and failed alternately.
+        never_axis:
+          definition: >
+            THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
+            measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
+            CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
+            104 990 served customers and is the dominant identifier in the row.
+
+          constellation: >
+            GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990
+            postcodes identify a single customer. The query is legal and the result is a customer
+            list pretending to be a breakdown.
+
+    # ===========================================================================
+    # mac.measure_type — the additivity class of a measure (the classic additive / semi-additive /
+    # non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
+    # over axis_kind (5 types × 2 kinds = 10 universal cells). Each cell references a mac.concept.aggregation_effect term.
+    # The count was written as "4 types × 2 kinds = 8" and the table below has listed FIVE members since
+    # v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
+    # An applied ontology's measures reference these members; they never re-encode the matrix.
+    # ===========================================================================
+    measure_type:
+      kind: value_domain
+      closed: true
+      description: How a measure aggregates — defined once, over axis_kind.
+      terms:
+        flow:
+          definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."
+          additivity:
+            time:        mac.concept.aggregation_effect.additive
+            categorical: mac.concept.aggregation_effect.additive
+        stock:
+          definition: "A level read at a point in time; it does not accumulate over time (e.g. inventory on hand)."
+          additivity:
+            time:        mac.concept.aggregation_effect.none         # a year IS the end-of-period row — resolved, not folded
+            categorical: mac.concept.aggregation_effect.additive
+        intensive:
+          definition: "A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM."
+          additivity:
+            time:        mac.concept.aggregation_effect.average
+            categorical: mac.concept.aggregation_effect.average
+        precomputed:
+          definition: "A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure of the summed or averaged inputs) and computed iteratively. v0.1.15: `precomputed` is a property of the MEASURE, not of an axis — every axis of such a measure is simply `none`, because no fold is valid anywhere. Where the value comes from is a measure_type fact; whether you may fold is an axis fact."
+          additivity:
+            time:        mac.concept.aggregation_effect.none
+            categorical: mac.concept.aggregation_effect.none
+        target:
+          definition: "A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis."
+          additivity:
+            time:        mac.concept.aggregation_effect.none
+            categorical: mac.concept.aggregation_effect.none
+
+# ==========================================================================
+# mac.relation.* — FOLDED. These 1 vocabularies were top-level keys spelled with
+# dots (`relation.column.role:`). The dotted name is still the identity everything
+# uses; the nesting is how a person reads it. `tools/mac_vocab.py` returns the dotted form
+# from either shape, which is what made this an authoring choice instead of an API change.
+# ==========================================================================
+relation:
+  column:
+
+    role:
+      kind: vocabulary
+      closed: true
+      description: The physical shape of a column in its relation, independent of its analytical role.
+      # `composite_key_part` RETIRED 2026-09-27 by operator ruling. It carried key MEMBERSHIP and no
+      # ORDER, so the order of a composite key lived only in the concept plane's `key: [...]` list — a
+      # second home for a fact that belongs to the RELATION. And splitting the key across two terms meant
+      # a consumer asking "what is this relation's key" had to remember both: mac_to_graph.py and
+      # mac_to_shacl.py tested `role == 'primary_key'` and found NO key for the reference bundle's fact
+      # table, whose two key columns both carried the other term. Every key column is now `primary_key`,
+      # and the order travels as the integer `key_position` on the column.
+      terms:
+        primary_key: >
+          The relation's own identity: one row per distinct value, measured rather than assumed.
+        foreign_key: >
+          A reference to another relation's identity. Whether every value is PRESENT in the parent is a
+          separate measurement — a declared key says the relationship is intended, not that it holds.
+        value: >
+          A payload column: it carries data, not identity and not a choice of row kind.
+        discriminator: >
+          A column whose value selects WHICH KIND of row this is — the column a perspective, status or
+          type is read from.
+        # `audit` AND `delivery_axis` WERE LEGAL IN THE SCHEMA AND ABSENT HERE, which made this closed
+        # vocabulary a smaller set than the one bundles are validated against — four terms against the
+        # schema's seven, and `tools/check_vocabulary_parity.py` red on the slot since 2026-09-29. Both are
+        # in active use and one of them is written by this framework's own tool, so the vocabulary was the
+        # incomplete half: `tools/mac_admit_identity.py:393` assigns `delivery_axis`, and three runtime
+        # tests declare `{"name": "written_at", "type": "timestamp", "role": "audit"}`. Measured on
+        # contoso5: 115 `value`, 23 `primary_key`, 18 `foreign_key`, and none of these two yet — they are
+        # declared because the producers exist, not because a bundle has reached them.
+        audit: >
+          A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in the
+          business. A load timestamp, a batch id, a validity window on a versioned row. It is physically a
+          payload column, and naming it apart is what keeps it out of a question's reach: grouping a measure
+          by the row's own write time is meaningless, and nothing in the data says so.
+        delivery_axis: >
+          A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
+          question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
+          identity but which the load still keys on — so the key survives as a physical fact without
+          claiming to be the concept's identity.
+
+# ==========================================================================
+# mac.transform.* — FOLDED. These 1 vocabularies were top-level keys spelled with
+# dots (`transform.driven_by:`). The dotted name is still the identity everything
+# uses; the nesting is how a person reads it. `tools/mac_vocab.py` returns the dotted form
+# from either shape, which is what made this an authoring choice instead of an API change.
+# ==========================================================================
+transform:
+  # ===========================================================================
+  # mac.relation.column.role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
+  # question may do with it. A column carries BOTH a storage_role and a column.role and they answer
+  # different questions: `CountryCode` is storage `value` and analytically a `dimension`; `StoreKey`
+  # is storage `primary_key` and analytically a `key`.
+  #
+  # DECLARED HERE BECAUSE IT WAS DECLARED NOWHERE. The dataset descriptors have used these five terms
+  # all along — 72 columns on contoso alone — and no file in the estate defined them. One of them,
+  # `dimension`, collided with the analytical vocabulary and meant something else there.
+  # ===========================================================================
+  driven_by:
+    kind: vocabulary
+    closed: true
+    description: >
+      WHO DECIDED THE SHAPE of one served relation's transform, and therefore who may change it.
+      Operator ruling, 2026-09-29: the first version is a 1:1 passthrough IF NO OTHER REGULATION
+      APPLIES; where the profiling already shows something, the platform PROPOSES an improvement; and
+      an SME or data scientist drives the change after that — including during concept authoring,
+      depending on what the concepts need. Three drivers at three moments, not three kinds of file.
+      ABSENT IS NOT A FOURTH TERM: a transform carrying no `driven_by` is UNDECLARED — nobody recorded
+      who drove it. Every curated transform in the estate is in that state today, and labelling them
+      `ruled` would assert a ruling that is on no record; the estate's own three-outcome discipline
+      (present / absent / undeclared) rather than a default that flatters the data.
+    terms:
+      passthrough: >
+        The floor. Every column, nothing renamed, derived or dropped — computable from the catalog,
+        so no judgement was exercised and none is claimed. Generated by tools/mac_passthrough.py,
+        which never touches a .sql that already exists.
+      proposed: >
+        The platform's own suggestion, made from measurements it already holds — row counts,
+        distincts, measured references, duplicate relations, orphans. It is a RECOMMENDATION and not
+        a ruling: `because` names the finding that motivated it, and until a person answers that
+        finding the proposal stands as the reason this transform has the shape it has.
+      ruled: >
+        A person decided — an SME or a data scientist — and `because` names what they answered.
+        Nothing regenerates a ruled transform.

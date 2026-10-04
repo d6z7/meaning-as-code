@@ -43,6 +43,12 @@ import sys
 
 import yaml
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` nests its dotted blocks
+#: (`concept: column: measure_type:`); every lookup here indexes them by their DOTTED identity,
+#: and `mac_vocab.flatten` is the one converter between the two shapes.
+import mac_vocab as _mv  # noqa: E402
+
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VOCAB = ROOT / "mac_vocabulary.yaml"
 EFFECTS = ROOT / "reference_manual" / "column_effects.yaml"
@@ -73,7 +79,7 @@ def load_vocabulary() -> dict:
     Both appear in the file; reading only one is how a generator silently renders an empty list,
     which is what measure_type would have done here.
     """
-    raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
+    raw = _mv.flatten(yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {})
     out: dict[str, dict] = {}
     for ns, spec in raw.items():
         if not isinstance(spec, dict) or spec.get("kind") not in ("vocabulary", "value_domain"):

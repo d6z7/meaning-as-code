@@ -124,7 +124,13 @@ def key_universe() -> set[str]:
         for form in lvl["forms"]:
             for k in form["keys"]:
                 out.add(f"{path}.{k['key']}")
-    for name, body in (vocab or {}).items():
+    #: FLATTENED FIRST. This iterated the vocabulary's TOP-LEVEL keys, which worked only while every
+    #: vocabulary WAS a top-level key spelled with dots. `mac_vocabulary.yaml` now nests them, so the top
+    #: level is `concept` / `relation` / `transform` — containers with no `terms` of their own — and every
+    #: term fell out of the universe. The gate then reported 6 pages as naming dead keys when nothing had
+    #: changed but the file's indentation. `mac_vocab.flatten` is the one reader of that shape.
+    import mac_vocab
+    for name, body in mac_vocab.flatten(vocab or {}).items():
         if not isinstance(body, dict):
             continue
         out |= {name, f"mac.{name}"}

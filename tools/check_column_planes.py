@@ -51,6 +51,12 @@ import sys
 
 import yaml
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` nests its dotted blocks
+#: (`concept: column: measure_type:`); every lookup here indexes them by their DOTTED identity,
+#: and `mac_vocab.flatten` is the one converter between the two shapes.
+import mac_vocab as _mv  # noqa: E402
+
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 VOCAB = ROOT / "mac_vocabulary.yaml"
 NAME = "check_column_planes"
@@ -68,7 +74,7 @@ SUSPICIOUS = {
 
 
 def load_terms() -> dict[str, list[str]]:
-    raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
+    raw = _mv.flatten(yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {})
     out = {}
     # `measure_type`, NOT `MeasureType`: the namespace is lower_snake in mac_vocabulary.yaml and
     # its members are lowercase (flow, stock, intensive, precomputed, target). The capitalised

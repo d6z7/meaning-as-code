@@ -36,6 +36,14 @@ import pathlib
 import re
 import sys
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` nests its dotted blocks
+#: (`concept: column: measure_type:`); every lookup here indexes them by their DOTTED identity,
+#: and `mac_vocab.flatten` is the one converter between the two shapes.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+import mac_vocab as _mv  # noqa: E402
+
+
 import yaml
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -47,7 +55,7 @@ import _plugin  # noqa: E402  — the bundle-plugin seam, shared by five tools
 
 
 def law(fw: pathlib.Path) -> dict:
-    v = yaml.safe_load((fw / "mac_vocabulary.yaml").read_text(encoding="utf-8"))
+    v = _mv.flatten(yaml.safe_load((fw / "mac_vocabulary.yaml").read_text(encoding="utf-8")) or {})
     return {k: (m.get("additivity") or {}) for k, m in (v["concept.column.measure_type"]["terms"]).items()}
 
 

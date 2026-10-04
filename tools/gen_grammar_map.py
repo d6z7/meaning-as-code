@@ -49,6 +49,12 @@ import sys
 
 import yaml
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` nests its dotted blocks
+#: (`concept: column: measure_type:`); every lookup here indexes them by their DOTTED identity,
+#: and `mac_vocab.flatten` is the one converter between the two shapes.
+import mac_vocab as _mv  # noqa: E402
+
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 GRAMMAR = ROOT / "grammar" / "query_grammar.yaml"
 VOCAB = ROOT / "mac_vocabulary.yaml"
@@ -258,7 +264,7 @@ def verify_permissions(perms: dict, measured: dict) -> dict:
 
 
 def load_vocabulary() -> dict:
-    raw = yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {}
+    raw = _mv.flatten(yaml.safe_load(VOCAB.read_text(encoding="utf-8")) or {})
     out: dict[str, dict] = {}
     for ns in ("outcome_class", "diagnostic_code", "concept.column.ruling", "concept.column.measure_type", "concept.aggregation_effect"):
         spec = raw.get(ns) or {}

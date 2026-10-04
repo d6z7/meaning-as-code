@@ -35,6 +35,14 @@ import pathlib
 import re
 import sys
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` nests its dotted blocks
+#: (`concept: column: measure_type:`); every lookup here indexes them by their DOTTED identity,
+#: and `mac_vocab.flatten` is the one converter between the two shapes.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+import mac_vocab as _mv  # noqa: E402
+
+
 #: The one home. Nothing here carries a copy of any vocabulary's members.
 VOCAB_REL = "mac_vocabulary.yaml"
 
@@ -89,7 +97,7 @@ def vocabularies(root: pathlib.Path, yaml) -> dict:
     usable against a framework checkout from before the two were unified, so an older tree reports the
     same findings instead of refusing.
     """
-    d = yaml.safe_load((root / VOCAB_REL).read_text(encoding="utf-8")) or {}
+    d = _mv.flatten(yaml.safe_load((root / VOCAB_REL).read_text(encoding="utf-8")) or {})
     out = {}
     for name, body in d.items():
         if not isinstance(body, dict) or "kind" not in body:

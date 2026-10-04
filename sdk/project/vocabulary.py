@@ -25,6 +25,14 @@ from __future__ import annotations
 from collections import Counter
 from pathlib import Path
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` may nest its dotted blocks
+#: (`concept: column: measure_type:`) or spell them flat; every lookup here indexes them by their
+#: DOTTED identity, and `tools/mac_vocab.flatten` is the one converter between the two.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
+import mac_vocab as _mv  # noqa: E402
+
+
 # The field-role namespace is a SOURCE fact, not a method fact: every source defines its own
 # (`<source>.field_role.dimension`), which is what the note below has always said. It was nonetheless
 # hardcoded to one instance's prefix, so every glossary this projector wrote — the public example
@@ -151,7 +159,9 @@ def _vocabulary() -> dict:
         f = _vocabulary_file()
         if f is None:
             raise FileNotFoundError("no mac_vocabulary.yaml beside this checkout")
-        return yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+        #: FLATTENED: `mac_vocabulary.yaml` nests its dotted blocks and `_terms(vocab, block)` below
+        #: indexes them by their dotted identity. `tools/mac_vocab.flatten` is the one converter.
+        return _mv.flatten(yaml.safe_load(f.read_text(encoding="utf-8")) or {})
     except Exception as exc:  # noqa: BLE001 — a projection must not break on an unreadable framework
         print(f"  vocabulary: mac_vocabulary.yaml unavailable ({type(exc).__name__}: {exc}); the "
               f"framework-governed groups render empty")

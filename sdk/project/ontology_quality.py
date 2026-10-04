@@ -81,6 +81,14 @@ import re as _re
 from collections import Counter as _Counter
 from pathlib import Path
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` may nest its dotted blocks
+#: (`concept: column: measure_type:`) or spell them flat; every lookup here indexes them by their
+#: DOTTED identity, and `tools/mac_vocab.flatten` is the one converter between the two.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
+import mac_vocab as _mv  # noqa: E402
+
+
 
 def rule_kinds(repo_root: Path | None = None) -> list[str]:
     """The terms of mac.concept.rule, READ from mac_vocabulary.yaml (their one home) in declaration
@@ -91,7 +99,10 @@ def rule_kinds(repo_root: Path | None = None) -> list[str]:
         import yaml as _yaml
 
         vocab = (repo_root or Path(__file__).resolve().parents[2]) / "mac_vocabulary.yaml"
-        doc = _yaml.safe_load(vocab.read_text(encoding="utf-8")) or {}
+        #: FLATTENED: `mac_vocabulary.yaml` nests its dotted blocks (`concept: column: measure_type:`) and
+        #: this reader indexes them by their dotted identity. `tools/mac_vocab.flatten` converts between the
+        #: two — the one place that rule lives on this side of the estate.
+        doc = _mv.flatten(_yaml.safe_load(vocab.read_text(encoding="utf-8")) or {})
         return [str(k) for k in ((doc.get("concept.rule") or {}).get("terms") or {})]
     except Exception:  # noqa: BLE001 — an unreadable vocabulary yields no kinds, not a guessed list
         return []
@@ -265,7 +276,10 @@ def measure_type_members(repo_root: Path | None = None):
         import yaml as _yaml
 
         vocab = (repo_root or Path(__file__).resolve().parents[2]) / "mac_vocabulary.yaml"
-        doc = _yaml.safe_load(vocab.read_text(encoding="utf-8")) or {}
+        #: FLATTENED: `mac_vocabulary.yaml` nests its dotted blocks (`concept: column: measure_type:`) and
+        #: this reader indexes them by their dotted identity. `tools/mac_vocab.flatten` converts between the
+        #: two — the one place that rule lives on this side of the estate.
+        doc = _mv.flatten(_yaml.safe_load(vocab.read_text(encoding="utf-8")) or {})
         members = (doc.get("concept.column.measure_type") or {}).get("terms") or {}
         return set(members) if members else None
     except Exception:  # noqa: BLE001 — reported by the caller as sme-source-unreadable

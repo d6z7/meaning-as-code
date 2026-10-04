@@ -65,7 +65,7 @@ page that calls itself a prototype is counted as a prototype:
 | [`CURRENCY.md`](CURRENCY.md) | Semantic currency | — | hand-written |
 | [`FINDINGS.md`](FINDINGS.md) | Findings — framework-enhancement candidates (for the maintainer's decis… | living | hand-written |
 | [`STRATEGY.md`](STRATEGY.md) | The strategy — RULED 2026-09-29 | — | `gen_strategy` **(no `check_*.py`)** |
-| [`canon_library.md`](canon_library.md) | The canon library — what makes a declaration executable | 20 defined, 20 described, 17 implemented (measured 2026-10-01) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` |
+| [`canon_library.md`](canon_library.md) | The canon library — what makes a declaration executable | 21 defined, 20 described, 18 implemented (measured 2026-10-04) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` |
 | [`column_map.generated.md`](column_map.generated.md) | The column map — everything about one column, on the column | — | `gen_slot_reference` |
 | [`column_roles.md`](column_roles.md) | Column Roles — what a column IS, and where a query may use it | ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed… | `gen_vocabulary_terms` |
 | [`column_rulings.md`](column_rulings.md) | Column rulings — reference | PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.ru… | `gen_vocabulary_terms` |
@@ -115,7 +115,7 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 
 ## The vocabulary reference
 
-**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **24 notion(s)** holding **146 term(s)**. **24** notion(s) have a chapter; **0** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
+**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **13 notion(s)** holding **97 term(s)**. **13** notion(s) have a chapter; **0** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
 
 | notion | kind | terms | closed | documented in |
 |---|---|---|---|---|
@@ -123,15 +123,6 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 | `mac.calendar_vocabulary` | value_domain | 9 | yes | [`column_specification.md`](column_specification.md) |
 | `mac.canon` | value_domain | 21 | no | [`canon_library.md`](canon_library.md) |
 | `mac.column_type` | value_domain | 5 | yes | [`column_specification.md`](column_specification.md) |
-| `mac.concept.aggregation_effect` | vocabulary | 3 | yes | [`measures.md`](measures.md) |
-| `mac.concept.axis_kind` | vocabulary | 2 | yes | [`measures.md`](measures.md) |
-| `mac.concept.column.identity` | vocabulary | 3 | yes | [`column_specification.md`](column_specification.md) |
-| `mac.concept.column.measure_type` | value_domain | 5 | yes | [`measures.md`](measures.md) |
-| `mac.concept.column.query_use` | vocabulary | 5 | yes | [`column_roles.md`](column_roles.md) |
-| `mac.concept.column.role` | vocabulary | 5 | yes | [`column_roles.md`](column_roles.md) |
-| `mac.concept.column.ruling` | vocabulary | 5 | yes | [`column_rulings.md`](column_rulings.md) |
-| `mac.concept.identity` | vocabulary | 6 | yes | [`identity_and_rules.md`](identity_and_rules.md) |
-| `mac.concept.rule` | vocabulary | 6 | yes | [`identity_and_rules.md`](identity_and_rules.md) |
 | `mac.connector` | registry | 0 | no | [`connection.md`](connection.md) |
 | `mac.credential_mode` | vocabulary | 6 | yes | [`connection.md`](connection.md) |
 | `mac.data_plane_gate` | vocabulary | 14 | yes | [`refusals_and_findings.md`](refusals_and_findings.md) |
@@ -139,10 +130,8 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 | `mac.dq_status` | vocabulary | 4 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.name_register` | vocabulary | 5 | yes | [`column_rulings.md`](column_rulings.md) |
 | `mac.outcome_class` | vocabulary | 10 | yes | [`refusals_and_findings.md`](refusals_and_findings.md) |
-| `mac.relation.column.role` | vocabulary | 6 | yes | [`column_roles.md`](column_roles.md) |
 | `mac.test_kind` | vocabulary | 2 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.test_status` | vocabulary | 7 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
-| `mac.transform.driven_by` | vocabulary | 3 | yes | [`data_plane.md`](data_plane.md) |
 
 Where a constellation already has a **pattern**, these pages link to the pattern rather than
 restate it. The pattern is canonical.
@@ -216,7 +205,7 @@ Generated, live, and — until this index was generated — linked from no page 
 |---|---|---|---|
 | [`column_bench.html`](column_bench.html) | MAC · the column bench | 3366 | `gen_column_bench` **(no `check_*.py`)** |
 | [`column_effects.yaml`](column_effects.yaml) | column_effects.yaml — WHAT EACH KEY OF THE COLUMN BLOCK ACTUALLY DOES,… | 1082 | hand-written |
-| [`grammar_map.html`](grammar_map.html) | MAC · three grammars, one shape | 6235 | `gen_grammar_map` **(no `check_*.py`)** |
+| [`grammar_map.html`](grammar_map.html) | MAC · three grammars, one shape | 6240 | `gen_grammar_map` **(no `check_*.py`)** |
 
 ## Findings, and how this manual is written
 

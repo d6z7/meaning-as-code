@@ -1,6 +1,6 @@
 ---
 title: The canon library — what makes a declaration executable
-status: 20 defined, 20 described, 17 implemented (measured 2026-10-01) — check_canon_documented.py holds the three lists together
+status: 21 defined, 20 described, 18 implemented (measured 2026-10-04) — check_canon_documented.py holds the three lists together
 audience: ontology authors binding realized_by; anyone implementing a canon
 ---
 
@@ -17,6 +17,84 @@ realized_by:
 
 The concept supplies **parameters only**. It never restates the logic — that is the whole point, and
 the reason a rule written once can serve a dozen bundles.
+
+## What a canon is FOR — the determinism seam
+
+The sentence above says what a canon *is*. This says why the mechanism exists, which is the question an
+author actually arrives with.
+
+`the_content_model.md` §4 states the problem a canon answers: **determinism is not a property of the
+pipeline, it is a property of the content, slot by slot.** A slot whose meaning is prose is read by a
+model, and two models may read the same prose differently — so the non-determinism is in the content,
+not in the engine. A slot with a canon is **run**, not read.
+
+That is the whole of it, and `mac.schema.json#$defs/canonBinding` says it in one line: *present → the
+slot is canon-backed (deterministic, run not read); absent → the slot's prose is model-interpreted.*
+
+So a canon is not an optimisation and not a helper library. It is **the one move that takes a slot out
+of interpretation**, and the ratio of behaviour-bearing slots that have one to behaviour-bearing slots
+that could is the measure of how much of an ontology is deterministic at all. `canonBinding` calls that
+ratio the determinism-coverage seam.
+
+**The prose does not leave.** A bound slot keeps its sentence beside the binding — the human twin
+(`AUTHORING` A9). The canon makes the behaviour reproducible; the prose is still how a person checks
+that the behaviour is the one they meant. A canon with no prose beside it is executable and
+unreviewable.
+
+## When you would reach for one
+
+Three things have to be true together. If one is missing, a canon is the wrong shape:
+
+1. **The decision recurs.** The same question is asked of more than one concept — "which rows does this
+   have", "what does this name resolve to", "may this be summed along that axis". A behaviour needed by
+   exactly one concept does not want a canon; it wants a rule on that concept.
+2. **Two readers could disagree.** The prose admits more than one defensible reading, and the difference
+   shows up in an answer rather than in an error. This is the test that matters: if every reader would
+   do the same thing, prose is already deterministic and a canon buys nothing.
+3. **The difference between concepts is PARAMETERS, not logic.** A concept binding a canon supplies only
+   what is particular to it — which column, which register, which code. The moment two concepts would
+   need the canon to behave differently, it is two canons or none.
+
+## How to bind one
+
+A behaviour-bearing slot names the canon and passes its parameters. Seven slots admit a binding, which
+is the whole surface: `grounding`, `contract.rules`, `enumerationValues`, `groupingMembers`,
+`aliasBlock`, `relationAliasBlock`, and an edge in `EdgesFile.edges`.
+
+A LIST composes, in order — the schema admits `canonRef` or an array of them, and composition is the
+normal case rather than an advanced one: a slot often needs a population chosen and then a ratio taken.
+Each entry carries its own `params`.
+
+```yaml
+realized_by:
+  - udf: mac.canon.population_select
+    params: { population: active }
+  - udf: mac.canon.ratio_select
+    params: { numerator: …, denominator: … }
+```
+
+What the concept must NOT do is restate the logic. The canon holds it once; a concept that explains
+*how* beside a binding has created a second home for the behaviour, and the two will disagree.
+
+## Where the logic lives, today
+
+An implementer needs this and the vocabulary's one-line definition does not say it. MEASURED 2026-10-04:
+the canon logic has **two homes**, and nine canons exist in both.
+
+| home | canons | who calls it |
+|---|---|---|
+| `mac-platform/.../mac_runtime/canons/` + `planner/` + `resolver/` | 15 modules, plus canons implemented inside the planner and resolver | the runtime, and `mac_runtime.canon.IMPLEMENTED` reports it |
+| `meaning-as-code/tools/canon/` | 12, whose own docstring calls it "the EXECUTABLE single-home of the canon logic" | this repository's tools |
+
+Both cannot be the single home. In both: `additivity_guard`, `ambiguity_gate`, `axis_default`,
+`closure_anomaly_check`, `composite_key_guard`, `densify`, `exclusion_filter`, `hierarchy_rollup`,
+`scoped_latest`. Which one is authoritative is an operator ruling and is not settled here — so until it
+is, read `mac_runtime.canon.IMPLEMENTED` for what actually runs when a question is answered, and treat
+this repository's copy as the one the framework's own tools use.
+
+Note also that a canon's implementation need not be a file named after it: `IMPLEMENTED` maps each name
+to WHERE its logic is, and three of them live in the planner and the resolver rather than in `canons/`.
+Read the map, not the directory.
 
 ## Three lists, which must agree
 

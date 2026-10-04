@@ -37,6 +37,14 @@ from pathlib import Path
 
 import yaml
 
+#: THE FOLD-AGNOSTIC VOCABULARY READER. `mac_vocabulary.yaml` may nest its dotted blocks
+#: (`concept: column: measure_type:`) or spell them flat; every lookup here indexes them by their
+#: DOTTED identity, and `tools/mac_vocab.flatten` is the one converter between the two.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
+import mac_vocab as _mv  # noqa: E402
+
+
 from sdk.project import layout as _layout_reader
 
 
@@ -251,7 +259,10 @@ def _fold_law() -> dict:
     column — never a guessed SUM, because a wrong fold is the one error on this page that turns
     into a wrong number downstream."""
     try:
-        doc = yaml.safe_load(_VOCAB_PATH.read_text(encoding="utf-8")) or {}
+        #: FLATTENED: `mac_vocabulary.yaml` nests its dotted blocks (`concept: column: measure_type:`) and
+        #: this reader indexes them by their dotted identity. `tools/mac_vocab.flatten` converts between the
+        #: two — the one place that rule lives on this side of the estate.
+        doc = _mv.flatten(yaml.safe_load(_VOCAB_PATH.read_text(encoding="utf-8")) or {})
     except Exception:  # noqa: BLE001 — a state to report as a dash, not to raise
         return {}
     out: dict = {}
