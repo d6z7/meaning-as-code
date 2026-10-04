@@ -181,7 +181,12 @@ object_kinds:
     # ENUMERATED: the bundle's own resource description.
     enumerate: '*.mac'
   declared_file:                  # any artifact addressed purely as a path
-    id_template: '{source}:file/{name}'
+    # `declared_file`, NOT `file`. This was the one id_template of seventeen that did not read
+    # `{source}:<kind>/{name}`, and NO object has ever used it: the loader hardcoded the format and
+    # produced `declared_file` for all 54. So the template was stale decoration — which is exactly
+    # what made it safe to find, and exactly what made it dangerous to leave. Corrected to what is
+    # in use, so that making the template LIVE (2026-10-04) changes no id in any bundle.
+    id_template: '{source}:declared_file/{name}'
     home_layer: null              # a target kind only; it is never scanned for pointers
     identity_field: null
     is_root: false

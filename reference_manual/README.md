@@ -61,42 +61,42 @@ page that calls itself a prototype is counted as a prototype:
 | [`05_tutorial.md`](05_tutorial.md) | Ch.05 — Tutorial: from blank canvas to a running model | written | hand-written |
 | [`AUTHORING.md`](AUTHORING.md) | Authoring constitution — the framework for this reference manual | written | hand-written |
 | [`FINDINGS.md`](FINDINGS.md) | Findings — framework-enhancement candidates (for the maintainer's decis… | living | hand-written |
-| [`canon_library.md`](canon_library.md) | The canon library — what makes a declaration executable | 20 defined, 20 described, 17 implemented (measured 2026-10-01) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`column_map.generated.md`](column_map.generated.md) | The column map — everything about one column, on the column | — | `gen_slot_reference` **(no `check_*.py`)** |
-| [`column_roles.md`](column_roles.md) | Column Roles — what a column IS, and where a query may use it | ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed… | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`column_rulings.md`](column_rulings.md) | Column rulings — reference | PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.ru… | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`column_specification.md`](column_specification.md) | The column specification | PARTIALLY ENFORCED (2026-09-29) — four flags LOAD (`role`, `identity`, `measure`, `rulings`: what mac.s… | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`connection.md`](connection.md) | Connection — how a bundle reaches its data | both vocabularies are read by the connector seam | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`data_plane.md`](data_plane.md) | The data plane — two-plane layout, data handling & transformation | written | hand-written |
+| [`canon_library.md`](canon_library.md) | The canon library — what makes a declaration executable | 20 defined, 20 described, 17 implemented (measured 2026-10-01) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` |
+| [`column_map.generated.md`](column_map.generated.md) | The column map — everything about one column, on the column | — | `gen_slot_reference` |
+| [`column_roles.md`](column_roles.md) | Column Roles — what a column IS, and where a query may use it | ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed… | `gen_vocabulary_terms` |
+| [`column_rulings.md`](column_rulings.md) | Column rulings — reference | PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.ru… | `gen_vocabulary_terms` |
+| [`column_specification.md`](column_specification.md) | The column specification — everything about a column, on the column | PARTIALLY ENFORCED (2026-09-29) — four flags LOAD (`role`, `identity`, `measure`, `rulings`: what mac.s… | `gen_vocabulary_terms` |
+| [`connection.md`](connection.md) | Connection — how a bundle reaches its data | both vocabularies are read by the connector seam | `gen_vocabulary_terms` |
+| [`data_plane.md`](data_plane.md) | The data plane — two-plane layout, data handling & transformation | written | `gen_vocabulary_terms` |
 | [`how_a_question_becomes_sql.md`](how_a_question_becomes_sql.md) | How a question becomes SQL — read this first | the trace is real; every number was measured 2026-09-25 on the contoso bundle, which lives in a separat… | hand-written |
-| [`identity_and_rules.md`](identity_and_rules.md) | Identity and rules — how a concept says what it IS and what must happen | both vocabularies are read; rule bodies are enforced, `binds` is read | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`measures.md`](measures.md) | How a measure folds — measure_type, axes, and what a question binds | measure_type and additivity are READ and enforced; binding_mode is not yet read | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`refusals_and_findings.md`](refusals_and_findings.md) | Refusals, findings and gates — what the engine says when it will not an… | outcome_class and diagnostic_code are read; data_plane_gate is enforced by the gate chain | `gen_vocabulary_terms` **(no `check_*.py`)** |
-| [`relation_column.generated.md`](relation_column.generated.md) | The relation's column — the data plane's physical shape | — | `gen_slot_reference` **(no `check_*.py`)** |
+| [`identity_and_rules.md`](identity_and_rules.md) | Identity and rules — how a concept says what it IS and what must happen | both vocabularies are read; rule bodies are enforced, `binds` is read | `gen_vocabulary_terms` |
+| [`measures.md`](measures.md) | How a measure folds — measure_type, axes, and what a question binds | measure_type and additivity are READ and enforced; binding_mode is not yet read | `gen_vocabulary_terms` |
+| [`refusals_and_findings.md`](refusals_and_findings.md) | Refusals, findings and gates — what the engine says when it will not an… | outcome_class and diagnostic_code are read; data_plane_gate is enforced by the gate chain | `gen_vocabulary_terms` |
+| [`relation_column.generated.md`](relation_column.generated.md) | The relation's column — the data plane's physical shape | — | `gen_slot_reference` |
 | [`rule_engine.md`](rule_engine.md) | The rule engine — a declared rule fires, and selects which rows a conce… | implemented in mac-runtime (planner/populations.py · canons/population_select.py · planner/predicates.p… | hand-written |
-| [`shape_reference.md`](shape_reference.md) | The Shape Reference — how a MAC file is shaped, key by key | CANONICAL — the per-object-type reference. The structural-shapes section is GENERATED from the schema (… | `gen_schema_shapes` **(no `check_*.py`)** |
-| [`testing_and_quality.md`](testing_and_quality.md) | Testing and data quality — what an instrument did, and what a human rul… | both vocabularies are read; check_dq_resolution_sync enforces the DQ cross-links | `gen_vocabulary_terms` **(no `check_*.py`)** |
+| [`shape_reference.md`](shape_reference.md) | The Shape Reference — how a MAC file is shaped, key by key | CANONICAL — the per-object-type reference. The structural-shapes section is GENERATED from the schema (… | `gen_schema_shapes` |
+| [`testing_and_quality.md`](testing_and_quality.md) | Testing and data quality — what an instrument did, and what a human rul… | both vocabularies are read; check_dq_resolution_sync enforces the DQ cross-links | `gen_vocabulary_terms` |
 | [`the_content_model.md`](the_content_model.md) | The content model — skeleton, prose, and the UDF seam | written | hand-written |
 
-A generator marked **(no `check_*.py`)** writes a page that no gate in the suite runs. `tools/run_framework_gates.sh` discovers gates by globbing `check_*.py`, so a `gen_*.py --check` is invisible to it unless a checker delegates; measured over `tools/check_*.py`, 3 generator(s) are delegated to (`gen_decisions_index`, `gen_key_reference`, `gen_manual_index`).
+A generator marked **(no `check_*.py`)** writes a page that no gate in the suite runs. `tools/run_framework_gates.sh` discovers gates by globbing `check_*.py`, so a `gen_*.py --check` is invisible to it unless a checker delegates; measured over `tools/check_*.py`, 6 generator(s) are delegated to (`gen_decisions_index`, `gen_key_reference`, `gen_manual_index`, `gen_schema_shapes`, `gen_slot_reference`, `gen_vocabulary_terms`).
 
-`mac.schema.json` declares version **0.1.16**. `shape_reference.md` names `0.1.0`, `0.1.9`, `0.1.12`, `0.1.14`, `0.1.15` and **not** `0.1.16`: the block `gen_schema_shapes.py` writes is held current by its own `--check`, the prose around it is not held by anything.
+`mac.schema.json` declares version **0.1.16**. `shape_reference.md` names `0.1.0`, `0.1.9`, `0.1.12`, `0.1.15`, `0.1.16`, the current one among them.
 
 ## The vocabulary reference
 
-**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **24 notion(s)** holding **144 term(s)**. **20** notion(s) have a chapter; **4** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
+**Every term MAC defines, and the page that documents it.** `mac_vocabulary.yaml` declares **24 notion(s)** holding **144 term(s)**. **24** notion(s) have a chapter; **0** do not. The definitions inside each chapter are rendered from the vocabulary by `tools/gen_vocabulary_terms.py`, so they cannot drift; which notion sits on which page is read from that generator's own block markers.
 
 | notion | kind | terms | closed | documented in |
 |---|---|---|---|---|
 | `mac.binding_mode` | vocabulary | 2 | yes | [`measures.md`](measures.md) |
-| `mac.calendar_vocabulary` | value_domain | 9 | yes | **— no chapter** |
+| `mac.calendar_vocabulary` | value_domain | 9 | yes | [`column_specification.md`](column_specification.md) |
 | `mac.canon` | value_domain | 21 | no | [`canon_library.md`](canon_library.md) |
-| `mac.column_type` | value_domain | 5 | yes | **— no chapter** |
+| `mac.column_type` | value_domain | 5 | yes | [`column_specification.md`](column_specification.md) |
 | `mac.concept.aggregation_effect` | vocabulary | 3 | yes | [`measures.md`](measures.md) |
 | `mac.concept.axis_kind` | vocabulary | 2 | yes | [`measures.md`](measures.md) |
 | `mac.concept.column.identity` | vocabulary | 3 | yes | [`column_specification.md`](column_specification.md) |
 | `mac.concept.column.measure_type` | value_domain | 5 | yes | [`measures.md`](measures.md) |
-| `mac.concept.column.query_use` | vocabulary | 5 | yes | **— no chapter** |
+| `mac.concept.column.query_use` | vocabulary | 5 | yes | [`column_roles.md`](column_roles.md) |
 | `mac.concept.column.role` | vocabulary | 5 | yes | [`column_roles.md`](column_roles.md) |
 | `mac.concept.column.ruling` | vocabulary | 5 | yes | [`column_rulings.md`](column_rulings.md) |
 | `mac.concept.identity` | vocabulary | 6 | yes | [`identity_and_rules.md`](identity_and_rules.md) |
@@ -111,9 +111,7 @@ A generator marked **(no `check_*.py`)** writes a page that no gate in the suite
 | `mac.relation.column.role` | vocabulary | 4 | yes | [`column_roles.md`](column_roles.md) |
 | `mac.test_kind` | vocabulary | 2 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
 | `mac.test_status` | vocabulary | 7 | yes | [`testing_and_quality.md`](testing_and_quality.md) |
-| `mac.transform.driven_by` | vocabulary | 3 | yes | **— no chapter** |
-
-The 4 notion(s) with no chapter, which `gen_vocabulary_terms.py --check` prints as UNDOCUMENTED: `mac.calendar_vocabulary`, `mac.column_type`, `mac.concept.column.query_use`, `mac.transform.driven_by`.
+| `mac.transform.driven_by` | vocabulary | 3 | yes | [`data_plane.md`](data_plane.md) |
 
 Where a constellation already has a **pattern**, these pages link to the pattern rather than
 restate it. The pattern is canonical.
@@ -213,8 +211,6 @@ completeness claim. A reference manual for frameworks needs its own framework.
 | [`column_map.generated.md`](column_map.generated.md) | absent (the page carries no frontmatter) |
 | [`grammar_map.html`](grammar_map.html) | absent (an HTML artifact carries no frontmatter) |
 | [`relation_column.generated.md`](relation_column.generated.md) | absent (the page carries no frontmatter) |
-
-**1** page(s) carry frontmatter that is not valid YAML; the `status:` line was read literally instead, which is a declaration and not an inference: [`column_specification.md`](column_specification.md).
 
 `../CONCEPT_SPEC.md` **is still present** (27 lines). The hand-written index said
 the shape reference "supersedes the retired `../CONCEPT_SPEC.md`", which reads as removed.

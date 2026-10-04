@@ -25,8 +25,8 @@ from `git log --diff-filter=D`, which is the only place a removed record still e
 | | count |
 |---|---|
 | records on disk | 17 |
-| …whose state is DECLARED | 10 |
-| …whose state is **UNKNOWN** | 7 |
+| …whose state is DECLARED | 17 |
+| …whose state is **UNKNOWN** | 0 |
 | records git records as removed | 7 |
 | records naming what supersedes them | 1 |
 | records declaring *designed, not enforced* | 2 |
@@ -42,38 +42,23 @@ removing it would leave a pointer with nowhere to land.
 
 | record | kind (filename) | state (declared) | where the state was read | cited by |
 |---|---|---|---|---|
-| [`2026-09-10_packaging-and-release-surface.md`](2026-09-10_packaging-and-release-surface.md) | **— none** | ACCEPTED (option C) | a `Status:` line in the body | 2 — `__init__.py`, `pyproject.toml` |
-| [`DELIVERABLES-2026-09-26_first-run-state.md`](DELIVERABLES-2026-09-26_first-run-state.md) | DELIVERABLES | the contract | a `Status:` line in the body | 9 — `tools/_plugin.py`, `tools/duckdb_seam.py`, `tools/mac_descriptors.py` +6 more |
-| [`DNA-2026-09-25_ontology-design-requirements.md`](DNA-2026-09-25_ontology-design-requirements.md) | DNA | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 0 |
-| [`PROPOSED-2026-09-13_connector-plugin-architecture.md`](PROPOSED-2026-09-13_connector-plugin-architecture.md) | PROPOSED | PROPOSED | a `Status:` line in the body | 4 — `sdk/connector/__init__.py`, `sdk/connector/base.py`, `sdk/gate/engine_coupling_floor.txt` +1 more |
-| [`PROPOSED-2026-09-29_delivery-manifest.md`](PROPOSED-2026-09-29_delivery-manifest.md) | PROPOSED | SUPERSEDED 2026-09-29 by `PROPOSED-2026-09-29_guardrails.md` | a `Status:` line in the body | 1 — `guardrails/README.md` |
-| [`PROPOSED-2026-09-29_guard-scope.md`](PROPOSED-2026-09-29_guard-scope.md) | PROPOSED | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 1 — `tools/check_guard_scope.py` |
-| [`PROPOSED-2026-09-29_guardrails.md`](PROPOSED-2026-09-29_guardrails.md) | PROPOSED | PROPOSED | a `Status:` line in the body | 1 — `guardrails/README.md` |
-| [`PROPOSED-2026-09-29_ontology-idiom.md`](PROPOSED-2026-09-29_ontology-idiom.md) | PROPOSED | PROPOSED — designed, not enforced | a `Status:` line in the body | 0 |
-| [`PROPOSED-2026-09-29_register-policy.md`](PROPOSED-2026-09-29_register-policy.md) | PROPOSED | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 2 — `guardrails/data/sources.yaml`, `tools/check_one_register_per_dimension.py` |
-| [`PROPOSED-2026-10-02_column-first-declarations.md`](PROPOSED-2026-10-02_column-first-declarations.md) | PROPOSED | PROPOSED | a `Status:` line in the body | 0 |
-| [`PROPOSED-2026-10-02_one-revenue-concept.md`](PROPOSED-2026-10-02_one-revenue-concept.md) | PROPOSED | PROPOSED | a `Status:` line in the body | 0 |
-| [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) | PROPOSED | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 0 |
-| [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) | PROTOCOL | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 2 — `guardrails/README.md`, `tools/framework_gate_failures.yaml` |
-| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 1 — `reference_manual/rule_engine.md` |
-| [`REQ-2026-09-13_console-connection-page.md`](REQ-2026-09-13_console-connection-page.md) | REQ | PROPOSED | a `Status:` line in the body | 4 — `protocol/2026-09-13/061-the-console-connection-page-requirement.md`, `wiki/core/capabilities.md`, `wiki/core/connectors.md` +1 more |
-| [`RULED-2026-09-13_testing-strategy.md`](RULED-2026-09-13_testing-strategy.md) | RULED | RULED BY THE OPERATOR | a `Status:` line in the body | 0 |
-| [`RULED-2026-10-02_frozen-document-layout.md`](RULED-2026-10-02_frozen-document-layout.md) | RULED | **UNKNOWN** | UNKNOWN — no frontmatter and no Status: line in its first 30 lines | 0 |
-
-### State UNKNOWN — a declared gap, not a guess
-
-**7 of 17** record(s) declare no state this index can read. A
-filename prefix is not a state: an agent may only write `PROPOSED`, so the prefix says who
-wrote it, not whether anyone ruled on it. Each of these needs a `Status:` line or
-frontmatter in the record itself; until then the honest value is UNKNOWN.
-
-* [`DNA-2026-09-25_ontology-design-requirements.md`](DNA-2026-09-25_ontology-design-requirements.md) — filename prefix `DNA`, 954 lines, titled "DNA — WHAT EVERY ONTOLOGY DESIGN MUST DECLARE"
-* [`PROPOSED-2026-09-29_guard-scope.md`](PROPOSED-2026-09-29_guard-scope.md) — filename prefix `PROPOSED`, 166 lines, titled "PROPOSED 2026-09-29 — what the ontology guard should ask, and what else it should ask it…"
-* [`PROPOSED-2026-09-29_register-policy.md`](PROPOSED-2026-09-29_register-policy.md) — filename prefix `PROPOSED`, 224 lines, titled "PROPOSED 2026-09-29 — a register is a VALUE SET, and not everything is a register"
-* [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) — filename prefix `PROPOSED`, 106 lines, titled "RECORDED 2026-10-02 — the `label_of` worked example uses fictional marques"
-* [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) — filename prefix `PROTOCOL`, 230 lines, titled "PROTOCOL — 2026-09-29 · guardrails: the concluding structure, and what it is owed"
-* [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) — filename prefix `PROTOCOL`, 417 lines, titled "PROTOCOL — 2026-10-01 · the rule engine: a declared rule that fires and selects rows"
-* [`RULED-2026-10-02_frozen-document-layout.md`](RULED-2026-10-02_frozen-document-layout.md) — filename prefix `RULED`, 77 lines, titled "RULED 2026-10-02 — a projected document's layout is DECLARED and FROZEN"
+| [`2026-09-10_packaging-and-release-surface.md`](2026-09-10_packaging-and-release-surface.md) | **— none** | implemented | frontmatter `state:` | 2 — `__init__.py`, `pyproject.toml` |
+| [`DELIVERABLES-2026-09-26_first-run-state.md`](DELIVERABLES-2026-09-26_first-run-state.md) | DELIVERABLES | recorded | frontmatter `state:` | 9 — `tools/_plugin.py`, `tools/duckdb_seam.py`, `tools/mac_descriptors.py` +6 more |
+| [`DNA-2026-09-25_ontology-design-requirements.md`](DNA-2026-09-25_ontology-design-requirements.md) | DNA | recorded | frontmatter `state:` | 0 |
+| [`PROPOSED-2026-09-13_connector-plugin-architecture.md`](PROPOSED-2026-09-13_connector-plugin-architecture.md) | PROPOSED | proposed | frontmatter `state:` | 4 — `sdk/connector/__init__.py`, `sdk/connector/base.py`, `sdk/gate/engine_coupling_floor.txt` +1 more |
+| [`PROPOSED-2026-09-29_delivery-manifest.md`](PROPOSED-2026-09-29_delivery-manifest.md) | PROPOSED | superseded | frontmatter `state:` | 2 — `guardrails/README.md`, `tools/check_decision_state.py` |
+| [`PROPOSED-2026-09-29_guard-scope.md`](PROPOSED-2026-09-29_guard-scope.md) | PROPOSED | implemented | frontmatter `state:` | 2 — `tools/check_decision_state.py`, `tools/check_guard_scope.py` |
+| [`PROPOSED-2026-09-29_guardrails.md`](PROPOSED-2026-09-29_guardrails.md) | PROPOSED | implemented | frontmatter `state:` | 2 — `guardrails/README.md`, `tools/check_decision_state.py` |
+| [`PROPOSED-2026-09-29_ontology-idiom.md`](PROPOSED-2026-09-29_ontology-idiom.md) | PROPOSED | implemented | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
+| [`PROPOSED-2026-09-29_register-policy.md`](PROPOSED-2026-09-29_register-policy.md) | PROPOSED | implemented | frontmatter `state:` | 3 — `guardrails/data/sources.yaml`, `tools/check_decision_state.py`, `tools/check_one_register_per_dimension.py` |
+| [`PROPOSED-2026-10-02_column-first-declarations.md`](PROPOSED-2026-10-02_column-first-declarations.md) | PROPOSED | implemented | frontmatter `state:` | 0 |
+| [`PROPOSED-2026-10-02_one-revenue-concept.md`](PROPOSED-2026-10-02_one-revenue-concept.md) | PROPOSED | proposed | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
+| [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) | PROPOSED | implemented | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
+| [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) | PROTOCOL | recorded | frontmatter `state:` | 3 — `guardrails/README.md`, `tools/check_decision_state.py`, `tools/framework_gate_failures.yaml` |
+| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 2 — `reference_manual/rule_engine.md`, `tools/check_decision_state.py` |
+| [`REQ-2026-09-13_console-connection-page.md`](REQ-2026-09-13_console-connection-page.md) | REQ | implemented | frontmatter `state:` | 5 — `protocol/2026-09-13/061-the-console-connection-page-requirement.md`, `tools/check_decision_state.py`, `wiki/core/capabilities.md` +2 more |
+| [`RULED-2026-09-13_testing-strategy.md`](RULED-2026-09-13_testing-strategy.md) | RULED | ruled | frontmatter `state:` | 0 |
+| [`RULED-2026-10-02_frozen-document-layout.md`](RULED-2026-10-02_frozen-document-layout.md) | RULED | implemented | frontmatter `state:` | 0 |
 
 ## Removed records — where a pointer that still names one should land
 
@@ -103,7 +88,7 @@ record carrying the phrase in its head has its unbuilt paths treated as unlocate
 than dangling.
 
 * [`PROPOSED-2026-09-13_connector-plugin-architecture.md`](PROPOSED-2026-09-13_connector-plugin-architecture.md) — cited by 4 tracked file(s) outside `decisions/`, so removing it would orphan those pointers
-* [`PROPOSED-2026-09-29_ontology-idiom.md`](PROPOSED-2026-09-29_ontology-idiom.md) — cited by 0 tracked file(s) outside `decisions/`
+* [`PROPOSED-2026-09-29_ontology-idiom.md`](PROPOSED-2026-09-29_ontology-idiom.md) — cited by 1 tracked file(s) outside `decisions/`, so removing it would orphan those pointers
 
 ## Declared bundle-relative paths
 
