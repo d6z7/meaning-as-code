@@ -1229,6 +1229,32 @@ def framework_rule_ids() -> tuple[set[str], str]:
 NAMESPACE_ONLY = object()
 
 
+def _vocab_block(doc: Any, group: str) -> Any:
+    """The vocabulary block at `group`, under EITHER addressing the framework has used.
+
+    `mac_vocabulary.yaml` was FOLDED on 2026-10-04 from flat dotted keys (`concept.axis_kind:`)
+    into a nested tree (`concept:` -> `axis_kind:`), 25 top-level keys down to 17. The block
+    SHAPE did not change at all -- only its address did. This reader looked the group up as a
+    flat key, found nothing, and reported 77 correct references as dangling, which is "renames
+    break readers silently" from the other side: the fold had no way to know this reader existed,
+    and nothing connected the two.
+
+    BOTH addressings are accepted, and not out of indecision -- this is the only cross-repo
+    pointer in the registry, so a bundle may legitimately be held against an older framework
+    checkout, and a reader that understands only today's shape turns that into 77 false reds.
+    The flat key is tried FIRST because it is unambiguous: a dotted key, where one exists, IS the
+    group, whereas a walk could in principle land on a nested block that merely shares the name.
+    """
+    if isinstance(doc, dict) and isinstance(doc.get(group), dict):
+        return doc[group]
+    node: Any = doc
+    for seg in group.split("."):
+        if not isinstance(node, dict):
+            return None
+        node = node.get(seg)
+    return node
+
+
 def framework_terms(arg: str) -> tuple[set[str] | None, str]:
     """The closed term set a framework vocabulary group declares.
 
@@ -1271,7 +1297,7 @@ def framework_terms(arg: str) -> tuple[set[str] | None, str]:
         doc = load_yaml(vf) or {}
     except Exception as exc:                                # noqa: BLE001
         return None, f"framework vocabulary unreadable: {vocab_file} -- {exc}"
-    block = doc.get(group)
+    block = _vocab_block(doc, group)
     if isinstance(block, dict) and not isinstance(block.get("terms"), dict) \
             and not block.get("closed"):
         return NAMESPACE_ONLY, (
