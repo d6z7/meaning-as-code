@@ -308,11 +308,26 @@ def census_kinds(path: Path = REGISTRY) -> int:
 
 
 def file_population(bundle: Path, path: Path = REGISTRY) -> list[str]:
-    """EVERY file this bundle carries, by the registry's declared definition — the denominator of
-    the untracked side, which had none.
+    """Every file this bundle carries THAT THIS REGISTRY CLAIMS — the denominator of the
+    untracked side, which had none.
 
     Not `git ls-files`: a bundle is handed over as a directory and may arrive without a .git at
     all, and the integrity record must still be able to say what it did not look at.
+
+    A CARVED-OUT PLANE IS NOT IN THIS DENOMINATOR, and that is the half this was missing. A
+    carve-out already means "the registry could cover this and something else covers it better",
+    and it already removed the plane from the WALK -- but not from the file census, so a plane
+    the operator had ruled out still arrived as one row per file. On contoso5 that was 401 rows
+    of 690, 58% of the census, for a plane nothing was going to judge. Listing 401 files as "not
+    looked at" is noise; the carve-out entry, which names what covers the plane instead, is the
+    fact. The COUNT is not lost either -- build.json reports `carved_out` so the number of files
+    this removed stays visible beside the census rather than vanishing from it.
+
+    The exclusions come from two different declarations ON PURPOSE. `exclude_dir_named` is
+    machinery and is deliberately mirrored to `mac_resources.py#tree_hash`, which means adding
+    anything to it changes every bundle's fingerprint -- so a SCOPING decision must never be
+    expressed there. `carved_out` is where scoping decisions live, with a reason and a covering
+    mechanism each.
     """
     doc = load_yaml(path) or {}
     spec = ((doc.get("census") or {}).get("file_population") or {})
@@ -320,6 +335,7 @@ def file_population(bundle: Path, path: Path = REGISTRY) -> list[str]:
     if not skip:
         raise ValueError(f"{path.name}#census.file_population.exclude_dir_named is empty — the "
                          f"census would include the emitted graph and describe itself")
+    carved = [c["path"] for c in carved_out(path)]
     out = []
     for f in bundle.rglob(spec.get("include") or "**/*"):
         if not f.is_file():
@@ -328,6 +344,8 @@ def file_population(bundle: Path, path: Path = REGISTRY) -> list[str]:
         if any(part in skip for part in rel.parts):
             continue
         if spec.get("exclude_dot_entries") and any(part.startswith(".") for part in rel.parts):
+            continue
+        if _oos_match(rel.as_posix(), carved):
             continue
         out.append(rel.as_posix())
     return sorted(out)
@@ -724,10 +742,19 @@ def scan_population(bundle: Path, kinds: dict[str, dict],
     Here, registering a kind widens the population automatically, and the gate prints what it saw
     over what exists.
     """
-    # A CARVED-OUT PLANE STAYS IN THE WALK. Its rows are labelled rather than counted, because
-    # the alternative is that the decision leaves no trace in the data at all -- the files simply
-    # stop appearing, which is exactly how an oversight looks. The declaration is in the registry
-    # and the evidence is in eg_coverage; neither alone is enough.
+    # A CARVED-OUT PLANE IS NOT WALKED. This is the opposite of what it did until 2026-10-04,
+    # and the reversal was an operator ruling, not a tidy-up: carved files were ADDED to the walk
+    # here so their rows could be LABELLED rather than missing, on the argument that "the files
+    # simply stop appearing, which is exactly how an oversight looks". True, and it cost 61% of a
+    # build to label a plane nothing was going to judge. The operator's ruling on acceptance
+    # ("does not have to be absolutely strict ... you should not even try to track acceptance
+    # here") settles the trade the other way.
+    #
+    # THE TRACE DID NOT GO WITH IT, because that objection was right. The ruling is in the
+    # registry's `carved_out`, which must name a `covered_by` to exist at all, and build.json
+    # reports `carved_out_files` and `carved_out_covered_by` -- so the number of files this
+    # removed and the mechanisms that judge them instead travel with every build. What is gone is
+    # one row per carved file, which is what was asked for.
     object_kinds: dict = {}
     for k in kinds.values():
         object_kinds.update(k.get("_object_kinds") or {})
@@ -747,10 +774,10 @@ def scan_population(bundle: Path, kinds: dict[str, dict],
             for f in it:
                 if f.is_file():
                     seen.setdefault(f, None)
-    for g in (carve_globs or []):
-        for f in bundle.glob(g):
-            if f.is_file():
-                seen.setdefault(f, None)
+    if carve_globs:
+        for f in list(seen):
+            if _oos_match(f.relative_to(bundle).as_posix(), list(carve_globs)):
+                del seen[f]
     return sorted(seen)
 
 

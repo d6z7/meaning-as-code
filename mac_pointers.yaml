@@ -1238,55 +1238,91 @@ pointer_kinds:
 # reading like the second, and six months from now the only evidence of a deliberate decision
 # would have been an absence. An absence is not a declaration.
 carved_out:
-  - path: 'acceptance/*_generated.yaml'
-    # SCOPED TO THE TWO GENERATED SUITES, NOT TO `acceptance/**`. The plane holds things this
-    # carve-out makes no claim about: `standing_failures.yaml` is the gate-failure register and
-    # stays UNCOVERED on purpose, because it is a debt and not a generated artifact; the question
-    # corpus under answers/, reference/ and anchors/ is already out of scope by the bundle's own
-    # ruling. Widening this glob would have swallowed all three and reported a debt as a decision.
-    decided: '2026-10-03'
+  - path: 'acceptance/**'
+    decided: '2026-10-04'
     decided_by: operator
-    covered_by: tools/check_suites_current.py
+    # ONE MECHANISM, because the field is what a reader runs. The plane's driver is gate.py;
+    # the two narrower mechanisms for its sub-planes are named in `reason` beside the sub-plane
+    # each one judges, which is where a reader looking for them will be.
+    covered_by: tools/gate.py
     removed_object_kinds: [generated_property]
     removed_reference_kinds:
       - generated_property_source
       - generated_property_validates_concept
       - generated_property_validates_relation
     reason: >
-      REFERENTIAL INTEGRITY IS THE WRONG MECHANISM FOR A GENERATED ARTIFACT. These suites are
-      rendered from the declarations they point at, so a stale pointer in one is never a fact
-      about the suite -- it is one fact about the PRODUCER not having been re-run, reported once
-      per pointer. Measured on the contoso5 of 2026-10-01: this registry found 22 separate
-      dangling pointers there, every one true, every one a symptom of that single cause.
-      check_suites_current.py re-runs the producer each suite names in its own `generated_by` and
-      byte-compares, so it reports the cause once and prints the command that fixes it.
-      Drift-against-regeneration is also the estate's existing precedent for generated files --
-      check_pages_current.py and `mac_resources.py --check` both work this way.
+      THE WHOLE ACCEPTANCE PLANE IS DRIVEN BY OTHER MECHANISMS AND IS NOT HELD TO REFERENTIAL
+      STRICTNESS. Operator ruling, 2026-10-04: "acceptance is driven with other mechanisms and
+      does not have to be absolutely strict -- ignore anything coming from acceptance, you should
+      not even try to track acceptance here." The ruling itself is older; what changed today is
+      that it is finally in ONE place. It had been implemented three times and completed none of
+      them -- 7 globs in the bundle`s own `conformance.out_of_scope`, one glob here covering only
+      `acceptance/*_generated.yaml`, and nothing at all over `board_history/`, `runs/`,
+      `*_runs.json`, `questions_dashboard.json`, `intents/` and `sme_needs.json`. So 401 of the
+      bundle`s 690 files -- 58% of the file census, 21.5 MB of 45.9 -- were still being censused
+      after being ruled out.
+
+      MEASURED, 2026-10-04: the plane cost 61% of a build (build_graph 967 ms -> 389 ms) and
+      `kind_census` alone 345 ms -> 44 ms, and it yielded 4 objects and 6 closure rows. The
+      census cost was also GROWING on its own: `board_history/` is an append-only archive of one
+      snapshot per clean gate run, 30 files and 17 MB, ~1,487 counted nodes added each run, and
+      it carried no information the census did not already have -- removing it drops 44,616
+      counted nodes to 5,924 and loses not one of the 35 keys, because every one also appears in
+      a live file. It made the COMMITTED integrity record churn whenever a gate ran.
+
+      WHY THE EARLIER SCOPING WAS NARROWER, AND WHAT COVERS EACH PART NOW. This entry used to
+      read `acceptance/*_generated.yaml` and argued against widening, because `acceptance/**`
+      would swallow two planes the carve-out made no claim about and report a debt as a decision.
+      Each is now named with its own mechanism rather than hidden:
+        the two generated suites   tools/check_suites_current.py re-runs the producer each suite
+                                   names in its own `generated_by` and byte-compares. Referential
+                                   integrity is the wrong instrument for a generated artifact: a
+                                   stale pointer in one is never a fact about the suite, it is one
+                                   fact about the PRODUCER not having been re-run, reported once
+                                   per pointer. On the contoso5 of 2026-10-01 this registry found
+                                   22 separate dangling pointers there, every one true and every
+                                   one the same cause. Drift-against-regeneration is the estate`s
+                                   existing precedent for generated files --
+                                   check_pages_current.py and `mac_resources.py --check` both work
+                                   this way.
+        standing_failures.yaml     the gate-failure register, and a DEBT rather than a generated
+                                   artifact, which is why widening was refused before.
+                                   tools/gate_register.py --check is its mechanism and judges it
+                                   directly; it was never the pointer registry`s to hold.
+        the question corpus        answers/, reference/, oracle/, anchors/ -- already out of scope
+                                   by the bundle`s own ruling, quoted in mac.project.yaml:
+                                   "corpus testing is outside the framework, because MAC defines
+                                   the ontology and not the questions asked of it".
+        the run history            board_history/, runs/, *_runs.json, questions_dashboard.json
+                                   are gate OUTPUT. tools/gate.py writes them and they are read
+                                   as evidence, never as declarations.
     measured_before_removing: >
       THE CARVE-OUT ORPHANS NOTHING, established before the rows came out rather than hoped for
-      afterwards, and measured at BOTH scopes because the first scope was the wrong one.
+      afterwards.
 
-      Of the four removed kinds: references whose TARGET is a `generated_property` = 0, and
-      non-acceptance objects whose upstream closure contains one = 0. A pure LEAF -- 112 objects
-      and 271 references pointing OUT at 75 declarations, nothing pointing back.
+      Of the four kinds removed with the generated suites: references whose TARGET is a
+      `generated_property` = 0, and non-acceptance objects whose upstream closure contains one
+      = 0. A pure LEAF -- 112 objects and 271 references pointing OUT at 75 declarations, nothing
+      pointing back.
 
-      Of the acceptance PLANE as a whole, which is the number that nearly made this change wrong:
-      5 references do point in, all from `contoso5.mac#resources[].path` at acceptance FILES
-      (`declared_file` nodes, which the manifest creates and which survive untouched), and 1
-      non-acceptance object depends on one. Those 5 remain resolved after the change -- verified,
-      not assumed. The plane also carried 228 `framework_term` and 84 `framework_contract_id`
-      references, and losing those was the real risk here: they are not acceptance testing at all,
-      they are framework vocabulary usage that happens to sit in acceptance files. See the
-      `'*'` object kind, whose population had to be DECLARED before this carve-out was safe.
+      Of the plane as a whole, re-measured on 2026-10-04 before widening: references from OUTSIDE
+      acceptance that target anything which disappears = 0. Dangling stays 0, identity violations
+      0, cycles 0. Only 4 objects go (three `*` carriers and one framework_term reached nowhere
+      else) because the FIVE `declared_file` objects for acceptance files are created by the
+      manifest`s own `resources[].path`, not by the walk -- so the bundle does not forget those
+      files exist, it stops reading inside them, and the manifest references to them still
+      resolve. That was the real risk here and it is why this was measured at both scopes.
 
-      The question corpus (answers/, reference/, anchors/ -- 748 coverage rows over 136 files) was
-      already out-of-scope by the bundle's own ruling, and `standing_failures.yaml` is a gate
-      register rather than a generated artifact, so it stays UNCOVERED on purpose.
+      The plane also carried 228 `framework_term` and 84 `framework_contract_id` references --
+      framework vocabulary usage that merely sits in acceptance files, not acceptance testing.
+      Losing those from the graph loses no declaration; see the `'*'` object kind, whose
+      population had to be DECLARED before any of this was safe.
     reversible: >
-      A LEAF IS RE-ADDABLE BY CONSTRUCTION. Restoring these four rows re-derives the 112 objects
-      and 271 references with no other row touched, which is what makes this a scoping decision
-      and not a loss. The removed rows are in git at the commit that carries this block.
-
+      A LEAF IS RE-ADDABLE BY CONSTRUCTION. Deleting this entry restores the plane to the
+      population and re-derives its objects and references with no other row touched, which is
+      what makes this a scoping decision and not a loss. The removed rows are in git at the
+      commit that carries this block, and the previous narrower version of this entry is in its
+      history.
 tombstones:
   artifact: governance/tombstones.yaml
   spec_version: mac.tombstones/1
