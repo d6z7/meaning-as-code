@@ -197,9 +197,9 @@ authored:
     what: a page NO PERSON writes — rendered from a declaration, held by its own generator's --check
     genre: generated
     path: reference_manual/keys/** | reference_manual/column_map.generated.md |
-      reference_manual/relation_column.generated.md
+      reference_manual/relation_column.generated.md | reference_manual/CURRENCY.md
     naming: the generator's own output path
-    population: {of: 58 pages, from: «the generators below», empty_is: EMPTY}
+    population: {of: 59 pages, from: «the generators below», empty_is: EMPTY}
     lifecycle: re-derived
     shape:
       # EXEMPT, EXPLICITLY, AND NEVER SILENTLY. A shape rule here would hold the page against a
@@ -220,9 +220,16 @@ authored:
                                             # exists because run_framework_gates.sh globs `check_*.py`
                                             # and could not see `gen_key_reference.py --check`.
         - tools/gen_slot_reference.py       # column_map.generated.md, relation_column.generated.md
+        - tools/check_semantic_currency.py  # CURRENCY.md — every claim this repository makes that its
+                                            # own schema, vocabulary or runtime contradicts. Written by
+                                            # `--page`, judged by `--check-page`.
     producers:
       - {tool: tools/gen_key_reference.py, role: writes reference_manual/keys/** from mac.schema.json}
       - {tool: tools/gen_slot_reference.py, role: writes the two slot pages}
+      - {tool: tools/check_semantic_currency.py,
+         role: "writes reference_manual/CURRENCY.md from the schema, the vocabulary and
+                mac_runtime.canon.IMPLEMENTED — the SEMANTIC counterpart to
+                check_dangling_references, which judges only whether a pointer resolves"}
     consumers: [{tool: «a reader», role: the key-by-key answer a person cannot get from the schema}]
     checkers: [tools/check_key_reference.py]
 

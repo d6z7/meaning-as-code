@@ -1,7 +1,7 @@
 ---
 title: "Canon — alias_resolve"
 part_of: reference_manual/canon
-status: NOT IMPLEMENTED — no bundle in the estate declares it
+status: SHIPPED — implemented in mac-runtime (`canons/alias_resolve.py`) and honoured today; no bundle in the estate declares it yet, which is a separate fact and was conflated with this one
 scope: GENERIC — domain-neutral
 ---
 

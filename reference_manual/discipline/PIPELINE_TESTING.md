@@ -364,7 +364,7 @@ all of them.** One query per claim, written from that claim's own prose.
 
 ### A.9.3 · TRANSLATING A PROSE CLAIM INTO COLUMNS
 
-Most of the valuable claims are prose. `produces.grain` says *"one row per (object × scope)"* and
+Most of the valuable claims are prose. `grounding.grain` says *"one row per (object × scope)"* and
 names no columns. Do not skip these — they are the highest-value claims in the bundle — and do not
 guess the columns either. **Derive the key, then corroborate it twice:**
 
