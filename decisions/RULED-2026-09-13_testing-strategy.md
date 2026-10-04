@@ -1,3 +1,11 @@
+---
+state: ruled
+genre: ruling
+ruled: 2026-09-13
+implemented_by:
+  - tools/run_framework_gates.sh
+  - tools/gate_register.py
+---
 # RULED — 2026-09-13 · the testing strategy's two gating decisions
 
 **Status: RULED BY THE OPERATOR.** This records a ratification, not a proposal. The analysis it

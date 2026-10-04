@@ -1,10 +1,27 @@
+---
+state: implemented
+genre: proposal
+ruled: 2026-09-29
+paths: bundle-relative
+supersedes: PROPOSED-2026-09-29_delivery-manifest.md
+implemented_by:
+  - guardrails/common.yaml
+  - guardrails/data/quality.yaml
+  - guardrails/data/sources.yaml
+  - guardrails/data/transformation.yaml
+  - guardrails/data/sme_questions.yaml
+  - guardrails/ontology/concepts.yaml
+  - guardrails/unfiled.yaml
+  - tools/check_guardrails.py
+---
 # GUARDRAILS — ONE SMALL FILE PER TOPIC, AND SOMETHING THAT CAN SAY NO
 
 **Paths: bundle-relative** where a descriptor or data file is named (`d_customer.yaml`, `data/…`); guardrail files are under this repo's `guardrails/`.
 
-**Status: PROPOSED.** Written by an agent; an agent may only write PROPOSED. The design is the
-operator's; the measurement is mine. Supersedes `PROPOSED-2026-09-29_delivery-manifest.md`, whose
-four rulings are carried forward unchanged and whose diagnosis is not restated here.
+**Status: IMPLEMENTED 2026-09-29** — written by an agent, and acted on the same day by the operator,
+whose design it was; the measurement is mine. The state is in this file's front matter. Supersedes
+`PROPOSED-2026-09-29_delivery-manifest.md`, whose four rulings are carried forward unchanged and
+whose diagnosis is not restated here.
 
 **What shipped (2026-09-29):** the single `guardrails/data-ingestion.yaml` named below was never written under that name;
 what shipped is four topic files — `guardrails/data/quality.yaml`, `guardrails/data/sources.yaml`,

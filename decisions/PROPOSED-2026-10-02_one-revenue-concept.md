@@ -1,3 +1,7 @@
+---
+state: proposed
+genre: proposal
+---
 # PROPOSED — 2026-10-02 · ONE Revenue concept, and the four things that break first
 
 **Status: PROPOSED.** Per CORE §3 an agent may only write `PROPOSED`; adding or removing a concept is

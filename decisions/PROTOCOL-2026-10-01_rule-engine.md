@@ -1,3 +1,7 @@
+---
+state: recorded
+genre: protocol
+---
 # PROTOCOL — 2026-10-01 · the rule engine: a declared rule that fires and selects rows
 
 **Written because the operator asked for it: "i want one agent to protocol and document ALL what is

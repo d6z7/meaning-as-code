@@ -1,3 +1,11 @@
+---
+state: implemented
+genre: adr
+ruled: 2026-09-10
+implemented_by:
+  - pyproject.toml
+  - __init__.py
+---
 # ADR — Packaging: what `pip install meaning-as-code` should mean
 
 STATUS: ACCEPTED (option C) · DATE: 2026-09-10

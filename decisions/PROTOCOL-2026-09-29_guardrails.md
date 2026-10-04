@@ -1,3 +1,10 @@
+---
+state: recorded
+genre: protocol
+paths: bundle-relative
+cited_by:
+  - tools/framework_gate_failures.yaml
+---
 # PROTOCOL — 2026-09-29 · guardrails: the concluding structure, and what it is owed
 
 **Written because the operator asked for it: "protocol last state of the art and concluding
