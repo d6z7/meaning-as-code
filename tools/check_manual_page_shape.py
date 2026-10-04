@@ -140,16 +140,31 @@ def headings(text: str) -> dict:
 
 
 def has_purpose(body: str) -> bool:
-    """Prose between the first `# ` title and the first `##` — the page saying what it is for."""
+    """Prose between the first `# ` title and the first `##` — the page saying what it is for.
+
+    SCANS THE WHOLE SPAN, and the earlier version returned on the FIRST non-blank line instead. That
+    made an `###` SUBTITLE between the title and the prose read as "the page never says what it is
+    for" — measured on 4 pages that all say it in the next paragraph:
+
+        # THE FOLD GRAMMAR
+        ### How to say what a number means, in words a domain expert can check
+
+        You have the design. This is how to use it. …
+
+    A subtitle is part of the title, so it is skipped like a comment. What still fails is the real
+    defect: a title (with or without a subtitle) running straight into `## 1. …` with no prose at all.
+    """
     lines = defence(body).splitlines()
     start = next((i for i, l in enumerate(lines) if l.startswith("# ")), None)
     if start is None:
         return False
     for line in lines[start + 1:]:
         s = line.strip()
-        if not s or s.startswith("<!--"):
-            continue
-        return not s.startswith("#")
+        if s.startswith("## "):
+            return False          # reached the first section having found no prose
+        if not s or s.startswith("<!--") or s.startswith("#") or set(s) <= {"-", "=", "*"}:
+            continue              # blank, a comment, a subtitle, or a horizontal rule
+        return True
     return False
 
 
@@ -218,6 +233,13 @@ def check_frontmatter(rel: str, fm, shape: dict) -> list:
     if not spec:
         return [_f(rel, NA, note="the genre declares no frontmatter rule")]
     if fm is None:
+        #: REQUIRING NOTHING CANNOT BE UNSATISFIED BY NOTHING. The earlier version refused an absent
+        #: block unconditionally and printed "the genre requires []" — a genre whose frontmatter is
+        #: entirely `optional:` could never pass, which is a rule asserting the opposite of what it
+        #: declares. An absent block is now a finding only where a key is actually required.
+        if not (spec.get("required") or []):
+            return [_f(rel, NA, note="no `---` block, and the genre requires no key — "
+                                     "its frontmatter is entirely optional")]
         return [_f(rel, FAILED, "FRONTMATTER_MISSING",
                    "no `---` frontmatter block; the genre requires "
                    f"{sorted(spec.get('required') or [])}")]

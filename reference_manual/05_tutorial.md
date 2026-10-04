@@ -12,7 +12,7 @@ on-ramp: you start with nothing, write one concept, **run it**, and grow a model
 time. It teaches the *mechanics*; when a shape turns tricky, it hands you to the matching pattern in Ch.03.*
 
 > **Relationship to the canon (A3 — reference, don't restate).** The step-by-step *recipes* live in
-> [`../MODELLERS_COOKBOOK.md`](../MODELLERS_COOKBOOK.md) (B1 author a concept · B3 enumeration · B4 rule ·
+> [`guides/MODELLERS_COOKBOOK.md`](guides/MODELLERS_COOKBOOK.md) (B1 author a concept · B3 enumeration · B4 rule ·
 > B5 edge · B6 grounding); the full worked model is [`../example_shop_ontology/`](../example_shop_ontology/).
 > This tutorial is the *narrative that runs them* — it points at each recipe rather than copying it.
 
@@ -91,7 +91,7 @@ declared fact* (and its canon) that makes the hard case come out right. A few yo
 
 ## 5.5 Where to go next
 
-- **A recipe for the exact thing you're authoring** → [`../MODELLERS_COOKBOOK.md`](../MODELLERS_COOKBOOK.md)
+- **A recipe for the exact thing you're authoring** → [`guides/MODELLERS_COOKBOOK.md`](guides/MODELLERS_COOKBOOK.md)
   (decisions A1–A4, recipes B1–B8, antipatterns C).
 - **A complete model to read and copy** → [`../example_shop_ontology/`](../example_shop_ontology/) — every
   construct, in full, with its own `validate.sh` and `QUERIES.md`.

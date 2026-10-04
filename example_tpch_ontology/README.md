@@ -56,7 +56,7 @@ It runs, in order, the three data-free **L1** gates — structural (`validate_sc
 every model file clean), referential (`check_references.py` → 0 orphans), and constraint (`check_shapes.py` → the
 built-in shapes, incl. the cross-file `rule-binds-grounded` invariant) — and exits non-zero if any fails.
 L1 proves *conformance*, not correctness (it does not assert a column exists in a warehouse); L2/L3 remain
-(see [../CONFORMANCE.md](../CONFORMANCE.md)).
+(see [../reference_manual/specification/CONFORMANCE.md](../reference_manual/specification/CONFORMANCE.md)).
 
 ## From question to SQL
 

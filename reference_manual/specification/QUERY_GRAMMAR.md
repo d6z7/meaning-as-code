@@ -7,7 +7,7 @@
 # THE QUERY GRAMMAR
 ### How a question becomes SQL, in words a reviewer can check
 
-> **New to this? Read [QUERY_WALKTHROUGH.md](QUERY_WALKTHROUGH.md) first.** It follows seven real
+> **New to this? Read [QUERY_WALKTHROUGH.md](../guides/QUERY_WALKTHROUGH.md) first.** It follows seven real
 > questions end to end with traced output from the landed planner. This file is the reference
 > behind it, and a reference only answers questions you already know to ask.
 

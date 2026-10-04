@@ -14,8 +14,8 @@ scope: GENERIC — domain-neutral. Examples are the synthetic shop and TPC-H ont
 > changes; a gate fails when it breaks.
 
 This is the story of the idea, why it takes the shape it does, and how it sits next to the standards that
-solve neighbouring problems. The normative details live in [FRAMEWORK.md](../FRAMEWORK.md) and
-[CONFORMANCE.md](../CONFORMANCE.md); this is the part you read first.
+solve neighbouring problems. The normative details live in [FRAMEWORK.md](../reference_manual/specification/FRAMEWORK.md) and
+[CONFORMANCE.md](../reference_manual/specification/CONFORMANCE.md); this is the part you read first.
 
 ## 1. The problem: meaning has no home
 

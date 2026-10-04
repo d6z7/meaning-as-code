@@ -15,7 +15,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "guardrails" / "strategy.yaml"
-OUT = ROOT / "STRATEGY.md"
+#: HOMED BY `guardrails/document_home.yaml` (genre `framework_statement`), not by this line. A generated
+#: page relocated without its generator is re-written at the old path by the next run, so the page comes
+#: back and the move is silently undone — `relocate_pages.py` refuses to move while this path is stale.
+OUT = ROOT / "reference_manual" / "STRATEGY.md"
 
 
 def _ref(r: str) -> str:

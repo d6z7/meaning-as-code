@@ -8,15 +8,15 @@ audience: ontology architects, platform/vendor integrators, AI-agent builders, n
 scope: GENERIC — domain-neutral. No business domain, warehouse, or vendor appears here.
 companions:
   - ../mac.schema.json          # the authoritative closed schema this is generated from (governs syntax)
-  - ../CONFORMANCE.md           # the schema changelog + conformance levels
+  - specification/CONFORMANCE.md           # the schema changelog + conformance levels
   - 02_building_blocks.md       # what the six classes ARE (the structures); this shows their YAML shape
-  - ../FRAMEWORK.md             # the canonical why + construct definitions
+  - specification/FRAMEWORK.md             # the canonical why + construct definitions
 ---
 
 # The Shape Reference
 
 > **The readable face of [`mac.schema.json`](../mac.schema.json).** For *what* a concept, class, or layer
-> **is**, read [Ch.02 — building blocks](02_building_blocks.md) and [`FRAMEWORK.md`](../FRAMEWORK.md). This
+> **is**, read [Ch.02 — building blocks](02_building_blocks.md) and [`FRAMEWORK.md`](specification/FRAMEWORK.md). This
 > document is the **reference** for *how a file is shaped* — which keys exist, where they nest, what is
 > required, the per-class conditionals, and the `x-` extension rule.
 >
