@@ -161,8 +161,46 @@ def notions_of(vocab: dict) -> dict:
             if isinstance(v, dict) and v.get("kind") in KINDS}
 
 
+#: THE PAGES THIS GENERATOR MAY WRITE, READ FROM THE DECLARATION THAT NAMES THEM.
+#: It used to be `sorted(docs.glob("*.md"))`. MEASURED 2026-10-04: that glob returns 27 pages and TWO
+#: of them — `column_map.generated.md` and `relation_column.generated.md` — are owned by
+#: `tools/gen_slot_reference.py`. Nothing declared that boundary; this generator refrained from writing
+#: them only because its injector is marker-driven and those two carry 0 `BEGIN GENERATED:
+#: vocabulary-terms:` markers. So the one thing standing between two producers and one file was an
+#: ABSENT MARKER, which is one line a person could add in good faith.
+#:
+#: Now the population comes from `guardrails/reference_manual.yaml` — the same declaration that names
+#: this tool as their producer. Measured: the 10 pages actually carrying a marker are all inside the
+#: `manual_topic_page` + `manual_argument_page` path lists (23 pages), and no marker-carrying page is
+#: outside them, so this is exact and not a narrowing of what is governed.
+_DECL = pathlib.Path(__file__).resolve().parent.parent / "guardrails" / "reference_manual.yaml"
+_GENRES = ("manual_topic_page", "manual_argument_page")
+
+
+def declared_pages(decl: pathlib.Path = _DECL) -> list[str] | None:
+    """Basenames the guardrail declares for the genres this tool injects into, or None."""
+    try:
+        import yaml
+        doc = yaml.safe_load(decl.read_text(encoding="utf-8")) or {}
+    except Exception:                                                     # noqa: BLE001
+        return None
+    out: list[str] = []
+    for genre in _GENRES:
+        item = (doc.get("authored") or {}).get(genre) or {}
+        for branch in str(item.get("path") or "").split("|"):
+            b = branch.strip()
+            if b.startswith("reference_manual/") and b.endswith(".md"):
+                out.append(b.rsplit("/", 1)[-1])
+    return sorted(set(out)) or None
+
+
 def pages_of(docs: pathlib.Path) -> list[pathlib.Path]:
-    return sorted(docs.glob("*.md"))
+    names = declared_pages()
+    if names is not None:
+        return [docs / n for n in names if (docs / n).is_file()]
+    #: THE DECLARATION IS UNREADABLE. Fall back to the glob, but never to a page whose name says
+    #: another generator renders it — a degraded population must not be a wider one.
+    return [p for p in sorted(docs.glob("*.md")) if not p.name.endswith(".generated.md")]
 
 
 def chapters_of(docs: pathlib.Path) -> dict[str, list[tuple[pathlib.Path, str]]]:

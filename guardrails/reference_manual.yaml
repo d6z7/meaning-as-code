@@ -76,7 +76,15 @@ authored:
       # sentence between the H1 and the first `##`. The rule is declared because the shape should
       # survive the next chapter, not because these break it.
       opens_with: purpose
-    producers: [{tool: «a person», role: writes and revises it; there is no generator}]
+    producers:
+      - {tool: «a person», role: writes and revises the chapter's argument}
+      # THE EARLIER LINE SAID "there is no generator", AND A GENERATOR WRITES ONE OF THESE PAGES.
+      # Measured 2026-10-04: `reference_manual/data_plane.md` is in this genre's path list and carries a
+      # `BEGIN GENERATED:vocabulary-terms:` block. An undeclared writer is the one thing
+      # `mac_artifacts.yaml`'s header forbids outright, and this declaration denied its existence.
+      - {tool: tools/gen_vocabulary_terms.py,
+         role: "injects one `vocabulary-terms` block per notion between markers — the chapter around it
+                is hand-written, and it writes ONLY where a marker already exists"}
     consumers:
       - {tool: «a reader», role: the manual's through-line, read in chapter order}
       - {tool: tools/check_dangling_references.py, role: holds its cross-links, reads: ["«links»"]}
@@ -280,6 +288,16 @@ authored:
       - {tool: tools/gen_schema_shapes.py,
          role: "injects ONE block into shape_reference.md between GENERATED markers — the page around
                 it is hand-written, which is why it is a topic page and not a generated face"}
+      # ALSO AN INJECTOR HERE, AND IT WAS UNDECLARED. Measured 2026-10-04: gen_vocabulary_terms writes
+      # 24 `vocabulary-terms` blocks across 9 of this genre's pages (canon_library, column_roles,
+      # column_rulings, column_specification, connection, identity_and_rules, measures,
+      # refusals_and_findings, testing_and_quality) plus data_plane.md in the argument genre. Its write
+      # POPULATION is now read from these two `path` lists rather than from a glob over
+      # `reference_manual/*.md`, which had already enumerated the two `*.generated.md` pages
+      # gen_slot_reference owns — two producers held apart by an absent marker rather than a declaration.
+      - {tool: tools/gen_vocabulary_terms.py,
+         role: "injects one `vocabulary-terms` block per notion between markers, in the pages THIS
+                declaration names; the page around each block is hand-written"}
     consumers: [{tool: «a reader», role: looked up by subject}]
     checkers: [tools/check_manual_page_shape.py]
     # NO STANDING ENTRY, AND THE GATE IS WHY. The first run of this declaration reported
