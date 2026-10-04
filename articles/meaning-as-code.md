@@ -149,10 +149,11 @@ nothing recalled from memory:
 | the measure expression in `SELECT` | a **rule**'s `template` |
 | which columns a rule may touch | the rule's `binds` |
 
-"Net revenue by region" ([TPC-H](../example_tpch_ontology/QUERIES.md)) is not answered from priors: the
-`SELECT` is the `net_revenue` rule's formula, the four `JOIN`s are four edges' `join_rule`s verbatim, the
-label is a column with role `value`. The composite join through an associative entity, the lifecycle rule
-that defines "received" — each clause traces to a cited file.
+"Net revenue by customer" ([shop](../example_shop_ontology/QUERIES.md) Q2) is not answered from priors:
+the `SELECT` is the `net_revenue` rule's formula (`gross − refunds`), the `JOIN` to customers is the
+`order__placed_by__customer` edge's `join_rule`, the `WHERE paid_at IS NOT NULL` is that rule's
+only-paid condition, and the label is a column. Every clause traces to a cited file — the SQL in that
+page carries the citation inline, as a comment, on the line it justifies.
 
 And the model knows the **boundary of what it can answer**. Ask the [shop](../example_shop_ontology/QUERIES.md)
 for "net revenue by product category" and a correct generator *refuses*: Revenue grounds on orders;

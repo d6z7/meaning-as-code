@@ -108,7 +108,7 @@ BASELINE = Path(__file__).resolve().parent / "dangling_floor.txt"
 SKIP_DIRS = {".git", "build", "node_modules", ".venv", "__pycache__", ".pytest_cache", "wiki", "protocol",
              ".harvest_cache", "evidence"}
 OWNED = ("tools", "decisions", "reference_manual", "guardrails", "sdk", "grammar", "registers", "benchmark",
-         "bundlegen", "invariants", "recognition", "example_shop_ontology", "example_tpch_ontology", "tests",
+         "bundlegen", "invariants", "recognition", "example_shop_ontology", "tests",
          "protocol", "wiki", "articles")
 CROSS_REPO = ("mac-platform/", "mac-console/", "mac-integration-kit/", "mac-ontology-", "packages/",
               "mac_runtime/", "okf_core/", "foldplane/", "platform/skills/")

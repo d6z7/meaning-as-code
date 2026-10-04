@@ -174,6 +174,6 @@ regenerates a ruled transform.
 ## Sequence
 
 1. Framework: add the manifest + resolver; teach the gates and projectors to use it; prove on the shop
-   example (shop two-plane, tpch back-compat proof).
+   example (two-plane; the tpch back-compat proof was removed with that bundle, 2026-10-04).
 2. Apply Option A to an applied project (relocate into `data/` + `ontology/`).
 3. Option B: migrate column meaning into ontology field-anchoring.

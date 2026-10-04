@@ -17,11 +17,17 @@ against the change. The framework branch and the applied-instance migration that
 
 ## The checklist
 
-1. **Both worked examples.** Apply the FULL change to **shop AND tpch**. A construct exercised in only
-   one example is not done — both must carry it (and, where it adds value, exercise different facets, e.g.
-   shop demonstrates `kind: raw_source`, tpch additionally `kind: dataset`).
+1. **The worked example.** Apply the FULL change to **shop**. A construct nothing exercises is not done:
+   the example must carry it, not just the schema.
 
-2. **Projections regenerated on both examples.** Every projector affected by the change is re-run for
+   *This read "shop AND tpch" until 2026-10-04, when `example_tpch_ontology` was removed — operator:
+   "we will keep only final version of contoso ontology as example". The rule it encoded is worth keeping
+   in sight: ONE example cannot exercise two facets of a construct at once (shop demonstrated
+   `kind: raw_source` where tpch additionally demonstrated `kind: dataset`), so a construct with more than
+   one facet now needs either a second bundle or a negative fixture per facet. Until contoso becomes the
+   in-repo example, that gap is real and this is where it is recorded.*
+
+2. **Projections regenerated on the example.** Every projector affected by the change is re-run for
    **both** examples and the outputs committed — including any NEW projector. The examples must *show* the
    change in `projections/`; a change that adds a construct but leaves the example projections stale or
    missing is incomplete. (This point exists because the data-plane transform construct first shipped with
@@ -37,8 +43,8 @@ against the change. The framework branch and the applied-instance migration that
    `CONFORMANCE.md` changelog entry, and version-stating prose in `README.md`/`FRAMEWORK.md`. Verify a
    single version value remains (`grep -rho "schema_version: *'[^']*'" example_*_ontology | sort -u`).
 
-4. **All gates green on both examples, plus the test suites.** structural (`validate_schema.py`) ·
-   referential (`check_references.py`) · constraint (`check_shapes.py`) for shop AND tpch, then
+4. **All gates green on the example, plus the test suites.** structural (`validate_schema.py`) ·
+   referential (`check_references.py`) · constraint (`check_shapes.py`) for shop, then
    `tests/test_negative.py` + `tests/test_layout.py`. **Any new closed vocabulary (a new enum / required
    key / file type) gets a matching negative fixture** proving the gate rejects violations.
 

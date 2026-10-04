@@ -101,5 +101,4 @@ that executes against a model and shows its work.
 ---
 
 *Companions: [meaning-as-code.md](meaning-as-code.md) (the idea) · [positioning.md](positioning.md) (why
-this over OSI / platforms) · the worked [shop](../example_shop_ontology/QUERIES.md) and
-[TPC-H](../example_tpch_ontology/QUERIES.md) question→SQL demos.*
+this over OSI / platforms) · the worked [shop](../example_shop_ontology/QUERIES.md) question→SQL demo.*

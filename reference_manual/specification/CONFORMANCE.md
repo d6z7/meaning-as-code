@@ -67,8 +67,8 @@ from an applied pilot into core (the `contract.rules` RuleObject in `mac.schema.
 `rule-binds-grounded` shape enforces it **cross-file**: every `binds` value must be a column of the table
 the concept grounds to (`grounding.table`/`sources` → `tables/<name>.yaml#columns`). Columns are
 single-homed in the Physical layer, so a rule cannot claim to govern a field the concept does not ground —
-the relational check the schema structurally cannot make. See `example_tpch_ontology` LineItem for a
-worked instance.
+the relational check the schema structurally cannot make. The worked instance was `example_tpch_ontology` LineItem, removed 2026-10-04; `example_shop_ontology`
+Order carries the same shape.
 
 **The data-plane transform construct (v0.1.8).** The two-plane layout's data plane is now fully typed,
 not just its seam. Alongside `data/datasets/` (produced relations → `TableFile`) and `data/sources/`

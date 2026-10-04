@@ -177,7 +177,9 @@ DEFAULT_TIMEOUT = 60.0
 
 #: The bundle handed to any module that wants a positional path, per the brief: use the example
 #: bundles as the real fixture. First one that exists wins.
-EXAMPLE_BUNDLES = ("example_tpch_ontology", "example_shop_ontology")
+#: example_tpch_ontology REMOVED 2026-10-04 (operator: keep only contoso as the example). A name
+#: here pointing at a directory that is gone is an exemption over nothing, so it goes with it.
+EXAMPLE_BUNDLES = ("example_shop_ontology",)
 
 
 # ------------------------------------------------------------------------------------------------

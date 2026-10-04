@@ -79,7 +79,8 @@ REJECTS = (
 #: A record of the past. `protocol/README.md`: "Append-only. Entries are never edited."
 ARCHIVE = ("protocol/", "decisions/")
 #: Not this repository's prose: an applied ontology's own files, and frozen expected values.
-NOT_PROSE = ("example_shop_ontology/", "example_tpch_ontology/", "tests/")
+#: example_tpch_ontology was removed 2026-10-04; a name excluding a directory that is gone is an exemption over nothing.
+NOT_PROSE = ("example_shop_ontology/", "tests/")
 
 PRESENT = re.compile(r"\b(current|currently|today|now|the next|latest|at present|as it stands|"
                      r"you (?:may|can|should|must) (?:write|declare|use))\b", re.I)

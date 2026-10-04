@@ -72,7 +72,8 @@ SIBLINGS = {
 #: Not documentation: bundle content, test goldens, build output. Excluded from the population with a
 #: reason, never silently — a denominator chosen to flatter the gate is the defect this estate names.
 NOT_DOCUMENTATION = (
-    "example_shop_ontology/", "example_tpch_ontology/",   # an APPLIED ontology's own files
+    "example_shop_ontology/",   # an APPLIED ontology's own files
+    #: example_tpch_ontology was removed 2026-10-04; a name excluding a directory that is gone is an exemption over nothing.
     "tests/golden/", "tests/fixtures/",                   # frozen expected values
     "node_modules/", "build/", ".venv/", "__pycache__/", ".git/",
 )
