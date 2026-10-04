@@ -135,9 +135,15 @@ run_capped() {
 # needs a flag the runner has no convention for and stays declared in the register as cannot-open.
 # `check_dangling_references` judges THIS repository's documents against THIS repository's baseline;
 # handed a bundle root it reported 58 new and 35 stale — a calling-convention miss, not a finding.
+# 2026-10-04: check_key_reference. Its subject is this repository's reference_manual/keys/ pages;
+# a bundle only supplies the examples, so it takes no bundle root. It is also the FIRST generator in
+# this repository whose --check the suite can see: the loop above globs `check_*.py`, so the five
+# existing `gen_*.py --check` instruments are invisible to it, which is how shape_reference.md held
+# `schema 0.1.14` against a 0.1.16 schema with nothing red.
 REPO_SUBJECT_GATES=(check_protocol.py check_canon_documented.py check_projection_field_parity.py
   check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
-  check_wiki_citations.py check_dangling_references.py check_strategy.py check_declarations_read.py)
+  check_wiki_citations.py check_dangling_references.py check_strategy.py check_declarations_read.py
+  check_key_reference.py)
 
 repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
   local n="$1" g
