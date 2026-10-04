@@ -43,6 +43,11 @@ world calls it, "Contoso, Ltd" is what the register calls it, and they are one c
 naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many
 and this ruling would be wrong. Cardinality cannot tell you which you have.
 
+| field | value |
+|---|---|
+| `constellation` | TWO COLUMNS ARE 1:1 AND ONE IS THE OTHER'S NAME. Cardinality is symmetric so the data cannot say which direction it runs; a person must. Getting it backwards produces an answer with the wrong column as its axis rather than an error.
+ |
+
 #### `mac.concept.column.ruling.finer_than`
 
 THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are
@@ -51,6 +56,11 @@ carries 32 values that roll up cleanly into `CategoryName`'s 8 — measured 32 d
 32 subcategories, so every subcategory has exactly ONE parent and the roll-up cannot
 double-count. THAT CLEAN N:1 IS THE TEST. A pair that merely differs in cardinality may be a
 colliding code space instead — see `scoped_by`, and measure before you rule.
+
+| field | value |
+|---|---|
+| `constellation` | TWO DIMENSIONS ARE A HIERARCHY AND THE ROWS SHOW ONLY A CORRELATION. Every sub-category sits in exactly one category, so the coarser question is answerable from the finer rows and not the reverse — a containment that is a business fact, not a measurable one.
+ |
 
 #### `mac.concept.column.ruling.scoped_by`
 
@@ -61,6 +71,11 @@ Corse in France, Como in Italy and Colorado in the United States. measured on a 
 `GROUP BY State` silently merges three unrelated regions into one row that looks like data. NOT
 `finer_than`: nothing here is a level of anything. It is one code space reused per parent, which
 is the composite identity `mac.canon.composite_key_guard` exists to protect.
+
+| field | value |
+|---|---|
+| `constellation` | A CODE IS UNIQUE ONLY INSIDE ITS PARENT, AND THE COLLISION IS SILENT. Measured: 40 of 565 state codes repeat across countries, so grouping on state merges regions and still returns a plausible table.
+ |
 
 #### `mac.concept.column.ruling.sort`
 
@@ -80,12 +95,22 @@ are the N that matter. A COLUMN THAT DECLARES NOTHING falls to
 query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice
 columns), and `Intent.ordering` -- the reader's own words, "top 5 by price" -- outranks both.
 
+| field | value |
+|---|---|
+| `constellation` | THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises none without ORDER BY, so the answer changes between runs on unchanged data — measured, on an 88-row breakdown that passed and failed alternately.
+ |
+
 #### `mac.concept.column.ruling.never_axis`
 
 THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
 measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
 CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990
 served customers and is the dominant identifier in the row.
+
+| field | value |
+|---|---|
+| `constellation` | GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990 postcodes identify a single customer. The query is legal and the result is a customer list pretending to be a breakdown.
+ |
 <!-- END GENERATED:vocabulary-terms:concept.column.ruling -->
 
 ---

@@ -1,0 +1,15 @@
+# gen_key_reference CONSTELLATION FLOOR — how many keys may still state no constellation.
+#
+# 177 -> 161. 177 was the count the moment the field existed and nothing used it; 161 is the count
+# after the column block and the three column vocabularies were written, measured 2026-10-04.
+#
+# A RATCHET, AND IT MOVES ONE WAY. Lower it by WRITING a constellation, never by raising it to make
+# a run green. The gate prints its own slack, because a floor above the measurement is headroom
+# rather than a ratchet — the leak gate's own floor file records a count that fell to 4 while the
+# declaration still said 146, which is 142 findings of permission nobody granted.
+#
+# WHY THIS IS A FLOOR AND NOT A REJECT. A key with no stated constellation is a real debt and there
+# are 161 of them; a hard reject would have been red on its first run and stayed red, which is how a
+# gate becomes something people pass a flag to. What may NOT happen is a NEW key arriving without
+# one — that is what this number catches, on the day it happens.
+161

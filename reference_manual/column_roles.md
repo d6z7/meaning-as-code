@@ -103,6 +103,8 @@ what the fact joins on.
 | field | value |
 |---|---|
 | `query_use` | identity |
+| `constellation` | A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT. Reach for it when the column is what a join lands on or what a distinct count counts — and never let it be summed: an identifier that is totalled is a number nobody asked for.
+ |
 
 #### `mac.concept.column.role.dimension`
 
@@ -114,6 +116,8 @@ resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example
 | field | value |
 |---|---|
 | `query_use` | axis, extremum |
+| `constellation` | A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender = 'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of the two is reasonable, the column is probably a key or a measure wearing a dimension's name.
+ |
 
 #### `mac.concept.column.role.measure`
 
@@ -124,6 +128,8 @@ is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmou
 | field | value |
 |---|---|
 | `query_use` | aggregate, extremum |
+| `constellation` | ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the datatype. The corollary matters as much: a threshold on a measure is a HAVING over the aggregate, never a WHERE over the column, so declaring this also declares where a filter may not go.
+ |
 
 #### `mac.concept.column.role.period`
 
@@ -134,6 +140,8 @@ relation carries several, so "sales in March" cannot silently pick the wrong one
 | field | value |
 |---|---|
 | `query_use` | axis, extremum, period_binding |
+| `constellation` | THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order line with an order date and a delivery date is the compelling case: both are dates, both are plausible, and the question does not say. This names which one is THE reporting date so the choice is not made silently.
+ |
 
 #### `mac.concept.column.role.housekeeping`
 
@@ -149,6 +157,8 @@ them: a load stamp is housekeeping whoever keeps the house.
 | field | value |
 |---|---|
 | `query_use` | none |
+| `constellation` | THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A validity window on a versioned dimension is the case: grouping sales by the row's own start date is meaningless, but nothing in the data says so, and the column is a perfectly good date. Declaring it keeps the column out of a question's reach entirely — its absence from an answer is correct rather than a gap.
+ |
 <!-- END GENERATED:vocabulary-terms:concept.column.role -->
 
 ---

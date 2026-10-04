@@ -133,11 +133,21 @@ discloses that it counted. Exactly one per concept, and a concept that legitimat
 says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
 column that does not identify.
 
+| field | value |
+|---|---|
+| `constellation` | EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels it: a surrogate key every fact points at, with a human-readable code and a name beside it that are both 1:1 with it. All three look alike in a profile; only this says which one the joins and the counts are about.
+ |
+
 #### `mac.concept.column.identity.part`
 
 ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
 returns a set where a row was expected, and looks like an answer. Declared on every column of
 the tuple; the concept declares `mac.concept.identity.composite` alongside.
+
+| field | value |
+|---|---|
+| `constellation` | NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified by its order and its line number — neither is unique alone, and declaring either as the identity would make the grain a lie. Mark each participating column, and the composite is what the concept is keyed on.
+ |
 
 #### `mac.concept.column.identity.reference`
 
@@ -145,6 +155,11 @@ A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over 
 points at is named separately; whether every value is PRESENT in the parent is a measurement,
 not a declaration, and a reference with no parent relation in the delivery is recorded AS
 dangling rather than dropped or invented.
+
+| field | value |
+|---|---|
+| `constellation` | THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale identifies a customer; the sale is identified by something else entirely. Without this the key reads as part of the sale's own identity, and a count of sales becomes a count of customers.
+ |
 <!-- END GENERATED:vocabulary-terms:concept.column.identity -->
 
 ### `rulings` — judgements measurement cannot make
