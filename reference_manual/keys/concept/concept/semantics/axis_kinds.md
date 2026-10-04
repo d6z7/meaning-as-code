@@ -16,9 +16,7 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 *string* · optional
 
-What kind of aggregation axis one column is, keyed by column name — DEPRECATED, and measured inert: its keys are column names while the planner looked them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key could ever match. Declare `axis_kind` on the column instead. Kept because readers still fall back to it, so an unmigrated bundle is unchanged.
-
-Not written by any concept in `contoso5`.
+What kind of aggregation axis one column is, keyed by column name. DO NOT USE IT: the keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the whole declaration is inert. Declare `axis_kind` on the column instead. It remains readable so a bundle that still carries it is not broken by its absence.
 
 ---
 

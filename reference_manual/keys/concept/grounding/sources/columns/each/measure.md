@@ -4,11 +4,7 @@
 
 [concept](../../../../README.md) · [grounding](../../../README.md) · [sources](../../README.md) · [columns](../README.md) · [<name>](README.md) · measure
 
-The measure facts -> concept.semantics.measure_type / unit / additivity.
-
-SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before.
-
-THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.
+THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.
 
 ## Keys
 
@@ -23,15 +19,11 @@ THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in thr
 
 PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.
 
-Not written by any concept in `contoso5`.
-
 ### `canonical`
 
 *boolean* · optional
 
 THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity.
-
-Not written by any concept in `contoso5`.
 
 ### `type`
 
@@ -39,15 +31,11 @@ Not written by any concept in `contoso5`.
 
 WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.
 
-Not written by any concept in `contoso5`.
-
 ### `unit`
 
 *string* · optional
 
 WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.
-
-Not written by any concept in `contoso5`.
 
 ---
 

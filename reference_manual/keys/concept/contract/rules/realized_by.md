@@ -4,11 +4,11 @@
 
 [concept](../../README.md) · [contract](../README.md) · [rules](README.md) · realized_by
 
-v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
+a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
 
-## Form 1 — v0.1.9: a single canon binding. Names a canon and su
+## Form 1 — a single canon binding. Names a canon and supplies O
 
-v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
+a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
 
 - [`udf`](#udf) — *string* **·** required
 - [`applied_as`](#applied-as) — *string*
@@ -21,13 +21,11 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
-Examples — 5 use(s) in `contoso5`, 2 distinct:
+Examples:
 
 ```yaml
-# Country
 udf: mac.canon.population_select
 
-# Discount
 udf: mac.canon.ratio_select
 ```
 
@@ -37,15 +35,11 @@ udf: mac.canon.ratio_select
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
 
-Not written by any concept in `contoso5`.
-
 ### `note`
 
 *string* · optional
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
-
-Not written by any concept in `contoso5`.
 
 ### `params`
 
@@ -53,10 +47,9 @@ Not written by any concept in `contoso5`.
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
 
-Examples — 5 use(s) in `contoso5`, 4 distinct:
+Examples:
 
 ```yaml
-# Country
 params:
   default: real
   populations:
@@ -71,7 +64,6 @@ params:
         op: eq
         value: --
 
-# Discount
 params:
   default: percent
   ratios:
@@ -83,7 +75,6 @@ params:
       - discount %
       - discount as a percentage
 
-# Location
 params:
   default: physical
   populations:
@@ -98,12 +89,12 @@ params:
         op: eq
         value: -1
 
-# … and 1 more distinct value(s)
+# … and 1 more shape(s)
 ```
 
-## Form 2 — v0.1.9: a single canon binding. Names a canon and su
+## Form 2 — a single canon binding. Names a canon and supplies O
 
-v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
+a single canon binding. Names a canon and supplies ONLY its params; the logic is single-homed in the executable canon library (tools/canon/) and documented in reference_manual/canon/. `applied_as` documents how the canon's output is consumed (e.g. subquery_wrapper, predicate_injection).
 
 - [`udf`](#udf) — *string* **·** required
 - [`applied_as`](#applied-as) — *string*
@@ -116,13 +107,11 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
-Examples — 5 use(s) in `contoso5`, 2 distinct:
+Examples:
 
 ```yaml
-# Country
 udf: mac.canon.population_select
 
-# Discount
 udf: mac.canon.ratio_select
 ```
 
@@ -132,15 +121,11 @@ udf: mac.canon.ratio_select
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
 
-Not written by any concept in `contoso5`.
-
 ### `note`
 
 *string* · optional
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
-
-Not written by any concept in `contoso5`.
 
 ### `params`
 
@@ -148,10 +133,9 @@ Not written by any concept in `contoso5`.
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
 
-Examples — 5 use(s) in `contoso5`, 4 distinct:
+Examples:
 
 ```yaml
-# Country
 params:
   default: real
   populations:
@@ -166,7 +150,6 @@ params:
         op: eq
         value: --
 
-# Discount
 params:
   default: percent
   ratios:
@@ -178,7 +161,6 @@ params:
       - discount %
       - discount as a percentage
 
-# Location
 params:
   default: physical
   populations:
@@ -193,12 +175,12 @@ params:
         op: eq
         value: -1
 
-# … and 1 more distinct value(s)
+# … and 1 more shape(s)
 ```
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Country** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 - udf: mac.canon.population_select

@@ -4,7 +4,7 @@
 
 [concept](../README.md) · [concept](README.md) · identity
 
-The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one. `resolved_axis` was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 (0 of 62 concepts used it); the enum below is landed FROM that vocabulary by tools/check_vocabulary_parity.py --write and is not edited by hand.
+The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional; presence is enforced warn-first by the shapes. The keyless-by-design kinds (`composite`, `sme_pending`) let a concept declare it has NO single-column key rather than be forced to invent one — a fake identity is worse than a declared absence, because a join will use it. The enum below is landed from mac_vocabulary.yaml by tools/check_vocabulary_parity.py --write and is not edited by hand.
 
 ## Keys
 
@@ -28,16 +28,13 @@ Legal values:
 - [`composite`](../../vocabulary/concept/identity.md#composite) — Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key.
 - [`sme_pending`](../../vocabulary/concept/identity.md#sme_pending) — Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules.
 
-Examples — 10 use(s) in `contoso5`, 3 distinct:
+Examples:
 
 ```yaml
-# Brand
 kind: code
 
-# Currency
 kind: iso
 
-# Customer
 kind: fk_name
 ```
 
@@ -45,9 +42,7 @@ kind: fk_name
 
 *string* · optional
 
-the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28).
-
-Not written by any concept in `contoso5`.
+The column or expression that IS the identity. Omit it for `sme_pending`, where the identity is the open question, and for `composite`, where no single column holds it. Prefer the COLUMN fact — `identity: canonical` in the column map — and declare it here only where there is no column map: an identity with two homes can disagree with itself.
 
 ### `counts_as`
 
@@ -55,10 +50,9 @@ Not written by any concept in `contoso5`.
 
 The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane.
 
-Examples — 1 use(s) in `contoso5`, 1 distinct:
+Examples:
 
 ```yaml
-# Store
 counts_as: location_code
 ```
 
@@ -68,29 +62,26 @@ counts_as: location_code
 
 How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH.
 
-Examples — 10 use(s) in `contoso5`, 10 distinct:
+Examples:
 
 ```yaml
-# Brand
 note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
   is established. Eleven brand NAMES used as their own key — a closed set with no surrogate and
   no …   # elided — see the real concept for the whole sentence
 
-# Color
 note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
   is established. Sixteen colour NAMES used as their own key.
 
-# Country
 note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
   is established. A `country_code` that IS the identity — ISO-3166 alpha-2, nine codes, no surrogate
   …   # elided — see the real concept for the whole sentence
 
-# … and 7 more distinct value(s)
+# … and 7 more shape(s)
 ```
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Brand** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 kind: code

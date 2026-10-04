@@ -19,15 +19,11 @@ Housekeeping. APPEND-ONLY — never edit change_log history.
 
 Whether a human has approved this concept as it now stands. It is about the FILE's review, not about whether the model is correct, and it goes stale the moment the file changes — which is what `change_log` and `last_reviewed` exist to make visible.
 
-Not written by any concept in `contoso5`.
-
 ### `change_log`
 
 *list of object* · optional · [has its own keys →](change_log.md)
 
 WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last. The one place a reader can see whether today's definition is the one a past answer was computed from. Git carries the diff; this carries the REASON, which a diff cannot.
-
-Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.governance.change_log`](change_log.md)
 
@@ -37,13 +33,11 @@ Its own keys: [`concept.governance.change_log`](change_log.md)
 
 ISO date — string or a YAML-parsed date
 
-Examples — 17 use(s) in `contoso5`, 2 distinct:
+Examples:
 
 ```yaml
-# Brand
 last_reviewed: '2026-09-29'
 
-# Color
 last_reviewed: '2026-09-30'
 ```
 
@@ -53,16 +47,15 @@ last_reviewed: '2026-09-30'
 
 WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a change to it. Distinct from `metadata.owner`, which names who answers for its MEANING; on a small team they are the same person and on a reviewed one they are deliberately not.
 
-Examples — 17 use(s) in `contoso5`, 1 distinct:
+Examples:
 
 ```yaml
-# Brand
 owner: operator
 ```
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Brand** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 owner: operator

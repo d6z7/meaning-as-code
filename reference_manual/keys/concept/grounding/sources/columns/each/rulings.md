@@ -4,9 +4,7 @@
 
 [concept](../../../../README.md) · [grounding](../../../README.md) · [sources](../../README.md) · [columns](../README.md) · [<name>](README.md) · rulings
 
-AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED, deliberately, and that is the whole point of the block: `role`, `identity` and `measure` beside it are DERIVED from the data, these are RULED by a human, and mac_vocabulary.yaml is explicit that they must not share a slot — "a slot that accepts both silts up, and `attribute` is what that looks like after two years". Keeping them in their own block makes the difference visible in the file rather than only in a vocabulary.
-
-ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.column.ruling declared four terms, closed, since v0.5; the column map admitted exactly role/identity/measure with additionalProperties: false; and reference_manual/column_rulings.md documented this very block with a man-page SYNOPSIS. So the vocabulary closed a set, the manual specified the shape, and the schema refused all of it — which is why the reference bundle showed 0 of 20 concepts declaring a ruling and I reported that as missing WORK. It was missing GRAMMAR. Every one of the four had a live case waiting: Manufacturer is a `label_of` Brand, SubCategoryName is `finer_than` CategoryName, State is `scoped_by` Country (40 of 565 codes collide across countries, so GROUP BY State silently merges three regions), and ZipCode is `never_axis` (29 193 of 104 990 values identify exactly one customer).
+AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED DELIBERATELY, and that is the point of the block: `role`, `identity` and `measure` beside it are DERIVED FROM THE DATA, these are RULED BY A HUMAN, and a slot that accepts both silts up until nobody can tell which kind a value is. Keeping them apart makes the difference visible in the file rather than only in a vocabulary. Each of the four has a live case: a trade-register name is a `label_of` the brand it names; a sub-category is `finer_than` its category; a state code is `scoped_by` its country, where 40 of 565 codes collide across countries so GROUP BY state silently merges three regions; and a postcode is `never_axis`, because 29,193 of 104,990 values identify exactly one customer.
 
 ## Keys
 
@@ -24,15 +22,11 @@ ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.colu
 
 The measurement a ruling rests on — a data-quality issue id, or a relation.column and the figure. REQUIRED with `never_axis`, and good practice with any ruling made from a number.
 
-Not written by any concept in `contoso5`.
-
 ### `finer_than`
 
 *string* · optional
 
 THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`.
-
-Not written by any concept in `contoso5`.
 
 ### `label_of`
 
@@ -40,21 +34,17 @@ Not written by any concept in `contoso5`.
 
 THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have.
 
-Not written by any concept in `contoso5`.
-
 ### `never_axis`
 
 *string* · optional
 
 THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)
 
-Not written by any concept in `contoso5`.
-
 ### `register`
 
 *string* · optional · 5 legal values
 
-WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'Contoso' is the common register, 'Contoso, Ltd' the legal one.
+WHICH naming register `label_of` points at — governed by mac.name_register. Required reading beside label_of: 'a worked bundle' is the common register, 'a worked bundle, Ltd' the legal one.
 
 Legal values:
 
@@ -64,29 +54,23 @@ Legal values:
 - [`short`](../../../../../vocabulary/name_register.md#short) — The abbreviated form. 'Mon' for Monday, 'Jan' for January.
 - [`code`](../../../../../vocabulary/name_register.md#code) — A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
-Not written by any concept in `contoso5`.
-
 ### `scoped_by`
 
 *string* · optional
 
 THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent.
 
-Not written by any concept in `contoso5`.
-
 ### `sort`
 
 *string* · optional · 3 legal values
 
-THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: "it must be sort per column and not concept"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. MEASURED 2026-10-02 on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged.
+THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: "it must be sort per column and not concept"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. Measured on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged.
 
 Legal values:
 
 - `asc`
 - `desc`
 - [`none`](../../../../../vocabulary/concept/aggregation_effect.md#none) — NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say.
-
-Not written by any concept in `contoso5`.
 
 ---
 

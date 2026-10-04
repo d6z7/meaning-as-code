@@ -20,15 +20,11 @@ A data-quality invariant (validation, NOT derivation). The description field is 
 
 WHAT MUST BE TRUE, stated so a reader can judge it. The condition itself — a uniqueness, a range, a relationship between columns that the schema cannot express. Where it can be executed, say so with `machine_executable` and give the engine a form it can run; an assertion nothing checks is a hope with a colon after it.
 
-Not written by any concept in `contoso5`.
-
 ### `machine_executable`
 
 *boolean* · optional
 
 Whether this assertion can be run as written, or is prose a person must check. Declaring it honestly is what keeps a constraint register from reading as a test suite: a register of twenty assertions of which three execute has three tests and seventeen intentions.
-
-Not written by any concept in `contoso5`.
 
 ### `notes`
 
@@ -36,15 +32,11 @@ Not written by any concept in `contoso5`.
 
 Working remarks about this assertion — what was measured, which rows fail it today, why it is stated this way rather than another.
 
-Not written by any concept in `contoso5`.
-
 ### `open_question`
 
 *string* · optional
 
 What about this assertion is not settled — a threshold nobody has ruled, a case the condition does not cover. Carried beside the assertion so the uncertainty travels with the thing it is about.
-
-Not written by any concept in `contoso5`.
 
 ### `severity`
 
@@ -57,8 +49,6 @@ Legal values:
 - [`ERROR`](../vocabulary/test_status.md#ERROR) — THE INSTRUMENT RAISED. An OUTAGE, not a judgement: a split that would not open, a connection refused, a timeout. Nothing was judged, so it must never be counted as a finding about the data — `tools/_plugin.py`'s founding rule ("could not run is the one honest answer available, and it is never a finding") and `sdk/connector/base.py`'s `EXIT_COULD_NOT_RUN`, on this axis. Carries `rows: null` — NOT `[]` — because an empty grid means the query ran and returned nothing, which is evidence, and `null` means nothing was examined.
 - `WARNING`
 - `INFORMATIONAL`
-
-Not written by any concept in `contoso5`.
 
 ---
 

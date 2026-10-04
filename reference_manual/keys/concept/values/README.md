@@ -18,9 +18,7 @@ v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure (
 
 *object* · optional · [has its own keys →](aliases/README.md)
 
-v0.1.9 (additive): the two-tier surface→canonical alias map a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent ⇒ no alias resolution for this enum.
-
-Not written by any concept in `contoso5`.
+The two-tier surface→canonical alias map that a generic resolver (mac.canon.alias_resolve) rides to bind a natural-language filter token to a closed value code. Optional; absent means no alias resolution for this enum. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way.
 
 Its own keys: [`concept.values.aliases`](aliases/README.md)
 
@@ -36,15 +34,11 @@ Legal values:
 - [`open`](../../vocabulary/dq_status.md#open) — NOBODY HAS RULED ON IT YET. The honest default and the only one that may be written without evidence — it asserts nothing except that the defect is recorded and undispositioned. This is the state that absence was silently standing in for, and naming it is the entire point: an issue is `open` because someone wrote `open`, not because a join missed.
 - `unknown`
 
-Not written by any concept in `contoso5`.
-
 ### `closure_why`
 
 *string* · optional
 
 THE EVIDENCE FOR THE CLOSURE CLAIM — what was measured, when, and against what. A closed set is a promise the engine will act on, so the claim needs a provenance a reviewer can re-run. `closed` with no `closure_why` is an assertion, not a measurement.
-
-Not written by any concept in `contoso5`.
 
 ### `items`
 
@@ -52,17 +46,13 @@ Not written by any concept in `contoso5`.
 
 the value rows — every value has a stable `code`; label/meaning/confidence/from are optional core; per-enum attributes are allowed.
 
-Not written by any concept in `contoso5`.
-
 Its own keys: [`concept.values.items`](items.md)
 
 ### `realized_by`
 
 *—* · optional · [has its own keys →](realized_by.md)
 
-v0.1.9: the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check).
-
-Not written by any concept in `contoso5`.
+the canon that realizes the closure semantics — closure_anomaly_check (a closed set → the out-of-set anomaly query; open/unknown → no check).
 
 Its own keys: [`concept.values.realized_by`](realized_by.md)
 

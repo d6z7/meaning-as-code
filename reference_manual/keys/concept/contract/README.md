@@ -19,19 +19,16 @@ v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using t
 
 The default aggregation / role / perspective to assume when the question is silent. Was aggregation_contract.
 
-Examples — 3 use(s) in `contoso5`, 3 distinct:
+Examples:
 
 ```yaml
-# Country
 default_reading: THREE RELATIONS REACH THIS CONCEPT AND A SALES QUESTION MEANS THE STORE'S. `{country_code}`
   is carried by the customer, by the store and by the location, so "revenue by country" has three
   …   # elided — see the real concept for the whole sentence
 
-# NetRevenue
 default_reading: 'An unqualified price means WHAT THE CUSTOMER PAID PER ARTICLE: `{net_amount}`
   summed and divided by [[UnitsSold]], 310.98 USD. Operator ruling, 2026-09-30.'
 
-# Order
 default_reading: A QUESTION THAT NAMES NO PERIOD COVERS ALL TIME — operator ruling, 2026-09-30.
   No implied "this year" and no implied latest month. The extent is `{order_date}` from 2016-05-18
   to …   # elided — see the real concept for the whole sentence
@@ -43,32 +40,27 @@ default_reading: A QUESTION THAT NAMES NO PERIOD COVERS ALL TIME — operator ru
 
 What an agent needs ONLY, to use this concept without probing the data; if more is needed, the concept is incomplete (fix it, don't probe). Was 'no_probe_guarantee'.
 
-Not written by any concept in `contoso5`.
-
 ### `resolution`
 
 *['string', 'object']* · optional
 
 How identity / name→code resolves (a join, not a probe). Was name_contract / resolution_contract / identity_contract.
 
-Not written by any concept in `contoso5`.
-
 ### `rules`
 
 *list of object* · optional · [has its own keys →](rules/README.md)
 
-v0.1.6: typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.
+typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d). Each rule is a trigger->directive, typed by what it governs (kind), and ANCHORED to the field(s) it governs (binds). `binds` must name columns of the table the concept grounds to — enforced cross-file by the rule-binds-grounded shape (mac_shapes.yaml). This is the field-anchoring: a rule cannot claim to govern a field the concept does not ground.
 
-Examples — 14 use(s) in `contoso5`, 14 distinct:
+Examples:
 
 ```yaml
-# Brand
 rules:
 - id: brand.resolution.by_grouping_products
   subject: Brand
   kind: mac.concept.rule.resolution
   confidence: P
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - brand
   when: the set of products carrying one brand is needed
@@ -86,20 +78,19 @@ rules:
   subject: Brand
   kind: mac.concept.rule.exclusion
   confidence: P
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - brand
   when: a question asks who is behind a product
   then: decide whether it means the brand the customer buys or the manufacturer, and say which
   never: treat the two columns as interchangeable because their member sets overlap
 
-# Color
 rules:
 - id: color.resolution.by_grouping_products
   subject: Color
   kind: mac.concept.rule.resolution
   confidence: C
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - color
   when: the set of products carrying one color is needed
@@ -114,7 +105,7 @@ rules:
   subject: Color
   kind: mac.concept.rule.ambiguity
   confidence: C
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - color
   when: a question asks about blue products, or breaks products down by colour
@@ -127,13 +118,12 @@ rules:
 
     '
 
-# Country
 rules:
 - id: country.exclusion.sentinel_is_not_a_country
   subject: Country
   kind: mac.concept.rule.exclusion
   confidence: P
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - country_code
   never: 'report nine countries
@@ -163,7 +153,7 @@ rules:
   subject: Country
   kind: mac.concept.rule.default
   confidence: C
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - country_code
   when: 'a measure over sales is grouped by or filtered on a country and the question does not
@@ -186,14 +176,14 @@ rules:
 
     '
 
-# … and 11 more distinct value(s)
+# … and 11 more shape(s)
 ```
 
 Its own keys: [`concept.contract.rules`](rules/README.md)
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Brand** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 rules:
@@ -201,7 +191,7 @@ rules:
   subject: Brand
   kind: mac.concept.rule.resolution
   confidence: P
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - brand
   when: the set of products carrying one brand is needed
@@ -220,7 +210,7 @@ rules:
   subject: Brand
   kind: mac.concept.rule.exclusion
   confidence: P
-  scope: CONTOSO5
+  scope: <source>
   binds:
   - brand
   when: a question asks who is behind a product

@@ -17,8 +17,6 @@ v0.1.9 (additive): a CLOSED two-tier alias map: surface tokens → a canonical v
 
 canonical code → its alias tiers.
 
-Not written by any concept in `contoso5`.
-
 Its own keys: [`concept.values.aliases.map`](map.md)
 
 ### `realized_by`
@@ -26,8 +24,6 @@ Its own keys: [`concept.values.aliases.map`](map.md)
 *—* · optional · [has its own keys →](realized_by.md)
 
 the canon that realizes the resolution — mac.canon.alias_resolve.
-
-Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.values.aliases.realized_by`](realized_by.md)
 

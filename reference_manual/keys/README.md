@@ -4,7 +4,7 @@
 
 Every key a concept file may write, one page per level, and one DIRECTORY per level so that any file-tree menu shows the hierarchy. Start at [`concept`](concept/README.md) — the file itself — and walk down: each page lists the keys legal at that level, what each means, which are required, the legal values of each, and the level beneath it.
 
-Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in the `contoso5` bundle. Nothing on these pages is authored prose — see `tools/gen_key_reference.py` for why.
+Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in a worked bundle, with that source's own name replaced by `<source>`: this is the grammar, so no page here teaches you about one ontology. Nothing on these pages is authored prose — see `tools/gen_key_reference.py` for why.
 
 | | |
 |---|---|
@@ -13,7 +13,7 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 | described in the schema | **200 of 200** (100%) |
 | **gaps — admitted and unexplained** | **0** |
 | vocabularies | 23, 144 terms |
-| examples | 103 |
+| examples | 103, from 17 concepts |
 
 ## The levels
 

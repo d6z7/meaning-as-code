@@ -21,9 +21,7 @@ The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).
 
 *object* · optional · [has its own keys →](additivity.md)
 
-Per-dimension aggregation rule — the footgun-preventer. v0.5: absorbs the former 'additivity_contract' (DECISION 0). Axis names are DOMAIN-SPECIFIC (a shop: customer/product/time) — any axis name maps to an additivity value. A stock measure is non-additive over time. v0.1.15: DERIVED, not authored. Writing it states the same fact twice — the concept would author both the premise and the conclusion, and they can drift: a target-inventory measure declared Target and wrote geography: additive, and a value anchor summed that measure across models for weeks on the strength of it. Kept in the schema so a legacy bundle still validates, and so the contradiction check has something to compare against when someone does write it.
-
-Not written by any concept in `contoso5`.
+Per-dimension aggregation rule — the footgun-preventer. Axis names are DOMAIN-SPECIFIC (a shop: customer, product, time) and any axis name maps to an additivity value. A stock measure is non-additive over time. DERIVED, NOT AUTHORED: writing it states the same fact twice, so the concept authors both the premise and the conclusion and they can drift — a target-inventory measure declared `geography: additive` and an anchor summed it across models for weeks on the strength of it. It stays in the schema so the contradiction check has something to compare against when somebody does write it.
 
 Its own keys: [`concept.concept.semantics.additivity`](additivity.md)
 
@@ -33,8 +31,6 @@ Its own keys: [`concept.concept.semantics.additivity`](additivity.md)
 
 v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.
 
-Not written by any concept in `contoso5`.
-
 Its own keys: [`concept.concept.semantics.axis_kinds`](axis_kinds.md)
 
 ### `measure_type`
@@ -43,15 +39,11 @@ Its own keys: [`concept.concept.semantics.axis_kinds`](axis_kinds.md)
 
 v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.
 
-Not written by any concept in `contoso5`.
-
 ### `null_semantics`
 
 *string* · optional
 
 WHAT A MISSING VALUE MEANS HERE — not loaded, genuinely zero, or not applicable. The three are indistinguishable in the rows and lead to three different answers: a sparse fact read as zero understates a total, and read as unknown refuses a question it could have answered. Where the reading changes the SQL, bind the `densify` canon; this is the statement a reader needs regardless.
-
-Not written by any concept in `contoso5`.
 
 ### `purpose`
 
@@ -59,15 +51,11 @@ Not written by any concept in `contoso5`.
 
 WHAT THIS CONCEPT IS FOR — the question it exists to answer. Where `definition` says what the notion IS, this says why the ontology carries it, which is what tells a later reader whether a proposed change serves it or quietly replaces it.
 
-Not written by any concept in `contoso5`.
-
 ### `realized_by`
 
 *—* · optional · [has its own keys →](realized_by.md)
 
-v0.1.9: the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero.
-
-Not written by any concept in `contoso5`.
+the canon(s) that realize a behaviour-bearing semantics slot — e.g. additivity_guard for the additivity/measure_type matrix, or densify for null_semantics=genuine_zero.
 
 Its own keys: [`concept.concept.semantics.realized_by`](realized_by.md)
 
@@ -77,24 +65,21 @@ Its own keys: [`concept.concept.semantics.realized_by`](realized_by.md)
 
 WHAT THIS CONCEPT COVERS AND WHAT IT LEAVES OUT, stated as a boundary. The population, the period, the part of the business. An answer is only as true as its scope, and an unstated scope is read as `everything` by whoever quotes the number next.
 
-Not written by any concept in `contoso5`.
-
 ### `unit`
 
 *string* · optional
 
 The unit of the measure this concept IS — 'USD', 'units', 'square_metres'. For a COMPOSED measure (several columns carrying `measure`) this is the unit of the composition and is REQUIRED, because the factor units differ and nothing may pick one: `Quantity x NetPrice` is USD though its factors are `units` and `USD`. With a single measure column it projects from that column's `measure.unit`. It is prose, deliberately: a unit carries what a reader must know to trust a number, and the one measured case where it was WRONG (an amount claimed in the order's own currency when it is stored in USD) was caught by a sentence, not by a token.
 
-Examples — 1 use(s) in `contoso5`, 1 distinct:
+Examples:
 
 ```yaml
-# Product
 unit: USD
 ```
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Product** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 unit: USD

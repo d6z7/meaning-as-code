@@ -19,15 +19,13 @@ A column's flags, or null to serve the column and say nothing more. TODAY'S FLAG
 
 *string* · optional
 
-WHAT KIND OF AGGREGATION AXIS this column is — mac.concept.axis_kind.time or .categorical. The fold law is stated over KINDS, not over column names, which is what makes it universal: (measure_type x axis_kind) -> aggregation effect. This replaces concept.semantics.axis_kinds, which was a per-column map parked one level up: its keys WERE column names (47 entries over 37 concepts, measured 2026-10-02) and the planner looked them up by a lowercased CONCEPT name, so not one key could ever match and the declaration was inert. The old slot is DEPRECATED, NEVER DELETED — readers fall back to it, so an unmigrated bundle is unchanged.
+WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis_kind) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.
 
-Examples — 39 use(s) in `contoso5`, 2 distinct:
+Examples:
 
 ```yaml
-# Discount.order_date
 axis_kind: mac.concept.axis_kind.time
 
-# Discount.customer_key
 axis_kind: mac.concept.axis_kind.categorical
 ```
 
@@ -43,16 +41,13 @@ Legal values:
 - [`part`](../../../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
 - [`reference`](../../../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
 
-Examples — 50 use(s) in `contoso5`, 3 distinct:
+Examples:
 
 ```yaml
-# Brand.brand
 identity: canonical
 
-# Brand.product_key
 identity: reference
 
-# Discount.order_key
 identity: part
 ```
 
@@ -60,32 +55,25 @@ identity: part
 
 *object* · optional · [has its own keys →](measure.md)
 
-The measure facts -> concept.semantics.measure_type / unit / additivity.
+THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.
 
-SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY. Revenue on an order line is `Quantity x NetPrice` — two columns, one amount — and each carries its own factor's unit (`units`, `USD`). THE COMPOSED unit is then stated on the CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED: the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on YAML key order. With exactly one measure column the unit projects from it, as before.
-
-THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in three ways at once, measured 2026-09-27: it forbade the COUNT while its stated reason was about the UNIT; `Quantity x NetPrice` has one unit and was refused anyway; and the rule lived only in this description, unexpressible in JSON Schema and enforced by NO tool — so a bundle could declare five measure columns in five units and pass every gate, which is the hazard the prose was worried about, left unguarded. Its cost was concrete: contoso1 declared GrossSalesAmount and NetSalesAmount with two measure columns each (under the retired `field_roles` shape, which had no such limit) and answered 'the ratio of gross to net revenue' as 1.063008040065774. contoso4, on the column standard, could not state gross revenue AT ALL. The new column map was less expressive than the shape it replaced. Enforced now by check_delivery_consistency's MEASURE-UNIT invariant, which is the half that was missing.
-
-Examples — 14 use(s) in `contoso5`, 7 distinct:
+Examples:
 
 ```yaml
-# Discount.discount_amount
 measure:
   type: mac.concept.column.measure_type.flow
   unit: USD
 
-# ExchangeRate.rate
 measure:
   type: mac.concept.column.measure_type.intensive
   unit: to-currency per from-currency
 
-# GrossRevenue.gross_amount
 measure:
   type: mac.concept.column.measure_type.flow
   unit: USD
   canonical: true
 
-# … and 4 more distinct value(s)
+# … and 4 more shape(s)
 ```
 
 Its own keys: [`concept.grounding.sources.columns.<name>.measure`](measure.md)
@@ -94,25 +82,20 @@ Its own keys: [`concept.grounding.sources.columns.<name>.measure`](measure.md)
 
 *string* · optional
 
-THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: "A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: "Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. Measured 2026-10-02 on contoso5: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.
+THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: "A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: "Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. measured on a worked bundle: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.
 
-Examples — 5 use(s) in `contoso5`, 5 distinct:
+Examples:
 
 ```yaml
-# Brand.brand
-register: data/lookups/contoso5_brand.lookup.yaml
+register: data/lookups/<source>_brand.lookup.yaml
 
-# Color.color
-register: data/lookups/contoso5_color.lookup.yaml
+register: data/lookups/<source>_color.lookup.yaml
 
-# Country.country_code
-register: data/lookups/contoso5_country_code.lookup.yaml
+register: data/lookups/<source>_country_code.lookup.yaml
 
-# Currency.currency_code
-register: data/lookups/contoso5_currencyexchange_from_currency.lookup.yaml
+register: data/lookups/<source>_currencyexchange_from_currency.lookup.yaml
 
-# ProductCategory.category_name
-register: data/lookups/contoso5_category_name.lookup.yaml
+register: data/lookups/<source>_category_name.lookup.yaml
 ```
 
 ### `role`
@@ -129,22 +112,17 @@ Legal values:
 - [`period`](../../../../../vocabulary/concept/column/role.md#period) — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
 - [`housekeeping`](../../../../../vocabulary/concept/column/role.md#housekeeping) — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when anything happened. Grouping sales by it is meaningless, and until this term existed it was spelled `attribute`, which reads as "a dimension you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than for the system that writes them: a load stamp is housekeeping whoever keeps the house.
 
-Examples — 112 use(s) in `contoso5`, 5 distinct:
+Examples:
 
 ```yaml
-# Brand.brand
 role: dimension
 
-# Brand.product_key
 role: key
 
-# Customer.valid_from
 role: housekeeping
 
-# Discount.discount_amount
 role: measure
 
-# Discount.order_date
 role: period
 ```
 
@@ -152,40 +130,35 @@ role: period
 
 *object* · optional · [has its own keys →](rulings.md)
 
-AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED, deliberately, and that is the whole point of the block: `role`, `identity` and `measure` beside it are DERIVED from the data, these are RULED by a human, and mac_vocabulary.yaml is explicit that they must not share a slot — "a slot that accepts both silts up, and `attribute` is what that looks like after two years". Keeping them in their own block makes the difference visible in the file rather than only in a vocabulary.
+AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot establish. NESTED DELIBERATELY, and that is the point of the block: `role`, `identity` and `measure` beside it are DERIVED FROM THE DATA, these are RULED BY A HUMAN, and a slot that accepts both silts up until nobody can tell which kind a value is. Keeping them apart makes the difference visible in the file rather than only in a vocabulary. Each of the four has a live case: a trade-register name is a `label_of` the brand it names; a sub-category is `finer_than` its category; a state code is `scoped_by` its country, where 40 of 565 codes collide across countries so GROUP BY state silently merges three regions; and a postcode is `never_axis`, because 29,193 of 104,990 values identify exactly one customer.
 
-ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.column.ruling declared four terms, closed, since v0.5; the column map admitted exactly role/identity/measure with additionalProperties: false; and reference_manual/column_rulings.md documented this very block with a man-page SYNOPSIS. So the vocabulary closed a set, the manual specified the shape, and the schema refused all of it — which is why the reference bundle showed 0 of 20 concepts declaring a ruling and I reported that as missing WORK. It was missing GRAMMAR. Every one of the four had a live case waiting: Manufacturer is a `label_of` Brand, SubCategoryName is `finer_than` CategoryName, State is `scoped_by` Country (40 of 565 codes collide across countries, so GROUP BY State silently merges three regions), and ZipCode is `never_axis` (29 193 of 104 990 values identify exactly one customer).
-
-Examples — 11 use(s) in `contoso5`, 10 distinct:
+Examples:
 
 ```yaml
-# Country.country_name
 rulings:
   label_of: country_code
   register: long
 
-# Customer.customer_name
 rulings:
   never_axis: privacy
   evidence: DQ-IDENTIFYING-DIM_CUSTOMER-CUSTOMER_NAME
 
-# Customer.country_code
 rulings:
   finer_than: continent
 
-# … and 7 more distinct value(s)
+# … and 7 more shape(s)
 ```
 
 Its own keys: [`concept.grounding.sources.columns.<name>.rulings`](rulings.md)
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Brand** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 role: dimension
 identity: canonical
-register: data/lookups/contoso5_brand.lookup.yaml
+register: data/lookups/<source>_brand.lookup.yaml
 ```
 
 ## Levels under this one

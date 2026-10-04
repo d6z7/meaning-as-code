@@ -4,7 +4,7 @@
 
 [concept](../README.md) · [grounding](README.md) · field_roles
 
-v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.
+the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.
 
 ## Keys
 
@@ -16,9 +16,7 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 *string* · optional
 
-The role of one column, keyed by column name, in the shape that PRECEDED the column map. The planner reads it to place a predicate. Authored bundles declare `role` on the column instead and let this project from it — a role written in both places gives one fact two homes that can disagree.
-
-Not written by any concept in `contoso5`.
+The role of one column, keyed by column name. Declare `role` on the column instead and let this project from it — a role written in both places gives one fact two homes that can disagree. The planner reads it to place a predicate, so it remains readable.
 
 ---
 

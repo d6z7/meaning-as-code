@@ -18,8 +18,6 @@
 
 What changed, in one line — the shape or the statement that moved, not the file's diff.
 
-Not written by any concept in `contoso5`.
-
 ### `change_type`
 
 *—* · **required** · 5 legal values
@@ -34,15 +32,11 @@ Legal values:
 - `REMOVAL`
 - `REFACTOR`
 
-Not written by any concept in `contoso5`.
-
 ### `date`
 
 *—* · **required**
 
 ISO date — string or a YAML-parsed date
-
-Not written by any concept in `contoso5`.
 
 ### `by`
 
@@ -50,15 +44,11 @@ Not written by any concept in `contoso5`.
 
 Who made the change — the person or seat accountable for it, not the tool that wrote the bytes.
 
-Not written by any concept in `contoso5`.
-
 ### `rationale`
 
 *string* · optional
 
 WHY the change was made, and against what evidence. The field that stops the same change being undone in six weeks by somebody who could see only the diff.
-
-Not written by any concept in `contoso5`.
 
 ---
 

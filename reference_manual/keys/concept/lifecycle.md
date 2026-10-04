@@ -18,18 +18,15 @@
 
 WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it.
 
-Not written by any concept in `contoso5`.
-
 ### `note`
 
 *string* · optional
 
 A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows.
 
-Examples — 1 use(s) in `contoso5`, 1 distinct:
+Examples:
 
 ```yaml
-# Order
 note: Both dates are on every line and constant within the order, and there is no status column,
   so an order has no observable state beyond "placed on this day, delivered on that one". Nothing
   …   # elided — see the real concept for the whole sentence
@@ -41,18 +38,17 @@ note: Both dates are on every line and constant within the order, and there is n
 
 The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition.
 
-Examples — 1 use(s) in `contoso5`, 1 distinct:
+Examples:
 
 ```yaml
-# Order
 phases:
 - ordered
 - delivered
 ```
 
-## As it is actually written
+## A whole block, as it is actually written
 
-Cut from **Order** in the `contoso5` bundle — not typed by hand.
+Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 phases:

@@ -18,8 +18,6 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 One alias and the value it resolves to, keyed by the alias as a person would type it. BANNED IN A CONCEPT: an alias is a name for a value, so it belongs in the register that holds the value, where every column carrying that set resolves it the same way.
 
-Not written by any concept in `contoso5`.
-
 ---
 
 [↑ the whole tree](../../../README.md)

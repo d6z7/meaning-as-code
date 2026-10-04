@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
+import re
 import shutil
 import sys
 import tempfile
@@ -360,6 +361,21 @@ def para(text) -> list[str]:
 #: could not have at any width: a key's LEGAL VALUES each carry the definition the vocabulary
 #: already holds, so `role` stops being five backticked words and becomes five explanations.
 
+def neutralise(text: str, bundle_name: str) -> str:
+    """Take ONE SOURCE'S NAME out of an example, and leave the shape standing.
+
+    A register path is `data/lookups/<source>_brand.lookup.yaml` in general and names a particular
+    source in any real bundle. The shape is what a reader needs; the source is what they must not
+    be taught, because the next ontology they build is for a different one.
+    """
+    if not bundle_name or bundle_name == "none":
+        return text
+    # CASE-INSENSITIVE, because a source names itself in more than one case: the directory is
+    # `contoso5` and `metadata.source` is `CONTOSO5`, and only the first was being caught — which
+    # left `scope: CONTOSO5` and `source: CONTOSO5` standing in twelve examples.
+    return re.sub(re.escape(bundle_name), "<source>", text, flags=re.I)
+
+
 def facts_line(k, here, levels) -> str:
     bits = [f"*{k['type']}*", "**required**" if k["required"] else "optional"]
     if k["enum"]:
@@ -426,35 +442,42 @@ def render_level(path, level, levels, notions, examples, per_key, gaps_by_level,
                     definition = " ".join(str((term or {}).get("definition") or "").split())
                     out.append(f"{head} — {definition}" if definition else head)
                 out.append("")
+            #: AN EXAMPLE, NOT A CENSUS. These pages document the ONTOLOGY BUILDER — the grammar,
+            #: for whoever builds an ontology for any source — so what one source happens to write
+            #: is not a fact about the grammar and does not belong on them. The first cut said
+            #: "Examples — 112 use(s) in contoso5, 5 distinct" and, on 149 keys, "Not written by any
+            #: concept in contoso5", which put a census of one L1 instance into L2 documentation 232
+            #: times. Operator: "you are doing documentation for ontology BUILDER and not for
+            #: ontology". The snippets stay — they are real, which is why they are cut and not
+            #: written — and the counting, the naming and the absences go.
             usages = per_key.get(f"{path}.{k['key']}") or []
             if usages:
                 seen, picked = set(), []
                 for who, snippet in usages:
-                    if snippet not in seen:
-                        seen.add(snippet)
-                        picked.append((who, snippet))
-                out += [f"Examples — {len(usages)} use(s) in `{bundle_name}`, "
-                        f"{len(seen)} distinct:", "", "```yaml"]
+                    body = neutralise(snippet, bundle_name)
+                    if body not in seen:
+                        seen.add(body)
+                        picked.append((who, body))
+                out += ["Examples:", "", "```yaml"]
                 #: HOW MANY TO SHOW. A one-line snippet costs a line, so show every distinct one
                 #: up to five — a five-term enum then shows all five, which is the whole point of
                 #: an example on an enum. A multi-line one costs a screen, so show three.
                 cap = 5 if all("\n" not in sn for _w, sn in picked) else 3
                 shown = picked[:cap]
-                for i, (who, snippet) in enumerate(shown):
-                    out += [f"# {who}", snippet] + ([""] if i < len(shown) - 1 else [])
+                for i, (_who, snippet) in enumerate(shown):
+                    out += [snippet] + ([""] if i < len(shown) - 1 else [])
                 if len(picked) > cap:
-                    out += ["", f"# … and {len(picked) - cap} more distinct value(s)"]
+                    out += ["", f"# … and {len(picked) - cap} more shape(s)"]
                 out += ["```", ""]
-            elif bundle_name != "none":
-                out += [f"Not written by any concept in `{bundle_name}`.", ""]
             if k["child"]:
                 out += [f"Its own keys: [`{k['child']}`]({rel(here, level_page(k['child'], levels))})", ""]
 
     example = examples.get(path)
     if example:
-        out += ["## As it is actually written", "",
-                f"Cut from **{example['concept']}** in the `{bundle_name}` bundle — not typed by hand.",
-                "", "```yaml", example["yaml"], "```", ""]
+        out += ["## A whole block, as it is actually written", "",
+                "Cut from a worked bundle — not typed by hand, so it cannot describe a shape "
+                "nobody writes.", "", "```yaml",
+                neutralise(example["yaml"], bundle_name), "```", ""]
 
     children = sorted(p for p in levels
                       if p.startswith(path + ".") and "." not in p[len(path) + 1:])
@@ -519,8 +542,9 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
            "legal at that level, what each means, which are required, the legal values of each, "
            "and the level beneath it.", "",
            f"Generated from `mac.schema.json` **{schema_version}** and `mac_vocabulary.yaml`. "
-           f"Examples are cut from {len(concepts_read)} real concepts in the `{bundle_name}` "
-           "bundle. Nothing on these pages is authored prose — see "
+           f"Examples are cut from {len(concepts_read)} real concepts in a worked bundle, with that "
+           "source's own name replaced by `<source>`: this is the grammar, so no page here teaches "
+           "you about one ontology. Nothing on these pages is authored prose — see "
            "`tools/gen_key_reference.py` for why.", "",
            "| | |", "|---|---|",
            f"| levels | {len(levels)} |",
@@ -530,7 +554,7 @@ def render_index(levels, notions, gaps, examples, schema_version, bundle_name, c
            f"| **gaps — admitted and unexplained** | **{len(gaps)}** |",
            f"| vocabularies | {len(notions)}, "
            f"{sum(len(n['terms']) for n in notions.values())} terms |",
-           f"| examples | {len(examples)} |", ""]
+           f"| examples | {len(examples)}, from {len(concepts_read)} concepts |", ""]
 
     gaps_by_level: dict[str, int] = {}
     for g in gaps:
