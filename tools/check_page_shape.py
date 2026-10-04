@@ -8,6 +8,15 @@ and held pages to none:
     csv    check_sample_matches_descriptor.py        header == the descriptor's columns
     md     check_pages_current.py                    STALENESS ONLY
 
+ITS SUBJECT IS A BUNDLE, AND THE MANUAL IS NOT ONE. This gate takes a bundle root in argv[1] and
+judges the pages a DELIVERY writes there. `reference_manual/` — this repository's own 123 authored
+pages, which until 2026-10-04 were named by no declaration at all — is held by
+`tools/check_manual_page_shape.py` against `authored:` entries in `guardrails/`. Four measured
+reasons for the split are in that file's header; the one that settles it is that declaring a manual
+page under `delivers:` put `reference_manual/patterns/*.md` into `mac_manifest.bom()` as ABSENT from
+contoso5, breaking the completeness answer the BOM exists to give. The two gates share `sections()`
+below and NOTHING else — one heading parser, two subjects. Do not merge them back.
+
 IT DOES NOT RE-RENDER, AND THAT IS THE WHOLE POINT. `check_pages_current` renders the page again and
 byte-compares, which catches a page drifting from its source and CANNOT catch the renderer changing
 what it emits — the comparator and the renderer are the same code, so they agree by construction.

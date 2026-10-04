@@ -1,0 +1,291 @@
+# guardrails/reference_manual.yaml — WHAT A MANUAL PAGE IS SHAPED LIKE.
+#
+# `tools/check_page_shape.py` opens with "WHAT A SCHEMA IS FOR YAML, THIS IS FOR MARKDOWN" and then
+# governs BUNDLE pages only. MEASURED 2026-10-04 on this tree: `reference_manual/` holds 123 markdown
+# pages and not one of them was named by any declaration in `guardrails/`. The four artifacts that
+# declared `shape.sections` were all bundle deliverables. The mechanism existed and pointed elsewhere.
+#
+# WHY THE BLOCK IS `authored:` AND NOT `delivers:` — MEASURED, not preferred. `delivers` means "a
+# DELIVERY writes this into a BUNDLE", and three readers already read it that way. Declaring one
+# manual page under `delivers` was tried here first and measured on contoso5:
+#
+#   mac_manifest.bom()          absent went 1 -> 2: `reference_manual/patterns/*.md` was reported
+#                               ABSENT from a bundle that will never hold the framework's own manual.
+#                               The BOM's completeness answer — the thing it exists to give — broke.
+#   sdk/project/layout.layouts  picked it up (10 -> 11 artifacts) and check_document_layout printed
+#                               "n/a ... a delivered file, held by tools/check_page_shape.py", which
+#                               is FALSE: that gate globs a bundle root, so nothing held it.
+#   check_page_shape.py         globbed <bundle>/reference_manual/... and found nothing, for ever.
+#
+# `authored:` carries the same item vocabulary (`what`, `path`, `population`, `shape`, `checkers`) and
+# says the one thing that differs: THIS REPOSITORY writes it, by hand, for a reader — no phase owes
+# it and no bundle contains it. Nothing reads the block today except the checker named below, which is
+# the point: a new subject gets a new block rather than a precedence rule inside an old one.
+#
+# WHAT IT DOES NOT RULE. The page's PROSE, its argument, its title wording, its length. A manual page
+# is held by review; this file holds only what a machine can judge without pretending to taste.
+#
+# THREE RULES THAT DID NOT GET WRITTEN, each because the measurement says it would cry wolf:
+#   title == H1          measured 10 agree, 54 disagree — the H1 puts the identifier in backticks
+#                        (`Canon — \`axis_default\`` against `Canon — axis_default`). A rule 54 pages
+#                        break on day one is a rule that gets ignored.
+#   one H1 per page       measured 28 pages carry more than one `# ` line, every one of them inside a
+#                        fenced code block. The rule would be about fences, not about pages.
+#   a closed `status` for the topic pages   measured 13 distinct free-prose values over 13 pages.
+#                        That is not a vocabulary to close, it is a debt to name. See `manual_topic_page`.
+#
+# HEADINGS ARE THE NORMALISED NAME. `sections[].heading` is matched by `check_page_shape.sections()`,
+# which strips a parenthetical or em-dash qualifier: the page's literal `## Initial state — what
+# you're handed` is the declared `Initial state`, and `## Contract (the pluggable interface)` is
+# `Contract`. One parser, the same one the bundle gate uses — a second copy of a heading rule in this
+# estate was double-escaped and refused three correct pages inside four minutes.
+
+spec_version: mac.guardrail/1
+topic: reference_manual
+status: PROPOSED 2026-10-04
+
+authored:
+
+  # ── GENRE 1 of 4: THE ARGUMENT ──────────────────────────────────────────────────────────────────
+  manual_argument_page:
+    what: a chapter of the manual's ARGUMENT — hand-written, held by review, not by a template
+    genre: argument
+    path: >-
+      reference_manual/00_the_problem.md | reference_manual/01_why_meaning_as_code.md |
+      reference_manual/02_building_blocks.md | reference_manual/04_discipline.md |
+      reference_manual/05_tutorial.md | reference_manual/the_content_model.md |
+      reference_manual/data_plane.md | reference_manual/AUTHORING.md
+    naming: the chapter's own file name, verbatim — these are named pages, not a population
+    population: {of: 8 named chapters, from: «this declaration», empty_is: EMPTY}
+    lifecycle: authored
+    shape:
+      # NO SECTIONS, DELIBERATELY. Measured over the 8: ZERO headings are shared by all of them, and
+      # 0 by even two of them — each chapter numbers its own argument (`0.1 A demonstration`,
+      # `2.3 Relations`, `4.4 The manual's self-discipline`). A section list here would be invented,
+      # and an invented shape is the defect, not the fix. What IS held is the frontmatter and the
+      # promise the page makes in its first sentence.
+      sections: []
+      extra_sections: allowed
+      frontmatter:
+        required: [title, status, part_of, scope]
+        optional: [position]
+        # MEASURED: 8 of 8 say exactly `written`. A one-term vocabulary is still a vocabulary — it is
+        # what makes the ninth chapter's `draft` visible instead of normal.
+        status_closed: [written]
+      # THE 28%-OPEN-WITH-NOTHING CLAIM, TESTED. Measured on these 8: 8 of 8 already carry a purpose
+      # sentence between the H1 and the first `##`. The rule is declared because the shape should
+      # survive the next chapter, not because these break it.
+      opens_with: purpose
+    producers: [{tool: «a person», role: writes and revises it; there is no generator}]
+    consumers:
+      - {tool: «a reader», role: the manual's through-line, read in chapter order}
+      - {tool: tools/check_dangling_references.py, role: holds its cross-links, reads: ["«links»"]}
+    checkers: [tools/check_manual_page_shape.py]
+
+  # ── GENRE 2 of 4: THE LOOKUP UNIT, pattern ──────────────────────────────────────────────────────
+  manual_pattern_page:
+    what: one named modelling pattern — one page per thing, a frozen template, read by lookup
+    genre: lookup
+    path: reference_manual/patterns/{pattern}.md
+    naming: "{pattern}.md — the pattern's own snake_case name"
+    population: {of: one page per pattern, from: reference_manual/patterns/*.md, empty_is: EMPTY}
+    lifecycle: authored
+    shape:
+      # DERIVED FROM WHAT THESE 22 PAGES ALREADY DO, not imposed. Measured: 20 of 22 carry exactly
+      # this section set in exactly this order; 1 adds a page-specific section; 1 omits the footgun
+      # (see `standing`). The four below are on 22 of 22, the fifth on 21 of 22.
+      sections:
+        - {heading: Initial state, required: always}
+        - {heading: "The question, and the answer", required: always}
+        - {heading: The pattern, required: always}
+        - {heading: The determinism border, required: always}
+        - {heading: "The footgun, concretely", required: always}
+      # AN EXTRA SECTION IS AUTHORSHIP, NOT DRIFT, and the measurement is why: 2 of 22 add one
+      # (`The half this pattern does not reach`, `Reading the entry`), each saying something true
+      # about that pattern alone. Forbidding it would delete content to satisfy a shape.
+      extra_sections: allowed
+      frontmatter:
+        required: [title, status, part_of, scope]
+        # MEASURED: 19 `prototype`, 3 `gap`. A real two-term vocabulary — `gap` marks a pattern the
+        # framework cannot yet express, and FINDINGS.md is where each one is argued.
+        status_closed: [prototype, gap]
+      # NOT DECLARED, and this is the brief's "28% open with no purpose" claim meeting the page.
+      # Measured: 0 of 22 carry prose between the H1 and the first `##` — the template puts the
+      # reader straight into `## Initial state — what you're handed`, which IS the statement of what
+      # the page is for. Declaring `opens_with: purpose` here would make 22 of 22 red and would be
+      # asking a frozen template to grow a preamble it deliberately does not have.
+      opens_with: null
+    producers: [{tool: «a person», role: writes one page per pattern against the template above}]
+    consumers:
+      - {tool: reference_manual/03_pattern_reference.md, role: the index that routes to them}
+      - {tool: «an ask-agent», role: looked up by name when a shape gets hard}
+    checkers: [tools/check_manual_page_shape.py]
+    standing:
+      # A MEASURED EXCEPTION TO THE SHAPE, not a weaker shape. Declared so the gate exits 0 on it and
+      # 1 on anything NEW — "only news exits 1". Remove the entry when the page conforms; the gate
+      # reports STANDING_STALE if you do not.
+      - page: reference_manual/patterns/scd_type_2.md
+        reject: SECTION_MISSING
+        detail: "`The footgun, concretely` is absent; the page closes on `## Reading the entry` instead"
+        owner: operator
+        since: 2026-10-04
+        why_not_fixed: >-
+          writing the missing section is BODY content — an argument about what goes wrong with a
+          Type-2 dimension in practice — and this change is permitted frontmatter only. A session
+          inventing a footgun for the estate's most-used pattern is worse than a named gap.
+
+  # ── GENRE 2 of 4: THE LOOKUP UNIT, canon — TWO VARIANTS ─────────────────────────────────────────
+  manual_canon_page:
+    what: one canon's entry — what it serves, its contract, and how honest it is about its limits
+    genre: lookup
+    path: reference_manual/canon/{canon}.md
+    naming: "{canon}.md — the canon's term as mac_vocabulary.yaml#canon.terms spells it"
+    population: {of: one page per canon, from: reference_manual/canon/*.md, empty_is: EMPTY}
+    lifecycle: authored
+    shape:
+      # TWO GENERATIONS, MEASURED, AND DECLARED AS TWO VARIANTS RATHER THAN ONE LOOSE SHAPE.
+      # Over the 20 pages, after heading normalisation: `Serves` 20, `Contract` 20, `How a concept
+      # plugs in` 15, `Determinism & honest limits` 15, `Demonstration` 14, `Reference implementation`
+      # 12, `Limits` 5. The split is CLEAN: 15 pages carry `Determinism & honest limits` and not
+      # `Limits`, 5 carry `Limits` and not `Determinism & honest limits`, and 0 carry both or neither.
+      #
+      # A SINGLE SHAPE OVER BOTH could only require `Serves` and `Contract` — it would assert nothing
+      # about the 15 full entries, which are the ones a reader plugs a concept into. Two variants
+      # assert more and invent nothing.
+      #
+      # HOW THE GATE PICKS: by best match, never by a marker a session would have to add to 20 pages.
+      # A page conforms when it satisfies ONE variant's required sections; it is refused (NO_VARIANT)
+      # when it satisfies none, and the refusal names the nearest variant and what is missing from it.
+      # That is the resolution ladder — exact, near miss, then report with candidates.
+      variants:
+        pluggable:
+          what: the full entry — a canon with a reference implementation a concept plugs into (15 of 20)
+          sections:
+            - {heading: Serves, required: always}
+            - {heading: Contract, required: always}
+            - {heading: How a concept plugs in, required: always}
+            - {heading: Determinism & honest limits, required: always}
+          optional_sections: [Reference implementation, Implementation, Demonstration]
+        entry:
+          what: the short entry — described and bounded, with no implementation to plug into (5 of 20)
+          sections:
+            - {heading: Serves, required: always}
+            - {heading: Contract, required: always}
+            - {heading: Limits, required: always}
+          optional_sections: []
+      extra_sections: allowed
+      frontmatter:
+        required: [title, status, part_of, scope]
+        # MEASURED: `reference` 13, `NOT IMPLEMENTED…` 3, `SHIPPED…` 2, `DECLARED BUT NOT
+        # IMPLEMENTED…` 2. Four terms, and 7 of the 20 carry an em-dash justification after the term
+        # ("SHIPPED — implemented in mac-runtime and honoured today"). The TERM is closed; the
+        # sentence after the dash is not, because it carries the evidence and must stay free prose.
+        status_closed_first_word: [reference, SHIPPED, NOT, DECLARED]
+      # Measured: 17 of 20 open with a purpose sentence, 3 do not (alias_resolve,
+      # refuse_unresolvable_name, relation_alias_resolve). `## Serves` is this genre's purpose
+      # statement, so the sentence above it is a courtesy, not the contract. Not declared.
+      opens_with: null
+    producers: [{tool: «a person», role: writes one page per canon term}]
+    consumers:
+      - {tool: tools/check_canon_documented.py, role: "list 2 of 3 — what the manual DESCRIBES",
+         reads: ["«the page's existence, by stem»"]}
+      - {tool: reference_manual/canon_library.md, role: the index over all of them}
+    checkers: [tools/check_manual_page_shape.py, tools/check_canon_documented.py]
+
+  # ── GENRE 3 of 4: THE GENERATED FACE — EXEMPT, AND WHY ──────────────────────────────────────────
+  manual_generated_face:
+    what: a page NO PERSON writes — rendered from a declaration, held by its own generator's --check
+    genre: generated
+    path: reference_manual/keys/** | reference_manual/column_map.generated.md |
+      reference_manual/relation_column.generated.md
+    naming: the generator's own output path
+    population: {of: 58 pages, from: «the generators below», empty_is: EMPTY}
+    lifecycle: re-derived
+    shape:
+      # EXEMPT, EXPLICITLY, AND NEVER SILENTLY. A shape rule here would hold the page against a
+      # declaration while its GENERATOR holds it against the same declaration — two homes for one
+      # rule, and the page is not where a fix would go. Judging it would also mean a generator change
+      # has to be accepted twice.
+      #
+      # THE EXEMPTION IS CONDITIONAL ON THE HOLDER EXISTING. The gate verifies every `held_by` tool
+      # is on disk and refuses (EXEMPT_UNHELD) if one is not — an exemption pointing at nothing is a
+      # hole with a sentence over it.
+      exempt: true
+      exempt_because: >-
+        held by the generator that writes it, against the same schema the page is cut from. Checking
+        the bytes a second time here would be a second home for the rule and could not catch anything
+        the generator's own --check cannot.
+      held_by:
+        - tools/check_key_reference.py      # reference_manual/keys/** — 56 pages. The `check_` name
+                                            # exists because run_framework_gates.sh globs `check_*.py`
+                                            # and could not see `gen_key_reference.py --check`.
+        - tools/gen_slot_reference.py       # column_map.generated.md, relation_column.generated.md
+    producers:
+      - {tool: tools/gen_key_reference.py, role: writes reference_manual/keys/** from mac.schema.json}
+      - {tool: tools/gen_slot_reference.py, role: writes the two slot pages}
+    consumers: [{tool: «a reader», role: the key-by-key answer a person cannot get from the schema}]
+    checkers: [tools/check_key_reference.py]
+
+  # ── GENRE 4 of 4: THE TOPIC PAGE — the 15 the brief's three genres do not reach ─────────────────
+  manual_topic_page:
+    what: a page about ONE subject of the framework — neither a chapter of the argument nor a lookup unit
+    genre: topic
+    # THIS GENRE IS THE MEASUREMENT THAT CONTRADICTED THE BRIEF. Three genres were specified —
+    # argument (8 named pages), lookup unit (42), generated face (58) — which is 108 of 123. These 15
+    # are the remainder, and they are where the disorder actually lives: 7 different frontmatter
+    # key-sets, 1 page with no frontmatter at all, and 13 distinct free-prose `status` values over 13
+    # pages. Leaving them unclaimed would make this gate print PASS over a denominator that excludes
+    # the worst of its own subject — the exact defect it was asked to end.
+    path: >-
+      reference_manual/README.md | reference_manual/03_pattern_reference.md |
+      reference_manual/FINDINGS.md | reference_manual/canon_library.md |
+      reference_manual/column_roles.md | reference_manual/column_rulings.md |
+      reference_manual/column_specification.md | reference_manual/connection.md |
+      reference_manual/how_a_question_becomes_sql.md | reference_manual/identity_and_rules.md |
+      reference_manual/measures.md | reference_manual/refusals_and_findings.md |
+      reference_manual/rule_engine.md | reference_manual/testing_and_quality.md |
+      reference_manual/shape_reference.md
+    naming: the subject's own name
+    population: {of: 15 named pages, from: «this declaration», empty_is: EMPTY}
+    lifecycle: authored
+    shape:
+      # A FLOOR, AND ONLY A FLOOR. These 15 share no section set and should not be made to: a page
+      # about measures and a page about the rule engine are different arguments. What every reader
+      # needs from all 15 is the same two facts — what it is called, and whether to trust it.
+      sections: []
+      extra_sections: allowed
+      frontmatter:
+        required: [title, status]
+        optional: [part_of, scope, audience, companions, paths, position, date, version]
+        # NOT CLOSED, AND THAT IS THE DEBT, NOT THE RULE. Measured: 13 distinct values over 13 pages,
+        # every one a sentence about implementation state ("both vocabularies are read by the
+        # connector seam", "PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under…").
+        # They are carrying real information in a field shaped for a term. Closing it is an operator
+        # ruling about a vocabulary; inventing one here and retro-fitting 13 pages to it is how a
+        # declaration comes to say something nobody agreed.
+        status_closed: null
+        status_debt: >-
+          13 distinct free-prose values over 13 pages. Owed: either a closed term with the sentence
+          moved to its own key, or a ruling that this field is prose here.
+      opens_with: null
+    producers:
+      - {tool: «a person», role: writes it}
+      - {tool: tools/gen_schema_shapes.py,
+         role: "injects ONE block into shape_reference.md between GENERATED markers — the page around
+                it is hand-written, which is why it is a topic page and not a generated face"}
+    consumers: [{tool: «a reader», role: looked up by subject}]
+    checkers: [tools/check_manual_page_shape.py]
+    # NO STANDING ENTRY, AND THE GATE IS WHY. The first run of this declaration reported
+    # `reference_manual/column_specification.md` as FRONTMATTER_UNPARSEABLE: its `status` was an
+    # unquoted multi-line plain scalar carrying "`rulings`: what", and a `: ` inside a plain scalar
+    # ends the key. The page had looked like it HAD no frontmatter to three hand-written measurement
+    # scripts, because each treated an unparseable block as an absent one. Fixed in place — the value
+    # is now a `>-` folded block and not one word of it changed — which is a frontmatter-only edit,
+    # and the kind of defect that stays invisible until something parses every page on purpose.
+
+watch:
+  what: how much of the manual is governed, and by what
+  where: the gate's own last two lines — `python3 tools/check_manual_page_shape.py`
+  measured_2026-10-04: >-
+    123 pages: 8 argument · 22 pattern · 20 canon · 58 generated (exempt) · 15 topic · 0 ungoverned.
+    65 judged, 63 held, 2 standing. Before this file: 123 pages and 0 under any declaration.

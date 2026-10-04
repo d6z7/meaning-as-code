@@ -1,6 +1,7 @@
 ---
 title: The column specification — everything about a column, on the column
-status: PARTIALLY ENFORCED (2026-09-29) — four flags LOAD (`role`, `identity`, `measure`, `rulings`: what
+status: >-
+  PARTIALLY ENFORCED (2026-09-29) — four flags LOAD (`role`, `identity`, `measure`, `rulings`: what
   mac.schema.json admits under grounding.sources[].columns.<col> with additionalProperties:false, and what
   mac-runtime reads); seven sections are PROPOSED and REFUSED by the schema today (`references`, `domain`,
   `resolution`, `placement`, `absence`, `disclose`, `discriminates`). They are banded at the end of this page.
