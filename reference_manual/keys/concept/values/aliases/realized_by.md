@@ -21,11 +21,15 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
+Not written by any concept in `contoso5`.
+
 ### `applied_as`
 
 *string* · optional
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -33,11 +37,15 @@ how the canon output is used (subquery_wrapper | predicate_injection | anomaly_c
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
 
+Not written by any concept in `contoso5`.
+
 ### `params`
 
 *object* · optional
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
+
+Not written by any concept in `contoso5`.
 
 ## Form 2 — v0.1.9: a single canon binding. Names a canon and su
 
@@ -54,11 +62,15 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
+Not written by any concept in `contoso5`.
+
 ### `applied_as`
 
 *string* · optional
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -66,11 +78,15 @@ how the canon output is used (subquery_wrapper | predicate_injection | anomaly_c
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
 
+Not written by any concept in `contoso5`.
+
 ### `params`
 
 *object* · optional
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
+
+Not written by any concept in `contoso5`.
 
 ---
 

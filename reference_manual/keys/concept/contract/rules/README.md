@@ -27,17 +27,75 @@
 
 stable dotted id, e.g. lineitem.revenue.net_of_discount
 
+Examples — 14 use(s) in `contoso5`, 14 distinct:
+
+```yaml
+# Brand
+id: brand.resolution.by_grouping_products
+
+# Color
+id: color.resolution.by_grouping_products
+
+# Country
+id: country.exclusion.sentinel_is_not_a_country
+
+# Currency
+id: currency.ambiguity.code_is_not_the_unit_of_the_amounts
+
+# Customer
+id: customer.ambiguity.as_of_now_or_as_of_sale
+
+# … and 9 more distinct value(s)
+```
+
 ### `kind`
 
 *string* · **required**
 
 a mac.concept.rule.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)
 
+Examples — 14 use(s) in `contoso5`, 5 distinct:
+
+```yaml
+# Brand
+kind: mac.concept.rule.resolution
+
+# Country
+kind: mac.concept.rule.exclusion
+
+# Currency
+kind: mac.concept.rule.ambiguity
+
+# Discount
+kind: mac.concept.rule.aggregation
+
+# NetRevenue
+kind: mac.concept.rule.default
+```
+
 ### `binds`
 
 *list of string* · optional
 
 the grounded field(s) this rule governs — must be columns of the table the concept grounds to (the field-anchoring).
+
+Examples — 14 use(s) in `contoso5`, 13 distinct:
+
+```yaml
+# Brand
+binds:
+- brand
+
+# Color
+binds:
+- color
+
+# Country
+binds:
+- country_code
+
+# … and 10 more distinct value(s)
+```
 
 ### `confidence`
 
@@ -51,11 +109,23 @@ Legal values:
 - `P`
 - `R`
 
+Examples — 14 use(s) in `contoso5`, 2 distinct:
+
+```yaml
+# Brand
+confidence: P
+
+# Color
+confidence: C
+```
+
 ### `enforced_by`
 
 *string* · optional
 
 deterministic backstop (e.g. a CP-3 anchor id)
+
+Not written by any concept in `contoso5`.
 
 ### `examples`
 
@@ -63,17 +133,95 @@ deterministic backstop (e.g. a CP-3 anchor id)
 
 Concrete cases this rule decides, as a reader would say them — the question, and what the rule makes of it. One real example settles an ambiguity that a careful `when:` leaves open, and it is what a reviewer checks the rule against.
 
+Not written by any concept in `contoso5`.
+
 ### `never`
 
 *string* · optional
 
 anti-pattern to avoid (optional)
 
+Examples — 11 use(s) in `contoso5`, 11 distinct:
+
+```yaml
+# Brand
+never: 'join to a brand relation
+
+  '
+
+# Color
+never: 'read `main.product."Color"`, or fold the spellings again at read time — the transform
+  did it.
+
+  '
+
+# Country
+never: 'report nine countries
+
+  '
+
+# … and 8 more distinct value(s)
+```
+
 ### `realized_by`
 
 *—* · optional · [has its own keys →](realized_by.md)
 
 v0.1.9: the canon(s) that realize this typed rule's when/then deterministically (e.g. a resolution rule → composite_key_guard; an exclusion rule → exclusion_filter; an ambiguity rule → ambiguity_gate). Filled → the rule is enforced by a run canon, not read prose.
+
+Examples — 5 use(s) in `contoso5`, 4 distinct:
+
+```yaml
+# Country
+realized_by:
+- udf: mac.canon.population_select
+  params:
+    default: real
+    populations:
+      real:
+        all:
+        - column: country_code
+          op: ne
+          value: --
+      sentinel:
+        all:
+        - column: country_code
+          op: eq
+          value: --
+
+# Discount
+realized_by:
+- udf: mac.canon.ratio_select
+  params:
+    default: percent
+    ratios:
+      percent:
+        denominator: GrossRevenue
+        surfaces:
+        - discount percentage
+        - discount rate
+        - discount %
+        - discount as a percentage
+
+# Location
+realized_by:
+- udf: mac.canon.population_select
+  params:
+    default: physical
+    populations:
+      physical:
+        all:
+        - column: location_code
+          op: ne
+          value: -1
+      online:
+        all:
+        - column: location_code
+          op: eq
+          value: -1
+
+# … and 1 more distinct value(s)
+```
 
 Its own keys: [`concept.contract.rules.realized_by`](realized_by.md)
 
@@ -82,6 +230,13 @@ Its own keys: [`concept.contract.rules.realized_by`](realized_by.md)
 *string* · optional
 
 general | <SOURCE> (general = framework default; else a source fact)
+
+Examples — 14 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+scope: CONTOSO5
+```
 
 ### `status`
 
@@ -94,11 +249,34 @@ Legal values:
 - `active`
 - [`proposed`](../../../vocabulary/transform/driven_by.md#proposed) — The platform's own suggestion, made from measurements it already holds — row counts, distincts, measured references, duplicate relations, orphans. It is a RECOMMENDATION and not a ruling: `because` names the finding that motivated it, and until a person answers that finding the proposal stands as the reason this transform has the shape it has.
 
+Not written by any concept in `contoso5`.
+
 ### `subject`
 
 *string* · optional
 
 v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a few words, read alongside the rule `id`. NOT a restatement of when/then/never (that would be prose); the terse human label shown as the rule's heading in the ontology explorer. Complements `why` (the rationale). Replaces the per-rule PURPOSE authoring comment (history stays in git).
+
+Examples — 14 use(s) in `contoso5`, 14 distinct:
+
+```yaml
+# Brand
+subject: Brand
+
+# Color
+subject: Color
+
+# Country
+subject: Country
+
+# Currency
+subject: Currency
+
+# Customer
+subject: Customer
+
+# … and 9 more distinct value(s)
+```
 
 ### `then`
 
@@ -106,17 +284,79 @@ v0.1.13: a SHORT email-subject-style headline naming the rule's objective — a 
 
 directive — what to do
 
+Examples — 9 use(s) in `contoso5`, 9 distinct:
+
+```yaml
+# Brand
+then: 'group dim_product on `brand`. The relation is computed — there is no brand table and no
+  brand key, so the instance set IS the distinct names on the product row.
+
+  '
+
+# Color
+then: 'group the served `dim_product` on `color`, which already holds one spelling per colour.
+
+  '
+
+# Currency
+then: convert each sale through ExchangeRate at its own order date; the amounts are USD
+
+# … and 6 more distinct value(s)
+```
+
 ### `when`
 
 *string* · optional
 
 trigger — the situation the rule applies to
 
+Examples — 9 use(s) in `contoso5`, 9 distinct:
+
+```yaml
+# Brand
+when: the set of products carrying one brand is needed
+
+# Color
+when: the set of products carrying one color is needed
+
+# Currency
+when: sales are asked for in a named currency
+
+# Customer
+when: customers are joined to sales over a period
+
+# ExchangeRate
+when: a period's sales are converted into another currency
+
+# … and 4 more distinct value(s)
+```
+
 ### `why`
 
 *string* · optional
 
 one-line rationale
+
+Examples — 13 use(s) in `contoso5`, 13 distinct:
+
+```yaml
+# Brand
+why: 'none exists, and inventing one gives eleven names a surrogate the warehouse does not have
+
+  '
+
+# Country
+why: '`--` is the sentinel the source wrote where the online store''s country goes. Counting it
+  answers 9 to "in how many countries do we sell" when the truth is 8, and it is the single largest
+  …'   # elided — see the real concept for the whole sentence
+
+# Currency
+why: 'nothing in the figure reveals it
+
+  '
+
+# … and 10 more distinct value(s)
+```
 
 ## As it is actually written
 

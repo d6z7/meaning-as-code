@@ -24,17 +24,52 @@ THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which s
 
 The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required.
 
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+concept: Brand
+
+# Color
+concept: Color
+
+# Country
+concept: Country
+
+# Currency
+concept: Currency
+
+# Customer
+concept: Customer
+
+# … and 12 more distinct value(s)
+```
+
 ### `schema_version`
 
 *string* · **required**
 
 Which generation of mac.schema.json this file is written against. It is what lets a reader know a key's absence is a vintage rather than an omission, and what a migration selects on. Stamp the schema's own `version`, not a guess. Required.
 
+Examples — 17 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+schema_version: 0.1.16
+```
+
 ### `source`
 
 *string* · **required**
 
 WHICH DATA SOURCE this ontology is for, as the project declares it (`CONTOSO5`). An ontology is bound to one source — its relations, its columns, its grain — and this is the binding stated in one place. It scopes every rule in the file: a rule's own `scope` defaults to it. Required.
+
+Examples — 17 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+source: CONTOSO5
+```
 
 ### `confidence`
 
@@ -48,17 +83,36 @@ Legal values:
 - `I`
 - `Q`
 
+Examples — 17 use(s) in `contoso5`, 2 distinct:
+
+```yaml
+# Brand
+confidence: I
+
+# Discount
+confidence: C
+```
+
 ### `owner`
 
 *string* · optional
 
 WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down.
 
+Examples — 17 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+owner: operator
+```
+
 ### `profiled_via`
 
 *string* · optional
 
 Free-text note on how the raw source was profiled (e.g. 'catalog metadata + a live column profile'). Distinct from `provenance`, which is the harvested/authored/tuned protocol stamp. v0.1.15: this example was previously spelled with two vendor product names — a catalog service and a query engine — and it was, measured, the SINGLE instance-specific token in this entire grammar (one occurrence; no driver or cloud-prefix token appeared anywhere else in this file). It is respelled rather than deleted, because the slot still needs an example; the new spelling says the same thing in nouns that every engine has, which is the test a core-grammar example has to pass. The old nouns are not quoted here on purpose: a note that names what it forbids becomes a register of those names, and this file is published.
+
+Not written by any concept in `contoso5`.
 
 ### `provenance`
 
@@ -72,6 +126,13 @@ Legal values:
 - `authored`
 - `tuned`
 
+Examples — 17 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+provenance: authored
+```
+
 ### `status`
 
 *—* · optional · 3 legal values
@@ -84,11 +145,28 @@ Legal values:
 - `draft`
 - `prototype`
 
+Examples — 17 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Brand
+status: draft
+```
+
 ### `version`
 
 *string* · optional
 
 The CONCEPT's version, bumped by whoever changes its meaning. Not the schema's version and not the bundle's: it answers "has this notion changed since I last read it". Measured on the worked bundle: 16 concepts at 1.0 and one at 1.1, which is what a version looks like when it is maintained rather than stamped.
+
+Examples — 17 use(s) in `contoso5`, 2 distinct:
+
+```yaml
+# Brand
+version: '1.0'
+
+# Order
+version: '1.1'
+```
 
 ## As it is actually written
 

@@ -25,6 +25,8 @@ concept
 
 THE MEANING ITSELF — what this notion IS, independently of where it is stored. Name, label, class, definition, identity, semantics. Nothing in this block names a relation or a column; that is `grounding`, and the separation is the whole point of the framework: the same meaning can be re-grounded on a different warehouse without a word of it changing. Required.
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.concept`](concept/README.md)
 
 ### `metadata`
@@ -32,6 +34,8 @@ Its own keys: [`concept.concept`](concept/README.md)
 *object* · **required** · [has its own keys →](metadata.md)
 
 THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.metadata`](metadata.md)
 
@@ -41,6 +45,8 @@ Its own keys: [`concept.metadata`](metadata.md)
 
 A data-quality invariant (validation, NOT derivation). The description field is 'assert:', never 'rule:'.
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.constraints`](constraints.md)
 
 ### `contract`
@@ -48,6 +54,8 @@ Its own keys: [`concept.constraints`](constraints.md)
 *['string', 'object']* · optional · [has its own keys →](contract/README.md)
 
 v0.5 NEW core construct (DECISION 0). The agent-facing binding rules for using this concept correctly — the resolution of the framework's deferred 'reasoning_guidance:' question. Absorbs the former *_contract family + no_probe_guarantee + grounding.guarantees. May be a free-text guidance STRING (shorthand) or a structured object with the sub-keys below; all optional.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.contract`](contract/README.md)
 
@@ -57,11 +65,15 @@ Its own keys: [`concept.contract`](contract/README.md)
 
 marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it.
 
+Not written by any concept in `contoso5`.
+
 ### `governance`
 
 *object* · optional · [has its own keys →](governance/README.md)
 
 Housekeeping. APPEND-ONLY — never edit change_log history.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.governance`](governance/README.md)
 
@@ -71,6 +83,8 @@ Its own keys: [`concept.governance`](governance/README.md)
 
 Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.grounding`](grounding/README.md)
 
 ### `lifecycle`
@@ -78,6 +92,8 @@ Its own keys: [`concept.grounding`](grounding/README.md)
 *object* · optional · [has its own keys →](lifecycle.md)
 
 (event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.lifecycle`](lifecycle.md)
 
@@ -87,6 +103,8 @@ Its own keys: [`concept.lifecycle`](lifecycle.md)
 
 grouping rollup (over + member sets — see groupingMembers) OR a legacy containment list (whole→part).
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.members`](members/README.md)
 
 ### `open_questions`
@@ -94,6 +112,8 @@ Its own keys: [`concept.members`](members/README.md)
 *list of object* · optional · [has its own keys →](open_questions.md)
 
 WHAT IS NOT DECIDED YET, carried IN the concept rather than in a reviewer's head. Each entry is a question whose answer will change the model, with an owner and the reason it is open. An undecided thing recorded here is auditable and blocks nothing; the same thing left out of the file gets silently decided by whoever next writes a rule.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.open_questions`](open_questions.md)
 
@@ -103,6 +123,8 @@ Its own keys: [`concept.open_questions`](open_questions.md)
 
 Intrinsic PRIMITIVE attributes — each a cross-class PropertyItem {name,type,required,doc}. Concept-typed relations are edges, not properties.
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.properties`](properties.md)
 
 ### `values`
@@ -110,6 +132,8 @@ Its own keys: [`concept.properties`](properties.md)
 *object* · optional · [has its own keys →](values/README.md)
 
 v0.5: 'values:' is the SINGLE carrier for an enumeration's value set + closure ('value_set:' was dropped, DECISION 3). Closure lives HERE, with the values — never in semantics.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.values`](values/README.md)
 

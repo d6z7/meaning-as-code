@@ -28,11 +28,26 @@ Legal values:
 - [`composite`](../../vocabulary/concept/identity.md#composite) — Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key.
 - [`sme_pending`](../../vocabulary/concept/identity.md#sme_pending) — Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules.
 
+Examples — 10 use(s) in `contoso5`, 3 distinct:
+
+```yaml
+# Brand
+kind: code
+
+# Currency
+kind: iso
+
+# Customer
+kind: fk_name
+```
+
 ### `canonical_key`
 
 *string* · optional
 
 the column/expression that IS the identity (omit for sme_pending; `resolved_axis`, which also omitted it, was retired 2026-09-28).
+
+Not written by any concept in `contoso5`.
 
 ### `counts_as`
 
@@ -40,11 +55,38 @@ the column/expression that IS the identity (omit for sme_pending; `resolved_axis
 
 The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane.
 
+Examples — 1 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Store
+counts_as: location_code
+```
+
 ### `note`
 
 *string* · optional
 
 How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH.
+
+Examples — 10 use(s) in `contoso5`, 10 distinct:
+
+```yaml
+# Brand
+note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+  is established. Eleven brand NAMES used as their own key — a closed set with no surrogate and
+  no …   # elided — see the real concept for the whole sentence
+
+# Color
+note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+  is established. Sixteen colour NAMES used as their own key.
+
+# Country
+note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+  is established. A `country_code` that IS the identity — ISO-3166 alpha-2, nine codes, no surrogate
+  …   # elided — see the real concept for the whole sentence
+
+# … and 7 more distinct value(s)
+```
 
 ## As it is actually written
 

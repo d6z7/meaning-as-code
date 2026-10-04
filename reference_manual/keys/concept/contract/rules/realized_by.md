@@ -21,11 +21,23 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
+Examples — 5 use(s) in `contoso5`, 2 distinct:
+
+```yaml
+# Country
+udf: mac.canon.population_select
+
+# Discount
+udf: mac.canon.ratio_select
+```
+
 ### `applied_as`
 
 *string* · optional
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -33,11 +45,61 @@ how the canon output is used (subquery_wrapper | predicate_injection | anomaly_c
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
 
+Not written by any concept in `contoso5`.
+
 ### `params`
 
 *object* · optional
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
+
+Examples — 5 use(s) in `contoso5`, 4 distinct:
+
+```yaml
+# Country
+params:
+  default: real
+  populations:
+    real:
+      all:
+      - column: country_code
+        op: ne
+        value: --
+    sentinel:
+      all:
+      - column: country_code
+        op: eq
+        value: --
+
+# Discount
+params:
+  default: percent
+  ratios:
+    percent:
+      denominator: GrossRevenue
+      surfaces:
+      - discount percentage
+      - discount rate
+      - discount %
+      - discount as a percentage
+
+# Location
+params:
+  default: physical
+  populations:
+    physical:
+      all:
+      - column: location_code
+        op: ne
+        value: -1
+    online:
+      all:
+      - column: location_code
+        op: eq
+        value: -1
+
+# … and 1 more distinct value(s)
+```
 
 ## Form 2 — v0.1.9: a single canon binding. Names a canon and su
 
@@ -54,11 +116,23 @@ v0.1.9: a single canon binding. Names a canon and supplies ONLY its params; the 
 
 the canon name — canonical form `mac.canon.<name>`, resolved by check_references against the mac.canon registry in mac_vocabulary.yaml (a bare name is tolerated but the mac.canon.* form is checkable).
 
+Examples — 5 use(s) in `contoso5`, 2 distinct:
+
+```yaml
+# Country
+udf: mac.canon.population_select
+
+# Discount
+udf: mac.canon.ratio_select
+```
+
 ### `applied_as`
 
 *string* · optional
 
 how the canon output is used (subquery_wrapper | predicate_injection | anomaly_check | …) — documentation for the consumer.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -66,11 +140,61 @@ how the canon output is used (subquery_wrapper | predicate_injection | anomaly_c
 
 Why this canon is bound here, for a reader — what it is expected to decide and what was measured before binding it. The binding itself is `udf` and `params`; this is the sentence that survives the next author asking why.
 
+Not written by any concept in `contoso5`.
+
 ### `params`
 
 *object* · optional
 
 the per-concept parameters the canon's signature names. The logic stays in the canon; only the bindings live here.
+
+Examples — 5 use(s) in `contoso5`, 4 distinct:
+
+```yaml
+# Country
+params:
+  default: real
+  populations:
+    real:
+      all:
+      - column: country_code
+        op: ne
+        value: --
+    sentinel:
+      all:
+      - column: country_code
+        op: eq
+        value: --
+
+# Discount
+params:
+  default: percent
+  ratios:
+    percent:
+      denominator: GrossRevenue
+      surfaces:
+      - discount percentage
+      - discount rate
+      - discount %
+      - discount as a percentage
+
+# Location
+params:
+  default: physical
+  populations:
+    physical:
+      all:
+      - column: location_code
+        op: ne
+        value: -1
+    online:
+      all:
+      - column: location_code
+        op: eq
+        value: -1
+
+# … and 1 more distinct value(s)
+```
 
 ## As it is actually written
 

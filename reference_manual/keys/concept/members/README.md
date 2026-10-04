@@ -18,11 +18,15 @@ v0.5 grouping template — how a grouping rolls up its leaf. `over` = the leaf c
 
 the leaf concept this groups (region over country, category over product)
 
+Not written by any concept in `contoso5`.
+
 ### `definitions`
 
 *list of object* · optional · [has its own keys →](definitions.md)
 
 (enumerated) the named member sets — each an explicit list or a derived rule
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.members.definitions`](definitions.md)
 
@@ -31,6 +35,8 @@ Its own keys: [`concept.members.definitions`](definitions.md)
 *—* · optional · [has its own keys →](realized_by.md)
 
 v0.1.9: the canon that realizes the rollup — hierarchy_rollup for a recursive (self-referencing parent) membership, expanding a node to its subtree.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.members.realized_by`](realized_by.md)
 

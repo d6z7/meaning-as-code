@@ -32,11 +32,51 @@ Legal values:
 - `grouping`
 - `meta`
 
+Examples — 17 use(s) in `contoso5`, 5 distinct:
+
+```yaml
+# Brand
+class: enumeration
+
+# Country
+class: reference
+
+# Customer
+class: entity
+
+# Discount
+class: measure
+
+# Order
+class: event
+```
+
 ### `name`
 
 *string* · **required**
 
 PascalCase ontology id — the single canonical identifier.
+
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+name: Brand
+
+# Color
+name: Color
+
+# Country
+name: Country
+
+# Currency
+name: Currency
+
+# Customer
+name: Customer
+
+# … and 12 more distinct value(s)
+```
 
 ### `definition`
 
@@ -44,11 +84,58 @@ PascalCase ontology id — the single canonical identifier.
 
 WHAT THIS NOTION IS, in prose, for a person — the one field in the file that a reader with no schema can use. Say what it is, at what grain, READ FROM THE ROWS rather than from the table name, and say what it is NOT where a neighbour could be mistaken for it. It is also the text a model is shown when choosing between two concepts, so a definition that omits the distinction between two readings is how the wrong one gets picked. Measurement belongs here: "681.72 net against 717.60 gross on one sale" settles an ambiguity that an adjective cannot.
 
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+definition: 'Whose name a product is sold under: eleven names, carried as a column on the product
+  row with no table and no key of their own. A2, top to bottom: not an event, not a measure; "a
+  controlled …'   # elided — see the real concept for the whole sentence
+
+# Color
+definition: 'The colour a product comes in: sixteen values on the served row, and the one attribute
+  that on its own makes a new SKU — "E400 Green" and "E400 Orange" are two products. A2: a controlled
+  …'   # elided — see the real concept for the whole sentence
+
+# Country
+definition: 'A country the business sells in or sells to: eight of them, plus the online sentinel.
+  Read from the rows: `AU, Australia`. A QUESTION ABOUT COUNTRIES IS A QUESTION ABOUT THIS CONCEPT
+  — …'   # elided — see the real concept for the whole sentence
+
+# … and 14 more distinct value(s)
+```
+
 ### `identity`
 
 *object* · optional · [has its own keys →](identity.md)
 
 The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional (additive v0.1.11); presence enforced warn-first by the shapes. The keyless-by-design kinds (composite / sme_pending) let a concept declare it has no single-column key rather than be forced a fake one. `resolved_axis` was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 (0 of 62 concepts used it); the enum below is landed FROM that vocabulary by tools/check_vocabulary_parity.py --write and is not edited by hand.
+
+Examples — 10 use(s) in `contoso5`, 10 distinct:
+
+```yaml
+# Brand
+identity:
+  kind: code
+  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+    is established. Eleven brand NAMES used as their own key — a closed set with no surrogate
+    and no relation behind it.
+
+# Color
+identity:
+  kind: code
+  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+    is established. Sixteen colour NAMES used as their own key.
+
+# Country
+identity:
+  kind: code
+  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
+    is established. A `country_code` that IS the identity — ISO-3166 alpha-2, nine codes, no surrogate
+    behind it.
+
+# … and 7 more distinct value(s)
+```
 
 Its own keys: [`concept.concept.identity`](identity.md)
 
@@ -58,17 +145,48 @@ Its own keys: [`concept.concept.identity`](identity.md)
 
 The concept's name AS A READER SAYS IT, where that differs from its identifier. `Color` is the key, `Colour` is the label. It is what a projection prints and what an answer calls the thing, so it carries spelling, case and local usage that an identifier cannot.
 
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+label: Brand
+
+# Color
+label: Colour
+
+# Country
+label: Country
+
+# Currency
+label: Currency
+
+# Customer
+label: Customer
+
+# … and 12 more distinct value(s)
+```
+
 ### `notes`
 
 *string* · optional
 
 Working remarks a reader may need and the definition should not carry — an open uncertainty, a measurement that justifies a choice, a thing checked and ruled out. Nothing here is normative: a statement that must hold is a rule with a body, and a statement that must be READ is part of the definition. If a note starts telling the engine what to do, it is in the wrong field.
 
+Not written by any concept in `contoso5`.
+
 ### `semantics`
 
 *object* · optional · [has its own keys →](semantics/README.md)
 
 The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).
+
+Examples — 1 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Product
+semantics:
+  unit: USD
+```
 
 Its own keys: [`concept.concept.semantics`](semantics/README.md)
 

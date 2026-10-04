@@ -18,6 +18,8 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 What kind of aggregation axis one column is, keyed by column name — DEPRECATED, and measured inert: its keys are column names while the planner looked them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key could ever match. Declare `axis_kind` on the column instead. Kept because readers still fall back to it, so an unmigrated bundle is unchanged.
 
+Not written by any concept in `contoso5`.
+
 ---
 
 [↑ the whole tree](../../../README.md)

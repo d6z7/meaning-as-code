@@ -18,6 +18,8 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 The role of one column, keyed by column name, in the shape that PRECEDED the column map. The planner reads it to place a predicate. Authored bundles declare `role` on the column instead and let this project from it — a role written in both places gives one fact two homes that can disagree.
 
+Not written by any concept in `contoso5`.
+
 ---
 
 [↑ the whole tree](../../README.md)

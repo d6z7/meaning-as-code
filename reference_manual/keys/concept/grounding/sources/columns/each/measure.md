@@ -23,11 +23,15 @@ THIS REPLACES 'Only ONE column per concept may carry it', which was wrong in thr
 
 PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.
 
+Not written by any concept in `contoso5`.
+
 ### `canonical`
 
 *boolean* · optional
 
 THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity.
+
+Not written by any concept in `contoso5`.
 
 ### `type`
 
@@ -35,11 +39,15 @@ THE COLUMN THE CONCEPT IS — the number a question about the concept itself fol
 
 WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.
 
+Not written by any concept in `contoso5`.
+
 ### `unit`
 
 *string* · optional
 
 WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.
+
+Not written by any concept in `contoso5`.
 
 ---
 

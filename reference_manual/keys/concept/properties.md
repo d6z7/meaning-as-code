@@ -20,11 +20,15 @@ v0.5 CROSS-CLASS primitive — a concept property. Identical shape wherever `pro
 
 The property's name as the ontology states it. A property is an INTRINSIC PRIMITIVE attribute of this concept; anything pointing at another concept is an edge, not a property.
 
+Not written by any concept in `contoso5`.
+
 ### `doc`
 
 *string* · optional
 
 What this property means, for a reader — what it records and at what grain. The one thing a type cannot say: `string` does not distinguish a name from a code from a free-text note.
+
+Not written by any concept in `contoso5`.
 
 ### `required`
 
@@ -32,17 +36,23 @@ What this property means, for a reader — what it records and at what grain. Th
 
 Whether every instance must carry this property. A claim about the NOTION, not about the current rows: a required property that is null in the data is a data-quality finding, and declaring it optional to make the finding go away is how a defect becomes invisible.
 
+Not written by any concept in `contoso5`.
+
 ### `type`
 
 *string* · optional
 
 the primitive datatype (string/int/date/...)
 
+Not written by any concept in `contoso5`.
+
 ### `value_domain`
 
 *string* · optional
 
 (optional) an enumeration this property's values must belong to
+
+Not written by any concept in `contoso5`.
 
 ---
 

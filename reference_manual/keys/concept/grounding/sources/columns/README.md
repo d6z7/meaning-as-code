@@ -18,6 +18,8 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.
 
+Not written by any concept in `contoso5`.
+
 Its own keys: [`concept.grounding.sources.columns.<name>`](each/README.md)
 
 ## As it is actually written

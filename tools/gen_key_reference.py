@@ -228,22 +228,48 @@ class Walker:
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 
+#: HOW LONG A SCALAR MAY BE INSIDE AN EXAMPLE. A definition runs to a thousand characters and is
+#: the right length for a definition and the wrong length for a snippet, so a long one is elided
+#: with the elision SAID — a snippet that silently shows half a value teaches the half.
+EXAMPLE_SCALAR = 190
+
+
+def _snippet(key: str, value) -> str:
+    """`key: value` as YAML, with a long scalar elided and the elision stated."""
+    shown = value
+    if isinstance(value, str) and len(" ".join(value.split())) > EXAMPLE_SCALAR:
+        shown = " ".join(value.split())[:EXAMPLE_SCALAR].rsplit(" ", 1)[0] + " …"
+    text = yaml.safe_dump({key: shown}, sort_keys=False, allow_unicode=True, width=92).rstrip()
+    if shown is not value:
+        text += "   # elided — see the real concept for the whole sentence"
+    return text
+
+
 def cut_examples(bundle: pathlib.Path, limit_chars: int = 1400):
-    """{level path -> {concept, yaml}} — an example a person TYPED would be another home."""
+    """({level -> {concept, yaml}}, [concepts], {level.key -> [(concept, yaml snippet)]}).
+
+    THE EXAMPLES ARE CUT, NEVER WRITTEN. One a person typed is a fourth home for a declaration and
+    the first to go stale; one lifted from a bundle cannot describe a shape nobody writes. Two kinds
+    are collected: the whole block at each level, and each KEY's own usage, so a reader deciding
+    what to put in `role` sees what seventeen concepts actually put there.
+    """
     examples: dict[str, dict] = {}
+    per_key: dict[str, list] = {}
     read: list[str] = []
     concepts = bundle / "ontology" / "concepts"
     if not concepts.is_dir():
         return examples, read
 
-    def collect(obj, path, name):
+    def collect(obj, path, name, keys=True):
         if path not in examples and isinstance(obj, (dict, list)) and obj:
             text = yaml.safe_dump(obj, sort_keys=False, allow_unicode=True, width=86).rstrip()
             if len(text) <= limit_chars:
                 examples[path] = {"concept": name, "yaml": text}
         if isinstance(obj, dict):
             for k, v in obj.items():
-                collect(v, f"{path}.{k}", name)
+                if keys and v is not None and v != [] and v != {}:
+                    per_key.setdefault(f"{path}.{k}", []).append((name, _snippet(k, v)))
+                collect(v, f"{path}.{k}", name, keys)
         elif isinstance(obj, list) and obj:
             collect(obj[0], path, name)
 
@@ -260,9 +286,21 @@ def cut_examples(bundle: pathlib.Path, limit_chars: int = 1400):
             cols = src.get("columns")
             if isinstance(cols, dict):
                 for spec in cols.values():
-                    collect(spec, f"concept.grounding.sources.columns.{ANY}", name)
+                    # keys=False: the per-key usages for a column come from the loop below, which
+                    # names the COLUMN as well as the concept. Collecting them here too gave one key
+                    # two attributions — `Brand` and `Brand.product_key` — for the same fact.
+                    collect(spec, f"concept.grounding.sources.columns.{ANY}", name, keys=False)
                     break
-    return examples, read
+                # EVERY column, not the first: the first column of the first relation would make
+                # `measure` and `rulings` look unused across the whole bundle.
+                for cname, spec in cols.items():
+                    if isinstance(spec, dict):
+                        for k, v in spec.items():
+                            if v is not None:
+                                per_key.setdefault(
+                                    f"concept.grounding.sources.columns.{ANY}.{k}", []
+                                ).append((f"{name}.{cname}", _snippet(k, v)))
+    return examples, read, per_key
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -331,7 +369,7 @@ def facts_line(k, here, levels) -> str:
     return " · ".join(bits)
 
 
-def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_name) -> str:
+def render_level(path, level, levels, notions, examples, per_key, gaps_by_level, bundle_name) -> str:
     here = level_page(path, levels)
     segs = path.split(".")
     crumb = []
@@ -388,6 +426,27 @@ def render_level(path, level, levels, notions, examples, gaps_by_level, bundle_n
                     definition = " ".join(str((term or {}).get("definition") or "").split())
                     out.append(f"{head} — {definition}" if definition else head)
                 out.append("")
+            usages = per_key.get(f"{path}.{k['key']}") or []
+            if usages:
+                seen, picked = set(), []
+                for who, snippet in usages:
+                    if snippet not in seen:
+                        seen.add(snippet)
+                        picked.append((who, snippet))
+                out += [f"Examples — {len(usages)} use(s) in `{bundle_name}`, "
+                        f"{len(seen)} distinct:", "", "```yaml"]
+                #: HOW MANY TO SHOW. A one-line snippet costs a line, so show every distinct one
+                #: up to five — a five-term enum then shows all five, which is the whole point of
+                #: an example on an enum. A multi-line one costs a screen, so show three.
+                cap = 5 if all("\n" not in sn for _w, sn in picked) else 3
+                shown = picked[:cap]
+                for i, (who, snippet) in enumerate(shown):
+                    out += [f"# {who}", snippet] + ([""] if i < len(shown) - 1 else [])
+                if len(picked) > cap:
+                    out += ["", f"# … and {len(picked) - cap} more distinct value(s)"]
+                out += ["```", ""]
+            elif bundle_name != "none":
+                out += [f"Not written by any concept in `{bundle_name}`.", ""]
             if k["child"]:
                 out += [f"Its own keys: [`{k['child']}`]({rel(here, level_page(k['child'], levels))})", ""]
 
@@ -569,12 +628,13 @@ def build(root: pathlib.Path, bundle: pathlib.Path | None):
     walker = Walker(schema, dotted)
     walker.walk(walker.defs["ConceptFile"], "concept")
     walker.prune_children()
-    examples, read = cut_examples(bundle) if bundle and bundle.is_dir() else ({}, [])
-    return schema, notions, walker, examples, read
+    examples, read, per_key = (cut_examples(bundle) if bundle and bundle.is_dir()
+                               else ({}, [], {}))
+    return schema, notions, walker, examples, read, per_key
 
 
 def pages_for(root: pathlib.Path, bundle: pathlib.Path | None) -> dict[str, str]:
-    schema, notions, walker, examples, read = build(root, bundle)
+    schema, notions, walker, examples, read, per_key = build(root, bundle)
     gaps_by_level: dict[str, list[str]] = {}
     for g in walker.gaps:
         gaps_by_level.setdefault(g["level"], []).append(g["key"])
@@ -583,7 +643,7 @@ def pages_for(root: pathlib.Path, bundle: pathlib.Path | None) -> dict[str, str]
                                       schema["version"], bundle.name if bundle else "none", read)}
     for path, level in walker.levels.items():
         pages[level_page(path, walker.levels)] = render_level(
-            path, level, walker.levels, notions, examples, gaps_by_level,
+            path, level, walker.levels, notions, examples, per_key, gaps_by_level,
             bundle.name if bundle else "none")
     for notion, body in notions.items():
         pages[notion_page(notion, notions)] = render_notion(notion, body, walker.levels, notions)
@@ -614,7 +674,7 @@ def write(out_dir: pathlib.Path, pages: dict[str, str]) -> int:
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
 
 def check(root: pathlib.Path, out_dir: pathlib.Path, bundle) -> list[str]:
-    schema, notions, walker, examples, read = build(root, bundle)
+    schema, notions, walker, examples, read, per_key = build(root, bundle)
     pages = pages_for(root, bundle)
     rejects: list[str] = []
 
@@ -764,7 +824,7 @@ def main(argv=None) -> int:
 
     pages = pages_for(ROOT, bundle)
     n = write(OUT_DIR, pages)
-    _, notions, walker, examples, read = build(ROOT, bundle)
+    _, notions, walker, examples, read, per_key = build(ROOT, bundle)
     key_total = sum(len(f["keys"]) for lv in walker.levels.values() for f in lv["forms"])
     print(f"PASS: gen_key_reference — wrote {n} page(s) to "
           f"{OUT_DIR.relative_to(ROOT)}: {len(walker.levels)} level(s), {len(notions)} vocabular(y/ies), "

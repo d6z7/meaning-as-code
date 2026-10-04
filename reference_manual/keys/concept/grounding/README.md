@@ -32,6 +32,8 @@ Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in t
 
 The column holding this concept's CODE, where the code is not the identity — a name resolves to it and a question filters on it. Read by the planner as one of the columns this concept may constrain on its own relation; a register's `code` is the value set that fills it.
 
+Not written by any concept in `contoso5`.
+
 ### `discriminator`
 
 *string* · optional
@@ -40,11 +42,15 @@ THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a predicate, and
 
 Documented 2026-09-28. It has existed since v0.5 with NO description, which is how a slot becomes the next `attribute`: unread, unexplained, and then used for whatever seems to fit.
 
+Not written by any concept in `contoso5`.
+
 ### `field_roles`
 
 *object* · optional · [has its own keys →](field_roles.md)
 
 v0.1.7: the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.grounding.field_roles`](field_roles.md)
 
@@ -54,11 +60,28 @@ Its own keys: [`concept.grounding.field_roles`](field_roles.md)
 
 v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grain-commitment lesson, first-class.
 
+Examples — 17 use(s) in `contoso5`, 12 distinct:
+
+```yaml
+# Brand
+grain: one member per brand name — eleven, over 2,517 products
+
+# Color
+grain: one member per colour name — sixteen, stored and meant
+
+# Country
+grain: one row per country code — nine as stored, eight as meant
+
+# … and 9 more distinct value(s)
+```
+
 ### `grounds_column`
 
 *string* · optional
 
 (naming contract) a physical column name as a VALUE, never a key.
+
+Not written by any concept in `contoso5`.
 
 ### `join_rule`
 
@@ -66,11 +89,15 @@ v0.5 PROMOTED to core: the committed leaf grain — one row = one ... . THE grai
 
 HOW THIS RELATION JOINS, in the bundle's own words, where the join is not a plain key equality. It is prose for a reader, not an executable clause: a join the engine must perform is an EDGE with a `join_rule` the assembler can emit. Declared here it documents a relation's own shape — a self-join, a scoped lookup — so the next author does not rediscover it.
 
+Not written by any concept in `contoso5`.
+
 ### `key_column`
 
 *string* · optional
 
 THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level. Prefer the column fact — `identity: canonical` in the column map — and use this only where there is no column map: declaring it in both places gives one identity two homes that can disagree. The planner reads it alongside `code_column` and `grounds_column` to know which of the relation's columns this concept may be pinned on.
+
+Not written by any concept in `contoso5`.
 
 ### `kind`
 
@@ -78,11 +105,15 @@ THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level
 
 Grounding adapter (pluggable): sql_table | api | file | graph.
 
+Not written by any concept in `contoso5`.
+
 ### `note`
 
 *string* · optional
 
 One remark about the GROUNDING — why this relation and not another, what a column name does not say, a measurement that justified the choice. About where the rows are, never about what the concept means; that is `concept.definition`.
+
+Not written by any concept in `contoso5`.
 
 ### `notes`
 
@@ -90,11 +121,15 @@ One remark about the GROUNDING — why this relation and not another, what a col
 
 Longer working remarks about the grounding, where one `note` will not hold them. Nothing here is normative — a statement the engine must honour is a rule, a ruling, or a column fact.
 
+Not written by any concept in `contoso5`.
+
 ### `realized_by`
 
 *—* · optional · [has its own keys →](realized_by.md)
 
 v0.1.9: the canon(s) that realize a behaviour-bearing grounding slot — e.g. snapshot_collapse for a versioned (SCD-2) relation, or exclusion_filter for a bake-disposition value_filter.
+
+Not written by any concept in `contoso5`.
 
 Its own keys: [`concept.grounding.realized_by`](realized_by.md)
 
@@ -104,11 +139,15 @@ Its own keys: [`concept.grounding.realized_by`](realized_by.md)
 
 HOW MANY ROWS THE RELATION HELD WHEN IT WAS MEASURED. A number, or a string where the count is approximate or qualified. It is evidence, not a constraint: nothing enforces it, and its job is to let a reader see at a glance whether a grain claim is plausible — 2,517 products against 104,990 customers says more about a model than either sentence about it.
 
+Not written by any concept in `contoso5`.
+
 ### `schema`
 
 *string* · optional
 
 The database SCHEMA the relation lives in, where the connection does not already pin one. Together with `table` it is the full address of the rows. Leave it out when the project's connection declares the schema, because a second home for it is how a bundle comes to work on one machine only.
+
+Not written by any concept in `contoso5`.
 
 ### `snapshot_rule`
 
@@ -116,11 +155,68 @@ The database SCHEMA the relation lives in, where the connection does not already
 
 HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the bundle's own words. It is PROSE, deliberately: the executable form is a `realized_by: snapshot_collapse` binding, a fragment that binds the relation, or `identity.counts_as` for a count. The runtime quotes it to the reader either way — when a collapse ran, as the rule the collapse honoured; when none did, as the bundle saying its relation holds several rows per member and this query read every one of them.
 
+Examples — 1 use(s) in `contoso5`, 1 distinct:
+
+```yaml
+# Store
+snapshot_rule: 'ONE ROW PER STORE ALREADY, once the `active` population has selected the trading
+  ones: 57 rows over 57 location codes, because a location has at most one store with no close
+  date. The …'   # elided — see the real concept for the whole sentence
+```
+
 ### `sources`
 
 *list of object* · optional · [has its own keys →](sources/README.md)
 
 v0.5 agnostic source binding — the relation(s) this concept queries, each with its key + the columns it uses. A view and a base table are IDENTICAL here (query target only); a view's lineage lives on its Physical descriptor (`derived_from`), never here.
+
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+sources:
+- relation: dim_product
+  key:
+  - brand
+  columns:
+    brand:
+      role: dimension
+      identity: canonical
+      register: data/lookups/contoso5_brand.lookup.yaml
+    product_key:
+      role: key
+      identity: reference
+
+# Color
+sources:
+- relation: dim_product
+  key:
+  - color
+  columns:
+    color:
+      role: dimension
+      identity: canonical
+      register: data/lookups/contoso5_color.lookup.yaml
+    product_key:
+      role: key
+      identity: reference
+
+# Country
+sources:
+- relation: dim_country
+  columns:
+    country_code:
+      role: key
+      identity: canonical
+      register: data/lookups/contoso5_country_code.lookup.yaml
+    country_name:
+      role: dimension
+      rulings:
+        label_of: country_code
+        register: long
+
+# … and 14 more distinct value(s)
+```
 
 Its own keys: [`concept.grounding.sources`](sources/README.md)
 
@@ -130,11 +226,15 @@ Its own keys: [`concept.grounding.sources`](sources/README.md)
 
 LEGACY, and still accepted: the single relation this concept queries. `sources[]` is the binding — use it for anything new. This key predates it, carried no description for five minor versions, and four independent readers in this estate consequently disagreed about which to read: one saw 22 of 22 concepts as ungrounded, another drew an empty graph. A reader MUST accept both, preferring `sources[]` when both are present, because the legacy sibling may be stale.
 
+Not written by any concept in `contoso5`.
+
 ### `value_filter`
 
 *string* · optional
 
 A PREDICATE THAT NARROWS WHAT THIS CONCEPT IS GROUNDED ON, applied inviolably to every query. Use it only for rows that are NOT the concept — a sentinel, a load artefact. IT IS NOT A DOMAIN IF A QUESTION CAN LEGITIMATELY ASK THE OTHER SIDE OF IT: a default reading belongs in a population rule, which steps aside when the question speaks about it. Measured on the worked bundle: Store declared `close_date IS NULL` here, and *how many stores are closed?* produced correct SQL that then had that clause ANDed onto it — a conjunction that can never be true, 0 rows against a truth of 9, with every stage green.
+
+Not written by any concept in `contoso5`.
 
 ## As it is actually written
 

@@ -16,11 +16,70 @@
 
 the table OR view name to query (agnostic — the AI does not care which)
 
+Examples — 17 use(s) in `contoso5`, 8 distinct:
+
+```yaml
+# Brand
+relation: dim_product
+
+# Country
+relation: dim_country
+
+# Currency
+relation: dim_currency
+
+# Customer
+relation: dim_customer
+
+# Discount
+relation: v_contoso5_sales_line
+
+# … and 3 more distinct value(s)
+```
+
 ### `columns`
 
 *—* · optional · [has its own keys →](columns/README.md)
 
 WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat list names columns and says nothing about them, and the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list is kept legal so an unmigrated bundle still loads, and `check_column_spec` reports every concept still using it.
+
+Examples — 17 use(s) in `contoso5`, 17 distinct:
+
+```yaml
+# Brand
+columns:
+  brand:
+    role: dimension
+    identity: canonical
+    register: data/lookups/contoso5_brand.lookup.yaml
+  product_key:
+    role: key
+    identity: reference
+
+# Color
+columns:
+  color:
+    role: dimension
+    identity: canonical
+    register: data/lookups/contoso5_color.lookup.yaml
+  product_key:
+    role: key
+    identity: reference
+
+# Country
+columns:
+  country_code:
+    role: key
+    identity: canonical
+    register: data/lookups/contoso5_country_code.lookup.yaml
+  country_name:
+    role: dimension
+    rulings:
+      label_of: country_code
+      register: long
+
+# … and 14 more distinct value(s)
+```
 
 Its own keys: [`concept.grounding.sources.columns`](columns/README.md)
 
@@ -29,6 +88,24 @@ Its own keys: [`concept.grounding.sources.columns`](columns/README.md)
 *['string', 'array']* · optional
 
 primary / join key column(s)
+
+Examples — 4 use(s) in `contoso5`, 4 distinct:
+
+```yaml
+# Brand
+key:
+- brand
+
+# Color
+key:
+- color
+
+# Currency
+key:
+- currency_code
+
+# … and 1 more distinct value(s)
+```
 
 ## As it is actually written
 

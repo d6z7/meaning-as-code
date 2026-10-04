@@ -22,11 +22,15 @@
 
 A stable handle for this question, so a decision record, a rule or a conversation can cite it and still mean this one after the list is reordered.
 
+Not written by any concept in `contoso5`.
+
 ### `question`
 
 *string* · **required**
 
 THE QUESTION ITSELF, asked so that an answer would be a decision. 'Does revenue mean net or gross here' can be answered; 'revenue is unclear' cannot, and is how an open question outlives every chance to close it.
+
+Not written by any concept in `contoso5`.
 
 ### `category`
 
@@ -34,11 +38,15 @@ THE QUESTION ITSELF, asked so that an answer would be a decision. 'Does revenue 
 
 What KIND of question this is: a missing declaration, a ruling only a person can make, a framework limit, a data defect. The classification decides who it goes to, and getting it wrong is how a question sits with an engineer for a month when it needed one sentence from the business.
 
+Not written by any concept in `contoso5`.
+
 ### `cross_references`
 
 *['array', 'string']* · optional
 
 Where else this question bears — the rules, columns, concepts or findings its answer would change. It is what makes the cost of leaving it open visible, and the checklist for what to revisit when it closes.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -46,17 +54,23 @@ Where else this question bears — the rules, columns, concepts or findings its 
 
 Context a reader of the question needs — what has already been measured, what was tried, which readings are still on the table.
 
+Not written by any concept in `contoso5`.
+
 ### `owner_for_resolution`
 
 *string* · optional
 
 WHO CAN ACTUALLY DECIDE THIS — usually a subject-matter expert, not the ontology's author. Naming them is what turns an open question into a request; without it the question is addressed to nobody and waits forever.
 
+Not written by any concept in `contoso5`.
+
 ### `priority`
 
 *string* · optional
 
 How much this question costs while it stays open — which questions it blocks, which answers are provisional until it is settled. It is what ranks a list of questions somebody has to actually work through.
+
+Not written by any concept in `contoso5`.
 
 ### `status`
 
@@ -71,11 +85,15 @@ Legal values:
 - `RESOLVED`
 - `NEEDS_SME_CONFIRMATION`
 
+Not written by any concept in `contoso5`.
+
 ### `topic`
 
 *string* · optional
 
 WHAT THE QUESTION IS ABOUT, in a few words — the column, the axis, the reading. What a reader scans to find whether their own uncertainty is already recorded.
+
+Not written by any concept in `contoso5`.
 
 ---
 

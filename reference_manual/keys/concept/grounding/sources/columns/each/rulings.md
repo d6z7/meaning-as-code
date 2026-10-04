@@ -24,11 +24,15 @@ ADDED 2026-09-28, and until then a ruling COULD NOT BE WRITTEN. mac.concept.colu
 
 The measurement a ruling rests on — a data-quality issue id, or a relation.column and the figure. REQUIRED with `never_axis`, and good practice with any ruling made from a number.
 
+Not written by any concept in `contoso5`.
+
 ### `finer_than`
 
 *string* · optional
 
 THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`.
+
+Not written by any concept in `contoso5`.
 
 ### `label_of`
 
@@ -36,11 +40,15 @@ THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up 
 
 THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have.
 
+Not written by any concept in `contoso5`.
+
 ### `never_axis`
 
 *string* · optional
 
 THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)
+
+Not written by any concept in `contoso5`.
 
 ### `register`
 
@@ -56,11 +64,15 @@ Legal values:
 - [`short`](../../../../../vocabulary/name_register.md#short) — The abbreviated form. 'Mon' for Monday, 'Jan' for January.
 - [`code`](../../../../../vocabulary/name_register.md#code) — A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
+Not written by any concept in `contoso5`.
+
 ### `scoped_by`
 
 *string* · optional
 
 THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent.
+
+Not written by any concept in `contoso5`.
 
 ### `sort`
 
@@ -73,6 +85,8 @@ Legal values:
 - `asc`
 - `desc`
 - [`none`](../../../../../vocabulary/concept/aggregation_effect.md#none) — NO fold is valid along this axis. If a value is needed at a coarser grain it must already EXIST as a stored row: RESOLVE it, never compute it. Which row that is, is determined for the TIME axis by mac_rules.yaml#mac.resolve.period_reading (a bare period reads its END cell) and needs no per-concept rule. Only a NON-time axis whose answer genuinely varies — a reach measure resolving to a matching abstraction level — needs the concept to say.
+
+Not written by any concept in `contoso5`.
 
 ---
 

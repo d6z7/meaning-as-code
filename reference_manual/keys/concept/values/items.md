@@ -20,6 +20,8 @@
 
 the canonical value identifier
 
+Not written by any concept in `contoso5`.
+
 ### `confidence`
 
 *—* · optional · 3 legal values
@@ -32,11 +34,15 @@ Legal values:
 - `I`
 - `Q`
 
+Not written by any concept in `contoso5`.
+
 ### `from`
 
 *['string', 'array']* · optional
 
 raw source attribute(s) this value was conformed from (a list when several raw spellings map to one code)
+
+Not written by any concept in `contoso5`.
 
 ### `label`
 
@@ -44,11 +50,15 @@ raw source attribute(s) this value was conformed from (a list when several raw s
 
 How this value is shown to a reader, where that differs from the code. BANNED IN A CONCEPT: a value set belongs in a register and the column points at it with `register:`, so a label lives in the register's own row. Kept in the schema for bundles not yet migrated.
 
+Not written by any concept in `contoso5`.
+
 ### `meaning`
 
 *string* · optional
 
 What this value MEANS, where the code does not say it. BANNED IN A CONCEPT for the same reason as its siblings — the register is the one home for a value and everything about it. A meaning written here is invisible to every other column carrying the same set.
+
+Not written by any concept in `contoso5`.
 
 ### `note`
 
@@ -56,11 +66,15 @@ What this value MEANS, where the code does not say it. BANNED IN A CONCEPT for t
 
 A remark about one value — an impurity, a historical spelling, a case that looks like it belongs and does not. BANNED IN A CONCEPT; it belongs on the register's row.
 
+Not written by any concept in `contoso5`.
+
 ### `open_question`
 
 *string* · optional
 
 An undecided question about one value, carried beside it. BANNED IN A CONCEPT; use the register, and `open_questions` at the concept level for a question about the notion itself.
+
+Not written by any concept in `contoso5`.
 
 ---
 

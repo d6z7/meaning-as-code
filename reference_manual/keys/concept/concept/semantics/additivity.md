@@ -18,6 +18,8 @@ You choose the names at this level — a column name, an axis name. `<name>` bel
 
 v0.1.15: ONE SCALE. This was a separate BINARY enum (additive | non-additive) and a LOSSY projection of mac.concept.aggregation_effect: point_in_time, averageable and non_aggregable all collapsed into 'non-additive', so a concept physically could not say which. That is why one reach measure's question stayed open — the vendor says sum AND average both fail, which is `precomputed`, and the concept layer had no word for it. It now IS the aggregation_effect vocabulary (three terms), bare or mac.-qualified. `precomputed` was briefly a fourth term here and was moved to mac.concept.column.measure_type where it belongs: WHERE A VALUE COMES FROM is a property of the measure; WHETHER YOU MAY FOLD is the only question an axis answers. At axis level the two were indistinguishable — both mean 'do not fold'. The retired spellings 'non-additive' / 'non_additive' are gone, not deprecated: 'non_additive' was never a defined value anywhere — it was the bug token three separate checkers existed to catch.
 
+Not written by any concept in `contoso5`.
+
 ---
 
 [↑ the whole tree](../../../README.md)

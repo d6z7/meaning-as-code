@@ -17,6 +17,8 @@
 
 The code of one member of this grouping, as the data holds it. The grouping's own value set, so the same rule applies as everywhere else: where a register already carries these values, point at it rather than restating them here.
 
+Not written by any concept in `contoso5`.
+
 ### `confidence`
 
 *—* · optional · 3 legal values
@@ -29,17 +31,23 @@ Legal values:
 - `I`
 - `Q`
 
+Not written by any concept in `contoso5`.
+
 ### `label`
 
 *string* · optional
 
 How one member of this grouping is shown to a reader, where that differs from its code.
 
+Not written by any concept in `contoso5`.
+
 ### `members`
 
 *list of array* · optional
 
 (explicit) the leaf codes in this set
+
+Not written by any concept in `contoso5`.
 
 ---
 
