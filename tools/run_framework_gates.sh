@@ -140,10 +140,26 @@ run_capped() {
 # this repository whose --check the suite can see: the loop above globs `check_*.py`, so the five
 # existing `gen_*.py --check` instruments are invisible to it, which is how shape_reference.md held
 # `schema 0.1.14` against a 0.1.16 schema with nothing red.
+# 2026-10-04, same day, three more of exactly that kind — check_schema_shapes, check_slot_reference and
+# check_vocabulary_terms. Every one is a thin delegate to a `gen_*.py --check` the suite could not see,
+# and each covered a measured false green: the 0.1.14 version claim and the missing `rulings` level on
+# shape_reference.md; five raw Python dict reprs in column_map.generated.md's TERM MEANINGS; and
+# `UNDOCUMENTED: 4` printed with exit 0 because the number reached no return statement. Four of the
+# repository's seven generators are now visible to this runner. THE THREE STILL INVISIBLE, named rather
+# than left to be rediscovered, and each MEASURED on this tree rather than assumed:
+#   gen_column_bench.py --check   requires `--bundle <root>`; the runner's one convention is a POSITIONAL
+#                                 bundle root, so wiring it needs a convention that does not exist yet.
+#   gen_grammar_map.py  --check   requires `--runtime <path to mac_runtime>`; same gap, a sibling path.
+#   gen_strategy.py     --check   runs bare and is GREEN (STRATEGY.md matches guardrails/strategy.yaml,
+#                                 11 rungs, 6 principles) — but it prints `OK —`, not one PASS:/FAIL:
+#                                 line, and declares no --self-test, so wiring it would add a gate that
+#                                 does not meet the contract. It is NOT check_strategy.py's question:
+#                                 that one resolves the references INSIDE strategy.yaml. Left visible and
+#                                 unharvested — a suite must never get greener as a side effect.
 REPO_SUBJECT_GATES=(check_protocol.py check_canon_documented.py check_projection_field_parity.py
   check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
   check_wiki_citations.py check_dangling_references.py check_strategy.py check_declarations_read.py
-  check_key_reference.py)
+  check_key_reference.py check_schema_shapes.py check_slot_reference.py check_vocabulary_terms.py)
 
 repo_subject() {  # repo_subject <basename> -- 0 if this gate takes no bundle root
   local n="$1" g

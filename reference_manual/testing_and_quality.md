@@ -90,7 +90,7 @@ to make unsayable.
 | field | value |
 |---|---|
 | `gradeable` | True |
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.test_status.FAIL`
 
@@ -101,7 +101,7 @@ that produced no verdict at all, and that is the defect `VACUOUS` removes.
 | field | value |
 |---|---|
 | `gradeable` | True |
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.test_status.ACCEPTED`
 
@@ -127,7 +127,7 @@ with a `requires` no writer satisfies.
 | field | value |
 |---|---|
 | `gradeable` | True |
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.test_status.ERROR`
 
@@ -153,7 +153,7 @@ end. Excluded from `examined` and counted as `skipped`.
 | field | value |
 |---|---|
 | `gradeable` | False |
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.test_status.VACUOUS`
 
@@ -226,7 +226,7 @@ is `open` because someone wrote `open`, not because a join missed.
 
 | field | value |
 |---|---|
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.dq_status.accepted`
 
@@ -249,7 +249,7 @@ that no longer exists.
 
 | field | value |
 |---|---|
-| `requires` |  |
+| `requires` | none |
 
 #### `mac.dq_status.wont_fix`
 

@@ -227,6 +227,159 @@ the schema refuses. A key is in exactly one of them.
 
 ---
 
+## What the column HOLDS — its type family
+
+`role` says where a query may use a column; the type family says what a comparison against it may
+mean. A threshold of `630.5` against an integer key and a boolean against a numeric both refuse at the
+same gate, and they refuse by FAMILY rather than by warehouse spelling — the spellings are a bundle's
+descriptor data and differ per warehouse, so the families are closed here and the spellings are
+normalised before matching (the text before `(` or `<`).
+
+<!-- BEGIN GENERATED:vocabulary-terms:column_type (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> The family of value a column holds, with the warehouse spellings that mean it. Closed over
+FAMILIES; open over spellings, which a bundle's descriptors supply and which are normalised
+before matching (the text before `(` or `<`).
+
+*`mac.column_type` · 5 terms · closed — these are all of them*
+
+#### `mac.column_type.text`
+
+Characters. A NAME, a code, a label -- something read rather than measured.
+
+| field | value |
+|---|---|
+| `spellings` | string, varchar, char, text, nvarchar, uuid |
+
+#### `mac.column_type.number`
+
+A magnitude. Something that can be larger or smaller than another of its kind.
+
+| field | value |
+|---|---|
+| `spellings` | integer, int, bigint, smallint, tinyint, decimal, numeric, double, float, real |
+
+#### `mac.column_type.temporal`
+
+A point in time. The only family a date literal may be compared against.
+
+| field | value |
+|---|---|
+| `spellings` | date, timestamp, datetime, timestamptz, time |
+
+#### `mac.column_type.boolean`
+
+True or false. Two members, so it is never a magnitude and never a name.
+
+| field | value |
+|---|---|
+| `spellings` | boolean, bool |
+
+#### `mac.column_type.collection`
+
+Several values in one cell. Never an axis and never an ordering key: GROUP BY over a collection
+groups by the container, which is not a member of anything a question asked about.
+
+| field | value |
+|---|---|
+| `spellings` | array, map, struct, row, json |
+<!-- END GENERATED:vocabulary-terms:column_type -->
+
+---
+
+## When a value set is a calendar, not a register
+
+`register` above points at the value set a column carries, and the usual reason to declare one is that
+a typed word has to resolve to a stored code. A calendar needs none of that: `March`, `Mon`, `2024-Q3`
+and `2024-03-01` are recognised by a built-in reader, so no lookup is cut for them, none is carried
+into a bundle, and none is monitored. A column whose values are one of these forms is a calendar, and
+declaring a register for it would create a second home for the Gregorian calendar.
+
+<!-- BEGIN GENERATED:vocabulary-terms:calendar_vocabulary (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> The words and literal forms of the Gregorian calendar. A column whose value set is one of these
+is a calendar, not a register: the built-in reader recognises it and no lookup is cut, carried
+or monitored for it.
+
+*`mac.calendar_vocabulary` · 9 terms · closed — these are all of them*
+
+#### `mac.calendar_vocabulary.month_name`
+
+The twelve month names in full.
+
+| field | value |
+|---|---|
+| `members` | January, February, March, April, May, June, July, August, September, October, November, December |
+
+#### `mac.calendar_vocabulary.month_short`
+
+The three-letter month abbreviations. `Sept` is admitted beside `Sep` because deliveries write
+both.
+
+| field | value |
+|---|---|
+| `members` | Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Sept, Oct, Nov, Dec |
+
+#### `mac.calendar_vocabulary.weekday_name`
+
+The seven weekday names in full.
+
+| field | value |
+|---|---|
+| `members` | Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday |
+
+#### `mac.calendar_vocabulary.weekday_short`
+
+The three-letter weekday abbreviations.
+
+| field | value |
+|---|---|
+| `members` | Mon, Tue, Tues, Wed, Thu, Thur, Thurs, Fri, Sat, Sun |
+
+#### `mac.calendar_vocabulary.quarter_label`
+
+A quarter of a year, unqualified by which year.
+
+| field | value |
+|---|---|
+| `members` | Q1, Q2, Q3, Q4 |
+
+#### `mac.calendar_vocabulary.iso_date`
+
+A day. `2020-12-31`, with an optional time this estate's served dates do not carry (every date
+column measured on the worked bundle is midnight).
+
+| field | value |
+|---|---|
+| `shape` | YYYY-MM-DD |
+
+#### `mac.calendar_vocabulary.year`
+
+A year as four digits. Half-open over twelve months when compared.
+
+| field | value |
+|---|---|
+| `shape` | YYYY |
+
+#### `mac.calendar_vocabulary.year_month`
+
+A month of a named year. `2024-03`, `March 2024`, `Mar 2024`.
+
+| field | value |
+|---|---|
+| `shape` | YYYY-MM |
+
+#### `mac.calendar_vocabulary.year_quarter`
+
+A quarter of a named year. `Q1 2024`, `2024-Q1`.
+
+| field | value |
+|---|---|
+| `shape` | Qn YYYY |
+<!-- END GENERATED:vocabulary-terms:calendar_vocabulary -->
+
+---
+
 ## Worked: `Customer`, all 13 columns
 
 `identity.kind: fk_name` · `canonical_key: CustomerKey` · one source.
