@@ -1,0 +1,257 @@
+<title>Contoso5 Knowledge</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#eef2f4; --surface:#fbfcfc; --rail:#e4eaed; --sunk:#e6ecef;
+  --ink:#141b24; --body:#2b3540; --muted:#5f6d79; --faint:#909ca6;
+  --rule:#d2dbe0; --hair:#e3eaed;
+  --accent:#2f4f82; --accent-soft:#dbe5f3;
+  --moss:#44663e; --moss-soft:#dde9da;
+  --amber:#8d6418; --amber-soft:#f2e8d4;
+  --brick:#9c3626; --brick-soft:#f3dedb;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0e1317; --surface:#161d24; --rail:#121920; --sunk:#1c242c;
+  --ink:#e7edf1; --body:#c3cfd8; --muted:#8a98a4; --faint:#6a7783;
+  --rule:#2a343e; --hair:#212a33;
+  --accent:#86a9dd; --accent-soft:#1b2a3d;
+  --moss:#95b78b; --moss-soft:#1c2a1e;
+  --amber:#d7a455; --amber-soft:#2d2414;
+  --brick:#e1877a; --brick-soft:#331d1a;
+}}
+:root[data-theme="dark"]{
+  --ground:#0e1317; --surface:#161d24; --rail:#121920; --sunk:#1c242c;
+  --ink:#e7edf1; --body:#c3cfd8; --muted:#8a98a4; --faint:#6a7783;
+  --rule:#2a343e; --hair:#212a33;
+  --accent:#86a9dd; --accent-soft:#1b2a3d;
+  --moss:#95b78b; --moss-soft:#1c2a1e;
+  --amber:#d7a455; --amber-soft:#2d2414;
+  --brick:#e1877a; --brick-soft:#331d1a;
+}
+*{box-sizing:border-box}
+body{margin:0; background:var(--ground); color:var(--body);
+  font-family:"Source Serif 4",Georgia,serif; font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased}
+.ui,h1,h2,h3,button,input,select,summary{font-family:Archivo,"Helvetica Neue",Arial,sans-serif}
+code,.m{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-size:.85em}
+code{background:var(--sunk); padding:.08em .34em; border-radius:3px; color:var(--ink)}
+
+/* ── shell ─────────────────────────────────────────────── */
+.shell{display:grid; grid-template-columns:316px 1fr; min-height:100vh}
+.rail{background:var(--rail); border-right:1px solid var(--rule); display:flex;
+  flex-direction:column; max-height:100vh; position:sticky; top:0}
+.railhead{padding:16px 16px 12px; border-bottom:1px solid var(--rule)}
+.railhead .t{font-family:Archivo,sans-serif; font-weight:700; font-size:.95rem; color:var(--ink);
+  letter-spacing:-.01em}
+.railhead .s{font-family:Archivo,sans-serif; font-size:.7rem; color:var(--muted); margin-top:3px}
+#q{width:100%; margin-top:10px; font-family:"IBM Plex Mono",monospace; font-size:.78rem;
+  padding:6px 8px; border:1px solid var(--rule); border-radius:4px; background:var(--surface);
+  color:var(--ink)}
+.tree{overflow-y:auto; padding:8px 6px 28px; flex:1}
+.grp{margin-bottom:2px}
+.grp>summary{list-style:none; cursor:pointer; padding:6px 10px; border-radius:4px;
+  font-size:.7rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--faint); display:flex; justify-content:space-between; align-items:center}
+.grp>summary::-webkit-details-marker{display:none}
+.grp>summary:hover{background:var(--sunk); color:var(--muted)}
+.grp>summary .n{font-family:"IBM Plex Mono",monospace; font-size:.66rem; font-weight:500}
+.cpt{margin:1px 0 1px 8px}
+.cpt>summary{list-style:none; cursor:pointer; padding:5px 10px; border-radius:4px;
+  font-size:.84rem; font-weight:600; color:var(--ink); display:flex; gap:6px; align-items:center}
+.cpt>summary::-webkit-details-marker{display:none}
+.cpt>summary:hover{background:var(--sunk)}
+.cpt>summary .dot{width:6px; height:6px; border-radius:50%; flex:none}
+.leaf{display:block; width:100%; text-align:left; border:0; background:none; cursor:pointer;
+  padding:4px 10px 4px 26px; font-size:.8rem; color:var(--muted); border-radius:4px;
+  line-height:1.35; font-family:Archivo,sans-serif}
+.leaf:hover{background:var(--sunk); color:var(--ink)}
+.leaf[aria-current="true"]{background:var(--accent); color:#fbfcfc; font-weight:600}
+.leaf.rule{font-family:"IBM Plex Mono",monospace; font-size:.72rem}
+.leaf.decl{color:var(--accent); font-weight:600}
+.leaf:focus-visible,#q:focus-visible,.grp>summary:focus-visible,.cpt>summary:focus-visible{
+  outline:2px solid var(--accent); outline-offset:-2px}
+
+/* ── pane ──────────────────────────────────────────────── */
+.pane{padding:34px 40px 80px; max-width:none; overflow-x:hidden}
+.crumb{font-family:Archivo,sans-serif; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); margin-bottom:10px}
+.pane h1{font-size:1.85rem; line-height:1.1; letter-spacing:-.02em; color:var(--ink); margin:0 0 6px;
+  text-wrap:balance}
+.lede{color:var(--muted); font-size:.98rem; margin:0 0 22px; max-width:68ch}
+.doc{max-width:72ch}
+.doc h2{font-size:1.1rem; color:var(--ink); margin:26px 0 8px; letter-spacing:-.01em}
+.doc h3{font-size:.95rem; color:var(--ink); margin:20px 0 6px}
+.doc p{margin:0 0 .85rem}
+.doc blockquote{margin:0 0 1rem; padding:.55rem .9rem; border-left:3px solid var(--accent);
+  background:var(--accent-soft); color:var(--ink); font-size:.95rem}
+.doc table{border-collapse:collapse; width:100%; font-size:.84rem; margin:.4rem 0 1.1rem;
+  font-family:Archivo,sans-serif}
+.doc th{text-align:left; font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint); border-bottom:1px solid var(--rule); padding:5px 8px}
+.doc td{padding:5px 8px; border-bottom:1px solid var(--hair); vertical-align:top}
+.doc td:first-child{white-space:nowrap}
+.tablewrap{overflow-x:auto}
+.doc ul{margin:0 0 1rem; padding-left:1.2rem}
+.doc li{margin-bottom:.3rem}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 20px}
+.chip{font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600; padding:3px 8px;
+  border-radius:3px; background:var(--sunk); color:var(--muted)}
+.chip.ok{background:var(--moss-soft); color:var(--moss)}
+.chip.warn{background:var(--amber-soft); color:var(--amber)}
+.chip.acc{background:var(--accent-soft); color:var(--accent)}
+.empty{max-width:60ch; color:var(--muted)}
+.empty h2{color:var(--ink)}
+.clauses{display:grid; gap:1px; background:var(--rule); border:1px solid var(--rule);
+  border-radius:4px; margin:0 0 20px; max-width:72ch}
+.clauses div{background:var(--surface); padding:9px 12px; display:grid;
+  grid-template-columns:4.2rem 1fr; gap:10px; font-size:.9rem}
+.clauses b{font-family:Archivo,sans-serif; font-size:.68rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint)}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static; max-height:none; border-right:0; border-bottom:1px solid var(--rule)}
+  .tree{max-height:46vh}
+  .pane{padding:22px 18px 60px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="shell">
+  <nav class="rail">
+    <div class="railhead">
+      <div class="t" id="bt">Knowledge</div>
+      <div class="s" id="bs"></div>
+      <input id="q" type="search" placeholder="filter concepts, rules, topics…" aria-label="Filter">
+    </div>
+    <div class="tree" id="tree"></div>
+  </nav>
+  <main class="pane" id="pane"></main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+const D = /*__DATA__*/null;
+const GROUPS = ["measure","reference","enumeration","entity","event"];
+const tree = document.getElementById("tree");
+const pane = document.getElementById("pane");
+const q = document.getElementById("q");
+let current = null;
+
+document.getElementById("bt").textContent = D.bundle + " knowledge";
+const nk = D.concepts.filter(c => c.has_knowledge).length;
+const nr = D.concepts.reduce((a, c) => a + c.rules.length, 0);
+document.getElementById("bs").textContent =
+  `${D.concepts.length} concepts · ${nr} rules · ${nk} with a knowledge page`;
+
+function md(t){ return marked.parse(t || "", {mangle:false, headerIds:false}); }
+function esc(s){ return String(s ?? "").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function matches(c, term){
+  if (!term) return true;
+  const hay = [c.stem, c.name, c.cls, c.definition,
+               ...c.topics.map(t => t.title + " " + t.body),
+               ...c.rules.map(r => r.id + " " + r.why + " " + r.canons.join(" "))].join(" ").toLowerCase();
+  return hay.includes(term);
+}
+
+function buildTree(){
+  const term = q.value.trim().toLowerCase();
+  const byGroup = new Map();
+  for (const c of D.concepts){
+    if (!matches(c, term)) continue;
+    if (!byGroup.has(c.cls)) byGroup.set(c.cls, []);
+    byGroup.get(c.cls).push(c);
+  }
+  const order = [...byGroup.keys()].sort((a,b)=>{
+    const ia = GROUPS.indexOf(a), ib = GROUPS.indexOf(b);
+    return (ia<0?99:ia) - (ib<0?99:ib) || a.localeCompare(b);
+  });
+  tree.innerHTML = order.map(g => {
+    const cs = byGroup.get(g).sort((a,b)=>a.name.localeCompare(b.name));
+    const open = term ? " open" : (g === "measure" || g === "reference" ? " open" : "");
+    return `<details class="grp"${open}>
+      <summary>${esc(g)}<span class="n">${cs.length}</span></summary>
+      ${cs.map(c => {
+        const dot = c.has_knowledge ? "var(--moss)" : "var(--rule)";
+        const kids = [
+          ...c.topics.map((t,i)=>`<button class="leaf" data-k="${c.stem}|t${i}">${esc(t.title)}</button>`),
+          ...c.rules.map((r,i)=>`<button class="leaf rule" data-k="${c.stem}|r${i}">${esc(r.id.split(".").slice(1).join("."))}</button>`),
+          `<button class="leaf decl" data-k="${c.stem}|decl">declaration</button>`,
+        ].join("");
+        return `<details class="cpt"${term?" open":""}>
+          <summary><span class="dot" style="background:${dot}"></span>${esc(c.name)}</summary>
+          ${kids}</details>`;
+      }).join("")}
+    </details>`;
+  }).join("") || `<p style="padding:14px;color:var(--muted);font-size:.85rem">Nothing matches that.</p>`;
+}
+
+function render(key){
+  current = key;
+  const [stem, what] = key.split("|");
+  const c = D.concepts.find(x => x.stem === stem);
+  if (!c) return;
+  let title = c.name, crumb = `${c.cls} · ${c.name}`, bodyHtml = "", chips = "", lede = "";
+
+  if (what === "decl"){
+    title = "Declaration";
+    crumb = `${c.cls} · ${c.name} · declaration`;
+    lede = "The formal side. Read the knowledge topics first, then compare this against them.";
+    bodyHtml = md(c.declaration);
+    chips = `<span class="chip">${c.columns} columns</span>` +
+            `<span class="chip">${c.rules.length} rules</span>`;
+  } else if (what[0] === "t"){
+    const t = c.topics[+what.slice(1)];
+    title = t.title; crumb = `${c.cls} · ${c.name} · knowledge`;
+    bodyHtml = md(t.body);
+  } else {
+    const r = c.rules[+what.slice(1)];
+    title = r.id.split(".").slice(1).join("."); crumb = `${c.cls} · ${c.name} · rule`;
+    chips = `<span class="chip acc">${esc(r.kind)}</span>` +
+      r.canons.map(x=>`<span class="chip ok">mac.canon.${esc(x)}</span>`).join("") +
+      (r.canons.length ? "" : `<span class="chip warn">prose only — no body</span>`) +
+      r.binds.map(b=>`<span class="chip">binds ${esc(b)}</span>`).join("");
+    const cl = Object.entries(r.clauses);
+    bodyHtml = (cl.length ? `<div class="clauses">${cl.map(([k,v])=>
+      `<div><b>${k}</b><span>${esc(v)}</span></div>`).join("")}</div>` : "")
+      + (r.why ? md(r.why) : `<p style="color:var(--muted)">No <code>why</code> recorded.</p>`);
+  }
+
+  pane.innerHTML = `<div class="crumb">${esc(crumb)}</div><h1>${esc(title)}</h1>`
+    + (lede ? `<p class="lede">${esc(lede)}</p>` : "")
+    + (chips ? `<div class="chips">${chips}</div>` : "")
+    + `<div class="doc">${bodyHtml}</div>`;
+  pane.querySelectorAll("table").forEach(t => {
+    const w = document.createElement("div"); w.className = "tablewrap";
+    t.parentNode.insertBefore(w, t); w.appendChild(t);
+  });
+  document.querySelectorAll(".leaf").forEach(b =>
+    b.setAttribute("aria-current", String(b.dataset.k === key)));
+  pane.scrollIntoView({block:"start"});
+}
+
+function welcome(){
+  const intro = D.knowledge_intro.map(s =>
+    (s.title === "Overview" ? "" : `<h2>${esc(s.title)}</h2>`) + md(s.body)).join("");
+  const missing = D.concepts.filter(c => !c.has_knowledge).map(c => c.name);
+  pane.innerHTML = `<div class="crumb">${esc(D.bundle)}</div><h1>Knowledge</h1>`
+    + `<p class="lede">Pick a group on the left, then a concept, then a topic. Each concept ends in
+       <b>declaration</b> — the formal side, to compare against what you just read.</p>`
+    + `<div class="doc">${intro}
+       <h2>Where the knowledge pages are</h2>
+       <p>${nk} of ${D.concepts.length} concepts have one. A grey dot in the tree means the prose is
+       still inside the declaration: ${missing.map(m=>`<code>${esc(m)}</code>`).join(" · ") || "none"}.</p>
+       </div>`;
+}
+
+tree.addEventListener("click", e => {
+  const b = e.target.closest(".leaf");
+  if (b) render(b.dataset.k);
+});
+q.addEventListener("input", () => { buildTree(); if (current) {
+  document.querySelectorAll(".leaf").forEach(b =>
+    b.setAttribute("aria-current", String(b.dataset.k === current))); } });
+buildTree();
+welcome();
+</script>

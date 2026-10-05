@@ -60,57 +60,72 @@ def norm(t: str) -> str:
 
 
 def sentences(text: str) -> list[str]:
-    """Every prose sentence in a concept document — block scalars, long values, and comments.
+    """Every prose sentence a concept document carries. THE UNIT IS THE SCALAR.
 
-    TWO STREAMS, NOT ONE, and the first cut used one. A `#` comment that follows a structural line
-    was JOINED to it, because a YAML value carries no terminal period and the splitter had nothing to
-    break on: `surfaces: [open, still open, trading, not closed, operating]` glued itself to the front
-    of the comment beneath it, and the sentence being judged then began with the list rather than with
-    prose. Measured on store.yaml: 6 of 90 sentences were reported lost that way, and all six were
-    present in the new home — a FALSE ALARM is as damaging here as a miss, because it teaches the
-    operator the verdict is noise. Comments are their own stream; values and block bodies are another.
+    Sentences split WITHIN one scalar and never across two, and that is the third and final
+    correction to this extractor. A YAML value usually has no terminal period, so joining the values
+    together let adjacent ones run into each other and produced sentences that existed in no file:
+    `never: ... report nine countries` ran into the comment beneath it, and order's `never: join on
+    currency alone` ran into the `why` after it — 628 bytes of text that was never written as one
+    claim. Measured: 6 then 3 then 2 then 1 spurious per concept as each join was closed.
+
+    A block scalar's own lines DO belong together — they are one value — so they are gathered and
+    then split. Comments are gathered per contiguous run, for the same reason.
+
+    What is NOT prose, each measured as a false alarm first: a `#`-less structural line, a value
+    starting with `[` or `{`, a bare list item, and an identifier long enough to clear the length
+    floor (a rule id is 48 characters, and prose has spaces).
     """
-    comments: list[str] = []
-    values: list[str] = []
+    scalars: list[str] = []
+    buf: list[str] = []
+    mode = None                      # 'comment' | 'block' | None
+    block_indent = 0
+
+    def flush():
+        nonlocal buf, mode
+        if buf:
+            scalars.append(" ".join(x for x in buf if x))
+        buf, mode = [], None
+
     for raw in text.splitlines():
         s = raw.strip()
+        indent = len(raw) - len(raw.lstrip())
+        if mode == "block":
+            if s and indent <= block_indent:
+                flush()
+            else:
+                buf.append(s)
+                continue
         if s.startswith("#"):
-            comments.append(s.lstrip("#:").strip())
+            if mode != "comment":
+                flush()
+                mode = "comment"
+            buf.append(s.lstrip("#:").strip())
+            continue
+        if mode == "comment":
+            flush()
+        if not s:
             continue
         m = re.match(r"^(?:-\s*)?[A-Za-z0-9_\-]+:\s*(.*)$", s)
         if m:
             v = m.group(1).strip()
-            # A STRUCTURED VALUE IS NOT PROSE, and this is the second false-alarm class the
-            # extractor produced. `populations: {all: [{column: location_code, op: ne, value: -1}]}`
-            # and `surfaces: [open, still open, trading, not closed, operating]` carry no terminal
-            # period, so consecutive ones concatenated into one long "sentence" that began with a
-            # brace and matched nothing. Three of 92 were reported lost that way on store.yaml, all
-            # three spurious. A prose sentence does not start with `[` or `{`.
-            # AND AN IDENTIFIER IS NOT PROSE however long it is. A rule id —
-            # `store.resolution.active_is_the_absent_close_date`, 48 characters — cleared the length
-            # floor and prefixed the `why` beneath it, so the judged sentence began with the id.
-            # Prose has spaces; a dotted token does not.
-            if (v and v not in {">", "|", ">-", "|-", ">+", "|+"}
-                    and not v.startswith(("[", "{"))
-                    and " " in v
+            if v in {">", "|", ">-", "|-", ">+", "|+"}:
+                mode, block_indent, buf = "block", indent, []
+                continue
+            if (v and not v.startswith(("[", "{")) and " " in v
                     and len(v) > MIN_SENTENCE):
-                values.append(v)
+                scalars.append(v)
             continue
-        # A BARE LIST ITEM IS STRUCTURE TOO — the third and last false-alarm class. `binds:` is
-        # written as `- close_date` / `- status_annotation`, and a rule's `- id: <rule id>` leaves
-        # the id behind; none carries a period, so they prefixed the `why` beneath them and the
-        # judged sentence began with a rule id rather than with the claim. Two of 91 on store.yaml,
-        # both spurious. A token on its own is not a sentence.
         if re.match(r"^-\s*[A-Za-z0-9_.\-]+$", s):
             continue
-        values.append(s)
+        scalars.append(s)
+    flush()
 
     out: list[str] = []
-    for stream in (values, comments):
-        joined = " ".join(x for x in stream if x)
-        out += [re.sub(r"\s+", " ", x).strip()
-                for x in re.split(r"(?<=[.!?])\s+", joined)
-                if len(x.strip()) > MIN_SENTENCE]
+    for sc in scalars:
+        for x in re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", sc).strip()):
+            if len(x.strip()) > MIN_SENTENCE:
+                out.append(x.strip())
     return out
 
 
