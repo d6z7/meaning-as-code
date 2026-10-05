@@ -9,6 +9,7 @@ A column's flags, or null to serve the column and say nothing more. TODAY'S FLAG
 ## Keys
 
 - [`axis_kind`](#axis-kind) — *string*
+- [`counts`](#counts) — *boolean*
 - [`identity`](#identity) — *string*
 - [`measure`](#measure) — *object*
 - [`register`](#register) — *string*
@@ -33,11 +34,27 @@ axis_kind: mac.concept.axis_kind.time
 axis_kind: mac.concept.axis_kind.categorical
 ```
 
+### `counts`
+
+*boolean* · optional
+
+WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.
+
+**When you would reach for it.**
+
+THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself.
+
+Examples:
+
+```yaml
+counts: true
+```
+
 ### `identity`
 
 *string* · optional · 3 legal values
 
-`canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree.
+`canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a foreign key. IDENTITY IS A COLUMN FACT AND HAS NO CONCEPT-LEVEL HOME: the `concept.identity` block was removed 2026-10-05 (operator ruling: "identity of the concept is given by column combination and it belongs there").
 
 **When you would reach for it.**
 
@@ -45,8 +62,8 @@ SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compell
 
 Legal values:
 
-- [`canonical`](../../../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.
-- [`part`](../../../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
+- [`canonical`](../../../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a column that does not identify.
+- [`part`](../../../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
 - [`reference`](../../../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
 
 Examples:

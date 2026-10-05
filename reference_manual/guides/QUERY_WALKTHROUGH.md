@@ -100,7 +100,7 @@ rather than wrong SQL.
 **The three things to notice.**
 
 `COUNT(DISTINCT CustomerKey)` was not chosen by the word "count". It came from `[2]`: Customer
-declares `identity.canonical_key: CustomerKey`. The operation only licensed a non-measure subject
+declares `identity: canonical` on `CustomerKey`. The operation only licensed a non-measure subject
 to be counted at all — **the key decided what to count**.
 
 **`Germany` became `DE` before any SQL existed.** The `Country` concept declares a register, and the
@@ -400,7 +400,7 @@ All three are recorded in `grammar/query_grammar.yaml#projection`.
 
 | | the SQL came from | not from |
 |---|---|---|
-| W1 | `identity.canonical_key`, and a register | the word "count" |
+| W1 | the canonical column, and a register | the word "count" |
 | W2 | an event concept carrying the key + a BFS over edges | the question's phrasing |
 | W3 | a rule's `template` and its `over` | arithmetic in the planner |
 | W4 | `grounding.snapshot_rule` | anything the question said |

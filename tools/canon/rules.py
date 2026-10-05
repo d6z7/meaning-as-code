@@ -91,15 +91,23 @@ def refuse_measure_no_row(*, source: str, label: str, slot: str = "scope",
 def derive_name_params(concept: dict, source: str) -> dict:
     """`refuse_unresolvable_name`'s parameters, READ from the concept rather than attached to a rule.
 
-    thing = concept.label (what a person calls it), code = concept.identity.canonical_key (what a
-    name must resolve to). Both are already declared on every conformant concept; attaching them to
-    a rule creates a second home that can — and did — disagree with the first.
+    thing = concept.label (what a person calls it), code = the column carrying `identity: canonical`
+    (what a name must resolve to). Both are already declared on every conformant concept; attaching
+    them to a rule creates a second home that can — and did — disagree with the first.
+
+    `code` MOVED 2026-10-05: it was `concept.identity.canonical_key` and that block is gone, so this
+    reads the column through the one helper that owns the lookup. Takes the whole DOC, not the
+    `concept:` block — the columns live under `grounding`.
     """
-    c = concept or {}
-    ident = (c.get("identity") or {})
+    doc = concept or {}
+    c = doc.get("concept") or doc
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    import mac_project as P
     return {"source": source,
             "thing": str(c.get("label") or c.get("name") or "").lower(),
-            "code": str(ident.get("canonical_key") or "")}
+            "code": str(P.canonical_key(doc) or "")}
 
 
 def refuse_unresolvable_name(*, source: str, thing: str, code: str, via: str = "") -> dict:

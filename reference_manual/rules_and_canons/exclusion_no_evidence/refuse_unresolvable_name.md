@@ -19,7 +19,7 @@ A **RENDER canon**: refusal text, not SQL.
 | param | read from |
 |---|---|
 | `thing` | `concept.label` |
-| `code` | `concept.identity.canonical_key` |
+| `code` | `identity: canonical` on a column |
 
 ## The behaviour exists — without the canon
 

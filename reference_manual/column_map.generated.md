@@ -15,6 +15,7 @@ host's row key.
 columns:
   <column-name>:
     axis_kind:    <string>
+    counts:       <boolean>
     identity:     canonical | part | reference
     measure:
       additivity:   <object>
@@ -35,14 +36,15 @@ columns:
       # `register` REQUIRES `label_of`
 ```
 
-**6 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
+**7 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
 
 ## PARAMETERS
 
 | key | type | required | choices | comment |
 |---|---|---|---|---|
 | `axis_kind` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorica… |
-| `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; … |
+| `counts` | boolean | no | — | WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.… |
+| `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a… |
 | `measure` | object | no | — | THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity excepti… |
 | `register` | string | no | — | THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (… |
 | `role` | string | no | `key`<br>`dimension`<br>`measure`<br>`period`<br>`housekeeping`<br>*from* `mac.concept.column.role` | projects to grounding.field_roles[<column>], which the planner reads to place a predicate. … |
@@ -52,10 +54,10 @@ columns:
 
 ### `identity` — `mac.concept.column.identity`  ·  CLOSED
 
-> What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
+> What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.
 
-- **`canonical`** — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.  ·  *constellation:* EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that c…
-- **`part`** — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.  ·  *constellation:* NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is i…
+- **`canonical`** — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a…  ·  *constellation:* EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that c…
+- **`part`** — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds …  ·  *constellation:* NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is i…
 - **`reference`** — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.  ·  *constellation:* THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on …
 
 ### `role` — `mac.concept.column.role`  ·  CLOSED

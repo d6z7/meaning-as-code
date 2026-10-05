@@ -8,21 +8,20 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 
 | | |
 |---|---|
-| levels | 32 |
-| keys | 177 |
-| described in the schema | **177 of 177** (100%) |
+| levels | 31 |
+| keys | 173 |
+| described in the schema | **173 of 173** (100%) |
 | **gaps — admitted and unexplained** | **0** |
-| **keys with no stated constellation** | **161** of 177 |
+| **keys with no stated constellation** | **156** of 173 |
 | vocabularies | 23, 146 terms |
-| examples | 103, from 17 concepts |
+| examples | 101, from 17 concepts |
 
 ## The levels
 
 Indented by nesting. The label is the key; the page it opens is that key's level.
 
 - [**a concept file**](concept/README.md) — its 11 top-level keys
-  - [`concept:`](concept/concept/README.md) — 7 keys
-    - [`identity:`](concept/concept/identity.md) — 4 keys
+  - [`concept:`](concept/concept/README.md) — 6 keys
     - [`semantics:`](concept/concept/semantics/README.md) — 5 keys
       - [`additivity:`](concept/concept/semantics/additivity.md) — 1 key
       - [`axis_kinds:`](concept/concept/semantics/axis_kinds.md) — 1 key
@@ -37,7 +36,7 @@ Indented by nesting. The label is the key; the page it opens is that key's level
     - [`realized_by:`](concept/grounding/realized_by.md) — 8 keys
     - [`sources:`](concept/grounding/sources/README.md) — 3 keys
       - [`columns:`](concept/grounding/sources/columns/README.md) — 1 key
-        - [`<name>`](concept/grounding/sources/columns/each/README.md) — 6 keys
+        - [`<name>`](concept/grounding/sources/columns/each/README.md) — 7 keys
           - [`measure:`](concept/grounding/sources/columns/each/measure.md) — 4 keys
           - [`rulings:`](concept/grounding/sources/columns/each/rulings.md) — 7 keys
   - [`lifecycle:`](concept/lifecycle.md) — 3 keys
@@ -60,18 +59,18 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
 - `mac`
   - [`binding_mode`](vocabulary/binding_mode.md) — 2 terms, closed
   - [`calendar_vocabulary`](vocabulary/calendar_vocabulary.md) — 9 terms, closed
-  - [`canon`](vocabulary/canon.md) — 21 terms, open
+  - [`canon`](vocabulary/canon.md) — 22 terms, open
   - [`column_type`](vocabulary/column_type.md) — 5 terms, closed
   - `concept`
     - [`aggregation_effect`](vocabulary/concept/aggregation_effect.md) — 3 terms, closed
     - [`axis_kind`](vocabulary/concept/axis_kind.md) — 2 terms, closed
+    - [`class`](vocabulary/concept/class.md) — 5 terms, closed
     - `column`
       - [`identity`](vocabulary/concept/column/identity.md) — 3 terms, closed
       - [`measure_type`](vocabulary/concept/column/measure_type.md) — 5 terms, closed
       - [`query_use`](vocabulary/concept/column/query_use.md) — 5 terms, closed
       - [`role`](vocabulary/concept/column/role.md) — 5 terms, closed
       - [`ruling`](vocabulary/concept/column/ruling.md) — 5 terms, closed
-    - [`identity`](vocabulary/concept/identity.md) — 6 terms, closed
     - [`rule`](vocabulary/concept/rule.md) — 6 terms, closed
   - [`credential_mode`](vocabulary/credential_mode.md) — 6 terms, closed
   - [`data_plane_gate`](vocabulary/data_plane_gate.md) — 14 terms, closed

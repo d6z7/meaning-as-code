@@ -27,6 +27,8 @@ Examples:
 udf: mac.canon.population_select
 
 udf: mac.canon.ratio_select
+
+udf: mac.canon.additivity_guard
 ```
 
 ### `applied_as`
@@ -76,20 +78,12 @@ params:
       - discount as a percentage
 
 params:
-  default: physical
-  populations:
-    physical:
-      all:
-      - column: location_code
-        op: ne
-        value: -1
-    online:
-      all:
-      - column: location_code
-        op: eq
-        value: -1
+  measure_column: rate
+  axis_effects:
+    time: mac.concept.aggregation_effect.average
+    categorical: mac.concept.aggregation_effect.none
 
-# … and 1 more shape(s)
+# … and 2 more shape(s)
 ```
 
 ## Form 2 — a single canon binding. Names a canon and supplies O
@@ -113,6 +107,8 @@ Examples:
 udf: mac.canon.population_select
 
 udf: mac.canon.ratio_select
+
+udf: mac.canon.additivity_guard
 ```
 
 ### `applied_as`
@@ -162,20 +158,12 @@ params:
       - discount as a percentage
 
 params:
-  default: physical
-  populations:
-    physical:
-      all:
-      - column: location_code
-        op: ne
-        value: -1
-    online:
-      all:
-      - column: location_code
-        op: eq
-        value: -1
+  measure_column: rate
+  axis_effects:
+    time: mac.concept.aggregation_effect.average
+    categorical: mac.concept.aggregation_effect.none
 
-# … and 1 more shape(s)
+# … and 2 more shape(s)
 ```
 
 ## A whole block, as it is actually written

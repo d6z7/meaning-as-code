@@ -227,7 +227,7 @@ Both work. Only one can be read.
 
 "How many customers" needs to know what **one customer** is.
 
-| decided by | `concept.identity.canonical_key: CustomerKey` |
+| decided by | `identity: canonical` on `CustomerKey` |
 |---|---|
 | **what it produces** | `COUNT(DISTINCT CustomerKey)`, and a disclosure naming the key it counted |
 
@@ -246,7 +246,7 @@ The SQL is not the answer. What travels with it:
 |---|---|
 | `constraints[].assert` | *"Country determines Continent — the roll-up is a function, measured 0 of 8 countries on two continents"* |
 | `contract.rules[].why` | why a store-side continent figure is refused |
-| `concept.identity` | *"counted by CustomerKey"* |
+| the canonical column | *"counted by CustomerKey"* |
 | `metadata.confidence` | reduced to the minimum over everything touched |
 
 ---

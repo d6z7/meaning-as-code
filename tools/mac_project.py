@@ -205,9 +205,10 @@ def canonical_key(doc: dict) -> str | None:
     reported 11 of 20 concepts unable to supply their `select` step while `mac_to_graph` reported nodes
     with no key at all. The declarations were complete; the readers were looking at the retired address.
 
-    The column is authoritative. The retired field is still read as a FALLBACK, so a bundle nobody has
-    migrated keeps working instead of silently losing its key — the fallback is a migration ramp, not a
-    second home: nothing writes it, and when no bundle carries it the branch becomes dead and goes.
+    THE FALLBACK IS GONE, 2026-10-05. It read `concept.identity.canonical_key` so an unmigrated bundle
+    kept working; the block itself has now been removed from the schema (operator ruling: *"declare on
+    concept level only what belongs to the concept level"*), so there is nothing left to fall back to
+    and a branch reading a field no file may carry would only hide a real miss.
     """
     for src in ((doc.get("grounding") or {}).get("sources") or []):
         if not isinstance(src, dict):
@@ -221,8 +222,7 @@ def canonical_key(doc: dict) -> str | None:
         for col, spec in cols.items():
             if isinstance(spec, dict) and spec.get("identity") == "canonical":
                 return str(col)
-    ck = ((doc.get("concept") or {}).get("identity") or {}).get("canonical_key")
-    return str(ck).strip() or None if ck else None
+    return None
 
 
 def key_parts(doc: dict) -> list:

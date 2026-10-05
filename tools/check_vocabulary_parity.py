@@ -76,6 +76,11 @@ import mac_vocab  # noqa: E402  — ONE reader of mac_vocabulary.yaml, fold-agno
 #: reads like the document rather than like a query language. EVERY enum slot a closed vocabulary
 #: governs is listed; a slot missing from here is a slot nothing checks.
 PAIRS = (
+    # ADDED 2026-10-05. The class vocabulary lived ONLY in the schema, so nothing compared it with a
+    # declaration — and the schema's seven terms had already drifted from mac-runtime's six
+    # (`meta` validated and then failed to load). Declared in mac_vocabulary.yaml now, and policed here.
+    ("concept `class`",
+     ["$defs", "ConceptFile", "properties", "concept", "properties", "class"], "concept.class"),
     ("concept column `role`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "role"], "concept.column.role"),
@@ -88,9 +93,9 @@ PAIRS = (
      "name_register"),
     ("TableFile column `role`",
      ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "relation.column.role"),
-    ("concept identity `kind`",
-     ["$defs", "ConceptFile", "properties", "concept", "properties", "identity", "properties", "kind"],
-     "concept.identity"),
+    # `concept identity kind` RETIRED 2026-10-05 with the slot it governed. Identity is a COLUMN
+    # fact (`concept.column.identity`, the pair two entries above); the concept-level block and its
+    # six-term vocabulary are gone, so there is no longer a second home for the parity to police.
     ("DQ issue `status`",
      ["$defs", "DataQualityRegisterFile", "properties", "issues", "items", "properties", "status"],
      "dq_status"),

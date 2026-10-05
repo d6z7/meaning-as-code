@@ -138,7 +138,7 @@ never: 'report nine countries
 
   '
 
-# … and 8 more shape(s)
+# … and 7 more shape(s)
 ```
 
 ### `realized_by`
@@ -180,22 +180,14 @@ realized_by:
         - discount as a percentage
 
 realized_by:
-- udf: mac.canon.population_select
+- udf: mac.canon.additivity_guard
   params:
-    default: physical
-    populations:
-      physical:
-        all:
-        - column: location_code
-          op: ne
-          value: -1
-      online:
-        all:
-        - column: location_code
-          op: eq
-          value: -1
+    measure_column: rate
+    axis_effects:
+      time: mac.concept.aggregation_effect.average
+      categorical: mac.concept.aggregation_effect.none
 
-# … and 1 more shape(s)
+# … and 2 more shape(s)
 ```
 
 Its own keys: [`concept.contract.rules.realized_by`](realized_by.md)
@@ -265,7 +257,7 @@ then: 'group the served `dim_product` on `color`, which already holds one spelli
 
 then: convert each sale through ExchangeRate at its own order date; the amounts are USD
 
-# … and 6 more shape(s)
+# … and 5 more shape(s)
 ```
 
 ### `when`
@@ -285,9 +277,9 @@ when: sales are asked for in a named currency
 
 when: customers are joined to sales over a period
 
-when: a period's sales are converted into another currency
+when: a question says "revenue" or "sales" without saying net or gross
 
-# … and 4 more shape(s)
+# … and 3 more shape(s)
 ```
 
 ### `why`

@@ -115,7 +115,7 @@ A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and re
 
 Shape of a concept file:
 - metadata: {concept, source, version, schema_version: '{SCHEMA_GENERATION}', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
-- concept: {name, label, class, identity?, definition}   # class is EXACTLY one of: {CLASSES} ; identity.kind ∈ {IDENTITY_KINDS}
+- concept: {name, label, class, definition}   # class is EXACTLY one of: {CLASSES}. There is NO `identity:` block on a concept — identity is declared on the COLUMNS, below.
 - grounding: {sources: [{relation, key, columns: {<col>: {role, identity?, measure?}}}], grain: "one row per ..."}
   EVERYTHING ABOUT A COLUMN GOES ON THE COLUMN. `columns` is a MAP keyed by column name, not a list of
   names, and it is the ONLY place a column's facts are declared:
@@ -128,16 +128,21 @@ Shape of a concept file:
         Surname:     {role: dimension}
         ValidFrom:   {role: housekeeping}   # pipeline bookkeeping — never offered to a question
         Status:                      # a bare name serves the column and says nothing more
-  TODAY'S FLAGS ARE role, identity, measure, rulings — and ONLY those four, because a flag ships with the code
-  that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a flag and a
-  sentence. `identity: canonical` becomes the concept's canonical_key; `part` marks one column of a
-  composite key; `reference` marks a foreign key. Several columns may carry `measure:` when they compose
+  TODAY'S FLAGS ARE role, identity, counts, measure, rulings — and ONLY those five, because a flag ships
+  with the code that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a
+  flag and a sentence. `identity: canonical` IS the concept's key; `part` marks one column of a
+  composite key (several parts and no canonical IS a composite — there is nothing else to declare);
+  `reference` marks a foreign key. `counts: true` marks the column one INSTANCE is counted by when the
+  relation is served FINER than the thing — a store dimension keyed on a version surrogate counts
+  VERSIONS unless this says otherwise. Several columns may carry `measure:` when they compose
   ONE quantity (Quantity x NetPrice); then `semantics.unit` on the concept states the composed unit.
   DO NOT WRITE A `field_roles:` BLOCK. It is PROJECTED from these roles — writing both gives one fact
   two homes that can drift, and check_delivery_consistency's ONE-HOME invariant reports both. Do not write
   the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
-  DO NOT WRITE `identity.canonical_key` under `concept:` when a column carries `identity: canonical` —
-  same reason: the key is a column fact, and declared twice the two can disagree.
+  DO NOT WRITE AN `identity:` BLOCK UNDER `concept:` AT ALL. It was removed from the schema on
+  2026-10-05 and a file carrying one fails validation. Identity is a column fact: which column is the
+  key, which columns compose a composite, and which one a count DISTINCTs are all statements about
+  columns, so they are declared where the column is.
 - contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.concept.rule.<{RULE_KINDS}>, confidence, scope: ACME, binds: [<cols>], when, then, never, why}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
@@ -175,7 +180,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 Authoring rules:
 - Ground on the REAL table and columns provided. NEVER invent a column that isn't in the schema.
 - Give every meaningful column a role from mac.concept.column.role — {ROLES}: key (identity/join), dimension (filterable, groupable), measure (numeric payload, folded as its measure_type allows), period (THE reporting date when a relation carries several), housekeeping (pipeline bookkeeping — validity windows, load stamps — never offered to a question). `attribute` is not a role.
-- identity.canonical_key is a SINGLE column name (a string). If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), set identity.kind: composite and OMIT canonical_key entirely — NEVER set canonical_key to a list.
+- EXACTLY ONE column carries `identity: canonical` when a single column identifies the thing. If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), mark EVERY column of the tuple `identity: part` and give NONE of them `canonical` — several parts and no canonical IS the composite, and there is no concept-level term to add.
 - Write a precise 2-4 sentence definition anchored in the schema + context.
 - WHERE MAC HAS A CANON FOR A RULE SHAPE, BIND — DO NOT WRITE THE CLAUSES. Supply
   `realized_by: {udf: mac.canon.<name>, params: {...}}` and OMIT when/then/never; they are RENDERED
@@ -222,7 +227,6 @@ Authoring rules:
 SYS_PROMPT = (
     SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
     .replace("{CLASSES}", " | ".join(concept_classes()))
-    .replace("{IDENTITY_KINDS}", "|".join(vocabulary_terms("concept.identity")))
     .replace("{RULE_KINDS}", "|".join(vocabulary_terms("concept.rule")))
     .replace("{ROLES}", " | ".join(vocabulary_terms("concept.column.role")))
     .replace("{MEASURE_TYPES}", "|".join(vocabulary_terms("concept.column.measure_type")))

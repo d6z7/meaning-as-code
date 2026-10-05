@@ -13,7 +13,7 @@ defines the **constructs** — the answer-particles — as what they actually ar
 patterns and canons rest on.*
 
 > **Relationship to the canon (single-homing, AUTHORING A3).** The *prose* definitions of the four layers and
-> six classes live in [`specification/FRAMEWORK.md`](specification/FRAMEWORK.md) §4–§5; their concrete YAML **shape** (which keys,
+> five classes live in [`specification/FRAMEWORK.md`](specification/FRAMEWORK.md) §4–§5; their concrete YAML **shape** (which keys,
 > where, per class) is the generated [Shape Reference](shape_reference.md); the additivity law lives in
 > [`../mac_vocabulary.yaml`](../mac_vocabulary.yaml). This chapter does **not** restate them — it adds the
 > layer FRAMEWORK leaves implicit: the **formal structure** under each construct, and the **completeness
@@ -42,11 +42,11 @@ Every concept is an **equation** between a meaning and a grounding:
 
 A construct's **class** says *what kind of right-hand side is allowed*. There are six.
 
-## 2.2 The six classes are six structures
+## 2.2 The five classes are five structures
 
 | `class:` | The structure it **is** | The equation it defines | Grounded in |
 | --- | --- | --- | --- |
-| **reference / entity** | a **set with identity** — a key is an injection `id: ⟦C⟧ ↪ K` | `⟦C⟧ = { r ∈ table : filter(r) }`; each row has a unique identity | extensional set theory |
+| **entity** | a **set with identity** — a key is an injection `id: ⟦C⟧ ↪ K` | `⟦C⟧ = { r ∈ table : filter(r) }`; each row has a unique identity | extensional set theory |
 | **enumeration** | a **set + a closure predicate** | `V(C) = { allowed values }`; `closed ⇒ V complete`, `open ⇒ V a lower bound` | open-/closed-world logic |
 | **measure** | a **function + an aggregation algebra** `m: cells → ℝ`, `α: axis → effect` | the value *and* which fold is valid per axis (`α` from `mac.concept.column.measure_type × axis_kind`) | dimensional analysis (stock vs flow) |
 | **grouping** | a **surjection** `π: leaves ↠ groups` | the roll-up map (a partition of the leaf set) | order theory / lattices |
@@ -62,8 +62,48 @@ Concretely, in the shop:
 - `⟦Category⟧ : products ↠ categories` — a **surjection**.
 - `⟦Order⟧ : (CHECKOUT → FULFILMENT → CLOSED)` — a **transition system**.
 
-The claim behind "exactly six": *set, set-with-closure, function-with-algebra, surjection, transition-system,
-relation* are the structures a data domain's meaning takes. Strong, and explicitly open (§2.7).
+The claim behind "exactly five": *set, set-with-closure, function-with-algebra, surjection, transition-system*
+are the structures a data domain's meaning takes (a relation between them is an edge, not a class). Strong,
+and explicitly open (§2.7).
+
+`reference` and `entity` were TWO NAMES FOR THE SET-WITH-IDENTITY ROW ABOVE, which is why they shared one
+cell; they merged under `entity` on 2026-10-05. `reference` also collided with
+`concept.column.identity.reference` one plane down, where it means a POINTER AT such a set rather than the
+set itself. The terms below are generated from the vocabulary and cannot drift from it.
+
+<!-- BEGIN GENERATED:vocabulary-terms:concept.class (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> What kind of thing a concept is (declared once per concept).
+
+*`mac.concept.class` · 5 terms · closed — these are all of them*
+
+#### `mac.concept.class.measure`
+
+A NUMBER a question folds. Its measure column IS the concept, which is what separates it from a
+thing that merely carries one. Decides COUNT(DISTINCT key) vs SUM(column).
+
+#### `mac.concept.class.event`
+
+Something that HAPPENED, at a grain of one row per occurrence. The fact a filtered count anchors
+on when the subject is a dimension.
+
+#### `mac.concept.class.enumeration`
+
+A closed value set whose members a register states, so a non-member is answerable without
+probing. Not a graph node; its register is inlined into the manual.
+
+#### `mac.concept.class.grouping`
+
+A roll-up ABOVE a leaf concept — it GROUPS another concept's members. Declares `members.over:
+<Concept>` (the schema requires it) and that containment is drawn as the graph's membership
+channel, never as an edge.
+
+#### `mac.concept.class.entity`
+
+A THING a question slices by, counts, or joins to — a customer, a store, a product, a country.
+The default: a concept that is not a number, an occurrence, a closed value set, or a roll-up is
+one of these.
+<!-- END GENERATED:vocabulary-terms:concept.class -->
 
 ## 2.3 Relations (edges) and derived concepts (rules)
 

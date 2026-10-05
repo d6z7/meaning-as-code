@@ -89,7 +89,7 @@ in prose, and `tools/check_query_grammar.py` reds if they drift apart.
 
 | word | asks | requires declared | contributes | branched |
 |---|---|---|---|---|
-| `count` | how many distinct instances | `identity.canonical_key` | `COUNT(DISTINCT key)` | yes |
+| `count` | how many distinct instances | the canonical column | `COUNT(DISTINCT key)` | yes |
 | `sum` | the total of a number | a measure column or a rule | `SUM(…)` | no |
 | `average` | the mean | a measure column or a rule | `AVG(…)` | no |
 | `list` | which members exist | a column to list | `SELECT DISTINCT` | yes |
@@ -129,7 +129,7 @@ it:
 
 | when the bundle declares | the question | when it does not |
 |---|---|---|
-| `identity.canonical_key` | is countable | `unsupported_intent` — nothing declares a number it carries |
+| the canonical column | is countable | `unsupported_intent` — nothing declares a number it carries |
 | a measure column or a rule | is foldable | the same refusal |
 | an **edge** between subject and every named term | is plannable | `no_join_path` — the hop is undeclared, *not* absent from the data |
 | a **register** or an inline value domain | resolves a name to a code offline | `ontology_gap` — no register, so a name cannot become a code |

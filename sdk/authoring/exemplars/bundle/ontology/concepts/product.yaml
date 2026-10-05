@@ -10,7 +10,7 @@ metadata:
 concept:
   name: Product
   label: Product
-  class: reference
+  class: entity
   semantics:
     unit: USD
   identity:

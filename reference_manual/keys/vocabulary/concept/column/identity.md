@@ -4,7 +4,7 @@
 
 **Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  3 terms
 
-What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
+What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.
 
 ## Terms
 
@@ -16,7 +16,7 @@ What part a column plays in its concept's identity (per column; see mac.concept.
 
 Write it as `mac.concept.column.identity.canonical`
 
-THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a column that does not identify.
+THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a column that does not identify.
 
 **When you would reach for it.**
 
@@ -26,7 +26,7 @@ EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that co
 
 Write it as `mac.concept.column.identity.part`
 
-ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple; the concept declares `mac.concept.identity.composite` alongside.
+ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
 
 **When you would reach for it.**
 

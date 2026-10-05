@@ -101,7 +101,19 @@ def _params_from() -> dict:
     return out
 
 
+#: THE CANONICAL KEY IS NO LONGER A DOTTED PATH. It left `concept.identity.canonical_key` on
+#: 2026-10-05 and is now the column carrying `identity: canonical`, which lives inside a LIST of
+#: sources — `_dig` walks mappings and cannot reach it. Declared as this literal in the canon
+#: registry's `params_from` and resolved here through the one helper that reads it. Without this the
+#: dig returns None, `declared` is empty, and the gate stops reporting the restatement it exists to
+#: catch: a quiet gate, not a passing one.
+_CANONICAL_COLUMN = "concept.grounding.columns[identity=canonical]"
+
+
 def _dig(doc: dict, dotted: str):
+    if dotted == _CANONICAL_COLUMN:
+        import mac_project as P
+        return P.canonical_key(doc)
     cur = doc
     for part in dotted.split("."):
         if not isinstance(cur, dict):

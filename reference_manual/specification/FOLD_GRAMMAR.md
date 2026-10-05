@@ -381,7 +381,7 @@ All executed read-only tonight:
 | number | what it is |
 |---|---|
 | **74** | rows in `dim_contoso_store` |
-| **74** | distinct `StoreKey`, the surrogate — and `identity.canonical_key` **is** `StoreKey` |
+| **74** | distinct `StoreKey`, the surrogate — and the canonical column **is** `StoreKey` |
 | **67** | distinct `StoreCode`, the business code |
 | **67** | distinct `StoreCode` after collapsing to the current version |
 | **64** | `StoreKey` values ever seen on the fact |

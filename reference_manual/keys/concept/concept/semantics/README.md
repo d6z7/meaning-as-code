@@ -48,20 +48,6 @@ WHAT THIS CONCEPT IS FOR — the question it exists to answer. Where `definition
 
 The unit of the measure this concept IS — 'USD', 'units', 'square_metres'. For a COMPOSED measure (several columns carrying `measure`) this is the unit of the composition and is REQUIRED, because the factor units differ and nothing may pick one: `Quantity x NetPrice` is USD though its factors are `units` and `USD`. With a single measure column it projects from that column's `measure.unit`. It is prose, deliberately: a unit carries what a reader must know to trust a number, and the one measured case where it was WRONG (an amount claimed in the order's own currency when it is stored in USD) was caught by a sentence, not by a token.
 
-Examples:
-
-```yaml
-unit: USD
-```
-
-## A whole block, as it is actually written
-
-Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
-
-```yaml
-unit: USD
-```
-
 ## Levels under this one
 
 - [`additivity:`](additivity.md)

@@ -2,7 +2,7 @@
 
 # `mac.canon.<term>`
 
-**Open** — terms may be added.  ·  21 terms
+**Open** — terms may be added.  ·  22 terms
 
 The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
@@ -25,6 +25,7 @@ The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 - [`ambiguity_gate`](#ambiguity-gate)
 - [`population_select`](#population-select)
 - [`ratio_select`](#ratio-select)
+- [`column_select`](#column-select)
 - [`alias_resolve`](#alias-resolve)
 - [`relation_alias_resolve`](#relation-alias-resolve)
 - [`enum_from_register`](#enum-from-register)
@@ -104,7 +105,7 @@ Write it as `mac.canon.refuse_unresolvable_name`
 
 **doc:** RENDER canon — a name does not resolve to a code; emit the refusal clauses
 
-**params_from:** `{"thing": "concept.label", "code": "concept.identity.canonical_key"}`
+**params_from:** `{"thing": "concept.label", "code": "concept.grounding.columns[identity=canonical]"}`
 
 ### `additivity_guard`
 
@@ -239,6 +240,19 @@ Write it as `mac.canon.ratio_select`
 **needs_sqlglot:** `false`
 
 **doc:** WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which ROWS a concept has. Both map a word a reader says to a declared body, and both were prose. `params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance, for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a question naming neither must ASK, with both names offered, which is the resolution ladder's third rung. MEASURED on the worked bundle 2026-10-02: Discount's percentage is over GrossRevenue (5.93%) and not NetRevenue (6.30%) on the same money; Margin names TWO -- margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on the same profit. `Intent.denominator` has always carried the choice and the planner has always read it, so a model's guess went straight through and nothing declared which was meant.
+
+
+### `column_select`
+
+Write it as `mac.canon.column_select`
+
+— no definition in the vocabulary —
+
+**serves:** competing_definitions
+
+**needs_sqlglot:** `false`
+
+**doc:** WHICH COLUMN OR JOIN PATH A NAMED READING RESOLVES TO -- the third member of the family population_select and ratio_select belong to. Those two map a word a reader says to the ROWS a concept has and to the FIGURE a ratio divides by; this one maps it to the COLUMN that answers. `params.columns` is a name -> {column, surfaces} map with an OPTIONAL `default`, and the axis is the rule's own `binds`, as it is for a population and a ratio. A name is matched EXACTLY over its declared surfaces, case/space/underscore folded. NO DEFAULT IS A DECLARATION: a question naming neither reading ASKS with both offered. MEASURED on the worked bundle 2026-10-05: an order's period is `order_date` and not `delivery_date`, which was a prose `then` only a model read and which changes the number -- an order counted on its delivery date falls in a different month. `axis_default` could not hold it: that canon injects a VALUE into a column and nothing selected BETWEEN columns. IT CHOOSES BETWEEN COLUMNS THE CONCEPT ITSELF DECLARES, and three rules that look like the same shape are not: "revenue means net" chooses between CONCEPTS, "a sales question means the store country" chooses a JOIN PATH, and "an unscoped question covers all time" is about the WINDOW and has no alternative column.
 
 
 ### `alias_resolve`

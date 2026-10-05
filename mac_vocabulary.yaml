@@ -15,7 +15,7 @@ metadata:
   namespace: mac
   version: '0.1.13'
   status: active
-  defines: [concept.aggregation_effect, concept.axis_kind, binding_mode, concept.column.measure_type, concept.rule, canon, concept.identity,
+  defines: [concept.aggregation_effect, concept.axis_kind, concept.class, binding_mode, concept.column.measure_type, concept.rule, canon,
             concept.column.role, concept.column.identity, relation.column.role, concept.column.ruling, name_register]
 
 # ===========================================================================
@@ -680,7 +680,10 @@ canon:
       doc: "RENDER canon — a name does not resolve to a code; emit the refusal clauses"
       params_from:
         thing: concept.label
-        code: concept.identity.canonical_key
+        # The canonical key left `concept.identity.canonical_key` on 2026-10-05; it is the column
+        # carrying `identity: canonical`, which sits inside a LIST and so is addressed by this
+        # literal rather than a dotted path (check_canon_binding._CANONICAL_COLUMN resolves it).
+        code: concept.grounding.columns[identity=canonical]
     additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
     axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
     exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
@@ -1101,30 +1104,45 @@ concept:
       time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
       categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
 
+
   # ===========================================================================
-  # mac.concept.identity — HOW a concept's canonical identity is established. Every concept declares
-  # `concept.identity.kind: mac.concept.identity.<term>`; `concept.identity.canonical_key` (when one is
-  # exposed) names the column/expression that IS the identity. Domain-neutral: an applied ontology picks
-  # the kind that fits. The two "keyless-by-design" kinds (composite, sme_pending) let a
-  # concept declare it legitimately has no single-column key — so the contract never forces a fake one.
+  # mac.concept.class — WHAT KIND OF THING A CONCEPT IS. The one genuinely concept-level typology:
+  # unlike identity (retired 2026-10-05), no column can express it. `Store/square_metres` and
+  # `UnitsSold/quantity` are column-identical, and only a person can say that the floor area is ABOUT
+  # a store while the quantity IS units sold.
+  #
+  # DECLARED HERE FOR THE FIRST TIME, 2026-10-05. The class vocabulary lived ONLY in mac.schema.json,
+  # so `check_vocabulary_parity` could not police it — and the two homes had already drifted: the
+  # schema admitted SEVEN terms and mac-runtime's `ConceptClass` admitted six. A concept writing the
+  # seventh (`meta`) validated and then failed to load.
+  #
+  # SHRUNK FROM SEVEN TO FOUR, operator ruling 2026-10-05, each removal measured:
+  #   `reference` -> RENAMED `entity`. Both named the same thing and `reference` was already taken one
+  #       plane down — `mac.concept.column.identity.reference` is a POINTER AT a thing. A class and a
+  #       column flag meaning opposite ends of one arrow is the `dimension` collision again.
+  #   `meta`      -> DROPPED. In the schema, never in the runtime enum; the meaning plane synthesises
+  #       its own concepts as entities. It returns when something reads it.
+  # `grouping` WAS PROPOSED FOR REMOVAL AND KEPT, which is worth recording because the first
+  # measurement was wrong. `mac_to_graph` lumps entity/grouping into one NODE_CLASSES set, so that
+  # reader cannot tell them apart — but it is not the only one: the schema makes `members.over`
+  # MANDATORY for a grouping, and console_api draws the CONTAINMENT channel from it (whole->part
+  # membership, which FRAMEWORK.md keeps on the concept deliberately instead of in edges.yaml).
+  # A term with a required companion field and a renderer is not ballast.
+  # What survives is what is READ: `measure` at 11 runtime sites (the COUNT(DISTINCT) vs SUM fork),
+  # `event` at one (the fact a filtered count anchors on), `enumeration` at four in the framework
+  # (excluded from graph nodes; its register inlined into the manual), `grouping` for containment,
+  # `entity` as the default.
   # ===========================================================================
-  identity:
+  class:
     kind: vocabulary
     closed: true
-    description: How a concept's canonical identity is established (declared once per concept).
-    # `resolved_axis` RETIRED 2026-09-28 by operator ruling ("i rule against for the time being").
-    # It meant "the serving view PINS or collapses this axis, so it is not exposed as a filterable
-    # key" — a real distinction, and one a column map cannot make, since there is no column to flag.
-    # But it was used in 0 of 62 concepts across four bundles, and a term with no delivered case is a
-    # claim about a need nobody has shown. Removed rather than kept 'in case': an unused member of a
-    # CLOSED vocabulary is indistinguishable from a wrong one until someone reaches for it.
+    description: What kind of thing a concept is (declared once per concept).
     terms:
-      iso:            "A universal external standard code (e.g. an ISO country code). Identity = the standard code; local names/labels are aliases."
-      code:           "A closed internal code set (e.g. a fuel or segment code). Identity = the code; surface spellings are aliases."
-      namespace_code: "A code that only means something within a scope — identity = (namespace, code); the bare code collides across scopes. Guarded by mac.canon.composite_key_guard."
-      fk_name:        "An opaque but stable key carrying a resolved human name (e.g. a model code + name). Identity = the key; the name is a joined attribute, not the identity."
-      composite:      "Identity is a TUPLE of columns (a fact grain, or a parent+member pair). Keyless-by-design: no single-column key."
-      sme_pending:    "Identity not yet known — carried as '__sme__', never invented; graduates to another kind once an SME rules."
+      measure:     "A NUMBER a question folds. Its measure column IS the concept, which is what separates it from a thing that merely carries one. Decides COUNT(DISTINCT key) vs SUM(column)."
+      event:       "Something that HAPPENED, at a grain of one row per occurrence. The fact a filtered count anchors on when the subject is a dimension."
+      enumeration: "A closed value set whose members a register states, so a non-member is answerable without probing. Not a graph node; its register is inlined into the manual."
+      grouping:    "A roll-up ABOVE a leaf concept — it GROUPS another concept's members. Declares `members.over: <Concept>` (the schema requires it) and that containment is drawn as the graph's membership channel, never as an edge."
+      entity:      "A THING a question slices by, counts, or joins to — a customer, a store, a product, a country. The default: a concept that is not a number, an occurrence, a closed value set, or a roll-up is one of these."
 
   # ===========================================================================
   # mac.concept.rule — the closed taxonomy that types every behavioural rule (what the rule governs).
@@ -1309,14 +1327,14 @@ concept:
     identity:
       kind: vocabulary
       closed: true
-      description: What part a column plays in its concept's identity (per column; see mac.concept.identity for the concept).
+      description: What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.
       terms:
         canonical:
           definition: >
             THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
             discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-            says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
-            column that does not identify.
+            declares `part` on every column of its key tuple instead — several parts and no canonical IS
+            the composite — rather than nominating a column that does not identify.
           constellation: >
             EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
             it: a surrogate key every fact points at, with a human-readable code and a name beside
@@ -1326,7 +1344,8 @@ concept:
           definition: >
             ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
             returns a set where a row was expected, and looks like an answer. Declared on every column of
-            the tuple; the concept declares `mac.concept.identity.composite` alongside.
+            the tuple, and that is the whole declaration: no canonical column over a key of two or more
+            IS the composite, and the concept adds nothing.
           constellation: >
             NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified
             by its order and its line number — neither is unique alone, and declaring either as the

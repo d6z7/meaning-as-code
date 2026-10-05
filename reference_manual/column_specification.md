@@ -1,7 +1,7 @@
 ---
 title: The column specification — everything about a column, on the column
 status: >-
-  PARTIALLY ENFORCED (2026-09-29) — four flags LOAD (`role`, `identity`, `measure`, `rulings`: what
+  PARTIALLY ENFORCED (2026-10-05) — five flags LOAD (`role`, `identity`, `counts`, `measure`, `rulings`: what
   mac.schema.json admits under grounding.sources[].columns.<col> with additionalProperties:false, and what
   mac-runtime reads); seven sections are PROPOSED and REFUSED by the schema today (`references`, `domain`,
   `resolution`, `placement`, `absence`, `disclose`, `discriminates`). They are banded at the end of this page.
@@ -12,8 +12,9 @@ companions: [how_a_question_becomes_sql.md, column_rulings.md, column_roles.md, 
 # The column specification
 
 > **Designed, then partly enforced — read this before copying a block.** `mac.schema.json` admits, under
-> `grounding.sources[].columns.<column>`, exactly four keys — **`role`, `identity`, `measure`, `rulings`** —
-> and refuses every other key (`additionalProperties: false`); mac-runtime reads those four. Everything
+> `grounding.sources[].columns.<column>`, exactly five keys — **`role`, `identity`, `counts`, `measure`,
+> `rulings`** —
+> and refuses every other key (`additionalProperties: false`); mac-runtime reads those five. Everything
 > else this page designed — `references`, `domain`, `resolution`, `placement`, `absence`, `disclose`,
 > `discriminates` — is **refused by the schema today: a concept that writes one of them does not load.**
 > Those sections are kept, unchanged in substance, in the banded
@@ -23,8 +24,8 @@ companions: [how_a_question_becomes_sql.md, column_rulings.md, column_roles.md, 
 >
 > Two corrections to the earlier draft of this page, both from the schema: `rulings.never_axis` is a
 > **free-text reason** (no `privacy | grain | derived` vocabulary exists anywhere), and `rulings.register`
-> **requires `rulings.label_of`** (`dependentRequired`, added 2026-09-29). `resolved_axis` no longer appears
-> in the identity kinds — retired 2026-09-28.
+> **requires `rulings.label_of`** (`dependentRequired`, added 2026-09-29). The concept-level identity
+> kinds are gone entirely — the whole block was retired 2026-10-05; identity is declared on the column.
 
 ## The principle
 
@@ -110,19 +111,28 @@ identity and **identifies nothing alone**; **`reference`** points at another con
 (*Which* concept it points at was designed as `references: <Concept>` beside it — that key does not
 load today; see PROPOSED.)
 
-**This is narrower than `mac.concept.identity`, and deliberately.** That vocabulary is per **concept**
-and says how identity is *established* — `iso`, `code`, `namespace_code`, `fk_name`, `composite`,
-`sme_pending`. It stays on `concept.identity.kind`. The concept says *"identity is a composite"*;
-these say *which columns compose it*.
+**This is the ONLY home for identity.** A concept-level `identity:` block once sat beside it,
+declaring how identity was *established* — `iso`, `code`, `namespace_code`, `fk_name`, `composite`,
+`sme_pending`. It was retired on 2026-10-05. Operator ruling: *"declare on concept level only what
+belongs to the concept level … identity of the concept is given by column combination and it belongs
+there."* Measured before removing it: `composite` was derived from the `part` columns anyway, `iso`,
+`namespace_code`, `fk_name` and `sme_pending` had **zero** readers in the runtime, and the single
+reader of `code` was misfiring — it refused a reference dimension that merely carried a rollup.
 
-> An earlier draft of this page had a fourth value, `natural`. It was a category error: a natural
-> key is a claim about the **kind** of identity, which is `mac.concept.identity.code` or `fk_name` on
-> the concept, not a statement about one column's part in it.
+A fourth column value, `natural`, was dropped earlier as a category error. The reasoning then was
+that a natural key is a claim about the *kind* of identity and so belonged on the concept; the kind
+turned out not to be worth declaring at all.
+
+Beside `identity` sits **`counts: true`** — the column one *instance* is counted by, when the
+relation is served finer than the thing. A store dimension keyed on a version surrogate counts
+versions unless this says otherwise, and the two numbers differ with nothing in the result saying
+which you got. It is a separate flag because the column that counts is routinely also the one that
+`references`.
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
-> What part a column plays in its concept's identity (per column; see mac.concept.identity for the
-concept).
+> What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level
+identity block.
 
 *`mac.concept.column.identity` · 3 terms · closed — these are all of them*
 
@@ -130,8 +140,8 @@ concept).
 
 THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
 discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-says so through `mac.concept.identity.composite` (or `sme_pending`) rather than nominating a
-column that does not identify.
+declares `part` on every column of its key tuple instead — several parts and no canonical IS the
+composite — rather than nominating a column that does not identify.
 
 | field | value |
 |---|---|
@@ -142,7 +152,8 @@ column that does not identify.
 
 ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
 returns a set where a row was expected, and looks like an answer. Declared on every column of
-the tuple; the concept declares `mac.concept.identity.composite` alongside.
+the tuple, and that is the whole declaration: no canonical column over a key of two or more IS
+the composite, and the concept adds nothing.
 
 | field | value |
 |---|---|
@@ -398,7 +409,7 @@ A quarter of a named year. `Q1 2024`, `2024-Q1`.
 
 ## Worked: `Customer`, all 13 columns
 
-`identity.kind: fk_name` · `canonical_key: CustomerKey` · one source.
+`identity: canonical` on `CustomerKey` · one source.
 
 > **Which keys would not load:** `references` (on GeoAreaKey), `placement` (State), `domain` and
 > `absence` (Gender, age_band_5y), `disclose` (age_band_5y). Strip those and the block validates;
@@ -480,7 +491,7 @@ per column and not a property of the column's name.
 
 ## Worked: `Country`, two relations
 
-`identity.kind: iso` · `canonical_key: Country` · **two sources**, and the same identity spelled
+`identity: canonical` on `Country` · **two sources**, and the same identity spelled
 differently on each.
 
 > **Which keys would not load:** `domain`, `resolution`, `placement`, `absence` and `disclose` on

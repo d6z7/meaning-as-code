@@ -539,7 +539,7 @@ RENDER canon — a name does not resolve to a code; emit the refusal clauses
 |---|---|
 | `serves` | exclusion_no_evidence |
 | `needs_sqlglot` | False |
-| `params_from` | thing: concept.label · code: concept.identity.canonical_key |
+| `params_from` | thing: concept.label · code: concept.grounding.columns[identity=canonical] |
 
 #### `mac.canon.additivity_guard`
 

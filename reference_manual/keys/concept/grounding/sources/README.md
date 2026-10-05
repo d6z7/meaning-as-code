@@ -81,29 +81,12 @@ Its own keys: [`concept.grounding.sources.columns`](columns/README.md)
 
 primary / join key column(s)
 
-Examples:
-
-```yaml
-key:
-- brand
-
-key:
-- color
-
-key:
-- currency_code
-
-# … and 1 more shape(s)
-```
-
 ## A whole block, as it is actually written
 
 Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
 - relation: dim_product
-  key:
-  - brand
   columns:
     brand:
       role: dimension

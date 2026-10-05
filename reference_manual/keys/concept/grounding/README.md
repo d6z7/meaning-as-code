@@ -129,9 +129,9 @@ HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the bundle's own wo
 Examples:
 
 ```yaml
-snapshot_rule: 'ONE ROW PER STORE ALREADY, once the `active` population has selected the trading
-  ones: 57 rows over 57 location codes, because a location has at most one store with no close
-  date. The …'   # elided — see the real concept for the whole sentence
+snapshot_rule: 'Nothing is collapsed: once the `active` population has selected the trading rows
+  there is one row per store already — 57 rows over 57 location codes, because a location has
+  at most one …'   # elided — see the real concept for the whole sentence
 ```
 
 ### `sources`
@@ -145,8 +145,6 @@ Examples:
 ```yaml
 sources:
 - relation: dim_product
-  key:
-  - brand
   columns:
     brand:
       role: dimension
@@ -158,8 +156,6 @@ sources:
 
 sources:
 - relation: dim_product
-  key:
-  - color
   columns:
     color:
       role: dimension
@@ -206,8 +202,6 @@ Cut from a worked bundle — not typed by hand, so it cannot describe a shape no
 ```yaml
 sources:
 - relation: dim_product
-  key:
-  - brand
   columns:
     brand:
       role: dimension

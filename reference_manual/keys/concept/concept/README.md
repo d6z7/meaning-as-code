@@ -11,33 +11,28 @@ THE MEANING ITSELF — what this notion IS, independently of where it is stored.
 - [`class`](#class) — *—* **·** required
 - [`name`](#name) — *string* **·** required
 - [`definition`](#definition) — *string*
-- [`identity`](#identity) — *object*
 - [`label`](#label) — *string*
 - [`notes`](#notes) — *string*
 - [`semantics`](#semantics) — *object*
 
 ### `class`
 
-*—* · **required** · 7 legal values
+*—* · **required** · 5 legal values
 
-The closed seven-class vocabulary. `meta` is the meaning-plane class (epic #86): a concept whose SUBJECT is the model itself, grounded only on the reflected meta_* relations. The two-planes guardrail keys on the meta_ table prefix + MODEL_PROPERTY route, not the class.
+WHAT KIND OF THING THIS CONCEPT IS — the closed five-term vocabulary mac_vocabulary.yaml#concept.class declares (this enum is landed from it by tools/check_vocabulary_parity.py --write and is not edited by hand). Shrunk from seven on 2026-10-05: `reference` was RENAMED `entity` (the old name is taken one plane down by concept.column.identity.reference, which means a POINTER AT a thing), and `meta` was dropped — it was admitted here but absent from mac-runtime's ConceptClass, so a concept writing it validated and then failed to load. `grouping` was proposed for removal and KEPT: this schema makes `members.over` mandatory for it and the console draws the containment channel from that.
 
 Legal values:
 
-- `entity`
-- `event`
-- `measure`
-- `enumeration`
-- `reference`
-- `grouping`
-- `meta`
+- [`measure`](../../vocabulary/concept/class.md#measure) — A NUMBER a question folds. Its measure column IS the concept, which is what separates it from a thing that merely carries one. Decides COUNT(DISTINCT key) vs SUM(column).
+- [`event`](../../vocabulary/concept/class.md#event) — Something that HAPPENED, at a grain of one row per occurrence. The fact a filtered count anchors on when the subject is a dimension.
+- [`enumeration`](../../vocabulary/concept/class.md#enumeration) — A closed value set whose members a register states, so a non-member is answerable without probing. Not a graph node; its register is inlined into the manual.
+- [`grouping`](../../vocabulary/concept/class.md#grouping) — A roll-up ABOVE a leaf concept — it GROUPS another concept's members. Declares `members.over: <Concept>` (the schema requires it) and that containment is drawn as the graph's membership channel, never as an edge.
+- [`entity`](../../vocabulary/concept/class.md#entity) — A THING a question slices by, counts, or joins to — a customer, a store, a product, a country. The default: a concept that is not a number, an occurrence, a closed value set, or a roll-up is one of these.
 
 Examples:
 
 ```yaml
 class: enumeration
-
-class: reference
 
 class: entity
 
@@ -78,50 +73,16 @@ Examples:
 
 ```yaml
 definition: 'Whose name a product is sold under: eleven names, carried as a column on the product
-  row with no table and no key of their own. A2, top to bottom: not an event, not a measure; "a
-  controlled …'   # elided — see the real concept for the whole sentence
+  row with no table and no key of their own. The account is knowledge/brand.md.'
 
 definition: 'The colour a product comes in: sixteen values on the served row, and the one attribute
-  that on its own makes a new SKU — "E400 Green" and "E400 Orange" are two products. A2: a controlled
-  …'   # elided — see the real concept for the whole sentence
+  that on its own makes a new SKU — "E400 Green" and "E400 Orange The account is knowledge/color.md.'
 
-definition: 'A country the business sells in or sells to: eight of them, plus the online sentinel.
-  Read from the rows: `AU, Australia`. A QUESTION ABOUT COUNTRIES IS A QUESTION ABOUT THIS CONCEPT
-  — …'   # elided — see the real concept for the whole sentence
+definition: A country Contoso sells in — 8 of them, plus one `--` sentinel that is not a place.
+  The account is knowledge/country.md.
 
 # … and 14 more shape(s)
 ```
-
-### `identity`
-
-*object* · optional · [has its own keys →](identity.md)
-
-The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional; presence is enforced warn-first by the shapes. The keyless-by-design kinds (`composite`, `sme_pending`) let a concept declare it has NO single-column key rather than be forced to invent one — a fake identity is worse than a declared absence, because a join will use it. The enum below is landed from mac_vocabulary.yaml by tools/check_vocabulary_parity.py --write and is not edited by hand.
-
-Examples:
-
-```yaml
-identity:
-  kind: code
-  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
-    is established. Eleven brand NAMES used as their own key — a closed set with no surrogate
-    and no relation behind it.
-
-identity:
-  kind: code
-  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
-    is established. Sixteen colour NAMES used as their own key.
-
-identity:
-  kind: code
-  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity
-    is established. A `country_code` that IS the identity — ISO-3166 alpha-2, nine codes, no surrogate
-    behind it.
-
-# … and 7 more shape(s)
-```
-
-Its own keys: [`concept.concept.identity`](identity.md)
 
 ### `label`
 
@@ -157,13 +118,6 @@ Working remarks a reader may need and the definition should not carry — an ope
 
 The SINGLE home for interpretive reasoning facts (FRAMEWORK §5).
 
-Examples:
-
-```yaml
-semantics:
-  unit: USD
-```
-
 Its own keys: [`concept.concept.semantics`](semantics/README.md)
 
 ## A whole block, as it is actually written
@@ -171,42 +125,15 @@ Its own keys: [`concept.concept.semantics`](semantics/README.md)
 Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
-name: Color
-label: Colour
+name: Brand
+label: Brand
 class: enumeration
-identity:
-  kind: code
-  note: The canonical key is a COLUMN fact and is not repeated here; this says only HOW
-    identity is established. Sixteen colour NAMES used as their own key.
-definition: '
-
-  The colour a product comes in: sixteen values on the served row, and the one attribute
-  that on its own makes a new SKU — "E400 Green" and "E400 Orange" are two products.
-
-
-  A2: a controlled set of coded values → `enumeration`.
-
-
-  WHY IT IS A CONCEPT. "Green MP3 players" is how a question reaches a product. Nobody says
-  a SKU''s name.
-
-
-  SIXTEEN, AND THE FOLD HAPPENS UPSTREAM. The landing row carried both `Blue` (197) and
-  `blue` (3); `data/transforms/dim_product.sql` capitalises the first letter, so the served
-  `color` holds `Blue` 200 and sixteen members in total — operator''s ruling of 2026-09-30,
-  taken as a rule about capitalisation rather than a patch naming one value. Measured on
-  the served plane 2026-10-02: 16 distinct, 0 case variants, and `color = ''blue''` returns
-  0 rows. Nothing is folded at read time, and these rules must not ask for it.
-
-
-  NAMES RESOLVE THROUGH `data/lookups/<source>_color.lookup.yaml`.
-
-  '
+definition: 'Whose name a product is sold under: eleven names, carried as a column on the
+  product row with no table and no key of their own. The account is knowledge/brand.md.'
 ```
 
 ## Levels under this one
 
-- [`identity:`](identity.md)
 - [`semantics:`](semantics/README.md)
 
 ---

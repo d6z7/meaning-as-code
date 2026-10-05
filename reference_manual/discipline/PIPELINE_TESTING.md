@@ -686,7 +686,7 @@ Four controls make the comparison mean something. **None is optional.**
 
 | tier | how the bundle is produced | human effort | runs on |
 |---|---|---|---|
-| **L0 — schema** | **generated**: tables → concepts, FKs → edges, column types → field_roles, PKs → `identity.canonical_key` | none | all 95 DBs |
+| **L0 — schema** | **generated**: tables → concepts, FKs → edges, column types → field_roles, PKs → `identity: canonical` on the column | none | all 95 DBs |
 | **L1 — profiled** | L0 + **generated** from a data profile: cardinality, null rates, candidate keys, value registers auto-cut from low-cardinality columns | none | all 95 DBs |
 | **L2 — authored** | L1 + a human adds rules, default readings, refusal scope, disclosures | hours per DB | a handful |
 

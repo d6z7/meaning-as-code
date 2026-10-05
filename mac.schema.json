@@ -164,15 +164,13 @@
             },
             "class": {
               "enum": [
-                "entity",
-                "event",
                 "measure",
+                "event",
                 "enumeration",
-                "reference",
                 "grouping",
-                "meta"
+                "entity"
               ],
-              "description": "The closed seven-class vocabulary. `meta` is the meaning-plane class (epic #86): a concept whose SUBJECT is the model itself, grounded only on the reflected meta_* relations. The two-planes guardrail keys on the meta_ table prefix + MODEL_PROPERTY route, not the class."
+              "description": "WHAT KIND OF THING THIS CONCEPT IS — the closed five-term vocabulary mac_vocabulary.yaml#concept.class declares (this enum is landed from it by tools/check_vocabulary_parity.py --write and is not edited by hand). Shrunk from seven on 2026-10-05: `reference` was RENAMED `entity` (the old name is taken one plane down by concept.column.identity.reference, which means a POINTER AT a thing), and `meta` was dropped — it was admitted here but absent from mac-runtime's ConceptClass, so a concept writing it validated and then failed to load. `grouping` was proposed for removal and KEPT: this schema makes `members.over` mandatory for it and the console draws the containment channel from that."
             },
             "definition": {
               "type": "string",
@@ -184,39 +182,6 @@
             "notes": {
               "type": "string",
               "description": "Working remarks a reader may need and the definition should not carry — an open uncertainty, a measurement that justifies a choice, a thing checked and ruled out. Nothing here is normative: a statement that must hold is a rule with a body, and a statement that must be READ is part of the definition. If a note starts telling the engine what to do, it is in the wrong field."
-            },
-            "identity": {
-              "type": "object",
-              "description": "The concept's CANONICAL IDENTITY — how it is identified (mac.concept.identity) and, when one is exposed, the key that IS the identity. Optional; presence is enforced warn-first by the shapes. The keyless-by-design kinds (`composite`, `sme_pending`) let a concept declare it has NO single-column key rather than be forced to invent one — a fake identity is worse than a declared absence, because a join will use it. The enum below is landed from mac_vocabulary.yaml by tools/check_vocabulary_parity.py --write and is not edited by hand.",
-              "properties": {
-                "kind": {
-                  "enum": [
-                    "iso",
-                    "code",
-                    "namespace_code",
-                    "fk_name",
-                    "composite",
-                    "sme_pending"
-                  ],
-                  "description": "mac.concept.identity.<term> — how the canonical identity is established."
-                },
-                "canonical_key": {
-                  "type": "string",
-                  "description": "The column or expression that IS the identity. Omit it for `sme_pending`, where the identity is the open question, and for `composite`, where no single column holds it. Prefer the COLUMN fact — `identity: canonical` in the column map — and declare it here only where there is no column map: an identity with two homes can disagree with itself."
-                },
-                "note": {
-                  "type": "string",
-                  "description": "How identity is established in this relation, where `kind` alone does not say it — which surrogate stands for the thing, which columns compose a composite, what is annotation and not identity. The canonical key itself is a COLUMN fact; this says HOW, not WHICH."
-                },
-                "counts_as": {
-                  "type": "string",
-                  "description": "The column one INSTANCE of this concept is counted by, when that is not the canonical key. Declare it wherever the relation is served at a FINER grain than the entity: an SCD-2 dimension keyed on a version surrogate counts versions unless this says otherwise, and the two numbers differ silently. The canonical_key stays what the fact JOINS on; this is what a count DISTINCTs. Same name and meaning as the fold plane's `counts_as`, which reaches only bundles that declare a fold plane."
-                }
-              },
-              "required": [
-                "kind"
-              ],
-              "additionalProperties": false
             }
           },
           "additionalProperties": false,
@@ -3947,7 +3912,7 @@
                             "part",
                             "reference"
                           ],
-                          "description": "`canonical` -> concept.identity.canonical_key; `part` marks one column of a composite key; `reference` a foreign key. The key is a COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree.",
+                          "description": "`canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a foreign key. IDENTITY IS A COLUMN FACT AND HAS NO CONCEPT-LEVEL HOME: the `concept.identity` block was removed 2026-10-05 (operator ruling: \"identity of the concept is given by column combination and it belongs there\").",
                           "constellation": "SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's."
                         },
                         "measure": {
@@ -4049,6 +4014,11 @@
                           "type": "string",
                           "description": "THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: \"A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once\" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: \"Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register\" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. measured on a worked bundle: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.",
                           "constellation": "A QUESTION WILL NAME THE VALUE IN WORDS AND THE COLUMN HOLDS A CODE. Someone asks about Germany and the column says `DE`. Reach for it when the column's values are a closed set a person will speak — a country, a brand, a currency — and especially when THE SAME SET APPEARS ON MORE THAN ONE COLUMN: the register is what makes one name resolve to one code exactly once, instead of each column learning the mapping separately and drifting."
+                        },
+                        "counts": {
+                          "type": "boolean",
+                          "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.",
+                          "constellation": "THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself."
                         }
                       }
                     }

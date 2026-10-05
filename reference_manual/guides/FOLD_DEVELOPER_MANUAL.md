@@ -592,7 +592,7 @@ cd $PLAT && MAC_FOLD_PLANE_DIR=<plane dir> .venv/bin/python $SP/proto/harness_la
 ### S14 · Counting the things
 *(case 14 · contoso · 109,120 → 67)*
 
-**WHEN YOU HAVE THIS.** Anyone will ask "how many X". The relation is served at a grain that is *not* one-row-per-thing, or the thing's canonical key is a surrogate. [measured here] read-only: `dim_contoso_store` = **74 rows / 74 distinct StoreKey / 67 distinct StoreCode**, and `identity.canonical_key` is `StoreKey` — the number the ruling forbids.
+**WHEN YOU HAVE THIS.** Anyone will ask "how many X". The relation is served at a grain that is *not* one-row-per-thing, or the thing's canonical key is a surrogate. [measured here] read-only: `dim_contoso_store` = **74 rows / 74 distinct StoreKey / 67 distinct StoreCode**, and the canonical column is `StoreKey` — the number the ruling forbids.
 
 **THE CONFIGURATION**
 

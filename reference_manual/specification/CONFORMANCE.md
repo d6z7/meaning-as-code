@@ -164,12 +164,15 @@ things about one word and nothing could report it. Which side is right is a huma
 use `attribute` 45 times and `period`/`housekeeping` zero — but *"the framework contradicts itself
 about a closed vocabulary"* is a fact, not a judgement, and it fails.
 
-**The same law covers a PROJECTED field.** `concept.identity.canonical_key` is what the column map's
-`identity: canonical` projects **into**; authoring both gives one fact two homes, and the schema's own
-`identity` description has said so all along: *"the key is a COLUMN fact, so declaring it here AND
-under concept.identity gives it two homes that can disagree."* Measured: 15 of 19 concepts in the
-reference bundle carry it only on the column. A composite key settles it outright — `canonical_key` is
-one string, while `identity: part` marks as many columns as the key has.
+**The same law covers a PROJECTED field, and this one ended by deleting the second home.** The column
+map's `identity: canonical` projects into the runtime's `canonical_key`; a concept-level
+`identity.canonical_key` beside it gave one fact two homes, and the schema's own description said so
+all along: *"the key is a COLUMN fact, so declaring it here AND under concept.identity gives it two
+homes that can disagree."* Deprecating it was not enough — the field stayed authorable and readers
+kept a fallback branch. On **2026-10-05** the whole `concept.identity` block was removed from
+`mac.schema.json`, with its six-term `kind` vocabulary. **A concept file that carries an `identity:`
+block no longer validates.** A composite key had already settled the argument outright — a
+`canonical_key` is one string, while `identity: part` marks as many columns as the key has.
 
 ### 2.2 EVERY VOCABULARY IS `snake_case`, AND CLOSED MEANS CLOSED
 

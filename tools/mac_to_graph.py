@@ -4,7 +4,7 @@ mac_to_graph.py — project a MAC ontology onto a property-graph schema (openCyp
 
 The second projector (alongside mac_to_osi.py): backs the "projects onto a graph DB" half of the thesis.
 A MAC ontology maps cleanly to a labelled property graph —
-  Concepts (entity / event / reference / grouping)  -> node labels   (key = grounded PK, properties = grounded columns)
+  Concepts (entity / event / grouping)             -> node labels   (key = grounded PK, properties = grounded columns)
   Edges    (edges.yaml endpoints + role)             -> relationship types  (:From)-[:ROLE]->(:To)
 `measure` and `enumeration` concepts are NOT nodes (a measure is a derived metric, an enumeration a value set).
 The FK columns become graph *relationships* (you traverse, not join) — the join_rule is kept as a comment.
@@ -20,7 +20,10 @@ import yaml
 import mac_project as P
 from mac_project import resolve
 
-NODE_CLASSES = {"entity", "event", "reference", "grouping"}
+# `reference` RETIRED 2026-10-05, folded into `entity`. `grouping` STAYS a node: this set cannot
+# tell it from an entity, but the schema requires `members.over` on it and the console draws the
+# containment channel from that — one blind reader is not no reader.
+NODE_CLASSES = {"entity", "event", "grouping"}
 
 
 def load(p): return yaml.safe_load(Path(p).read_text()) or {}
