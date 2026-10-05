@@ -97,14 +97,14 @@ this pattern guarantees by **canon** (deterministic) and what it leaves to **pro
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Identity is keyed on `(brand_id, size_code)` — never the bare code | **canon-backed** | the [`composite_key_guard`](../canon/context_dependent_meaning/composite_key_guard.md) canon |
+| Identity is keyed on `(brand_id, size_code)` — never the bare code | **canon-backed** | the [`composite_key_guard`](../rules_and_canons/context_dependent_meaning/composite_key_guard.md) canon |
 | Catching that a bare-code filter was written | **canon-backed** | the same guard, at the SQL gate |
 | *Which* brand "size M" means when the question is silent | **prose-fallback** (interpretative) | the agent asks — the irreducible question-reading step |
 
 **The canon** — the prose *"resolve by `(brand, size_code)`, never the bare code"* is realized not by a
 per-concept snippet but by **naming a generic library UDF and binding its parameters** (content model §5;
 single-homing per AUTHORING A3 — the logic lives once, in
-[canon/composite_key_guard.md](../canon/context_dependent_meaning/composite_key_guard.md)):
+[canon/composite_key_guard.md](../rules_and_canons/context_dependent_meaning/composite_key_guard.md)):
 
 ```yaml
 scope:

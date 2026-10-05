@@ -95,7 +95,7 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — the query-time safety is canon-backed
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Never use `parent_id` without its `parent_type` discriminator | **canon-backed** (reused) | [`composite_key_guard`](../canon/context_dependent_meaning/composite_key_guard.md) `{parent_id; [parent_type]}` |
+| Never use `parent_id` without its `parent_type` discriminator | **canon-backed** (reused) | [`composite_key_guard`](../rules_and_canons/context_dependent_meaning/composite_key_guard.md) `{parent_id; [parent_type]}` |
 | Per-type target resolution | **skeleton** (workaround) | N discriminated `physical` edges + a `parent_type` enumeration |
 | A single first-class **polymorphic edge** | **🔴 framework gap** | not a construct yet — flagged in [FINDINGS.md](../FINDINGS.md) F1, *not* enacted |
 | interpretative remainder | **none** | once the discriminator is required, joins are mechanical |

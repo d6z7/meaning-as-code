@@ -375,7 +375,7 @@ grouped or filtered on alone; the scope column travels with it.
 
 **The full treatment is [patterns/context_dependent_meaning.md](patterns/context_dependent_meaning.md)**
 — *"a code meaningless without its parent"* — which is canonical for this constellation and is
-enforced by the [`composite_key_guard`](canon/context_dependent_meaning/composite_key_guard.md) canon. `scoped_by` is the
+enforced by the [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) canon. `scoped_by` is the
 column-level shorthand. If the two ever disagree, the pattern wins.
 
 ## When to use it — the constellation

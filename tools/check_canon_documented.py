@@ -4,7 +4,7 @@
 A canon exists in three places and nothing has ever compared them:
 
   1. mac_vocabulary.yaml#canon.terms      — what the framework DEFINES
-  2. reference_manual/canon/*.md          — what the manual DESCRIBES
+  2. reference_manual/rules_and_canons/**/*.md — what the manual DESCRIBES
   3. mac_runtime.canon.IMPLEMENTED        — what the runtime HONOURS
 
 Measured 2026-09-25, and no two of the three agreed:
@@ -54,7 +54,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     vocab_file = ROOT / "mac_vocabulary.yaml"
-    pages_dir = ROOT / "reference_manual" / "canon"
+    pages_dir = ROOT / "reference_manual" / "rules_and_canons"
     if not vocab_file.is_file() or not pages_dir.is_dir():
         print(f"REFUSED: need {vocab_file.name} and {pages_dir}")
         return 2

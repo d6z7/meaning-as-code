@@ -92,8 +92,8 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — another case where a **skeleton flag 
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Which meaning a missing row has | **canon body** | a `densify` binding (declared, not guessed) |
-| `genuine_zero` → densify to the grid + `COALESCE 0` | **canon-backed** | [`densify`](../canon/absence_semantics/densify.md) |
-| `structurally_untracked` → drop from the denominator | **canon-backed** | [`exclusion_filter`](../canon/impurity_disposition/exclusion_filter.md) (restrict the grid) |
+| `genuine_zero` → densify to the grid + `COALESCE 0` | **canon-backed** | [`densify`](../rules_and_canons/absence_semantics/densify.md) |
+| `structurally_untracked` → drop from the denominator | **canon-backed** | [`exclusion_filter`](../rules_and_canons/impurity_disposition/exclusion_filter.md) (restrict the grid) |
 | `not_loaded` → exclude **and flag** (never impute 0) | **partly canon / data** | exclude + a completeness caveat (the *register* edge of [`impurity_disposition`](impurity_disposition.md)) |
 | interpretative remainder | **minimal** | once `densify` is bound, the behaviour follows |
 

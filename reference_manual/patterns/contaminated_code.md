@@ -73,7 +73,7 @@ canon_ref: [query_rules (resolve.by_semantic_identity), patterns/context_depende
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Resolve by curated `name`/`category`, not the code | **skeleton** | a `resolution` rule (resolve-by-semantic-identity) |
-| Reject prefix/`LIKE` matching on the opaque code | **canon-backed** | [`opaque_code_guard`](../canon/contaminated_code/opaque_code_guard.md) |
+| Reject prefix/`LIKE` matching on the opaque code | **canon-backed** | [`opaque_code_guard`](../rules_and_canons/contaminated_code/opaque_code_guard.md) |
 | interpretative remainder | **none** | once the curated attribute is named |
 
 ```yaml

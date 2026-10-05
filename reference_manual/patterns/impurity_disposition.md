@@ -8,7 +8,7 @@ scope: GENERIC — domain-neutral. Example from example_shop_ontology/ (illustra
 # Pattern — Impurity disposition  🟡 *edges canon-able; the curation-layer abstraction is the residual gap*
 
 > This entry documents a **frontier that is now partly built** — which is why it is 🟡, not 🔴. The query-time
-> *edges* of the disposition are canon-backed: [`exclusion_filter`](../canon/impurity_disposition/exclusion_filter.md) realizes the
+> *edges* of the disposition are canon-backed: [`exclusion_filter`](../rules_and_canons/impurity_disposition/exclusion_filter.md) realizes the
 > **bake** exclusion, and abstaining on a NEEDS_SME flag realizes **block**. What remains a genuine framework
 > **gap (🔴)** is the *abstraction itself* — two primitives, both deferred (COOKBOOK B8):
 >
@@ -107,7 +107,7 @@ nature**. That is not a failure to canonize; it is the honest shape of a frontie
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Choosing the disposition (reliably / partly / not separable) | **prose-fallback** (SME judgement) | irreducibly human — the framework does not pretend otherwise |
-| Excluding *reliably-identifiable* junk (the **bake** disposition) | **canon-backed** | [`exclusion_filter`](../canon/impurity_disposition/exclusion_filter.md) |
+| Excluding *reliably-identifiable* junk (the **bake** disposition) | **canon-backed** | [`exclusion_filter`](../rules_and_canons/impurity_disposition/exclusion_filter.md) |
 | Abstaining when an impurity is flagged unresolved (the **block** disposition) | **canon-backed** (given the flag) | flagged NEEDS_SME → return ⊥ is deterministic |
 | The residual caveat (the **register** disposition) | **data, not query-behaviour** | attached to the result ("clean to within X") |
 

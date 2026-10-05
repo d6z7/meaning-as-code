@@ -3,7 +3,7 @@ title: The rule engine — a declared rule fires, and selects which rows a conce
 status: implemented in mac-runtime (planner/populations.py · canons/population_select.py · planner/predicates.py); the bodies are READ, lowered to bound SQL and disclosed
 audience: ontology authors
 scope: GENERIC — domain-neutral. Every measurement from example/contoso5, 2026-10-01.
-companions: [canon/population_select.md, identity_and_rules.md, column_specification.md, canon_library.md]
+companions: [canon/population_select.md, identity_and_rules.md, column_specification.md, rules_and_canons/README.md]
 ---
 
 # The rule engine
@@ -26,7 +26,7 @@ Operator framing, 2026-10-01, which `planner/populations.py:3-6` quotes and impl
 > condition on specific column must be not null in order to fetch the data.
 
 This page is the **authoring** surface. The pure decision it calls is specified in
-[`canon/competing_definitions/population_select.md`](canon/competing_definitions/population_select.md); the rule vocabulary it lives inside is
+[`rules_and_canons/competing_definitions/population_select.md`](rules_and_canons/competing_definitions/population_select.md); the rule vocabulary it lives inside is
 [`identity_and_rules.md`](identity_and_rules.md).
 
 ---

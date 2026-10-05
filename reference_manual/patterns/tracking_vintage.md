@@ -94,9 +94,9 @@ canons that **compose** (and **reuse** an existing one):
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Never `SUM` across `scenario` (three measurements of one cell) | **canon-backed** | [`additivity_guard`](../canon/semi_additive_balance/additivity_guard.md) **reused**, `{ scenario: non_aggregable }` |
-| Default to `ACTUAL` when the question names no scenario | **canon-backed** | [`axis_default`](../canon/tracking_vintage/axis_default.md) injects `scenario = ?` |
-| "Latest month" = `MAX` over the **pinned** scenario, not the whole table | **canon-backed** | [`scoped_latest`](../canon/tracking_vintage/scoped_latest.md) |
+| Never `SUM` across `scenario` (three measurements of one cell) | **canon-backed** | [`additivity_guard`](../rules_and_canons/semi_additive_balance/additivity_guard.md) **reused**, `{ scenario: non_aggregable }` |
+| Default to `ACTUAL` when the question names no scenario | **canon-backed** | [`axis_default`](../rules_and_canons/tracking_vintage/axis_default.md) injects `scenario = ?` |
+| "Latest month" = `MAX` over the **pinned** scenario, not the whole table | **canon-backed** | [`scoped_latest`](../rules_and_canons/tracking_vintage/scoped_latest.md) |
 | *Which* relative period "last quarter" denotes | **prose-fallback** | interpretation of the question |
 
 ```yaml

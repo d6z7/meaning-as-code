@@ -10,7 +10,7 @@ scope: none
 ## Moved
 
 `population_select`'s page is now
-[**`canon/competing_definitions/population_select.md`**](competing_definitions/population_select.md).
+[**`rules_and_canons/competing_definitions/population_select.md`**](../rules_and_canons/competing_definitions/population_select.md).
 
 On 2026-10-05 the canon pages were grouped by the pattern each one serves — the `serves` field every
 canon term already declared — so a page now sits under the pattern it realizes. Basenames were

@@ -280,7 +280,7 @@ claiming to be the concept's identity.
 
 **`composite_key_part` used as though it were a key.** It identifies nothing alone. A query
 filtering on one part of a composite identity returns a **set** where a row was expected, and looks
-like it returned an answer. That is what [`composite_key_guard`](canon/context_dependent_meaning/composite_key_guard.md)
+like it returned an answer. That is what [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md)
 catches.
 
 **A `foreign_key` assumed to be present.** Declaring the reference says it is *intended*.

@@ -150,10 +150,10 @@ authored:
     # field every canon term already declares — so the folder a page sits in and the group the
     # generated tree puts it in are ONE declaration and cannot disagree. Basenames were preserved
     # through the move, which is why every inbound reference needed only a segment inserted.
-    path: reference_manual/canon/{serves}/{canon}.md
+    path: reference_manual/rules_and_canons/{serves}/{canon}.md
     naming: "{serves}/{canon}.md — the pattern from mac_vocabulary.yaml#canon.terms[{canon}].serves,
       then the canon's term as that same block spells it"
-    population: {of: one page per canon, from: 'reference_manual/canon/*/*.md', empty_is: EMPTY}
+    population: {of: one page per canon, from: 'reference_manual/rules_and_canons/*/*.md', empty_is: EMPTY}
     lifecycle: authored
     shape:
       # TWO GENERATIONS, MEASURED, AND DECLARED AS TWO VARIANTS RATHER THAN ONE LOOSE SHAPE.
@@ -202,21 +202,24 @@ authored:
     consumers:
       - {tool: tools/check_canon_documented.py, role: "list 2 of 3 — what the manual DESCRIBES",
          reads: ["«the page's existence, by stem»"]}
-      - {tool: reference_manual/canon_library.md, role: the index over all of them}
+      - {tool: reference_manual/rules_and_canons/README.md, role: the chapter and the index over all of them}
     checkers: [tools/check_manual_page_shape.py, tools/check_canon_documented.py]
 
   # ── GENRE 5: THE SIGNPOST, declared because the first one existed before this block did ─────────
   manual_redirect_stub:
     what: a one-screen signpost at a path a page used to occupy, saying where it went and why it stays
     genre: lookup
-    path: reference_manual/canon/{canon}.md
-    naming: "{canon}.md — the basename the moved page had, unchanged; that is the whole point of it"
+    # TWO LOCATIONS, because two pages moved and both are cited from the archive: the canon pages
+    # left `canon/` for `rules_and_canons/<serves>/`, and the chapter left the manual root for
+    # `rules_and_canons/README.md`. The `|` form is the one manual_generated_face already uses.
+    path: reference_manual/canon/{canon}.md | reference_manual/canon_library.md
+    naming: "the path the moved page had, unchanged; that is the whole point of it"
     # THE FLAT GLOB IS NOW EXACTLY THIS POPULATION. Until 2026-10-05 `canon/*.md` WAS the canon
     # entries; they moved one level down into `canon/{serves}/`, so a file left directly under
     # `canon/` is now a signpost and nothing else. empty_is OK because a tree with nothing moved
     # needs no signposts -- an empty population here is the healthy state, not an unmeasured one.
     population: {of: one stub per page that moved and is still cited from an archive,
-                 from: 'reference_manual/canon/*.md', empty_is: OK}
+                 from: 'reference_manual/canon/*.md + reference_manual/canon_library.md', empty_is: OK}
     lifecycle: authored
     shape:
       # A SIGNPOST IS NOT AN ENTRY, and bending `manual_canon_page` to admit it would have cost the
@@ -297,7 +300,7 @@ authored:
     # the worst of its own subject — the exact defect it was asked to end.
     path: >-
       reference_manual/README.md | reference_manual/03_pattern_reference.md |
-      reference_manual/FINDINGS.md | reference_manual/canon_library.md |
+      reference_manual/FINDINGS.md | reference_manual/rules_and_canons/README.md |
       reference_manual/column_roles.md | reference_manual/column_rulings.md |
       reference_manual/column_specification.md | reference_manual/connection.md |
       reference_manual/how_a_question_becomes_sql.md | reference_manual/identity_and_rules.md |

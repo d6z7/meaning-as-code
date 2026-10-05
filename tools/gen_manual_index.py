@@ -339,10 +339,10 @@ def render(root: pathlib.Path) -> str:
     #: in, sort order hands the stub the key and the index links the signpost instead of the page.
     canon_pages = {p["rel"].rsplit("/", 1)[-1][: -len(".md")]: p
                    for p in described
-                   if p["rel"].startswith("canon/")
+                   if p["rel"].startswith("rules_and_canons/")
                    and str(p.get("status") or "").strip().lower() != "redirect"}
     canon_redirects = [p for p in described
-                       if p["rel"].startswith("canon/")
+                       if p["rel"].startswith("rules_and_canons/")
                        and str(p.get("status") or "").strip().lower() == "redirect"]
     pattern_pages = [p for p in described if p["rel"].startswith("patterns/")]
     artifacts = [p for p in described if not p["rel"].endswith(".md")]
@@ -357,7 +357,7 @@ def render(root: pathlib.Path) -> str:
     #: that assertion is independent.
     #:
     #: GROUPED BY DIRECTORY AND DISCOVERED, so the NEXT directory indexes itself on the day it appears.
-    KNOWN = ("canon/", "patterns/", "keys/")
+    KNOWN = ("rules_and_canons/", "patterns/", "keys/")
     subdirs: dict[str, list[dict]] = {}
     for d in described:
         rel = d["rel"]
@@ -365,6 +365,13 @@ def render(root: pathlib.Path) -> str:
             continue
         subdirs.setdefault(rel.split("/", 1)[0], []).append(d)
     subdir_pages = [d for group in subdirs.values() for d in group]
+
+    #: THE CHAPTER IS A PAGE TOO, and it stopped being linked the moment it moved inside the tree it
+    #: describes. `KNOWN` excludes `rules_and_canons/` from the discovered-subdirectory groups (its
+    #: canon pages have their own table), and the canon table is keyed by canon NAME, which a README
+    #: is not. So the front page of the directory fell between the two and the coverage walk -- which
+    #: reads the filesystem, not this renderer -- correctly called it uncovered.
+    canon_front = next((d for d in described if d["rel"] == "rules_and_canons/README.md"), None)
 
     canon = canon_lists(root)
     vocab = vocabulary_lists(root)
@@ -424,7 +431,7 @@ def render(root: pathlib.Path) -> str:
     A("| where | openable files | what indexes them |")
     A("|---|---|---|")
     A(f"| `reference_manual/` (markdown, top level) | {len(root_pages)} | this page, below |")
-    A(f"| `reference_manual/canon/` | {len(canon_pages)} | this page, below, beside the canon "
+    A(f"| `reference_manual/rules_and_canons/` | {len(canon_pages)} | its own front page, below, beside the canon "
       f"vocabulary and the runtime |")
     A(f"| `reference_manual/patterns/` | {len(pattern_pages)} | this page, below |")
     for d in sorted(subdirs):
@@ -507,6 +514,11 @@ def render(root: pathlib.Path) -> str:
       f"`canon/`, **{len(honoured)} implemented** in the runtime's implemented-canon set. The three "
       f"middle columns below ARE those three lists; the last is the page's own frontmatter.")
     A("")
+    if canon_front:
+        A(f"The chapter itself is [`{canon_front['rel']}`]({canon_front['rel']}) — what a rule is, "
+          f"where its body fires, what crosses into the answer, and how it is tested, then the "
+          f"groups below.")
+        A("")
     A("| canon | defined | page | implemented | `status:` as the page declares it |")
     A("|---|---|---|---|---|")
     for name in sorted(set(defined) | described_c | honoured):

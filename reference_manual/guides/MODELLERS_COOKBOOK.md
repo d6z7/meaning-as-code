@@ -426,7 +426,7 @@ column; its only edge was `type: shared_attribute` with `resolved_by` naming a p
 declared no join key and was never emittable. The concept and the edge were deleted; the predicate now
 lives as an axis on Store, and *"revenue from the online store"* answers through it. **The test:** does
 the axis have rows of its own that something joins to, or is it a reading of rows that already exist?
-A reading is a rule. See `reference_manual/canon/competing_definitions/population_select.md` and DNA law 16.
+A reading is a rule. See `reference_manual/rules_and_canons/competing_definitions/population_select.md` and DNA law 16.
 Execution validation reliably catches the inversion if it slips through.
 
 ---

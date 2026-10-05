@@ -180,7 +180,15 @@ _GENRES = ("manual_topic_page", "manual_argument_page")
 
 
 def declared_pages(decl: pathlib.Path = _DECL) -> list[str] | None:
-    """Basenames the guardrail declares for the genres this tool injects into, or None."""
+    """Manual-relative PATHS the guardrail declares for the genres this tool injects into, or None.
+
+    PATHS, NOT BASENAMES, and it was basenames until 2026-10-05. Every declared page sat at the
+    manual root, so `rsplit("/", 1)[-1]` was lossless and the flattening was invisible. When the canon
+    chapter moved to `rules_and_canons/README.md` the declaration still named it correctly and this
+    reader turned it into `README.md`, which resolves to the GENERATED INDEX at the manual root -- a
+    different page, carrying no `vocabulary-terms:` marker. The gate then reported `mac.canon` as a
+    notion the vocabulary defines and no page documents, which was true of the page it was looking at.
+    """
     try:
         import yaml
         doc = yaml.safe_load(decl.read_text(encoding="utf-8")) or {}
@@ -192,7 +200,7 @@ def declared_pages(decl: pathlib.Path = _DECL) -> list[str] | None:
         for branch in str(item.get("path") or "").split("|"):
             b = branch.strip()
             if b.startswith("reference_manual/") and b.endswith(".md"):
-                out.append(b.rsplit("/", 1)[-1])
+                out.append(b[len("reference_manual/"):])
     return sorted(set(out)) or None
 
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""gen_canon_index — the canon tree in canon_library.md, grouped by the pattern each canon serves.
+"""gen_canon_index — the canon tree in rules_and_canons/README.md, grouped by the pattern it serves.
 
 NO GROUPING AND NO COUNT ON THE PAGE THIS WRITES IS TYPED HERE. The middle layer of the tree is
 `mac_vocabulary.yaml#canon.terms[*].serves`, which every canon already declares and which names a
 page under `reference_manual/patterns/`. So the groups are READ, not authored: a canon moves between
 groups by changing its declaration, and a group appears or disappears because the canons did.
 
-THE DIRECTORY CARRIES THE SAME GROUPING. `reference_manual/canon/<serves>/<name>.md` since
+THE DIRECTORY CARRIES THE SAME GROUPING. `reference_manual/rules_and_canons/<serves>/<name>.md` since
 2026-10-05, so the tree this renders and the tree on disk are built from one declaration and cannot
 disagree. Basenames were PRESERVED through the move, which is what kept it mechanical: 50 markdown
 links needed only a group segment inserted after `canon/`, 33 links out of the moved pages needed one
@@ -33,8 +33,8 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VOCAB = ROOT / "mac_vocabulary.yaml"
-PAGE = ROOT / "reference_manual" / "canon_library.md"
-PAGES_DIR = ROOT / "reference_manual" / "canon"
+PAGE = ROOT / "reference_manual" / "rules_and_canons" / "README.md"
+PAGES_DIR = ROOT / "reference_manual" / "rules_and_canons"
 PATTERNS_DIR = ROOT / "reference_manual" / "patterns"
 
 #: The runtime is a different repository and is read, never imported — the same posture
@@ -94,7 +94,7 @@ def render() -> str:
     L: list[str] = [BEGIN, ""]
     L.append(f"**{len(t)} canons across {len(order)} patterns.** The middle layer is not a filing "
              f"choice: it is each canon's own `serves`, the data pattern it exists for, which also "
-             f"names its page under [`patterns/`](patterns/). A canon changes group by changing that "
+             f"names its page under [`patterns/`](../patterns/). A canon changes group by changing that "
              f"declaration.")
     L.append("")
     if found:
@@ -102,7 +102,7 @@ def render() -> str:
         L.append(f"|---|---|---|---|")
         L.append(f"| **count** | {len(t)} | {len(described & set(t))} | {len(impl)} |")
         L.append(f"| **read from** | `mac_vocabulary.yaml#canon.terms` | "
-                 f"`reference_manual/canon/*.md` | `mac_runtime.canon.IMPLEMENTED` |")
+                 f"`rules_and_canons/**/*.md` | `mac_runtime.canon.IMPLEMENTED` |")
         L.append("")
         L.append("`tools/check_canon_documented.py` holds the three together; this table is read "
                  "from the same places it reads.")
@@ -113,8 +113,17 @@ def render() -> str:
 
     for g in order:
         members = sorted(groups[g])
-        link = f"[`{g}`](patterns/{g}.md)" if g in patterns else f"`{g}`"
-        L.append(f"### {link} &nbsp;·&nbsp; {len(members)}")
+        link = f"[`{g}`](../patterns/{g}.md)" if g in patterns else f"`{g}`"
+        # FOLDABLE, so twelve groups are a page you can scan rather than scroll. `<details>` is the
+        # one collapsible GitHub-flavoured markdown admits, and it needs the blank lines around the
+        # table or the markdown inside a block-level HTML element is rendered as literal text.
+        # OPEN BY DEFAULT on the largest group only: a page whose every group is shut shows a reader
+        # nothing, and one whose every group is open is the flat list this replaced.
+        L.append(f"<details{' open' if len(members) > 2 else ''}>")
+        L.append(f"<summary><b>{g}</b> &nbsp;·&nbsp; {len(members)} canon"
+                 f"{'s' if len(members) != 1 else ''}</summary>")
+        L.append("")
+        L.append(f"Pattern: {link}")
         L.append("")
         # NO DEFINITION TEXT HERE, DELIBERATELY. Each canon's meaning is rendered once, lower on this
         # page, by gen_vocabulary_terms.py reading the same vocabulary. Excerpting it into the tree
@@ -124,7 +133,7 @@ def render() -> str:
         L.append("|---|---|---|---|---|")
         for n in members:
             body = t[n]
-            page = f"[page](canon/{g}/{n}.md)" if n in described else "—"
+            page = f"[page]({g}/{n}.md)" if n in described else "—"
             if not found:
                 status = "—"
             elif n in impl:
@@ -135,6 +144,8 @@ def render() -> str:
                 status = "unknown"
             sqlglot = "yes" if body.get("needs_sqlglot") else "no"
             L.append(f"| `{n}` | {page} | [below](#maccanon{n.replace('_', '')}) | {status} | {sqlglot} |")
+        L.append("")
+        L.append("</details>")
         L.append("")
 
     L.append(END)

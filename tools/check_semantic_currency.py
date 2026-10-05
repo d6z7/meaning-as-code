@@ -265,7 +265,7 @@ def run() -> tuple[list[dict], dict]:
                          "file": file or subject.split(":")[0]})
 
     #: 1 — THE CANON'S CLAIM AGAINST THE RUNTIME'S BEHAVIOUR.
-    canon_dir = ROOT / "reference_manual" / "canon"
+    canon_dir = ROOT / "reference_manual" / "rules_and_canons"
     for f in sorted(canon_dir.glob("*.md")) if canon_dir.is_dir() else []:
         text = f.read_text(encoding="utf-8", errors="replace")
         m = re.search(r"^status:\s*(.*)$", text[:2000], re.M)

@@ -85,7 +85,7 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — this pattern is **fully deterministic
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| "A node" means node + all descendants | **canon-backed** | [`hierarchy_rollup`](../canon/recursive_hierarchy/hierarchy_rollup.md) |
+| "A node" means node + all descendants | **canon-backed** | [`hierarchy_rollup`](../rules_and_canons/recursive_hierarchy/hierarchy_rollup.md) |
 | Traversal to arbitrary (ragged) depth | **canon-backed** | the same recursive CTE |
 | Containment is structure, not an edge | **skeleton** | `members:` on the concept |
 | interpretative remainder | **none** | the subtree is mechanical once the root is named |

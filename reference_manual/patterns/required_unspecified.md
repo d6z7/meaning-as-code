@@ -73,7 +73,7 @@ canon_ref: [query_rules (measure.period_mandatory, ambiguity.ask_dont_guess), ca
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Which axes are required / have a safe default | **skeleton** | per-measure `required` + `default` declarations |
-| Required + unspecified + no default → ASK | **canon-backed** (reused) | [`ambiguity_gate`](../canon/competing_definitions/ambiguity_gate.md) |
+| Required + unspecified + no default → ASK | **canon-backed** (reused) | [`ambiguity_gate`](../rules_and_canons/competing_definitions/ambiguity_gate.md) |
 | *Which* period/region the user then means | **prose-fallback** | the clarifying answer (interpretation) |
 
 ```yaml

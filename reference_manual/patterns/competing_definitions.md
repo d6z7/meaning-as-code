@@ -83,9 +83,9 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — the *detection* of ambiguity is deter
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Detecting the term matches >1 candidate (or 0) | **canon-backed** | [`ambiguity_gate`](../canon/competing_definitions/ambiguity_gate.md) |
+| Detecting the term matches >1 candidate (or 0) | **canon-backed** | [`ambiguity_gate`](../rules_and_canons/competing_definitions/ambiguity_gate.md) |
 | Producing the answer once a definition is pinned | **canon-backed** | the chosen candidate's predicate |
-| Selecting the rows when the term is a STATE the data never stores | **canon-backed** | [`population_select`](../canon/competing_definitions/population_select.md) |
+| Selecting the rows when the term is a STATE the data never stores | **canon-backed** | [`population_select`](../rules_and_canons/competing_definitions/population_select.md) |
 | *Which* definition the user means | **prose-fallback** | the ask — the irreducible interpretation |
 
 ```yaml
@@ -114,7 +114,7 @@ a reading, and asked unqualified "how many stores?" means the active ones.
 
 That fact has no home on a concept (it does not say what a store *is*) and none on an edge (it joins
 nothing). It is a statement about which rows the concept HAS under a given reading, so it is a rule,
-and the rule's body is [`population_select`](../canon/competing_definitions/population_select.md): named populations as
+and the rule's body is [`population_select`](../rules_and_canons/competing_definitions/population_select.md): named populations as
 structured predicates, one marked `default`, and the condition is the rule's own `binds` — a question
 constraining a bound column is making its own statement about the state, so the default steps aside,
 disclosed.

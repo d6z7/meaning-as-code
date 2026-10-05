@@ -2,7 +2,7 @@
 title: Identity and rules — how a concept says what it IS and what must happen
 status: both vocabularies are read; rule bodies are enforced, `binds` is read
 audience: ontology authors
-companions: [column_specification.md, canon_library.md]
+companions: [column_specification.md, rules_and_canons/README.md]
 ---
 
 # Identity and rules
@@ -73,7 +73,7 @@ concepts across four bundles used it. The schema enum still lists it; that is an
 
 **Step 3 is `scoped_by` in its concept-level form.** `namespace_code` is the same fact the
 [`context_dependent_meaning`](patterns/context_dependent_meaning.md) pattern describes and
-[`composite_key_guard`](canon/context_dependent_meaning/composite_key_guard.md) enforces — a `State` code that means Corse in
+[`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) enforces — a `State` code that means Corse in
 France and Colorado in the United States.
 
 ### Worked — contoso
@@ -141,7 +141,7 @@ A fact the consumer INHERITS from the serving view (relied on, not re-derived).
 | `never` | **quoted verbatim into a refusal.** This is the field a reader actually meets. |
 | `why` | the reason, so the refusal teaches rather than blocks |
 | `binds` | which columns the rule governs — how the planner knows the rule applies |
-| `realized_by` | the [canon](canon_library.md) that makes it deterministic, if one exists |
+| `realized_by` | the [canon](rules_and_canons/README.md) that makes it deterministic, if one exists |
 
 ### What each kind is for
 
