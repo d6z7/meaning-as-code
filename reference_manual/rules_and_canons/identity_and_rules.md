@@ -1,6 +1,9 @@
 ---
 title: Rules — how a concept says what must happen
-status: rule bodies are enforced, `binds` is read
+status: >-
+  ENFORCED (2026-10-05) — `contract.rules[].kind` is closed by a pattern in mac.schema.json that
+  enumerates this vocabulary's six terms, held to it by check_vocabulary_parity. Rule bodies are
+  enforced and `binds` is read.
 audience: ontology authors
 companions: [column_specification.md, rules_and_canons/README.md]
 ---
@@ -8,6 +11,14 @@ companions: [column_specification.md, rules_and_canons/README.md]
 # Rules
 
 The vocabulary a concept declares to say **what the engine must do**.
+
+> **The kind is CLOSED as of 2026-10-05, and was not before.** `contract.rules[].kind` was
+> `{"type": "string"}` — these six terms appeared in the schema only inside that slot's description,
+> as prose, pipe-separated. **Any string validated.** An author, or a model generating a concept,
+> could invent `mac.concept.rule.validation` and nothing refused it; a delivered bundle had to carry
+> its own shape (`fplclean-rule-kind-closed`) to close what the schema left open. The slot now
+> carries `^mac\.concept\.rule\.(aggregation|ambiguity|default|exclusion|guarantee|resolution)$`,
+> generated from the terms below, and `check_vocabulary_parity` fails if the two ever disagree.
 
 > **Identity moved, 2026-10-05.** This page also carried `mac.concept.identity` — a six-term
 > vocabulary for HOW a concept's identity was established. It is retired: identity is a fact about

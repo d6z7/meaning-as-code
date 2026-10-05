@@ -112,12 +112,59 @@ PAIRS = (
 #: `^mac\.measure_type\.[A-Za-z_]…` still spelled the old name. Declared here so a rename cannot be
 #: "finished" while a pattern still disagrees.
 PATTERNS = (
+    # ADDED 2026-10-05, and it was the widest hole in the estate. `contract.rules[].kind` was
+    # `{"type": "string"}` — the six terms of a CLOSED vocabulary lived only in that slot's
+    # description, as prose, pipe-separated. Any string validated, so an author (or a model) could
+    # invent a rule kind and nothing refused it; a bundle had to carry its own shape to close what
+    # the schema left open. The pattern now enumerates the members, which `compare_patterns` holds
+    # to the vocabulary.
+    ("contract rule `kind`",
+     ["$defs", "contract", "properties", "rules", "items", "properties", "kind"], "concept.rule"),
     ("semantics.measure_type token", ["$defs", "semantics", "properties", "measure_type"],
      "concept.column.measure_type"),
     ("semantics.axis_kinds token",
      ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis_kind"),
     ("additivity axis token", ["$defs", "additivityAxis", "oneOf", 1], "concept.aggregation_effect"),
 )
+
+#: THE THIRD SHAPE A VOCABULARY TAKES IN THE SCHEMA: not an enum of values and not a pattern over a
+#: token, but the PROPERTY NAMES of an object. `rulings:` is the case — each ruling is a key, and
+#: `additionalProperties: false` is what closes the set. Until 2026-10-05 nothing compared those keys
+#: with the vocabulary that declares them, so `concept.column.ruling` was a closed five-term
+#: vocabulary against a seven-key object and no reader could say whether the extra two were intended.
+#: (label, JSON path to the object, vocabulary block, companions). A COMPANION is a key the object
+#: admits that is NOT a term: an argument to a term, or a slot a different vocabulary governs. Each
+#: is named here, so "the schema admits a key the vocabulary does not declare" stays a finding
+#: rather than a shrug.
+PROPERTY_SETS = (
+    ("column `rulings` keys",
+     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "rulings"],
+     "concept.column.ruling",
+     {"evidence": "the measurement `never_axis` must cite — an argument to a ruling, not a ruling",
+      "register": "which naming register a `label_of` column carries — governed by `name_register`"}),
+)
+
+#: VOCABULARIES WITH NO SCHEMA SLOT, DECLARED SO THE DENOMINATOR IS HONEST. Until 2026-10-05 this
+#: gate reported "N of N governed slot(s)" while NINE of the nineteen vocabularies were governed by
+#: nothing — a perfect fraction over a population nobody printed, which is the defect the estate
+#: keeps paying for. A vocabulary belongs here only because a bundle cannot write it: these are
+#: ENGINE-SIDE, produced by the runtime and the gates and never authored in a concept file. If one
+#: ever gains an authored slot, move it to PAIRS or PATTERNS — do not extend this list.
+UNGOVERNED = {
+    # NOT a duplicate of `concept.column.role` and NOT retirable, against what the 2026-10-05
+    # handover's OWED 4 proposed. That read measured "0 uses" and stopped there: `query_use` is a
+    # FIELD ON each role term inside mac_vocabulary.yaml, and the planner reads it through
+    # `framework.query_use(role)`. A bundle writes it zero times because a bundle never writes it
+    # at all — which makes it ungoverned by design, not dead.
+    "concept.column.query_use": "a field on each concept.column.role term; read by the planner, never authored",
+    "outcome_class":   "the runtime's answer classification, emitted never authored",
+    "test_status":     "the acceptance suite's own verdict vocabulary",
+    "test_kind":       "the acceptance suite's own test taxonomy",
+    "diagnostic_code": "mac_checks_* diagnostic ids, emitted by the gates",
+    "data_plane_gate": "the data-plane gate names, a tool register not a bundle key",
+    "binding_mode":    "how a canon binding applies; carried in the canon registry, not a schema slot",
+}
 
 ACCEPTED_SHAPE = """\
 ACCEPTED SHAPE — run inside a MAC framework checkout carrying mac.schema.json and
@@ -302,9 +349,79 @@ def rewrite(text: str, vocab: dict, blocks: list[str], pairs=PAIRS) -> tuple[str
     return dumps(doc), changed
 
 
-def _report(rows, prows) -> int:
-    bad = [r for r in rows if r[4] != "ok"] + [r for r in prows if r[2] != "ok"]
-    print(f"  VOCABULARY PARITY — {len(rows)} enum slot(s) + {len(prows)} pattern slot(s)\n")
+def compare_property_sets(schema: dict, vocab: dict, sets=PROPERTY_SETS) -> list:
+    """One row per object whose PROPERTY NAMES are a vocabulary. (label, block, state, detail).
+
+    Three things must hold, and the third is the one a comment cannot: the object must close itself
+    (`additionalProperties: false`, or any key at all is admitted and the vocabulary means nothing);
+    every term must be a key; and every key must be a term or a DECLARED companion.
+    """
+    vocab = _vocab(vocab)
+    out = []
+    for label, path, block, companions in sets:
+        try:
+            obj = dig(schema, path)
+        except KeyError as exc:
+            out.append((label, block, "missing_slot", str(exc)))
+            continue
+        if obj.get("additionalProperties") is not False:
+            out.append((label, block, "not_closed",
+                        "the object does not set `additionalProperties: false`, so it admits any "
+                        "key and its vocabulary constrains nothing"))
+            continue
+        keys = set(obj.get("properties") or {})
+        terms = set(terms_of(vocab, block))
+        missing = sorted(terms - keys)
+        extra = sorted(keys - terms - set(companions))
+        if missing or extra:
+            detail = []
+            if missing:
+                detail.append(f"the vocabulary declares {missing} and the object has no such key")
+            if extra:
+                detail.append(f"the object admits {extra}, which is neither a term nor a declared "
+                              f"companion — name it in PROPERTY_SETS or drop it")
+            out.append((label, block, "disagree", "; ".join(detail)))
+            continue
+        out.append((label, block, "ok",
+                    f"{len(terms)} term(s) are keys, closed, plus {len(companions)} declared "
+                    f"companion(s): {', '.join(sorted(companions))}"))
+    return out
+
+
+def coverage(vocab) -> list:
+    """Every CLOSED vocabulary is policed by a slot, or declared ungoverned with a reason.
+
+    THE DENOMINATOR, which this gate used to leave out. It reported "N of N governed slot(s)" over
+    the slots it happened to list, while nine of nineteen vocabularies were governed by nothing —
+    a perfect fraction over a population nobody printed. A vocabulary that is neither in PAIRS nor
+    PATTERNS nor UNGOVERNED is a closed term set the schema does not enforce, which is how
+    `contract.rules[].kind` sat as a bare string with its six terms in a prose description.
+    """
+    vocab = _vocab(vocab)
+    declared = {k for k, b in vocab.items() if isinstance(b, dict) and b.get("kind") == "vocabulary"}
+    policed = ({b for _, _, b in PAIRS} | {b for _, _, b in PATTERNS}
+               | {b for _, _, b, _ in PROPERTY_SETS})
+    out = []
+    for name in sorted(declared):
+        if name in policed:
+            out.append((name, "policed", ""))
+        elif name in UNGOVERNED:
+            out.append((name, "ungoverned", UNGOVERNED[name]))
+        else:
+            out.append((name, "UNCOVERED",
+                        "a closed vocabulary that no schema slot enforces and nothing declares "
+                        "exempt — add it to PAIRS/PATTERNS, or to UNGOVERNED with its reason"))
+    for name in sorted(set(UNGOVERNED) - declared):
+        out.append((name, "STALE_EXEMPTION",
+                    "declared ungoverned here and no longer a vocabulary — remove the entry"))
+    return out
+
+
+def _report(rows, prows, srows=(), crows=()) -> int:
+    bad = ([r for r in rows if r[4] != "ok"] + [r for r in prows if r[2] != "ok"]
+           + [s for s in srows if s[2] != "ok"]
+           + [c for c in crows if c[1] in ("UNCOVERED", "STALE_EXEMPTION")])
+    print(f"  VOCABULARY PARITY — {len(rows)} enum + {len(prows)} pattern + {len(srows)} property-set slot(s)\n")
     for label, block, se, vt, state, detail in rows:
         print(f"  [{'ok  ' if state == 'ok' else 'FAIL'}] {label:26} vs mac_vocabulary.yaml#{block}")
         print(f"           {detail}")
@@ -314,14 +431,27 @@ def _report(rows, prows) -> int:
     for label, block, state, detail in prows:
         print(f"  [{'ok  ' if state == 'ok' else 'FAIL'}] {label:26} vs mac_vocabulary.yaml#{block}")
         print(f"           {detail}")
+    if crows:
+        uncovered = [c for c in crows if c[1] in ("UNCOVERED", "STALE_EXEMPTION")]
+        print(f"\n  COVERAGE — {len(crows)} closed vocabular(y/ies)\n")
+        for name, state, why in crows:
+            if state == "policed":
+                continue
+            print(f"  [{'ok  ' if state == 'ungoverned' else 'FAIL'}] {name:26} {state}")
+            print(f"           {why}")
+        if not uncovered:
+            n_pol = sum(1 for c in crows if c[1] == "policed")
+            print(f"  every vocabulary is accounted for: {n_pol} policed by a slot, "
+                  f"{len(crows) - n_pol} declared ungoverned with a reason")
+
     n = len(rows) + len(prows)
     if bad:
-        print(f"\nFAIL: check_vocabulary_parity — {len(bad)} of {n} governed slot(s) disagree "
-              f"with the vocabulary that declares them. One fact, two homes: the framework "
+        print(f"\nFAIL: check_vocabulary_parity — {len(bad)} finding(s) over {n} governed slot(s) "
+              f"and {len(crows)} closed vocabular(y/ies). One fact, two homes: the framework "
               f"contradicts itself about a CLOSED vocabulary, and no bundle can be conformant to both")
         return 1
-    print(f"\nPASS: check_vocabulary_parity — {n} of {n} governed slot(s) carry exactly "
-          f"the terms their vocabulary declares")
+    print(f"\nPASS: check_vocabulary_parity — {n} of {n} governed slot(s) carry exactly the terms "
+          f"their vocabulary declares, and all {len(crows)} closed vocabular(y/ies) are accounted for")
     return 0
 
 
@@ -363,7 +493,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  NOTHING TO WRITE — every slot governed by {', '.join(a.write)} already carries "
                   f"its vocabulary's terms\n")
     schema = json.loads(text)
-    return _report(compare(schema, voc), compare_patterns(schema, voc))
+    return _report(compare(schema, voc), compare_patterns(schema, voc),
+                   compare_property_sets(schema, voc), coverage(voc))
 
 
 def _plant(path: list, leaf):

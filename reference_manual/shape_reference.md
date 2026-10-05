@@ -122,7 +122,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
   rules:  # typed behavioural rules (promoted from an applied pilot, FRAMEWORK §6d)
     - <item>
       id: <…>  # REQUIRED · string · stable dotted id, e.g
-      kind: <…>  # REQUIRED · string · a mac.concept.rule.* reference…
+      kind: <…>  # REQUIRED · string · WHAT THIS RULE GOVERNS — a mac.concept.rule.* member
       scope: <…>  # string · general | <SOURCE> (general = framework default; else a source fact)
       when: <…>  # string · trigger — the situation the rule applies to
       then: <…>  # string · directive — what to do

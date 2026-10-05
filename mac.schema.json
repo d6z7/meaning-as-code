@@ -3563,7 +3563,8 @@
               },
               "kind": {
                 "type": "string",
-                "description": "a mac.concept.rule.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)"
+                "description": "WHAT THIS RULE GOVERNS — a mac.concept.rule.* member. CLOSED BY THE PATTERN since 2026-10-05: until then this slot was `{type: string}` and the six terms were listed only in this sentence, so any string validated and an author could invent a kind. A bundle had to carry its own shape to close what the schema left open.",
+                "pattern": "^mac\\.concept\\.rule\\.(aggregation|ambiguity|default|exclusion|guarantee|resolution)$"
               },
               "scope": {
                 "type": "string",
@@ -4223,7 +4224,7 @@
           "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^mac\\.concept\\.axis_kind\\.[A-Za-z_][A-Za-z0-9_]*$",
+            "pattern": "^mac\\.concept\\.axis_kind\\.(categorical|time)$",
             "description": "What kind of aggregation axis one column is, keyed by column name. DO NOT USE IT: the keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the whole declaration is inert. Declare `axis_kind` on the column instead. It remains readable so a bundle that still carries it is not broken by its absence."
           }
         },
@@ -4234,7 +4235,7 @@
         "measure_type": {
           "type": "string",
           "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
-          "pattern": "^mac\\.concept\\.column\\.measure_type\\.[A-Za-z_][A-Za-z0-9_]*$",
+          "pattern": "^mac\\.concept\\.column\\.measure_type\\.(flow|intensive|precomputed|stock|target)$",
           "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.concept.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and at the time check_vocabulary_parity did not read patterns, so this one had to be found by a bundle failing. The parity gate has read patterns since 2026-09-27 (PATTERNS in tools/check_vocabulary_parity.py) and this slot is one of the three it holds to the vocabulary's namespace."
         }
       },

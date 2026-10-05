@@ -47,7 +47,7 @@ id: customer.ambiguity.as_of_now_or_as_of_sale
 
 *string* · **required**
 
-a mac.concept.rule.* reference (resolution|aggregation|default|ambiguity|exclusion|guarantee)
+WHAT THIS RULE GOVERNS — a mac.concept.rule.* member. CLOSED BY THE PATTERN since 2026-10-05: until then this slot was `{type: string}` and the six terms were listed only in this sentence, so any string validated and an author could invent a kind. A bundle had to carry its own shape to close what the schema left open.
 
 Examples:
 
