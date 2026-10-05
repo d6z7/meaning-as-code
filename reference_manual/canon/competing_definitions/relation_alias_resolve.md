@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral
 
 ## Serves
 
-The [`competing_definitions`](../patterns/competing_definitions.md) pattern, one level up: the
+The [`competing_definitions`](../../patterns/competing_definitions.md) pattern, one level up: the
 ambiguous word names a **relationship**, not a value.
 
 ## Contract

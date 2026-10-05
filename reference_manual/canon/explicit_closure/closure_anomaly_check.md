@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`explicit_closure`](../patterns/explicit_closure.md) pattern — any enumeration whose `closure` governs
+The [`explicit_closure`](../../patterns/explicit_closure.md) pattern — any enumeration whose `closure` governs
 whether an "unknown value" is an **anomaly** (closed) or **expected** (open).
 
 ## Contract (the pluggable interface)

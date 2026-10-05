@@ -90,7 +90,7 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — here a skeleton flag *decides whether
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Whether an "unknown value" check should exist | **skeleton** | the `closure` flag (closed → yes; open → no) |
-| The anomaly query for a closed set | **canon-backed** | [`closure_anomaly_check`](../canon/closure_anomaly_check.md) |
+| The anomaly query for a closed set | **canon-backed** | [`closure_anomaly_check`](../canon/explicit_closure/closure_anomaly_check.md) |
 | Declining the check for an open set (no false alarms) | **canon-backed** | the *same* canon returns `None` for open/unknown |
 | interpretative remainder | **none** | the closure flag decides deterministically |
 

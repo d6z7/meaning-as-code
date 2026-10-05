@@ -97,7 +97,7 @@ Per [AUTHORING.md](../AUTHORING.md) A4 — the canon here is a **query-shape** t
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Collapse to one row per natural key before aggregating (no fact-multiplication) | **canon-backed** | [`snapshot_collapse`](../canon/snapshot_collapse.md) (`subquery_wrapper`) |
+| Collapse to one row per natural key before aggregating (no fact-multiplication) | **canon-backed** | [`snapshot_collapse`](../canon/scd_type_2/snapshot_collapse.md) (`subquery_wrapper`) |
 | An explicit AS-OF date resolves to the version valid then | **canon-backed** | the same canon, `as_of=?` (bound) |
 | An undated question means the current version | **skeleton/default** | the collapse defaults to latest (`ROW_NUMBER`) |
 | interpretative remainder | **none/minimal** | "undated → current" is a safe default, not a guess |

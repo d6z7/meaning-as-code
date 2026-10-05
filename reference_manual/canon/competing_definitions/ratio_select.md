@@ -15,7 +15,7 @@ scope: GENERIC — domain-neutral. Measurements from example/contoso5.
 
 ## Serves
 
-[`competing_definitions`](../patterns/competing_definitions.md) — and specifically the case where one
+[`competing_definitions`](../../patterns/competing_definitions.md) — and specifically the case where one
 word a person says has **several arithmetic readings of the same measure**, each a defensible answer
 and only one of them the answer.
 

@@ -73,7 +73,7 @@ concepts across four bundles used it. The schema enum still lists it; that is an
 
 **Step 3 is `scoped_by` in its concept-level form.** `namespace_code` is the same fact the
 [`context_dependent_meaning`](patterns/context_dependent_meaning.md) pattern describes and
-[`composite_key_guard`](canon/composite_key_guard.md) enforces — a `State` code that means Corse in
+[`composite_key_guard`](canon/context_dependent_meaning/composite_key_guard.md) enforces — a `State` code that means Corse in
 France and Colorado in the United States.
 
 ### Worked — contoso

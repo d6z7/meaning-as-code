@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral contract; the failure below was measured
 
 ## Serves
 
-The [`explicit_closure`](../patterns/explicit_closure.md) pattern, for a **grouping**: a concept
+The [`explicit_closure`](../../patterns/explicit_closure.md) pattern, for a **grouping**: a concept
 whose members are sets of other members — continents over countries, categories over products.
 
 ## Contract
@@ -54,7 +54,7 @@ indistinguishable from an absent one.
 
 ## You almost certainly do not need it
 
-**[`resolve_by_register`](resolve_by_register.md) already expresses a grouping**, because its
+**[`resolve_by_register`](../contaminated_code/resolve_by_register.md) already expresses a grouping**, because its
 guarantee is that a name binds **every** code it covers:
 
 ```yaml

@@ -9,11 +9,11 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **guard** canon: a multivalued attribute (an array column, or a value reached through a bridge) must be
 > tested with **membership** (`contains` / `EXISTS`), never scalar **equality**. Single-homed here; bound via
-> `realized_by: { udf, params }`. See [content model](../the_content_model.md).
+> `realized_by: { udf, params }`. See [content model](../../the_content_model.md).
 
 ## Serves
 
-The [`multivalued_bridge`](../patterns/multivalued_bridge.md) pattern — any attribute a row has *many* of
+The [`multivalued_bridge`](../../patterns/multivalued_bridge.md) pattern — any attribute a row has *many* of
 (tags, categories, segments, labels).
 
 ## Contract (the pluggable interface)

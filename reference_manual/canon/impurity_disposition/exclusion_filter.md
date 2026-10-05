@@ -9,12 +9,12 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **transform** canon realizing `mac.concept.rule.exclusion`: it injects a predicate that removes
 > **reliably-identifiable** junk (test rows, known buckets, unmapped sentinels). It is the **bake**
-> disposition of [`impurity_disposition`](../patterns/impurity_disposition.md) — and *only* that: it does
+> disposition of [`impurity_disposition`](../../patterns/impurity_disposition.md) — and *only* that: it does
 > not touch the partially- or not-separable residual (those are register / block). Single-homed here.
 
 ## Serves
 
-The [`impurity_disposition`](../patterns/impurity_disposition.md) pattern (bake disposition) — and any
+The [`impurity_disposition`](../../patterns/impurity_disposition.md) pattern (bake disposition) — and any
 concept with an `exclusion` rule over reliably-identifiable rows.
 
 ## Contract (the pluggable interface)

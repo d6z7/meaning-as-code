@@ -65,7 +65,15 @@ def main(argv: list[str] | None = None) -> int:
     # all 19 are defined — a wrong key reads as an empty vocabulary, which reads as a manual full of
     # canons nobody defined.
     defined = set(block.get("terms") if block.get("terms") is not None else block.get("members") or {})
-    described = {p.stem for p in pages_dir.glob("*.md")}
+    # ONE LEVEL DOWN, BY PATTERN. The pages moved to `canon/<serves>/<name>.md` on 2026-10-05 —
+    # the directory now carries the same grouping the generated tree reads, so a canon's page sits
+    # under the pattern it serves. A FLAT glob here measured ZERO described against 21 undescribed
+    # the moment they moved, which is the shape of gate that reports on a population it cannot see.
+    # `rglob` finds them at any depth, so this does not care if the grouping is re-cut later.
+    #
+    # README.md IS EXCLUDED BY NAME. A sub-index would otherwise be counted as a canon called
+    # "README" and reported as a page the vocabulary does not define.
+    described = {p.stem for p in pages_dir.rglob("*.md") if p.stem != "README"}
 
     try:
         _neighbours.ensure_runtime_on_path()

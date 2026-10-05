@@ -327,8 +327,23 @@ def render(root: pathlib.Path) -> str:
                  if not under_keys(root, p) and p != me]
 
     root_pages = [p for p in described if "/" not in p["rel"] and p["rel"].endswith(".md")]
-    canon_pages = {p["rel"][len("canon/"):-len(".md")]: p
-                   for p in described if p["rel"].startswith("canon/")}
+    #: KEYED BY STEM, NOT BY STRIPPED PATH, and REDIRECT STUBS ARE NOT PAGES. The canon pages moved to
+    #: `canon/<serves>/<name>.md` on 2026-10-05, which broke both halves of the old expression: the key
+    #: became `competing_definitions/population_select` and matched no canon name, so every one of the
+    #: 21 rendered as "— none" while the coverage walk — which reads the filesystem, not this renderer —
+    #: correctly reported 21 uncovered pages. The link below is built from the page's own `rel` for the
+    #: same reason: a hardcoded `canon/{name}.md` cannot survive a regrouping.
+    #:
+    #: A `status: redirect` stub is EXCLUDED, and it has to be: one lives at the old flat path so two
+    #: append-only records in `decisions/` still resolve, and it shares a stem with the real page. Left
+    #: in, sort order hands the stub the key and the index links the signpost instead of the page.
+    canon_pages = {p["rel"].rsplit("/", 1)[-1][: -len(".md")]: p
+                   for p in described
+                   if p["rel"].startswith("canon/")
+                   and str(p.get("status") or "").strip().lower() != "redirect"}
+    canon_redirects = [p for p in described
+                       if p["rel"].startswith("canon/")
+                       and str(p.get("status") or "").strip().lower() == "redirect"]
     pattern_pages = [p for p in described if p["rel"].startswith("patterns/")]
     artifacts = [p for p in described if not p["rel"].endswith(".md")]
 
@@ -496,10 +511,20 @@ def render(root: pathlib.Path) -> str:
     A("|---|---|---|---|---|")
     for name in sorted(set(defined) | described_c | honoured):
         page = canon_pages.get(name)
-        link = f"[`canon/{name}.md`](canon/{name}.md)" if page else "**— none**"
+        link = f"[`{page['rel']}`]({page['rel']})" if page else "**— none**"
         A(f"| `mac.canon.{name}` | {'yes' if name in defined else '**no**'} | {link} "
           f"| {'yes' if name in honoured else 'no'} | {cell(page['status'] if page else None)} |")
     A("")
+    #: A SIGNPOST IS STILL A PAGE THE MANUAL CARRIES, so the index links it. The coverage assertion
+    #: reads the filesystem and asks whether every file is reachable from here; excluding redirects
+    #: from the walk would have made the gate quieter rather than the manual navigable.
+    if canon_redirects:
+        A(f"**{len(canon_redirects)} moved page(s)**, kept as a signpost because an append-only record "
+          f"in `decisions/` still cites the old path: "
+          + ", ".join(f"[`{r['rel']}`]({r['rel']})" for r in sorted(canon_redirects, key=lambda r: r["rel"]))
+          + ".")
+        A("")
+
     disagree = sorted(n for n in described_c & honoured
                       if re.match(r"NOT IMPLEMENTED", str(canon_pages[n]["status"] or ""), re.I))
     if disagree:

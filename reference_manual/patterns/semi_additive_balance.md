@@ -92,7 +92,7 @@ has no interpretative remainder at all:
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | Which axis is additive vs point-in-time | **skeleton** | `measure_type.stock × axis_kind` — typed, no prose |
-| `SUM(units_on_hand)` may not cross the time axis unpinned | **canon-backed** | the [`additivity_guard`](../canon/additivity_guard.md) canon |
+| `SUM(units_on_hand)` may not cross the time axis unpinned | **canon-backed** | the [`additivity_guard`](../canon/semi_additive_balance/additivity_guard.md) canon |
 | anything interpretative | **none** | the cleanest case: skeleton + canon → 100% determinism coverage |
 
 **The canon** — and note its params are *not hand-authored*: they are the **projection of the measure's type

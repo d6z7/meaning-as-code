@@ -12,11 +12,11 @@ statement that these rows are *all the members there are*, so a value outside th
 without touching the warehouse.
 
 One of the two canons the runtime actually implements; see
-[`resolve_by_register`](resolve_by_register.md) for the other, and for the distinction below.
+[`resolve_by_register`](../contaminated_code/resolve_by_register.md) for the other, and for the distinction below.
 
 ## Serves
 
-The [`explicit_closure`](../patterns/explicit_closure.md) pattern — a value set that is **closed**,
+The [`explicit_closure`](../../patterns/explicit_closure.md) pattern — a value set that is **closed**,
 where the members live in one place and are not restated in the concept.
 
 Four concepts declare it in the worked bundle: `Color`, `Currency`, `Channel`, `StoreStatus`.
@@ -76,7 +76,7 @@ whose members do **not** resolve by name: `'Closed'` matches, *"shut stores"* do
 
 - **Deterministic**; the register is a file in the bundle and is never probed.
 - **Closure is a claim this canon does not verify.** It binds the members; whether the list is still
-  complete is the [`warranty`](../column_specification.md) question, and a `closed` set nobody
+  complete is the [`warranty`](../../column_specification.md) question, and a `closed` set nobody
   reconciles is a refusal backed by a stale sample.
 - **`closed` covers the CODED members only.** An absence is not a third member and must not be
   minted as one — `StoreStatus` has no code for an operating store, and inventing `Operating` would

@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`recursive_hierarchy`](../patterns/recursive_hierarchy.md) pattern — any self-referencing parent/child
+The [`recursive_hierarchy`](../../patterns/recursive_hierarchy.md) pattern — any self-referencing parent/child
 structure (category tree, org chart, bill-of-materials) whose nodes are queried with their descendants.
 
 ## Contract (the pluggable interface)

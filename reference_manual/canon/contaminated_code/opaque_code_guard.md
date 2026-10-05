@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`contaminated_code`](../patterns/contaminated_code.md) pattern — any opaque key whose embedded
+The [`contaminated_code`](../../patterns/contaminated_code.md) pattern — any opaque key whose embedded
 structure has been reused/overloaded (the domain-neutral form of the "resolve by name, never by code prefix"
 principle).
 

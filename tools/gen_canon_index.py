@@ -6,19 +6,17 @@ NO GROUPING AND NO COUNT ON THE PAGE THIS WRITES IS TYPED HERE. The middle layer
 page under `reference_manual/patterns/`. So the groups are READ, not authored: a canon moves between
 groups by changing its declaration, and a group appears or disappears because the canons did.
 
-WHY THE TREE IS IN THIS PAGE AND NOT IN THE FILESYSTEM. `canon/<serves>/<name>.md` was the obvious
-shape and it is refused by three measurements, all taken 2026-10-05:
+THE DIRECTORY CARRIES THE SAME GROUPING. `reference_manual/canon/<serves>/<name>.md` since
+2026-10-05, so the tree this renders and the tree on disk are built from one declaration and cannot
+disagree. Basenames were PRESERVED through the move, which is what kept it mechanical: 50 markdown
+links needed only a group segment inserted after `canon/`, 33 links out of the moved pages needed one
+more `../`, and 9 sibling links were re-pointed. `check_canon_documented` moved from a flat `glob` to
+`rglob` in the same change — a flat glob measured 0 described against 21 undescribed the moment the
+pages moved.
 
-  * `check_canon_documented` reads `described = {p.stem for p in pages_dir.glob("*.md")}` — a FLAT
-    glob. Subdirectories make it report 0 described / 21 undescribed, turning a green gate red, and a
-    `canon/README.md` would be counted as a described canon named "README".
-  * 28 files outside the generated index link `canon/<name>.md` directly.
-  * Six of those links are in `decisions/PROTOCOL-2026-10-01_rule-engine.md`, a DATED record.
-    Rewriting a link inside it would make the record claim a path that did not exist on its date.
-
-So the pages stay where every existing reference already points, their basenames preserved, and the
-tree is a READING structure over them. Moving the files is a separate change that must carry the gate
-and the link rewrite with it; see the page's own note.
+decisions/ WAS NOT TOUCHED. Its records are dated, they cite canon paths as backticked prose rather
+than markdown links, and check_dangling_references does not judge a path whose first segment is not
+an owned directory. A dated record may describe where a page was on its date.
 
 Usage:
   python3 tools/gen_canon_index.py            # write the region between the sentinels
@@ -83,7 +81,7 @@ def terms() -> dict[str, dict]:
 def render() -> str:
     t = terms()
     impl, unimpl, found = runtime_lists()
-    described = {p.stem for p in PAGES_DIR.glob("*.md")}
+    described = {p.stem for p in PAGES_DIR.rglob("*.md") if p.stem != "README"}
     patterns = {p.stem for p in PATTERNS_DIR.glob("*.md")}
 
     groups: dict[str, list[str]] = {}
@@ -126,7 +124,7 @@ def render() -> str:
         L.append("|---|---|---|---|---|")
         for n in members:
             body = t[n]
-            page = f"[page](canon/{n}.md)" if n in described else "—"
+            page = f"[page](canon/{g}/{n}.md)" if n in described else "—"
             if not found:
                 status = "—"
             elif n in impl:

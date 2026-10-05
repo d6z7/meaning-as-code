@@ -75,7 +75,7 @@ canon_ref: [query_rules (attr.array_membership), shape_reference.md (ConceptFile
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Filter by membership, never equality | **canon-backed** | [`array_membership_guard`](../canon/array_membership_guard.md) |
+| Filter by membership, never equality | **canon-backed** | [`array_membership_guard`](../canon/multivalued_bridge/array_membership_guard.md) |
 | An additive measure double-counts across the multivalue | **data / caveat** | declared limit: needs an allocation factor or distinct base (not auto-solved) |
 | interpretative remainder | **minimal** | the allocation policy is a modelling choice |
 

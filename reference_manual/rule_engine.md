@@ -26,7 +26,7 @@ Operator framing, 2026-10-01, which `planner/populations.py:3-6` quotes and impl
 > condition on specific column must be not null in order to fetch the data.
 
 This page is the **authoring** surface. The pure decision it calls is specified in
-[`canon/population_select.md`](canon/population_select.md); the rule vocabulary it lives inside is
+[`canon/competing_definitions/population_select.md`](canon/competing_definitions/population_select.md); the rule vocabulary it lives inside is
 [`identity_and_rules.md`](identity_and_rules.md).
 
 ---

@@ -14,7 +14,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`competing_definitions`](../patterns/competing_definitions.md) pattern — and any concept where a term
+The [`competing_definitions`](../../patterns/competing_definitions.md) pattern — and any concept where a term
 resolves to several named candidate definitions and the system must ask rather than guess.
 
 ## Contract (the pluggable interface)

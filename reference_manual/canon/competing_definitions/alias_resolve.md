@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral
 
 ## Serves
 
-The [`competing_definitions`](../patterns/competing_definitions.md) pattern — one surface word,
+The [`competing_definitions`](../../patterns/competing_definitions.md) pattern — one surface word,
 several defensible meanings.
 
 ## Contract

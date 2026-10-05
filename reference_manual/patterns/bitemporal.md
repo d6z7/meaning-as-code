@@ -84,7 +84,7 @@ canon_ref: [patterns/scd_type_2.md, canon/snapshot_collapse.md, FINDINGS.md, pat
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Collapse each axis to a given as-of | **canon-backed** (reused) | [`snapshot_collapse`](../canon/snapshot_collapse.md), once per axis |
+| Collapse each axis to a given as-of | **canon-backed** (reused) | [`snapshot_collapse`](../canon/scd_type_2/snapshot_collapse.md), once per axis |
 | A single first-class **bitemporal (V, S) collapse** | **🔴 framework gap** | not a construct — [FINDINGS.md](../FINDINGS.md) F2, not enacted |
 | *Which* (V, S) the question means | **prose-fallback** | interpretation ("as we believed it on Jan 10") |
 

@@ -14,7 +14,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`tracking_vintage`](../patterns/tracking_vintage.md) pattern (scoped "latest") — and any relative-period
+The [`tracking_vintage`](../../patterns/tracking_vintage.md) pattern (scoped "latest") — and any relative-period
 resolution that must anchor to the latest *actual*, not the planning horizon.
 
 ## Contract (the pluggable interface)

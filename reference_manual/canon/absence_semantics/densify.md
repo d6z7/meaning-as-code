@@ -13,7 +13,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 ## Serves
 
-The [`absence_semantics`](../patterns/absence_semantics.md) pattern (the genuine-zero case) — any sparse
+The [`absence_semantics`](../../patterns/absence_semantics.md) pattern (the genuine-zero case) — any sparse
 measure whose missing rows mean a real zero and must be counted as such in averages, coverage, and totals.
 
 ## Contract (the pluggable interface)

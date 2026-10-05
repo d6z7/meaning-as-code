@@ -146,9 +146,14 @@ authored:
   manual_canon_page:
     what: one canon's entry — what it serves, its contract, and how honest it is about its limits
     genre: lookup
-    path: reference_manual/canon/{canon}.md
-    naming: "{canon}.md — the canon's term as mac_vocabulary.yaml#canon.terms spells it"
-    population: {of: one page per canon, from: reference_manual/canon/*.md, empty_is: EMPTY}
+    # GROUPED BY THE PATTERN THE CANON SERVES, 2026-10-05. The directory layer is `serves` — the
+    # field every canon term already declares — so the folder a page sits in and the group the
+    # generated tree puts it in are ONE declaration and cannot disagree. Basenames were preserved
+    # through the move, which is why every inbound reference needed only a segment inserted.
+    path: reference_manual/canon/{serves}/{canon}.md
+    naming: "{serves}/{canon}.md — the pattern from mac_vocabulary.yaml#canon.terms[{canon}].serves,
+      then the canon's term as that same block spells it"
+    population: {of: one page per canon, from: 'reference_manual/canon/*/*.md', empty_is: EMPTY}
     lifecycle: authored
     shape:
       # TWO GENERATIONS, MEASURED, AND DECLARED AS TWO VARIANTS RATHER THAN ONE LOOSE SHAPE.
@@ -199,6 +204,45 @@ authored:
          reads: ["«the page's existence, by stem»"]}
       - {tool: reference_manual/canon_library.md, role: the index over all of them}
     checkers: [tools/check_manual_page_shape.py, tools/check_canon_documented.py]
+
+  # ── GENRE 5: THE SIGNPOST, declared because the first one existed before this block did ─────────
+  manual_redirect_stub:
+    what: a one-screen signpost at a path a page used to occupy, saying where it went and why it stays
+    genre: lookup
+    path: reference_manual/canon/{canon}.md
+    naming: "{canon}.md — the basename the moved page had, unchanged; that is the whole point of it"
+    # THE FLAT GLOB IS NOW EXACTLY THIS POPULATION. Until 2026-10-05 `canon/*.md` WAS the canon
+    # entries; they moved one level down into `canon/{serves}/`, so a file left directly under
+    # `canon/` is now a signpost and nothing else. empty_is OK because a tree with nothing moved
+    # needs no signposts -- an empty population here is the healthy state, not an unmeasured one.
+    population: {of: one stub per page that moved and is still cited from an archive,
+                 from: 'reference_manual/canon/*.md', empty_is: OK}
+    lifecycle: authored
+    shape:
+      # A SIGNPOST IS NOT AN ENTRY, and bending `manual_canon_page` to admit it would have cost the
+      # 21 real pages their Serves/Contract/Limits requirement. It asserts the two things that make a
+      # stub useful instead: WHERE the page went, and WHY the stub cannot simply be deleted.
+      sections:
+        - {heading: Moved, required: always}
+        - {heading: Why this stub exists and will not move again, required: always}
+      extra_sections: allowed
+      frontmatter:
+        required: [title, status, part_of, scope]
+        # `redirect` is this genre's only status: a signpost has no implementation state to report.
+        status_closed_first_word: [redirect]
+      opens_with: null
+    producers: [{tool: «a person», role: writes one when a cited page moves}]
+    consumers:
+      - {tool: tools/gen_manual_index.py, role: "links it, so the coverage walk finds every file",
+         reads: ["«status: redirect, which excludes it from the canon list and lists it as moved»"]}
+    checkers: [tools/check_manual_page_shape.py, tools/check_manual_index.py]
+    why_it_exists: >-
+      `population_select`'s page moved under `competing_definitions/` and two ARCHIVE records still
+      cite the old path -- decisions/DNA-2026-09-25 (law 16) and decisions/PROTOCOL-2026-10-01.
+      guardrails/semantic_currency.yaml names decisions/ append-only, "Entries are never edited", so
+      the citation cannot be rewritten; check_dangling_references judges an owned-root path like
+      `reference_manual/canon/population_select.md`; and tools/dangling_floor.txt is a one-way ratchet
+      that refuses a new waiver. A stub is the only form under which all three stay true at once.
 
   # ── GENRE 3 of 4: THE GENERATED FACE — EXEMPT, AND WHY ──────────────────────────────────────────
   manual_generated_face:

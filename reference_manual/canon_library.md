@@ -118,82 +118,82 @@ SQL; still no rows in Python.
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `alias_resolve` | [page](canon/alias_resolve.md) | [below](#maccanonaliasresolve) | **acts** | no |
-| `ambiguity_gate` | [page](canon/ambiguity_gate.md) | [below](#maccanonambiguitygate) | **acts** | no |
-| `population_select` | [page](canon/population_select.md) | [below](#maccanonpopulationselect) | **acts** | no |
-| `ratio_select` | [page](canon/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
-| `relation_alias_resolve` | [page](canon/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
+| `alias_resolve` | [page](canon/competing_definitions/alias_resolve.md) | [below](#maccanonaliasresolve) | **acts** | no |
+| `ambiguity_gate` | [page](canon/competing_definitions/ambiguity_gate.md) | [below](#maccanonambiguitygate) | **acts** | no |
+| `population_select` | [page](canon/competing_definitions/population_select.md) | [below](#maccanonpopulationselect) | **acts** | no |
+| `ratio_select` | [page](canon/competing_definitions/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
+| `relation_alias_resolve` | [page](canon/competing_definitions/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
 
 ### [`explicit_closure`](patterns/explicit_closure.md) &nbsp;·&nbsp; 3
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `closure_anomaly_check` | [page](canon/closure_anomaly_check.md) | [below](#maccanonclosureanomalycheck) | **acts** | no |
-| `enum_from_register` | [page](canon/enum_from_register.md) | [below](#maccanonenumfromregister) | **acts** | no |
-| `grouping_from_register` | [page](canon/grouping_from_register.md) | [below](#maccanongroupingfromregister) | declared only | no |
+| `closure_anomaly_check` | [page](canon/explicit_closure/closure_anomaly_check.md) | [below](#maccanonclosureanomalycheck) | **acts** | no |
+| `enum_from_register` | [page](canon/explicit_closure/enum_from_register.md) | [below](#maccanonenumfromregister) | **acts** | no |
+| `grouping_from_register` | [page](canon/explicit_closure/grouping_from_register.md) | [below](#maccanongroupingfromregister) | declared only | no |
 
 ### [`contaminated_code`](patterns/contaminated_code.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `opaque_code_guard` | [page](canon/opaque_code_guard.md) | [below](#maccanonopaquecodeguard) | **acts** | yes |
-| `resolve_by_register` | [page](canon/resolve_by_register.md) | [below](#maccanonresolvebyregister) | **acts** | no |
+| `opaque_code_guard` | [page](canon/contaminated_code/opaque_code_guard.md) | [below](#maccanonopaquecodeguard) | **acts** | yes |
+| `resolve_by_register` | [page](canon/contaminated_code/resolve_by_register.md) | [below](#maccanonresolvebyregister) | **acts** | no |
 
 ### `exclusion_no_evidence` &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `refuse_measure_no_row` | [page](canon/refuse_measure_no_row.md) | [below](#maccanonrefusemeasurenorow) | declared only | no |
-| `refuse_unresolvable_name` | [page](canon/refuse_unresolvable_name.md) | [below](#maccanonrefuseunresolvablename) | **acts** | no |
+| `refuse_measure_no_row` | [page](canon/exclusion_no_evidence/refuse_measure_no_row.md) | [below](#maccanonrefusemeasurenorow) | declared only | no |
+| `refuse_unresolvable_name` | [page](canon/exclusion_no_evidence/refuse_unresolvable_name.md) | [below](#maccanonrefuseunresolvablename) | **acts** | no |
 
 ### [`tracking_vintage`](patterns/tracking_vintage.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `axis_default` | [page](canon/axis_default.md) | [below](#maccanonaxisdefault) | **acts** | yes |
-| `scoped_latest` | [page](canon/scoped_latest.md) | [below](#maccanonscopedlatest) | **acts** | no |
+| `axis_default` | [page](canon/tracking_vintage/axis_default.md) | [below](#maccanonaxisdefault) | **acts** | yes |
+| `scoped_latest` | [page](canon/tracking_vintage/scoped_latest.md) | [below](#maccanonscopedlatest) | **acts** | no |
 
 ### [`absence_semantics`](patterns/absence_semantics.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `densify` | [page](canon/densify.md) | [below](#maccanondensify) | **acts** | no |
+| `densify` | [page](canon/absence_semantics/densify.md) | [below](#maccanondensify) | **acts** | no |
 
 ### [`context_dependent_meaning`](patterns/context_dependent_meaning.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `composite_key_guard` | [page](canon/composite_key_guard.md) | [below](#maccanoncompositekeyguard) | **acts** | yes |
+| `composite_key_guard` | [page](canon/context_dependent_meaning/composite_key_guard.md) | [below](#maccanoncompositekeyguard) | **acts** | yes |
 
 ### [`impurity_disposition`](patterns/impurity_disposition.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `exclusion_filter` | [page](canon/exclusion_filter.md) | [below](#maccanonexclusionfilter) | **acts** | yes |
+| `exclusion_filter` | [page](canon/impurity_disposition/exclusion_filter.md) | [below](#maccanonexclusionfilter) | **acts** | yes |
 
 ### [`multivalued_bridge`](patterns/multivalued_bridge.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `array_membership_guard` | [page](canon/array_membership_guard.md) | [below](#maccanonarraymembershipguard) | **acts** | yes |
+| `array_membership_guard` | [page](canon/multivalued_bridge/array_membership_guard.md) | [below](#maccanonarraymembershipguard) | **acts** | yes |
 
 ### [`recursive_hierarchy`](patterns/recursive_hierarchy.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `hierarchy_rollup` | [page](canon/hierarchy_rollup.md) | [below](#maccanonhierarchyrollup) | **acts** | no |
+| `hierarchy_rollup` | [page](canon/recursive_hierarchy/hierarchy_rollup.md) | [below](#maccanonhierarchyrollup) | **acts** | no |
 
 ### [`scd_type_2`](patterns/scd_type_2.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `snapshot_collapse` | [page](canon/snapshot_collapse.md) | [below](#maccanonsnapshotcollapse) | **acts** | no |
+| `snapshot_collapse` | [page](canon/scd_type_2/snapshot_collapse.md) | [below](#maccanonsnapshotcollapse) | **acts** | no |
 
 ### [`semi_additive_balance`](patterns/semi_additive_balance.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
-| `additivity_guard` | [page](canon/additivity_guard.md) | [below](#maccanonadditivityguard) | **acts** | yes |
+| `additivity_guard` | [page](canon/semi_additive_balance/additivity_guard.md) | [below](#maccanonadditivityguard) | **acts** | yes |
 
 <!-- END generated: canon tree -->
 
@@ -289,8 +289,8 @@ The tree's **runtime** column says `declared only` for three: `grouping_from_reg
 `mac_runtime.canon.KNOWN_UNIMPLEMENTED` with its reason. They are honest sketches, not a backlog —
 each shows the shape its pattern needs, and some record why a canon may be the **wrong shape** for
 the job rather than merely unbuilt: `grouping_from_register` is unnecessary because
-[`resolve_by_register`](canon/resolve_by_register.md) already binds every code a name covers, and
-[`relation_alias_resolve`](canon/relation_alias_resolve.md) is not implementable from its own page
+[`resolve_by_register`](canon/contaminated_code/resolve_by_register.md) already binds every code a name covers, and
+[`relation_alias_resolve`](canon/competing_definitions/relation_alias_resolve.md) is not implementable from its own page
 because no slot holds the surfaces it would match against.
 
 **A declaration naming one of the three parses, passes every gate, and has no effect** —

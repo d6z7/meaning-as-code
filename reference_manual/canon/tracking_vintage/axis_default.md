@@ -9,11 +9,11 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **transform** canon (it *rewrites* the query, unlike a guard which only catches). Realizes
 > `mac.concept.rule.default`: when an orthogonal axis is left unspecified but a safe default exists, inject it.
-> Single-homed here; bound via `realized_by: { udf, params }`. See the [content model](../the_content_model.md).
+> Single-homed here; bound via `realized_by: { udf, params }`. See the [content model](../../the_content_model.md).
 
 ## Serves
 
-The [`tracking_vintage`](../patterns/tracking_vintage.md) pattern (default `scenario = ACTUAL`) — and any
+The [`tracking_vintage`](../../patterns/tracking_vintage.md) pattern (default `scenario = ACTUAL`) — and any
 concept with a `default` rule over an unspecified-but-safe axis.
 
 ## Contract (the pluggable interface)
@@ -51,7 +51,7 @@ def axis_default(sql: str, *, axis_column: str, default_value, dialect: str = "t
 realized_by: { udf: axis_default, params: { axis_column: scenario, default_value: ACTUAL } }
 ```
 
-It **composes** with [`additivity_guard`](additivity_guard.md): `axis_default` injects the default
+It **composes** with [`additivity_guard`](../semi_additive_balance/additivity_guard.md): `axis_default` injects the default
 scenario, `additivity_guard` (with `{ scenario: non_aggregable }`) catches a `SUM` across scenarios. A
 pattern's `realized_by` may therefore be a **list** of canons.
 

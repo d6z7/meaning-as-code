@@ -56,7 +56,7 @@ prior_art:
     Not idiomatic; would be a derived dataset.
 mac_expression: >
   A `measure` with an explicitly declared GRAIN + a `guarantee` that it is pre-aggregated at that grain. The
-  [`additivity_guard`](../canon/additivity_guard.md) is reused with sub-grain axes marked `non_aggregable`
+  [`additivity_guard`](../canon/semi_additive_balance/additivity_guard.md) is reused with sub-grain axes marked `non_aggregable`
   (you may sum across months and products; you may NOT split a month, nor AVG the sums as if they were
   sales). A separate rule forbids UNION/JOIN with the detail fact. No new structure.
 why_better: >
@@ -79,7 +79,7 @@ canon_ref: [canon/additivity_guard.md, shape_reference.md (ConceptFile; groundin
 | Behaviour | Kind | How |
 | --- | --- | --- |
 | The summary's grain + "pre-aggregated" fact | **skeleton** | declared `grain` + a `guarantee` |
-| No decomposition below grain; correct cross-grain sums | **canon-backed** (reused) | [`additivity_guard`](../canon/additivity_guard.md), sub-grain axes `non_aggregable` |
+| No decomposition below grain; correct cross-grain sums | **canon-backed** (reused) | [`additivity_guard`](../canon/semi_additive_balance/additivity_guard.md), sub-grain axes `non_aggregable` |
 | Don't mix with the detail fact | **canon-able / rule** | a no-UNION-with-detail rule |
 | interpretative remainder | **minimal** | the grain decides |
 

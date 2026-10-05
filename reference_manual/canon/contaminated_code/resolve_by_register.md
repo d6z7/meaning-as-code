@@ -11,7 +11,7 @@ scope: GENERIC — domain-neutral contract; examples measured on a live bundle
 > slot. Its logic is single-homed; concepts name it and bind parameters, never restating its logic.
 
 **This entry is not a reference sketch.** Most of the canon library is illustrative Python showing
-what a canon *would* look like. This one, and [`enum_from_register`](enum_from_register.md), are the
+what a canon *would* look like. This one, and [`enum_from_register`](../explicit_closure/enum_from_register.md), are the
 two the runtime actually implements — so the contract below is the real one, and the examples are
 measured rather than imagined.
 
@@ -19,7 +19,7 @@ measured rather than imagined.
 
 **Turning a word a person typed into the value the warehouse stores.** Every name-to-code resolution
 in every bundle goes through this canon. It is the mechanism behind
-[lookup pre-resolution](../patterns/../patterns/explicit_closure.md) and the reason a question can
+[lookup pre-resolution](../../patterns/../patterns/explicit_closure.md) and the reason a question can
 name `Germany` when the column holds `DE`.
 
 Eight concepts declare it in the worked bundle: `Brand`, `Color`, `Country`, `Continent`,
@@ -126,10 +126,10 @@ name would return no rows, which reads as 'no data'."*
 - **`search` must be a column, not a pattern.** There is no regex form; a word not present under
   some search column does not resolve.
 - **The ladder is not declarable per column.** `fuzzy_floor`, the candidate count and which rungs
-  run are runtime constants today. The [column specification](../column_specification.md) moves them
+  run are runtime constants today. The [column specification](../../column_specification.md) moves them
   onto the column; until then every register shares one ladder.
 - **`scope` accepts three forms only** — `col = value`, `col IN (v, …)`, joined by `AND`. Anything
   else is skipped with the grammar quoted back.
 - **It does not know which COLUMN of the concept the value lives in.** That travels separately, and
   omitting it is how `CustomerKey = 'female'` reached the warehouse. See
-  [how a question becomes SQL](../how_a_question_becomes_sql.md) §3.
+  [how a question becomes SQL](../../how_a_question_becomes_sql.md) §3.
