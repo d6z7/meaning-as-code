@@ -449,8 +449,6 @@ def check_confidence_earned(b) -> list:
         aggravating = []
         if gov.get("owner"):
             aggravating.append(f"owner {str(gov['owner'])!r} has no ratification on record")
-        if str(meta.get("status") or "").strip().lower() == "draft":
-            aggravating.append(f"status is {str(meta['status'])!r}, which the confidence stamp contradicts")
         if gov.get("last_reviewed"):
             aggravating.append(f"last_reviewed {gov['last_reviewed']} names nobody")
         path = "metadata.confidence"

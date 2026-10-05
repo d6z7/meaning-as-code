@@ -30,7 +30,7 @@ Its own keys: [`concept.concept`](concept/README.md)
 
 *object* · **required** · [has its own keys →](metadata.md)
 
-THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required.
+THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required. THREE KEYS REMOVED 2026-10-05, each measured across the worked bundle's 17 concepts: `concept` DUPLICATED `concept.name` 17 of 17 and was only ever read as a fallback behind it; `status` was the constant 'draft' on all 17, so the one check reading it could not discriminate (it appended a clause to a MAC006 witness, never decided it); `owner` was the constant 'operator' and reached only a display row. A field with one value bundle-wide is not per-concept metadata.
 
 Its own keys: [`concept.metadata`](metadata.md)
 

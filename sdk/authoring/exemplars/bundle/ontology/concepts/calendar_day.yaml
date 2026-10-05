@@ -1,10 +1,7 @@
 metadata:
-  concept: CalendarDay
   source: CONTOSO5
   version: '1.0'
   schema_version: 0.1.16
-  status: draft
-  owner: operator
   confidence: I
   provenance: authored
 concept:

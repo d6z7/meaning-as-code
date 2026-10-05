@@ -4,41 +4,16 @@
 
 [concept](README.md) · metadata
 
-THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required.
+THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required. THREE KEYS REMOVED 2026-10-05, each measured across the worked bundle's 17 concepts: `concept` DUPLICATED `concept.name` 17 of 17 and was only ever read as a fallback behind it; `status` was the constant 'draft' on all 17, so the one check reading it could not discriminate (it appended a clause to a MAC006 witness, never decided it); `owner` was the constant 'operator' and reached only a display row. A field with one value bundle-wide is not per-concept metadata.
 
 ## Keys
 
-- [`concept`](#concept) — *string* **·** required
 - [`schema_version`](#schema-version) — *string* **·** required
 - [`source`](#source) — *string* **·** required
 - [`confidence`](#confidence) — *—*
-- [`owner`](#owner) — *string*
 - [`profiled_via`](#profiled-via) — *string*
 - [`provenance`](#provenance) — *string*
-- [`status`](#status) — *—*
 - [`version`](#version) — *string*
-
-### `concept`
-
-*string* · **required**
-
-The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required.
-
-Examples:
-
-```yaml
-concept: Brand
-
-concept: Color
-
-concept: Country
-
-concept: Currency
-
-concept: Customer
-
-# … and 12 more shape(s)
-```
 
 ### `schema_version`
 
@@ -84,18 +59,6 @@ confidence: I
 confidence: C
 ```
 
-### `owner`
-
-*string* · optional
-
-WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down.
-
-Examples:
-
-```yaml
-owner: operator
-```
-
 ### `profiled_via`
 
 *string* · optional
@@ -120,24 +83,6 @@ Examples:
 provenance: authored
 ```
 
-### `status`
-
-*—* · optional · 3 legal values
-
-How far this concept has been taken, from the closed set below. It is a claim about REVIEW, not about correctness: `draft` says nobody has signed it off, and a draft concept still answers questions. Gates read it to decide what may be relied on, so leaving a finished concept at `draft` understates the bundle and marking an unreviewed one `production` overstates it.
-
-Legal values:
-
-- `production`
-- `draft`
-- `prototype`
-
-Examples:
-
-```yaml
-status: draft
-```
-
 ### `version`
 
 *string* · optional
@@ -157,12 +102,9 @@ version: '1.1'
 Cut from a worked bundle — not typed by hand, so it cannot describe a shape nobody writes.
 
 ```yaml
-concept: Brand
 source: <source>
 version: '1.0'
 schema_version: 0.1.16
-status: draft
-owner: operator
 confidence: I
 provenance: authored
 ```

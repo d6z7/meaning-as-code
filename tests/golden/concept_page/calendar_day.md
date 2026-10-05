@@ -9,8 +9,6 @@ NAMES RESOLVE THROUGH `data/lookups/contoso5_year_month.lookup.csv` and `data/lo
 - **Identity** — iso
 - **Version** — 1.0
 - **Schema version** — 0.1.16
-- **Status** — draft
-- **Owner** — operator
 - **Governance owner** — operator
 - **Last reviewed** — 2026-09-29
 

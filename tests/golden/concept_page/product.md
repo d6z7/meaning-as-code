@@ -11,8 +11,6 @@ IT IS NOT ITS BRAND, CATEGORY OR COLOUR. Those are words a question uses and the
 - **Identity** — fk_name
 - **Version** — 1.0
 - **Schema version** — 0.1.16
-- **Status** — draft
-- **Owner** — operator
 - **Governance owner** — operator
 - **Last reviewed** — 2026-09-29
 

@@ -341,10 +341,6 @@ def _details_block(obj: dict) -> list[str]:
         rows.append(("Version", str(meta["version"])))
     if meta.get("schema_version"):
         rows.append(("Schema version", str(meta["schema_version"])))
-    if meta.get("status"):
-        rows.append(("Status", str(meta["status"])))
-    if meta.get("owner"):
-        rows.append(("Owner", str(meta["owner"])))
     if contract.get("dissolved_by"):
         rows.append(("Dissolved by", f"`{contract['dissolved_by']}`"))
     if gov.get("owner"):

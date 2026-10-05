@@ -98,15 +98,10 @@
         "metadata": {
           "type": "object",
           "required": [
-            "concept",
             "source",
             "schema_version"
           ],
           "properties": {
-            "concept": {
-              "type": "string",
-              "description": "The concept's name, repeated here so a reader of this block alone knows what file they are in. It MUST equal `concept.name` — two spellings of one identity is the defect this field most often introduces. Required."
-            },
             "source": {
               "type": "string",
               "description": "WHICH DATA SOURCE this ontology is for, as the project declares it (`a worked bundle`). An ontology is bound to one source — its relations, its columns, its grain — and this is the binding stated in one place. It scopes every rule in the file: a rule's own `scope` defaults to it. Required."
@@ -118,14 +113,6 @@
             "schema_version": {
               "type": "string",
               "description": "Which generation of mac.schema.json this file is written against. It is what lets a reader know a key's absence is a vintage rather than an omission, and what a migration selects on. Stamp the schema's own `version`, not a guess. Required."
-            },
-            "status": {
-              "$ref": "#/$defs/status",
-              "description": "How far this concept has been taken, from the closed set below. It is a claim about REVIEW, not about correctness: `draft` says nobody has signed it off, and a draft concept still answers questions. Gates read it to decide what may be relied on, so leaving a finished concept at `draft` understates the bundle and marking an unreviewed one `production` overstates it."
-            },
-            "owner": {
-              "type": "string",
-              "description": "WHO ANSWERS FOR THIS MEANING — the person or seat a question about it goes to. Not who typed it: an agent may author a concept and never own it. The one name that cannot be derived from the file, which is why it is written down."
             },
             "confidence": {
               "$ref": "#/$defs/confidence"
@@ -145,7 +132,7 @@
             }
           },
           "additionalProperties": false,
-          "description": "THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required."
+          "description": "THE FILE'S OWN IDENTITY CARD — who wrote it, against which schema, for which source, and how far it has been taken. It says nothing about MEANING: everything here would still be true if the concept meant something else entirely. That is the split worth holding, because a question is answered from `concept`, `grounding` and `contract`, and never from here. Required. THREE KEYS REMOVED 2026-10-05, each measured across the worked bundle's 17 concepts: `concept` DUPLICATED `concept.name` 17 of 17 and was only ever read as a fallback behind it; `status` was the constant 'draft' on all 17, so the one check reading it could not discriminate (it appended a clause to a MAC006 witness, never decided it); `owner` was the constant 'operator' and reached only a display row. A field with one value bundle-wide is not per-concept metadata."
         },
         "concept": {
           "type": "object",

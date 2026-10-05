@@ -8,8 +8,6 @@ IT IS IN USD. The sale's `currency_code` names what the customer paid in, not wh
 
 - **Version** — 1.0
 - **Schema version** — 0.1.16
-- **Status** — draft
-- **Owner** — operator
 - **Governance owner** — operator
 - **Last reviewed** — 2026-09-29
 

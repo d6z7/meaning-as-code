@@ -9,10 +9,10 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 | | |
 |---|---|
 | levels | 31 |
-| keys | 173 |
-| described in the schema | **173 of 173** (100%) |
+| keys | 170 |
+| described in the schema | **170 of 170** (100%) |
 | **gaps — admitted and unexplained** | **0** |
-| **keys with no stated constellation** | **156** of 173 |
+| **keys with no stated constellation** | **153** of 170 |
 | vocabularies | 23, 146 terms |
 | examples | 101, from 17 concepts |
 
@@ -43,7 +43,7 @@ Indented by nesting. The label is the key; the page it opens is that key's level
   - [`members:`](concept/members/README.md) — 3 keys
     - [`definitions:`](concept/members/definitions.md) — 4 keys
     - [`realized_by:`](concept/members/realized_by.md) — 8 keys
-  - [`metadata:`](concept/metadata.md) — 9 keys
+  - [`metadata:`](concept/metadata.md) — 6 keys
   - [`properties:`](concept/properties.md) — 5 keys
   - [`values:`](concept/values/README.md) — 5 keys
     - [`aliases:`](concept/values/aliases/README.md) — 2 keys

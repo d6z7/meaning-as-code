@@ -255,7 +255,7 @@ def parse_concept(path, lookups_dir, cdir):
     if domain == os.path.basename(cdir):
         domain = "general"
     return {
-        "id": concept.get("name", meta.get("concept", os.path.basename(path))),
+        "id": concept.get("name", os.path.basename(path)),
         "label": concept.get("label", concept.get("name", "")),
         "german": concept.get("german", ""),
         "klass": concept.get("class", ""),
