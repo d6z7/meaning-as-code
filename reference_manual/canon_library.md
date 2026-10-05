@@ -1,6 +1,6 @@
 ---
 title: The canon library — what makes a declaration executable
-status: 21 defined, 20 described, 18 implemented (measured 2026-10-04) — check_canon_documented.py holds the three lists together
+status: 21 defined, 21 described, 18 implemented (measured 2026-10-05) — check_canon_documented.py holds the three lists together
 audience: ontology authors binding realized_by; anyone implementing a canon
 ---
 
@@ -100,9 +100,9 @@ Read the map, not the directory.
 
 | list | where | count |
 |---|---|---|
-| **defined** | `mac_vocabulary.yaml#canon.members` | 20 |
-| **described** | `reference_manual/canon/*.md` | 20 |
-| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **17** |
+| **defined** | `mac_vocabulary.yaml#canon.terms` | 21 |
+| **described** | `reference_manual/canon/*.md` | 21 |
+| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **18** |
 
 `tools/check_canon_documented.py` compares them. On 2026-09-25 no two agreed:
 `resolve_by_register` — which every name resolution in every bundle goes through, declared by eight
@@ -369,6 +369,8 @@ Each member carries two fields, and both are useful before you read a page:
 | [`resolve_by_register`](canon/resolve_by_register.md) | every name→code resolution in every bundle; 8 concepts in contoso |
 | [`enum_from_register`](canon/enum_from_register.md) | every closed value domain; 4 concepts |
 | [`snapshot_collapse`](canon/snapshot_collapse.md) | SCD-2 collapse to one row per key at a date |
+| [`population_select`](canon/population_select.md) | which ROWS a concept has; 4 contoso5 rules |
+| [`ratio_select`](canon/ratio_select.md) | which FIGURE a named ratio divides by; 3 contoso5 rules |
 
 ## Declared in a bundle and NOT implemented
 
@@ -379,7 +381,9 @@ Each member carries two fields, and both are useful before you read a page:
 
 ## The rest
 
-Thirteen more are defined with reference implementations and no runtime behaviour. They are
+Three are defined and the runtime does not act on them — `grouping_from_register`,
+`refuse_measure_no_row` and `relation_alias_resolve`, each listed in
+`mac_runtime.canon.KNOWN_UNIMPLEMENTED`. They are
 honest sketches, not pending work: each shows the shape its pattern needs, and several — 
 [`refuse_unresolvable_name`](canon/refuse_unresolvable_name.md) especially — record why the canon
 may be the **wrong shape** for the job rather than merely unbuilt.
