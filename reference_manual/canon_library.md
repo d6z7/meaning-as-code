@@ -101,80 +101,6 @@ aggregate, because the denominator's expression comes from *its own* concept's d
 the text verbatim over a second `FROM` keeps one definition of the number instead of editing it. Still
 SQL; still no rows in Python.
 
-## When you would reach for one
-
-Three things have to be true together. If one is missing, a canon is the wrong shape:
-
-1. **The decision recurs.** The same question is asked of more than one concept — "which rows does this
-   have", "what does this name resolve to", "may this be summed along that axis". A behaviour needed by
-   exactly one concept does not want a canon; it wants a rule on that concept.
-2. **Two readers could disagree.** The prose admits more than one defensible reading, and the difference
-   shows up in an answer rather than in an error. This is the test that matters: if every reader would
-   do the same thing, prose is already deterministic and a canon buys nothing.
-3. **The difference between concepts is PARAMETERS, not logic.** A concept binding a canon supplies only
-   what is particular to it — which column, which register, which code. The moment two concepts would
-   need the canon to behave differently, it is two canons or none.
-
-## How to bind one
-
-A behaviour-bearing slot names the canon and passes its parameters. Seven slots admit a binding, which
-is the whole surface: `grounding`, `contract.rules`, `enumerationValues`, `groupingMembers`,
-`aliasBlock`, `relationAliasBlock`, and an edge in `EdgesFile.edges`.
-
-A LIST composes, in order — the schema admits `canonRef` or an array of them, and composition is the
-normal case rather than an advanced one: a slot often needs a population chosen and then a ratio taken.
-Each entry carries its own `params`.
-
-```yaml
-realized_by:
-  - udf: mac.canon.population_select
-    params: { population: active }
-  - udf: mac.canon.ratio_select
-    params: { numerator: …, denominator: … }
-```
-
-What the concept must NOT do is restate the logic. The canon holds it once; a concept that explains
-*how* beside a binding has created a second home for the behaviour, and the two will disagree.
-
-## Where the logic lives, today
-
-An implementer needs this and the vocabulary's one-line definition does not say it. MEASURED 2026-10-04:
-the canon logic has **two homes**, and nine canons exist in both.
-
-| home | canons | who calls it |
-|---|---|---|
-| `mac-platform/.../mac_runtime/canons/` + `planner/` + `resolver/` | 15 modules, plus canons implemented inside the planner and resolver | the runtime, and `mac_runtime.canon.IMPLEMENTED` reports it |
-| `meaning-as-code/tools/canon/` | 12, whose own docstring calls it "the EXECUTABLE single-home of the canon logic" | this repository's tools |
-
-Both cannot be the single home. In both: `additivity_guard`, `ambiguity_gate`, `axis_default`,
-`closure_anomaly_check`, `composite_key_guard`, `densify`, `exclusion_filter`, `hierarchy_rollup`,
-`scoped_latest`. Which one is authoritative is an operator ruling and is not settled here — so until it
-is, read `mac_runtime.canon.IMPLEMENTED` for what actually runs when a question is answered, and treat
-this repository's copy as the one the framework's own tools use.
-
-Note also that a canon's implementation need not be a file named after it: `IMPLEMENTED` maps each name
-to WHERE its logic is, and three of them live in the planner and the resolver rather than in `canons/`.
-Read the map, not the directory.
-
-## Three lists, which must agree
-
-| list | where | count |
-|---|---|---|
-| **defined** | `mac_vocabulary.yaml#canon.terms` | 21 |
-| **described** | `reference_manual/canon/*.md` | 21 |
-| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **18** |
-
-`tools/check_canon_documented.py` compares them. On 2026-09-25 no two agreed:
-`resolve_by_register` — which every name resolution in every bundle goes through, declared by eight
-concepts — was **implemented and undocumented**, while ten canons nothing implements had pages. Two
-pages described canons the vocabulary did not define.
-
-> **Seventeen of twenty do something today**, and on 2026-09-25 it was three. A declaration naming
-> one of the remaining three parses, passes every gate, and has no effect.
-> `check_canon_implemented.py` is what makes that visible; before it existed, four concepts bound
-> `grouping_from_register` and silently got nothing. **Check before you bind** — DNA P1: a canon
-> declared and not implemented is a rule that reads as enforced and is not.
-
 ## The canons, by the pattern they serve
 
 <!-- BEGIN generated: canon tree (tools/gen_canon_index.py) -->
@@ -270,6 +196,121 @@ pages described canons the vocabulary did not define.
 | `additivity_guard` | [page](canon/additivity_guard.md) | [below](#maccanonadditivityguard) | **acts** | yes |
 
 <!-- END generated: canon tree -->
+
+## Reading the table
+
+Each member carries two fields, and both are useful before you read a page:
+
+- **`serves`** names the [pattern](patterns/) the canon realizes. That is the cross-reference
+  between the two halves of this manual — a pattern describes the constellation you were handed, a
+  canon is what makes the response deterministic. It is data, not prose, so it cannot drift.
+- **`needs_sqlglot`** says whether enforcing it requires parsing SQL. A canon that must inspect a
+  query — `composite_key_guard`, `additivity_guard` — is a **guard**: it catches, it does not
+  rewrite. One that does not, usually builds something instead.
+
+## When you would reach for one
+
+Three things have to be true together. If one is missing, a canon is the wrong shape:
+
+1. **The decision recurs.** The same question is asked of more than one concept — "which rows does this
+   have", "what does this name resolve to", "may this be summed along that axis". A behaviour needed by
+   exactly one concept does not want a canon; it wants a rule on that concept.
+2. **Two readers could disagree.** The prose admits more than one defensible reading, and the difference
+   shows up in an answer rather than in an error. This is the test that matters: if every reader would
+   do the same thing, prose is already deterministic and a canon buys nothing.
+3. **The difference between concepts is PARAMETERS, not logic.** A concept binding a canon supplies only
+   what is particular to it — which column, which register, which code. The moment two concepts would
+   need the canon to behave differently, it is two canons or none.
+
+## How to bind one
+
+A behaviour-bearing slot names the canon and passes its parameters. Seven slots admit a binding, which
+is the whole surface: `grounding`, `contract.rules`, `enumerationValues`, `groupingMembers`,
+`aliasBlock`, `relationAliasBlock`, and an edge in `EdgesFile.edges`.
+
+A LIST composes, in order — the schema admits `canonRef` or an array of them, and composition is the
+normal case rather than an advanced one: a slot often needs a population chosen and then a ratio taken.
+Each entry carries its own `params`.
+
+```yaml
+realized_by:
+  - udf: mac.canon.population_select
+    params: { population: active }
+  - udf: mac.canon.ratio_select
+    params: { numerator: …, denominator: … }
+```
+
+What the concept must NOT do is restate the logic. The canon holds it once; a concept that explains
+*how* beside a binding has created a second home for the behaviour, and the two will disagree.
+
+## Where the logic lives, today
+
+An implementer needs this and the vocabulary's one-line definition does not say it. MEASURED 2026-10-04:
+the canon logic has **two homes**, and nine canons exist in both.
+
+| home | canons | who calls it |
+|---|---|---|
+| `mac-platform/.../mac_runtime/canons/` + `planner/` + `resolver/` | 15 modules, plus canons implemented inside the planner and resolver | the runtime, and `mac_runtime.canon.IMPLEMENTED` reports it |
+| `meaning-as-code/tools/canon/` | 12, whose own docstring calls it "the EXECUTABLE single-home of the canon logic" | this repository's tools |
+
+Both cannot be the single home. In both: `additivity_guard`, `ambiguity_gate`, `axis_default`,
+`closure_anomaly_check`, `composite_key_guard`, `densify`, `exclusion_filter`, `hierarchy_rollup`,
+`scoped_latest`. Which one is authoritative is an operator ruling and is not settled here — so until it
+is, read `mac_runtime.canon.IMPLEMENTED` for what actually runs when a question is answered, and treat
+this repository's copy as the one the framework's own tools use.
+
+Note also that a canon's implementation need not be a file named after it: `IMPLEMENTED` maps each name
+to WHERE its logic is, and three of them live in the planner and the resolver rather than in `canons/`.
+Read the map, not the directory.
+
+## Three lists, which must agree
+
+| list | where | count |
+|---|---|---|
+| **defined** | `mac_vocabulary.yaml#canon.terms` | 21 |
+| **described** | `reference_manual/canon/*.md` | 21 |
+| **implemented** | `mac_runtime.canon.IMPLEMENTED` | **18** |
+
+`tools/check_canon_documented.py` compares them. On 2026-09-25 no two agreed:
+`resolve_by_register` — which every name resolution in every bundle goes through, declared by eight
+concepts — was **implemented and undocumented**, while ten canons nothing implements had pages. Two
+pages described canons the vocabulary did not define.
+
+> **Seventeen of twenty do something today**, and on 2026-09-25 it was three. A declaration naming
+> one of the remaining three parses, passes every gate, and has no effect.
+> `check_canon_implemented.py` is what makes that visible; before it existed, four concepts bound
+> `grouping_from_register` and silently got nothing. **Check before you bind** — DNA P1: a canon
+> declared and not implemented is a rule that reads as enforced and is not.
+
+## The three the runtime does not act on
+
+The tree's **runtime** column says `declared only` for three: `grouping_from_register`,
+`refuse_measure_no_row` and `relation_alias_resolve`, each listed in
+`mac_runtime.canon.KNOWN_UNIMPLEMENTED` with its reason. They are honest sketches, not a backlog —
+each shows the shape its pattern needs, and some record why a canon may be the **wrong shape** for
+the job rather than merely unbuilt: `grouping_from_register` is unnecessary because
+[`resolve_by_register`](canon/resolve_by_register.md) already binds every code a name covers, and
+[`relation_alias_resolve`](canon/relation_alias_resolve.md) is not implementable from its own page
+because no slot holds the surfaces it would match against.
+
+**A declaration naming one of the three parses, passes every gate, and has no effect** —
+`check_canon_implemented.py` is what makes that visible. Check the runtime column before you bind.
+
+## Why these pages are a flat directory and a nested tree
+
+The tree above is a reading structure; on disk `reference_manual/canon/` is flat, one page per canon.
+That is deliberate, and measured rather than preferred:
+
+- `check_canon_documented.py` reads `{p.stem for p in pages_dir.glob("*.md")}` — a FLAT glob.
+  Subdirectories make it report 0 described against 21 undescribed, and a `canon/README.md` would be
+  counted as a canon named "README".
+- **28** files outside the generated index link `canon/<name>.md` directly.
+- Six of those are in `decisions/PROTOCOL-2026-10-01_rule-engine.md`, a DATED record. Rewriting a
+  link inside it would make the record claim a path that did not exist on its date.
+
+So the basenames stay where every existing reference points, and the grouping lives in the
+declaration that already carried it. Moving the files is a separate change that must bring the gate's
+glob and the 28 links with it.
 
 ## Every canon, defined
 
@@ -511,44 +552,3 @@ register-sourced twin of an inline enumerated grouping.
 | `serves` | explicit_closure |
 | `needs_sqlglot` | False |
 <!-- END GENERATED:vocabulary-terms:canon -->
-
-## Reading the table
-
-Each member carries two fields, and both are useful before you read a page:
-
-- **`serves`** names the [pattern](patterns/) the canon realizes. That is the cross-reference
-  between the two halves of this manual — a pattern describes the constellation you were handed, a
-  canon is what makes the response deterministic. It is data, not prose, so it cannot drift.
-- **`needs_sqlglot`** says whether enforcing it requires parsing SQL. A canon that must inspect a
-  query — `composite_key_guard`, `additivity_guard` — is a **guard**: it catches, it does not
-  rewrite. One that does not, usually builds something instead.
-
-## The three the runtime does not act on
-
-The tree's **runtime** column says `declared only` for three: `grouping_from_register`,
-`refuse_measure_no_row` and `relation_alias_resolve`, each listed in
-`mac_runtime.canon.KNOWN_UNIMPLEMENTED` with its reason. They are honest sketches, not a backlog —
-each shows the shape its pattern needs, and some record why a canon may be the **wrong shape** for
-the job rather than merely unbuilt: `grouping_from_register` is unnecessary because
-[`resolve_by_register`](canon/resolve_by_register.md) already binds every code a name covers, and
-[`relation_alias_resolve`](canon/relation_alias_resolve.md) is not implementable from its own page
-because no slot holds the surfaces it would match against.
-
-**A declaration naming one of the three parses, passes every gate, and has no effect** —
-`check_canon_implemented.py` is what makes that visible. Check the runtime column before you bind.
-
-## Why these pages are a flat directory and a nested tree
-
-The tree above is a reading structure; on disk `reference_manual/canon/` is flat, one page per canon.
-That is deliberate, and measured rather than preferred:
-
-- `check_canon_documented.py` reads `{p.stem for p in pages_dir.glob("*.md")}` — a FLAT glob.
-  Subdirectories make it report 0 described against 21 undescribed, and a `canon/README.md` would be
-  counted as a canon named "README".
-- **28** files outside the generated index link `canon/<name>.md` directly.
-- Six of those are in `decisions/PROTOCOL-2026-10-01_rule-engine.md`, a DATED record. Rewriting a
-  link inside it would make the record claim a path that did not exist on its date.
-
-So the basenames stay where every existing reference points, and the grouping lives in the
-declaration that already carried it. Moving the files is a separate change that must bring the gate's
-glob and the 28 links with it.
