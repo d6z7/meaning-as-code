@@ -41,6 +41,66 @@ ratio the determinism-coverage seam.
 that the behaviour is the one they meant. A canon with no prose beside it is executable and
 unreviewable.
 
+## How a canon runs — YAML to Python to SQL
+
+The question people ask first, and the one the rest of this page assumes: **what actually executes?**
+
+Three actors, one job each.
+
+| | does | sees |
+|---|---|---|
+| the **model** | proposes *meaning* — tokens only (`Margin`, `markup`, `Germany`, `2024`) | the question |
+| **Python** | disposes *structure* — picks columns, denominator, filters, joins, and emits **one SQL statement** | the declarations and those tokens |
+| **SQL** | produces the *number* | the rows |
+
+**Python's output is SQL text, not numbers.** A canon is a pure decision: `ratio_select` returns
+`Selection(name='markup_percent', denominator='SalesCost')` — a name and a name. Every canon page
+states the constraint the same way: *reads no rows*, because no SQL may run to decide which SQL to
+write. The planner renders the decision as an aggregate and the warehouse computes it.
+
+Here is one question asked three ways against the same bundle, with the SQL each declaration produced:
+
+```sql
+-- "margin %"          → the ratio_select binding on Margin picked NetRevenue
+SELECT (SUM(sales_line.margin_amount)) / NULLIF(SUM(sales_line.net_amount), 0)  AS margin_per_netrevenue
+FROM sales_line
+
+-- "markup"            → the same rule, the other declared reading
+SELECT (SUM(sales_line.margin_amount)) / NULLIF(SUM(sales_line.cost_amount), 0) AS margin_per_salescost
+FROM sales_line
+
+-- "price per article" → NetRevenue's binding, denominator UnitsSold
+SELECT (SUM(sales_line.net_amount))    / NULLIF(SUM(sales_line.quantity), 0)    AS netrevenue_per_unitssold
+FROM sales_line
+```
+
+The declaration changed one identifier — `net_amount` / `cost_amount` / `quantity` — and nothing else.
+`NULLIF` is not a nicety: a group with no denominator rows is a group the question has no answer for,
+and division by zero is an engine error on some engines and infinity on others.
+
+### Why the Python layer costs the same at ten rows or ten billion
+
+It never scales with the data, because it only ever reads two small things: the declarations, and the
+intent. **So the aggregate is always pushed into the warehouse** — a mean over ten million rows is
+`SUM(...) / NULLIF(SUM(...), 0)` in one statement, never ten million values crossing a process
+boundary. Measured on a worked bundle: a share-of-total denominator summed **223 974 lines to
+218 814 471.66**, matching a human-approved reference figure to the cent, in a single query.
+
+The only rows Python ever sees are the **result** rows — one per group, after aggregation — which the
+presenter formats and attaches disclosures to. Its rule is: no new number.
+
+Two honest qualifications. The canons whose `sqlglot` column below says *yes* take **SQL text** as
+input and parse it to catch or rewrite the statement — still no rows, just the query. And `densify` is
+the one canon whose job is to add rows; it does that by emitting a grid join in SQL, not in Python.
+
+### Where the single statement is deliberately broken
+
+One shape does not fit one `SELECT`: a share-of-total, whose denominator must ignore the filters its
+numerator applies. That becomes a scalar subquery over a second scope — and not a `CASE` inside the
+aggregate, because the denominator's expression comes from *its own* concept's definition, so reusing
+the text verbatim over a second `FROM` keeps one definition of the number instead of editing it. Still
+SQL; still no rows in Python.
+
 ## When you would reach for one
 
 Three things have to be true together. If one is missing, a canon is the wrong shape:
@@ -115,7 +175,103 @@ pages described canons the vocabulary did not define.
 > `grouping_from_register` and silently got nothing. **Check before you bind** — DNA P1: a canon
 > declared and not implemented is a rule that reads as enforced and is not.
 
-## The twenty
+## The canons, by the pattern they serve
+
+<!-- BEGIN generated: canon tree (tools/gen_canon_index.py) -->
+
+**21 canons across 12 patterns.** The middle layer is not a filing choice: it is each canon's own `serves`, the data pattern it exists for, which also names its page under [`patterns/`](patterns/). A canon changes group by changing that declaration.
+
+| | defined | described | implemented |
+|---|---|---|---|
+| **count** | 21 | 21 | 18 |
+| **read from** | `mac_vocabulary.yaml#canon.terms` | `reference_manual/canon/*.md` | `mac_runtime.canon.IMPLEMENTED` |
+
+`tools/check_canon_documented.py` holds the three together; this table is read from the same places it reads.
+
+### [`competing_definitions`](patterns/competing_definitions.md) &nbsp;·&nbsp; 5
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `alias_resolve` | [page](canon/alias_resolve.md) | [below](#maccanonaliasresolve) | **acts** | no |
+| `ambiguity_gate` | [page](canon/ambiguity_gate.md) | [below](#maccanonambiguitygate) | **acts** | no |
+| `population_select` | [page](canon/population_select.md) | [below](#maccanonpopulationselect) | **acts** | no |
+| `ratio_select` | [page](canon/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
+| `relation_alias_resolve` | [page](canon/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
+
+### [`explicit_closure`](patterns/explicit_closure.md) &nbsp;·&nbsp; 3
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `closure_anomaly_check` | [page](canon/closure_anomaly_check.md) | [below](#maccanonclosureanomalycheck) | **acts** | no |
+| `enum_from_register` | [page](canon/enum_from_register.md) | [below](#maccanonenumfromregister) | **acts** | no |
+| `grouping_from_register` | [page](canon/grouping_from_register.md) | [below](#maccanongroupingfromregister) | declared only | no |
+
+### [`contaminated_code`](patterns/contaminated_code.md) &nbsp;·&nbsp; 2
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `opaque_code_guard` | [page](canon/opaque_code_guard.md) | [below](#maccanonopaquecodeguard) | **acts** | yes |
+| `resolve_by_register` | [page](canon/resolve_by_register.md) | [below](#maccanonresolvebyregister) | **acts** | no |
+
+### `exclusion_no_evidence` &nbsp;·&nbsp; 2
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `refuse_measure_no_row` | [page](canon/refuse_measure_no_row.md) | [below](#maccanonrefusemeasurenorow) | declared only | no |
+| `refuse_unresolvable_name` | [page](canon/refuse_unresolvable_name.md) | [below](#maccanonrefuseunresolvablename) | **acts** | no |
+
+### [`tracking_vintage`](patterns/tracking_vintage.md) &nbsp;·&nbsp; 2
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `axis_default` | [page](canon/axis_default.md) | [below](#maccanonaxisdefault) | **acts** | yes |
+| `scoped_latest` | [page](canon/scoped_latest.md) | [below](#maccanonscopedlatest) | **acts** | no |
+
+### [`absence_semantics`](patterns/absence_semantics.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `densify` | [page](canon/densify.md) | [below](#maccanondensify) | **acts** | no |
+
+### [`context_dependent_meaning`](patterns/context_dependent_meaning.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `composite_key_guard` | [page](canon/composite_key_guard.md) | [below](#maccanoncompositekeyguard) | **acts** | yes |
+
+### [`impurity_disposition`](patterns/impurity_disposition.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `exclusion_filter` | [page](canon/exclusion_filter.md) | [below](#maccanonexclusionfilter) | **acts** | yes |
+
+### [`multivalued_bridge`](patterns/multivalued_bridge.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `array_membership_guard` | [page](canon/array_membership_guard.md) | [below](#maccanonarraymembershipguard) | **acts** | yes |
+
+### [`recursive_hierarchy`](patterns/recursive_hierarchy.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `hierarchy_rollup` | [page](canon/hierarchy_rollup.md) | [below](#maccanonhierarchyrollup) | **acts** | no |
+
+### [`scd_type_2`](patterns/scd_type_2.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `snapshot_collapse` | [page](canon/snapshot_collapse.md) | [below](#maccanonsnapshotcollapse) | **acts** | no |
+
+### [`semi_additive_balance`](patterns/semi_additive_balance.md) &nbsp;·&nbsp; 1
+
+| canon | long form | definition | runtime | sqlglot |
+|---|---|---|---|---|
+| `additivity_guard` | [page](canon/additivity_guard.md) | [below](#maccanonadditivityguard) | **acts** | yes |
+
+<!-- END generated: canon tree -->
+
+## Every canon, defined
 
 <!-- BEGIN GENERATED:vocabulary-terms:canon (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -297,6 +453,11 @@ and markup % over SalesCost (126.79%), a factor of 2.27 on the same profit. `Int
 has always carried the choice and the planner has always read it, so a model's guess went
 straight through and nothing declared which was meant.
 
+| field | value |
+|---|---|
+| `serves` | competing_definitions |
+| `needs_sqlglot` | False |
+
 #### `mac.canon.alias_resolve`
 
 resolve a surface token (scope_relative tier first, then multilingual) to a canonical value
@@ -362,28 +523,32 @@ Each member carries two fields, and both are useful before you read a page:
   query — `composite_key_guard`, `additivity_guard` — is a **guard**: it catches, it does not
   rewrite. One that does not, usually builds something instead.
 
-## Implemented, and what they carry
+## The three the runtime does not act on
 
-| canon | what depends on it |
-|---|---|
-| [`resolve_by_register`](canon/resolve_by_register.md) | every name→code resolution in every bundle; 8 concepts in contoso |
-| [`enum_from_register`](canon/enum_from_register.md) | every closed value domain; 4 concepts |
-| [`snapshot_collapse`](canon/snapshot_collapse.md) | SCD-2 collapse to one row per key at a date |
-| [`population_select`](canon/population_select.md) | which ROWS a concept has; 4 contoso5 rules |
-| [`ratio_select`](canon/ratio_select.md) | which FIGURE a named ratio divides by; 3 contoso5 rules |
-
-## Declared in a bundle and NOT implemented
-
-| canon | declared by | consequence |
-|---|---|---|
-| [`grouping_from_register`](canon/grouping_from_register.md) | 4 contoso concepts | nothing; and [`resolve_by_register`](canon/resolve_by_register.md) already expresses it |
-| [`refuse_measure_no_row`](canon/refuse_measure_no_row.md) | 2 contoso measures | nothing; an empty scope still returns `0` |
-
-## The rest
-
-Three are defined and the runtime does not act on them — `grouping_from_register`,
+The tree's **runtime** column says `declared only` for three: `grouping_from_register`,
 `refuse_measure_no_row` and `relation_alias_resolve`, each listed in
-`mac_runtime.canon.KNOWN_UNIMPLEMENTED`. They are
-honest sketches, not pending work: each shows the shape its pattern needs, and several — 
-[`refuse_unresolvable_name`](canon/refuse_unresolvable_name.md) especially — record why the canon
-may be the **wrong shape** for the job rather than merely unbuilt.
+`mac_runtime.canon.KNOWN_UNIMPLEMENTED` with its reason. They are honest sketches, not a backlog —
+each shows the shape its pattern needs, and some record why a canon may be the **wrong shape** for
+the job rather than merely unbuilt: `grouping_from_register` is unnecessary because
+[`resolve_by_register`](canon/resolve_by_register.md) already binds every code a name covers, and
+[`relation_alias_resolve`](canon/relation_alias_resolve.md) is not implementable from its own page
+because no slot holds the surfaces it would match against.
+
+**A declaration naming one of the three parses, passes every gate, and has no effect** —
+`check_canon_implemented.py` is what makes that visible. Check the runtime column before you bind.
+
+## Why these pages are a flat directory and a nested tree
+
+The tree above is a reading structure; on disk `reference_manual/canon/` is flat, one page per canon.
+That is deliberate, and measured rather than preferred:
+
+- `check_canon_documented.py` reads `{p.stem for p in pages_dir.glob("*.md")}` — a FLAT glob.
+  Subdirectories make it report 0 described against 21 undescribed, and a `canon/README.md` would be
+  counted as a canon named "README".
+- **28** files outside the generated index link `canon/<name>.md` directly.
+- Six of those are in `decisions/PROTOCOL-2026-10-01_rule-engine.md`, a DATED record. Rewriting a
+  link inside it would make the record claim a path that did not exist on its date.
+
+So the basenames stay where every existing reference points, and the grouping lives in the
+declaration that already carried it. Moving the files is a separate change that must bring the gate's
+glob and the 28 links with it.

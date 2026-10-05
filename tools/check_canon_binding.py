@@ -61,20 +61,44 @@ def _flat(rule, keys=("when", "then", "never")) -> str:
     return " ".join(" ".join(str(rule.get(k) or "").split()) for k in keys).lower()
 
 
+class VocabularyMalformed(RuntimeError):
+    """The canon registry could not be read as declared. Never swallowed into an empty result."""
+
+
 def _params_from() -> dict:
-    """{canon: {param: dotted concept path}} — READ from the registry, never listed here."""
+    """{canon: {param: dotted concept path}} — READ from the registry, never listed here.
+
+    A MALFORMED REGISTRY IS NEWS, NOT AN EMPTY DICT. This read used to sit inside a bare
+    `except Exception: return {}`, and that is not a conservative default -- it is the same result as
+    a registry that declares no `params_from` at all, so the two are indistinguishable to every
+    caller. MEASURED 2026-10-04: `canon.terms.ratio_select` was authored as a bare STRING where its
+    twenty siblings are mappings, so `.get("params_from")` raised AttributeError at the seventeenth
+    term. Three entries had already been collected -- refuse_measure_no_row, refuse_unresolvable_name
+    and snapshot_collapse -- and the except discarded them. The attached-vs-declared parameter check
+    was therefore DEAD FOR EVERY CANON IN THE ESTATE, silently, and the gate still printed a verdict.
+
+    So a term whose body is not a mapping now RAISES and names itself. A reader that cannot read its
+    own registry has verified nothing, which is the one thing it must not report as clean.
+    """
+    import yaml
+    f = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
     try:
-        import yaml
-        f = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
-        out = {}
-        for name, m in ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
-                        .get("canon", {}).get("terms", {}) or {}).items():
-            pf = (m or {}).get("params_from")
-            if pf:
-                out["mac.canon." + name] = pf
-        return out
-    except Exception:                                                   # noqa: BLE001
-        return {}
+        doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
+        raise VocabularyMalformed(f"{f.name} could not be parsed: {exc}") from exc
+    terms = (doc.get("canon") or {}).get("terms") or {}
+    out = {}
+    for name, m in terms.items():
+        if m is not None and not isinstance(m, dict):
+            raise VocabularyMalformed(
+                f"canon.terms.{name} is a {type(m).__name__}, not a mapping. A canon term declares "
+                f"`serves`, `needs_sqlglot` and `doc`; written as a bare string it carries none of "
+                f"them, and nothing that asks the term a question can read it."
+            )
+        pf = (m or {}).get("params_from")
+        if pf:
+            out["mac.canon." + name] = pf
+    return out
 
 
 def _dig(doc: dict, dotted: str):

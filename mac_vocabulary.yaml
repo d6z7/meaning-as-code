@@ -741,19 +741,22 @@ canon:
         DOMAIN stays on grounding.value_filter; a predicate a question can ask the other side of
         does NOT. The trigger for a business state that is a column combination rather than a
         stored value — `closed` IS `close_date IS NOT NULL`."
-    ratio_select: >
-      WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which
-      ROWS a concept has. Both map a word a reader says to a declared body, and both were prose.
-      `params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the
-      numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over
-      its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance,
-      for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a
-      question naming neither must ASK, with both names offered, which is the resolution ladder's
-      third rung. MEASURED on the worked bundle 2026-10-02: Discount's percentage is over
-      GrossRevenue (5.93%) and not NetRevenue (6.30%) on the same money; Margin names TWO --
-      margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on
-      the same profit. `Intent.denominator` has always carried the choice and the planner has always
-      read it, so a model's guess went straight through and nothing declared which was meant.
+    ratio_select:
+      serves: competing_definitions
+      needs_sqlglot: false
+      doc: >
+        WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which
+        ROWS a concept has. Both map a word a reader says to a declared body, and both were prose.
+        `params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the
+        numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over
+        its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance,
+        for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a
+        question naming neither must ASK, with both names offered, which is the resolution ladder's
+        third rung. MEASURED on the worked bundle 2026-10-02: Discount's percentage is over
+        GrossRevenue (5.93%) and not NetRevenue (6.30%) on the same money; Margin names TWO --
+        margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on
+        the same profit. `Intent.denominator` has always carried the choice and the planner has always
+        read it, so a model's guess went straight through and nothing declared which was meant.
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
     relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
     enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
