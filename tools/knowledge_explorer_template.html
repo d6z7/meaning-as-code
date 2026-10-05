@@ -94,6 +94,27 @@ code{background:var(--sunk); padding:.08em .34em; border-radius:3px; color:var(-
 .tablewrap{overflow-x:auto}
 .doc ul{margin:0 0 1rem; padding-left:1.2rem}
 .doc li{margin-bottom:.3rem}
+.tabs{display:flex; gap:2px; border-bottom:1px solid var(--rule); margin:0 0 22px;
+  overflow-x:auto; scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:0; background:none; cursor:pointer; padding:9px 14px; font-size:.82rem;
+  font-weight:600; color:var(--muted); border-bottom:2px solid transparent; white-space:nowrap;
+  font-family:Archivo,sans-serif}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--accent); border-bottom-color:var(--accent)}
+.tab .c{font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:500; opacity:.75;
+  margin-left:5px}
+.tab:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.strip{display:flex; flex-wrap:wrap; border-top:1px solid var(--rule);
+  border-bottom:1px solid var(--rule); margin:0 0 24px}
+.strip div{flex:1 1 118px; padding:11px 14px 11px 0; border-right:1px solid var(--hair)}
+.strip div:last-child{border-right:0}
+.strip .n{font-family:Archivo,sans-serif; font-size:1.4rem; font-weight:600; color:var(--ink);
+  line-height:1; font-variant-numeric:tabular-nums; display:block; letter-spacing:-.02em}
+.strip .l{font-family:Archivo,sans-serif; font-size:.68rem; color:var(--muted); display:block;
+  margin-top:4px; line-height:1.25}
+.strip .warn .n{color:var(--amber)}
+.strip .ok .n{color:var(--moss)}
 .chips{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 20px}
 .chip{font-family:"IBM Plex Mono",monospace; font-size:.68rem; font-weight:600; padding:3px 8px;
   border-radius:3px; background:var(--sunk); color:var(--muted)}
@@ -176,7 +197,7 @@ function buildTree(){
         const dot = c.has_knowledge ? "var(--moss)" : "var(--rule)";
         const kids = [
           ...c.topics.map((t,i)=>`<button class="leaf" data-k="${c.stem}|t${i}">${esc(t.title)}</button>`),
-          ...c.rules.map((r,i)=>`<button class="leaf rule" data-k="${c.stem}|r${i}">${esc(r.id.split(".").slice(1).join("."))}</button>`),
+          ...(c.rules.length ? [`<button class="leaf rule" data-k="${c.stem}|rules">rules <span style="opacity:.6">${c.rules.length}</span></button>`] : []),
           `<button class="leaf decl" data-k="${c.stem}|decl">declaration</button>`,
         ].join("");
         return `<details class="cpt"${term?" open":""}>
@@ -185,6 +206,31 @@ function buildTree(){
       }).join("")}
     </details>`;
   }).join("") || `<p style="padding:14px;color:var(--muted);font-size:.85rem">Nothing matches that.</p>`;
+}
+
+function tabsFor(c, active){
+  const t = [];
+  for (const [name, i] of Object.entries(c.tabs)) t.push([name, `t${i}`, null]);
+  if (c.rules.length) t.push(["Rules", "rules", c.rules.length]);
+  for (const i of c.extra) t.push([c.topics[i].title, `t${i}`, null]);
+  t.push(["Declaration", "decl", null]);
+  return `<div class="tabs" role="tablist">` + t.map(([n, k, cnt]) =>
+    `<button class="tab" role="tab" data-k="${c.stem}|${k}" aria-selected="${k === active}">`
+    + esc(n) + (cnt ? `<span class="c">${cnt}</span>` : "") + `</button>`).join("") + `</div>`;
+}
+
+function stripFor(c){
+  const kp = c.has_knowledge;
+  return `<div class="strip">
+    <div><span class="n">${c.columns}</span><span class="l">columns declared</span></div>
+    <div><span class="n">${c.rules.length}</span><span class="l">rules</span></div>
+    <div class="${c.bound === c.rules.length && c.rules.length ? "ok" : (c.bound ? "" : "warn")}">
+      <span class="n">${c.bound}</span><span class="l">with a canon body</span></div>
+    <div class="${kp ? "ok" : "warn"}"><span class="n">${kp ? "yes" : "no"}</span>
+      <span class="l">knowledge page</span></div>
+    <div><span class="n" style="font-size:.9rem;font-family:'IBM Plex Mono',monospace">${esc(c.relation)}</span>
+      <span class="l">relation</span></div>
+  </div>`;
 }
 
 function render(key){
@@ -205,6 +251,23 @@ function render(key){
     const t = c.topics[+what.slice(1)];
     title = t.title; crumb = `${c.cls} · ${c.name} · knowledge`;
     bodyHtml = md(t.body);
+  } else if (what === "rules"){
+    title = "Rules"; crumb = `${c.cls} · ${c.name} · rules`;
+    lede = c.bound === c.rules.length
+      ? "Every one has a canon body."
+      : `${c.bound} of ${c.rules.length} have a canon body. The rest state their behaviour as `
+        + `when/then/never, which the schema requires of a rule with no body.`;
+    bodyHtml = c.rules.map((r, i) => {
+      const cl = Object.entries(r.clauses);
+      return `<h2>${esc(r.id.split(".").slice(1).join("."))}</h2>`
+        + `<div class="chips"><span class="chip acc">${esc(r.kind)}</span>`
+        + r.canons.map(x=>`<span class="chip ok">mac.canon.${esc(x)}</span>`).join("")
+        + (r.canons.length ? "" : `<span class="chip warn">no body</span>`)
+        + r.binds.map(b=>`<span class="chip">binds ${esc(b)}</span>`).join("") + `</div>`
+        + (cl.length ? `<div class="clauses">${cl.map(([k,v])=>
+            `<div><b>${k}</b><span>${esc(v)}</span></div>`).join("")}</div>` : "")
+        + (r.why ? md(r.why) : "");
+    }).join("");
   } else {
     const r = c.rules[+what.slice(1)];
     title = r.id.split(".").slice(1).join("."); crumb = `${c.cls} · ${c.name} · rule`;
@@ -218,10 +281,15 @@ function render(key){
       + (r.why ? md(r.why) : `<p style="color:var(--muted)">No <code>why</code> recorded.</p>`);
   }
 
-  pane.innerHTML = `<div class="crumb">${esc(crumb)}</div><h1>${esc(title)}</h1>`
+  const tabKey = what.startsWith("r") && what !== "rules" ? "rules" : what;
+  pane.innerHTML = `<div class="crumb">${esc(crumb)}</div><h1>${esc(c.name)}</h1>`
+    + stripFor(c) + tabsFor(c, tabKey)
+    + (title !== c.name ? `<h2 style="margin-top:0">${esc(title)}</h2>` : "")
     + (lede ? `<p class="lede">${esc(lede)}</p>` : "")
     + (chips ? `<div class="chips">${chips}</div>` : "")
     + `<div class="doc">${bodyHtml}</div>`;
+  pane.querySelectorAll(".tab").forEach(b =>
+    b.addEventListener("click", () => render(b.dataset.k)));
   pane.querySelectorAll("table").forEach(t => {
     const w = document.createElement("div"); w.className = "tablewrap";
     t.parentNode.insertBefore(w, t); w.appendChild(t);

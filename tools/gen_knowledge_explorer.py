@@ -88,6 +88,19 @@ def build(root: pathlib.Path) -> dict:
         topics = []
         if kp.is_file():
             topics = sections(kp.read_text(encoding="utf-8"))
+        #: THE CANONICAL TABS, and they are honest rather than aspirational. Measured over
+        #: contoso5's 17: `definition` 17/17, `grain` 17/17, columns 17/17, rules 14/17,
+        #: identity.kind 10/17, snapshot_rule 1/17 — so Overview, Grain and Declaration are
+        #: always there, Identity and Rules are usually, and the snapshot rule lives INSIDE
+        #: Grain rather than earning a tab that is empty on sixteen concepts. A tab with no
+        #: content is not rendered; its absence is the measurement.
+        canon = {"Overview": None, "Identity": None, "Grain": None}
+        rest = []
+        for i, t in enumerate(topics):
+            if t["title"] in canon and canon[t["title"]] is None:
+                canon[t["title"]] = i
+            else:
+                rest.append(i)
         rule_topics = []
         for r in rules:
             page = rdir / f"{r['id']}.md"
@@ -109,6 +122,8 @@ def build(root: pathlib.Path) -> dict:
                             if r.get(k)},
             })
         out.append({
+            "tabs": {k: v for k, v in canon.items() if v is not None},
+            "extra": rest,
             "stem": f.stem,
             "name": c.get("name") or f.stem,
             "cls": c.get("class") or "—",
@@ -118,6 +133,8 @@ def build(root: pathlib.Path) -> dict:
             "rules": rule_topics,
             "declaration": declaration_view(doc),
             "columns": len((doc.get("grounding", {}).get("sources") or [{}])[0].get("columns") or {}),
+            "bound": sum(1 for r in rule_topics if r["canons"]),
+            "relation": (doc.get("grounding", {}).get("sources") or [{}])[0].get("relation") or "—",
         })
     idx = kdir / "index.md"
     return {
