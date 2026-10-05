@@ -29,6 +29,20 @@ spelling `resolved_axis`, RETIRED from the vocabulary 2026-09-28 — a ruling ma
 `additivityAxis`, `$defs.credentialMode`, and `transform.metadata.driven_by`. A gate that covers
 four of nine reports a PASS with a denominator nobody printed.
 
+THE DEFECT OF 2026-10-05 — THIS GATE'S OWN READER, NOT A CONTRADICTION. `mac_vocabulary.yaml` may
+spell a vocabulary FLAT as one dotted key or FOLDED as `concept: column: role:`; the dotted path is
+the identity either way and readers convert in ONE place, `tools/mac_vocab.flatten`. This module
+asked `vocab.get("concept.column.role")` and the file FOLDS, so six of its nine governed slots
+reported "declares no block" — a disagreement that was not there, and the gate's own verdict said
+"no bundle can be conformant to both". It survived because every self-test fixture was planted FLAT,
+the one-mutant-per-slot loop included: the fixtures used the one spelling the reader handled. Worse,
+`gen_slot_reference.py` derives the slot pages from PAIRS in THIS module and had been loading the
+same file through `mac_vocab.flatten` all along — two readers of one table, one of them right.
+Every reader below now normalises through `_vocab`, and the slot loop plants each fixture BOTH ways.
+Measured: 8 of 12 slots "disagreeing" before, 2 after — and those 2 are the human rulings the
+paragraph above already owed, which is the only reason this repair is distinguishable from a
+weakening of the gate.
+
 THE PAIRS ARE DECLARED BELOW AND NOWHERE ELSE. This module is THE home of the slot -> vocabulary
 table: `gen_slot_reference.py` derives each reference page's "choices" from it (`governs_under`),
 and `--write` lands the vocabulary's terms INTO the schema from it. Adding a governed slot is one
@@ -54,6 +68,9 @@ import argparse
 import json
 import pathlib
 import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import mac_vocab  # noqa: E402  — ONE reader of mac_vocabulary.yaml, fold-agnostic
 
 #: (label, JSON path into mac.schema.json, vocabulary block). The path is a list of keys/indices so it
 #: reads like the document rather than like a query language. EVERY enum slot a closed vocabulary
@@ -120,10 +137,23 @@ def dig(doc, path: list):
     return cur
 
 
+def _vocab(doc: dict) -> dict:
+    """{dotted name -> vocabulary node}, from a FOLDED or FLAT document. Idempotent.
+
+    EVERY reader in this module goes through here. It is one line of delegation on purpose: the
+    conversion between the two legal spellings has one home, `mac_vocab.flatten`, and a second
+    opinion about it is the defect the header records.
+    """
+    return mac_vocab.flatten(doc or {})
+
+
 def terms_of(vocab: dict, block: str) -> list[str]:
     """The vocabulary's terms for `block`, IN DECLARATION ORDER — `terms:` or the older `members:`,
-    a map or a list of {term:} rows. An empty list means the block declares nothing (or is absent)."""
-    body = vocab.get(block) or {}
+    a map or a list of {term:} rows. An empty list means the block declares nothing (or is absent).
+
+    Fold-agnostic: a folded document resolves here too, so a direct caller cannot be handed [] for a
+    block the file plainly declares."""
+    body = _vocab(vocab).get(block) or {}
     t = body.get("terms") if body.get("terms") is not None else body.get("members")
     names = list(t) if isinstance(t, dict) else [
         (x.get("term") if isinstance(x, dict) else x) for x in (t or [])]
@@ -152,6 +182,7 @@ def governs_under(object_path: list, pairs=PAIRS) -> dict[str, str]:
 
 def compare(schema: dict, vocab: dict, pairs=PAIRS) -> list:
     """One row per governed slot: (label, block, schema_terms, vocab_terms, state, detail)."""
+    vocab = _vocab(vocab)
     out = []
     for label, path, block in pairs:
         try:
@@ -190,6 +221,7 @@ def compare_patterns(schema: dict, vocab: dict, pats=PATTERNS) -> list:
     must be the vocabulary's. A regex alternation is an enum wearing a disguise.
     """
     import re as _re
+    vocab = _vocab(vocab)
     out = []
     for label, path, block in pats:
         try:
@@ -239,6 +271,7 @@ def rewrite(text: str, vocab: dict, blocks: list[str], pairs=PAIRS) -> tuple[str
     nothing, which is a different fact from "closed"), or when the text does not round-trip through
     `dumps` (the re-dump would then move bytes that are not enums).
     """
+    vocab = _vocab(vocab)
     governed = {b for _l, _p, b in pairs}
     unknown = sorted(set(blocks) - governed)
     if unknown:
@@ -371,6 +404,22 @@ def _self_test() -> int:
 
     r = compare(SCH, {}, P)[0]
     case("MUTANT a vocabulary block that does not exist fails", r[4] == "missing_block")
+
+    # ── THE FOLDED SPELLING. `concept.column.role` may be written as one dotted key or as nested
+    #    `concept: column: role:`, and until 2026-10-05 this module read only the first — reporting
+    #    "declares no block" for six real blocks. The fixture below is the SAME vocabulary as VOC,
+    #    folded, and it must read identically; `_plant` builds it, so the two spellings in this test
+    #    have one constructor rather than a hand-typed nest.
+    FOLDED = _plant(["concept", "column", "role"], VOC["concept.column.role"])
+    case("a FOLDED vocabulary reads the same as the flat one", compare(SCH, FOLDED, P)[0][4] == "ok")
+    case("MUTANT a folded block is never reported as missing",
+         compare(SCH, FOLDED, P)[0][4] != "missing_block")
+    case("terms_of reads a folded block directly, for the callers that pass one",
+         terms_of(FOLDED, "concept.column.role") == ["key", "dimension"])
+    case("normalising twice changes nothing (gen_slot_reference hands in a flat document)",
+         _vocab(_vocab(FOLDED)) == _vocab(FOLDED))
+    case("a term is never mistaken for a path segment",
+         terms_of({"concept": {"terms": {"a": "", "b": ""}}}, "concept") == ["a", "b"])
     r = compare({"$defs": {}}, VOC, P)[0]
     case("MUTANT a schema path that does not exist fails and NAMES the step",
          r[4] == "missing_slot" and "$defs.x" in r[5])
@@ -393,6 +442,11 @@ def _self_test() -> int:
         r = compare(_plant(path, {"enum": ["a", "b", "stray"]}), toy, one)[0]
         case(f"MUTANT {label}: a schema-only term on the declared path fails and is named",
              r[4] == "disagree" and "stray" in r[5])
+        # THE SAME SLOT WITH ITS BLOCK FOLDED. Every fixture in this loop was flat, which is exactly
+        # why 18 cases here passed while six of these nine slots failed in the field.
+        folded = _plant(block.split("."), {"closed": True, "terms": {"a": "", "b": ""}})
+        case(f"{label}: its block resolves FOLDED as well as flat",
+             compare(_plant(path, {"enum": ["a", "b"]}), folded, one)[0][4] == "ok")
 
     # ── THE PAGE DERIVATION: a reference page's "choices" come from PAIRS, not from a second table.
     obj = ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
@@ -476,7 +530,8 @@ def _self_test() -> int:
     print(f"PASS: check_vocabulary_parity self-test — {n}/{n} case(s): a disagreement is reported in "
           f"BOTH directions, an unconstrained slot beside a closed vocabulary fails, a missing block "
           f"or a missing schema path fails and names what was missing, `members:` reads as `terms:`, "
-          f"each of the {len(PAIRS)} governed slots is exercised on its declared path, a reference "
+          f"each of the {len(PAIRS)} governed slots is exercised on its declared path in BOTH the "
+          f"flat and the folded spelling of its block, a reference "
           f"page's choices derive from PAIRS, --write lands terms in vocabulary order and touches "
           f"nothing else and refuses a typo, an empty block or a file it cannot re-serialise "
           f"faithfully, and a PATTERN must name the current namespace with any inline alternation "
