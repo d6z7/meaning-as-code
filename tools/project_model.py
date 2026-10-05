@@ -26,6 +26,23 @@ import yaml
 HERE = Path(__file__).resolve().parent
 MAC_VOCAB = HERE.parent / "mac_vocabulary.yaml"
 
+sys.path.insert(0, str(HERE))
+import mac_vocab as _mv  # noqa: E402  — ONE reader of mac_vocabulary.yaml, fold-agnostic
+
+
+def _vocab(doc: dict) -> dict:
+    """{dotted name -> vocabulary node}, from a FOLDED or FLAT document. Idempotent.
+
+    EVERY vocabulary read below goes through here. `mac_vocabulary.yaml` may spell a block FLAT as
+    one dotted key or FOLDED as `concept: column: measure_type:`, and the four readers under this
+    line asked for the dotted key against the raw document. Measured 2026-10-05: all four answered
+    EMPTY — `EFFECT` {}, `IDENTITY_KINDS` [], `measure_law()` 0 measure types, and the closed
+    rule-type taxonomy 0 of 6 terms with `closed: false`. Each of those is a closed vocabulary this
+    module's own docstring promises it reads, and each failed in the direction that looks like an
+    ontology declaring nothing rather than like a broken reader.
+    """
+    return _mv.flatten(doc or {})
+
 # LABELS ONLY — the MEMBERS come from the vocabulary. This map used to enumerate them, and had
 # drifted: it carried `semi_additive`, which mac_vocabulary.yaml's CLOSED aggregation_effect has never
 # defined. A closed vocabulary whose members are hand-copied into code is N homes for one fact, and it
@@ -42,8 +59,9 @@ def _effects() -> dict:
     try:
         from pathlib import Path as _P
         import yaml as _y
-        terms = (_y.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
-                              .read_text(encoding="utf-8")) or {}).get("concept.aggregation_effect", {}).get("terms", {})
+        terms = (_vocab(_y.safe_load((_P(__file__).resolve().parent.parent / "mac_vocabulary.yaml")
+                              .read_text(encoding="utf-8"))).get("concept.aggregation_effect", {})
+                 .get("terms", {}))
     except Exception:                                                      # noqa: BLE001
         terms = {}
     return {f"mac.concept.aggregation_effect.{k}": _LABEL.get(k, k) for k in terms}
@@ -57,7 +75,7 @@ def _identity_kinds() -> list[str]:
     Dimensions footnote rendered a hand-typed list until 2026-09-29 and still named `resolved_axis`,
     retired the day before — a footnote documenting a term the enum refuses."""
     try:
-        return [str(k) for k in ((yaml.safe_load(MAC_VOCAB.read_text(encoding="utf-8")) or {})
+        return [str(k) for k in (_vocab(yaml.safe_load(MAC_VOCAB.read_text(encoding="utf-8")))
                                  .get("concept.identity") or {}).get("terms") or {}]
     except Exception:
         return []
@@ -75,7 +93,7 @@ def load(p: Path):
 
 def measure_law() -> dict:
     """The additivity matrix from mac.concept.column.measure_type: {flow: {time,categorical}, stock:…, target:…}."""
-    doc = load(MAC_VOCAB)
+    doc = _vocab(load(MAC_VOCAB))
     mt = (doc.get("concept.column.measure_type") or {}).get("terms") or {}
     out = {}
     for name, spec in mt.items():
@@ -1033,7 +1051,7 @@ def _kind_term(kind):
 
 def _rule_kinds(mac_vocab: Path) -> list[dict]:
     """The closed rule-type taxonomy, read from the framework vocab (mac.concept.rule)."""
-    rk = load(mac_vocab).get("concept.rule") or {}
+    rk = _vocab(load(mac_vocab)).get("concept.rule") or {}
     closed = bool(rk.get("closed"))
     return [{"term": t, "governs": g, "closed": closed}
             for t, g in (rk.get("terms") or {}).items()]
