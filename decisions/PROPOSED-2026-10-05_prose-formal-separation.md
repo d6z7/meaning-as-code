@@ -16,23 +16,25 @@ fomal text. this is unreadabl for human … when i am reading prosa i make mysel
 line translates into something but how the whole something work … then i compare yaml formal format
 with my understanding of the rule. the way how it is now … it is hardly possible."*
 
-Measured across contoso5's 17 concepts, counting YAML comment bytes, long-scalar prose bytes, and
-structural bytes (keys plus short values) separately:
+Measured across contoso5's 17 concepts by `tools/check_prose_ratio.py` (Phase 0, now written),
+counting YAML comment bytes, long-scalar prose bytes, and structural bytes separately. The figures
+below are the TOOL'S, which supersede the throwaway script this record first quoted — it counted
+list-item keys slightly differently and read 94 bytes more as formal:
 
 | concept | comment | prose | formal | prose+comment : formal |
 |---|---|---|---|---|
-| `store` | 6 042 | 7 776 | 1 738 | **7,95x** |
-| `country` | 911 | 4 847 | 1 083 | **5,32x** |
-| `order` | 0 | 5 010 | 1 487 | **3,37x** |
-| `brand` | 282 | 1 542 | 1 039 | 1,76x |
+| `store` | 6 042 | 7 776 | 1 728 | **8,00x** |
+| `country` | 911 | 4 847 | 1 075 | **5,36x** |
+| `order` | 0 | 5 010 | 1 477 | **3,39x** |
+| `brand` | 282 | 1 542 | 1 033 | 1,77x |
 | … | | | | |
-| `sales_cost` | 0 | 279 | 1 043 | 0,27x |
-| `gross_revenue` | 0 | 264 | 1 054 | 0,25x |
-| **TOTAL** | **9 031** | **31 847** | **20 020** | **2,04x** |
+| `sales_cost` | 0 | 279 | 1 041 | 0,27x |
+| `gross_revenue` | 0 | 264 | 1 052 | 0,25x |
+| **TOTAL** | **9 031** | **31 847** | **19 926** | **2,05x** |
 
 Three facts follow, and the plan is built on them:
 
-1. **The claim is exact.** 2,04x, against a stated 2x.
+1. **The claim is exact.** 2,05x, against a stated 2x.
 2. **The damage concentrates where the work went.** `store`, `country` and `order` carry **60 %** of
    all prose in the bundle. The concepts nobody has fought over sit at **0,25x** and read fine — so
    0,25x is a demonstrated floor, not an aspiration.
@@ -103,14 +105,17 @@ is one fact in two homes — the defect this estate keeps removing, at a count o
 
 ### Phase 0 — make the measurement a tool (half a day, no bundle change)
 
-A new gate, proposed and not yet written — `tools/check_prose_ratio.py`: the table above,
-re-runnable, per concept, with `--self-test`.
+`tools/check_prose_ratio.py` — the table above, re-runnable, per concept, with `--self-test`.
 
 * It reports the ratio and PRINTS THE DENOMINATOR. A gate with no denominator is the failure this
   estate names most often.
 * **No threshold yet.** It exits 0 and reports. The threshold is set from the corpus after Phase 2,
   not from taste.
-* Exit criterion: the table reproduces 2,04x / 7,95x / 0,25x from a clean checkout.
+* **DONE** — written, `--self-test` 8/8 over 4 measurement classes, and it reproduces
+  2,05x / 8,00x / 0,25x. It refuses rather than reporting 0,00x over an empty population, and it
+  discovers concepts through `mac_project.concept_files` rather than a glob, for the reason
+  `check_canon_binding` records: a hand-written glob "measured ZERO on every foldered bundle and
+  printed a clean verdict".
 
 ### Phase 1 — the two gates, against today's tree (1 day)
 
