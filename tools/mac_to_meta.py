@@ -231,6 +231,20 @@ def grounding_yaml(tables: dict, source: str = "<source>") -> str:
     return _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)
 
 
+def _declared_key_columns() -> dict:
+    """{relation -> the key columns it declares}, read off `_META_CONCEPTS`' own relation specs.
+
+    NOT A SECOND LIST. Every spec already names its keys — `("meta_enum", ["concept", "value"])` —
+    so a descriptor's `role` is derived from the declaration that exists rather than guessed beside
+    it.
+    """
+    out: dict = {}
+    for spec in _META_CONCEPTS.values():
+        for rel, keys in spec.get("relations", ()) or ():
+            out.setdefault(rel, set()).update(keys or ())
+    return out
+
+
 def dataset_descriptors(tables: dict, source: str = "<source>") -> dict:
     """{table_name: yaml_text} — a Physical-layer schema-of-record descriptor per meta_* relation, the
     twin of the warehouse dim descriptors (data/datasets/<rel>.yaml). The shapes gate resolves a grounded
@@ -239,8 +253,20 @@ def dataset_descriptors(tables: dict, source: str = "<source>") -> dict:
     order; all VARCHAR (the meaning plane is descriptive). Generated — never hand-edited."""
     import yaml as _yaml
     sv = _framework_schema_version()
+    declared = _declared_key_columns()
     out = {}
     for name, rows in tables.items():
+        # A ROLE IS RULED OR IT IS REFUSED, operator 2026-10-05. This emitted `role: unknown` for
+        # every column it could not classify, and `unknown` was in the schema's enum and in no
+        # vocabulary — so a generated descriptor validated while saying nothing. The term is gone
+        # from the enum; a column whose role nobody has ruled on must not validate.
+        if name not in declared:
+            raise ValueError(
+                f"dataset_descriptors cannot describe {name!r}: no _META_CONCEPTS spec declares it, "
+                f"so its key columns are unknown and every `role` would be a guess. Declare the "
+                f"relation in _META_CONCEPTS (with its key columns) or do not reflect it."
+            )
+        keys = declared[name]
         doc = {
           "metadata": {
             "table": name, "source": source.upper(), "schema_version": sv, "status": "deployed",
@@ -248,7 +274,8 @@ def dataset_descriptors(tables: dict, source: str = "<source>") -> dict:
             "note": "GENERATED — do not hand-edit; regenerate from model.introspection.json.",
             "owner": "data-platform-team"},
           "table": {"name": name, "schema": source, "type": "view", "confidence": "C"},
-          "columns": [{"name": c, "type": "string", "role": ("value" if c == "value" else "unknown"),
+          "columns": [{"name": c, "type": "string",
+                       "role": ("primary_key" if c in keys else "value"),
                        "confidence": "C"} for c in _ordered_columns(rows)],
         }
         out[name] = _yaml.safe_dump(doc, sort_keys=False, allow_unicode=True, width=100)

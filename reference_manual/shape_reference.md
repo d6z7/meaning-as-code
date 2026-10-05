@@ -423,7 +423,7 @@ columns:  # REQUIRED
         child: <…>  # enum: mandatory | optional
         parent: <…>  # enum: mandatory | optional
     register: <…>  # string · Path to the register that holds this column's members, relative to the…
-    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | delivery_axis | unknown · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
+    role: <…>  # REQUIRED · enum: primary_key | foreign_key | value | discriminator | audit | delivery_axis · v0.5 (DECISION 4): the canonical PHYSICAL role set is kept
     searchable: <…>  # enum: like · HOW A VALUE IN THIS COLUMN IS RESOLVED when no register can hold it
     type: <…>  # string
     values: [ ... ]  # TRANSIENT — the measured bounded domain, on its way to a register
@@ -729,7 +729,7 @@ issues:  # REQUIRED
       consequences:  # open: extra keys allowed
       recommendation: <…>  # string|null
       because: <…>  # string
-    status: <…>  # enum: open | accepted | rejected | resolved | waived · The DISPOSITION, which survives re-measurement: the measurement is…
+    status: <…>  # enum: open | accepted | resolved | wont_fix · The DISPOSITION, which survives re-measurement: the measurement is…
     ruled_by: <…>  # string|null
     reason: <…>  # string|null
     raised_by: <…>  # string · the generator that measured it

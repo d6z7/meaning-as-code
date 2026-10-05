@@ -648,9 +648,8 @@
                 "enum": [
                   "open",
                   "accepted",
-                  "rejected",
                   "resolved",
-                  "waived"
+                  "wont_fix"
                 ],
                 "description": "The DISPOSITION, which survives re-measurement: the measurement is refreshed, the ruling is not."
               },
@@ -3016,8 +3015,7 @@
                   "value",
                   "discriminator",
                   "audit",
-                  "delivery_axis",
-                  "unknown"
+                  "delivery_axis"
                 ],
                 "description": "v0.5 (DECISION 4): the canonical PHYSICAL role set is kept. An applied ontology's analytical roles (mac_vocabulary.yaml#concept.column.role: key/dimension/measure/period/housekeeping — `attribute` is retired) are mapped down to this during projection; they do NOT enter the schema. 'unknown' is forbidden in production-status files (enforced separately). v0.1.14 (C1): 'delivery_axis' added — a column that splits ROWS without splitting FIGURES, measured by mac_admit_identity.py. This does NOT reopen DECISION 4: the barred roles are the ontology's ANALYTICAL ones (the five of mac_vocabulary.yaml#concept.column.role), whereas the enum already carries identity-participation roles (primary_key, foreign_key, composite_key_part) and 'delivery_axis' is the measured COMPLEMENT of composite_key_part. A column left 'unknown' while the admission test reports it COLLAPSIBLE is the residue awaiting a human ruling — and 'unknown' is already forbidden in production-status files, so no new gate is needed."
               },
