@@ -140,6 +140,22 @@ coincidental value match. Measured: `online` resolved as a *value* to four candi
 not one was the channel — the sentinel country code `'--'` on three concepts, and `'Online'` on a
 state column.
 
+## Two things every binding must get right
+
+**A PREDICATE IS STRUCTURE, NEVER SQL TEXT, and the reason is measured.**
+`assert_bound_params_only` refuses any raw string literal, so a predicate written as text —
+`status_annotation IN ('Closed','Restructured')` — is UNEXECUTABLE: it plans cleanly and dies at the
+adapter. Written as `{column, op, values}` its values are bound and it runs. Five of the ten
+predicates one worked bundle needs are string-valued, so this is not an edge case.
+
+**DECLARE ONE HALF AND DERIVE THE OTHER.** Operator design, 2026-10-01: *"we should define that
+closed stores have only close date is not null, then the active stores will be the negation of it …
+this should be able to avoid the problem by design."* A population written as `not: <other>` is the
+COMPLEMENT of that other, which makes an axis a partition BY CONSTRUCTION rather than by
+measurement — the two halves cannot overlap, cannot leave a gap, and cannot be authored
+inconsistently, because only one of them is authored.
+
+
 ## Determinism & honest limits (AUTHORING A5)
 
 - **Deterministic.** Same declaration + same constrained columns + same asked word → same selection.
