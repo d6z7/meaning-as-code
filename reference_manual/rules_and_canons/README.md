@@ -274,7 +274,7 @@ exist"*, which is the defect the canon registry was written for.
 
 `tools/check_canon_documented.py` holds the three together; this table is read from the same places it reads.
 
-### [`competing_definitions`](../patterns/competing_definitions.md) &nbsp;·&nbsp; 6
+### [`competing_definitions`](../patterns/semantic_constellations/competing_definitions.md) &nbsp;·&nbsp; 6
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -285,7 +285,7 @@ exist"*, which is the defect the canon registry was written for.
 | `ratio_select` | [page](competing_definitions/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
 | `relation_alias_resolve` | [page](competing_definitions/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
 
-### [`explicit_closure`](../patterns/explicit_closure.md) &nbsp;·&nbsp; 3
+### [`explicit_closure`](../patterns/open_vs_closed_world/explicit_closure.md) &nbsp;·&nbsp; 3
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -293,7 +293,7 @@ exist"*, which is the defect the canon registry was written for.
 | `enum_from_register` | [page](explicit_closure/enum_from_register.md) | [below](#maccanonenumfromregister) | **acts** | no |
 | `grouping_from_register` | [page](explicit_closure/grouping_from_register.md) | [below](#maccanongroupingfromregister) | declared only | no |
 
-### [`contaminated_code`](../patterns/contaminated_code.md) &nbsp;·&nbsp; 2
+### [`contaminated_code`](../patterns/semantic_constellations/contaminated_code.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -307,50 +307,50 @@ exist"*, which is the defect the canon registry was written for.
 | `refuse_measure_no_row` | [page](exclusion_no_evidence/refuse_measure_no_row.md) | [below](#maccanonrefusemeasurenorow) | declared only | no |
 | `refuse_unresolvable_name` | [page](exclusion_no_evidence/refuse_unresolvable_name.md) | [below](#maccanonrefuseunresolvablename) | **acts** | no |
 
-### [`tracking_vintage`](../patterns/tracking_vintage.md) &nbsp;·&nbsp; 2
+### [`tracking_vintage`](../patterns/aggregation_hazards/tracking_vintage.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `axis_default` | [page](tracking_vintage/axis_default.md) | [below](#maccanonaxisdefault) | **acts** | yes |
 | `scoped_latest` | [page](tracking_vintage/scoped_latest.md) | [below](#maccanonscopedlatest) | **acts** | no |
 
-### [`absence_semantics`](../patterns/absence_semantics.md) &nbsp;·&nbsp; 1
+### [`absence_semantics`](../patterns/open_vs_closed_world/absence_semantics.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `densify` | [page](absence_semantics/densify.md) | [below](#maccanondensify) | **acts** | no |
 
-### [`context_dependent_meaning`](../patterns/context_dependent_meaning.md) &nbsp;·&nbsp; 1
+### [`context_dependent_meaning`](../patterns/semantic_constellations/context_dependent_meaning.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `composite_key_guard` | [page](context_dependent_meaning/composite_key_guard.md) | [below](#maccanoncompositekeyguard) | **acts** | yes |
 
-### [`impurity_disposition`](../patterns/impurity_disposition.md) &nbsp;·&nbsp; 1
+### [`impurity_disposition`](../patterns/semantic_constellations/impurity_disposition.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `exclusion_filter` | [page](impurity_disposition/exclusion_filter.md) | [below](#maccanonexclusionfilter) | **acts** | yes |
 
-### [`multivalued_bridge`](../patterns/multivalued_bridge.md) &nbsp;·&nbsp; 1
+### [`multivalued_bridge`](../patterns/dimensional_special_cases/multivalued_bridge.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `array_membership_guard` | [page](multivalued_bridge/array_membership_guard.md) | [below](#maccanonarraymembershipguard) | **acts** | yes |
 
-### [`recursive_hierarchy`](../patterns/recursive_hierarchy.md) &nbsp;·&nbsp; 1
+### [`recursive_hierarchy`](../patterns/identity_and_structure/recursive_hierarchy.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `hierarchy_rollup` | [page](recursive_hierarchy/hierarchy_rollup.md) | [below](#maccanonhierarchyrollup) | **acts** | no |
 
-### [`scd_type_2`](../patterns/scd_type_2.md) &nbsp;·&nbsp; 1
+### [`scd_type_2`](../patterns/history_and_time/scd_type_2.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `snapshot_collapse` | [page](scd_type_2/snapshot_collapse.md) | [below](#maccanonsnapshotcollapse) | **acts** | no |
 
-### [`semi_additive_balance`](../patterns/semi_additive_balance.md) &nbsp;·&nbsp; 1
+### [`semi_additive_balance`](../patterns/aggregation_hazards/semi_additive_balance.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -459,7 +459,7 @@ because no slot holds the surfaces it would match against.
 
 ## Why these pages are a flat directory and a nested tree
 
-The tree above is a reading structure; on disk `reference_manual/canon/` is flat, one page per canon.
+The tree above is the structure on disk: a canon page sits in the folder of the pattern it serves, `reference_manual/rules_and_canons/<pattern>/<canon>.md`. The flat `canon/` directory it replaced was removed on 2026-10-05.
 That is deliberate, and measured rather than preferred:
 
 - `check_canon_documented.py` reads `{p.stem for p in pages_dir.glob("*.md")}` — a FLAT glob.

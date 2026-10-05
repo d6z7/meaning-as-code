@@ -341,7 +341,7 @@ def self_test(vocab: dict) -> int:
         def mutate(page: pathlib.Path, new_text: str, cls: str, why: str):
             """Seed one mutant, assert it REJECTS — and assert it CHANGED THE PAGE.
 
-            THE SECOND ASSERTION IS NOT CEREMONY. gen_key_reference.py's `uncovered-key` mutant
+            THE SECOND ASSERTION IS NOT CEREMONY. gen_structure_reference.py's `uncovered-key` mutant
             deleted a TABLE ROW; when the emitter stopped emitting tables the mutant deleted
             nothing, every check stayed clean, and the self-test still reported 6/6 — green over a
             reject class it was no longer testing.

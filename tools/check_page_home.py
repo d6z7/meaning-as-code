@@ -4,8 +4,8 @@
 A THREE-LINE DELEGATE, and the reason is the runner's discovery rule, not a design preference:
 `run_framework_gates.sh` finds gates by globbing `tools/check_*.py`, so `relocate_pages.py --check`
 was invisible to it — the home declaration in `guardrails/document_home.yaml` would have kept holding
-and nothing would have run it. `tools/check_key_reference.py` exists for exactly this reason over
-`gen_key_reference.py --check`; this is the same shape, so it is the same solution.
+and nothing would have run it. `tools/check_structure_reference.py` exists for exactly this reason over
+`gen_structure_reference.py --check`; this is the same shape, so it is the same solution.
 
 The subject is THIS REPOSITORY, not a bundle, so the name belongs in the runner's
 `REPO_SUBJECT_GATES`. A positional bundle root is refused with exit 2 rather than ignored: being

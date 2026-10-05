@@ -15,14 +15,19 @@
 # that resolved against declared grounding.sources columns) are deprecated in its favour. A `binds` that
 # names a field the grounded table does not actually expose is a real gap — surfaced here, not hidden.
 shapes:
+  # FIVE, NOT SEVEN — and this file was the layer the 2026-10-05 shrink MISSED. `reference` was
+  # renamed `entity` and `meta` dropped in mac.schema.json, mac_vocabulary.yaml and mac-runtime's
+  # ConceptClass on the same day; these values stayed at seven. A bundle writing `class: meta` then
+  # PASSED this shape and FAILED the loader — the shape said conformant about a file that cannot be
+  # read, which is worse than no shape. Keep this list identical to mac_vocabulary.yaml#concept.class.
   - id: concept-class-closed
-    description: a concept's class must be one of the closed seven-class vocabulary
+    description: a concept's class must be one of the closed five-class vocabulary
     target: concept
     severity: error
     constraint:
       kind: in
       path: concept.class
-      values: [entity, event, measure, enumeration, reference, grouping, meta]
+      values: [measure, event, enumeration, grouping, entity]
 
   # v0.1.16: the footgun-preventer now demands the DERIVATION INPUTS, not the derived answer. A measure
   # says what it IS and what its axes ARE; mac_vocabulary.yaml#concept.column.measure_type says what that implies. The

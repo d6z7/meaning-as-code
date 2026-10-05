@@ -34,7 +34,7 @@ SO THE CHECK ASKS A SECOND QUESTION OF A DIFFERENT SOURCE. `admitted_keys()` is 
 free-key and pattern levels — and it asserts, against the text ON DISK, that every key name the
 schema admits under a file type appears in that file type's section, and that the version in the
 heading is the version in the schema. Four reject classes, four mutants, and `--self-test` also
-asserts that each mutant CHANGED the page: in `gen_key_reference.py` a mutant that deleted a table
+asserts that each mutant CHANGED the page: in `gen_structure_reference.py` a mutant that deleted a table
 row silently stopped deleting anything when the emitter stopped emitting tables, and the self-test
 reported 6/6 over a reject it was no longer exercising.
 
@@ -441,7 +441,7 @@ def self_test(schema_path: pathlib.Path) -> int:
         def mutate(new_text: str, cls: str, why: str):
             """Seed one mutant, assert it REJECTS — and assert it CHANGED THE PAGE.
 
-            THE SECOND ASSERTION IS NOT CEREMONY. gen_key_reference.py's `uncovered-key` mutant
+            THE SECOND ASSERTION IS NOT CEREMONY. gen_structure_reference.py's `uncovered-key` mutant
             deleted a TABLE ROW; when the emitter stopped emitting tables the mutant deleted
             nothing, every `check` stayed clean, and the self-test still reported 6/6 — green over
             a reject class it was no longer testing.
@@ -471,7 +471,7 @@ def self_test(schema_path: pathlib.Path) -> int:
         # THE MUTANT MATCHES THE KEY POSITION, not a whole line: the emitted line carries a trailing
         # `# …` annotation, so an equality test against `"rulings:"` deleted nothing and the first
         # run of this self-test went green over a reject it was not exercising — the same way
-        # gen_key_reference's table-row mutant did. The `mutate` helper now refuses that silently.
+        # gen_structure_reference's table-row mutant did. The `mutate` helper now refuses that silently.
         drop = re.compile(r"^\s*rulings:")
         mutate("\n".join(ln for ln in clean.splitlines() if not drop.match(ln)) + "\n",
                "uncovered-key", "a key the schema admits and the page omits")

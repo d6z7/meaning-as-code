@@ -136,7 +136,7 @@ rules:
   - id: mac.guarantee.catalogued_member_is_real
     subject: "A catalogued member is a real value — never drop it as missing, whatever it is called"
     kind: mac.concept.rule.guarantee
-    scope: { concept.class: reference }
+    scope: { concept.class: entity }   # `reference` renamed `entity` 2026-10-05; this scope could not match
     confidence: C
     when:  "a value set carries a member whose label reads like an absence — Unassigned, Unknown,
             N/A, Other, Not specified — and a question counts, sums, lists or breaks down that set"

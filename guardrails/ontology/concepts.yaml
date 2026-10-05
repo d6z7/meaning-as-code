@@ -292,7 +292,7 @@ refuses:
       of `{column, op, value|values}` over six operators with every value BOUND, never SQL text.
       One rule is one AXIS; a concept with two states declares two. Drop `when`/`then`/`never` and
       keep `why:` — no predicate encodes who ruled it, when, against what measurement. Contract:
-      reference_manual/canon/population_select.md.
+      reference_manual/rules_and_canons/competing_definitions/population_select.md.
     # NOT ENFORCED, AND IT MUST SAY SO. `check_canon_binding` is the nearest gate and does not
     # reach this: it reads `realized_by` only in the DICT form (tools/check_canon_binding.py:114,
     # `isinstance(rb, dict)`), while `canonBinding` is `oneOf [canonRef, array]` and every

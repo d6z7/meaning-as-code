@@ -3,7 +3,7 @@
 
 WHY THIS FILE EXISTS AND IS NOT JUST A FLAG. `run_framework_gates.sh` discovers gates by globbing
 `check_*.py`. A generator checks itself behind `gen_<x>.py --check`, so NOT ONE generator is run by
-the suite unless a `check_` name delegates to it — measured 2026-10-04, `check_key_reference.py` was
+the suite unless a `check_` name delegates to it — measured 2026-10-04, `check_structure_reference.py` was
 the only one that did, leaving `gen_schema_shapes`, `gen_slot_reference`, `gen_vocabulary_terms`,
 `gen_column_bench`, `gen_grammar_map` and `gen_strategy` invisible. That is how
 `reference_manual/shape_reference.md` came to claim `schema 0.1.14` against a schema at 0.1.16 with

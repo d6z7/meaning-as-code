@@ -13,3 +13,15 @@
 # gate becomes something people pass a flag to. What may NOT happen is a NEW key arriving without
 # one — that is what this number catches, on the day it happens.
 161
+
+# 161 -> 465, RE-BASED 2026-10-05 because the DENOMINATOR MOVED, not the debt. 161 was measured
+# when gen_key_reference walked ConceptFile and nothing else. It now walks twelve file shapes
+# across both planes — project, relation, lookup, transform, ontology, edges, rules and the five
+# governance declarations — so the old number was a count over one file type being compared with a
+# count over twelve. ConceptFile's own share FELL over the same period (161 -> 153, eight written),
+# which is the evidence that this is arithmetic and not regression.
+#
+# IT IS STILL A ONE-WAY RATCHET. A new key that states no constellation pushes this up and fails.
+# The honest next step is a floor PER ROOT, so a thirteenth shape can never again hide inside one
+# number the way the three data-plane roots hid inside 161 for a day.
+465

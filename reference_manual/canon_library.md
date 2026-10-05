@@ -32,5 +32,5 @@ a layout that did not exist when it was written. `check_dangling_references` jud
 like `reference_manual/canon_library.md`, and `tools/dangling_floor.txt` is a one-way ratchet that
 refuses a new waiver, so the reference cannot be set aside either.
 
-Its sibling stub, [`canon/population_select.md`](canon/population_select.md), exists for the same
+Its sibling stub, [`rules_and_canons/competing_definitions/population_select.md`](rules_and_canons/competing_definitions/population_select.md), exists for the same
 reason and cites the same guardrail.

@@ -16,7 +16,7 @@ metadata:
   version: '0.1.13'
   status: active
   defines: [concept.aggregation_effect, concept.axis_kind, concept.class, binding_mode, concept.column.measure_type, concept.rule, canon,
-            concept.column.role, concept.column.identity, relation.column.role, concept.column.ruling, name_register]
+            concept.column.role, concept.column.identity, dataset.column.role, concept.column.ruling, name_register]
 
 # ===========================================================================
 # mac.column_type — WHAT KIND OF VALUE a column holds, physically. The FAMILY, not the warehouse's
@@ -1492,11 +1492,11 @@ concept:
 
 # ==========================================================================
 # mac.relation.* — FOLDED. These 1 vocabularies were top-level keys spelled with
-# dots (`relation.column.role:`). The dotted name is still the identity everything
+# dots (`dataset.column.role:`). The dotted name is still the identity everything
 # uses; the nesting is how a person reads it. `tools/mac_vocab.py` returns the dotted form
 # from either shape, which is what made this an authoring choice instead of an API change.
 # ==========================================================================
-relation:
+dataset:
   column:
 
     role:
@@ -1548,7 +1548,18 @@ relation:
 # ==========================================================================
 transform:
   # ===========================================================================
-  # mac.relation.column.role — WHAT A COLUMN IS PHYSICALLY: its shape in the relation, independent of what a
+  # mac.dataset.column.role — WHAT A COLUMN IS PHYSICALLY: its shape in the dataset, independent of
+  # what a
+  #
+  # RENAMED FROM `relation.*` ON 2026-10-05, operator ruling. One object had FOUR names: the schema
+  # called the file a `TableFile` with a `table:` block, the vocabulary namespaced it `relation.*`,
+  # every concept points at it as `relation:`, and on disk it is `data/sources/` and
+  # `data/datasets/`. `dataset` is the word the directory and the operator already use, and
+  # `metadata.kind` already names both members — `raw_source` and `served_dataset`. `table` was
+  # rejected because `table.type` is `view` on 8 of 16; `relation` because it is relational-algebra
+  # vocabulary a reader of `data/` never meets. The concepts' own `grounding.sources[].relation:`
+  # key is deliberately NOT renamed: it is written in every concept and changing it is a bundle
+  # migration no reader benefits from.
   # question may do with it. A column carries BOTH a storage_role and a column.role and they answer
   # different questions: `CountryCode` is storage `value` and analytically a `dimension`; `StoreKey`
   # is storage `primary_key` and analytically a `key`.

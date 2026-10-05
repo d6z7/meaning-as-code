@@ -187,11 +187,6 @@ members:  # one of: array | object · v0.5 grouping template — how a grouping 
     applied_as: <…>  # string · how the canon output is used (subquery_wrapper | predicate_injection |…
     note: <…>  # string · Why this canon is bound here, for a reader — what it is expected to…
 
-lifecycle:  # (event class) the state machine: phases group states, in sequence
-  phases: [ ... ]  # The named phases of this event's life, IN SEQUENCE — each grouping the…
-  boundary: <…>  # WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it…
-  note: <…>  # string · A remark about the lifecycle — a phase the data represents oddly, a…
-
 derived_by_rule: <…>  # string · marks a concept whose value is produced by a rule; the formula lives in…
 
 grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
@@ -263,7 +258,6 @@ governance:  # Housekeeping
 
 **Per `concept.class` (conditional shape):**
 
-- **event** — requires `lifecycle`
 - **measure** — requires `concept.semantics.measure_type`; requires `concept.semantics.axis_kinds`; requires `concept.semantics`
 - **enumeration** — requires `values`
 - **grouping** — requires `members`
@@ -377,12 +371,10 @@ edges:  # REQUIRED
 
 ```yaml
 metadata:  # CLOSED v0.1.15
-  table: <…>  # string
   schema_version: <…>  # string
-  kind: <…>  # string
+  kind: <…>  # enum: raw_source | served_dataset · WHICH OF THE TWO HOMES THIS DESCRIPTOR DESCRIBES — the raw…
   observed: <…>  # string · the date the measurement was taken
   generated_by: <…>  # string
-  external: <…>  # boolean
   status: <…>  # enum: measured | retired · A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT
 
 table:  # REQUIRED · A MEASUREMENT CARRIES NO GRADE OF BELIEF

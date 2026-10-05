@@ -3,7 +3,7 @@ title: The rule engine — a declared rule fires, and selects which rows a conce
 status: implemented in mac-runtime (planner/populations.py · canons/population_select.py · planner/predicates.py); the bodies are READ, lowered to bound SQL and disclosed
 audience: ontology authors
 scope: GENERIC — domain-neutral. Every measurement from example/contoso5, 2026-10-01.
-companions: [canon/population_select.md, identity_and_rules.md, column_specification.md, rules_and_canons/README.md]
+companions: [competing_definitions/population_select.md, identity_and_rules.md, column_specification.md, rules_and_canons/README.md]
 ---
 
 # The rule engine
@@ -251,7 +251,7 @@ adapter. Measured on this bundle today: **10 populations are declared, 4 of them
 (`closed`, `restructured`, `real`, `sentinel`), 4 numeric and 2 needing no value at all. Structure is
 the only form that can carry a string.
 
-> The figure "five of ten" in `planner/predicates.py:12` and `canon/population_select.md:150` counted
+> The figure "five of ten" in `planner/predicates.py:12` and `competing_definitions/population_select.md:150` counted
 > `inactive`, which was removed the same day (`data/references/store.yaml:257-263`). Today's measured count is **4 of
 > 10**. Recorded rather than edited — the file is another agent's.
 

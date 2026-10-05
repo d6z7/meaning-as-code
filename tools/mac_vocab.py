@@ -13,7 +13,7 @@ never "it cannot be". It is that nothing stood between the file and its readers:
   in check_vocabulary_parity, check_column_planes, gen_grammar_map, project_model, mac_model and more.
   So folding the file would have broken 30 lookups in 10 modules, one at a time, at a distance.
 
-  And `gen_key_reference`'s walker ALREADY joins nested keys —
+  And `gen_structure_reference`'s walker ALREADY joins nested keys —
   `walk(v, f"{path}.{k}" if path else str(k))` — so the generator would not have noticed the fold at
   all. The blocker was never the hard part; it was the thirty dict indexes nobody had a reader for.
 

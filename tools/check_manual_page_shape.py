@@ -11,7 +11,7 @@ WHY A SECOND FILE AND NOT A FLAG ON check_page_shape.py. Four measurements, not 
   1. THE SUBJECT IS A DIFFERENT THING. `check_page_shape.py` takes a BUNDLE root in argv[1] and
      `run_framework_gates.sh` hands it one. This gate's subject is THIS REPOSITORY's manual; a bundle
      has no `reference_manual/`. The estate already split exactly this case rather than overload one
-     file: `check_key_reference.py` exists only because its subject is this repo while the runner's
+     file: `check_structure_reference.py` exists only because its subject is this repo while the runner's
      convention is a bundle root.
   2. `required` IS COMPUTED FROM A DIFFERENT FACT. `check_page_shape._needs` reads the page's sibling
      `.yaml` DESCRIPTOR, so "required" there means "the data for it exists". A manual page has no

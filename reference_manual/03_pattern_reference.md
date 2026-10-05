@@ -82,20 +82,20 @@ The entries this chapter will contain, grouped by the recognizable shape. ⚠️
 Each becomes a file under `patterns/` as it is written; ✅-linked ones exist.
 
 **Identity & structure**
-- [`associative_entity`](patterns/associative_entity.md) — M:N relationship that carries its own attributes ⚠️ ✅
-- [`polymorphic_association`](patterns/polymorphic_association.md) — a foreign key that may point at one of several types 🔴 → 🟡 ✅ (workaround + [finding F1](FINDINGS.md))
+- [`associative_entity`](patterns/identity_and_structure/associative_entity.md) — M:N relationship that carries its own attributes ⚠️ ✅
+- [`polymorphic_association`](patterns/identity_and_structure/polymorphic_association.md) — a foreign key that may point at one of several types 🔴 → 🟡 ✅ (workaround + [finding F1](FINDINGS.md))
 - `supertype_subtype` — table/class inheritance ⚠️
-- [`recursive_hierarchy`](patterns/recursive_hierarchy.md) — self-referencing parent key (org chart, category tree) ⚠️ ✅
+- [`recursive_hierarchy`](patterns/identity_and_structure/recursive_hierarchy.md) — self-referencing parent key (org chart, category tree) ⚠️ ✅
 
 **History & time**
-- [`scd_type_2`](patterns/scd_type_2.md) — a dimension that keeps history as versioned rows ⚠️ ✅
+- [`scd_type_2`](patterns/history_and_time/scd_type_2.md) — a dimension that keeps history as versioned rows ⚠️ ✅
 - `scd_type_3` — a dimension that keeps only the prior value in a column ⚠️
 - `accumulating_snapshot` — one fact row with several milestone date stamps ⚠️
 - `bitemporal` — valid-time vs system-time as two independent axes 🔴
 
 **Aggregation hazards**
-- [`semi_additive_balance`](patterns/semi_additive_balance.md) — a level that sums across entities but not across time ⚠️ ✅
-- [`tracking_vintage`](patterns/tracking_vintage.md) — actual / plan / budget as an axis orthogonal to the reporting cycle ⚠️ ✅
+- [`semi_additive_balance`](patterns/aggregation_hazards/semi_additive_balance.md) — a level that sums across entities but not across time ⚠️ ✅
+- [`tracking_vintage`](patterns/aggregation_hazards/tracking_vintage.md) — actual / plan / budget as an axis orthogonal to the reporting cycle ⚠️ ✅
 - `pre_aggregated_summary` — a rollup table that must not be re-aggregated ⚠️
 
 **Dimensional special cases**
@@ -105,15 +105,15 @@ Each becomes a file under `patterns/` as it is written; ✅-linked ones exist.
 - `junk_dimension` — a grab-bag of low-cardinality flags 🔴
 
 **Open- vs closed-world**
-- [`explicit_closure`](patterns/explicit_closure.md) — when a value set is closed, open, or unknown — and why stating it matters ⚠️ ✅
-- [`absence_semantics`](patterns/absence_semantics.md) — what a missing row means (true zero vs not-loaded vs untracked) ⚠️ ✅
+- [`explicit_closure`](patterns/open_vs_closed_world/explicit_closure.md) — when a value set is closed, open, or unknown — and why stating it matters ⚠️ ✅
+- [`absence_semantics`](patterns/open_vs_closed_world/absence_semantics.md) — what a missing row means (true zero vs not-loaded vs untracked) ⚠️ ✅
 
 **The hard semantic constellations (this framework's own additions — no equivalent in Kimball/RDF)**
-- [`context_dependent_meaning`](patterns/context_dependent_meaning.md) — the same code means different things under different parents ⚠️ ✅
+- [`context_dependent_meaning`](patterns/semantic_constellations/context_dependent_meaning.md) — the same code means different things under different parents ⚠️ ✅
 - `contaminated_code` — an opaque code/prefix that mixes unrelated things ⚠️
-- [`competing_definitions`](patterns/competing_definitions.md) — one natural-language term, several defensible definitions ("Europe") ⚠️ ✅
+- [`competing_definitions`](patterns/semantic_constellations/competing_definitions.md) — one natural-language term, several defensible definitions ("Europe") ⚠️ ✅
 - `required_unspecified` — a required dimension the question left out → ask, never guess ⚠️
-- [`impurity_disposition`](patterns/impurity_disposition.md) — bake-into-view vs register-as-caveat vs block-as-needs-expert 🟡 ✅ **(partial:
+- [`impurity_disposition`](patterns/semantic_constellations/impurity_disposition.md) — bake-into-view vs register-as-caveat vs block-as-needs-expert 🟡 ✅ **(partial:
   the query-time edges are canon-backed; the curation-layer + typed DQ-register *primitives* remain deferred — see `guides/MODELLERS_COOKBOOK.md` B8)**
 
 > The 🔴 rows are the prize: enumerating systematically is what *surfaces* the framework's holes

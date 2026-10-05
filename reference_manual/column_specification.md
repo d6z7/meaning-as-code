@@ -840,7 +840,7 @@ anchors (`eta_1`, `eta_2`, `eta_3`, `eta_4` here — each a different milestone'
 
 And `from_cp` / `to_cp` both reference the same `Checkpoint` concept in **different roles**.
 `identity: reference` + `references: Checkpoint` cannot tell them apart. This is
-[role_playing_dimension](patterns/role_playing_dimension.md) at the column level, and the block has
+[role_playing_dimension](patterns/dimensional_special_cases/role_playing_dimension.md) at the column level, and the block has
 no `role_name`.
 
 #### 3. A concept class contoso does not use

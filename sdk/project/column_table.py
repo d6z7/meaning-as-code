@@ -13,7 +13,7 @@ WHAT THE CELLS SAY, and the reasoning is the operator's:
          categorical token has to be string-parsed by every consumer that wants to sort by it (the same
          shape as StoreCode = StoreKey // 10, rejected for that reason). A markdown table is read by a
          person; nothing parses it. So the declaration stays structured and the page stays legible.
-         `PK`/`FK` are DISPLAY abbreviations and are not members of mac.relation.column.role, which is
+         `PK`/`FK` are DISPLAY abbreviations and are not members of mac.dataset.column.role, which is
          why `legend()` states the mapping on the page instead of leaving an agent to infer it.
 
   reference  where the column's values resolve: `-> relation.column` for a foreign key, or

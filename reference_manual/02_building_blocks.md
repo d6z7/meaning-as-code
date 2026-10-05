@@ -167,11 +167,11 @@ facts a question in Q needs are a **finite set**:
 and the framework provides **exactly one slot for each**. The claim has two parts:
 
 - **Necessary** — drop any one and a question in Q exists whose answer is *derivably wrong*. The **witnesses
-  are the patterns**: `additivity` ← [`semi_additive_balance`](patterns/semi_additive_balance.md); `closure`
-  ← [`explicit_closure`](patterns/explicit_closure.md); scoped `identity` ←
-  [`context_dependent_meaning`](patterns/context_dependent_meaning.md); `scope` ←
-  [`competing_definitions`](patterns/competing_definitions.md); `absence` ←
-  [`absence_semantics`](patterns/absence_semantics.md). (`grounding` is necessary trivially — no grounding ⇒
+  are the patterns**: `additivity` ← [`semi_additive_balance`](patterns/aggregation_hazards/semi_additive_balance.md); `closure`
+  ← [`explicit_closure`](patterns/open_vs_closed_world/explicit_closure.md); scoped `identity` ←
+  [`context_dependent_meaning`](patterns/semantic_constellations/context_dependent_meaning.md); `scope` ←
+  [`competing_definitions`](patterns/semantic_constellations/competing_definitions.md); `absence` ←
+  [`absence_semantics`](patterns/open_vs_closed_world/absence_semantics.md). (`grounding` is necessary trivially — no grounding ⇒
   no extension.)
 - **Sufficient** — with all six, `intent → query` is a **total** function (or correctly returns `⊥`).
 

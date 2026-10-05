@@ -230,51 +230,51 @@ QUERY may do with it; `storage_role` says what SHAPE it is in the relation.
 | `dim_contoso_store.Status` | `discriminator` | `dimension` |
 
 (`composite_key_part` was retired 2026-09-27: every key column is `primary_key` and its place in a
-composite key is the integer `key_position` — see `mac.relation.column.role`.)
+composite key is the integer `key_position` — see `mac.dataset.column.role`.)
 
 **You never author this one.** It is measured — the profile plane counts distinct values and nulls,
 the reference plane measures inclusion against candidate parents, and
 `data/datasets/<relation>.yaml` records what they found. If you are hand-writing a `storage_role`,
 something upstream failed.
 
-<!-- BEGIN GENERATED:vocabulary-terms:relation.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:dataset.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The physical shape of a column in its relation, independent of its analytical role.
 
-*`mac.relation.column.role` · 6 terms · closed — these are all of them*
+*`mac.dataset.column.role` · 6 terms · closed — these are all of them*
 
-#### `mac.relation.column.role.primary_key`
+#### `mac.dataset.column.role.primary_key`
 
 The relation's own identity: one row per distinct value, measured rather than assumed.
 
-#### `mac.relation.column.role.foreign_key`
+#### `mac.dataset.column.role.foreign_key`
 
 A reference to another relation's identity. Whether every value is PRESENT in the parent is a
 separate measurement — a declared key says the relationship is intended, not that it holds.
 
-#### `mac.relation.column.role.value`
+#### `mac.dataset.column.role.value`
 
 A payload column: it carries data, not identity and not a choice of row kind.
 
-#### `mac.relation.column.role.discriminator`
+#### `mac.dataset.column.role.discriminator`
 
 A column whose value selects WHICH KIND of row this is — the column a perspective, status or
 type is read from.
 
-#### `mac.relation.column.role.audit`
+#### `mac.dataset.column.role.audit`
 
 A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in
 the business. A load timestamp, a batch id, a validity window on a versioned row. It is
 physically a payload column, and naming it apart is what keeps it out of a question's reach:
 grouping a measure by the row's own write time is meaningless, and nothing in the data says so.
 
-#### `mac.relation.column.role.delivery_axis`
+#### `mac.dataset.column.role.delivery_axis`
 
 A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
 question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
 identity but which the load still keys on — so the key survives as a physical fact without
 claiming to be the concept's identity.
-<!-- END GENERATED:vocabulary-terms:relation.column.role -->
+<!-- END GENERATED:vocabulary-terms:dataset.column.role -->
 
 ### Anti-patterns
 
@@ -297,7 +297,7 @@ as patterns — read them there, not here.**
 
 | role | the constellation | pattern |
 |---|---|---|
-| `period` | one relation, several dates, each a different ROLE of the same calendar — `OrderDate` 2016-05-18..2025-12-31 and `DeliveryDate` ..2026-01-06, so *"lines in 2025"* answers **37 708** or **37 616** depending which is bound, and nothing in the result says which | [role_playing_dimension](patterns/role_playing_dimension.md) |
+| `period` | one relation, several dates, each a different ROLE of the same calendar — `OrderDate` 2016-05-18..2025-12-31 and `DeliveryDate` ..2026-01-06, so *"lines in 2025"* answers **37 708** or **37 616** depending which is bound, and nothing in the result says which | [role_playing_dimension](patterns/dimensional_special_cases/role_playing_dimension.md) |
 | `housekeeping` | a column with the shape of a perfectly good date dimension — `StartDT`, 11 305 distinct over 104 990 rows — that records when the ROW was written, not when anything happened | *no pattern yet* |
 
 **What this page adds that the pattern does not:** the pattern tells you what to do when you meet

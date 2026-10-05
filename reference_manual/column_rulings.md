@@ -236,7 +236,7 @@ StateFull: { role: …dimension, rulings: { label_of: State, register: long } }
 
 [`finer_than`](#2--finer_than) when the two columns are levels, not names ·
 [column_roles.md](column_roles.md) ·
-[patterns/competing_definitions.md](patterns/competing_definitions.md) for one term with several
+[patterns/semantic_constellations/competing_definitions.md](patterns/semantic_constellations/competing_definitions.md) for one term with several
 *meanings*, which is the opposite problem
 
 ---
@@ -350,7 +350,7 @@ grounding:
 
 ## See also
 
-[patterns/recursive_hierarchy.md](patterns/recursive_hierarchy.md) when the hierarchy is a
+[patterns/identity_and_structure/recursive_hierarchy.md](patterns/identity_and_structure/recursive_hierarchy.md) when the hierarchy is a
 self-reference rather than two columns
 
 ---
@@ -373,7 +373,7 @@ rulings:
 Declares that this column's values are **unique only within the named column**. It may not be
 grouped or filtered on alone; the scope column travels with it.
 
-**The full treatment is [patterns/context_dependent_meaning.md](patterns/context_dependent_meaning.md)**
+**The full treatment is [patterns/semantic_constellations/context_dependent_meaning.md](patterns/semantic_constellations/context_dependent_meaning.md)**
 — *"a code meaningless without its parent"* — which is canonical for this constellation and is
 enforced by the [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) canon. `scoped_by` is the
 column-level shorthand. If the two ever disagree, the pattern wins.
@@ -506,8 +506,8 @@ individuals. Customer can be grouped by: Continent, Country, Gender, State, age_
 
 ## See also
 
-[patterns/junk_dimension.md](patterns/junk_dimension.md) ·
-[patterns/degenerate_dimension.md](patterns/degenerate_dimension.md)
+[patterns/dimensional_special_cases/junk_dimension.md](patterns/dimensional_special_cases/junk_dimension.md) ·
+[patterns/dimensional_special_cases/degenerate_dimension.md](patterns/dimensional_special_cases/degenerate_dimension.md)
 
 ---
 

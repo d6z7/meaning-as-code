@@ -16,15 +16,15 @@ findings across 110 documents. Four of them show the shape of the defect:
                           sdk/gate/ — true, and unfindable from any of the three sentences.
 
 None of these was a lie when written. Files moved, a proposal was retired, a plan was not built, and
-the sentences that pointed at them kept reading well. Prose does not rot visibly — `check_wiki_citations`
-already says so for the wiki, and this is the same mechanism turned on the documents the wiki does not
-cover: every *.md, the module docstring of every tool and SDK module, and the prose fields of the
+the sentences that pointed at them kept reading well. Prose does not rot visibly, so this turns a
+citation check on every document in the tree: every *.md, the module docstring of every tool and SDK
+module, and the prose fields of the
 guardrails. A pointer that resolves to nothing is a defect with a predicate, so it gets a gate.
 
 WHAT IT SCANS
   * every `*.md` under the root, except .git/ build/ node_modules/ .venv/ __pycache__/ .pytest_cache/
-    (pytest writes its own README there), wiki/ (generated; `check_wiki_citations` owns it) and
-    protocol/ (append-only: an old entry may name a file that has since moved, and that is history);
+    (pytest writes its own README there) and protocol/ (append-only: an old entry may name a file
+    that has since moved, and that is history);
   * the MODULE DOCSTRING of tools/**/*.py and sdk/**/*.py — the paragraph a reader is sent to;
   * the PROSE FIELDS of guardrails/**/*.yaml, the same fields `check_retired_terms.PROSE_FIELDS` names.
 
@@ -32,8 +32,7 @@ THE REFERENCE FORMS, AND WHAT EACH SEVERITY MEANS
   R1  a markdown link `[text](relative/target)`             -> ERROR when the target does not exist
   R2  a backticked path rooted in an OWNED directory        -> ERROR when it does not exist
       (tools/ decisions/ reference_manual/ guardrails/ sdk/ grammar/ registers/ benchmark/ bundlegen/
-       invariants/ recognition/ example_shop_ontology/ example_tpch_ontology/ tests/ protocol/ wiki/
-       articles/) — a path under one of these is a claim about THIS repository and is judged as one
+       invariants/ recognition/ example_shop_ontology/ tests/ protocol/ articles/) — a path under one of these is a claim about THIS repository and is judged as one
   R3  a backticked bare basename (foo.py, x.yaml)           -> ERROR when no file of that name exists
                                                               anywhere in the tree; WARNING when several
                                                               do and the sentence does not say which
@@ -105,11 +104,11 @@ from check_retired_terms import PROSE_FIELDS, _walk  # noqa: E402  (one home for
 ROOT = Path(__file__).resolve().parent.parent
 BASELINE = Path(__file__).resolve().parent / "dangling_floor.txt"
 
-SKIP_DIRS = {".git", "build", "node_modules", ".venv", "__pycache__", ".pytest_cache", "wiki", "protocol",
+SKIP_DIRS = {".git", "build", "node_modules", ".venv", "__pycache__", ".pytest_cache", "protocol",
              ".harvest_cache", "evidence"}
 OWNED = ("tools", "decisions", "reference_manual", "guardrails", "sdk", "grammar", "registers", "benchmark",
          "bundlegen", "invariants", "recognition", "example_shop_ontology", "tests",
-         "protocol", "wiki", "articles")
+         "protocol", "articles")
 CROSS_REPO = ("mac-platform/", "mac-console/", "mac-integration-kit/", "mac-ontology-", "packages/",
               "mac_runtime/", "okf_core/", "foldplane/", "platform/skills/")
 BUNDLE_ROOTS = ("data", "ontology", "acceptance", "governance", "projections", "quality", "transforms",

@@ -97,7 +97,7 @@ THE REJECT CLASSES — each proven by a mutant in `--self-test`
                               defect this whole change exists to end.
 
 THE SUBJECT IS THIS REPOSITORY, NOT A BUNDLE, so this gate REFUSES a positional path argument
-rather than mis-reading one. The precedent and the reason are `tools/check_key_reference.py`: a
+rather than mis-reading one. The precedent and the reason are `tools/check_structure_reference.py`: a
 gate that mis-read that argument once judged 7 commits against a floor measured over 38 and printed
 PASS. It is declared in the runner's REPO_SUBJECT_GATES for the same reason.
 
@@ -531,7 +531,7 @@ def main(argv=None) -> int:
     # bundle has none. It is declared in the runner's REPO_SUBJECT_GATES for that reason, and
     # refusing a positional argument is what keeps a calling-convention miss from reading as a
     # finding — the defect that once had a gate judge 7 commits against a floor measured over 38
-    # and print PASS. See tools/check_key_reference.py, which sets this precedent.
+    # and print PASS. See tools/check_structure_reference.py, which sets this precedent.
     positional = [a for a in argv if not a.startswith("-")]
     if positional:
         print(f"could not run: this gate takes no path argument (got {positional[0]!r}); "

@@ -18,14 +18,14 @@ structures *do* absorb — e.g. `associative_entity` — are **not** findings; t
 
 | # | Candidate | Surfaced by | Today's workaround | Status |
 | --- | --- | --- | --- | --- |
-| **F1** | A first-class **polymorphic edge** (one edge → a discriminated union of targets) | [`polymorphic_association`](patterns/polymorphic_association.md) | N discriminated `physical` edges + `parent_type` enum + reused `composite_key_guard` | **open — for decision** |
-| **F2** | A first-class **bitemporal (dual-as-of) collapse** (as-of valid V, as-known-at system S) | [`bitemporal`](patterns/bitemporal.md) | nest `snapshot_collapse` twice (valid then system) | **open — for decision** |
+| **F1** | A first-class **polymorphic edge** (one edge → a discriminated union of targets) | [`polymorphic_association`](patterns/identity_and_structure/polymorphic_association.md) | N discriminated `physical` edges + `parent_type` enum + reused `composite_key_guard` | **open — for decision** |
+| **F2** | A first-class **bitemporal (dual-as-of) collapse** (as-of valid V, as-known-at system S) | [`bitemporal`](patterns/history_and_time/bitemporal.md) | nest `snapshot_collapse` twice (valid then system) | **open — for decision** |
 
 ---
 
 ## F1 — A first-class polymorphic edge / abstract role target
 
-**Surfaced by:** [`polymorphic_association`](patterns/polymorphic_association.md).
+**Surfaced by:** [`polymorphic_association`](patterns/identity_and_structure/polymorphic_association.md).
 
 **The gap.** A `(type, id)` pair references one of several concepts, chosen by the discriminator. MAC's edge
 model assumes a **single** typed target (`realized_by` one FK), so a polymorphic reference has no first-class
@@ -53,7 +53,7 @@ framework quality checklist. **Not enacted here.**
 
 ## F2 — A first-class bitemporal (dual-as-of) collapse
 
-**Surfaced by:** [`bitemporal`](patterns/bitemporal.md).
+**Surfaced by:** [`bitemporal`](patterns/history_and_time/bitemporal.md).
 
 **The gap.** A bitemporal fact has two independent time axes — *valid* (when true in the world) and *system*
 (when recorded). `snapshot_collapse` collapses **one** axis to an as-of; a bitemporal read needs **both**

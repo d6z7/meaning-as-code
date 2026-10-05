@@ -29,4 +29,4 @@ owned-root path like `reference_manual/rule_engine.md`, and `tools/dangling_floo
 that refuses a new waiver, so the reference cannot be set aside either.
 
 Its sibling stubs, [`canon_library.md`](canon_library.md) and
-[`canon/population_select.md`](canon/population_select.md), exist for the same reason.
+[`rules_and_canons/competing_definitions/population_select.md`](rules_and_canons/competing_definitions/population_select.md), exist for the same reason.

@@ -2,7 +2,7 @@
 title: How a measure folds — measure_type, axes, and what a question binds
 status: measure_type and additivity are READ and enforced; binding_mode is not yet read
 audience: ontology authors declaring a measure
-companions: [column_roles.md, ../mac_vocabulary.yaml, patterns/semi_additive_balance.md]
+companions: [column_roles.md, ../mac_vocabulary.yaml, patterns/aggregation_hazards/semi_additive_balance.md]
 ---
 
 # How a measure folds

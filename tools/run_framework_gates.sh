@@ -46,8 +46,7 @@
 # NOT FIXED HERE, ON PURPOSE — two gates are miscounted as could-not-run and it would make this
 # suite GREENER to fix, which needs an operator, not this runner:
 #   check_topology.py       run bare: PASS (5 capabilities over 620 tracked files)
-#   check_wiki_citations.py run bare: PASS (1021 citations over 34 pages)
-# Both refuse <bundle-root> because their subject is THIS REPOSITORY, so both belong in
+# It refuses <bundle-root> because its subject is THIS REPOSITORY, so it belongs in
 # REPO_SUBJECT_GATES below. Moving them turns 2 could-not-runs into 2 passes (30/37 -> 32/37)
 # without proving one new thing, and it moves a published baseline. Left visible, not silently
 # harvested: a suite must never get greener as a side effect of someone else's task.
@@ -131,18 +130,19 @@ run_capped() {
 # 2026-09-29: seven more, MEASURED bare rather than assumed. The header above once claimed moving
 # them would make the suite greener; run bare, five of the eight that refused a bundle root were
 # FAILING (canon_documented, projection_field_parity, query_grammar, topology, vocabulary_parity)
-# and two PASS (guard_scope, wiki_citations). Could-not-run had hidden five reds. `check_guardrails`
+# and one PASS (guard_scope); `check_wiki_citations` was the second and was deleted with the
+# wiki on 2026-10-05. Could-not-run had hidden five reds. `check_guardrails`
 # needs a flag the runner has no convention for and stays declared in the register as cannot-open.
 # `check_dangling_references` judges THIS repository's documents against THIS repository's baseline;
 # handed a bundle root it reported 58 new and 35 stale — a calling-convention miss, not a finding.
-# 2026-10-04: check_key_reference. Its subject is this repository's reference_manual/keys/ pages;
+# 2026-10-04: check_structure_reference. Its subject is this repository's reference_manual/structure/ pages;
 # a bundle only supplies the examples, so it takes no bundle root. It is also the FIRST generator in
 # this repository whose --check the suite can see: the loop above globs `check_*.py`, so the five
 # existing `gen_*.py --check` instruments are invisible to it, which is how shape_reference.md held
 # `schema 0.1.14` against a 0.1.16 schema with nothing red.
 REPO_SUBJECT_GATES=(check_strategy.py check_protocol.py check_canon_documented.py check_projection_field_parity.py
   check_query_grammar.py check_topology.py check_vocabulary_parity.py check_guard_scope.py
-  check_wiki_citations.py check_dangling_references.py check_declarations_read.py check_key_reference.py
+  check_dangling_references.py check_declarations_read.py check_structure_reference.py
   check_schema_shapes.py check_slot_reference.py check_vocabulary_terms.py check_decision_state.py
   check_manual_index.py check_decisions_index.py check_semantic_currency.py
   check_page_home.py)

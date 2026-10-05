@@ -87,7 +87,9 @@ def render() -> str:
     t = terms()
     impl, unimpl, found = runtime_lists()
     described = {p.stem for p in PAGES_DIR.rglob("*.md") if p.stem != "README"}
-    patterns = {p.stem for p in PATTERNS_DIR.glob("*.md")}
+    #: PATTERNS ARE FOLDED INTO FAMILIES (2026-10-05), so a page is one level down and the link
+    #: needs its family segment. `{stem: family}` rather than a bare set, for exactly that.
+    patterns = {q.stem: q.parent.name for q in PATTERNS_DIR.glob("*/*.md")}
 
     groups: dict[str, list[str]] = {}
     for name, body in t.items():
@@ -118,7 +120,7 @@ def render() -> str:
 
     for g in order:
         members = sorted(groups[g])
-        link = f"[`{g}`](../patterns/{g}.md)" if g in patterns else f"`{g}`"
+        link = (f"[`{g}`](../patterns/{patterns[g]}/{g}.md)" if g in patterns else f"`{g}`")
         # PLAIN HEADINGS, NOT `<details>`. Operator ruling 2026-10-05: "main chapters should not be
         # foldable for the time being." A group was briefly a `<summary>`, which also cost it its
         # place in every table of contents — a `<summary>` is not a heading, so the twelve group

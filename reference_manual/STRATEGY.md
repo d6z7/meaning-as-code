@@ -215,7 +215,7 @@ Every domain question in the bundle's corpus passes against its SME-approved ans
 
 ## Documentation
 
-A document describes the PRESENT. History lives in protocol/ (append-only) and in CONFORMANCE §6 (the changelog); a proposal says PROPOSED on its first line; a document that narrates a past state is marked history or retired by the citation rule (cited by no gate, tool, guardrail, wiki claim or README, and describing a shape the schema no longer routes).
+A document describes the PRESENT. History lives in protocol/ (append-only) and in CONFORMANCE §6 (the changelog); a proposal says PROPOSED on its first line; a document that narrates a past state is marked history or retired by the citation rule (cited by no gate, tool, guardrail, or README, and describing a shape the schema no longer routes).
 
 Enforced by: `tools/check_dangling_references.py`, `tools/check_retired_terms.py`, `tools/gen_strategy.py`, `tools/gen_vocabulary_terms.py`.  
 **Owed:** a `describes: current | history | proposal` front-matter ratchet over every hand-written page, so a page that narrates the past says so on its face.

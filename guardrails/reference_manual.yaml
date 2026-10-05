@@ -94,9 +94,13 @@ authored:
   manual_pattern_page:
     what: one named modelling pattern — one page per thing, a frozen template, read by lookup
     genre: lookup
-    path: reference_manual/patterns/{pattern}.md
-    naming: "{pattern}.md — the pattern's own snake_case name"
-    population: {of: one page per pattern, from: reference_manual/patterns/*.md, empty_is: EMPTY}
+    # FOLDED INTO FAMILIES 2026-10-05. The 22 pages moved from a flat `patterns/` into the six
+    # families `03_pattern_reference.md` §3.2 already names, and each page now DECLARES its own
+    # `family:` in frontmatter — so the directory is derived from a declaration, not a convention.
+    # This path still said `patterns/{pattern}.md`, and all 22 instantly read as UNGOVERNED_PAGE.
+    path: reference_manual/patterns/{family}/{pattern}.md
+    naming: "{family}/{pattern}.md — the family from the page's own `family:`, then its snake_case name"
+    population: {of: one page per pattern, from: reference_manual/patterns/*/*.md, empty_is: EMPTY}
     lifecycle: authored
     shape:
       # DERIVED FROM WHAT THESE 22 PAGES ALREADY DO, not imposed. Measured: 20 of 22 carry exactly
@@ -113,7 +117,13 @@ authored:
       # about that pattern alone. Forbidding it would delete content to satisfy a shape.
       extra_sections: allowed
       frontmatter:
-        required: [title, status, part_of, scope]
+        required: [title, status, part_of, scope, family]
+        # `family` ADDED 2026-10-05 with the fold. The six families are the ones
+        # `03_pattern_reference.md` §3.2 already names; declaring the family ON THE PAGE is what
+        # makes the directory derived rather than a filing convention, so a pattern moves family
+        # by changing one line and the path follows.
+        family_closed: [identity_and_structure, history_and_time, aggregation_hazards,
+                        dimensional_special_cases, open_vs_closed_world, semantic_constellations]
         # MEASURED: 19 `prototype`, 3 `gap`. A real two-term vocabulary — `gap` marks a pattern the
         # framework cannot yet express, and FINDINGS.md is where each one is argued.
         status_closed: [prototype, gap]
@@ -132,7 +142,7 @@ authored:
       # A MEASURED EXCEPTION TO THE SHAPE, not a weaker shape. Declared so the gate exits 0 on it and
       # 1 on anything NEW — "only news exits 1". Remove the entry when the page conforms; the gate
       # reports STANDING_STALE if you do not.
-      - page: reference_manual/patterns/scd_type_2.md
+      - page: reference_manual/patterns/history_and_time/scd_type_2.md
         reject: SECTION_MISSING
         detail: "`The footgun, concretely` is absent; the page closes on `## Reading the entry` instead"
         owner: operator
@@ -248,14 +258,19 @@ authored:
       cite the old path -- decisions/DNA-2026-09-25 (law 16) and decisions/PROTOCOL-2026-10-01.
       guardrails/semantic_currency.yaml names decisions/ append-only, "Entries are never edited", so
       the citation cannot be rewritten; check_dangling_references judges an owned-root path like
-      `reference_manual/canon/population_select.md`; and tools/dangling_floor.txt is a one-way ratchet
+      `reference_manual/rules_and_canons/competing_definitions/population_select.md`; and tools/dangling_floor.txt is a one-way ratchet
       that refuses a new waiver. A stub is the only form under which all three stay true at once.
 
   # ── GENRE 3 of 4: THE GENERATED FACE — EXEMPT, AND WHY ──────────────────────────────────────────
   manual_generated_face:
     what: a page NO PERSON writes — rendered from a declaration, held by its own generator's --check
     genre: generated
-    path: reference_manual/keys/** | reference_manual/column_map.generated.md |
+    # `vocabulary/**` ADDED 2026-10-05: the vocabulary pages moved OUT of `keys/` to sit beside it
+    # (keys answers WHICH KEYS, vocabulary answers WHICH VALUES — two questions, two trees), and
+    # 23 generated pages instantly became UNGOVERNED_PAGE because this path still named only their
+    # old home. A page's genre follows the page, and the declaration is where that is said.
+    path: reference_manual/structure/** | reference_manual/vocabulary/** |
+      reference_manual/column_map.generated.md |
       reference_manual/relation_column.generated.md | reference_manual/CURRENCY.md
     naming: the generator's own output path
     population: {of: 59 pages, from: «the generators below», empty_is: EMPTY}
@@ -275,22 +290,22 @@ authored:
         the bytes a second time here would be a second home for the rule and could not catch anything
         the generator's own --check cannot.
       held_by:
-        - tools/check_key_reference.py      # reference_manual/keys/** — 56 pages. The `check_` name
+        - tools/check_structure_reference.py      # reference_manual/structure/** — 56 pages. The `check_` name
                                             # exists because run_framework_gates.sh globs `check_*.py`
-                                            # and could not see `gen_key_reference.py --check`.
+                                            # and could not see `gen_structure_reference.py --check`.
         - tools/gen_slot_reference.py       # column_map.generated.md, relation_column.generated.md
         - tools/check_semantic_currency.py  # CURRENCY.md — every claim this repository makes that its
                                             # own schema, vocabulary or runtime contradicts. Written by
                                             # `--page`, judged by `--check-page`.
     producers:
-      - {tool: tools/gen_key_reference.py, role: writes reference_manual/keys/** from mac.schema.json}
+      - {tool: tools/gen_structure_reference.py, role: writes reference_manual/structure/** from mac.schema.json}
       - {tool: tools/gen_slot_reference.py, role: writes the two slot pages}
       - {tool: tools/check_semantic_currency.py,
          role: "writes reference_manual/CURRENCY.md from the schema, the vocabulary and
                 mac_runtime.canon.IMPLEMENTED — the SEMANTIC counterpart to
                 check_dangling_references, which judges only whether a pointer resolves"}
     consumers: [{tool: «a reader», role: the key-by-key answer a person cannot get from the schema}]
-    checkers: [tools/check_key_reference.py]
+    checkers: [tools/check_structure_reference.py]
 
   # ── GENRE 4 of 4: THE TOPIC PAGE — the 15 the brief's three genres do not reach ─────────────────
   manual_topic_page:

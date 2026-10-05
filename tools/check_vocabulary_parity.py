@@ -91,8 +91,8 @@ PAIRS = (
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "register"],
      "name_register"),
-    ("TableFile column `role`",
-     ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "relation.column.role"),
+    ("dataset column `role`",
+     ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "dataset.column.role"),
     # `concept identity kind` RETIRED 2026-10-05 with the slot it governed. Identity is a COLUMN
     # fact (`concept.column.identity`, the pair two entries above); the concept-level block and its
     # six-term vocabulary are gone, so there is no longer a second home for the parity to police.

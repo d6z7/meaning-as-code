@@ -43,7 +43,7 @@ identically. Agreement by construction is not evidence. `--check` now asks a SEC
 SOURCE — every term the vocabulary declares for a governed slot, and the opening words of its meaning,
 must appear under that slot's heading; every key the schema admits must appear in the table; and no
 Python container repr may appear anywhere on a page. Five reject classes, five mutants, and
-`--self-test` asserts that each mutant CHANGED the page: in `gen_key_reference.py` a mutant that
+`--self-test` asserts that each mutant CHANGED the page: in `gen_structure_reference.py` a mutant that
 deleted a table row silently stopped deleting anything when the emitter stopped emitting tables, and
 the self-test reported 6/6 over a reject it was no longer exercising.
 
@@ -369,7 +369,7 @@ def self_test(schema: dict, vocab: dict) -> int:
         def mutate(new_text: str, cls: str, why: str):
             """Seed one mutant, assert it REJECTS — and assert it CHANGED THE PAGE.
 
-            THE SECOND ASSERTION IS NOT CEREMONY. gen_key_reference.py's `uncovered-key` mutant
+            THE SECOND ASSERTION IS NOT CEREMONY. gen_structure_reference.py's `uncovered-key` mutant
             deleted a TABLE ROW; when the emitter stopped emitting tables the mutant deleted
             nothing, every check stayed clean, and the self-test still reported 6/6 — green over a
             reject class it was no longer testing.

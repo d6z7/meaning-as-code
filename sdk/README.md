@@ -3,7 +3,7 @@
 The **only** code that may write the ontology SSOT (`sources/**`). Disallowed operations are not merely discouraged — they are not exposed. See `mac-platform/decisions/2026-08-12_three-plane-authoring-model.md` and `mac-platform/boundaries.yaml` (both live in the host repository, not here; the boundary is enforced by `sdk/gate/check_boundaries.py`).
 
 ## Contract
-- **May import:** `meaning-as-code` (the pinned grammar), other `sdk/` modules. **Never** `wiki/`.
+- **May import:** `meaning-as-code` (the pinned grammar), other `sdk/` modules. **Never** a documentation tree.
 - **Sole SSOT writer:** `sdk/authoring/operations.py`. No other module (here or anywhere) may write under `sources/**` — enforced by `sdk/gate/check_write_paths.py` (call-graph aware).
 - **The harvest emits CANDIDATES only** (`sdk/engine/**` has zero write calls); every persist routes through an allowed op that refuses any object whose validation status ∉ {valid, fixed}.
 

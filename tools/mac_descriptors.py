@@ -461,7 +461,6 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         "# where a person argues for it: no default reading, no grain ruling, no 'what one X is'.",
         "",
         "metadata:",
-        f"  table: {table}",
         "  schema_version: 0.1.15",
         # STATUS IS A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT. Every generated
         # descriptor used to be born `draft`, which no reader consumed and which is not true of a
@@ -471,8 +470,9 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         "  status: measured",
         f"  kind: {'served_dataset' if served else 'raw_source'}",
     ]
-    if not served:
-        lines.append("  external: true")
+    # `external: true` WAS EMITTED HERE and is gone (2026-10-05). It could only ever be written
+    # inside this branch, so it was never `false` — a present-or-absent marker typed as a boolean,
+    # read by nothing, saying what `kind: raw_source` on the line above already says.
     lines += [
         f"  observed: '{observed}'",
         f"  generated_by: {GENERATOR}",

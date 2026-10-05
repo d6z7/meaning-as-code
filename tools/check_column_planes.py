@@ -5,7 +5,7 @@ THE OPERATOR'S TWO-PLANE MAP, 2026-09-27, turned into a gate. The map says which
 governs which slot, and separates them by PLANE:
 
     DATA PLANE     data/sources/*.yaml · data/datasets/*.yaml
-                   columns[].role -> mac.relation.column.role (5)   the PHYSICAL shape in the relation
+                   columns[].role -> mac.dataset.column.role (5)   the PHYSICAL shape in the relation
     CONCEPT PLANE  ontology/concepts/**/*.yaml
                    concept.identity.kind -> mac.concept.identity (7)      per CONCEPT
                    the column map's four slots:
@@ -16,14 +16,14 @@ governs which slot, and separates them by PLANE:
                                      register -> mac.name_register (5)
 
 WHY THE SPLIT IS WHAT MAKES THE GATE POSSIBLE. Both planes spell the slot `role:`. One takes
-`mac.relation.column.role`, the other `mac.concept.column.role`, and the two sets SHARE NO TERM — so a term from
+`mac.dataset.column.role`, the other `mac.concept.column.role`, and the two sets SHARE NO TERM — so a term from
 the wrong side is detectable, and is detectable ONLY once the planes are named. Measured on contoso
 the day this gate was written: `dim_contoso_store.Channel` declares `role: dimension` in the DATA
 plane, which is a column.role term in a storage_role slot. Read as one undifferentiated "role", it
 looks correct.
 
 WHAT IT REDS ON
-  R1  a data-plane role outside mac.relation.column.role
+  R1  a data-plane role outside mac.dataset.column.role
   R2  a concept-plane role outside mac.concept.column.role — this is where a RETIRED term surfaces:
       `attribute` was replaced by `housekeeping` and the vocabulary no longer defines it
   R3  a concept binds a column the data plane does not measure — the ontology serving a column
@@ -81,11 +81,11 @@ def load_terms() -> dict[str, list[str]]:
     # spelling survives in 8 framework files and in the runtime's fold-law drift test, where it
     # raises KeyError instead of comparing a cell. Asking for the wrong name here returned an
     # empty list in silence, which is the same defect one layer up.
-    for ns in ("relation.column.role", "concept.column.role", "concept.column.identity", "concept.identity",
+    for ns in ("dataset.column.role", "concept.column.role", "concept.column.identity", "concept.identity",
                "concept.column.measure_type", "concept.column.ruling", "name_register"):
         spec = raw.get(ns) or {}
         out[ns] = list((spec.get("terms") or spec.get("members") or {}))
-    if not out["relation.column.role"] or not out["concept.column.role"]:
+    if not out["dataset.column.role"] or not out["concept.column.role"]:
         raise RuntimeError("mac_vocabulary.yaml did not yield the two role vocabularies")
     return out
 
@@ -142,11 +142,11 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], collections.Cou
 def check(storage: dict, rows: list[dict], terms: dict) -> list[str]:
     bad: list[str] = []
     for (rel, col), role in sorted(storage.items()):
-        if role is not None and role not in terms["relation.column.role"]:
-            other = " — a mac.concept.column.role term in a mac.relation.column.role slot" \
+        if role is not None and role not in terms["dataset.column.role"]:
+            other = " — a mac.concept.column.role term in a mac.dataset.column.role slot" \
                 if role in terms["concept.column.role"] else ""
             bad.append(f"R1 {rel}.{col} declares data-plane role {role!r}, "
-                       f"not a mac.relation.column.role term{other}")
+                       f"not a mac.dataset.column.role term{other}")
     seen = set()
     for r in rows:
         role = r["role"]
@@ -190,12 +190,12 @@ def census(storage: dict, rows: list[dict], kinds: collections.Counter,
         s = storage.get((r["rel"], r["col"]))
         xt[(s, r["role"])] += 1
     print(f"\n── storage_role x column.role, the two planes crossed "
-          f"({len(xt)} of {len(terms['relation.column.role']) * len(terms['concept.column.role'])} possible pairs occur) ──")
+          f"({len(xt)} of {len(terms['dataset.column.role']) * len(terms['concept.column.role'])} possible pairs occur) ──")
     for (s, c), n in sorted(xt.items(), key=lambda x: -x[1]):
         flag = ""
         if (s, c) in SUSPICIOUS:
             flag = "  <- " + SUSPICIOUS[(s, c)]
-        elif s is not None and s not in terms["relation.column.role"]:
+        elif s is not None and s not in terms["dataset.column.role"]:
             flag = "  <- illegal storage_role"
         elif c is not None and c not in terms["concept.column.role"]:
             flag = "  <- retired/illegal column_role"
@@ -216,7 +216,7 @@ def census(storage: dict, rows: list[dict], kinds: collections.Counter,
 
 def self_test() -> int:
     """One mutant per reject class. A gate that cannot go red is the zero-denominator pass."""
-    terms = {"relation.column.role": ["value", "primary_key"], "concept.column.role": ["key", "dimension"],
+    terms = {"dataset.column.role": ["value", "primary_key"], "concept.column.role": ["key", "dimension"],
              "concept.identity": [], "concept.column.identity": [], "measure_type": [],
              "concept.column.ruling": [], "name_register": []}
     ok_store = {("t", "a"): "value"}

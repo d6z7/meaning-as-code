@@ -259,7 +259,7 @@ def check_parity(effects: dict, table: dict[str, dict], vocab: dict) -> list[str
 def two_plane_census(bundle: pathlib.Path) -> dict:
     """The operator's two-plane map, populated from this bundle — every column placed in BOTH planes.
 
-    THE JOIN IS THE POINT. The data plane measures a column's PHYSICAL shape (mac.relation.column.role); the
+    THE JOIN IS THE POINT. The data plane measures a column's PHYSICAL shape (mac.dataset.column.role); the
     concept plane authors its ANALYTICAL role (mac.concept.column.role). The two vocabularies share no term,
     so crossing them is a 5x5 space in which some pairs are ordinary, some are the reference
     manual's own warnings, and a term from the wrong side is a breach visible only once the planes

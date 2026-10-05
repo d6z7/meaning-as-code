@@ -66,7 +66,7 @@ the single live read of `identity.kind` in the playground was a false refusal.
 
 ### D1b · the two-homes argument that was taken the wrong way
 
-`parser.py` refused any concept whose column said `canonical` without a concept-level `kind`, because
+`ontology/parser.py` refused any concept whose column said `canonical` without a concept-level `kind`, because
 a first version GUESSED the kind from the column and was wrong (2026-09-26, Store read as `code` when
 it was `fk_name`). That incident proved **do not infer**. It was read as **keep it on the concept**.
 Different conclusions; the estate took the second. The refusal is deleted: with nothing inferring a
@@ -124,7 +124,7 @@ load. It is now declared in `mac_vocabulary.yaml`, landed into the schema by `--
 
 `mac_to_graph`'s `NODE_CLASSES` lumps `entity`/`reference`/`grouping` into one set, which read as
 proof that nothing told them apart. It was one blind reader, not no reader: **`mac.schema.json` makes
-`members.over` MANDATORY for a grouping**, and `console_api.py:5019-5140` draws the **containment
+`members.over` MANDATORY for a grouping**, and mac-platform's `console_api.py:5019-5140` draws the **containment
 channel** from it — whole→part membership that FRAMEWORK.md deliberately keeps on the concept instead
 of in `edges.yaml`, with its own test file and its own top-level key in the graph API.
 

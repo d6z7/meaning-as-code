@@ -124,7 +124,7 @@ homes:
       is the rule a mechanical mover would have broken silently, which is why it is written down.
     naming: the retired page's own basename — the address being redirected from
     members:
-      - CONCEPT_SPEC.md   # -> reference_manual/keys/** ; "kept only so existing links resolve"
+      - CONCEPT_SPEC.md   # -> reference_manual/structure/** ; "kept only so existing links resolve"
       - TESTING.md        # -> PIPELINE_TESTING.md Part A, with a §1-§9 anchor map
     population: {of: 2 named pages, from: «this declaration», empty_is: EMPTY}
     # MEASURED: 66 of the 436 references name these two. 4 of the 66 are inside `protocol/`, which
@@ -157,13 +157,23 @@ homes:
     naming: "{GENRE}-{date}_{slug}.md"
     population: {of: 18 records, from: decisions/*.md, empty_is: EMPTY}
     checkers: [tools/check_decision_state.py]
+    documentation: false
+    documentation_because: >-
+      KEPT, BUT NOT OFFICIAL DOCUMENTATION. Operator, 2026-10-05: *"you can btw keep it but not in
+      the official documentation."* A decision record is an APPEND-ONLY account of what was ruled on
+      a date — true when written and never edited afterwards, which is exactly what documentation
+      must not be. Served beside the manual it reads as current guidance, and several records do
+      assert counts, keys and paths the estate has since changed: a reader cannot tell the archive
+      from the standard when both arrive in one tree. The records stay on disk, stay linked from
+      `decisions/README.md`, and stay citable; they are simply not pages the console's documentation
+      window offers. If a record holds a fact that IS current, that fact belongs in the manual —
+      moving it there is the fix, not re-serving the archive.
 
-  wiki_page:
-    what: the explanatory wiki, clustered by audience
-    home: wiki/{audience}
-    naming: "{audience}/{topic}.md — kebab-case"
-    population: {of: 35 pages over 3 audiences, from: wiki/**/*.md, empty_is: EMPTY}
-    checkers: [tools/check_wiki_citations.py]
+  # `wiki_page` RETIRED 2026-10-05 by operator ruling, and the home is gone with it. It was 35
+  # pages COMPILED by tools/mac_wiki.py from the protocol entries — 15 real pages and 18 stubs —
+  # so deleting the output alone would have regenerated on the next run. The compiler and
+  # check_wiki_citations.py are deleted too, which is what makes the removal hold. The protocol
+  # entries it compiled from are untouched: they are the source, and they remain.
 
   article:
     what: a long-form piece written outward, for a reader who does not have this repository

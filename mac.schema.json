@@ -198,24 +198,6 @@
             }
           ]
         },
-        "lifecycle": {
-          "type": "object",
-          "description": "(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.",
-          "properties": {
-            "phases": {
-              "type": "array",
-              "description": "The named phases of this event's life, IN SEQUENCE — each grouping the states that belong to it. Descriptive and not executed: it records the shape a reader needs to interpret a status column, and nothing enforces a transition."
-            },
-            "boundary": {
-              "description": "WHERE THIS CONCEPT'S LIFECYCLE STARTS AND STOPS — the first state it recognises and the last. It is what says whether a row that has left the last phase is still this concept at all, which decides whether a count includes it."
-            },
-            "note": {
-              "type": "string",
-              "description": "A remark about the lifecycle — a phase the data represents oddly, a transition that happens outside this system, a state that exists in the business and not in the rows."
-            }
-          },
-          "additionalProperties": false
-        },
         "derived_by_rule": {
           "type": "string",
           "description": "marks a concept whose value is produced by a rule; the formula lives in rules.yaml (single-homing), this only names it."
@@ -284,25 +266,6 @@
                 }
               }
             }
-          }
-        },
-        {
-          "$comment": "v0.5 per-class template — event: must carry a lifecycle (the state machine).",
-          "if": {
-            "properties": {
-              "concept": {
-                "properties": {
-                  "class": {
-                    "const": "event"
-                  }
-                }
-              }
-            }
-          },
-          "then": {
-            "required": [
-              "lifecycle"
-            ]
           }
         },
         {
@@ -2775,14 +2738,16 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "table": {
-              "type": "string"
-            },
             "schema_version": {
               "type": "string"
             },
             "kind": {
-              "type": "string"
+              "type": "string",
+              "enum": [
+                "raw_source",
+                "served_dataset"
+              ],
+              "description": "WHICH OF THE TWO HOMES THIS DESCRIPTOR DESCRIBES — the raw schema-of-record under `data/sources/`, or the served relation under `data/datasets/`. They are ONE shape: identical `table.*` and `columns[].*`, so this key is the whole difference. It was `{type: string}` with no enum and no description until 2026-10-05, which made the single discriminator of the data plane an open field. `external: true` sat beside it as a second marker and is removed: the generator could only ever emit it inside `if not served`, so it was present-or-absent typed as a boolean, it was read by nothing, and it said what this key already says."
             },
             "observed": {
               "type": "string",
@@ -2790,9 +2755,6 @@
             },
             "generated_by": {
               "type": "string"
-            },
-            "external": {
-              "type": "boolean"
             },
             "status": {
               "type": "string",
@@ -2803,7 +2765,7 @@
               "description": "A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT. `retired` is read by check_datasets_are_grounded, which skips a descriptor whose relation is gone — the one real consumer. `draft` is NOT permitted: a measurement is not a draft, it either happened or it did not, and every generated descriptor was born `draft` for no reader at all."
             }
           },
-          "description": "CLOSED v0.1.15. It was an open object — `additionalProperties` unset and `properties` empty — so it accepted any key, and that is the hatch `status: draft` and `confidence: I` came through while the column object beside it was strictly closed."
+          "description": "CLOSED v0.1.15. It was an open object — `additionalProperties` unset and `properties` empty — so it accepted any key, and that is the hatch `status: draft` and `confidence: I` came through while the column object beside it was strictly closed. `table` REMOVED 2026-10-05: it duplicated `table.name` in 16 of 16 descriptors, and the FILENAME too — a triple. It had zero readers (the one hit was a writer), and the filename<->table.name link is already enforced by tools/check_relation_identity.py, so the fact was policed twice over without this third copy."
         },
         "table": {
           "type": "object",

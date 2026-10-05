@@ -103,7 +103,7 @@ def index_path(root: pathlib.Path) -> pathlib.Path:
 
 
 def keys_index_path(root: pathlib.Path) -> pathlib.Path:
-    return manual_dir(root) / "keys" / "README.md"
+    return manual_dir(root) / "structure" / "README.md"
 
 
 def manual_files(root: pathlib.Path) -> list[pathlib.Path]:
@@ -113,7 +113,7 @@ def manual_files(root: pathlib.Path) -> list[pathlib.Path]:
 
 
 def under_keys(root: pathlib.Path, path: pathlib.Path) -> bool:
-    return "keys" in path.relative_to(manual_dir(root)).parts
+    return "structure" in path.relative_to(manual_dir(root)).parts
 
 
 # ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -198,14 +198,22 @@ def describe(path: pathlib.Path, base: pathlib.Path) -> dict:
 def canon_lists(root: pathlib.Path) -> dict:
     """The THREE canon lists `check_canon_documented.py` compares, from the same three sources."""
     vocab_file = root / "mac_vocabulary.yaml"
-    pages_dir = manual_dir(root) / "canon"
+    # THE CANON PAGES MOVED AND THIS DID NOT FOLLOW THEM. On 2026-10-05 they were regrouped under
+    # the pattern each one serves — `rules_and_canons/<pattern>/<canon>.md` — and `canon/` was left
+    # holding a single redirect stub. This globbed `canon/*.md`, so for every run since, the
+    # "described" set was ONE name: the stub's. The count was wrong and nothing said so, because a
+    # directory that exists and is nearly empty looks exactly like a directory that is correct.
+    # Deleting the stub turned that silent wrong answer into a refusal, which is how it was found.
+    pages_dir = manual_dir(root) / "rules_and_canons"
     if not vocab_file.is_file() or not pages_dir.is_dir():
         raise CouldNotRun(f"need {vocab_file.name} and {pages_dir}")
     block = (yaml.safe_load(vocab_file.read_text(encoding="utf-8")) or {}).get("canon") or {}
     # `terms:` is the vocabulary's key; `members:` is the older spelling, read the same way the
     # canon gate reads it — one wrong key there once reported 19 defined canons as 0.
     defined = block.get("terms") if block.get("terms") is not None else (block.get("members") or {})
-    described = {p.stem for p in pages_dir.glob("*.md")}
+    # One level DOWN: a canon page sits in its pattern's folder. The group's own front pages
+    # (`README.md`, `rule_engine.md`, …) sit at the top of `rules_and_canons/` and are not canons.
+    described = {p.stem for p in pages_dir.glob("*/*.md")}
 
     sys.path.insert(0, str(TOOLS))
     try:
@@ -390,7 +398,7 @@ def render(root: pathlib.Path) -> str:
     schema_version = json.loads((root / "mac.schema.json").read_text(encoding="utf-8")).get("version")
 
     keys_rel = sorted(p.relative_to(manual).as_posix() for p in keys_files)
-    keys_other = [k for k in keys_rel if k != "keys/README.md"]
+    keys_other = [k for k in keys_rel if k != "structure/README.md"]
     has_keys_index = keys_index_path(root).is_file()
 
     unknowns = [p for p in described if p["status"] is None]
@@ -448,8 +456,8 @@ def render(root: pathlib.Path) -> str:
     for d in sorted(subdirs):
         A(f"| `reference_manual/{d}/` | {len(subdirs[d])} | this page, below |")
     A(f"| artifacts that are not markdown | {len(artifacts)} | this page, below |")
-    A(f"| `reference_manual/keys/` | {len(keys_rel)} | its own generated index, "
-      f"[`keys/README.md`](keys/README.md)" + ("" if has_keys_index else " — **ABSENT**") + " |")
+    A(f"| `reference_manual/structure/` | {len(keys_rel)} | its own generated index, "
+      f"[`structure/README.md`](structure/README.md)" + ("" if has_keys_index else " — **ABSENT**") + " |")
     A(f"| **total** | **{len(files)}** | this index is one of them, and is counted but not listed |")
     A("")
     A("What the manual says about its own pages, counted — each key is a page's own `status:`, so a")
@@ -522,7 +530,8 @@ def render(root: pathlib.Path) -> str:
     A(f"The deterministic behaviour a concept's `realized_by:` names. A canon exists in three places "
       f"and `tools/check_canon_documented.py` compares them: **{len(defined)} defined** in "
       f"`mac_vocabulary.yaml` under `canon`, **{len(described_c)} described** by a page under "
-      f"`canon/`, **{len(honoured)} implemented** in the runtime's implemented-canon set. The three "
+      f"`rules_and_canons/<pattern>/`, **{len(honoured)} implemented** in the runtime's "
+      f"implemented-canon set. The three "
       f"middle columns below ARE those three lists; the last is the page's own frontmatter.")
     A("")
     if canon_front:
@@ -571,14 +580,14 @@ def render(root: pathlib.Path) -> str:
     A("## The generated key reference")
     A("")
     if has_keys_index:
-        A(f"[`keys/README.md`](keys/README.md) indexes **{len(keys_other)}** further page(s) — one per "
+        A(f"[`structure/README.md`](structure/README.md) indexes **{len(keys_other)}** further page(s) — one per "
           f"LEVEL of a concept file and one per vocabulary notion, written by "
-          f"`tools/gen_key_reference.py` from `mac.schema.json` and `mac_vocabulary.yaml`. They are not "
+          f"`tools/gen_structure_reference.py` from `mac.schema.json` and `mac_vocabulary.yaml`. They are not "
           f"repeated here, because that sub-index is generated too; `tools/check_manual_index.py` "
           f"asserts from the filesystem that every one of them is reachable through it.")
     else:
-        A(f"**{len(keys_other)} page(s) exist under `keys/` and there is no `keys/README.md` to index "
-          f"them.** Run `python3 tools/gen_key_reference.py`.")
+        A(f"**{len(keys_other)} page(s) exist under `keys/` and there is no `structure/README.md` to index "
+          f"them.** Run `python3 tools/gen_structure_reference.py`.")
     A("")
 
     A("## Artifacts that are not markdown")
@@ -694,22 +703,22 @@ def check(root: pathlib.Path) -> tuple[list[str], dict]:
             rejects.append(f"[uncovered-page] {rel} — the manual carries this page and the index does "
                            f"not link it")
 
-    #: AND THE SUBTREE THIS INDEX DELEGATES. It claims `keys/README.md` indexes those pages; a
+    #: AND THE SUBTREE THIS INDEX DELEGATES. It claims `structure/README.md` indexes those pages; a
     #: completeness claim that hands off to another index is only true if that index is complete.
     keys_index = keys_index_path(root)
     if counts["keys"]:
         if not keys_index.is_file():
-            rejects.append(f"[uncovered-keys-page] keys/README.md — {counts['keys']} page(s) under "
+            rejects.append(f"[uncovered-keys-page] structure/README.md — {counts['keys']} page(s) under "
                            f"keys/ and no sub-index to reach them through")
         else:
             sub = link_targets(keys_index.read_text(encoding="utf-8"))
             for p in files:
                 rel = p.relative_to(manual).as_posix()
-                if not under_keys(root, p) or rel == "keys/README.md":
+                if not under_keys(root, p) or rel == "structure/README.md":
                     continue
                 if rel[len("keys/"):] not in sub and rel not in sub:
                     rejects.append(f"[uncovered-keys-page] {rel} — this index delegates the keys/ "
-                                   f"subtree to keys/README.md and that page does not link it")
+                                   f"subtree to structure/README.md and that page does not link it")
     return rejects, counts
 
 
@@ -777,10 +786,10 @@ def self_test() -> int:
 
         # uncovered-keys-page — the delegated sub-index stops covering one of its own pages.
         sub = keys_index_path(fake)
-        victim = next((p for p in sorted((man / "keys").rglob("*.md")) if p.name != "README.md"), None)
+        victim = next((p for p in sorted((man / "structure").rglob("*.md")) if p.name != "README.md"), None)
         if sub.is_file() and victim is not None:
             keep = sub.read_text(encoding="utf-8")
-            inner = victim.relative_to(man / "keys").as_posix()
+            inner = victim.relative_to(man / "structure").as_posix()
             sub.write_text("\n".join(ln for ln in keep.splitlines() if inner not in ln) + "\n",
                            encoding="utf-8")
             expect(any(r.startswith("[uncovered-keys-page]") for r in check(fake)[0]),
@@ -822,7 +831,7 @@ def main(argv=None) -> int:
             if len(rejects) > 40:
                 print(f"  … and {len(rejects) - 40} more")
             tail = (f"{counts['listed']} page(s) listed + {counts['keys']} delegated to "
-                    f"keys/README.md + 1 index = {counts['existing']} file(s) in reference_manual/")
+                    f"structure/README.md + 1 index = {counts['existing']} file(s) in reference_manual/")
             if rejects:
                 print(f"FAIL: gen_manual_index — {len(rejects)} reject(s) over {tail}; run "
                       f"`python3 tools/gen_manual_index.py` to regenerate")
@@ -833,7 +842,7 @@ def main(argv=None) -> int:
         index_path(ROOT).write_text(render(ROOT), encoding="utf-8")
         _, counts = check(ROOT)
         print(f"PASS: gen_manual_index — wrote reference_manual/README.md: {counts['listed']} page(s) "
-              f"listed + {counts['keys']} delegated to keys/README.md + 1 index = "
+              f"listed + {counts['keys']} delegated to structure/README.md + 1 index = "
               f"{counts['existing']} file(s) in reference_manual/")
         return 0
     except CouldNotRun as exc:

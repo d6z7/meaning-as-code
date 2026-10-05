@@ -180,9 +180,6 @@ def _canonicalize_names(doc: dict, base: str, view_schema: str) -> None:
         if isinstance(tbl, dict):
             tbl["name"] = base
             tbl["schema"] = view_schema
-        meta = ds.get("metadata")
-        if isinstance(meta, dict) and "table" in meta:
-            meta["table"] = base
         dfrom = ds.get("derived_from")
         if isinstance(dfrom, dict):
             dfrom["pipeline"] = f"data/transforms/{base}.yaml"

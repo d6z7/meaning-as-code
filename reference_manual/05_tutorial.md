@@ -84,10 +84,10 @@ The loop above handles the *easy* shapes. The moment the data fights back — a 
 find the **pattern** in [Ch.03](03_pattern_reference.md). Each pattern is the same loop with the *one
 declared fact* (and its canon) that makes the hard case come out right. A few you'll meet early:
 
-- a stock you might sum over time → [`semi_additive_balance`](patterns/semi_additive_balance.md)
-- "revenue?" with no period → [`required_unspecified`](patterns/required_unspecified.md)
-- a dimension with versioned history → [`scd_type_2`](patterns/scd_type_2.md)
-- a missing row that might mean zero → [`absence_semantics`](patterns/absence_semantics.md)
+- a stock you might sum over time → [`semi_additive_balance`](patterns/aggregation_hazards/semi_additive_balance.md)
+- "revenue?" with no period → [`required_unspecified`](patterns/semantic_constellations/required_unspecified.md)
+- a dimension with versioned history → [`scd_type_2`](patterns/history_and_time/scd_type_2.md)
+- a missing row that might mean zero → [`absence_semantics`](patterns/open_vs_closed_world/absence_semantics.md)
 
 ## 5.5 Where to go next
 
