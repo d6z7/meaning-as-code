@@ -65,7 +65,7 @@ page that calls itself a prototype is counted as a prototype:
 | [`CURRENCY.md`](CURRENCY.md) | Semantic currency | — | hand-written |
 | [`FINDINGS.md`](FINDINGS.md) | Findings — framework-enhancement candidates (for the maintainer's decis… | living | hand-written |
 | [`STRATEGY.md`](STRATEGY.md) | The strategy — RULED 2026-09-29 | — | `gen_strategy` **(no `check_*.py`)** |
-| [`canon_library.md`](canon_library.md) | The canon library — what makes a declaration executable | 21 defined, 21 described, 18 implemented (measured 2026-10-05) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` |
+| [`canon_library.md`](canon_library.md) | Rules and their canons — what makes a declaration executable | 21 defined, 21 described, 18 implemented (measured 2026-10-05) — check_canon_documented.py holds the th… | `gen_vocabulary_terms` |
 | [`column_map.generated.md`](column_map.generated.md) | The column map — everything about one column, on the column | — | `gen_slot_reference` |
 | [`column_roles.md`](column_roles.md) | Column Roles — what a column IS, and where a query may use it | ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed… | `gen_vocabulary_terms` |
 | [`column_rulings.md`](column_rulings.md) | Column rulings — reference | PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.ru… | `gen_vocabulary_terms` |

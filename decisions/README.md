@@ -44,7 +44,7 @@ removing it would leave a pointer with nowhere to land.
 |---|---|---|---|---|
 | [`2026-09-10_packaging-and-release-surface.md`](2026-09-10_packaging-and-release-surface.md) | **— none** | implemented | frontmatter `state:` | 2 — `__init__.py`, `pyproject.toml` |
 | [`DELIVERABLES-2026-09-26_first-run-state.md`](DELIVERABLES-2026-09-26_first-run-state.md) | DELIVERABLES | recorded | frontmatter `state:` | 9 — `tools/_plugin.py`, `tools/duckdb_seam.py`, `tools/mac_descriptors.py` +6 more |
-| [`DNA-2026-09-25_ontology-design-requirements.md`](DNA-2026-09-25_ontology-design-requirements.md) | DNA | recorded | frontmatter `state:` | 0 |
+| [`DNA-2026-09-25_ontology-design-requirements.md`](DNA-2026-09-25_ontology-design-requirements.md) | DNA | recorded | frontmatter `state:` | 1 — `reference_manual/canon/population_select.md` |
 | [`PROPOSED-2026-09-13_connector-plugin-architecture.md`](PROPOSED-2026-09-13_connector-plugin-architecture.md) | PROPOSED | proposed | frontmatter `state:` | 4 — `sdk/connector/__init__.py`, `sdk/connector/base.py`, `sdk/gate/engine_coupling_floor.txt` +1 more |
 | [`PROPOSED-2026-09-29_delivery-manifest.md`](PROPOSED-2026-09-29_delivery-manifest.md) | PROPOSED | superseded | frontmatter `state:` | 2 — `guardrails/README.md`, `tools/check_decision_state.py` |
 | [`PROPOSED-2026-09-29_guard-scope.md`](PROPOSED-2026-09-29_guard-scope.md) | PROPOSED | implemented | frontmatter `state:` | 2 — `tools/check_decision_state.py`, `tools/check_guard_scope.py` |
@@ -55,7 +55,7 @@ removing it would leave a pointer with nowhere to land.
 | [`PROPOSED-2026-10-02_one-revenue-concept.md`](PROPOSED-2026-10-02_one-revenue-concept.md) | PROPOSED | proposed | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
 | [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) | PROPOSED | implemented | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
 | [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) | PROTOCOL | recorded | frontmatter `state:` | 3 — `guardrails/README.md`, `tools/check_decision_state.py`, `tools/framework_gate_failures.yaml` |
-| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 3 — `reference_manual/canon_library.md`, `reference_manual/rule_engine.md`, `tools/check_decision_state.py` |
+| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 4 — `reference_manual/canon/population_select.md`, `reference_manual/canon_library.md`, `reference_manual/rule_engine.md` +1 more |
 | [`REQ-2026-09-13_console-connection-page.md`](REQ-2026-09-13_console-connection-page.md) | REQ | implemented | frontmatter `state:` | 5 — `protocol/2026-09-13/061-the-console-connection-page-requirement.md`, `tools/check_decision_state.py`, `wiki/core/capabilities.md` +2 more |
 | [`RULED-2026-09-13_testing-strategy.md`](RULED-2026-09-13_testing-strategy.md) | RULED | ruled | frontmatter `state:` | 0 |
 | [`RULED-2026-10-02_frozen-document-layout.md`](RULED-2026-10-02_frozen-document-layout.md) | RULED | implemented | frontmatter `state:` | 0 |

@@ -1,10 +1,10 @@
 ---
-title: The canon library — what makes a declaration executable
+title: Rules and their canons — what makes a declaration executable
 status: 21 defined, 21 described, 18 implemented (measured 2026-10-05) — check_canon_documented.py holds the three lists together
 audience: ontology authors binding realized_by; anyone implementing a canon
 ---
 
-# The canon library
+# Rules and their canons
 
 **A canon is the executable half of a declaration.** A concept states a fact in its own terms and
 names a canon to realize it; the canon holds the logic **once**, for every concept that binds it.
@@ -17,6 +17,56 @@ realized_by:
 
 The concept supplies **parameters only**. It never restates the logic — that is the whole point, and
 the reason a rule written once can serve a dozen bundles.
+
+## A rule is a trigger; a canon is its body
+
+The operator's reframe, recorded at the head of the firing mechanism itself
+(`mac_runtime/planner/contract_guards.py`):
+
+> a prose rule is like a **trigger** — at design time you bind it to a concept and its columns; its
+> behaviour is a body, and a body can be code.
+
+That is the whole relationship. **A canon is a rule's default implementation.** A concept states a
+fact in its own terms; a rule says how to ACT on that fact; and the canon holds the acting — once,
+for every concept that binds it. `mac.schema.json` makes the pair a contract, at v0.1.17:
+
+> a rule is either WRITTEN or BOUND — never neither. Where `realized_by` is present the clauses are
+> RENDERED from the canon and may be omitted; where it is absent they must be there and non-empty.
+
+So a rule has exactly two states, and the difference is who reads it:
+
+| | the rule says | who executes it | what a wrong one costs |
+|---|---|---|---|
+| **written** | `when` / `then` / `never` prose | a language model, at answer time | the next model may read it differently; nothing says so |
+| **bound** | `realized_by: {udf, params}` | the runtime, deterministically | a parameter can be wrong; the algorithm cannot |
+
+`why:` survives in both states and is never rendered from a canon — no parameter encodes *a person
+ruled this, on this date, against this measurement*.
+
+### Four planes, and which one owns what
+
+A rule is not the only thing the framework states universally. Three files divide the work, and a
+fourth plane is the bundle's:
+
+| plane | file | states | reaches |
+|---|---|---|---|
+| STRUCTURE | `mac.schema.json` | what an artifact must look like | every bundle |
+| CONSTRAINT | `mac_shapes.yaml` | invariants true of any conformant ontology | every bundle |
+| BEHAVIOUR, common | `mac_rules.yaml` | how to ACT — stated ONCE | every concept matching `scope` |
+| BEHAVIOUR, local | a concept's `contract.rules[]` | how to act about THIS concept | one concept |
+
+**A common rule is an ordinary rule.** Same `id · kind · subject · when · then · never ·
+realized_by`; the one addition is that `scope` carries a class selector instead of a source name. It
+exists because behaviour restated per concept is the N-homes defect applied to verbs: measured on one
+bundle, the same refusal law appeared **thirteen times**, once per measure concept — thirteen `when`
+wordings, thirteen `then`, twelve `never`, each individually well-formed so no gate saw anything, one
+of them carrying a bare `then` that promised an answer it could not produce.
+
+A bundle does not write a common rule. It may add a `realized_by` for the **same canon** carrying
+parameters MAC cannot know — chiefly `confusable`, because only the author knows which measure a
+tired reader would substitute. The law is MAC's; those parameters are the bundle's. A concept that
+needs to say something *different* writes its own full rule, and that is an **override**, visible
+precisely because it is rare.
 
 ## What a canon is FOR — the determinism seam
 
@@ -100,6 +150,116 @@ numerator applies. That becomes a scalar subquery over a second scope — and no
 aggregate, because the denominator's expression comes from *its own* concept's definition, so reusing
 the text verbatim over a second `FROM` keeps one definition of the number instead of editing it. Still
 SQL; still no rows in Python.
+
+## Where a rule fires
+
+Only a rule with a body fires. A rule without one is prose and is not this mechanism's concern — it
+is the concern of the author who has not written the body yet, and the plan-time cost is proportional
+to the number of bodies.
+
+There are **four moments a canon can act**, and they differ in what exists yet:
+
+| moment | entry point | what it may do | outcome it can force |
+|---|---|---|---|
+| **plan time, before SQL** | `check_contract_guards` | read the intent and the declarations | `Clarification` — a term with several named definitions and none pinned becomes a question, never a guess |
+| **after SQL, read-only** | `check_sql_guards` | parse the rendered statement | `Refusal` — the four guards refuse the shapes their pages forbid |
+| **after SQL, rewriting** | `apply_sql_transforms` | rewrite the statement, bind values as named params, **disclose** | a changed query, and a disclosure — an undisclosed default is indistinguishable from a guess |
+| **off the answer path** | `anomaly_checks` | generate a check per closed value domain | nothing; a monitor runs it |
+
+Guards **catch**; they never rewrite. Transforms rewrite and must disclose. That split is what
+`needs_sqlglot` in the tree below is really telling you: a canon that must parse SQL to do its job is
+a guard.
+
+And a canon that *selects* — which rows, which denominator, which default — runs inside planning
+rather than at one of those four moments, because its answer decides what SQL to write at all. The
+planner's own step numbering, from `planner/plan.py`:
+
+| step | what happens | canon consulted |
+|---|---|---|
+| 0 · 0b | the denominator and thresholds the question named | — |
+| 1 | subject → concept, contract, rule | — |
+| **1a** | **which figure does the ratio divide by** | `ratio_select` |
+| 1b | what population is the denominator over | `population_select` |
+| 2 · 2b | resolve every filter and slice term | `resolve_by_register`, `alias_resolve` |
+| 3 | join paths | — |
+| 4 | contract rules | — |
+| **4b** | **the fold law, over the axes being folded** | `additivity_guard` |
+| **4c** | **contract rule BODIES** | the firing mechanism proper |
+| **4d** | **which rows does each concept have — the trigger** | `population_select` |
+| 5 | assemble SQL | — |
+| **5b** | **canons that read the rendered statement** | the four guards, then the transforms |
+
+A selection canon reads no rows, and says so on its own page: *no SQL may run to decide which SQL to
+write.* Both halves of that sentence matter — the decision is made against the intent and the
+declarations, and it is made before there is a statement to run.
+
+## What crosses into the answer — tracking which rule fired
+
+A plan carries its own provenance, in three separate lists because they are three different
+namespaces:
+
+| field on `Plan` | holds | filled by |
+|---|---|---|
+| `rules_used` | **rules-plane** ids — a derivation rule, a denominator's rule | `planner/sql.py`, as each is rendered |
+| `laws_applied` | ids from `mac_rules.yaml` the plan was made under | `_laws_applied` — a period was bound, a dimension reached on its declared key, a fold checked, a filter resolved to a catalogued member |
+| `caveats_known` | what a **contract** rule did, prefixed as an applied declaration | the transforms, when they disclose |
+
+`laws_applied` names a law only when the framework is located: the runtime cites what it can read and
+stays silent otherwise, rather than claiming a law it did not consult.
+
+Those lists are not cosmetic. The answer's **confidence is the minimum** over the confidence of every
+concept touched *and* every rule that fired — so a `P`-confidence rule drags the whole answer down to
+`P`, which is the point.
+
+### The defect this part was built out of, and it is worth knowing
+
+`rules_used` **cannot carry a contract rule's id.** It holds rules-plane ids, a contract rule lives in
+a different namespace, and appending one raised `UnknownRuleError` and errored the entire answer. So
+for a while contract-rule firings had nowhere to go — and the consequence was measured on the
+77-question board:
+
+> the console's trace showed **"Rules — none fired" on 33 of 77 answers** whose reading demonstrably
+> applied one.
+
+Worse, the firings that *were* recorded arrived indistinguishable from unrelated facts: **193
+assumptions, every one `kind: dq`**, with nothing separating an applied declaration that CHANGED THE
+NUMBER from a measured data-quality observation. A machine marker had been stripped one line before
+the comment that called it "a machine marker for a presenter".
+
+The fix is the `ref` field: a contract-rule firing survives as a caveat whose `ref` is the
+applied-declaration marker, so a presenter can tell the two apart without minting a new caveat kind —
+that set is closed, and widening it is a ruling, not a rendering fix.
+
+**So "which rule fired" is answerable in three places, and you need all three**: `rules_used` for the
+rules plane, `laws_applied` for the common laws, and the marked caveats for contract rules.
+
+## How this is tested
+
+Five arms, each asking a different question, because a canon can be correct and still never run:
+
+| arm | asks | where |
+|---|---|---|
+| **the law** | does the canon decide what its page says it decides? | `tests/test_canon_<name>.py`, written against that page's own demonstration **and its "what happens without it"** |
+| **the firing** | does it actually run, at the right moment? | `test_planner_contract_guard`, `test_canon_guards`, `test_canon_transforms`, `test_canon_decisions` — each against the planner's own rendered SQL |
+| **the binding survives the parser** | is the declaration still there after loading? | `test_ontology_canon_bindings` — *"a dropped binding does not raise, does not warn, and does not appear as an empty field a caller might check"* |
+| **the declaration is read** | does ANY module outside the parser consult this field? | `test_declared_but_unread` — a field with no reader and no waiver is a declaration nothing consumes |
+| **the three lists agree** | defined, described, implemented | `check_canon_documented` · `check_canon_implemented` · `check_canon_binding` |
+
+The last arm is the one that catches the failure mode peculiar to this design. A canon can be
+**declared and not implemented** — the binding parses, passes every other gate, and does nothing;
+measured on one bundle, six bindings named a verb the runtime had never spoken, and the diagnosis went
+wrong *because* of it, with an agent concluding registers were missing and cutting fifteen new ones.
+And a bound rule's prose can **drift from the canon that governs it**, which `check_canon_binding`
+holds by meaning rather than by string similarity: across thirteen copies of one law the mean string
+fit was 0,88 while meaning was preserved 13 of 13, so a gate on similarity would have fired on
+rewording as loudly as on redefinition.
+
+### What refuses, and what that protects
+
+A declaration that cannot be honoured says so, by name. A binding whose parameters do not fit its
+canon, or a guard whose SQL cannot be parsed, is a `Refusal` naming the rule — never a silent pass.
+That is the whole posture: the alternative is a declaration *"addressed to a listener that did not
+exist"*, which is the defect the canon registry was written for.
 
 ## The canons, by the pattern they serve
 
