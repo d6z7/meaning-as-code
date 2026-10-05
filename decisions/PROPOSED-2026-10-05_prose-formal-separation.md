@@ -119,20 +119,44 @@ is one fact in two homes — the defect this estate keeps removing, at a count o
 
 ### Phase 1 — the two gates, against today's tree (1 day)
 
-A second new gate, proposed and not yet written — `tools/check_concept_narrative.py`, three
-reject classes:
+`tools/check_concept_narrative.py` — **DONE**, `--self-test` 7/7. Three gating classes and one
+advisory:
 
-| reject | fires when |
-|---|---|
-| `unpaired-concept` | a `*.yaml` under `ontology/concepts/` has no `*.md` beside it, or the reverse |
-| `uncovered-declaration` | a rule id or declared column in the YAML appears in no narrative |
-| `phantom-reference` | a column or `[[Concept]]` the narrative names is not declared |
+| class | fires when | gates? |
+|---|---|---|
+| `unpaired-concept` | a concept declaration with no narrative, or a narrative with no declaration | yes |
+| `unpaired-rule` | a `contract.rules[].id` with no rule page, or a rule page naming no rule | yes |
+| `uncovered-declaration` | a declared column or rule id that no narrative mentions | yes |
+| `phantom-reference` | a column the narrative names that this concept does not declare | **advisory** |
 
-Run it BEFORE moving any prose, and **record what it finds on the current tree**. If today's generated
-pages already fail coverage, that is a finding about the projection and belongs in the record.
+**THE SEAMS ARE THE CONSOLE'S.** `mac_console/console_api.py` already serves
+`ontology/concepts/*.md` as one seam and `ontology/concepts/rules/*.md` as another — with the comment
+that a glob "must not cross a `/`, or `ontology/concepts/*.md` would silently swallow
+`ontology/concepts/rules/*.md`, which is a rule page and a different seam's". **Both already reach
+the console's side panel**, so the narratives are already a served plane; this gate holds the pairs
+those seams imply.
 
-* `--self-test` with one mutant per reject class, per the suite's contract.
-* Exit criterion: green on today's tree, or its failures declared with an owner.
+**`phantom-reference` is advisory, and that is a measurement not a softening.** Judged twice on
+contoso5, both attempts were ALL false positives. The broad test — any backticked token with an
+underscore — read relation names (`v_contoso5_sales_line`, `dim_store`) and framework slots
+(`label_of`, `value_filter`) as columns: 23 rejects, 23 wrong. Narrowing it to "a column of ANOTHER
+concept" left one: `order.md`'s *"the six measures … are all keyed on `order_key` and `line_number`"*,
+where the sentence correctly attributes that column to the measures. Telling "this concept has X"
+from "those concepts are keyed on X" needs to know which concept a sentence is about, and no reader
+here does. It reports and does not gate.
+
+### What the baseline run found, which is the reason for running it first
+
+```
+PASS: check_concept_narrative — every pair agrees over 17 concept(s), 17 narrative(s),
+24 rule page(s), 112 declared column(s), 24 declared rule(s); 1 advisory
+```
+
+**Today's tree is already clean on all three gating classes.** 17 concepts pair with 17 narratives,
+24 rule pages with 24 declared rules, and every one of 112 declared columns and 24 rule ids is
+mentioned. That is a real and useful result: the projection currently covers everything the
+declaration declares, so Phase 2 starts from coverage and must not lose it — the gate's job is to
+prove the migration keeps what the projection already had.
 
 ### Phase 2 — the pilot: `store`, `country`, `order` (1–2 days)
 
