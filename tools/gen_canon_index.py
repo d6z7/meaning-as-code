@@ -114,16 +114,11 @@ def render() -> str:
     for g in order:
         members = sorted(groups[g])
         link = f"[`{g}`](../patterns/{g}.md)" if g in patterns else f"`{g}`"
-        # FOLDABLE, so twelve groups are a page you can scan rather than scroll. `<details>` is the
-        # one collapsible GitHub-flavoured markdown admits, and it needs the blank lines around the
-        # table or the markdown inside a block-level HTML element is rendered as literal text.
-        # OPEN BY DEFAULT on the largest group only: a page whose every group is shut shows a reader
-        # nothing, and one whose every group is open is the flat list this replaced.
-        L.append(f"<details{' open' if len(members) > 2 else ''}>")
-        L.append(f"<summary><b>{g}</b> &nbsp;·&nbsp; {len(members)} canon"
-                 f"{'s' if len(members) != 1 else ''}</summary>")
-        L.append("")
-        L.append(f"Pattern: {link}")
+        # PLAIN HEADINGS, NOT `<details>`. Operator ruling 2026-10-05: "main chapters should not be
+        # foldable for the time being." A group was briefly a `<summary>`, which also cost it its
+        # place in every table of contents — a `<summary>` is not a heading, so the twelve group
+        # names disappeared from the page outline. `###` keeps them addressable and anchored.
+        L.append(f"### {link} &nbsp;·&nbsp; {len(members)}")
         L.append("")
         # NO DEFINITION TEXT HERE, DELIBERATELY. Each canon's meaning is rendered once, lower on this
         # page, by gen_vocabulary_terms.py reading the same vocabulary. Excerpting it into the tree
@@ -144,8 +139,6 @@ def render() -> str:
                 status = "unknown"
             sqlglot = "yes" if body.get("needs_sqlglot") else "no"
             L.append(f"| `{n}` | {page} | [below](#maccanon{n.replace('_', '')}) | {status} | {sqlglot} |")
-        L.append("")
-        L.append("</details>")
         L.append("")
 
     L.append(END)

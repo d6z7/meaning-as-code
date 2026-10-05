@@ -55,7 +55,7 @@ removing it would leave a pointer with nowhere to land.
 | [`PROPOSED-2026-10-02_one-revenue-concept.md`](PROPOSED-2026-10-02_one-revenue-concept.md) | PROPOSED | proposed | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
 | [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) | PROPOSED | implemented | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
 | [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) | PROTOCOL | recorded | frontmatter `state:` | 3 — `guardrails/README.md`, `tools/check_decision_state.py`, `tools/framework_gate_failures.yaml` |
-| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 4 — `reference_manual/canon/population_select.md`, `reference_manual/rule_engine.md`, `reference_manual/rules_and_canons/README.md` +1 more |
+| [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 5 — `reference_manual/canon/population_select.md`, `reference_manual/canon_library.md`, `reference_manual/rule_engine.md` +2 more |
 | [`REQ-2026-09-13_console-connection-page.md`](REQ-2026-09-13_console-connection-page.md) | REQ | implemented | frontmatter `state:` | 5 — `protocol/2026-09-13/061-the-console-connection-page-requirement.md`, `tools/check_decision_state.py`, `wiki/core/capabilities.md` +2 more |
 | [`RULED-2026-09-13_testing-strategy.md`](RULED-2026-09-13_testing-strategy.md) | RULED | ruled | frontmatter `state:` | 0 |
 | [`RULED-2026-10-02_frozen-document-layout.md`](RULED-2026-10-02_frozen-document-layout.md) | RULED | implemented | frontmatter `state:` | 0 |

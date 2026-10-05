@@ -274,10 +274,7 @@ exist"*, which is the defect the canon registry was written for.
 
 `tools/check_canon_documented.py` holds the three together; this table is read from the same places it reads.
 
-<details open>
-<summary><b>competing_definitions</b> &nbsp;·&nbsp; 5 canons</summary>
-
-Pattern: [`competing_definitions`](../patterns/competing_definitions.md)
+### [`competing_definitions`](../patterns/competing_definitions.md) &nbsp;·&nbsp; 5
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -287,12 +284,7 @@ Pattern: [`competing_definitions`](../patterns/competing_definitions.md)
 | `ratio_select` | [page](competing_definitions/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
 | `relation_alias_resolve` | [page](competing_definitions/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
 
-</details>
-
-<details open>
-<summary><b>explicit_closure</b> &nbsp;·&nbsp; 3 canons</summary>
-
-Pattern: [`explicit_closure`](../patterns/explicit_closure.md)
+### [`explicit_closure`](../patterns/explicit_closure.md) &nbsp;·&nbsp; 3
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
@@ -300,120 +292,68 @@ Pattern: [`explicit_closure`](../patterns/explicit_closure.md)
 | `enum_from_register` | [page](explicit_closure/enum_from_register.md) | [below](#maccanonenumfromregister) | **acts** | no |
 | `grouping_from_register` | [page](explicit_closure/grouping_from_register.md) | [below](#maccanongroupingfromregister) | declared only | no |
 
-</details>
-
-<details>
-<summary><b>contaminated_code</b> &nbsp;·&nbsp; 2 canons</summary>
-
-Pattern: [`contaminated_code`](../patterns/contaminated_code.md)
+### [`contaminated_code`](../patterns/contaminated_code.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `opaque_code_guard` | [page](contaminated_code/opaque_code_guard.md) | [below](#maccanonopaquecodeguard) | **acts** | yes |
 | `resolve_by_register` | [page](contaminated_code/resolve_by_register.md) | [below](#maccanonresolvebyregister) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>exclusion_no_evidence</b> &nbsp;·&nbsp; 2 canons</summary>
-
-Pattern: `exclusion_no_evidence`
+### `exclusion_no_evidence` &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `refuse_measure_no_row` | [page](exclusion_no_evidence/refuse_measure_no_row.md) | [below](#maccanonrefusemeasurenorow) | declared only | no |
 | `refuse_unresolvable_name` | [page](exclusion_no_evidence/refuse_unresolvable_name.md) | [below](#maccanonrefuseunresolvablename) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>tracking_vintage</b> &nbsp;·&nbsp; 2 canons</summary>
-
-Pattern: [`tracking_vintage`](../patterns/tracking_vintage.md)
+### [`tracking_vintage`](../patterns/tracking_vintage.md) &nbsp;·&nbsp; 2
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `axis_default` | [page](tracking_vintage/axis_default.md) | [below](#maccanonaxisdefault) | **acts** | yes |
 | `scoped_latest` | [page](tracking_vintage/scoped_latest.md) | [below](#maccanonscopedlatest) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>absence_semantics</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`absence_semantics`](../patterns/absence_semantics.md)
+### [`absence_semantics`](../patterns/absence_semantics.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `densify` | [page](absence_semantics/densify.md) | [below](#maccanondensify) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>context_dependent_meaning</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`context_dependent_meaning`](../patterns/context_dependent_meaning.md)
+### [`context_dependent_meaning`](../patterns/context_dependent_meaning.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `composite_key_guard` | [page](context_dependent_meaning/composite_key_guard.md) | [below](#maccanoncompositekeyguard) | **acts** | yes |
 
-</details>
-
-<details>
-<summary><b>impurity_disposition</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`impurity_disposition`](../patterns/impurity_disposition.md)
+### [`impurity_disposition`](../patterns/impurity_disposition.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `exclusion_filter` | [page](impurity_disposition/exclusion_filter.md) | [below](#maccanonexclusionfilter) | **acts** | yes |
 
-</details>
-
-<details>
-<summary><b>multivalued_bridge</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`multivalued_bridge`](../patterns/multivalued_bridge.md)
+### [`multivalued_bridge`](../patterns/multivalued_bridge.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `array_membership_guard` | [page](multivalued_bridge/array_membership_guard.md) | [below](#maccanonarraymembershipguard) | **acts** | yes |
 
-</details>
-
-<details>
-<summary><b>recursive_hierarchy</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`recursive_hierarchy`](../patterns/recursive_hierarchy.md)
+### [`recursive_hierarchy`](../patterns/recursive_hierarchy.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `hierarchy_rollup` | [page](recursive_hierarchy/hierarchy_rollup.md) | [below](#maccanonhierarchyrollup) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>scd_type_2</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`scd_type_2`](../patterns/scd_type_2.md)
+### [`scd_type_2`](../patterns/scd_type_2.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `snapshot_collapse` | [page](scd_type_2/snapshot_collapse.md) | [below](#maccanonsnapshotcollapse) | **acts** | no |
 
-</details>
-
-<details>
-<summary><b>semi_additive_balance</b> &nbsp;·&nbsp; 1 canon</summary>
-
-Pattern: [`semi_additive_balance`](../patterns/semi_additive_balance.md)
+### [`semi_additive_balance`](../patterns/semi_additive_balance.md) &nbsp;·&nbsp; 1
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `additivity_guard` | [page](semi_additive_balance/additivity_guard.md) | [below](#maccanonadditivityguard) | **acts** | yes |
-
-</details>
 
 <!-- END generated: canon tree -->
 
