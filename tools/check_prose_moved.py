@@ -60,24 +60,58 @@ def norm(t: str) -> str:
 
 
 def sentences(text: str) -> list[str]:
-    """Every prose sentence in a concept document — block scalars, long values, and comments."""
-    parts: list[str] = []
+    """Every prose sentence in a concept document — block scalars, long values, and comments.
+
+    TWO STREAMS, NOT ONE, and the first cut used one. A `#` comment that follows a structural line
+    was JOINED to it, because a YAML value carries no terminal period and the splitter had nothing to
+    break on: `surfaces: [open, still open, trading, not closed, operating]` glued itself to the front
+    of the comment beneath it, and the sentence being judged then began with the list rather than with
+    prose. Measured on store.yaml: 6 of 90 sentences were reported lost that way, and all six were
+    present in the new home — a FALSE ALARM is as damaging here as a miss, because it teaches the
+    operator the verdict is noise. Comments are their own stream; values and block bodies are another.
+    """
+    comments: list[str] = []
+    values: list[str] = []
     for raw in text.splitlines():
         s = raw.strip()
         if s.startswith("#"):
-            parts.append(s.lstrip("#:").strip())
+            comments.append(s.lstrip("#:").strip())
             continue
         m = re.match(r"^(?:-\s*)?[A-Za-z0-9_\-]+:\s*(.*)$", s)
         if m:
             v = m.group(1).strip()
-            if v and v not in {">", "|", ">-", "|-", ">+", "|+"} and len(v) > MIN_SENTENCE:
-                parts.append(v)
+            # A STRUCTURED VALUE IS NOT PROSE, and this is the second false-alarm class the
+            # extractor produced. `populations: {all: [{column: location_code, op: ne, value: -1}]}`
+            # and `surfaces: [open, still open, trading, not closed, operating]` carry no terminal
+            # period, so consecutive ones concatenated into one long "sentence" that began with a
+            # brace and matched nothing. Three of 92 were reported lost that way on store.yaml, all
+            # three spurious. A prose sentence does not start with `[` or `{`.
+            # AND AN IDENTIFIER IS NOT PROSE however long it is. A rule id —
+            # `store.resolution.active_is_the_absent_close_date`, 48 characters — cleared the length
+            # floor and prefixed the `why` beneath it, so the judged sentence began with the id.
+            # Prose has spaces; a dotted token does not.
+            if (v and v not in {">", "|", ">-", "|-", ">+", "|+"}
+                    and not v.startswith(("[", "{"))
+                    and " " in v
+                    and len(v) > MIN_SENTENCE):
+                values.append(v)
             continue
-        parts.append(s)
-    joined = " ".join(p for p in parts if p)
-    return [re.sub(r"\s+", " ", x).strip()
-            for x in re.split(r"(?<=[.!?])\s+", joined)
-            if len(x.strip()) > MIN_SENTENCE]
+        # A BARE LIST ITEM IS STRUCTURE TOO — the third and last false-alarm class. `binds:` is
+        # written as `- close_date` / `- status_annotation`, and a rule's `- id: <rule id>` leaves
+        # the id behind; none carries a period, so they prefixed the `why` beneath them and the
+        # judged sentence began with a rule id rather than with the claim. Two of 91 on store.yaml,
+        # both spurious. A token on its own is not a sentence.
+        if re.match(r"^-\s*[A-Za-z0-9_.\-]+$", s):
+            continue
+        values.append(s)
+
+    out: list[str] = []
+    for stream in (values, comments):
+        joined = " ".join(x for x in stream if x)
+        out += [re.sub(r"\s+", " ", x).strip()
+                for x in re.split(r"(?<=[.!?])\s+", joined)
+                if len(x.strip()) > MIN_SENTENCE]
+    return out
 
 
 def _git_show(repo: pathlib.Path, rev: str, rel: str) -> str | None:
