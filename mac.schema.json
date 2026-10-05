@@ -3,7 +3,7 @@
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
   "version": "0.1.16",
   "title": "Meaning-as-Code (MAC) — formal schema v0.1.18-develop",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected. Project-specific extensions are permitted ONLY under the 'x-' namespace (see CONFORMANCE.md). This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.concept.identity, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected, and there is NO extension namespace: `x-` is BANNED (operator ruling 2026-10-05) and tools/check_extension_keys.py refuses any such key as MAC012. Where an extension seems needed, that is a MAC gap — name the wall and change this schema. This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.14-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.concept.identity, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
     {
@@ -1282,8 +1282,17 @@
           ]
         },
         "lock": {},
-        "notes": {}
-      }
+        "notes": {},
+        "frozen_at": {
+          "type": "string",
+          "description": "When the phase was frozen. Read by tools/mac_to_explorer.py."
+        },
+        "frozen_by": {
+          "type": "string",
+          "description": "Who froze the phase. Read by tools/mac_to_explorer.py."
+        }
+      },
+      "additionalProperties": false
     },
     "PipelineExit": {
       "type": "object",
@@ -1569,7 +1578,7 @@
     },
     "ProjectFile": {
       "type": "object",
-      "description": "THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and `^x-` remains the sanctioned way to extend. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It now carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on <dataset>'s REPRODUCTION.md).",
+      "description": "THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and there is no extension namespace to fall back on. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It no longer carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on <dataset>'s REPRODUCTION.md). `profile` IS DELIBERATELY ABSENT (2026-10-05). CONFORMANCE §2 described it as \"the list of x- keys a project uses and what each means\" — a declaration mechanism for the `x-` extension namespace, which is BANNED. No bundle has ever written it. The description used to claim this $def carried it while `additionalProperties: false` refused it, so the schema invited a key it then rejected.",
       "required": [
         "planes"
       ],
@@ -1656,7 +1665,18 @@
           "additionalProperties": false
         },
         "publish": {
-          "type": "object"
+          "type": "object",
+          "additionalProperties": false,
+          "description": "WHAT A PUBLISHED COPY OF THIS BUNDLE CONTAINS. Was a bare `{type: object}` — so any key validated and none was documented; `include` has been read by sdk/cli/publish.py all along.",
+          "properties": {
+            "include": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The paths a published copy carries. Read by sdk/cli/publish.py."
+            }
+          }
         },
         "serving": {
           "type": "object",
@@ -1783,6 +1803,13 @@
                 "reason": {
                   "type": "string",
                   "description": "WHY THESE ROWS MAY LEAVE THE BUNDLE — required when `publish` is true (see this object's `allOf`), and rendered ON the page under the sample, so the justification travels with the thing it justifies instead of staying in a manifest nobody opens. Not required for withholding: refusing to publish needs no defence, publishing does. Say what makes the data publishable (synthetic, licensed, already public), not who approved it."
+                },
+                "seed": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ],
+                  "description": "THE SEED THE SAMPLER DREW WITH, so a published sample is reproducible. Read by tools/mac_sample.py; admitted 2026-10-05 — the node is `additionalProperties: false`, so a bundle that set a seed its own sampler reads failed validation."
                 }
               },
               "allOf": [
@@ -2729,6 +2756,7 @@
     },
     "TableFile": {
       "type": "object",
+      "description": "A DATASET OR SOURCE DESCRIPTOR. `foreign_keys:` IS DELIBERATELY ABSENT (removed 2026-10-05; operator ruling 2026-09-27). A foreign key is declared ON THE COLUMN — `columns[].role: foreign_key` plus `columns[].references`, a mapping carrying `to` with `cardinality` and `participation` PER SIDE (child and parent). That is strictly MORE than the retired table-level block could state: it had one `cardinality_at_to` and no participation at all, which is why the ER diagram could not be drawn from it. Measured over the 16 delivered descriptors: 0 wrote the block, 18 columns carry `role: foreign_key` and 23 carry `references`. The block was not merely unused — it was ACTIVELY HARMFUL: tools/mac_model.py read it and nothing else, so the shared model reported ZERO foreign keys on every delivered bundle while 18 sat on the columns beside it. That reader now takes the column form first and the block only as a fallback, as its five siblings already did; those fallbacks stay, so an unmigrated bundle still resolves even though the schema no longer admits the key.",
       "required": [
         "table",
         "columns"
@@ -2950,46 +2978,6 @@
                 },
                 "uniqueItems": true,
                 "description": "TRANSIENT — the measured bounded domain, on its way to a register. NOT A HOME. `mac_profile` writes it; `mac_lookups` cuts it into data/lookups/, points the column at it with `register:`, and POPS this key. A DELIVERED descriptor must therefore carry no `values:` at all, which is enforced by the DOMAIN-HOMED invariant in check_delivery_consistency — the operator ruled the member lists out of the YAML on 2026-09-26 (\"these values could be in lookup if necessary?!?!\", and the move cut the descriptor plane by 73 %) and asked on 2026-09-28 whether anything made the ruling stick: nothing did. Compliance was an accident of stage ORDERING — measured that day, a worked bundle 0 of 14 and a worked bundle 0 of 16 were clean only because `mac_descriptors` happened to run last, while a worked bundle carried member lists on 7 of 7 source descriptors, one of them 120 members long. It stays in the schema because the hand-off is real and a producer must be able to write a valid file mid-pipeline; what is forbidden is SURVIVING to delivery."
-              }
-            },
-            "additionalProperties": false,
-            "description": "A MEASUREMENT CARRIES NO GRADE OF BELIEF. `confidence` was a core key on this object and NOTHING read it there — every reader in the framework reads confidence on an ONTOLOGY artifact (concept metadata, enumeration members, rules, edges). CONFORMANCE.md §2 step 2 is the test it failed: 'an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in prose.' Asserting 'inferred' about a type read out of information_schema is not inference. Removed v0.1.15; the two planes that already carried no belief (profiles, references) were the ones getting it right."
-          }
-        },
-        "foreign_keys": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": [
-              "name",
-              "from_column",
-              "to_table",
-              "to_column"
-            ],
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "from_column": {
-                "type": "string"
-              },
-              "to_table": {
-                "type": "string"
-              },
-              "to_column": {
-                "type": "string"
-              },
-              "enforced": {
-                "type": "boolean"
-              },
-              "required": {
-                "type": "boolean"
-              },
-              "cardinality_at_to": {
-                "type": "string"
-              },
-              "notes": {
-                "type": "string"
               }
             },
             "additionalProperties": false,
@@ -3796,7 +3784,7 @@
     },
     "grounding": {
       "type": "object",
-      "description": "Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.",
+      "description": "Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing).",
       "properties": {
         "kind": {
           "type": "string",
@@ -4178,8 +4166,7 @@
           "additionalProperties": {
             "$ref": "#/$defs/additivityAxis",
             "description": "WHETHER THIS MEASURE MAY BE FOLDED ALONG THE NAMED AXIS — the mac.concept.aggregation_effect vocabulary, bare or `mac.`-qualified. ONE SCALE, AND THREE TERMS RATHER THAN TWO: a binary additive/non-additive collapses point-in-time, averageable and non-aggregable into one word, so a concept cannot say WHICH, and a measure whose vendor states that sum and average both fail has no way to say so. Where a value COMES FROM is a property of the measure (`measure_type`); whether you may FOLD is the only question an axis answers, which is why those two live apart."
-          },
-          "x-derived-from": "concept.semantics.measure_type x concept.semantics.axis_kinds, resolved by mac_vocabulary.yaml#concept.column.measure_type"
+          }
         },
         "axis_kinds": {
           "type": "object",

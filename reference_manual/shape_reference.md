@@ -413,17 +413,6 @@ columns:  # REQUIRED
     type: <…>  # string
     values: [ ... ]  # TRANSIENT — the measured bounded domain, on its way to a register
 
-foreign_keys:
-  - <item>
-    name: <…>  # REQUIRED · string
-    from_column: <…>  # REQUIRED · string
-    to_table: <…>  # REQUIRED · string
-    to_column: <…>  # REQUIRED · string
-    enforced: <…>  # boolean
-    required: <…>  # boolean
-    cardinality_at_to: <…>  # string
-    notes: <…>  # string
-
 grounded_by_concepts:
   - <item>
     concept: <…>  # string
@@ -527,7 +516,8 @@ runtime:  # WHAT THIS BUNDLE NEEDS IN ORDER TO BE ANSWERED FROM
   interpreter: <…>  # string · Path to the bundle's interpreter document.
   model_catalog: <…>  # string · Path to the bundle's model catalog.
 
-publish:
+publish:  # WHAT A PUBLISHED COPY OF THIS BUNDLE CONTAINS
+  include: [ ... ]  # The paths a published copy carries
 
 serving:  # THE BUNDLE'S SERVING CONTRACT — how this bundle spells the relations it…
   naming:  # The serving-name convention THIS bundle keeps  # closed: only keys above
@@ -548,6 +538,7 @@ disclosure:  # WHAT THIS BUNDLE PERMITS TO BE PUBLISHED OUT OF ITS OWN DATA
   samples:  # MAY THE ROWS THEMSELVES BE RENDERED ON A GENERATED PAGE? The sampler…  # closed: only keys above
     publish: <…>  # REQUIRED · boolean · `true` publishes the drawn member rows onto the generated concept pages
     reason: <…>  # string · WHY THESE ROWS MAY LEAVE THE BUNDLE — required when `publish` is true…
+    seed: <…>  # integer|string · THE SEED THE SAMPLER DREW WITH, so a published sample is reproducible
 
 reproduction:  # How this bundle is rebuilt — as DATA, so a gate can check the artifacts…
   narrative: <…>  # string · path to the human-readable twin, e.g
@@ -762,6 +753,10 @@ phase: <…>  # REQUIRED · enum: BUILD | TUNE
 lock: <…>
 
 notes: <…>
+
+frozen_at: <…>  # string · When the phase was frozen
+
+frozen_by: <…>  # string · Who froze the phase
 ```
 
 ### ShapesFile

@@ -10,6 +10,7 @@ MAY THE ROWS THEMSELVES BE RENDERED ON A GENERATED PAGE? The sampler (tools/mac_
 
 - [`publish`](#publish) — *boolean* **·** required
 - [`reason`](#reason) — *string*
+- [`seed`](#seed) — *['integer', 'string']*
 
 ### `publish`
 
@@ -22,6 +23,12 @@ MAY THE ROWS THEMSELVES BE RENDERED ON A GENERATED PAGE? The sampler (tools/mac_
 *string* · optional
 
 WHY THESE ROWS MAY LEAVE THE BUNDLE — required when `publish` is true (see this object's `allOf`), and rendered ON the page under the sample, so the justification travels with the thing it justifies instead of staying in a manifest nobody opens. Not required for withholding: refusing to publish needs no defence, publishing does. Say what makes the data publishable (synthetic, licensed, already public), not who approved it.
+
+### `seed`
+
+*['integer', 'string']* · optional
+
+THE SEED THE SAMPLER DREW WITH, so a published sample is reproducible. Read by tools/mac_sample.py; admitted 2026-10-05 — the node is `additionalProperties: false`, so a bundle that set a seed its own sampler reads failed validation.
 
 ---
 

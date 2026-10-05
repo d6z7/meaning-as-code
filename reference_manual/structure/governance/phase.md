@@ -11,6 +11,8 @@ the rule-governance phase switch. BUILD = ontology CRUD permitted and a missing 
 ## Keys
 
 - [`phase`](#phase) — *—* **·** required
+- [`frozen_at`](#frozen-at) — *string*
+- [`frozen_by`](#frozen-by) — *string*
 - [`lock`](#lock) — *—*
 - [`notes`](#notes) — *—*
 
@@ -24,6 +26,18 @@ Legal values:
 
 - `BUILD`
 - `TUNE`
+
+### `frozen_at`
+
+*string* · optional
+
+When the phase was frozen. Read by tools/mac_to_explorer.py.
+
+### `frozen_by`
+
+*string* · optional
+
+Who froze the phase. Read by tools/mac_to_explorer.py.
 
 ### `lock`
 

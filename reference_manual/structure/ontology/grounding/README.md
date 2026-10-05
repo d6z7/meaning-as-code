@@ -4,7 +4,7 @@
 
 [ontology](../README.md) · grounding
 
-Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.
+Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing).
 
 ## Keys
 

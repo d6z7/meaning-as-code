@@ -143,8 +143,6 @@ class Gen:
 
     def closure(self, node):
         ap = node.get("additionalProperties", True)
-        xp = "^x-" in (node.get("patternProperties") or {})
-        if ap is False and xp: return "  # closed: only keys above + x-*"
         if ap is False: return "  # closed: only keys above"
         if isinstance(ap, dict) and ap: return "  # free key names; the VALUE shape is below"
         return "  # open: extra keys allowed"
@@ -242,8 +240,6 @@ class Gen:
                  f"*discriminator key:* `{disc}:` · *required:* {', '.join('`'+r+'`' for r in fd.get('required',[]))}",
                  "", "```yaml"]
         lines += self.render(fd, 0, fd.get("required", []), [refname], 0, top=True)
-        if "^x-" in (fd.get("patternProperties") or {}):
-            lines.append("# x-<name>:  project-specific extension keys allowed anywhere (only sanctioned extension)")
         lines.append("```")
         cc = self.class_conditionals(fd)
         if cc:
@@ -332,8 +328,8 @@ def admitted_keys(schema: dict) -> dict[str, set[str]]:
         ap = node.get("additionalProperties")
         if isinstance(ap, dict) and ap:
             walk(ap, acc, seen)
-        for pat, v in (node.get("patternProperties") or {}).items():
-            if pat != "^x-" and isinstance(v, dict):
+        for _pat, v in (node.get("patternProperties") or {}).items():
+            if isinstance(v, dict):
                 walk(v, acc, seen)
         items = node.get("items")
         if isinstance(items, dict):

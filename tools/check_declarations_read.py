@@ -52,7 +52,7 @@ FRAMEWORK_FILES = ("TransformFile",)
 #: keys that are METADATA about the declaration rather than a declaration the runtime acts on
 META_KEYS = {"metadata", "governance", "version", "schema_version", "status", "owner", "provenance",
              "last_reviewed", "change_log", "generated_by", "observed", "source", "label", "definition",
-             "doc", "description", "note", "notes", "purpose", "x-", "$comment", "why", "examples",
+             "doc", "description", "note", "notes", "purpose", "$comment", "why", "examples",
              "measured_at", "measured_by", "date", "by", "change", "change_type",
              # FOR PEOPLE, NOT THE RUNTIME (ruled 2026-09-29 with the v0.5 retirement): a member's meaning, a
              # closure's why, a change's rationale, an approval status, an open question's priority and
@@ -267,7 +267,9 @@ def audit(runtime: pathlib.Path, family: str | None = None) -> dict:
     all_schema = schema_keys(schema, FILES)
 
     def _in_scope(leaf: str) -> bool:
-        return not (leaf in ("*", "") or leaf in META_KEYS or leaf.startswith("x-"))
+        # NO `x-` EXEMPTION. The namespace is BANNED (2026-10-05); exempting its prefix here is how a
+        # key could be declared and never read without the gate ever saying so.
+        return not (leaf in ("*", "") or leaf in META_KEYS)
 
     leaf_paths: dict[str, set[str]] = {}
     for fk, paths in all_schema.items():

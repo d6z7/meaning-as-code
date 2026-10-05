@@ -8,26 +8,27 @@ Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples 
 
 | | |
 |---|---|
-| levels | 98 |
-| keys | 480 |
-| described in the schema | **342 of 480** (71%) |
-| **gaps — admitted and unexplained** | **138** |
-| **keys with no stated constellation** | **463** of 480 |
+| levels | 97 |
+| keys | 471 |
+| described in the schema | **342 of 471** (73%) |
+| **gaps — admitted and unexplained** | **129** |
+| **keys with no stated constellation** | **454** of 471 |
 | vocabularies | 23, 146 terms |
-| examples | 101, from 17 concepts |
+| examples | 99, from 17 concepts |
 
 ## The levels
 
 Indented by nesting. The label is the key; the page it opens is that key's level.
 
-- [**project**](structure/project/README.md) — its 15 top-level keys, **5 unexplained**
+- [**project**](structure/project/README.md) — its 15 top-level keys, **4 unexplained**
   - [`capabilities:`](structure/project/capabilities.md) — 1 key, **1 unexplained**
   - [`conformance:`](structure/project/conformance/README.md) — 1 key, **1 unexplained**
     - [`out_of_scope:`](structure/project/conformance/out_of_scope.md) — 2 keys, **1 unexplained**
   - [`disclosure:`](structure/project/disclosure/README.md) — 1 key
-    - [`samples:`](structure/project/disclosure/samples.md) — 2 keys
+    - [`samples:`](structure/project/disclosure/samples.md) — 3 keys
   - [`metadata:`](structure/project/metadata.md) — 6 keys, **6 unexplained**
   - [`planes:`](structure/project/planes.md) — 1 key, **1 unexplained**
+  - [`publish:`](structure/project/publish.md) — 1 key
   - [`reproduction:`](structure/project/reproduction/README.md) — 5 keys, **1 unexplained**
     - [`gate:`](structure/project/reproduction/gate.md) — 2 keys, **2 unexplained**
     - [`pipelines:`](structure/project/reproduction/pipelines/README.md) — 2 keys, **2 unexplained**
@@ -41,13 +42,12 @@ Indented by nesting. The label is the key; the page it opens is that key's level
     - [`naming:`](structure/project/serving/naming/README.md) — 3 keys
       - [`roles:`](structure/project/serving/naming/roles/README.md) — 1 key, **1 unexplained**
         - [`<name>`](structure/project/serving/naming/roles/each.md) — 2 keys
-- [**dataset**](structure/dataset/README.md) — its 7 top-level keys, **1 unexplained**
+- [**dataset**](structure/dataset/README.md) — its 6 top-level keys, **1 unexplained**
   - [`columns:`](structure/dataset/columns/README.md) — 13 keys, **6 unexplained**
     - [`references:`](structure/dataset/columns/references/README.md) — 3 keys
       - [`cardinality:`](structure/dataset/columns/references/cardinality.md) — 2 keys, **2 unexplained**
       - [`participation:`](structure/dataset/columns/references/participation.md) — 2 keys, **2 unexplained**
   - [`derived_from:`](structure/dataset/derived_from.md) — 4 keys, **1 unexplained**
-  - [`foreign_keys:`](structure/dataset/foreign_keys.md) — 8 keys, **8 unexplained**
   - [`governance:`](structure/dataset/governance/README.md) — 4 keys
     - [`change_log:`](structure/dataset/governance/change_log.md) — 5 keys
   - [`grounded_by_concepts:`](structure/dataset/grounded_by_concepts.md) — 3 keys, **2 unexplained**
@@ -64,7 +64,7 @@ Indented by nesting. The label is the key; the page it opens is that key's level
   - [`metadata:`](structure/transform/metadata.md) — 2 keys
   - [`produces:`](structure/transform/produces.md) — 3 keys, **1 unexplained**
   - [`transforms:`](structure/transform/transforms.md) — 9 keys, **7 unexplained**
-- [**ontology**](structure/ontology/README.md) — its 11 top-level keys
+- [**ontology**](structure/ontology/README.md) — its 10 top-level keys
   - [`concept:`](structure/ontology/concept/README.md) — 6 keys
     - [`semantics:`](structure/ontology/concept/semantics/README.md) — 5 keys
       - [`additivity:`](structure/ontology/concept/semantics/additivity.md) — 1 key
@@ -83,7 +83,6 @@ Indented by nesting. The label is the key; the page it opens is that key's level
         - [`<name>`](structure/ontology/grounding/sources/columns/each/README.md) — 7 keys
           - [`measure:`](structure/ontology/grounding/sources/columns/each/measure.md) — 4 keys
           - [`rulings:`](structure/ontology/grounding/sources/columns/each/rulings.md) — 7 keys
-  - [`lifecycle:`](structure/ontology/lifecycle.md) — 3 keys
   - [`members:`](structure/ontology/members/README.md) — 3 keys
     - [`definitions:`](structure/ontology/members/definitions.md) — 4 keys
     - [`realized_by:`](structure/ontology/members/realized_by.md) — 8 keys
@@ -155,7 +154,6 @@ Each is a key the schema admits and does not explain. The fix is a description w
 | [`dataset.columns.references.cardinality`](structure/dataset/columns/references/cardinality.md) | `child`, `parent` |
 | [`dataset.columns.references.participation`](structure/dataset/columns/references/participation.md) | `child`, `parent` |
 | [`dataset.derived_from`](structure/dataset/derived_from.md) | `notes` |
-| [`dataset.foreign_keys`](structure/dataset/foreign_keys.md) | `cardinality_at_to`, `enforced`, `from_column`, `name`, `notes`, `required`, `to_column`, `to_table` |
 | [`dataset.grounded_by_concepts`](structure/dataset/grounded_by_concepts.md) | `concept`, `ref` |
 | [`dataset.metadata`](structure/dataset/metadata.md) | `generated_by`, `schema_version` |
 | [`dataset.table`](structure/dataset/table.md) | `description`, `name`, `schema`, `type` |
@@ -175,7 +173,7 @@ Each is a key the schema admits and does not explain. The fix is a description w
 | [`lookup.attached`](structure/lookup/attached.md) | `column`, `relation`, `schema` |
 | [`lookup.metadata`](structure/lookup/metadata.md) | `generated_by`, `kind` |
 | [`lookup.register`](structure/lookup/register.md) | `members` |
-| [`project`](structure/project/README.md) | `descriptors`, `metadata`, `publish`, `sources`, `transforms` |
+| [`project`](structure/project/README.md) | `descriptors`, `metadata`, `sources`, `transforms` |
 | [`project.capabilities`](structure/project/capabilities.md) | `<name>` |
 | [`project.conformance`](structure/project/conformance/README.md) | `out_of_scope` |
 | [`project.conformance.out_of_scope`](structure/project/conformance/out_of_scope.md) | `reason` |

@@ -4,9 +4,9 @@
 
 project
 
-THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and `^x-` remains the sanctioned way to extend. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It now carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on <dataset>'s REPRODUCTION.md).
+THE BUNDLE MANIFEST (mac.project.yaml). Shape measured across three live manifests — only `planes` is universal, so it is the only required key; `additionalProperties: false` is kept deliberately, because an unenumerated manifest key is exactly the invention this definition exists to catch, and there is no extension namespace to fall back on. Previously the only bundle file MAC did not define — it was exempted by a hardcoded basename check inside validate_schema.py, which meant the file where a bundle declares its own conformance was itself unchecked. It no longer carries the three declarations that had nowhere legitimate to live: `profile` (CONFORMANCE.md §2 — what each x- key means; without it every x- key is undeclared debt by construction), `conformance.out_of_scope` (the MAC001 escape hatch — a bundle may own files MAC does not define, but it must SAY SO), and `reproduction` (how the bundle is rebuilt, as CHECKABLE data rather than prose that goes stale — measured twice on <dataset>'s REPRODUCTION.md). `profile` IS DELIBERATELY ABSENT (2026-10-05). CONFORMANCE §2 described it as "the list of x- keys a project uses and what each means" — a declaration mechanism for the `x-` extension namespace, which is BANNED. No bundle has ever written it. The description used to claim this $def carried it while `additionalProperties: false` refused it, so the schema invited a key it then rejected.
 
-> **5 keys at this level carry no description in `mac.schema.json`.** The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
+> **4 keys at this level carry no description in `mac.schema.json`.** The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
 
 ## Keys
 
@@ -86,9 +86,11 @@ Its own keys: [`project.metadata`](metadata.md)
 
 ### `publish`
 
-*object* · optional
+*object* · optional · [has its own keys →](publish.md)
 
-— no description in the schema —
+WHAT A PUBLISHED COPY OF THIS BUNDLE CONTAINS. Was a bare `{type: object}` — so any key validated and none was documented; `include` has been read by sdk/cli/publish.py all along.
+
+Its own keys: [`project.publish`](publish.md)
 
 ### `reproduction`
 
@@ -139,6 +141,7 @@ Absent on bundles predating the container spec; required going forward.
 - [`disclosure:`](disclosure/README.md)
 - [`metadata:`](metadata.md)
 - [`planes:`](planes.md)
+- [`publish:`](publish.md)
 - [`reproduction:`](reproduction/README.md)
 - [`runtime:`](runtime.md)
 - [`serving:`](serving/README.md)

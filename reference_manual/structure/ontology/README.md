@@ -13,7 +13,6 @@ ontology
 - [`derived_by_rule`](#derived-by-rule) — *string*
 - [`governance`](#governance) — *object*
 - [`grounding`](#grounding) — *object*
-- [`lifecycle`](#lifecycle) — *object*
 - [`members`](#members) — *—*
 - [`properties`](#properties) — *list of object*
 - [`values`](#values) — *object*
@@ -68,17 +67,9 @@ Its own keys: [`ontology.governance`](governance/README.md)
 
 *object* · optional · [has its own keys →](grounding/README.md)
 
-Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing). Profile-specific annotations go under 'x-'.
+Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing).
 
 Its own keys: [`ontology.grounding`](grounding/README.md)
-
-### `lifecycle`
-
-*object* · optional · [has its own keys →](lifecycle.md)
-
-(event class) the state machine: phases group states, in sequence. Descriptive — recorded, not executed.
-
-Its own keys: [`ontology.lifecycle`](lifecycle.md)
 
 ### `members`
 
@@ -111,7 +102,6 @@ Its own keys: [`ontology.values`](values/README.md)
 - [`contract:`](contract/README.md)
 - [`governance:`](governance/README.md)
 - [`grounding:`](grounding/README.md)
-- [`lifecycle:`](lifecycle.md)
 - [`members:`](members/README.md)
 - [`metadata:`](metadata.md)
 - [`properties:`](properties.md)

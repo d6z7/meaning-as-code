@@ -281,9 +281,10 @@ def _schema_offers(fw: Framework, since: dict) -> tuple:
                     # `concept.semantics.additivity` derivable from (measure_type x axis_kind), so its
                     # ABSENCE is the desired state — and this check promptly reported 9 sites as
                     # failing to adopt the very block that was just removed on purpose, i.e. it told
-                    # the reader to re-add what the framework had stopped asking for. A slot says so
-                    # itself via `x-derived-from`; nothing here carries a list of special cases.
-                    if v.get("x-derived-from"):
+                    # the reader to re-add what the framework had stopped asking for. The slot says so
+                    # in its OWN description; the `x-derived-from` key that used to say it was deleted
+                    # with the banned `x-` namespace (2026-10-05) and MAC has no replacement keyword.
+                    if "DERIVED, NOT AUTHORED" in desc:
                         continue
                     seen.add(slot)
                     o = Offer(key=slot, kind=SLOT, slot=slot,

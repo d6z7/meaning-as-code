@@ -4,6 +4,8 @@
 
 dataset
 
+A DATASET OR SOURCE DESCRIPTOR. `foreign_keys:` IS DELIBERATELY ABSENT (removed 2026-10-05; operator ruling 2026-09-27). A foreign key is declared ON THE COLUMN — `columns[].role: foreign_key` plus `columns[].references`, a mapping carrying `to` with `cardinality` and `participation` PER SIDE (child and parent). That is strictly MORE than the retired table-level block could state: it had one `cardinality_at_to` and no participation at all, which is why the ER diagram could not be drawn from it. Measured over the 16 delivered descriptors: 0 wrote the block, 18 columns carry `role: foreign_key` and 23 carry `references`. The block was not merely unused — it was ACTIVELY HARMFUL: tools/mac_model.py read it and nothing else, so the shared model reported ZERO foreign keys on every delivered bundle while 18 sat on the columns beside it. That reader now takes the column form first and the block only as a fallback, as its five siblings already did; those fallbacks stay, so an unmigrated bundle still resolves even though the schema no longer admits the key.
+
 > **1 key at this level carry no description in `mac.schema.json`.** The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
 
 ## Keys
@@ -11,7 +13,6 @@ dataset
 - [`columns`](#columns) — *list of object* **·** required
 - [`table`](#table) — *object* **·** required
 - [`derived_from`](#derived-from) — *object*
-- [`foreign_keys`](#foreign-keys) — *list of object*
 - [`governance`](#governance) — *object*
 - [`grounded_by_concepts`](#grounded-by-concepts) — *list of object*
 - [`metadata`](#metadata) — *object*
@@ -39,14 +40,6 @@ Its own keys: [`dataset.table`](table.md)
 (views only) LINEAGE — how this serving relation is built. Absent for base tables. For engineers/governance + rebuild; NOT read by the query-generating agent (the concept grounds to the relation agnostically).
 
 Its own keys: [`dataset.derived_from`](derived_from.md)
-
-### `foreign_keys`
-
-*list of object* · optional · [has its own keys →](foreign_keys.md)
-
-A MEASUREMENT CARRIES NO GRADE OF BELIEF. `confidence` was a core key on this object and NOTHING read it there — every reader in the framework reads confidence on an ONTOLOGY artifact (concept metadata, enumeration members, rules, edges). CONFORMANCE.md §2 step 2 is the test it failed: 'an agent or projector reads it directly — a key nothing consumes is a note, and a note belongs in prose.' Asserting 'inferred' about a type read out of information_schema is not inference. Removed v0.1.15; the two planes that already carried no belief (profiles, references) were the ones getting it right.
-
-Its own keys: [`dataset.foreign_keys`](foreign_keys.md)
 
 ### `governance`
 
@@ -76,7 +69,6 @@ Its own keys: [`dataset.metadata`](metadata.md)
 
 - [`columns:`](columns/README.md)
 - [`derived_from:`](derived_from.md)
-- [`foreign_keys:`](foreign_keys.md)
 - [`governance:`](governance/README.md)
 - [`grounded_by_concepts:`](grounded_by_concepts.md)
 - [`metadata:`](metadata.md)

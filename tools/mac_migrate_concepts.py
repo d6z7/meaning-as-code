@@ -105,7 +105,8 @@ def descriptor_columns(root: pathlib.Path | None, table: str | None) -> list[dic
 
 def propose(concept: str, col: dict, legacy_role: str | None, canonical: str | None) -> dict:
     """A proposed decision for one column, from the relation plane's own facts — never a ruling."""
-    name, role, sub = str(col.get("name")), str(col.get("role") or ""), str(col.get("x-subrole") or col.get("subrole") or "")
+    # NO `x-subrole`: the `x-` namespace is BANNED (2026-10-05); only the bare key is read.
+    name, role, sub = str(col.get("name")), str(col.get("role") or ""), str(col.get("subrole") or "")
     if name == canonical or role == "primary_key":
         return {"role": "key", "identity": "canonical" if name == canonical else "reference",
                 "because": f"descriptor role {role or 'n/a'}; {'the canonical key' if name == canonical else 'a key that is not the canonical one'}"}
@@ -392,8 +393,8 @@ contract:
         (b / "ontology" / "concepts" / "order.yaml").write_text(legacy, encoding="utf-8")
         (b / "data" / "datasets" / "orders.yaml").write_text(
             "table: {name: orders}\ncolumns:\n  - {name: order_id, role: primary_key}\n  - {name: customer_id, role: foreign_key}\n"
-            "  - {name: status, role: value}\n  - {name: surname, role: value, x-subrole: attribute}\n  - {name: gross_amount, role: value}\n"
-            "  - {name: placed_at, role: value, x-subrole: temporal}\n  - {name: email, role: value, x-subrole: attribute}\n", encoding="utf-8")
+            "  - {name: status, role: value}\n  - {name: surname, role: value, subrole: attribute}\n  - {name: gross_amount, role: value}\n"
+            "  - {name: placed_at, role: value, subrole: temporal}\n  - {name: email, role: value, subrole: attribute}\n", encoding="utf-8")
         case("a bundle with a legacy concept fails --check", run(b, {}, write=False) == 1)
         try:
             migrate_text(legacy, decisions=dec, generation="0.1.16", root=b)

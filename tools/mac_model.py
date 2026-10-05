@@ -65,7 +65,7 @@ from types import SimpleNamespace
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from mac_project import resolve  # noqa: E402
+from mac_project import column_reference, resolve  # noqa: E402
 
 # --------------------------------------------------------------------------------------------------
 # framework constants — these name FRAMEWORK constructs (schema keys, canonical dirs, closed domains),
@@ -1066,8 +1066,21 @@ def _build_relation(doc: Doc, role: str) -> Relation:
             nullable=col.get("nullable") if isinstance(col.get("nullable"), bool) else None,
             description=col.get("description") if isinstance(col.get("description"), str) else None,
             site=Site(doc.relpath, f"columns[{i}]")))
+    # FOREIGN KEYS — the COLUMN form (`role: foreign_key` + `references`) is the one home ruled
+    # 2026-09-27; `references` is a `relation.column` string OR a mapping carrying `to`, and
+    # `column_reference` is the ONE resolver for both. The retired top-level `foreign_keys:` block is
+    # read only when the column form yields NOTHING, so an unmigrated bundle still resolves.
     fks = []
-    for i, fk in enumerate(_as_list(doc.data.get("foreign_keys"))):
+    for i, col in enumerate(_as_list(doc.data.get("columns"))):
+        cname = _as_dict(col).get("name")
+        ref = column_reference(_as_dict(col)) if isinstance(cname, str) else None
+        if not ref or not ref["relation"] or getattr(columns.get(cname), "role", None) != "foreign_key":
+            continue
+        fks.append(ForeignKey(
+            relation=stem, name=None, from_column=cname, to_table=ref["relation"],
+            to_column=ref["column"] or cname,
+            site=Site(doc.relpath, f"columns[{i}].references")))
+    for i, fk in enumerate(_as_list(doc.data.get("foreign_keys")) if not fks else ()):
         fk = _as_dict(fk)
         if not all(isinstance(fk.get(k), str) for k in ("from_column", "to_table", "to_column")):
             continue

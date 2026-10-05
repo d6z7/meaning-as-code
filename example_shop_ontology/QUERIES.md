@@ -20,7 +20,7 @@ Net **Revenue** is rule `net_revenue` (`ontology/rules.yaml`): `gross − refund
 ## Q1. "What was our net revenue in Q1 2026?"
 
 **Intent → ontology.** Measure = Revenue (rule `net_revenue` → expression + the *only-paid* condition);
-period filter on `orders.placed_at` (role `value`, `x-subrole: temporal`). Refunds are a **finer grain**
+period filter on `orders.placed_at` (role `value`). Refunds are a **finer grain**
 than orders (`data/datasets/refunds.yaml`: "zero or more rows per order"), so they are pre-aggregated to the
 order grain before netting — honoring the Order grain (one row per order) instead of fanning it out.
 

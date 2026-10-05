@@ -84,6 +84,31 @@ foreign_keys:
   to_column: widget_code
 """
 
+# The COLUMN form of a foreign key — `role: foreign_key` + `references` — which is the one home
+# (ruling 2026-09-27) and the ONLY shape the delivered bundles write. `references` is a MAPPING here
+# and schema-qualified, so the relation must come from the SECOND-TO-LAST segment, not `mart`.
+DATASET_COLUMN_FK = """\
+metadata:
+  provenance: harvested
+table:
+  name: {physical}
+  schema: mart
+columns:
+- name: widget_code
+  type: string
+  role: key
+- name: amount
+  type: double
+  role: measure
+- name: parent_code
+  type: string
+  role: foreign_key
+  references:
+    to: mart.dim_widget.widget_code
+    cardinality: {{child: many, parent: one}}
+    participation: {{child: optional, parent: mandatory}}
+"""
+
 MEASURE_CONCEPT = """\
 metadata:
   provenance: {provenance}
@@ -156,7 +181,8 @@ def build_bundle(root: Path, *, foldered: bool, data="data", ontology="ontology"
     write(root / "mac.project.yaml", MANIFEST.format(data=data, ontology=ontology))
     write(root / data / "datasets" / "fact_widget.yaml",
           DATASET.format(physical="fact_widget_v2"))
-    write(root / data / "datasets" / "dim_widget.yaml", DATASET.format(physical="dim_widget"))
+    write(root / data / "datasets" / "dim_widget.yaml",
+          DATASET_COLUMN_FK.format(physical="dim_widget"))
     write(root / data / "sources" / "raw_widget.yaml", DATASET.format(physical="raw_widget"))
     write(root / data / "transforms" / "fact_widget.yaml",
           "metadata:\n  provenance: tuned\nproduces: fact_widget\n")
@@ -387,6 +413,13 @@ try:
        "the physical name is a secondary key onto the same relation")
     eq(len(r.foreign_keys), 1, "foreign keys are read")
     eq(r.foreign_keys[0].to_table, "dim_widget", "…with their target")
+    # the COLUMN form is the primary home; the block above is the fallback for an unmigrated bundle
+    cfk = Bf.relation("dim_widget").foreign_keys
+    eq(len(cfk), 1, "a `role: foreign_key` column with `references` IS a foreign key")
+    eq(cfk[0].to_table, "dim_widget", "…whose target relation is the second-to-last segment")
+    eq(cfk[0].to_column, "widget_code", "…and whose target column is the last")
+    eq(str(cfk[0].site), "data/datasets/dim_widget.yaml#columns[2].references",
+       "…sited on the COLUMN that declares it")
     eq(Bf.relation("raw_widget").role, "raw_source", "a raw-source descriptor is role=raw_source")
     eq(list(r.columns), ["widget_code", "amount"], "columns keep declaration order")
 
