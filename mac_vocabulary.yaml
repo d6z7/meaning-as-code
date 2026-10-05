@@ -757,6 +757,24 @@ canon:
         margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on
         the same profit. `Intent.denominator` has always carried the choice and the planner has always
         read it, so a model's guess went straight through and nothing declared which was meant.
+    column_select:
+      serves: competing_definitions
+      needs_sqlglot: false
+      doc: >
+        WHICH COLUMN OR JOIN PATH A NAMED READING RESOLVES TO -- the third member of the family
+        population_select and ratio_select belong to. Those two map a word a reader says to the ROWS a
+        concept has and to the FIGURE a ratio divides by; this one maps it to the COLUMN that answers.
+        `params.columns` is a name -> {column, surfaces} map with an OPTIONAL `default`, and the axis
+        is the rule's own `binds`, as it is for a population and a ratio. A name is matched EXACTLY
+        over its declared surfaces, case/space/underscore folded. NO DEFAULT IS A DECLARATION: a
+        question naming neither reading ASKS with both offered. MEASURED on the worked bundle
+        2026-10-05: an order's period is `order_date` and not `delivery_date`, which was a prose
+        `then` only a model read and which changes the number -- an order counted on its delivery
+        date falls in a different month. `axis_default` could not hold it: that canon injects a VALUE
+        into a column and nothing selected BETWEEN columns. IT CHOOSES BETWEEN COLUMNS THE CONCEPT
+        ITSELF DECLARES, and three rules that look like the same shape are not: "revenue means net"
+        chooses between CONCEPTS, "a sales question means the store country" chooses a JOIN PATH, and
+        "an unscoped question covers all time" is about the WINDOW and has no alternative column.
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
     relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
     enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }

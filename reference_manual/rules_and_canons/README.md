@@ -265,21 +265,22 @@ exist"*, which is the defect the canon registry was written for.
 
 <!-- BEGIN generated: canon tree (tools/gen_canon_index.py) -->
 
-**21 canons across 12 patterns.** The middle layer is not a filing choice: it is each canon's own `serves`, the data pattern it exists for, which also names its page under [`patterns/`](../patterns/). A canon changes group by changing that declaration.
+**22 canons across 12 patterns.** The middle layer is not a filing choice: it is each canon's own `serves`, the data pattern it exists for, which also names its page under [`patterns/`](../patterns/). A canon changes group by changing that declaration.
 
 | | defined | described | implemented |
 |---|---|---|---|
-| **count** | 21 | 21 | 18 |
+| **count** | 22 | 22 | 19 |
 | **read from** | `mac_vocabulary.yaml#canon.terms` | `rules_and_canons/**/*.md` | `mac_runtime.canon.IMPLEMENTED` |
 
 `tools/check_canon_documented.py` holds the three together; this table is read from the same places it reads.
 
-### [`competing_definitions`](../patterns/competing_definitions.md) &nbsp;·&nbsp; 5
+### [`competing_definitions`](../patterns/competing_definitions.md) &nbsp;·&nbsp; 6
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `alias_resolve` | [page](competing_definitions/alias_resolve.md) | [below](#maccanonaliasresolve) | **acts** | no |
 | `ambiguity_gate` | [page](competing_definitions/ambiguity_gate.md) | [below](#maccanonambiguitygate) | **acts** | no |
+| `column_select` | [page](competing_definitions/column_select.md) | [below](#maccanoncolumnselect) | **acts** | no |
 | `population_select` | [page](competing_definitions/population_select.md) | [below](#maccanonpopulationselect) | **acts** | no |
 | `ratio_select` | [page](competing_definitions/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
 | `relation_alias_resolve` | [page](competing_definitions/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
@@ -478,7 +479,7 @@ glob and the 28 links with it.
 
 > The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
-*`mac.canon` · 21 terms · open — a bundle may add its own*
+*`mac.canon` · 22 terms · open — a bundle may add its own*
 
 #### `mac.canon.composite_key_guard`
 
@@ -653,6 +654,28 @@ not NetRevenue (6.30%) on the same money; Margin names TWO -- margin % over NetR
 and markup % over SalesCost (126.79%), a factor of 2.27 on the same profit. `Intent.denominator`
 has always carried the choice and the planner has always read it, so a model's guess went
 straight through and nothing declared which was meant.
+
+| field | value |
+|---|---|
+| `serves` | competing_definitions |
+| `needs_sqlglot` | False |
+
+#### `mac.canon.column_select`
+
+WHICH COLUMN OR JOIN PATH A NAMED READING RESOLVES TO -- the third member of the family
+population_select and ratio_select belong to. Those two map a word a reader says to the ROWS a
+concept has and to the FIGURE a ratio divides by; this one maps it to the COLUMN that answers.
+`params.columns` is a name -> {column, surfaces} map with an OPTIONAL `default`, and the axis is
+the rule's own `binds`, as it is for a population and a ratio. A name is matched EXACTLY over
+its declared surfaces, case/space/underscore folded. NO DEFAULT IS A DECLARATION: a question
+naming neither reading ASKS with both offered. MEASURED on the worked bundle 2026-10-05: an
+order's period is `order_date` and not `delivery_date`, which was a prose `then` only a model
+read and which changes the number -- an order counted on its delivery date falls in a different
+month. `axis_default` could not hold it: that canon injects a VALUE into a column and nothing
+selected BETWEEN columns. IT CHOOSES BETWEEN COLUMNS THE CONCEPT ITSELF DECLARES, and three
+rules that look like the same shape are not: "revenue means net" chooses between CONCEPTS, "a
+sales question means the store country" chooses a JOIN PATH, and "an unscoped question covers
+all time" is about the WINDOW and has no alternative column.
 
 | field | value |
 |---|---|

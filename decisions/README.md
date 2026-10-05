@@ -54,7 +54,7 @@ removing it would leave a pointer with nowhere to land.
 | [`PROPOSED-2026-10-02_column-first-declarations.md`](PROPOSED-2026-10-02_column-first-declarations.md) | PROPOSED | implemented | frontmatter `state:` | 0 |
 | [`PROPOSED-2026-10-02_one-revenue-concept.md`](PROPOSED-2026-10-02_one-revenue-concept.md) | PROPOSED | proposed | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
 | [`PROPOSED-2026-10-02_public-brand-examples.md`](PROPOSED-2026-10-02_public-brand-examples.md) | PROPOSED | implemented | frontmatter `state:` | 1 — `tools/check_decision_state.py` |
-| [`PROPOSED-2026-10-05_prose-formal-separation.md`](PROPOSED-2026-10-05_prose-formal-separation.md) | PROPOSED | proposed | frontmatter `state:` | 1 — `tools/check_prose_ratio.py` |
+| [`PROPOSED-2026-10-05_prose-formal-separation.md`](PROPOSED-2026-10-05_prose-formal-separation.md) | PROPOSED | proposed | frontmatter `state:` | 2 — `tools/check_concept_narrative.py`, `tools/check_prose_ratio.py` |
 | [`PROTOCOL-2026-09-29_guardrails.md`](PROTOCOL-2026-09-29_guardrails.md) | PROTOCOL | recorded | frontmatter `state:` | 3 — `guardrails/README.md`, `tools/check_decision_state.py`, `tools/framework_gate_failures.yaml` |
 | [`PROTOCOL-2026-10-01_rule-engine.md`](PROTOCOL-2026-10-01_rule-engine.md) | PROTOCOL | recorded | frontmatter `state:` | 6 — `reference_manual/canon/population_select.md`, `reference_manual/canon_library.md`, `reference_manual/rule_engine.md` +3 more |
 | [`PROTOCOL-2026-10-05_column-standard-cleanup-handover.md`](PROTOCOL-2026-10-05_column-standard-cleanup-handover.md) | PROTOCOL | recorded | frontmatter `state:` | 0 |
