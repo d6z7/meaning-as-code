@@ -3,7 +3,7 @@
 
 WHY, IN ONE SENTENCE: a hand-written synopsis can document a grammar that does not exist, and ours did.
 
-MEASURED 2026-09-28. `reference_manual/column_rulings.md` opens with a man-page SYNOPSIS — the shape the
+MEASURED 2026-09-28. `reference_manual/rules_and_canons/column_rulings.md` opens with a man-page SYNOPSIS — the shape the
 operator asked for, already in the tree — and every line of it is unimplemented:
 
     columns:

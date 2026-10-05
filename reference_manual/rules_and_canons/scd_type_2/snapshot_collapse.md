@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **query-shape** canon (`applied_as: subquery_wrapper`): it produces a relation already collapsed to one
 > row per entity, so downstream aggregation cannot multiply facts across versions. Single-homed here; bound
-> via `realized_by: { udf, params }`. See the [content model](../../the_content_model.md).
+> via `realized_by: { udf, params }`. See the [content model](../../rules_and_canons/the_content_model.md).
 
 ## Serves
 

@@ -15,7 +15,7 @@ engine must do**.
 ## `mac.concept.identity` — how identity is established
 
 Per **concept**, not per column. (For which *column* plays which part, see
-[`mac.concept.column.identity`](column_specification.md).)
+[`mac.concept.column.identity`](../column_specification.md).)
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -72,8 +72,8 @@ identify — which is the failure `composite` exists to prevent. (A third keyles
 concepts across four bundles used it. The schema enum still lists it; that is an open parity gap.)
 
 **Step 3 is `scoped_by` in its concept-level form.** `namespace_code` is the same fact the
-[`context_dependent_meaning`](patterns/context_dependent_meaning.md) pattern describes and
-[`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) enforces — a `State` code that means Corse in
+[`context_dependent_meaning`](../patterns/context_dependent_meaning.md) pattern describes and
+[`composite_key_guard`](context_dependent_meaning/composite_key_guard.md) enforces — a `State` code that means Corse in
 France and Colorado in the United States.
 
 ### Worked — contoso
@@ -141,7 +141,7 @@ A fact the consumer INHERITS from the serving view (relied on, not re-derived).
 | `never` | **quoted verbatim into a refusal.** This is the field a reader actually meets. |
 | `why` | the reason, so the refusal teaches rather than blocks |
 | `binds` | which columns the rule governs — how the planner knows the rule applies |
-| `realized_by` | the [canon](rules_and_canons/README.md) that makes it deterministic, if one exists |
+| `realized_by` | the [canon](../README.md) that makes it deterministic, if one exists |
 
 ### What each kind is for
 
@@ -164,4 +164,4 @@ need asking, or answers a question they did not ask. Contoso chooses `ambiguity`
 
 A rule's **prose** (`when`/`then`/`never`/`why`) is usually cross-column and stays at concept level.
 Its **params** under `realized_by` are mechanics about one column and belong on that column — see
-[the column specification](column_specification.md). *Prose stays, params descend.*
+[the column specification](../column_specification.md). *Prose stays, params descend.*

@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **guard** canon: a multivalued attribute (an array column, or a value reached through a bridge) must be
 > tested with **membership** (`contains` / `EXISTS`), never scalar **equality**. Single-homed here; bound via
-> `realized_by: { udf, params }`. See [content model](../../the_content_model.md).
+> `realized_by: { udf, params }`. See [content model](../../rules_and_canons/the_content_model.md).
 
 ## Serves
 

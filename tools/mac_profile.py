@@ -138,7 +138,7 @@ SINGLETON_MIN_SHARE = 0.01
 def singleton_candidates(row: dict, columns: list[dict]) -> list[str]:
     """Non-key, non-numeric columns near-unique enough to be an identifier in disguise.
 
-    WHY THIS IS MEASURED AT ALL. `rulings.never_axis: privacy` (reference_manual/column_rulings.md
+    WHY THIS IS MEASURED AT ALL. `rulings.never_axis: privacy` (reference_manual/rules_and_canons/column_rulings.md
     §4) is a ruling made FROM a measurement -- "ZipCode alone singles out 29 193 of 104 990 served
     customers" -- and must cite it as `evidence`. The census counts distinct and nulls; neither says
     how many values are held by EXACTLY ONE row, which is the number that turns a dimension into a

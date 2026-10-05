@@ -92,7 +92,7 @@ canon_ref: [mac_vocabulary.yaml (rule_kind.resolution), query_rules (resolve.by_
 
 ## The determinism border
 
-Per [AUTHORING.md](../AUTHORING.md) A4 and [the content model](../the_content_model.md), here is exactly what
+Per [AUTHORING.md](../AUTHORING.md) A4 and [the content model](../rules_and_canons/the_content_model.md), here is exactly what
 this pattern guarantees by **canon** (deterministic) and what it leaves to **prose** (interpretative):
 
 | Behaviour | Kind | How |

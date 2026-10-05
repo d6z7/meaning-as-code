@@ -146,7 +146,7 @@ far it currently reaches.
 ## 2.6 The determinism corollary
 
 Completeness (§2.5) says the needed facts are **captured**. It does *not* say they are **deterministic** —
-that is a separate property, and it is the subject of [the content model](the_content_model.md): a captured
+that is a separate property, and it is the subject of [the content model](rules_and_canons/the_content_model.md): a captured
 fact is deterministic where its slot is **skeleton** or a **canon**, and interpretative where it is **prose**.
 So two distinct guarantees compose:
 
@@ -166,7 +166,7 @@ Stated plainly, as the constitution requires (AUTHORING A5):
 - **Is the six-fact set `{grounding, identity, additivity, closure, absence, scope}` closed?** Unknown — it is
   the smallest set that covers Q *so far*. A question in Q that needs a seventh fact would refute closure;
   that, too, is welcomed and versioned.
-- **Where the math stops and prose begins** is drawn in [the content model](the_content_model.md), not here:
+- **Where the math stops and prose begins** is drawn in [the content model](rules_and_canons/the_content_model.md), not here:
   the structures and the equation are exact; the interpretation of a natural-language *question* into an
   intent over them is not.
 

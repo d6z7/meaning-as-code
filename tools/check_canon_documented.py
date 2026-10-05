@@ -73,7 +73,14 @@ def main(argv: list[str] | None = None) -> int:
     #
     # README.md IS EXCLUDED BY NAME. A sub-index would otherwise be counted as a canon called
     # "README" and reported as a page the vocabulary does not define.
-    described = {p.stem for p in pages_dir.rglob("*.md") if p.stem != "README"}
+    # EXACTLY THE CANON PAGES: `<pattern>/<canon>.md`, one level down and no deeper. The directory
+    # also carries the chapter (`README.md`) and, since 2026-10-05, the four other pages whose subject
+    # is rules rather than one canon -- rule_engine, identity_and_rules, column_rulings,
+    # refusals_and_findings, the_content_model. An rglob swept all six in and reported their stems as
+    # canons the vocabulary does not define ("5 undefined"), which is the mirror of the flat glob that
+    # reported 21 undescribed: both measured the wrong population and said so confidently. The
+    # one-level glob IS the guardrail's declared population for manual_canon_page.
+    described = {p.stem for p in pages_dir.glob("*/*.md") if p.stem != "README"}
 
     try:
         _neighbours.ensure_runtime_on_path()

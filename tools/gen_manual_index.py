@@ -372,6 +372,17 @@ def render(root: pathlib.Path) -> str:
     #: is not. So the front page of the directory fell between the two and the coverage walk -- which
     #: reads the filesystem, not this renderer -- correctly called it uncovered.
     canon_front = next((d for d in described if d["rel"] == "rules_and_canons/README.md"), None)
+    #: AND ITS COMPANION PAGES. Since 2026-10-05 the directory also holds the pages whose SUBJECT is
+    #: rules rather than one canon — the rule engine, identity and rules, column rulings, refusals,
+    #: the content model. They are not canon pages, so the canon table below cannot hold them, and
+    #: `KNOWN` keeps the directory out of the discovered-subdirectory groups. Without this they were
+    #: carried by the manual and linked from nowhere, which the coverage walk reported one for one.
+    canon_companions = sorted(
+        (d for d in described
+         if d["rel"].startswith("rules_and_canons/")
+         and d["rel"].count("/") == 1
+         and d["rel"] != "rules_and_canons/README.md"),
+        key=lambda d: d["rel"])
 
     canon = canon_lists(root)
     vocab = vocabulary_lists(root)
@@ -518,6 +529,11 @@ def render(root: pathlib.Path) -> str:
         A(f"The chapter itself is [`{canon_front['rel']}`]({canon_front['rel']}) — what a rule is, "
           f"where its body fires, what crosses into the answer, and how it is tested, then the "
           f"groups below.")
+        A("")
+    if canon_companions:
+        A(f"Beside it, {len(canon_companions)} page(s) on the same subject:")
+        A("")
+        L.extend(page_table(canon_companions, visible))
         A("")
     A("| canon | defined | page | implemented | `status:` as the page declares it |")
     A("|---|---|---|---|---|")

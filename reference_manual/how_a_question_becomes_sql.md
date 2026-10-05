@@ -287,5 +287,5 @@ cannot say it.
 |---|---|
 | declare everything about a column, in one place | [column_specification.md](column_specification.md) |
 | decide what a column IS | [column_roles.md](column_roles.md) |
-| declare something measurement cannot establish | [column_rulings.md](column_rulings.md) |
+| declare something measurement cannot establish | [column_rulings.md](rules_and_canons/column_rulings.md) |
 | recognise a shape you have been handed | [patterns/](patterns/) — 22 constellations |

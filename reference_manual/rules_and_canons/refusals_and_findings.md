@@ -337,7 +337,7 @@ canon binding: a parameter readable from a declaration should not be re-typed on
 
 **MAC008 is the one that catches an unresolved `mac.*` token** — and it only scans `*.yaml` and
 `*.yml`. Markdown has never been checked, which is why the reference manual needed its own
-[drift gate](../tools/gen_vocabulary_terms.py).
+[drift gate](../../tools/gen_vocabulary_terms.py).
 
 ---
 

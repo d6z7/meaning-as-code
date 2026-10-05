@@ -33,7 +33,7 @@ formally: a concept is a *falsifiable equation*; this is how you falsify it.)
 ## 4.2 The determinism gradient (the manual's addition)
 
 Correctness asks *does the model match reality?* Determinism asks a different question entirely: *will two
-LLMs reading this produce the same behaviour?* From [the content model](the_content_model.md): a
+LLMs reading this produce the same behaviour?* From [the content model](rules_and_canons/the_content_model.md): a
 behaviour-bearing slot is **skeleton** or **canon** (deterministic) or **prose** (interpretative,
 model-variant). The measurable form is **determinism coverage** (content model §6): the fraction of
 behaviour-bearing slots that are canon-backed.

@@ -115,7 +115,7 @@ Only the *mechanical edges* canonize — apply a known exclusion, abstain on a s
 judging how separable an impurity is — is SME work, and forcing it to be *explicit* (not a silent `WHERE`)
 is the win available even before the curation layer exists. A pattern's border is allowed to be mostly
 prose; what is **not** allowed is pretending that prose is deterministic. The determinism-coverage metric
-([content model §6](../the_content_model.md)) simply reports this pattern low — honestly.
+([content model §6](../rules_and_canons/the_content_model.md)) simply reports this pattern low — honestly.
 
 ## The footgun, concretely
 

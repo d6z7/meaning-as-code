@@ -111,7 +111,7 @@ inherits it. And we **cover both**: the prose for every human and the auditing e
 machine that must not guess. Neither replaces the other; the UDF is the prose's canon, the prose is the
 UDF's explanation.
 
-> **Authoring rule (see [AUTHORING.md](AUTHORING.md) A2/A9):** a behaviour-bearing slot ships prose
+> **Authoring rule (see [AUTHORING.md](../AUTHORING.md) A2/A9):** a behaviour-bearing slot ships prose
 > *always*, and its `realized_by:` canon *wherever determinism is required*. A canon is **reviewed and
 > frozen**, never silently regenerated — otherwise it is just prose again.
 

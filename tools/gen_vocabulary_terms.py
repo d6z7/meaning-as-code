@@ -309,8 +309,18 @@ def self_test(vocab: dict) -> int:
     with tempfile.TemporaryDirectory() as tmp:
         docs = pathlib.Path(tmp) / "reference_manual"
         docs.mkdir(parents=True)
+        #: COPIED AT ITS RELATIVE PATH, not flattened to its basename. This was `docs / page.name`
+        #: and it was lossless only while every declared page sat at the manual root -- the same
+        #: latent flattening `declared_pages` carried. When three chapters moved into
+        #: `rules_and_canons/` on 2026-10-05, their declared paths could no longer resolve inside the
+        #: fixture, so the self-test's FIRST assertion -- "the manual as committed must be clean" --
+        #: reported mac.concept.rule, mac.concept.identity and mac.concept.column.ruling as notions
+        #: no page documents, while the real run over the real tree was clean at 24 of 24. A fixture
+        #: that cannot represent the tree it copies tests a manual that does not exist.
         for page in pages_of(DOCS):
-            shutil.copy2(page, docs / page.name)
+            dest = docs / page.relative_to(DOCS)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(page, dest)
         for page, text in inject(vocab, docs).items():
             page.write_text(text, encoding="utf-8")
 

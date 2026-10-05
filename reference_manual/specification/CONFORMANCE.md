@@ -599,7 +599,7 @@ bundle must reach the start before anything is allowed to run.
   It names a canon in the new **`mac.canon`** vocabulary registry (`mac_vocabulary.yaml`), resolved by
   `check_references` (an unknown canon name is an ERROR); the canon **logic is single-homed** in the
   executable library **`tools/canon/`** and demonstrated runnable in **`tests/test_canon.py`**. The seam is
-  the determinism-coverage mechanism (reference_manual/the_content_model.md §4): a behaviour-bearing slot
+  the determinism-coverage mechanism (reference_manual/rules_and_canons/the_content_model.md §4): a behaviour-bearing slot
   WITH a `realized_by` is canon-backed (deterministic); WITHOUT, its prose is model-interpreted. Optional and
   backward-compatible. Per RELEASING.md, the tag, schema title, validator `CURRENT`, and every example
   `schema_version` move to `0.1.9` together.

@@ -13,7 +13,7 @@ honest, single-homed, and machine-trustworthy — the same properties it asks of
 If a section breaks one of these rules, the section is wrong, not the rule.*
 
 The constitution is grounded in three companion ideas, stated once and referenced everywhere:
-the **content model** ([the_content_model.md](the_content_model.md)) — skeleton / prose / UDF;
+the **content model** ([the_content_model.md](rules_and_canons/the_content_model.md)) — skeleton / prose / UDF;
 the **anatomy of a pattern** ([00_the_problem.md](00_the_problem.md) §0.3) — every entry is a Question → Answer;
 the **formal stance** — we describe what we have built and validated, and nothing more.
 
@@ -23,7 +23,7 @@ the **formal stance** — we describe what we have built and validated, and noth
 Every piece of content is one of: **skeleton** (typed/pointer, deterministic), **behaviour-bearing**
 (drives a query/decision), or **pure prose** (informs a human only). No unclassified content. *Check:* apply
 the discriminator — "could two competent models produce different behaviour from this slot?"
-([content model §2](the_content_model.md)). The complete slot inventory per object type — which keys exist
+([content model §2](rules_and_canons/the_content_model.md)). The complete slot inventory per object type — which keys exist
 and where they nest — is the [Shape Reference](shape_reference.md).
 
 ### A2 — Behaviour-bearing prose carries a UDF seam

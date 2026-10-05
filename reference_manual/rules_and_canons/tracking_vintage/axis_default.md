@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **transform** canon (it *rewrites* the query, unlike a guard which only catches). Realizes
 > `mac.concept.rule.default`: when an orthogonal axis is left unspecified but a safe default exists, inject it.
-> Single-homed here; bound via `realized_by: { udf, params }`. See the [content model](../../the_content_model.md).
+> Single-homed here; bound via `realized_by: { udf, params }`. See the [content model](../../rules_and_canons/the_content_model.md).
 
 ## Serves
 

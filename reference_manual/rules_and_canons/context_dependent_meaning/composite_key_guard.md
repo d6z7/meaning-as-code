@@ -10,7 +10,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 > A **canon** is a generic, parameterized UDF — the deterministic realization of a behaviour-bearing slot.
 > Its logic is **single-homed here** (AUTHORING A3) and bound to a concept's columns via
 > `realized_by: { udf, params }`. Concepts name it; they never restate its logic. See the
-> [content model](../../the_content_model.md) §4–§5. *(This entry also doubles as the template for future
+> [content model](../../rules_and_canons/the_content_model.md) §4–§5. *(This entry also doubles as the template for future
 > canon entries: Serves · Contract · Reference implementation · Plug-in · Demonstration · Limits.)*
 
 ## Serves

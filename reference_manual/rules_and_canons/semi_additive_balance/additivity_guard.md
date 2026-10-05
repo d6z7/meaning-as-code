@@ -9,7 +9,7 @@ scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 
 > A **canon** is a generic, parameterized UDF — the deterministic realization of a behaviour-bearing slot,
 > single-homed here and bound to a concept via `realized_by: { udf, params }`. See the
-> [content model](../../the_content_model.md) §4–§5 and the entry template in
+> [content model](../../rules_and_canons/the_content_model.md) §4–§5 and the entry template in
 > [composite_key_guard](../context_dependent_meaning/composite_key_guard.md).
 
 ## Serves

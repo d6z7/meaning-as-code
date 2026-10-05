@@ -173,7 +173,7 @@ binding_mode:
 # ===========================================================================
 # mac.canon — the canon library: the deterministic, parameterized UDFs a behaviour-bearing slot binds
 # to via `realized_by: { udf: mac.canon.<name>, params: {...} }` (v0.1.9; the content-model UDF seam,
-# reference_manual/the_content_model.md §4). The logic is single-homed in the executable library
+# reference_manual/rules_and_canons/the_content_model.md §4). The logic is single-homed in the executable library
 # tools/canon/ and demonstrated runnable in tests/test_canon.py ("a canon that doesn't run is prose in
 # a code costume"). Each member names the pattern it serves; an applied ontology references the term and
 # supplies only params — it never re-encodes the logic. Coverage, not completeness (AUTHORING A5): this
