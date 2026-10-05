@@ -74,14 +74,14 @@ grain) guards the reading of the result.
 
 This is the part worth dwelling on. Because every clause of the generated query traces to a specific model
 element — the `SELECT` to a rule's formula, each `JOIN` to an edge's `join_rule`, each table/column to the
-Physical layer (exactly what the worked examples' `QUERIES.md` demonstrate) — the agent can **explain why
+Physical layer — the agent can **explain why
 an answer is what it is by citing the model**, not by post-hoc rationalization. "This is net revenue
 (rule `net_revenue`), summed over lines joined to region through these four edges, for orders in 1995."
 The lineage from number → SQL → meaning is mechanical.
 
 The same property lets the agent **refuse honestly**. Ask for something the edges don't connect — "revenue
 by a dimension no join reaches" — and a correct generator reports the missing edge instead of fabricating
-a column (see the shop's unanswerable case in [its QUERIES.md](../example_shop_ontology/QUERIES.md)). A
+a column. A
 model that knows the boundary of what it can answer is worth more than one that always answers.
 
 ## Where this fits in the bigger picture
@@ -101,4 +101,4 @@ that executes against a model and shows its work.
 ---
 
 *Companions: [meaning-as-code.md](meaning-as-code.md) (the idea) · [positioning.md](positioning.md) (why
-this over OSI / platforms) · the worked [shop](../example_shop_ontology/QUERIES.md) question→SQL demo.*
+this over OSI / platforms).*

@@ -179,7 +179,8 @@ DEFAULT_TIMEOUT = 60.0
 #: bundles as the real fixture. First one that exists wins.
 #: example_tpch_ontology REMOVED 2026-10-04 (operator: keep only contoso as the example). A name
 #: here pointing at a directory that is gone is an exemption over nothing, so it goes with it.
-EXAMPLE_BUNDLES = ("example_shop_ontology",)
+#: example_shop_ontology was REMOVED 2026-10-05, completing the 2026-10-04 ruling that took example_tpch_ontology ("keep only contoso as the example"). It was the LAST in-repo bundle, so this fixture is tests/fixtures/two_plane_project — the two-plane sibling of flat_project, written to the current column standard that shop had gone stale against.
+EXAMPLE_BUNDLES = ("tests/fixtures/two_plane_project",)
 
 
 # ------------------------------------------------------------------------------------------------

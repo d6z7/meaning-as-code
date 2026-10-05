@@ -12,7 +12,7 @@ companions:
   - reference_manual/shape_reference.md  # the key-by-key reference, GENERATED from the schema (CONCEPT_SPEC.md is a retired redirect)
   - mac.schema.json     # v0.1.14: the machine-checkable schema — the strict, enforceable contract
   - CONFORMANCE.md      # v0.1.14: conformance levels + the closed-core rule (x- is PROHIBITED)
-  - example_shop_ontology/   # a worked, validated example on a neutral domain — "this framework, applied"
+  - tests/fixtures/two_plane_project/   # the two-plane self-test fixture (the worked example is contoso5)
 ---
 
 # The YAML Ontology Framework
@@ -26,7 +26,7 @@ This document is the complete description of the framework: what problem it solv
 built on, every construct it defines, and — honestly — what it is *not* and when not to use it. A
 stakeholder can read §1–§4 and understand the idea; an engineer can read §5–§8 and author a concept
 without opening another file; §9 answers the obvious objections. The worked example
-(`example_shop_ontology/`) shows the whole framework applied to a small, neutral domain.
+(contoso5, in its own repository) shows the whole framework applied to a small domain.
 
 ---
 
@@ -144,7 +144,7 @@ The framework is the disciplined application of seven principles. Everything in 
 Everything you author is one of a small, fixed set of object types. Each has exactly one home and
 belongs to exactly one layer. Paths are relative to a bundle root and follow the two-plane layout
 (`ontology/` for meaning, `data/` for how the data is made — see
-[reference_manual/data_plane.md](reference_manual/data_plane.md)); `example_shop_ontology/` is the
+[reference_manual/data_plane.md](reference_manual/data_plane.md)); contoso5 is the
 worked instance of every row.
 
 | # | Object type | What it is | Home (bundle-relative) | Layer | Cardinality |
@@ -153,7 +153,7 @@ worked instance of every row.
 | 2 | **Rule** | a derivation / membership computation | entry in `ontology/rules.yaml` | Rules | many per file |
 | 3 | **Edge** | a navigable relation between two concepts, at `level: physical`, `business` or `federation` | entry in `ontology/edges.yaml` | Edges | many per file |
 | 4 | **Dataset descriptor** | physical grounding target (columns / types / keys) | `data/datasets/<relation>.yaml` | Physical | 1 file = 1 relation |
-| 5 | **Finding** | a data-vs-model discrepancy caught by execution | `data/quality/` (the register and its `DQ-*` records; the example keeps `recon_findings.md`) | (cross-cutting record) | append-only |
+| 5 | **Finding** | a data-vs-model discrepancy caught by execution | `data/quality/` (the register and its `DQ-*` records) | (cross-cutting record) | append-only |
 | 6 | **Open question** | an SME-actionable unknown | `open_questions:` inside a concept (or a rule) | (lives on the object) | inline list |
 
 A cross-source *federation* edge is an ordinary entry in `ontology/edges.yaml` with `level: federation`
@@ -401,7 +401,7 @@ degrades to an annotation or convention — the *information is never lost*, onl
   2026-09-29: it described the pre-two-plane layout (`<source>/tables/`, `federation/`), and its one
   still-true table, the object types, was folded into §4.
 - **The worked example** — this entire framework applied to a small, neutral, synthetic domain
-  (an online shop) — is `example_shop_ontology/`. Read it to see, rather than read about, every
+  — is contoso5, in its own repository. Read it to see, rather than read about, every
   construct above.
 
 ---

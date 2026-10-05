@@ -1,0 +1,20 @@
+# Two-plane fixture — data plane / DATASET: the produced customers relation (the seam).
+
+metadata:
+  schema_version: 0.1.18
+  status: measured
+  kind: served_dataset
+
+table:
+  name: customers
+  schema: two_plane_warehouse
+  type: table
+  description: "One row per customer. Grounding target for the Customer entity."
+
+columns:
+  - { name: customer_id,  type: string,    role: primary_key }
+  - { name: country_code, type: string,    role: value }
+  - { name: created_at,   type: timestamp, role: value }
+
+grounded_by_concepts:
+  - { concept: Customer, role: primary_table }

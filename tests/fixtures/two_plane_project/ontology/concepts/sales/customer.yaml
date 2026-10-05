@@ -1,0 +1,30 @@
+# Two-plane fixture > sales > Customer. Synthetic; illustrates the `entity` class.
+
+metadata:
+  source: TWO_PLANE
+  version: '1.0'
+  schema_version: 0.1.18
+  confidence: C
+  provenance: authored
+
+concept:
+  name: Customer
+  class: entity
+  definition: >-
+    A party who can place orders. Identified by customer_id; one row per customer.
+
+grounding:
+  kind: sql_table
+  schema: two_plane_warehouse
+  sources:
+    - relation: customers
+      columns:
+        customer_id:
+          role: key
+          identity: canonical
+          counts: true
+        country_code:
+          role: dimension
+        created_at:
+          role: dimension
+  grain: one row per customer (customer_id)

@@ -139,7 +139,7 @@ sentence.
 ## 6. The payoff: the model writes the SQL
 
 If the deterministic half is really deterministic, you should be able to *watch* it happen. You can. Each
-worked example ships a `QUERIES.md` that turns plain questions into SQL **by reading the ontology** —
+worked example turns plain questions into SQL **by reading the ontology** —
 nothing recalled from memory:
 
 | SQL clause | comes from |
@@ -149,13 +149,13 @@ nothing recalled from memory:
 | the measure expression in `SELECT` | a **rule**'s `template` |
 | which columns a rule may touch | the rule's `binds` |
 
-"Net revenue by customer" ([shop](../example_shop_ontology/QUERIES.md) Q2) is not answered from priors:
+"Net revenue by customer" is not answered from priors:
 the `SELECT` is the `net_revenue` rule's formula (`gross − refunds`), the `JOIN` to customers is the
 `order__placed_by__customer` edge's `join_rule`, the `WHERE paid_at IS NOT NULL` is that rule's
 only-paid condition, and the label is a column. Every clause traces to a cited file — the SQL in that
 page carries the citation inline, as a comment, on the line it justifies.
 
-And the model knows the **boundary of what it can answer**. Ask the [shop](../example_shop_ontology/QUERIES.md)
+And the model knows the **boundary of what it can answer**. Ask the worked model
 for "net revenue by product category" and a correct generator *refuses*: Revenue grounds on orders;
 Category is reachable only through products; **no edge connects them.** Because the joins are data, the gap
 is reported as a missing edge to add — not papered over with a fabricated `orders.sku`. A model that can
@@ -206,7 +206,7 @@ score.
 
 ---
 
-*Worked examples in this repo: [example_shop_ontology](../example_shop_ontology/) (a small neutral
+*Worked examples: contoso5, in its own repository (a small neutral
 domain) and [example_tpch_ontology](../example_tpch_ontology/) (the TPC-H benchmark — a richer shape:
-hierarchy, associative entity, composite-key fact, derived measure). Each has a `validate.sh` that runs
-all three gates and a `QUERIES.md` that generates SQL from the model.*
+hierarchy, associative entity, composite-key fact, derived measure). The in-repo examples were removed
+by operator ruling (2026-10-04, 2026-10-05); the gates run against any bundle root.*

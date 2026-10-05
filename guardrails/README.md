@@ -73,7 +73,7 @@ the ITEM and says which delivery owes it.
 every topic under `data/` — measured the hour this tree was grouped: 2 topics found instead of 6,
 which would have reported a complete delivery as entirely undeclared. This estate's most-repeated
 defect is a flat glob over a grouped directory; the worst instance ships an empty
-`usage_guardrails.md`, 30 lines against 645, because `references.py` globs `concepts/*.yaml`.
+a usage-guardrails page, 30 lines against 645, because `references.py` globs `concepts/*.yaml`.
 
 **A KIND BELONGS TO EXACTLY ONE FILE.** Moving one between topics is a MOVE, never a copy — which
 is why no precedence rule exists anywhere in this tree, and why `bom.conflicts` must stay empty.

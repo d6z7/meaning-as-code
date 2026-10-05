@@ -202,6 +202,15 @@ CLAIMS = [
     {"file": "mac.schema.json",
      "find": re.compile(r"(current generation v)(\d+\.\d+\.\d+(?:-develop)?)"),
      "what": "schema description — current generation"},
+    # THE FOURTH HOME, ADDED 2026-10-05 — and it was found the only way an unwatched claim ever is:
+    # by reading the file after `--set` reported success. `--set 0.1.14-develop -> 0.1.18` rewrote the
+    # title, the description and the validator, printed a clean list, and left `"version": "0.1.16"`
+    # sitting four lines into the same file it had just edited twice. `--check` then said every claim
+    # agreed, because a claim that is not enumerated here cannot disagree. That is this tool's own
+    # subject matter one plane up: the drift it exists to catch, in the tool that catches it.
+    {"file": "mac.schema.json",
+     "find": re.compile(r'("version": ")(\d+\.\d+\.\d+(?:-develop)?)(")'),
+     "what": "schema version field"},
     {"file": "tools/validate_schema.py",
      "find": re.compile(r"(CURRENT = ')(\d+\.\d+\.\d+(?:-develop)?)(')"),
      "what": "the validator's notion of current"},

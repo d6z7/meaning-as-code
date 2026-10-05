@@ -1,0 +1,26 @@
+# tests/fixtures/two_plane_project — THE TWO-PLANE FIXTURE, sibling of tests/fixtures/flat_project.
+#
+# Created 2026-10-05 when `example_shop_ontology` was dropped (operator: "keep only contoso as the
+# example", the same ruling that removed example_tpch_ontology on 2026-10-04). Shop had been the
+# repo's only two-plane bundle, so three self-tests -- test_layout, test_mac_model and
+# check_seam_contract's end-to-end cases -- resolved their fixture through it. Deleting it without a
+# replacement would have left those assertions measuring NOTHING, which is the defect this estate
+# calls a zero-denominator pass.
+#
+# This is SCAFFOLDING, not a worked example: minimal, synthetic, and written to the CURRENT standard
+# (no concept-level `identity:` block, no `metadata.table`, no `foreign_keys:`) -- all three of which
+# shop still carried, which is why it stood at 33 findings the day it went.
+spec_version: mac.container/1
+
+metadata:
+  project: tests/two_plane
+  data_domain: tests
+  dataset: two_plane
+  label: Two-plane layout fixture
+
+planes:
+  data: data
+  ontology: ontology
+descriptors: data/datasets      # produced relations the ontology binds to (the seam)
+transforms: data/transforms     # the pipelines: source -> dataset
+sources: data/sources           # observed raw-input schema-of-record

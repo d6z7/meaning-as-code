@@ -74,7 +74,7 @@ the open*:
   dimensions, relationships; built to move a semantic layer *between tools*. It overlaps MAC's
   Semantic/Physical levels and is the natural **export target** — and MAC *does* export it: [`tools/mac_to_osi.py`](../tools/mac_to_osi.py)
   projects a MAC ontology onto an OSI semantic model (Physical→`datasets`/`fields`, Edges→`relationships`,
-  Rules→`metrics`), and the output ([`example_shop_ontology/projections/shop.osi.yaml`](../example_shop_ontology/projections/shop.osi.yaml))
+  Rules→`metrics`), and the output (a bundle's `projections/<name>.osi.yaml`)
   **validates against OSI's own JSON Schema** (v0.2.0.dev0). What OSI is *not*: an authoring discipline with a *closed core an LLM can't hallucinate*, typed
   **rules bound to physical fields with cross-file enforcement**, an edges-as-data join model, a
   constraint/shapes gate, or L0–L3 trust tiers. *Adopt for interchange; keep MAC for authoring + governance.*

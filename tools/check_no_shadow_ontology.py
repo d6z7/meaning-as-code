@@ -153,7 +153,7 @@ def _self_test() -> int:
         want("`concept:` alone is not a diversion", diverted(d)[0], [])
 
         # FAIL-OPEN 2 — fixtures and examples are exempt, or this gate reds the framework itself.
-        for sub in ("tests", "fixtures", "example_shop_ontology"):
+        for sub in ("tests", "fixtures"):
             (d / sub).mkdir(parents=True, exist_ok=True)
             (d / sub / "c.yaml").write_text(concept, encoding="utf-8")
         want("fixtures and examples are exempt", diverted(d)[0], [])

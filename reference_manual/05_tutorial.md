@@ -13,14 +13,14 @@ time. It teaches the *mechanics*; when a shape turns tricky, it hands you to the
 
 > **Relationship to the canon (A3 — reference, don't restate).** The step-by-step *recipes* live in
 > [`guides/MODELLERS_COOKBOOK.md`](guides/MODELLERS_COOKBOOK.md) (B1 author a concept · B3 enumeration · B4 rule ·
-> B5 edge · B6 grounding); the full worked model is [`../example_shop_ontology/`](../example_shop_ontology/).
+> B5 edge · B6 grounding); the full worked model is contoso5, in its own repository.
 > This tutorial is the *narrative that runs them* — it points at each recipe rather than copying it.
 
 ## 5.1 Hello, ontology
 
 The smallest complete thing you can write is **one concept**. An `enumeration` is the simplest — values +
 closure + grounding, no joins (cookbook **B3**). Create `shop/ontology/concepts/order/order_status.yaml`
-(the two-plane layout; the finished file is `example_shop_ontology/ontology/concepts/order/order_status.yaml`):
+(the two-plane layout):
 
 ```yaml
 metadata: { concept: OrderStatus, source: shop, version: '1.0', schema_version: '0.1.9', status: draft, confidence: I }
@@ -93,8 +93,9 @@ declared fact* (and its canon) that makes the hard case come out right. A few yo
 
 - **A recipe for the exact thing you're authoring** → [`guides/MODELLERS_COOKBOOK.md`](guides/MODELLERS_COOKBOOK.md)
   (decisions A1–A4, recipes B1–B8, antipatterns C).
-- **A complete model to read and copy** → [`../example_shop_ontology/`](../example_shop_ontology/) — every
-  construct, in full, with its own `validate.sh` and `QUERIES.md`.
+- **A complete model to read and copy** → contoso5, in its own repository — every construct, in full.
+  The in-repo examples were removed by operator ruling (2026-10-04, 2026-10-05); what is left here is
+  self-test scaffolding under `tests/fixtures/`.
 - **The hard shapes** → [Ch.03 — the Pattern Reference](03_pattern_reference.md).
 
 You now have the on-ramp: write one concept, run it, grow the model a validated file at a time, and reach for

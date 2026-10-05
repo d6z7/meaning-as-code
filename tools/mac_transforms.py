@@ -45,6 +45,7 @@ from datetime import UTC, datetime
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import _plugin  # noqa: E402
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
 
 GENERATOR = "mac_transforms.py/1"
 
@@ -176,7 +177,7 @@ def _render(root: pathlib.Path, schema: str, view: str, refs: list[str],
         "metadata:",
         f"  pipeline: {view}",
         "  layer: data-transformation",
-        "  schema_version: '0.1.14'",
+        f"  schema_version: '{_mac_version()}'",
         "  status: draft",
         "  confidence: I",
         f"  observed: '{observed}'",

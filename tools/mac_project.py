@@ -123,7 +123,8 @@ def plane_prefixes(root):
 # to be grouped into sub-directories: reference_manual and both worked examples ship
 # concepts/<group>/<name>.yaml, while other bundles keep them flat.
 #
-# MEASURED 2026-09-10 on the framework's OWN example_shop_ontology (8 concepts, foldered): eight gates
+# MEASURED 2026-09-10 on the framework's OWN example_shop_ontology (8 concepts, foldered — the bundle
+# was removed 2026-10-05; the measurement stands as the record of why this resolver exists): eight gates
 # globbed `concepts/*.yaml` — depth 0 only — found ZERO files and printed a clean verdict.
 # check_answerability said "every answer path derives — 0 of 0 concept(s) measured". Three operators
 # read that green independently; one rated it blocking. The same eight gates also hardcoded the

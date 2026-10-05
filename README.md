@@ -79,7 +79,7 @@ describes is [d6z7/mac-ontology-contoso](https://github.com/d6z7/mac-ontology-co
 - **Field-anchoring** — typed rules **bound to the columns they govern** (`binds`), enforced cross-file: a
   rule cannot claim to govern a field the concept doesn't ground, and the gate proves it.
 - **The model generates the SQL** — `SELECT` from a rule, `JOIN` from an edge, tables and columns from
-  grounding: the deterministic half of question-answering, shown end-to-end in each example's `QUERIES.md`.
+  grounding: the deterministic half of question-answering.
 - **Provenance for free** — because every clause traces to a concept, an edge, or a rule, an answer can be
   explained by citing the model — and an unanswerable question is *refused*, not fabricated.
 - **Six projectors, each self-validating** — one model → OSI · RDF/OWL · SHACL · openCypher · OKF ·
@@ -91,10 +91,13 @@ describes is [d6z7/mac-ontology-contoso](https://github.com/d6z7/mac-ontology-co
   Foundry split — datasets/transforms vs. ontology — but **vendor-neutral and in files you own**. Opt-in
   per project via `mac.project.yaml`; absent ⇒ flat (back-compatible). See
   [reference_manual/data_plane.md](reference_manual/data_plane.md).
-- **Two worked examples, both two-plane Option B** (structure-only datasets; all column meaning
-  field-anchored in the ontology) — a shop, and TPC-H (richer: a hierarchy, an associative entity, a
-  composite-key fact, a derived measure, and four closed enumerations), each with a `validate.sh` (all
-  three gates) and a `QUERIES.md` (question → SQL).
+- **One worked example, two-plane Option B** (structure-only datasets; all column meaning
+  field-anchored in the ontology) — contoso5, which lives in its own repository. The two in-repo
+  examples that stood here were removed by operator ruling: example_tpch_ontology on 2026-10-04 and
+  example_shop_ontology on 2026-10-05, the latter having gone stale against the column standard.
+  What remains in this repo is self-test scaffolding, not a model to copy:
+  [`tests/fixtures/two_plane_project/`](tests/fixtures/two_plane_project/) (two-plane) and
+  [`tests/fixtures/flat_project/`](tests/fixtures/flat_project/) (the flat back-compat default).
 
 This repository is the complete, domain-neutral description of the framework, plus the worked examples.
 
@@ -127,7 +130,7 @@ six independent verdicts. (Outputs live under each example's `projections/`.)
 | **[FRAMEWORK.md](reference_manual/specification/FRAMEWORK.md)** | The canonical description — the problem, the thesis, the four layers, the six classes, the rules layer, the trade-offs, and the projection table (RDF / property-graph / relational). **Read this first.** |
 | [reference_manual/shape_reference.md](reference_manual/shape_reference.md) | The exhaustive key-by-key reference — every object type's shape, **generated from `mac.schema.json`**. (`CONCEPT_SPEC.md` is a retired redirect to it.) |
 | [MODELLERS_COOKBOOK.md](reference_manual/guides/MODELLERS_COOKBOOK.md) | The task-oriented guide — *when you're authoring*: decision procedures (which layer? which class? which edge level?), recipes per task, and antipatterns. Routes to the canon; doesn't restate it. |
-| [example_shop_ontology/](example_shop_ontology/) | A tiny, complete, **synthetic** ontology (an online shop) — the framework applied end-to-end. Read it to *see* every construct, rather than read about it. |
+| [tests/fixtures/two_plane_project/](tests/fixtures/two_plane_project/) | The two-plane **self-test fixture** — the smallest tree exercising all four descriptor families plus edges. Scaffolding, not a model to copy: the worked example is contoso5, in its own repository. |
 | [mac.schema.json](mac.schema.json) | The **formal, machine-checkable schema** (v0.1.14) — the single source of structural truth: closed vocabulary, class/level/type/role enums, required keys, and the `x-` extension rule. |
 | [CONFORMANCE.md](reference_manual/specification/CONFORMANCE.md) | Conformance levels (L0–L3), the closed-core contract, and the v0.1.9 change list. |
 | [SEAM_CONTRACT.md](reference_manual/specification/SEAM_CONTRACT.md) | **`mac.seam/1`** — how a framework tool answers a host that may not import it: the CLI shape, the one envelope, the closed failure vocabulary, the cache rule, and the rule that decides when an incomplete answer may be served. Enforced by [tools/check_seam_contract.py](tools/check_seam_contract.py). |
@@ -156,19 +159,16 @@ The model is checked by **three** deterministic, data-free gates (no warehouse n
 ```bash
 pip install jsonschema pyyaml      # one-time
 
-# Run all three gates against an example in one command:
-./example_shop_ontology/validate.sh
-
-# …or each gate on its own (point any of them at YOUR model's root to validate it):
+# Each gate on its own (point any of them at YOUR model's root to validate it):
 # 1. STRUCTURAL — validate every file against the formal schema (mac.schema.json)
-python3 tools/validate_schema.py example_shop_ontology
+python3 tools/validate_schema.py tests/fixtures/two_plane_project
 #   enforces files at the current schema_version (0.1.14) and skips the rest; --all checks everything, --strict fails on warnings
 
 # 2. REFERENTIAL — every cross-file reference (realized_by / grounding / over: / value_domain) resolves
-python3 tools/check_references.py example_shop_ontology
+python3 tools/check_references.py tests/fixtures/two_plane_project
 
 # 3. CONSTRAINT — run the shapes (relational invariants as data), incl. cross-file rule-binds-grounded
-python3 tools/check_shapes.py example_shop_ontology
+python3 tools/check_shapes.py tests/fixtures/two_plane_project
 
 # plus NEGATIVE TESTS — prove the schema REJECTS bad input (not just that it accepts good)
 python3 tests/test_negative.py
@@ -185,17 +185,17 @@ negative suite into CI.
 Emit any target from a model root — the projectors resolve the layout (flat *or* two-plane) themselves:
 
 ```bash
-python3 tools/mac_to_osi.py     example_shop_ontology -o out.osi.yaml     # OSI semantic model
-python3 tools/mac_to_rdf.py     example_shop_ontology -o out.ttl          # RDF / OWL (Turtle)
-python3 tools/mac_to_shacl.py   example_shop_ontology --selftest          # SHACL (+ pySHACL good/bad-data test)
-python3 tools/mac_to_graph.py   example_shop_ontology -o out.cypher       # openCypher property graph
-python3 tools/mac_to_okf.py     example_shop_ontology -o out.okf --check  # OKF agent-knowledge bundle
-python3 tools/mac_to_mermaid.py example_shop_ontology -o out.mmd          # Mermaid diagram (renders on GitHub)
+python3 tools/mac_to_osi.py     <bundle> -o out.osi.yaml     # OSI semantic model
+python3 tools/mac_to_rdf.py     <bundle> -o out.ttl          # RDF / OWL (Turtle)
+python3 tools/mac_to_shacl.py   <bundle> --selftest          # SHACL (+ pySHACL good/bad-data test)
+python3 tools/mac_to_graph.py   <bundle> -o out.cypher       # openCypher property graph
+python3 tools/mac_to_okf.py     <bundle> -o out.okf --check  # OKF agent-knowledge bundle
+python3 tools/mac_to_mermaid.py <bundle> -o out.mmd          # Mermaid diagram (renders on GitHub)
 ```
 
 Each example keeps its rendered outputs under `projections/` — and the shop ontology has a picture:
-[`example_shop_ontology/shop_ontology.drawio.svg`](example_shop_ontology/shop_ontology.drawio.svg) (curated)
-and an inline [Mermaid block](example_shop_ontology/README.md) (generated, renders on GitHub).
+a curated drawio SVG and an inline Mermaid block (generated, renders on GitHub) — both produced per
+bundle by `tools/mac_to_mermaid.py`.
 
 ## What this is not
 

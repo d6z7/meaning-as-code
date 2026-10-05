@@ -4,7 +4,7 @@
 
 Every key a MAC file may write, one page per level, and one DIRECTORY per level so that any file-tree menu shows the hierarchy. Four roots, one per file shape: [`ontology`](structure/ontology/README.md) — the ontology plane; [`dataset`](structure/dataset/README.md) — a dataset's descriptor, which is the shape BOTH `data/sources/` and `data/datasets/` are written in (they differ by `metadata.external` and by which directory they sit in, not by which keys they may write); [`lookup`](structure/lookup/README.md) — a value register; and [`transform`](structure/transform/README.md) — how a served relation is derived. Walk down from any of them: each page lists the keys legal at that level, what each means, which are required, the legal values of each, and the level beneath it.
 
-Generated from `mac.schema.json` **0.1.16** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in a worked bundle, with that source's own name replaced by `<source>`: this is the grammar, so no page here teaches you about one ontology. Nothing on these pages is authored prose — see `tools/gen_structure_reference.py` for why.
+Generated from `mac.schema.json` **0.1.18** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in a worked bundle, with that source's own name replaced by `<source>`: this is the grammar, so no page here teaches you about one ontology. Nothing on these pages is authored prose — see `tools/gen_structure_reference.py` for why.
 
 | | |
 |---|---|

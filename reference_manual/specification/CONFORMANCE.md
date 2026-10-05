@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.14)
-version: '0.1.14'
+title: MAC Conformance — the strict-syntax contract (v0.1.18)
+version: '0.1.18'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -466,7 +466,7 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.16'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.18'`**.
 - **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
   `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
   there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept
@@ -579,6 +579,36 @@ bundle must reach the start before anything is allowed to run.
     first bundle on the column standard (contoso5, 17 concepts) could not load there before. One fixture
     bundle — `sdk/authoring/exemplars/bundle/` — is now the composer's exemplar and the round-trip test
     in both repos: what the composer emits, the reader loads.
+- **`0.1.18`, 2026-10-05** — **one version, actually synchronized; and identity is a column fact.**
+  Nothing in the core vocabulary changes shape here that was not already landed under `0.1.17`-era work;
+  what changes is that the number finally means something. Before this entry the estate held FIVE
+  disagreeing answers to "what generation is this" — `VERSION` said `0.1.14-develop`, `mac.schema.json`'s
+  `version` field said `0.1.16`, its own title said `v0.1.18-develop`, `validate_schema.CURRENT` said
+  `0.1.16-develop`, and parts of the schema described themselves as `v0.1.19`, a generation that was never
+  released and has no tag. `version.py --check` was red and had been for four generations.
+  - **The producers no longer type the stamp.** Eight generators each carried their own literal, frozen at
+    whatever was current the day it was typed: `mac_to_meta` `0.1.13`; `mac_transforms` and `bundlegen`
+    `0.1.14`; `mac_references`, `mac_profile` and `mac_profile_split` `0.1.14-develop`; `mac_descriptors`
+    `0.1.15`; `mac_lookups` `0.1.16`. All eight now read `tools/version.py`. This was the ACTUAL cause of
+    the spread, and it is why fixing the five claims by hand would have fixed nothing: the next generated
+    file would have reintroduced it.
+  - **A fourth claim is now watched.** `version.py` enumerated the schema title, the schema description and
+    the validator, but not `mac.schema.json`'s own `version` field — so `--set` rewrote that file twice and
+    left the field four lines in at `0.1.16`, and `--check` reported full agreement because a claim that is
+    not enumerated cannot disagree. It is in `CLAIMS` now.
+  - **`v0.1.19` is folded into `0.1.18`.** The two-pipeline `reproduction` declaration and the data
+    pipeline's declared exit were authored against a number ahead of `CURRENT` and never tagged. They ship
+    here; the labels in `mac.schema.json` and `validate_schema.py` now say so.
+  - **Every stamp in the tree moves.** 366 in this repo and 91 in contoso5, from six distinct values, to
+    `0.1.18`. The recognized range is `0.1.9 … 0.1.18` inclusive, nine generations of grace, so no bundle
+    behind the bump turns red — the window only ever widens.
+  - **`example_shop_ontology` is REMOVED**, completing the 2026-10-04 ruling that took
+    `example_tpch_ontology` ("keep only contoso as the example"). It was the last in-repo bundle and it had
+    gone stale against the column standard — still carrying the retired concept-level `identity:` block,
+    `metadata.table` and `foreign_keys:`, which is why it stood at 33 findings. The self-tests that used it
+    as their fixture now use `tests/fixtures/two_plane_project/`, the two-plane sibling of
+    `tests/fixtures/flat_project/`, written to this generation.
+
 - A **new core key** (§2's proposal path, step 4) or any **breaking** change to the core vocabulary bumps
   the patch while pre-`0.x` stabilises, with a changelog entry here. The field-anchoring promotion — the
   `contract.rules` RuleObject with `binds` (§1, FRAMEWORK §6d) — defined `0.1.6`.
@@ -606,7 +636,7 @@ bundle must reach the start before anything is allowed to run.
   WITH a `realized_by` is canon-backed (deterministic); WITHOUT, its prose is model-interpreted. Optional and
   backward-compatible. Per RELEASING.md, the tag, schema title, validator `CURRENT`, and every example
   `schema_version` move to `0.1.9` together.
-- **`0.1.19`** adds the **two-pipeline declaration** to `reproduction` (additive and OPTIONAL, so every
+- **`0.1.18`** adds the **two-pipeline declaration** to `reproduction` (additive and OPTIONAL, so every
   `0.1.14` manifest remains valid and no existing bundle turns red): **`reproduction.pipelines`** — a CLOSED
   object over exactly two properties, `data` and `ontology`, each with a manually-typed **`entry`** command;
   an OPTIONAL **`pipeline: data | ontology`** on each `reproduction.stages[]` entry; a new

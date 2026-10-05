@@ -37,7 +37,7 @@ and the next paid run is the first one that keeps its answer.
 
 ── USAGE ──────────────────────────────────────────────────────────────────────────────────────
 
-    python3 tools/run_suite.py --bundle example_shop_ontology \\
+    python3 tools/run_suite.py --bundle tests/fixtures/two_plane_project \\
         --suite acceptance/properties.yaml --engine sqlite --schema shop_warehouse \\
         --seed /tmp/shop_seed.sql
 

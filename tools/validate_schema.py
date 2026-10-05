@@ -90,7 +90,7 @@ def _pick_def(path, layout=None):
         'PHASE.yaml': 'PhaseFile',
         'shapes.yaml': 'ShapesFile',
         'sme_ledger.yaml': 'SmeLedgerFile',
-        # v0.1.19 — the data pipeline's declared exit. Routed by basename like its
+        # v0.1.18 — the data pipeline's declared exit. Routed by basename like its
         # siblings, so the sign-off is CHECKED rather than excused: without this it
         # would arrive as "carries no MAC definition" and a bundle would have to
         # declare its own governance artifact out of scope to go green.
@@ -178,7 +178,7 @@ SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projec
 # twice over: version.py's own header records the field not existing at all when the claim was
 # written, and today the field exists and says 0.1.13 while this says 0.1.14-develop. A comment
 # naming a source is not a source — which is why what replaces it below is checkable instead.
-CURRENT = '0.1.16-develop'
+CURRENT = '0.1.18'
 
 # ── THE RECOGNIZED SET IS DERIVED, NOT TYPED ──────────────────────────────────────────────────────
 # What stood here was a hand-typed set literal holding CURRENT, its base spelling, and the five

@@ -245,14 +245,18 @@ try:
     eq(B.concepts()[0].name, "Widget", "flat project: concept name read")
     eq(B.relation("widgets").name, "widgets", "flat project: descriptors resolve under tables/")
 
-    shop = REPO / "example_shop_ontology"
-    S = M.load(shop)
-    check(S.layout.two_plane, "two-plane example loads")
-    eq(len(S.concepts()), 8, "shop: 8 concept files, foldered by domain")
-    eq(len(S.docs("dataset")), 7, "shop: 7 dataset descriptors")
-    eq(len(S.docs("source")), 1, "shop: 1 raw-source descriptor")
-    eq(len(S.docs("transform")), 1, "shop: 1 transform descriptor")
-    check(len(S.edges()) > 0, f"shop: edges loaded ({len(S.edges())})")
+    # THE TWO-PLANE FIXTURE. These counts were 8/7/1/1 against the bundle removed 2026-10-05 — the
+    # last in-repo one. What replaces it is deliberately the SMALLEST tree that still exercises all
+    # four descriptor families plus edges, because what these assertions test is the RESOLVER, not
+    # the size of any bundle.
+    two_plane = REPO / "tests" / "fixtures" / "two_plane_project"
+    S = M.load(two_plane)
+    check(S.layout.two_plane, "two-plane fixture loads")
+    eq(len(S.concepts()), 2, "two-plane: 2 concept files, foldered by domain")
+    eq(len(S.docs("dataset")), 2, "two-plane: 2 dataset descriptors")
+    eq(len(S.docs("source")), 1, "two-plane: 1 raw-source descriptor")
+    eq(len(S.docs("transform")), 1, "two-plane: 1 transform descriptor")
+    check(len(S.edges()) > 0, f"two-plane: edges loaded ({len(S.edges())})")
     check(all(not d.relpath.startswith("projections/") for d in S.docs()),
           "planes scope excludes projections/ (generated exports are not model source)")
 

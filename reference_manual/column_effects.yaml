@@ -27,7 +27,7 @@
 
 metadata:
   of: the column specification
-  schema_version: 0.1.15
+  schema_version: 0.1.18
   companions: [column_specification.md, column_roles.md, column_rulings.md, ../mac_vocabulary.yaml]
   measured_at: '2026-09-27'
   # The enforced set was read off mac-platform's ColumnSpec model fields, not asserted:

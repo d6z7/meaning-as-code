@@ -68,6 +68,7 @@ import sys
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import _plugin  # noqa: E402
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
 
 GENERATOR = "mac_lookups.py/1"
 #: Above this a column is not a register: it is data. 608 GeoAreaKeys is a dimension to join, not a
@@ -607,7 +608,7 @@ def _write_register_descriptors(root: pathlib.Path, by_set: dict, yaml) -> int:
         attached = sorted({(r, c, sc or "") for r, c, _, sc in held["attached"]})
         owner_rel, owner_col, _owner_schema = attached[0]
         doc = {
-            "metadata": {"kind": "value_register", "schema_version": "0.1.16",
+            "metadata": {"kind": "value_register", "schema_version": _mac_version(),
                          "generated_by": GENERATOR},
             "register": {"name": held["stem"], "csv": rel_csv,
                          "members": len(held["members"]), "grain": "one row per code"},

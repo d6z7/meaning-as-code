@@ -32,7 +32,7 @@ THE REFERENCE FORMS, AND WHAT EACH SEVERITY MEANS
   R1  a markdown link `[text](relative/target)`             -> ERROR when the target does not exist
   R2  a backticked path rooted in an OWNED directory        -> ERROR when it does not exist
       (tools/ decisions/ reference_manual/ guardrails/ sdk/ grammar/ registers/ benchmark/ bundlegen/
-       invariants/ recognition/ example_shop_ontology/ tests/ protocol/ articles/) — a path under one of these is a claim about THIS repository and is judged as one
+       invariants/ recognition/ tests/ protocol/ articles/) — a path under one of these is a claim about THIS repository and is judged as one
   R3  a backticked bare basename (foo.py, x.yaml)           -> ERROR when no file of that name exists
                                                               anywhere in the tree; WARNING when several
                                                               do and the sentence does not say which
@@ -107,7 +107,7 @@ BASELINE = Path(__file__).resolve().parent / "dangling_floor.txt"
 SKIP_DIRS = {".git", "build", "node_modules", ".venv", "__pycache__", ".pytest_cache", "protocol",
              ".harvest_cache", "evidence"}
 OWNED = ("tools", "decisions", "reference_manual", "guardrails", "sdk", "grammar", "registers", "benchmark",
-         "bundlegen", "invariants", "recognition", "example_shop_ontology", "tests",
+         "bundlegen", "invariants", "recognition", "tests",
          "protocol", "articles")
 CROSS_REPO = ("mac-platform/", "mac-console/", "mac-integration-kit/", "mac-ontology-", "packages/",
               "mac_runtime/", "okf_core/", "foldplane/", "platform/skills/")

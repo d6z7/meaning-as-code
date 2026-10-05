@@ -53,8 +53,10 @@ fi
 # The bundle this suite points bundle-subject gates at. Printed on the final line: a verdict whose
 # subject is not named is not reproducible.
 #: example_tpch_ontology was REMOVED 2026-10-04 by operator ruling — "we will keep only final
-#: version of contoso ontology as example". example_shop_ontology is the remaining in-repo bundle.
-BUNDLE="${1:-example_shop_ontology}"
+#: version of contoso ontology as example". example_shop_ontology followed it on 2026-10-05 — it was
+#: the last in-repo bundle, and it had gone stale against the column standard. The default is now the
+#: two-plane self-test fixture; a real bundle is passed as $1.
+BUNDLE="${1:-tests/fixtures/two_plane_project}"
 if [ ! -d "$REPO/$BUNDLE" ]; then
   echo "could not run: run_gates — '$BUNDLE' is not a directory under $REPO" >&2
   exit 2

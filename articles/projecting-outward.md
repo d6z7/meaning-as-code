@@ -16,7 +16,7 @@ its target's own terms** — not on the author's say-so.
 ## The discipline: projections are derived, never authored
 
 A projection is a build artifact, not a source. The MAC files (`concepts/`, `edges.yaml`, `tables/`,
-`rules.yaml`) are the single source of record; everything a projector emits is regenerable from them and
+the rules layer) are the single source of record; everything a projector emits is regenerable from them and
 lives apart, under `projections/`, so it can never be mistaken for — or drift from — the model. You author
 in one place, govern in one place, and re-run the projectors whenever the model changes. The gates ignore
 `projections/` for exactly this reason: an export is output, never input.
@@ -79,7 +79,7 @@ out-of-enum codes). The engine, not the author, is the judge.
 portable "LLM-wiki": a directory of markdown concept docs with YAML frontmatter whose one required field is
 `type`. The projector emits one doc per concept — `type` from the concept class, a `# Schema` section from
 the grounded columns, linked `## Relationships` from the edges, a `# Values` table for enumerations, and
-`# Citations` back to the source `.yaml` — plus the reserved `index.md` and `log.md`. The check asserts
+`# Citations` back to the source `.yaml` — plus the reserved index and log pages. The check asserts
 every doc has `type` and every internal link resolves.
 
 OKF makes the deepest point of all. Its own reference implementation *enriches* each concept with "schemas,

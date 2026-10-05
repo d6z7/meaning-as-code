@@ -40,6 +40,7 @@ from datetime import UTC, datetime
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
 import _plugin  # noqa: E402  - same directory; the seam that owns the connection
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
 
 GENERATOR = "mac_descriptors.py/1"
 
@@ -461,7 +462,7 @@ def _render(m: dict, schema: str, table: str, served: bool, singles: dict, obser
         "# where a person argues for it: no default reading, no grain ruling, no 'what one X is'.",
         "",
         "metadata:",
-        "  schema_version: 0.1.15",
+        f"  schema_version: {_mac_version()}",
         # STATUS IS A LIFECYCLE FACT ABOUT THE FILE, NOT A GRADE OF THE MEASUREMENT. Every generated
         # descriptor used to be born `draft`, which no reader consumed and which is not true of a
         # measurement: it either happened or it did not. The one real consumer of this field is

@@ -1,0 +1,49 @@
+# Two-plane fixture > sales > Revenue. Synthetic; illustrates the `measure` class.
+
+metadata:
+  source: TWO_PLANE
+  version: '1.0'
+  schema_version: 0.1.18
+  confidence: C
+  provenance: authored
+
+concept:
+  name: Revenue
+  class: measure
+  definition: >-
+    The amount billed on an order, net of nothing. One amount per order.
+  # DECLARED BECAUSE THE SHIPPED SCHEMA DEMANDS IT, and the demand is under dispute. mac.schema.json
+  # makes `concept.semantics` required on a measure and mac_shapes.yaml requires measure_type, unit
+  # and axis_kinds under it -- while the column-first migration moved exactly those facts ONTO the
+  # columns, where contoso5 now writes them and nowhere else. Measured 2026-10-05: contoso5 carries
+  # 26 shape violations and 7 schema errors of precisely this shape. A FIXTURE IS THE WRONG PLACE TO
+  # TAKE A SIDE, so this one conforms to what ships and the disagreement is named here.
+  semantics:
+    measure_type: mac.concept.column.measure_type.flow
+    unit: EUR
+    axis_kinds:
+      placed_at: mac.concept.axis_kind.time
+      customer_id: mac.concept.axis_kind.categorical
+
+grounding:
+  kind: sql_table
+  schema: two_plane_warehouse
+  sources:
+    - relation: orders
+      columns:
+        order_id:
+          role: key
+          identity: canonical
+          counts: true
+        customer_id:
+          role: key
+          identity: reference
+        placed_at:
+          role: period
+          axis_kind: mac.concept.axis_kind.time
+        amount:
+          role: measure
+          measure:
+            type: mac.concept.column.measure_type.flow
+            unit: EUR
+  grain: one row per order (order_id)

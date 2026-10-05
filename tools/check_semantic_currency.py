@@ -80,7 +80,7 @@ REJECTS = (
 ARCHIVE = ("protocol/", "decisions/")
 #: Not this repository's prose: an applied ontology's own files, and frozen expected values.
 #: example_tpch_ontology was removed 2026-10-04; a name excluding a directory that is gone is an exemption over nothing.
-NOT_PROSE = ("example_shop_ontology/", "tests/")
+NOT_PROSE = ("tests/",)   # example_shop_ontology removed 2026-10-05; tests/ now holds the fixtures
 
 PRESENT = re.compile(r"\b(current|currently|today|now|the next|latest|at present|as it stands|"
                      r"you (?:may|can|should|must) (?:write|declare|use))\b", re.I)

@@ -28,7 +28,10 @@ def _j(x):
 _MAC_VOCAB = Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
 
 
-def _framework_schema_version(default: str = "0.1.13") -> str:
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
+
+def _framework_schema_version(default: str | None = None) -> str:
+    default = default or _mac_version()
     """The MAC framework's CURRENT schema version, read generically from mac_vocabulary.yaml
     (metadata.version) — the same source validate_schema.py's CURRENT tracks and the version pre-flight
     gate enforces. Generated meta concepts declare it so they are gated (not silently skipped). Falls

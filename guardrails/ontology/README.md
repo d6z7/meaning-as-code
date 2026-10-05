@@ -18,10 +18,10 @@ protects nothing and costs a day".
 The fix is `_is_guardrail_tree` in the kit: a POSITIVE identification, two conditions, neither
 sufficient alone — `/guardrails/ontology/` under a root carrying `mac.schema.json`. Measured over
 all twelve `ontology` directories in this estate, exactly one is exempt; the framework's own
-`example_shop_ontology/ontology` stays protected, which is why a root test alone would not do. The
+a bundle's nested `ontology/` stays protected, which is why a root test alone would not do. The
 operator installed it, because an agent that can edit a gate has no gate.
 
 **WHAT IS STILL NOT RULED HERE.** The derived half of the plane — `<bundle>/ontology/vocabulary.json`, `<bundle>/ontology/edges.json`,
-`ontology_quality.json`, `SME-QUESTIONS.md` — and `ontology_conformance_suite`, which is still filed
+an ontology-quality report, an SME-questions page — and `ontology_conformance_suite`, which is still filed
 under `unfiled.yaml` with `belongs_to: ontology` awaiting its move. Absence from this directory is
 still permission, not oversight.

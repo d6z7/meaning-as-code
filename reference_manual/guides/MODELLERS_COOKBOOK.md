@@ -4,11 +4,11 @@ version: '1.0'
 date: 2026-06-07
 status: GUIDE — the task-oriented companion to the canon. Routes to FRAMEWORK.md / reference_manual/shape_reference.md; does not restate them.
 audience: anyone authoring or reviewing concept/rules/edges/tables YAML under this framework
-scope: GENERIC — domain-neutral. All examples are from example_shop_ontology/ (a synthetic online shop). No real domain.
+scope: GENERIC — domain-neutral. Examples name constructs, not a bundle; the worked model is contoso5.
 companions:
   - FRAMEWORK.md            # the canon — the why and the complete definition (READ FIRST)
   - reference_manual/shape_reference.md  # the exhaustive key-by-key reference, generated from the schema
-  - example_shop_ontology/  # the worked example every recipe below points at
+  - tests/fixtures/two_plane_project/  # the in-repo two-plane fixture (scaffolding, not a model)
 ---
 
 # The Modeller's Cookbook
@@ -18,7 +18,7 @@ companions:
 > framework; it routes you to the canon. Every rule of truth lives in [FRAMEWORK.md](../specification/FRAMEWORK.md) and
 > [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this file is the procedure for *applying* them.
 >
-> **What this is NOT.** Not a tutorial (read the canon + `example_shop_ontology/` first), not a spec
+> **What this is NOT.** Not a tutorial (read the canon first), not a spec
 > (every key is in reference_manual/shape_reference.md), and deliberately **not an exhaustive scenario catalogue** — the
 > framework is closed (4 layers, 6 classes), so this manual is organised around its *closed primitives*
 > and the *recurring decisions* you make against them, not around the open-ended list of domains you
@@ -143,7 +143,7 @@ common error — see C3.
 # Part B — Recipes
 
 Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff** (from
-`example_shop_ontology/`). Copy the worked file as your starting skeleton.
+contoso5). Copy a worked file as your starting skeleton.
 
 ## B1. Author a new concept (the base recipe every other recipe extends)
 
@@ -164,7 +164,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 7. `governance.change_log:` — one `CREATION` entry. Append-only forever after.
 
 **Validate:** run the validator (Part D). **Canon:** SPEC §6; FW §5. **Worked diff:** any file under
-`example_shop_ontology/ontology/concepts/` — `customer/customer.yaml` is the simplest entity.
+contoso5's ontology/concepts/ — store.yaml is the simplest entity.
 
 ## B2. Model an *event* with a lifecycle
 
@@ -183,7 +183,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 4. Lifecycle is **descriptive** — the framework records the machine, never executes it.
 
 **Validate:** phases present; states grouped under phases; sequence ordered. **Canon:** FW §5.3, SPEC §6.
-**Worked diff:** [`ontology/concepts/order/order.yaml`](example_shop_ontology/ontology/concepts/order/order.yaml) — the
+**Worked diff:** contoso5's ontology/concepts/sale.yaml — the
 `CHECKOUT → FULFILMENT → CLOSED` machine, with the OrderStatus enumeration carrying the value set.
 
 ## B3. Add an *enumeration* (controlled value set)
@@ -207,7 +207,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 **When:** A1 → rule — the thing is *computed* (not a stored column you just aggregate).
 
 **Steps:**
-1. In `rules.yaml`, add an entry with `rule:` (the id — the reserved word, SPEC §5), `derives:` (the
+1. In the bundle's rules layer, add an entry with `rule:` (the id — the reserved word, SPEC §5), `derives:` (the
    concept it produces), `over:` (concepts it reads), and plain-language `logic:` (**always**).
 2. Choose `render_kind:` (SPEC §7): `sql_expression` (snippet injected at query time) ·
    `derived_set` (a membership predicate) · `sql_view` (a pre-deposited view, via `view_ref:`) ·
@@ -223,7 +223,7 @@ Each recipe: **When** · **Steps** · **Validate** · **Canon** · **Worked diff
 
 **Validate:** legal `render_kind` + payload; params bound not interpolated; `validated_against` columns
 exist. **Canon:** FW §6, SPEC §7. **Worked diff:**
-[`ontology/rules.yaml` → `net_revenue`](example_shop_ontology/ontology/rules.yaml) — gross − refunds, paid-only, period
+contoso5's net_revenue rule — gross − refunds, paid-only, period
 bound as params.
 
 ## B5. Connect two concepts with an *edge*
@@ -240,7 +240,7 @@ bound as params.
 4. For `level: business`/`federation`, **refer** to the physical edge / alias; never carry a raw join.
 
 **Validate:** level/type legal; endpoints resolve; cardinality on both ends. **Canon:** FW §7. **Worked
-diff:** [`ontology/edges.yaml`](example_shop_ontology/ontology/edges.yaml) — `order__placed_by__customer` and
+diff:** a bundle's `ontology/edges.yaml` — `order__placed_by__customer` and
 `product__belongs_to__category`.
 
 ## B6. Ground a concept to physical data
@@ -258,7 +258,7 @@ diff:** [`ontology/edges.yaml`](example_shop_ontology/ontology/edges.yaml) — `
 
 **Validate:** referenced table/columns exist in the tables layer; naming contract. **Canon:** SPEC §6
 grounding + §5. **Worked diff:** the `grounding:` block in `concepts/order/order.yaml` + the matching
-[`data/datasets/orders.yaml`](example_shop_ontology/data/datasets/orders.yaml).
+a bundle's `data/datasets/orders.yaml`.
 
 ## B7. Bridge two sources (federation)
 
@@ -359,13 +359,13 @@ result explains itself.
 What to look for in review. Each: **smell → why wrong → fix.**
 
 ## C1. The same fact in two layers
-**Smell:** a net-revenue formula written both on the `Revenue` concept and in `rules.yaml`; a join
+**Smell:** a net-revenue formula written both on the `Revenue` concept and in the rules layer; a join
 written both in an edge `join_rule:` and restated on a concept. **Why wrong:** violates single-homing
 (FW §3.2) — diffs lie, drift becomes invisible. **Fix:** decide the owning layer (A1) and reference it
 from the other; delete the copy.
 
 ## C2. A rule for a stored value
-**Smell:** a `rules.yaml` entry whose `logic:` is "select column X where Y" with no derivation. **Why
+**Smell:** a rules-layer entry whose `logic:` is "select column X where Y" with no derivation. **Why
 wrong:** stored values that are merely filtered/aggregated need **no** rule (FW §6) — the rules layer is
 for *computed* things only. **Fix:** delete the rule; let the concept's `grounding:` + the agent's query
 handle it.
@@ -447,7 +447,7 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 
 2. **Execution validation.** Run the query the model implies against the live warehouse/graph and
    sanity-check the number. When the model says X and the data says Y, that is **the loop working**:
-   record a **finding** (see `example_shop_ontology/data/quality/recon_findings.md` for the shape), fix the model,
+   record a **finding** in the bundle's `data/quality/` register, fix the model,
    move on. A fact is only trustworthy at the right-hand end of the trust gradient — *authored →
    structurally valid → execution-validated → expert-confirmed* (FW §8). Promote `confidence:`
    accordingly.
@@ -478,6 +478,6 @@ Two gates, in order — neither is optional (FW §8, SPEC §9):
 | reviewing and something smells off | Part C |
 | done authoring | Part D (validate → execute) |
 
-*All recipes are grounded in `example_shop_ontology/` (synthetic shop). The canon — every definition and
+*All recipes are grounded in contoso5, in its own repository. The canon — every definition and
 every key — is [FRAMEWORK.md](../specification/FRAMEWORK.md) and [reference_manual/shape_reference.md](reference_manual/shape_reference.md); this cookbook only
 tells you how to apply them.*

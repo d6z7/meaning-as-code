@@ -5,7 +5,7 @@ metadata:
   concept: Legalities
   source: CARD_GAMES
   version: '1.0'
-  schema_version: 0.1.14
+  schema_version: 0.1.18
   status: draft
   owner: generated
   confidence: I

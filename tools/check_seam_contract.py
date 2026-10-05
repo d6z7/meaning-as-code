@@ -1077,7 +1077,7 @@ def _self_test() -> int:
     rc, out = _run("--seam", "no-such-seam", str(Path(_REPO)))
     case("END TO END an unregistered seam id could-not-run (exit 2), never a pass over zero",
          rc == 2 and "no seam registered" in out, f"exit {rc}")
-    fixture = Path(_REPO) / "example_shop_ontology"
+    fixture = Path(_REPO) / "tests" / "fixtures" / "two_plane_project"
     if fixture.is_dir():
         rc, out = _run(str(fixture), "--seam", "edges", "--corruptions", "1")
         # RE-POINTED, NOT DELETED, AND THE REASON IS THE POINT. This case read "the real runner
@@ -1107,7 +1107,7 @@ def _self_test() -> int:
         case("END TO END --json parses on a real run and carries the clause list",
              json.loads(out)["clauses"] == list(CLASSES), out.strip()[:160])
     else:
-        case("END TO END the public fixture bundle is present", False, f"no {fixture}")
+        case("END TO END the two-plane fixture bundle is present", False, f"no {fixture}")
 
     total = len(cases)
     if bad:

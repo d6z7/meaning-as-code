@@ -1,0 +1,20 @@
+# Two-plane fixture — data plane / SOURCE: the observed raw orders input (schema-of-record).
+# What COMES IN, before cleansing. Not ontology-bound: concepts bind to the produced dataset.
+
+metadata:
+  schema_version: 0.1.18
+  status: measured
+  kind: raw_source
+  observed: '2026-10-05'
+
+table:
+  name: orders_raw
+  schema: two_plane_raw
+  type: table
+  description: "Raw upstream orders as they arrive (amount in integer cents)."
+
+columns:
+  - { name: order_id,    type: string,    role: primary_key }
+  - { name: customer_id, type: string,    role: foreign_key }
+  - { name: gross_cents, type: bigint,    role: value }
+  - { name: placed_at,   type: timestamp, role: value }

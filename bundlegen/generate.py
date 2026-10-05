@@ -34,7 +34,16 @@ import re
 import sys
 from dataclasses import dataclass, field
 
-SCHEMA_VERSION = "0.1.14"
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "tools"))
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
+
+# THE STAMP IS READ, NEVER TYPED (2026-10-05). Every generator in this tree used to carry its own
+# literal, each frozen at whatever was current the day somebody typed it: 0.1.13 here, 0.1.14 there,
+# 0.1.14-develop in three more, 0.1.15, 0.1.16. That is not a cosmetic spread -- a generated file is
+# stamped with a generation it was not written against, and `validate_schema` then either checks it
+# against the wrong definition or, once the stamp falls below the floor, SKIPS IT AND STILL PRINTS
+# "clean". tools/version.py owns the number; this reads it.
+SCHEMA_VERSION = _mac_version()
 
 #: Columns whose NAME says they identify something. A convention, declared here rather than
 #: scattered: an inference this whole generator rests on should be readable in one place.

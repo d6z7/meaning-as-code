@@ -90,7 +90,7 @@ The model never tied a descriptor to a directory — a concept's `grounding` ref
 **name**, not a path; the *tools* resolve that name to a descriptor file. So the only thing the tools learn
 is **two roots**, via one shared resolver (`tools/mac_project.py`):
 
-- `ontology_root` — where `concepts/`, `edges.yaml`, `rules.yaml` live (flat: project root; two-plane:
+- `ontology_root` — where the concepts, edges and rules layers live (flat: project root; two-plane:
   `<root>/ontology`).
 - `descriptor_dir` — where TableFiles live (flat: `<root>/tables`; two-plane: `<root>/data/datasets`).
 

@@ -714,7 +714,7 @@ def _self_test() -> int:
         with tree() as tmp:
             entry(tmp, commits=f"[{_A[:7]}]")
             floor_file(tmp, shas=(_B[:7],))
-            v = drive(tmp, [Commit(_A, "a")], arg="example_shop_ontology")
+            v = drive(tmp, [Commit(_A, "a")], arg="two_plane_project")
             expect("mutant pathspec-as-range", v.code, 2)
             ok("mutant pathspec-as-range says WHY", "PATHSPEC" in v.errs[0])
 

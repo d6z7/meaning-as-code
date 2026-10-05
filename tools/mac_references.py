@@ -120,7 +120,15 @@ from mac_sample import SampleRefused, open_reader                               
 NAME = "mac_references"
 CONTRACT = "mac.references/1"
 TOOL = "mac_references.py/1"
-SCHEMA_VERSION = "0.1.14-develop"
+from version import read as _mac_version  # noqa: E402  -- the stamp has ONE home
+
+# THE STAMP IS READ, NEVER TYPED (2026-10-05). Every generator in this tree used to carry its own
+# literal, each frozen at whatever was current the day somebody typed it: 0.1.13 here, 0.1.14 there,
+# 0.1.14-develop in three more, 0.1.15, 0.1.16. That is not a cosmetic spread -- a generated file is
+# stamped with a generation it was not written against, and `validate_schema` then either checks it
+# against the wrong definition or, once the stamp falls below the floor, SKIPS IT AND STILL PRINTS
+# "clean". tools/version.py owns the number; this reads it.
+SCHEMA_VERSION = _mac_version()
 RUN_RECORD = "references.run.json"
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════

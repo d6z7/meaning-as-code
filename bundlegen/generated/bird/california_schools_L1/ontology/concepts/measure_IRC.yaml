@@ -6,7 +6,7 @@ metadata:
   concept: IRC
   source: CALIFORNIA_SCHOOLS
   version: '1.0'
-  schema_version: 0.1.14
+  schema_version: 0.1.18
   status: draft
   owner: generated
   confidence: I
