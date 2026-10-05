@@ -705,7 +705,7 @@ def _identifying_columns(root: pathlib.Path, yaml) -> list[dict]:
 
     WHY IT IS A DQ FINDING AND NOT A GATE. The number is a fact; whether the column may be an axis is
     a person's call -- `rulings.never_axis: privacy` on the concept's column, citing this id as
-    `evidence` (reference_manual/rules_and_canons/column_rulings.md §4). Operator, 2026-09-29: that ruling is a MUST
+    `evidence` (reference_manual/column_rulings.md §4). Operator, 2026-09-29: that ruling is a MUST
     HAVE, and a prohibition without a measurement is a preference; this is the measurement."""
     served = {f.stem for f in (root / "data" / "datasets").glob("*.yaml")}
     out = []

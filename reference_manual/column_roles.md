@@ -19,7 +19,7 @@ use it. It is the first thing declared about a column and the only required one.
 > **A role is READ, not decided.** All five are derivable from cardinality, type and reference
 > structure — which is why a generator assigns them over a thousand columns with no human present.
 > If you find yourself *deciding* rather than *reading*, you are holding a **ruling**, not a role.
-> See [column_rulings.md](rules_and_canons/column_rulings.md).
+> See [column_rulings.md](column_rulings.md).
 
 ---
 
@@ -412,4 +412,4 @@ authored — putting them here would create a second home for a fact the warehou
   the ruling states its reason.
 - **`attribute`.** It is gone. It was four different judgements wearing one word, and no generator
   ever assigned it because all four are authored. They live in
-  [column_rulings.md](rules_and_canons/column_rulings.md).
+  [column_rulings.md](column_rulings.md).

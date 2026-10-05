@@ -46,7 +46,7 @@ TWO COLUMNS ARE 1:1 AND ONE OF THEM IS WHAT A PERSON SAYS WHILE THE OTHER IS WHA
 
 *string* · optional
 
-THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/rules_and_canons/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)
+THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)
 
 **When you would reach for it.**
 

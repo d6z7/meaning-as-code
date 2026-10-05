@@ -1524,7 +1524,7 @@
               "singletons": {
                 "type": "integer",
                 "minimum": 0,
-                "description": "VALUES HELD BY EXACTLY ONE ROW. Measured by mac_profile.py/6 in one GROUPING SETS scan, only for near-unique non-key, non-numeric columns (>= 1,000 distinct and >= 1% of rows); ABSENT means the column was not a candidate, never that the count is zero. This is the measurement behind `rulings.never_axis: privacy` (reference_manual/rules_and_canons/column_rulings.md §4): a column most of whose values name one row is an identifier wearing a dimension's role, and GROUP BY it returns one row per person. mac_dq_findings.py raises DQ-IDENTIFYING-<relation>-<column> from it, and the ruling cites that id as `evidence`. Added 2026-09-29, operator: the ruling is a MUST HAVE, and a prohibition without a measurement is a preference."
+                "description": "VALUES HELD BY EXACTLY ONE ROW. Measured by mac_profile.py/6 in one GROUPING SETS scan, only for near-unique non-key, non-numeric columns (>= 1,000 distinct and >= 1% of rows); ABSENT means the column was not a candidate, never that the count is zero. This is the measurement behind `rulings.never_axis: privacy` (reference_manual/column_rulings.md §4): a column most of whose values name one row is an identifier wearing a dimension's role, and GROUP BY it returns one row per person. mac_dq_findings.py raises DQ-IDENTIFYING-<relation>-<column> from it, and the ruling cites that id as `evidence`. Added 2026-09-29, operator: the ruling is a MUST HAVE, and a prohibition without a measurement is a preference."
               },
               "determined_by": {
                 "type": "array",
@@ -4024,7 +4024,7 @@
                             },
                             "never_axis": {
                               "type": "string",
-                              "description": "THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/rules_and_canons/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)",
+                              "description": "THIS COLUMN MUST NOT BE GROUPED ON, and the value is the REASON in prose — the vocabulary says 'for the stated reason', so it is a sentence rather than a token. `evidence` is REQUIRED beside it: a ruling made from a measurement must produce a refusal that CITES the measurement, never one that asserts. (reference_manual/column_rulings.md proposed a closed set `privacy | grain | derived`; no vocabulary has ever declared those three, so they are not admitted here. Closing this reason is an open question for the operator.)",
                               "constellation": "A COLUMN LOOKS LIKE A DIMENSION AND GROUPING BY IT PRODUCES ONE ROW PER INSTANCE. Measured: a postcode where 29,193 of 104,990 values identify exactly one customer. The group-by is legal, it executes, and the answer is a list of customers wearing the shape of a breakdown. Reach for it when a column's distinct count approaches its row count and the column is still a plausible axis by name."
                             },
                             "evidence": {

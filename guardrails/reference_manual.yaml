@@ -212,11 +212,11 @@ authored:
     # TWO LOCATIONS, because two pages moved and both are cited from the archive: the canon pages
     # left `canon/` for `rules_and_canons/<serves>/`, and the chapter left the manual root for
     # `rules_and_canons/README.md`. The `|` form is the one manual_generated_face already uses.
-    # FOUR LOCATIONS, one per page that moved and is still cited from an archive: the canon pages
+    # THREE LOCATIONS, one per page that moved and is still cited from an archive: the canon pages
     # left `canon/` for `rules_and_canons/<serves>/`, and the chapter plus three subject pages left
     # the manual root for `rules_and_canons/`. The `|` form is the one manual_generated_face uses.
     path: reference_manual/canon/{canon}.md | reference_manual/canon_library.md |
-      reference_manual/rule_engine.md | reference_manual/column_rulings.md
+      reference_manual/rule_engine.md
     naming: "the path the moved page had, unchanged; that is the whole point of it"
     # THE FLAT GLOB IS NOW EXACTLY THIS POPULATION. Until 2026-10-05 `canon/*.md` WAS the canon
     # entries; they moved one level down into `canon/{serves}/`, so a file left directly under
@@ -305,7 +305,7 @@ authored:
     path: >-
       reference_manual/README.md | reference_manual/03_pattern_reference.md |
       reference_manual/FINDINGS.md | reference_manual/rules_and_canons/README.md |
-      reference_manual/column_roles.md | reference_manual/rules_and_canons/column_rulings.md |
+      reference_manual/column_roles.md | reference_manual/column_rulings.md |
       reference_manual/column_specification.md | reference_manual/connection.md |
       reference_manual/how_a_question_becomes_sql.md | reference_manual/rules_and_canons/identity_and_rules.md |
       reference_manual/measures.md | reference_manual/rules_and_canons/refusals_and_findings.md |

@@ -175,7 +175,7 @@ ZipCode:
 Four of them — `label_of` (with its `register`), `finer_than`, `scoped_by` (loaded, not yet planned-on; not in the
 table below because `column_effects.yaml` has no entry for it yet), `never_axis` — each with
 its own constellation, worked example and implementation status in
-[column_rulings.md](rules_and_canons/column_rulings.md). Two things the schema enforces: `evidence` is **required**
+[column_rulings.md](column_rulings.md). Two things the schema enforces: `evidence` is **required**
 with `never_axis` (a prohibition without a measurement is a preference), and `register` is **only
 legal beside `label_of`** (it says *which* of the thing's names this column is, so it needs the
 thing). `never_axis` is the reason as a sentence, quoted into the refusal — not a token.
@@ -736,7 +736,7 @@ Status:
 
 Per column, because that is where nulls happen. `sentinels` lists non-null values that are not
 members — though a sentinel carrying *meaning* is usually a column that should be
-[split](rules_and_canons/column_rulings.md), not flagged.
+[split](column_rulings.md), not flagged.
 
 ### `disclose` and `discriminates`
 
