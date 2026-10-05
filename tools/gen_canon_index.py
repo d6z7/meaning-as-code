@@ -37,11 +37,16 @@ PAGE = ROOT / "reference_manual" / "rules_and_canons" / "README.md"
 PAGES_DIR = ROOT / "reference_manual" / "rules_and_canons"
 PATTERNS_DIR = ROOT / "reference_manual" / "patterns"
 
-#: The runtime is a different repository and is read, never imported — the same posture
-#: check_canon_implemented.py takes. Absent, the status column says so rather than guessing.
-RUNTIME = pathlib.Path(
-    "<redacted-home>/dev/mac-platform/packages/mac-runtime/src/mac_runtime/canon.py"
-)
+#: The runtime is a different repository and is READ, never imported — the same posture
+#: check_canon_implemented.py takes. Its LOCATION comes from _neighbours, which is the one home for
+#: it: typing the path here made this the TWELFTH copy of the fact that module exists to hold, and
+#: because the copy named an operator's home directory it was both an identity leak in a public
+#: repository and a generator that could only run on one machine. Absent, the status column says so.
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
+
+_pkg = _neighbours.runtime_package()
+RUNTIME = (_pkg / "canon.py") if _pkg else None
 
 BEGIN = "<!-- BEGIN generated: canon tree (tools/gen_canon_index.py) -->"
 END = "<!-- END generated: canon tree -->"
@@ -49,7 +54,7 @@ END = "<!-- END generated: canon tree -->"
 
 def runtime_lists() -> tuple[set[str], set[str], bool]:
     """(implemented, known_unimplemented, found). Parsed as text; no import across the boundary."""
-    if not RUNTIME.is_file():
+    if RUNTIME is None or not RUNTIME.is_file():
         return set(), set(), False
     src = RUNTIME.read_text(encoding="utf-8")
     out = []
