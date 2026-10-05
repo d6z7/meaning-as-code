@@ -151,12 +151,56 @@ Baselines were taken by STASHING the change and re-running, not from the previou
 that record said 13 red over **96** gates and the population is now **99**, so its figures could not
 have been attributed.
 
+---
+
+## D3 · THE CONCEPT HEADER LOSES FOUR MORE KEYS
+
+Operator: *"we dont need metadata and concept … status / owner unnecessary, concept redundant."*
+Measured across all 17 before removing anything:
+
+| key | measured | outcome |
+|---|---|---|
+| `metadata.concept` | duplicated `concept.name` **17 of 17**; every reader took it only as a fallback | removed |
+| `metadata.status` | the constant `draft` on all 17 | removed |
+| `metadata.owner` | the constant `operator`, reaching only a display row | removed |
+| `concept.label` | **9 of 17** identical to `name` | removed on those 9 |
+| `metadata.confidence` | **varies** (3 C, 14 I), parser REQUIRES it, `min_confidence` stamps it on every answer | **kept** |
+
+`status` had one reader and it was not a check: `mac_checks_semantic` appended a clause to a MAC006
+witness message, while the diagnostic itself keys on `provenance` + `confidence` +
+`governance.ratified_by`. A field with one value bundle-wide cannot discriminate anything.
+
+### D3a · `metadata` is NOT retired, and the reason is worth recording
+
+The operator asked for the whole block to fold into `concept:`. It did not, because `metadata:` is an
+**estate-wide file header**: 15 `$defs` declare one and 4 require it — `TableFile` has
+`metadata.table`, `ProjectFile` has `metadata.project`, the same subject-naming shape. Folding it for
+ConceptFile alone would make concepts the only type without the header. The operator accepted this;
+`source`, `version`, `schema_version`, `confidence` and `provenance` stay on it.
+
+### D3b · `label` earns its place, and the schema already said when
+
+`mac.schema.json` describes it as *"the concept's name as a reader says it, WHERE THAT DIFFERS from
+its identifier"*, and it is optional — so the 9 concepts repeating `name` were already against the
+standard. The 8 that differ stay, because the field does two jobs and only one is derivable:
+`registers.py` already derives the spaced form of a CamelCase name (`GrossRevenue` → `gross revenue`)
+for RESOLUTION, but `display = concept.label or name` is not derivable — without it an answer reads
+*"GrossRevenue"*. Two carry a fact nothing derives: `Colour`, and `Margin (gross profit)`.
+
+### D3c · a bug this introduced
+
+The first pass removed **34** `owner:` lines where 17 was correct: the filter matched two-space
+indentation and took `governance.owner` with `metadata.owner`. Caught by diffing the removal COUNTS
+against the expected 17, not by reading the files, and restored on all 17.
+
+---
+
 ## Owed
 
-- `schema_version` 0.1.16 → 0.1.17 (`RELEASING.md:16` — any schema change bumps it).
-- `metadata` collapse into `concept`: `metadata.concept` duplicates `concept.name` 17 of 17;
-  `status`/`owner`/`provenance`/`source`/`schema_version` are **byte-identical across all 17**, so they
-  are bundle facts copied per concept. `confidence` must stay — it varies (3 C, 14 I), the parser
-  REQUIRES it, and `min_confidence` stamps it on every answer.
-- `mac-ontology-contoso` carries 5 `class: reference` concepts migrated **uncommitted** here, outside
-  the contoso5-only scope, because the platform suite loads that bundle. Accept or revert.
+- **`schema_version` is not a bump, it is a drift.** `RELEASING.md` requires the same value in every
+  model file. contoso5's 91 files carry **four**: `'0.1.14'` quoted ×8, `0.1.14` ×32, `0.1.15` ×16,
+  `0.1.16` ×35. The schema's own `version` (0.1.16), its `title` (v0.1.18-develop) and
+  `validate_schema.CURRENT` (0.1.16-develop) are three more. 539 files across three repos. This is a
+  deliberate release action and is NOT folded into this change.
+- `mac-ontology-contoso` carries 5 `class: reference` → `entity` concepts migrated here because the
+  platform suite loads that bundle — outside the contoso5-only scope. Accept or revert.

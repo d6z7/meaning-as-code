@@ -12,7 +12,7 @@ spec_version: mac.gate_failures/1
 scope: repo
 declared: 2026-09-29
 review_by: 2026-12-29
-standing: 10
+standing: 9
 entries:
   check_protocol.py:
     kind: fail
@@ -51,12 +51,6 @@ entries:
     since: 2026-09-29
     reason: "over 5 capabilities with a marker checked over 1183 tracked files, 16 declared homes: the credential plan appears in tools/mac_references.py and tools/mac_sample.py outside its declared home"
     expected: "every capability marker sits in a home TOPOLOGY.md's table declares"
-  check_vocabulary_parity.py:
-    kind: fail
-    owner: operator
-    since: 2026-09-27
-    reason: "2 of 12 governed slots disagree with the vocabulary: TableFile.columns.role (schema-only audit, delivery_axis, unknown) and DQ issue status (schema rejected, waived vs vocabulary wont_fix)"
-    expected: "the operator rules each slot; tools/check_vocabulary_parity.py --write lands the ruling"
   check_seam_contract.py:
     kind: fail
     owner: platform

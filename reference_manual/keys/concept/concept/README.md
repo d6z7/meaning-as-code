@@ -93,17 +93,17 @@ The concept's name AS A READER SAYS IT, where that differs from its identifier. 
 Examples:
 
 ```yaml
-label: Brand
-
 label: Colour
 
-label: Country
+label: Exchange Rate
 
-label: Currency
+label: Gross Revenue
 
-label: Customer
+label: Margin (gross profit)
 
-# … and 12 more shape(s)
+label: Net Revenue
+
+# … and 3 more shape(s)
 ```
 
 ### `notes`
@@ -126,7 +126,6 @@ Cut from a worked bundle — not typed by hand, so it cannot describe a shape no
 
 ```yaml
 name: Brand
-label: Brand
 class: enumeration
 definition: 'Whose name a product is sold under: eleven names, carried as a column on the
   product row with no table and no key of their own. The account is knowledge/brand.md.'
