@@ -242,3 +242,36 @@ then 3) before a correct run gave 11 modules. And a raw `grep '\.field'` is not 
 once measured "150 readers" that way and had **zero**. Use the attribute chain, or
 `check_declarations_read` while remembering its own caveat — it credits a reader by matching `.<field>`
 anywhere, so its finding set is a floor, not a measurement.
+
+## BLOCKING THE PUSH — an identity leak in this branch's HISTORY
+
+`meaning-as-code` is public and its leak floor is 0. The branch `docs/canon-ratio-select` is **11
+commits ahead of `develop` and has never been pushed**, so this was still catchable at source, and the
+working tree is now clean. **The HISTORY is not.**
+
+`tools/gen_canon_index.py` was authored on this branch holding the sibling runtime's location as an
+absolute path under the operator's home directory. `tools/_neighbours.py` exists precisely for that
+fact — its own docstring records that the path was once typed **eleven times**, and that each copy was
+*"two defects at once: an identity leak in a PUBLIC repository … and a gate that could not run on any
+machine but one."* This was the twelfth. Fixed at source in `9eb2389`: `RUNTIME` now comes from
+`_neighbours.runtime_package()` and is None-able, the guard says so before reading, the runtime still
+resolves (18 implemented, 3 known-unimplemented) and `reference_manual/rules_and_canons/README.md` is
+byte-identical.
+
+**What is still owed, and it needs the operator's yes because it rewrites history:** the line survives
+in two patches in the unpushed range — `7327f6a` which introduced it and `9eb2389` which removes it.
+Pushing publishes both. Measured over `origin/develop..HEAD`: **0 hits in 11 commit messages, 2 hits
+across the patches**, using the 8 built-in shapes of `mac-platform/tools/check_secrets.py`.
+
+The scrub is one idempotent substitution — the file has four distinct pre-fix versions on this branch
+and **all four carry the identical three-line block**, so a `--tree-filter` replacing it with the
+`_neighbours` form rewrites every one of them, and `--prune-empty` then drops `9eb2389` because it
+touches nothing else. Take a backup ref first. Verify afterwards with: the range scan back to 0 hits,
+and `git diff <backup> HEAD` empty — the tree must be unchanged.
+
+**Three leaks remain in the working tree and they are NOT news from this branch:** two deliberate fake
+AWS keys and one fake private-key block inside `sdk/gate/test_bundle_secrets.py` and
+`sdk/connector/conformance.py`, both already on `origin/develop`. They are a secret-scanner's own test
+fixtures. The gate's instruction is to append `secret-scan-allow` on the line or allowlist the path with
+a written justification — a change to MAC, so it needs a yes, and it should get one: a scanner whose own
+tests trip it will be ignored.
