@@ -226,10 +226,36 @@ def _directives(root: pathlib.Path) -> dict:
     return counts
 
 
+def _environment(root: pathlib.Path) -> dict:
+    """WHETHER THE FRAMEWORK RESOLVES, probed functionally rather than trusted.
+
+    MEASURED 2026-10-06, and this field exists because it bit this very gate. `axis_columns()` resolves
+    a column's role through `framework.Vocabulary.serves`; with the framework unreachable it returns ()
+    for EVERY concept, the prompt offers no axes, and every refusal reads "declares no groupable column
+    at all" -- silently, and in the safe-looking direction. Run the same bundle at the same commit with
+    `$MAC_FRAMEWORK_ROOT` set and unset and `check_plan_replay` says `0 gained, 58 in the floor` one way
+    and `1 capability lost` the other. A freeze that does not record this can be compared against a
+    capture taken under the other condition and report the environment as an ontology change.
+
+    So it is probed, not read from the environment: the variable is one of three ways the framework can
+    be found (`_neighbours.framework_root`), and what matters is the OUTCOME, not which way won.
+    """
+    try:
+        from mac_runtime.ontology.index import OntologyIndex
+        from mac_runtime.planner.grounded_columns import axis_columns
+        idx = OntologyIndex.from_directory(root)
+        offered = sum(len(axis_columns(c) or ()) for c in idx.concepts.values())
+        return {"axis_columns_total": offered, "resolves": offered > 0}
+    except Exception as exc:                                        # noqa: BLE001
+        return {"axis_columns_total": -1, "resolves": False,
+                "why": f"{type(exc).__name__}: {str(exc)[:70]}"}
+
+
 def capture(root: pathlib.Path) -> dict:
     return {
         "spec": "mac.rule_baseline/1",
         "as_of_pinned": AS_OF,
+        "environment": _environment(root),
         "behaviour": _behaviour(root),
         "prompt": _prompt(root),
         "rule_pages": _rule_pages(root),
@@ -246,6 +272,29 @@ def capture(root: pathlib.Path) -> dict:
 def compare(old: dict, new: dict) -> list[str]:
     """Every way the bundle now differs from the freeze. Order is by blast radius, not by artefact."""
     out: list[str] = []
+
+    #: FIRST, AND IT SHORT-CIRCUITS. Comparing a capture taken with the framework resolvable against
+    #: one taken without it reports the environment as an ontology change -- every axis, every
+    #: refusal and most of the prompt move at once. There is no useful diff past this point, so say
+    #: so and stop rather than printing eighty findings about a variable.
+    oe, ne = old.get("environment"), new.get("environment") or {}
+    if oe is None:
+        #: A FREEZE FROM BEFORE THIS FIELD EXISTED. Absent is not the same as False, and conflating
+        #: them is how the guard failed on its own first test: the pre-field baseline compared clean
+        #: against an UNREACHABLE-framework run and hid a 989-char prompt difference and three lost
+        #: plans. Re-capture rather than guess which condition it was taken under.
+        return ["[environment] the freeze records no environment, so it predates this check and the "
+                "condition it was captured under is unknown. Re-capture: a comparison that cannot "
+                "tell the framework apart from the ontology is not a comparison."]
+    oe = oe or {}
+    if bool(oe.get("resolves")) != bool(ne.get("resolves")):
+        return [f"[environment] the freeze was taken with the framework "
+                f"{'RESOLVABLE' if oe.get('resolves') else 'UNREACHABLE'} "
+                f"({oe.get('axis_columns_total')} axis columns offered) and this run has it "
+                f"{'RESOLVABLE' if ne.get('resolves') else 'UNREACHABLE'} "
+                f"({ne.get('axis_columns_total')}). NOT COMPARABLE — this is the environment, not the "
+                f"ontology. Set $MAC_FRAMEWORK_ROOT (or put the framework beside the bundle) and run "
+                f"again; no other finding below would mean anything."]
 
     ob, nb = old.get("behaviour") or {}, new.get("behaviour") or {}
     for qid in sorted(set(ob) | set(nb)):
@@ -343,15 +392,33 @@ def self_test(bundle: pathlib.Path) -> int:
     about itself rather than waiting to be trusted.
     """
     fails: list[str] = []
+    me = [sys.executable, str(pathlib.Path(__file__).resolve())]
+
+    def run(args: list[str]) -> tuple[int, str]:
+        """Drive this gate's own CLI in a FRESH PROCESS.
+
+        Not a second in-process `capture()`: measured 2026-10-06, two captures in one process both
+        reported the PRE-mutation prompt and pages, because something on the register/parser path
+        caches parsed YAML by path and the second read never saw the mutated file. In isolation
+        `_prompt` moved 19 293 -> 18 657 on the same mutation, so the gate was right and the test was
+        lying. Two processes is also what a person does -- capture, edit, compare -- so the self-test
+        now exercises the path that actually ships rather than a convenience wrapper around it.
+        """
+        import subprocess                                          # noqa: PLC0415
+        p = subprocess.run(me + args, capture_output=True, text=True)
+        return p.returncode, (p.stdout or "") + (p.stderr or "")
+
     with tempfile.TemporaryDirectory() as td:
         work = pathlib.Path(td) / bundle.name
         shutil.copytree(bundle, work, symlinks=True,
                         ignore=shutil.ignore_patterns("*.duckdb", ".git"))
-        try:
-            frozen = capture(work)
-        except Exception as exc:                                   # noqa: BLE001
-            print(f"REFUSED: could not capture the copy — {type(exc).__name__}: {exc}")
+
+        rc, out = run([str(work), "--capture"])
+        if rc != 0:
+            print(f"REFUSED: could not freeze the copy — {out.strip()[:200]}")
             return 2
+        before_n = sum(len(v) for v in
+                       (json.loads((work / BASELINE_REL).read_text()).get("directives") or {}).values())
 
         n = _strip_directives(work)
         if n == 0:
@@ -359,23 +426,22 @@ def self_test(bundle: pathlib.Path) -> int:
         #: AND REGENERATE, because that is what a real migration commit does. Without this the pages
         #: on disk are merely STALE, not blanked, and the page assertion below would be testing
         #: something the mutation never did — which the self-test caught on its first run.
-        regenerated = _reproject(work)
-        if not regenerated:
+        if not _reproject(work):
             fails.append("could not re-run the projector on the copy, so the page dimension of this "
                          "self-test proves nothing; fix that rather than dropping the assertion")
-        after = capture(work)
-        diffs = compare(frozen, after)
 
-        if not diffs:
+        rc, out = run([str(work)])
+        if rc == 0:
             fails.append(f"VACUOUS: {n} directive clause(s) deleted and this gate reported NO "
                          f"difference. That is the failure this gate exists to avoid.")
         # And it must notice in the places that actually matter, not merely somewhere.
-        if not any(d.startswith("[prompt]") for d in diffs):
+        if "[prompt]" not in out:
             fails.append("the prompt digest did not move, though `never` feeds it verbatim")
-        if not any(d.startswith("[rule-page") for d in diffs):
+        if "[rule-page" not in out:
             fails.append("no rule page changed, though the pages render those keys")
-
-        before_n = sum(len(v) for v in (frozen.get("directives") or {}).values())
+        if "[environment]" in out:
+            fails.append("the comparison refused on the environment, so the mutation was never "
+                         "judged — the two captures ran under different framework resolution")
         if before_n != n:
             fails.append(f"counted {before_n} clauses but removed {n} — the measure and the mutation "
                          f"disagree, so one of them is wrong")
@@ -383,7 +449,8 @@ def self_test(bundle: pathlib.Path) -> int:
     for f in fails:
         print(f"  FAIL  {f}")
     print(("FAIL" if fails else "PASS") + f": check_rule_baseline --self-test — "
-          f"{len(fails)} failure(s); the deletion mutation must be visible in the prompt and the pages")
+          f"{len(fails)} failure(s) over {n} clause(s) deleted; the mutation must be visible in the "
+          f"prompt AND the pages, and must not be masked by an environment refusal")
     return 1 if fails else 0
 
 
@@ -436,9 +503,16 @@ def main() -> int:
         path.write_text(json.dumps(now, indent=1, sort_keys=True) + "\n", encoding="utf-8")
         planned = sum(1 for v in now["behaviour"].values() if v.get("outcome") == "Plan")
         d = now.get("directives") or {}
+        env = now.get("environment") or {}
         print(f"WROTE {BASELINE_REL} — {nq} intent(s) ({planned} planned), prompt "
               f"{now['prompt']['chars']} chars, {len(now['rule_pages'])} rule page(s), "
               f"{sum(len(v) for v in d.values())} directive clause(s) over {len(d)} rule(s)")
+        #: SAID OUT LOUD, because a freeze taken with the framework unreachable looks healthy and is
+        #: not: 59 planned instead of 62 and a 989-char smaller prompt, with no error anywhere.
+        print(f"  framework {'RESOLVABLE' if env.get('resolves') else '** UNREACHABLE **'} — "
+              f"{env.get('axis_columns_total')} axis column(s) offered across the bundle"
+              + ("" if env.get("resolves") else
+                 "; this freeze is DEGRADED, set $MAC_FRAMEWORK_ROOT and capture again"))
         return 0
 
     if not path.is_file():
