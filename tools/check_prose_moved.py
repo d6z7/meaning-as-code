@@ -21,10 +21,31 @@ which are prose with no reader and the first thing a migration drops — and ask
 findable across the AFTER corpus: the concept document, its narrative, its rule pages, the bundle's
 knowledge plane, and the framework pages a generic fact may legitimately have been promoted to.
 
-MATCHED ON A NORMALISED PREFIX, not on equality, because a migration is allowed to re-wrap, re-punctuate
-and merge. It is NOT allowed to lose the claim. The prefix is long enough that two different claims do
-not collide and short enough that re-wrapping does not break the match; `--prefix` moves it and the
+MATCHED ON A NORMALISED PREFIX AND A TAIL, not on equality, because a migration is allowed to re-wrap,
+re-punctuate and merge. It is NOT allowed to lose the claim. The prefix is long enough that two
+different claims do not collide and short enough that re-wrapping does not break the match; the tail
+is what catches a sentence rehomed only as far as its middle. `--prefix` and `--tail` move them and the
 verdict prints what was used.
+
+WHAT THIS GATE CANNOT SEE, MEASURED 2026-10-06 — read the count with this in hand. Run against the
+Phase-3 prose move (215 sentences over 17 concepts) it reported 11 lost and 2 truncated. JUDGED ONE BY
+ONE AGAINST THE NEW CORPUS, 2 of 13 were real: color.yaml had lost ' are two products.' off the end of
+its definition, and order.yaml had lost the claim that an order has no observable state beyond its two
+dates and that cancellation is therefore unanswerable — nothing in the knowledge plane carried it. The
+other 11 were FALSE, in three kinds, and none is a defect in the migration:
+
+* RE-WORDED. Five country sentences were promoted into a RULING written in its own words. Every claim
+  is there — three relations, the disagreement, the operator's ruling, the location reading, the
+  disclosure — and not one survives as a 55-character prefix.
+* REFORMATTED. Four net_revenue sentences became a TABLE with comma decimals: `310,98` is not
+  `310.98`, and a row of a table is not a sentence.
+* FORMALISED. One country sentence ended '... take edge `customer__based_in__country`' and that edge
+  now sits in the rule's `paths:` block, where it is executable instead of readable.
+
+So the unit is the sentence and the question is the claim, and those part company exactly when a
+migration does its job well. A count of 11 here meant 2. Treat the list as a REVIEW to be judged
+entry by entry — which is what it is good at, both real losses were invisible to every other check —
+and never as a quantity of loss.
 
     python3 tools/check_prose_moved.py <bundle> --since HEAD~1
     python3 tools/check_prose_moved.py <bundle> --since HEAD~1 --concept store
@@ -51,6 +72,16 @@ MIN_SENTENCE = 45
 #: How much of a normalised sentence must survive. 55 characters distinguished all 92 of store.yaml's
 #: sentences from one another while tolerating every re-wrap the migration made.
 PREFIX = 55
+#: AND HOW MUCH OF ITS END, which is a correction of this gate's own method, MEASURED 2026-10-06.
+#: A head match says the sentence STARTS somewhere in the new corpus. It says nothing about where it
+#: STOPS. `color.yaml` carried '... makes a new SKU — "E400 Green" and "E400 Orange" are two
+#: products.'; the move kept it as far as the second quote and dropped ' are two products.' — and
+#: this gate passed, because the first 55 characters were intact. The self-test's own fixture is
+#: named "a sentence truncated past the prefix must reject" and truncates to 30 characters, which is
+#: INSIDE the prefix: it tested the case that already worked and never the case in its name. `norm`
+#: strips punctuation and collapses whitespace, so a re-wrap and a re-punctuation both normalise to
+#: the same tail; what a missing tail means is a lost clause.
+TAIL = 40
 
 _FW = pathlib.Path(__file__).resolve().parent.parent / "reference_manual"
 
@@ -157,6 +188,16 @@ def after_corpus(root: pathlib.Path, stem: str) -> str:
     for k in (root / "knowledge",):
         if k.is_dir():
             out += [p.read_text(encoding="utf-8") for p in k.glob("*.md")]
+    # AND THE DECISION RECORDS, which this gate was missing and which cost it four false findings.
+    # MEASURED 2026-10-06 against the Phase-3 move: country.yaml's four ruling sentences ("BOTH
+    # readings matter ... an unqualified sales question means the country the STORE trades in") were
+    # reported as lost. They were not lost, they were PROMOTED — to decisions/RULING-2026-09-30_a-
+    # sales-question-means-the-store-country.md, which is the operator's own sequence: a DECISION is
+    # made, the decision triggers a rule, the rule triggers a projection. A ruling's reasoning belongs
+    # in the ruling, and a gate that does not look there calls the correct move a loss.
+    for d in (root / "decisions", _FW.parent / "decisions"):
+        if d.is_dir():
+            out += [p.read_text(encoding="utf-8") for p in d.rglob("*.md")]
     # AND THE FRAMEWORK, because a GENERIC fact is legitimately promoted rather than moved sideways:
     # two of store.yaml's comments were true of every bundle binding population_select and belong on
     # that canon's page, not in any bundle.
@@ -171,6 +212,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--since", default="HEAD~1", help="the revision to take as BEFORE")
     ap.add_argument("--concept", help="one concept stem, else every concept")
     ap.add_argument("--prefix", type=int, default=PREFIX)
+    ap.add_argument("--tail", type=int, default=TAIL,
+                    help="how many characters of a sentence's END must also survive")
     ap.add_argument("--self-test", action="store_true")
     a = ap.parse_args(argv)
     if a.self_test:
@@ -188,6 +231,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     lost: list[tuple[str, str]] = []
+    cut: list[tuple[str, str, str]] = []
     n_before = n_checked = 0
     for f in files:
         rel = str(f.relative_to(repo))
@@ -206,18 +250,37 @@ def main(argv: list[str] | None = None) -> int:
             n_checked += 1
             if key not in corpus:
                 lost.append((f.stem, s))
+                continue
+            # THE HEAD IS HOME; IS THE END? A sentence long enough to have an end past the prefix
+            # must show it, or a clause was dropped where nobody was looking.
+            n = norm(s)
+            if len(n) > a.prefix + a.tail and n[-a.tail:] not in corpus:
+                cut.append((f.stem, s, n[-a.tail:]))
 
     denom = (f"{len(files)} concept(s), {n_before} prose sentence(s) at {a.since}, "
-             f"{n_checked} judged at a {a.prefix}-char prefix")
+             f"{n_checked} judged at a {a.prefix}-char prefix and a {a.tail}-char tail")
+    if cut:
+        # A SEPARATE CLASS, NOT A SEPARATE SEVERITY. The head is home and the end is gone, which is
+        # the loss a prefix match cannot see; it is reported first because it is the quieter failure —
+        # a sentence that still reads as present.
+        for stem, s, t in cut:
+            print(f"  [prose-truncated] {stem} — rehomed as far as …{norm(s)[a.prefix - 18:a.prefix]!r}, "
+                  f"lost the end …{t[-34:]!r}")
     if lost:
         for stem, s in lost[:30]:
             print(f"  [prose-lost] {stem} — {s[:140]}")
         if len(lost) > 30:
             print(f"  … {len(lost) - 30} more")
         print(f"\nFAIL: check_prose_moved — {len(lost)} sentence(s) "
-              f"({sum(len(s) for _, s in lost)} bytes) in no new home, over {denom}")
+              f"({sum(len(s) for _, s in lost)} bytes) in no new home"
+              + (f" and {len(cut)} rehomed with the end cut off" if cut else "")
+              + f", over {denom}")
         return 1
-    print(f"PASS: check_prose_moved — every sentence is still findable, over {denom}")
+    if cut:
+        print(f"\nFAIL: check_prose_moved — {len(cut)} sentence(s) rehomed with the END CUT OFF "
+              f"(the head matched, so a prefix-only check passes them), over {denom}")
+        return 1
+    print(f"PASS: check_prose_moved — every sentence is still findable, head and end, over {denom}")
     return 0
 
 
@@ -266,9 +329,17 @@ def _self_test() -> int:
         expect(main([str(repo(t, rewrapped + "\n")), "--since", "HEAD"]) == 0,
                "a re-wrapped sentence must still match")
     with tempfile.TemporaryDirectory() as t:
-        # rehomed but TRUNCATED past the prefix -> reject; losing the claim is not re-wrapping
+        # rehomed but truncated INSIDE the prefix -> reject as LOST; the head itself is not there
         expect(main([str(repo(t, SENT[:30] + "\n")), "--since", "HEAD"]) == 1,
-               "a sentence truncated past the prefix must reject")
+               "a sentence truncated inside the prefix must reject")
+    with tempfile.TemporaryDirectory() as t:
+        # REHOMED BUT TRUNCATED PAST THE PREFIX -> reject. This is the case the fixture above was
+        # NAMED for and never tested: cutting to 30 characters destroys the head, which the prefix
+        # match already catches. Cutting 24 characters off the END leaves the head intact, and until
+        # 2026-10-06 that passed — which is how color.yaml lost ' are two products.' in silence.
+        expect(len(norm(SENT)) > PREFIX + TAIL, "the fixture sentence must be long enough to have an end")
+        expect(main([str(repo(t, SENT[:-24] + "\n")), "--since", "HEAD"]) == 1,
+               "a sentence rehomed with its END cut off must reject")
     with tempfile.TemporaryDirectory() as t:
         r = pathlib.Path(t)
         (r / "mac.project.yaml").write_text("planes:\n  ontology: ontology\n", encoding="utf-8")
@@ -281,7 +352,7 @@ def _self_test() -> int:
         print(f"FAIL: check_prose_moved self-test — {len(bad)} of {checks} failed")
         return 1
     print(f"PASS: check_prose_moved self-test — {checks}/{checks} check(s): lost, verbatim, "
-          f"re-wrapped, truncated, and the refusal")
+          f"re-wrapped, cut inside the prefix, cut past it, and the refusal")
     return 0
 
 
