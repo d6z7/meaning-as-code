@@ -95,11 +95,17 @@ def _module_imports(src: pathlib.Path) -> dict[str, set[str]]:
     return out
 
 
-def _reachable_modules(src: pathlib.Path) -> set[str]:
-    """Every mac_runtime module reachable by import from the entry points, transitively."""
+def _reachable_modules(src: pathlib.Path, entries: tuple[str, ...] | set[str] = _ENTRY_MODULES) -> set[str]:
+    """Every mac_runtime module reachable by import from the entry points, transitively.
+
+    `entries` DEFAULTS to the question path, which is the only entry this gate's question admits: a
+    canon reached solely from the console's meaning-plane emitter decides nothing about an answer.
+    `check_declarations_read` asks a WIDER question — does any caller reach the module that reads this
+    declaration — and passes the runtime's measured consumer surface instead. Two questions, two entry
+    sets, one graph; do not harmonise them."""
     graph = _module_imports(src)
     seen: set[str] = set()
-    stack = [m for m in _ENTRY_MODULES if m in graph]
+    stack = [m for m in entries if m in graph]
     while stack:
         m = stack.pop()
         if m in seen:
