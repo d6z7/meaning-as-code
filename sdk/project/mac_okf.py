@@ -190,7 +190,53 @@ def concept_to_md(
     )
 
 
-def rule_to_md(rule: dict, parent_name: str, parent_title: str) -> str:
+def _projected_clauses(rule: dict, doc: dict | None) -> tuple[dict, list[str]]:
+    """(clauses, canons_that_rendered_them) — the rule's clauses, PROJECTED from its canon where it has
+    one, and the authored keys where it has not.
+
+    THIS IS THE DIRECTION REVERSAL. This projector used to emit `when`/`then`/`never` verbatim from the
+    YAML, which made the generated page a projection of the PROSE rather than of the rule — so deleting
+    the prose blanked 19 pages, and the operator's sequence ("rule trigger creation of projection what
+    the rule does") could not be satisfied without keeping the thing it was meant to replace.
+
+    Now a bound rule's text comes from `tools/canon/rules.render`, which turns the canon's own params
+    into clauses. One wording per canon, N attachments, nothing to drift — and the YAML keeps only form.
+
+    FALLS BACK RATHER THAN FAILING. A canon with no prose renderer (9 of 23 have one) leaves the
+    authored clauses in place and is named in the returned list so the page can say which half a reader
+    is looking at. A projector that died on an unrendered canon would make adding a canon a breaking
+    change.
+    """
+    authored = {k: rule.get(k) for k in ("when", "then", "never")}
+    raw = rule.get("realized_by")
+    bindings = [raw] if isinstance(raw, dict) else list(raw or [])
+    if not bindings:
+        return authored, []
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "tools"))
+        from canon import rules as _canon_rules          # noqa: PLC0415
+    except Exception:                                    # noqa: BLE001
+        return authored, []
+    out = dict(authored)
+    rendered_by: list[str] = []
+    for b in bindings:
+        udf = str((b or {}).get("udf") or "")
+        try:
+            got = _canon_rules.render(udf, (b or {}).get("params") or {}, concept=doc)
+        except Exception:                                # noqa: BLE001 — no renderer, or a bad param
+            continue
+        rendered_by.append(udf)
+        for k in ("when", "then", "never"):
+            if got.get(k):
+                #: THE CANON'S WORDING WINS where it has one. An authored clause beside a body is the
+                #: second home guardrails/ontology/concepts.yaml#STATE-AS-PROSE forbids, and the prose
+                #: home is the one that rots.
+                out[k] = got[k]
+    return out, rendered_by
+
+
+def rule_to_md(rule: dict, parent_name: str, parent_title: str,
+               doc: dict | None = None) -> str:
     title = rule.get("subject") or rule.get("id")
     _kind = str(rule.get("kind") or "rule").split(".")[-1]
     _binds = ", ".join(rule.get("binds") or [])
@@ -224,16 +270,24 @@ def rule_to_md(rule: dict, parent_name: str, parent_title: str) -> str:
         details.append("- **Binds** — " + ", ".join(f"`{b}`" for b in rule.get("binds")))
     if rule.get("id"):
         details.append(f"- **Rule id** — `{rule.get('id')}`")
+    if rule.get("decided_in"):
+        #: THE RULING THIS RULE OBEYS. A rule does not originate; somebody decided. v0.1.19.
+        details.append(f"- **Decided in** — `{rule.get('decided_in')}`")
+    clauses, rendered_by = _projected_clauses(rule, doc)
     body = ["## Rule", "", *details, ""]
+    if rendered_by:
+        body += [f"> The clauses below are PROJECTED from "
+                 f"{', '.join('`' + u + '`' for u in rendered_by)} — the canon this rule binds. They "
+                 f"are not authored here and must not be edited: change the declaration.", ""]
     for label, key in (
         ("When", "when"),
         ("Then — do (then)", "then"),
         ("Never — don't (never)", "never"),
     ):
-        if rule.get(key):
+        if clauses.get(key):
             # VERBATIM — a single authored clause stays ONE clause. The old _bullets() split on '; ',
             # fragmenting SME phrasing and any clause/SQL that legitimately contains a semicolon.
-            body += [f"### {label}", "", str(rule[key]).strip(), ""]
+            body += [f"### {label}", "", str(clauses[key]).strip(), ""]
     body += [f"Applies to [{parent_title}](../{parent_name}.md)."]
     return frontmatter(surface) + "\n" + "\n".join(body)
 
@@ -317,7 +371,7 @@ def build(src: Path, out: Path):
         (out / f"{name}.md").write_text(concept_page(name, path, obj, inputs))
         for rule in (obj.get("contract") or {}).get("rules") or []:
             rid = rule.get("id", "rule").replace("/", "_")
-            (out / "rules" / f"{rid}.md").write_text(rule_to_md(rule, name, bundle[name]))
+            (out / "rules" / f"{rid}.md").write_text(rule_to_md(rule, name, bundle[name], obj))
             n_rules += 1
     title = bundle_title(src)
     idx = [

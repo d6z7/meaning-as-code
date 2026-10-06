@@ -206,3 +206,170 @@ def render(udf: str, params: dict, concept: dict | None = None, root=None) -> di
         raise KeyError(f"unknown canon {udf!r}; known: {sorted(CANONS)}")
     from . import resolve_params
     return fn(**resolve_params(udf, params, concept, root))
+
+
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+# THE SELECTION FAMILY, and the two guards contoso5 binds. Added 2026-10-06.
+#
+# WHY THESE SIX, AND WHY NOW. The operator's sequence ends "rule trigger creation of projection what
+# the rule does in the knowledge about the concept" — the human text about a rule is DERIVED from the
+# formal rule, not authored beside it. That projection is this module, and it covered 3 of 23 canons,
+# NONE of them the six a worked bundle actually binds. So `check_canon_binding` could hold 0 of 12
+# bindings against their canon, and `sdk/project/mac_okf.py` had to render a rule page from the
+# authored `when`/`then`/`never` instead — which is why deleting that prose blanked 19 pages.
+#
+# EACH RENDERER STATES WHAT ITS CANON DECIDES AND WHAT IT REFUSES TO DO, from the params alone. None
+# names a concept, a column or a bundle: the words come from the declaration it is handed.
+# ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+def _surfaces_of(body) -> list:
+    return list((body or {}).get("surfaces") or ())
+
+
+def _named_readings(bodies: dict, what: str) -> str:
+    """`a (also called x, y), b` — the readings and the words that select each."""
+    parts = []
+    for name in sorted(bodies):
+        words = _surfaces_of(bodies[name])
+        parts.append(f"`{name}`" + (f" (also called {_join(words)})" if words else ""))
+    return f"{len(bodies)} named {what}: " + _join(parts)
+
+
+def _default_clause(default, kind: str) -> tuple[str, str]:
+    """(then-tail, never-tail) for a declaration that does or does not name a default."""
+    if default:
+        return (f"a question naming none of them takes `{default}`, and the answer DISCLOSES that it "
+                f"did", "")
+    return ("a question naming none of them is ASKED BACK, with every reading offered",
+            f"choosing between {kind} the question did not name")
+
+
+def population_select(*, populations: dict, default: str = "") -> dict:
+    """WHICH ROWS the concept has — named readings of one axis, as bound predicates."""
+    subsets = {n: b.get("of") for n, b in populations.items() if (b or {}).get("of")}
+    complements = {n: b.get("not") for n, b in populations.items() if (b or {}).get("not")}
+    then_tail, never_tail = _default_clause(default, "populations")
+    then = [_named_readings(populations, "population(s) of one axis"), then_tail]
+    if complements:
+        then.append("; ".join(f"`{n}` is everything `{o}` is not" for n, o in sorted(complements.items())))
+    if subsets:
+        then.append("; ".join(f"`{n}` is a subset of `{o}`" for n, o in sorted(subsets.items())))
+    never = ["mixing two readings of one axis in a single figure",
+             "reporting a count over all rows as a count of the default reading"]
+    if never_tail:
+        never.insert(0, never_tail)
+    return {
+        "subject": "which rows this concept has, and which reading a bare question means",
+        "when": "a question counts, lists or filters this concept's rows",
+        "then": ". ".join(p for p in then if p),
+        "never": _join(never),
+    }
+
+
+def ratio_select(*, ratios: dict, default: str = "") -> dict:
+    """WHICH FIGURE a named ratio divides by."""
+    then_tail, never_tail = _default_clause(default, "denominators")
+    bodies = {n: {"surfaces": _surfaces_of(b)} for n, b in ratios.items()}
+    denoms = "; ".join(f"`{n}` divides by {(ratios[n] or {}).get('denominator')}"
+                       for n in sorted(ratios))
+    never = ["dividing by a figure this bundle has not declared"]
+    if never_tail:
+        never.insert(0, never_tail)
+    return {
+        "subject": "which figure a rate over this measure divides by",
+        "when": "a rate, share or percentage over this measure is asked for",
+        "then": f"{_named_readings(bodies, 'ratio(s)')}. {denoms}. {then_tail}",
+        "never": _join(never),
+    }
+
+
+def column_select(*, columns: dict, default: str = "") -> dict:
+    """WHICH COLUMN a named reading resolves to, among columns this concept declares."""
+    then_tail, never_tail = _default_clause(default, "columns")
+    bodies = {n: {"surfaces": _surfaces_of(b)} for n, b in columns.items()}
+    cols = "; ".join(f"`{n}` is `{(columns[n] or {}).get('column')}`" for n in sorted(columns))
+    never = ["answering on one column while reporting the other's name"]
+    if never_tail:
+        never.insert(0, never_tail)
+    return {
+        "subject": "which of this concept's columns a named reading answers on",
+        "when": "a question names this concept and does not say which reading it means",
+        "then": f"{_named_readings(bodies, 'reading(s)')}. {cols}. {then_tail}",
+        "never": _join(never),
+    }
+
+
+def path_select(*, paths: dict, default: str = "") -> dict:
+    """WHICH RELATION the answer is reached through — the last hop into this concept."""
+    then_tail, never_tail = _default_clause(default, "relations")
+    bodies = {n: {"surfaces": _surfaces_of(b)} for n, b in paths.items()}
+    vias = "; ".join(f"`{n}` arrives by `{(paths[n] or {}).get('via')}`" for n in sorted(paths))
+    never = ["averaging two readings, which are answers to different questions",
+             "picking between them silently"]
+    if never_tail:
+        never.insert(0, never_tail)
+    return {
+        "subject": "which relation an answer about this concept is reached through",
+        "when": "a measure is grouped by or filtered on this concept and the question does not say "
+                "through what",
+        "then": f"{_named_readings(bodies, 'reading(s)')}. {vias}. {then_tail}",
+        "never": _join(never),
+    }
+
+
+def additivity_guard(*, measure_column: str, axis_effects: dict) -> dict:
+    """HOW this measure folds across each kind of axis — the fold law, per axis kind."""
+    def _effect(v) -> str:
+        return str(v).rsplit(".", 1)[-1]
+    allowed = sorted(k for k, v in axis_effects.items() if _effect(v) == "additive")
+    banned = sorted(k for k, v in axis_effects.items() if _effect(v) != "additive")
+    spelled = "; ".join(f"across a {k} axis it is {_effect(axis_effects[k])}"
+                        for k in sorted(axis_effects))
+    #: `_join` uses "; " because most clauses are lists of independent prohibitions. An axis list is
+    #: not: "a categorical; time axis" is not a sentence, and the first render of this canon produced
+    #: exactly that. Alternatives are joined with "or" here and nowhere else.
+    def _or(items) -> str:
+        items = sorted(items)
+        return items[0] if len(items) == 1 else " or ".join([", ".join(items[:-1]), items[-1]])
+
+    sum_clause = (f"Sum it only across " + (f"{_or(allowed)} axes" if allowed else "")) if allowed \
+        else "It may not be summed across ANY declared axis"
+    return {
+        "subject": f"how `{measure_column}` may be folded, per kind of axis",
+        "when": f"`{measure_column}` is aggregated across an axis",
+        #: NO "elsewhere" WHEN THERE IS NO ELSEWHERE. With nothing additive the sentence read "it may
+        #: not be summed across ANY declared axis; elsewhere apply the declared effect", which
+        #: contradicts itself in eleven words.
+        "then": (f"{spelled}. {sum_clause}"
+                 + ("; elsewhere apply the declared effect and say which was applied" if allowed
+                    else ". Apply the declared effect and say which was applied")),
+        "never": _join([f"summing `{measure_column}` across "
+                        + (f"a {_or(banned)} axis" if banned else "an axis it is not additive over"),
+                        "weighting every member of an axis equally when the declaration says otherwise"]),
+    }
+
+
+def composite_key_guard(*, code_column: str, scope_columns) -> dict:
+    """A CODE THAT IS ONLY MEANINGFUL INSIDE A SCOPE — constrain it with its scope or not at all."""
+    scopes = list(scope_columns or ())
+    return {
+        "subject": f"`{code_column}` is identified by the pair, not by itself",
+        "when": f"`{code_column}` is constrained, grouped on, or joined",
+        "then": (f"carry {_join([f'`{c}`' for c in scopes])} with it — the identity is "
+                 f"({code_column}, {', '.join(scopes)}), and a value of `{code_column}` means "
+                 f"different things under different {_join(scopes)}"),
+        "never": _join([f"constraining or grouping on `{code_column}` without "
+                        f"{_join([f'`{c}`' for c in scopes])}",
+                        "treating two rows with the same code and different scope as one thing"]),
+    }
+
+
+CANONS.update({
+    "mac.canon.population_select": population_select,
+    "mac.canon.ratio_select": ratio_select,
+    "mac.canon.column_select": column_select,
+    "mac.canon.path_select": path_select,
+    "mac.canon.additivity_guard": additivity_guard,
+    "mac.canon.composite_key_guard": composite_key_guard,
+})
