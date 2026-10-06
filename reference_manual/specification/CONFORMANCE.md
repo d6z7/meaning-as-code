@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.19)
-version: '0.1.19'
+title: MAC Conformance — the strict-syntax contract (v0.1.19-develop)
+version: '0.1.19-develop'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -466,7 +466,7 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.19'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.19-develop'`**.
 - **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
   `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
   there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept
