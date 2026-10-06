@@ -181,17 +181,18 @@ the concept's own grounded columns by the `rule-binds-grounded` shape.
 The first draft of this canon named whole chains —
 `[net_revenue__by__store, store__trades_in__country]`. **Measured, that is wrong in two ways.**
 
-**It does not scale.** Three edges terminate at Country; **thirteen** first hops of the two kinds exist
-(`discount__by__customer`, `discount__by__store`, `gross_revenue__by__…`, `margin__by__…`,
-`net_revenue__by__…`, `order__placed_by__customer`, `sales_cost__by__…`, `units_sold__by__…`). A
-chain-based params block needs an entry per measure per reading, and must be edited whenever a measure
-or an edge is added or renamed. An edge-based one is **three entries**, intrinsic to Country, and adding
-a measure never touches it.
+**It does not scale.** Three edges terminate at Country; **fourteen** first hops of the two kinds exist
+— seven to Customer and seven to Store. A chain-based params block needs an entry per measure per
+reading, and must be edited whenever a measure or an edge is added or renamed. An edge-based one is
+**three entries**, intrinsic to Country, and adding a measure never touches it.
 
-**And it would encode a path that does not exist.** `Order` has `order__placed_by__customer` and **no
-store edge at all**. A chain declaration would assert a store chain for Order that cannot be built. An
-edge declaration cannot make that mistake: when only one of the three is reachable there is no choice,
-the canon resolves it and says nothing.
+**And a chain cannot be enumerated by pattern.** This estate names an edge for what the relation MEANS —
+*"the verbs are the row's own story"* — so the first hops are `net_revenue__by__store`,
+`units_sold__by__store`, … and `order__placed_at__store`. Nothing in the id is patterned. An author
+writing chains by hand will miss one, and so will a tool: while drafting this page the author grepped
+`__by__store`, concluded Order had no store edge at all, and wrote that into four files before the
+planner resolved `order__placed_at__store` and corrected it. Naming only the last hop removes the whole
+class of mistake, because the last hop is one edge the concept can see.
 
 The first hop is not a decision. It is forced — it is the measure's own edge to its dimension. **The
 only decision is the last hop into the target**, and that is what the params name.
@@ -220,11 +221,13 @@ Against contoso5's declaration above, subject `NetRevenue`:
 | *"revenue by store country"* | store, customer, location | `RESOLVE store`, `named=True` | as asked |
 | *"revenue by site country"* | store, customer, location | `RESOLVE location`, `named=True` | as asked |
 
-And with subject `Order`, where only the customer edge exists:
+And the one-reachable-reading branch, which fires whenever a subject can reach only one of the declared
+readings. On contoso5 **no concept is in that position** — every measure and Order reach Country through
+both Store and Customer — so the branch is exercised by its test rather than by this bundle:
 
 | the question says | reachable | decision |
 |---|---|---|
-| *"orders by country"* | customer only | `RESOLVE customer` — one path, no choice, no disclosure of a default that was never in play |
+| *"X by country"*, where only the customer edge exists | customer only | `RESOLVE customer`, `only_option=True` — one path, no choice, and **not** flagged `by_default`, because disclosing "we took the default" implies an alternative the reader could have had |
 
 Were the `default` removed from the declaration, the first row becomes
 `ASK ["customer", "location", "store"]` — the reader is asked rather than given one of three numbers.
@@ -263,8 +266,8 @@ and trusts them, the way its twins are handed column names.
 is a fact about the warehouse, and `check_edge_joins_measured` owns the cardinality claims on each edge.
 This canon only chooses which claim the answer rests on.
 
-**It cannot rescue an unreachable reading.** If the ruled default is not reachable from the subject —
-Order, above — the canon resolves what is reachable rather than refusing. A reader who asked a plain
+**It cannot rescue an unreachable reading.** If the ruled default is not reachable from the subject, the
+canon resolves what is reachable rather than refusing. A reader who asked a plain
 question gets the only answer there is; a reader who asked for the store reading explicitly gets an
 `ASK`, because the alternative is answering a different question silently.
 

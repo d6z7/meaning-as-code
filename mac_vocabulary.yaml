@@ -773,8 +773,9 @@ canon:
         case/space/underscore folded. NO DEFAULT IS A DECLARATION: a question naming no reading ASKS
         with every reachable one offered. IT NAMES THE LAST HOP, NOT A CHAIN -- the first hop is the
         measure's own edge to its dimension and is forced, so chains would need an entry per measure
-        per reading (13 on contoso5 against 3 edges into Country) and would assert paths that do not
-        exist (Order has no store edge). MEASURED on contoso5 2026-10-06, and this canon exists
+        per reading (14 on contoso5 against 3 edges into Country) and cannot be enumerated by pattern,
+        because an edge is named for what the relation MEANS -- `net_revenue__by__store` beside
+        `order__placed_at__store`. MEASURED on contoso5 2026-10-06, and this canon exists
         because of it: `country_code` is carried by dim_customer, dim_store and dim_location, the
         operator ruled on 2026-09-30 that an unqualified sales question means the STORE's country
         (confidence C), and ALL SEVEN measures took the customer path -- because both candidate paths
