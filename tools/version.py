@@ -214,6 +214,22 @@ CLAIMS = [
     {"file": "tools/validate_schema.py",
      "find": re.compile(r"(CURRENT = ')(\d+\.\d+\.\d+(?:-develop)?)(')"),
      "what": "the validator's notion of current"},
+    # THE FIFTH, SIXTH AND SEVENTH HOMES, ADDED 2026-10-06 — and found the way the fourth was: by
+    # reading a file this tool had just reported clean. `--check` said all four claims agreed at
+    # 0.1.19-develop while CONFORMANCE.md's frontmatter, its title and its own §6 sentence all said
+    # 0.1.18 and its changelog said "v0.1.19 is folded into 0.1.18" — a generation the schema was
+    # actively shipping three fields under. The NORMATIVE conformance document disagreed with the
+    # schema it is normative for, in three places, and nothing could see it, for the reason the note
+    # above already states: a claim that is not enumerated here cannot disagree.
+    {"file": "reference_manual/specification/CONFORMANCE.md",
+     "find": re.compile(r"(title: MAC Conformance — the strict-syntax contract \(v)(\d+\.\d+\.\d+(?:-develop)?)(\))"),
+     "what": "CONFORMANCE title"},
+    {"file": "reference_manual/specification/CONFORMANCE.md",
+     "find": re.compile(r"(\nversion: ')(\d+\.\d+\.\d+(?:-develop)?)(')"),
+     "what": "CONFORMANCE frontmatter version"},
+    {"file": "reference_manual/specification/CONFORMANCE.md",
+     "find": re.compile(r"(The current generation is \*\*`')(\d+\.\d+\.\d+(?:-develop)?)('`\*\*)"),
+     "what": "CONFORMANCE §6 — the current generation"},
 ]
 
 

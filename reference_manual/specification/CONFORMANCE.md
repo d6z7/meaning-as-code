@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.18)
-version: '0.1.18'
+title: MAC Conformance — the strict-syntax contract (v0.1.19)
+version: '0.1.19'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -466,7 +466,7 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.18'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.19'`**.
 - **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
   `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
   there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept
@@ -579,6 +579,34 @@ bundle must reach the start before anything is allowed to run.
     first bundle on the column standard (contoso5, 17 concepts) could not load there before. One fixture
     bundle — `sdk/authoring/exemplars/bundle/` — is now the composer's exemplar and the round-trip test
     in both repos: what the composer emits, the reader loads.
+- **`0.1.19`, 2026-10-06** — **three additive fields, and a relation may say the COLUMN resolves it.**
+  All additive over `0.1.18`, so `0.1.18` files remain valid.
+  - **`contract.rules[].subject`** (optional) — a short email-subject headline per rule, complementing
+    `why`.
+  - **`contract.rules[].decided_in`** (optional) — a ref to the DECISION the rule is the consequence of,
+    in the estate's cross-repo form `<repo>#<path>`. The operator's sequence is decision → rule →
+    projection, and until this slot existed the first arrow had nowhere to be written down: the Country
+    ruling lived for six days as a sentence inside the rule it produced.
+  - **`edges[].resolved_by_construction`** (optional, `const: true`) and the clause that admits it. A
+    `level: business` `type: shared_attribute` edge previously had to carry `resolved_by` — a resolution
+    rule — with NO alternative, and that was wrong in the case the estate actually has. Such an edge
+    relates two concepts because a column's VALUE SPACE is shared, not because a foreign key joins them,
+    so the instance set is produced by GROUPING that column. Where the target is an enumeration whose
+    canonical column IS the shared column, the register's membership already is the set, and a rule
+    restating it is a second home that will rot. Three such rules were retired for exactly that reason
+    (`brand` 2026-10-05, `color` and `product_category` 2026-10-06, each "the column already runs it") —
+    and the first retirement left its edge with no legal value to give, so contoso5 was schema-invalid
+    and the other two retirements were blocked behind the clause. The clause is now a three-way `anyOf`,
+    mirroring what a physical edge has had since `0.1.18`: a resolution rule, a canon binding, or
+    `resolved_by_construction: true`. An absence is still a finding — "the column resolves it" and
+    "nobody has worked this out" must not become one silence, which is the lesson `0.1.18` recorded for
+    the physical branch.
+  - **AND IT IS CHECKED, not asserted**, which is why this form was admitted over widening
+    `resolved_by` to accept a column pointer. `tools/check_edge_definition.py`'s `CONSTRUCTION_UNPROVEN`
+    verifies the target is an enumeration, that its canonical column is register-backed, and that the
+    SOURCE concept carries that same column — which is what makes two concepts share an attribute
+    rather than merely mention one. A pointer at a column would have been an author's word that nothing
+    could test.
 - **`0.1.18`, 2026-10-05** — **one version, actually synchronized; and identity is a column fact.**
   Nothing in the core vocabulary changes shape here that was not already landed under `0.1.17`-era work;
   what changes is that the number finally means something. Before this entry the estate held FIVE
