@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -80,7 +81,26 @@ def main(argv: list[str] | None = None) -> int:
     # canons the vocabulary does not define ("5 undefined"), which is the mirror of the flat glob that
     # reported 21 undescribed: both measured the wrong population and said so confidently. The
     # one-level glob IS the guardrail's declared population for manual_canon_page.
-    described = {p.stem for p in pages_dir.glob("*/*.md") if p.stem != "README"}
+    # A PAGE MARKED `status: retired` DESCRIBES NOTHING, and that is how a canon leaves the standard.
+    # RETIRED 2026-10-07: five terms were deleted from `mac_vocabulary.yaml#canon.terms` and from the
+    # runtime registry — ambiguity_gate, closure_anomaly_check, exclusion_filter,
+    # grouping_from_register, relation_alias_resolve. Deleting the term IS the enforcement:
+    # `check_references` resolves every `realized_by.udf` against that namespace and an unknown canon is
+    # an ERROR, so a binding to a retired canon refuses at the gate instead of parsing and deciding
+    # nothing. But the PAGES had to stay exactly where they are: 28 pages link to those five, and a
+    # moved page is a broken link (the estate's own rule — preserve the basename). So without this
+    # filter the five would read as "described but undefined" forever, and the gate that proves the three
+    # lists agree would be permanently red over a retirement it is supposed to be able to express.
+    retired = set()
+    described = set()
+    for p in pages_dir.glob("*/*.md"):
+        if p.stem == "README":
+            continue
+        head = p.read_text(encoding="utf-8", errors="replace")[:600]
+        if re.search(r"^status: *retired\b", head, re.M | re.I):
+            retired.add(p.stem)
+        else:
+            described.add(p.stem)
 
     try:
         _neighbours.ensure_runtime_on_path()
@@ -95,8 +115,11 @@ def main(argv: list[str] | None = None) -> int:
     undefined = sorted(described - defined)
     unfindable = sorted(honoured - described)
 
+    # THE RETIRED COUNT IS PRINTED, always. A canon that left the standard is not nothing: its page is
+    # still on disk and still linked, and a reader who cannot see how many were retired cannot tell a
+    # shrinking canon from a gate measuring the wrong population.
     print(f"canon: defined {len(defined)}   described {len(described)}   "
-          f"implemented {len(honoured)}")
+          f"implemented {len(honoured)}" + (f"   retired {len(retired)}" if retired else ""))
 
     if undescribed:
         print(f"\nDEFINED, NO PAGE ({len(undescribed)}) — the vocabulary promises a canon the manual")

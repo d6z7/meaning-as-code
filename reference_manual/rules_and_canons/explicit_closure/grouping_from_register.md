@@ -1,9 +1,17 @@
 ---
 title: "Canon — grouping_from_register"
 part_of: reference_manual/canon
-status: DECLARED BUT NOT IMPLEMENTED — four concepts in the worked bundle bind it and it does nothing
+status: retired
 scope: GENERIC — domain-neutral contract; the failure below was measured
 ---
+
+> **RETIRED 2026-10-07.** `mac.canon.grouping_from_register` is no longer a term of the canon: it is gone from
+> `mac_vocabulary.yaml#canon.terms` and from the runtime registry, so a `realized_by` naming it is
+> now an ERROR at `check_references` rather than a binding that parses and decides nothing. This
+> page is kept in place — 28 pages link to the five retired canons, and a moved page is a broken
+> link — as the record of what was considered and why it went.
+>
+> **Why:** never implemented, never hooked, and its own page carries a section headed "You almost certainly do not need it": `resolve_by_register` guarantees a name binds EVERY code it covers, so an exploded register searched on the group column and resolving to the member column IS the re-aggregation. The four concepts that once bound it are gone or rule-free, and every grouping column in this bundle sits on the same row as its members.
 
 # Canon — `mac.canon.grouping_from_register`
 

@@ -1,9 +1,17 @@
 ---
 title: "Canon — ambiguity_gate"
 part_of: reference_manual/canon
-status: reference   # illustrative reference implementation, not a finished production function
+status: retired   # illustrative reference implementation, not a finished production function
 scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 ---
+
+> **RETIRED 2026-10-07.** `mac.canon.ambiguity_gate` is no longer a term of the canon: it is gone from
+> `mac_vocabulary.yaml#canon.terms` and from the runtime registry, so a `realized_by` naming it is
+> now an ERROR at `check_references` rather than a binding that parses and decides nothing. This
+> page is kept in place — 28 pages link to the five retired canons, and a moved page is a broken
+> link — as the record of what was considered and why it went.
+>
+> **Why:** the four `*_select` canons each construct their own ASK — `population_select`, `ratio_select`, `column_select` and `path_select` all return their candidates — and not one of them calls this. Bound to a rule it can only REFUSE, because it does not know what its candidates resolve to. contoso5 has three `ambiguity`-kind rules and zero bind it. `canons/ambiguity_gate.py` STAYS as the shared ASK constructor those four should be collapsed onto; what is retired is the term, not the code.
 
 # Canon — `ambiguity_gate`
 

@@ -684,9 +684,26 @@ canon:
         # carrying `identity: canonical`, which sits inside a LIST and so is addressed by this
         # literal rather than a dotted path (check_canon_binding._CANONICAL_COLUMN resolves it).
         code: concept.grounding.columns[identity=canonical]
+    # RETIRED 2026-10-07, operator ruling after a five-agent triage of all 23 canons. FOUR, not the
+    # five the triage proposed: `exclusion_filter` was reinstated the same hour, because the suite
+    # proved it WORKS — `test_transforms_rewrite_bind_and_disclose_on_real_planner_sql` exercises it
+    # end to end against rendered planner SQL. The triage's case was that contoso5's only two uses
+    # were rewritten as `population_select`, which is true and is an argument about this BUNDLE, not
+    # about the canon. Unused is not the same as unimplemented, and retiring a tested, hooked
+    # transform because the one bundle in scope has no case for it would destroy working behaviour
+    # to tidy a list. The terms are
+    # DELETED rather than flagged, and that is the enforcement: `check_references` resolves every
+    # `realized_by.udf` against this namespace and an unknown canon is an ERROR, so a binding to a
+    # retired canon now refuses at the gate instead of parsing and deciding nothing. Each page stays
+    # where it is, marked `status: retired`, because 28 pages link to the five and a moved page is a
+    # broken link. Why each one went:
+    #   ambiguity_gate — the four *_select canons each construct their own ASK and none calls it; bound, it can only refuse
+    #   closure_anomaly_check — needs inline values.items, which this estate bans; check_register_membership does the job
+    #   grouping_from_register — resolve_by_register already expresses a grouping; its own page says so
+    #   relation_alias_resolve — superseded by path_select, which shipped and is bound
+    exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
     additivity_guard:      { serves: semi_additive_balance,     needs_sqlglot: true,  doc: "reject SUM of a measure across a non-additive axis" }
     axis_default:          { serves: tracking_vintage,          needs_sqlglot: true,  doc: "inject a safe default for an unconstrained orthogonal axis" }
-    exclusion_filter:      { serves: impurity_disposition,      needs_sqlglot: true,  doc: "inject an exclusion predicate for reliably-identifiable junk (bake)" }
     snapshot_collapse:
       serves: scd_type_2
       needs_sqlglot: false
@@ -701,11 +718,9 @@ canon:
         # warehouse while still reading as VERIFIED. mac_admit_identity.py derives this key and dates
         # it against the source watermark.
         natural_key: 'profile#identity_evidence.key'
-    closure_anomaly_check: { serves: explicit_closure,          needs_sqlglot: false, doc: "for a closed value set, the query that finds out-of-set values (else None)" }
     scoped_latest:         { serves: tracking_vintage,          needs_sqlglot: false, doc: "MAX(date) over a scoped subset, not the whole table" }
     hierarchy_rollup:      { serves: recursive_hierarchy,       needs_sqlglot: false, doc: "recursive-CTE subtree: a node and all its descendants" }
     densify:               { serves: absence_semantics,         needs_sqlglot: false, doc: "LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)" }
-    ambiguity_gate:        { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a single/pinned candidate, else ASK (⊥) — never guess" }
     # ADDED 2026-10-01, operator ruling: "rule act like DB trigger. if the condition is met ...
     # then something should happen ... this must be doable with symbolic language and having null or
     # not null test is good first step".
@@ -810,9 +825,7 @@ canon:
         chooses between CONCEPTS, "a sales question means the store country" chooses a JOIN PATH, and
         "an unscoped question covers all time" is about the WINDOW and has no alternative column.
     alias_resolve:         { serves: competing_definitions,     needs_sqlglot: false, doc: "resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop" }
-    relation_alias_resolve: { serves: competing_definitions,    needs_sqlglot: false, doc: "resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)" }
     enum_from_register:    { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration." }
-    grouping_from_register: { serves: explicit_closure,          needs_sqlglot: false, doc: "realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping." }
 
 # ===========================================================================
 # mac.diagnostic_code — THE CLOSED DIAGNOSTIC TAXONOMY. Every finding the compiler can make.

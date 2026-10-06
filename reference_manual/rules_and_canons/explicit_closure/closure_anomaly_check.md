@@ -1,9 +1,17 @@
 ---
 title: "Canon — closure_anomaly_check"
 part_of: reference_manual/canon
-status: reference   # illustrative reference implementation, not a finished production function
+status: retired   # illustrative reference implementation, not a finished production function
 scope: GENERIC — domain-neutral. Examples from example_shop_ontology/.
 ---
+
+> **RETIRED 2026-10-07.** `mac.canon.closure_anomaly_check` is no longer a term of the canon: it is gone from
+> `mac_vocabulary.yaml#canon.terms` and from the runtime registry, so a `realized_by` naming it is
+> now an ERROR at `check_references` rather than a binding that parses and decides nothing. This
+> page is kept in place — 28 pages link to the five retired canons, and a moved page is a broken
+> link — as the record of what was considered and why it went.
+>
+> **Why:** it requires inline `values.items` and raises without them — and inline values are BANNED in this estate (values live in a register and the column points at it). contoso5 has zero `values:` blocks, so on a conforming bundle this canon declines by name on every concept, forever. `tools/check_register_membership.py` does the job it was written for, against the warehouse, and its own docstring records that it replaced the inline-member suite.
 
 # Canon — `closure_anomaly_check`
 
