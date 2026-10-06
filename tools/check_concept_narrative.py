@@ -87,6 +87,9 @@ def check(root: pathlib.Path) -> tuple[list[Reject], dict[str, int]]:
     import yaml
 
     rejects: list[Reject] = []
+    #: Every concept identity a `[[WikiLink]]` may legally name — `concept.name` and
+    #: `concept.label`, collected in the same pass that reads the declarations.
+    concept_names: set = set()
     warnings: list[Reject] = []
     files = list(P.concept_files(root))
     cdir = P.concepts_dir(root)
@@ -122,6 +125,8 @@ def check(root: pathlib.Path) -> tuple[list[Reject], dict[str, int]]:
             rejects.append(Reject("unreadable", f.name, str(exc)[:120]))
             continue
         cols, rules = _declared(doc)
+        c = doc.get("concept") or {}
+        concept_names |= {str(c[k]) for k in ("name", "label") if c.get(k)}
         n_cols += len(cols)
         n_rules += len(rules)
         seen_rules |= rules
@@ -171,6 +176,26 @@ def check(root: pathlib.Path) -> tuple[list[Reject], dict[str, int]]:
             warnings.append(Reject("phantom-reference", f"{page.name}:{tok}",
                                    f"named as a column of {f.stem}; declared by another concept. "
                                    f"Advisory — a sentence about another concept reads the same way"))
+
+    # ── `[[WikiLink]]` -> a concept this bundle declares ────────────────────────────────────
+    #    A SECOND PASS, because `concept_names` is only complete once every declaration is read;
+    #    checking inside the loop above would judge the first page against a set of one.
+    #
+    #    THIS ONE GATES, where the column phantom above only advises, and the difference is
+    #    inference. Deciding whether a backticked token is a claim about THIS concept needs to know
+    #    what a sentence is about — no reader here does, and both attempts were 23/23 then 1/1 false
+    #    positives. A `[[Name]]` needs nothing: it either names a declared concept or it does not.
+    #    That is why `_WIKI` was compiled at the top of this file and then referenced by nothing but
+    #    its own definition — the ADR's clause "every `[[Concept]]` the narrative names exists in the
+    #    YAML" had no code behind it. Measured on contoso5 2026-10-06 before adding it: 9 distinct
+    #    targets over 42 links, all 9 resolving, so this starts green and catches the next rename.
+    for page in sorted(set(narratives.values()) | set(rule_pages.values())):
+        for target in sorted(set(_WIKI.findall(page.read_text(encoding="utf-8")))):
+            if target not in concept_names:
+                rejects.append(Reject(
+                    "dangling-wikilink", f"{page.name}:[[{target}]]",
+                    f"names no concept this bundle declares; a `[[link]]` is a pointer, and "
+                    f"{len(concept_names)} identities are declared"))
 
     for stem, page in sorted(narratives.items()):
         if stem not in {f.stem for f in files}:
