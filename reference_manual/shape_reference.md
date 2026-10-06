@@ -81,7 +81,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.18)
+## Structural shapes — generated (schema 0.1.19-develop)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -139,6 +139,7 @@ contract:  # string|object · v0.5 NEW core construct (DECISION 0)
       examples: [ ... ]  # Concrete cases this rule decides, as a reader would say them — the…
       status: <…>  # enum: active | proposed · Where this rule stands — proposed, ruled, retired
       confidence: <…>  # enum: C | P | R · Assurance factor for the rule: C=confirmed (an…
+      decided_in: <…>  # string · v0.1.19: THE DECISION THIS RULE IS THE CONSEQUENCE OF — a ref to the…
 
 values:  # v0.5: 'values:' is the SINGLE carrier for an enumeration's value set +…
   closure: <…>  # enum: closed | open | unknown · WHETHER THIS VALUE SET IS ALL OF THEM

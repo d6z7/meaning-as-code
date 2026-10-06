@@ -730,6 +730,36 @@ pointer_kinds:
       only to the file — the rule objects exist once `contract.rules[]` declares a sub_file
       container, which is two lines and the next obvious step.
 
+  - reference_kind: rule_decided_in
+    what: 'A contract rule naming the DECISION RECORD it is the consequence of.'
+    src_kind: rule
+    dst_kind: decision_record
+    carrier: value
+    key_pattern: 'decided_in'
+    value_shape: repo_qualified_path
+    resolver: by_repo_path
+    cardinality: one
+    required: false
+    invert: false
+    case_fold: false
+    population: 'ontology/concepts/*.yaml -> contract.rules[].decided_in'
+    producers: [a human recording a ruling, then writing the rule it produces]
+    consumers: [a reader asking why a rule exists; the knowledge projection]
+    checkers: []
+    note: >
+      v0.1.19. The step the operator's sequence names — "creation of DECISIONS / decision triggers
+      creation of rules in yaml file" — and it had no pointer, so the link was prose: `why:` is the
+      largest remaining prose block in the worked bundle at 3,501 bytes over 19 rules, mostly
+      sentences of the form "the operator ruled on <date> that ...". CROSS-REPO BY NATURE and that is
+      why `checkers` is empty rather than pretending: a bundle's rule cites a record in
+      `meaning-as-code/decisions/`, which a bundle-scoped gate cannot open, and the estate already
+      counts such targets as UNLOCATED rather than dangling (tools/mac_pointers.py, 346 of them).
+      What CAN be checked, and is owed, is the other direction: a framework-side gate walking every
+      `decided_in` it is handed and resolving it against `decisions/`. Writing `checkers` here before
+      that exists is the hatch verify_enforced_by was built to close.
+      NOT `decided_by`: that spelling is taken, in this very file, for WHO ruled a carve-out
+      (`decided_by: operator`). One name, two meanings, is the defect this catalogue exists to find.
+
   - reference_kind: edge_endpoint_concept
     what: 'An edge naming the concepts it joins.'
     src_kind: edge
