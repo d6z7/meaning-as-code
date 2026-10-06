@@ -278,16 +278,30 @@ CANON_NAMES = frozenset(CANONS)
 
 # ── declared parameters: READ from the model, never retyped into the binding ─────────────────────
 def _params_from_registry(udf: str) -> dict:
-    """{param: dotted concept path} declared in mac_vocabulary.yaml#canon.members[].params_from."""
-    try:
-        import yaml
-        from pathlib import Path as _P
-        f = _P(__file__).resolve().parent.parent.parent / "mac_vocabulary.yaml"
-        m = ((yaml.safe_load(f.read_text(encoding="utf-8")) or {})
-             .get("canon", {}).get("members", {}) or {}).get(udf.split(".")[-1]) or {}
-        return m.get("params_from") or {}
-    except Exception:                                                    # noqa: BLE001
+    """{param: dotted concept path} declared in mac_vocabulary.yaml#canon.terms[].params_from.
+
+    IT READ `canon.members` AND THE BLOCK HAS NO SUCH KEY. Measured 2026-10-06: `canon` carries
+    exactly `closed`, `description`, `kind`, `terms`, so this returned `{}` for EVERY canon, always,
+    and `resolve_params` therefore filled NOTHING from the concept for any of them. Three canons
+    declare `params_from` — refuse_measure_no_row, refuse_unresolvable_name, snapshot_collapse — and
+    all three were invisible to the renderer that exists to read them.
+
+    AND THE BARE `except Exception: return {}` MADE IT UNFINDABLE, which is the same defect its own
+    twin already fixed and documented: `check_canon_binding._params_from` records that an empty dict
+    "is not a conservative default -- it is the same result as a registry that declares no
+    `params_from` at all, so the two are indistinguishable to every caller". A missing FILE is a
+    legitimate empty answer; a registry that cannot be parsed is news, and now says so.
+    """
+    import yaml
+    from pathlib import Path as _P
+    f = _P(__file__).resolve().parent.parent.parent / "mac_vocabulary.yaml"
+    if not f.is_file():
         return {}
+    doc = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
+    m = ((doc.get("canon") or {}).get("terms") or {}).get(udf.split(".")[-1]) or {}
+    #: A term authored as a bare STRING is the shape that broke the twin at its seventeenth term.
+    #: Not a mapping means it declares no params_from, which is an answer, not an error.
+    return (m.get("params_from") or {}) if isinstance(m, dict) else {}
 
 
 def _dig(doc, dotted: str):
