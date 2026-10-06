@@ -60,6 +60,98 @@ def _bindings(node: Any, path: str = "") -> list[tuple[str, str]]:
     return out
 
 
+#: THE ENTRY POINTS A QUESTION ACTUALLY TRAVELS THROUGH. Reachability is measured FROM these, not
+#: from "does the name appear somewhere" — a canon referenced only by a module nothing imports is
+#: exactly as inert as one referenced nowhere, and that distinction is invisible to grep.
+_ENTRY_MODULES = ("mac_runtime.planner.plan", "mac_runtime.pipeline", "mac_runtime.planner.sql")
+
+
+def _module_imports(src: pathlib.Path) -> dict[str, set[str]]:
+    """{dotted module -> the mac_runtime modules it imports}, read with ast rather than by regex."""
+    import ast
+    out: dict[str, set[str]] = {}
+    for f in sorted(src.rglob("*.py")):
+        dotted = ".".join(f.relative_to(src).with_suffix("").parts)
+        if dotted.endswith(".__init__"):
+            dotted = dotted[: -len(".__init__")]
+        try:
+            tree = ast.parse(f.read_text(encoding="utf-8"))
+        except SyntaxError:
+            continue
+        got: set[str] = set()
+        pkg = dotted.rsplit(".", 1)[0] if "." in dotted else dotted
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Import):
+                got |= {a.name for a in n.names if a.name.startswith("mac_runtime")}
+            elif isinstance(n, ast.ImportFrom):
+                base = n.module or ""
+                if n.level:                       # a relative import resolves against this package
+                    base = f"{pkg}.{base}" if base else pkg
+                if not base.startswith("mac_runtime"):
+                    continue
+                got.add(base)
+                got |= {f"{base}.{a.name}" for a in n.names}
+        out[dotted] = got
+    return out
+
+
+def _reachable_modules(src: pathlib.Path) -> set[str]:
+    """Every mac_runtime module reachable by import from the entry points, transitively."""
+    graph = _module_imports(src)
+    seen: set[str] = set()
+    stack = [m for m in _ENTRY_MODULES if m in graph]
+    while stack:
+        m = stack.pop()
+        if m in seen:
+            continue
+        seen.add(m)
+        for dep in graph.get(m, ()):              # a `from x import y` edge may name a SYMBOL
+            for cand in (dep, dep.rsplit(".", 1)[0]):
+                if cand in graph and cand not in seen:
+                    stack.append(cand)
+    return seen
+
+
+def _unreachable_canons(src: pathlib.Path, udfs: set[str]) -> dict[str, str]:
+    """{udf -> why} for each declared canon whose implementation nothing on the plan path can call.
+
+    WHY THIS SITS IN *THIS* GATE. Its own docstring records the defect it was built for: a
+    declaration "addressed to a listener that did not exist". Membership in `IMPLEMENTED` proves a
+    function was written, not that anything asks it. MEASURED 2026-10-06: `mac.canon.column_select`
+    is in IMPLEMENTED, its reader `planner/columns.py` parses bindings correctly, and NOTHING imports
+    that module — where its two twins, populations and ratios, are imported by plan.py. Two contoso5
+    rules bound it and decided nothing. That is the same defect at one more remove, and the gate
+    that exists for it passed.
+    """
+    import re as _re
+    reachable = _reachable_modules(src)
+    bad: dict[str, str] = {}
+    for udf in sorted(udfs):
+        bare = udf.rsplit(".", 1)[-1]
+        holders = []
+        for f in sorted(src.rglob("*.py")):
+            rel = f.relative_to(src)
+            if rel.parts[:2] == ("mac_runtime", "canons") or rel.name == "canon.py":
+                continue              # the implementation and the registry are not callers
+            text = f.read_text(encoding="utf-8")
+            #: A LITERAL CALL *OR* A DISPATCH KEY. The first cut matched only `name(` and reported
+            #: additivity_guard and composite_key_guard as inert — both FALSE, and one of them is
+            #: observably firing (a POLICY_DENIED refusal in the captured corpus). contract_guards
+            #: dispatches them BY NAME through `_SQL_GUARDS` / `_SQL_TRANSFORMS` / `CANONS`, so the
+            #: call site is a string, not an identifier. A detector blind to a dispatch table
+            #: reports the estate's most common wiring pattern as dead code — and a gate with false
+            #: positives is worse than none, which this estate measured twice at 23/23 and 1/1.
+            if (_re.search(rf"\b{bare}\s*\(", text)
+                    or f'"{bare}"' in text or f"'{bare}'" in text):
+                holders.append(".".join(rel.with_suffix("").parts))
+        live = [h for h in holders if h in reachable]
+        if holders and not live:
+            bad[udf] = f"called only from {', '.join(holders)}, which nothing on the plan path imports"
+        elif not holders:
+            bad[udf] = "no module outside its own implementation calls it"
+    return bad
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("bundle", nargs="?", default=".")
@@ -110,8 +202,31 @@ def main(argv: list[str] | None = None) -> int:
         f"canon bindings declared: {len(declared)}   implemented: {len(declared) - len(bad)}   "
         f"UNIMPLEMENTED: {len(bad)}"
     )
+    #: AND IS ANYTHING ASKING IT? Membership in IMPLEMENTED means a function was written. This asks
+    #: the next question, which is the one this gate's own origin story is about.
+    inert: dict = {}
+    try:
+        src = _neighbours.runtime_src()
+        if src is not None:
+            inert = _unreachable_canons(src, {u for _f, _p, u in declared if u in IMPLEMENTED})
+    except Exception as exc:                                        # noqa: BLE001
+        print(f"  (reachability not measured: {type(exc).__name__}: {str(exc)[:70]})")
+
+    if inert:
+        #: A WARNING WITH ITS DENOMINATOR, not an error, and the reason is that every one of these
+        #: is PRE-EXISTING: failing here would turn a measurement into a blocked branch on the day it
+        #: was first taken. The ratchet is the number — it may only go down.
+        print(f"\n  INERT: {len(inert)} of {len({u for _f, _p, u in declared})} declared canon(s) "
+              f"implemented and UNREACHABLE — nothing on the plan path can call them:")
+        for udf, why in sorted(inert.items()):
+            print(f"    {udf}  —  {why}")
+        print("  A binding to one of these parses, passes every gate, and decides nothing, which is "
+              "indistinguishable\n  from never having been written — the defect this gate exists for, "
+              "one level deeper.")
+
     if not bad:
-        print("OK — every declared canon is one the runtime implements.")
+        print("OK — every declared canon is one the runtime implements."
+              + (f" {len(inert)} {'is' if len(inert) == 1 else 'are'} unreachable (see above)." if inert else ""))
         return 0
 
     print("\nThese declarations name a verb the runtime does not speak. They parse, they pass")
