@@ -4,16 +4,16 @@
 
 Every key a MAC file may write, one page per level, and one DIRECTORY per level so that any file-tree menu shows the hierarchy. Four roots, one per file shape: [`ontology`](structure/ontology/README.md) — the ontology plane; [`dataset`](structure/dataset/README.md) — a dataset's descriptor, which is the shape BOTH `data/sources/` and `data/datasets/` are written in (they differ by `metadata.external` and by which directory they sit in, not by which keys they may write); [`lookup`](structure/lookup/README.md) — a value register; and [`transform`](structure/transform/README.md) — how a served relation is derived. Walk down from any of them: each page lists the keys legal at that level, what each means, which are required, the legal values of each, and the level beneath it.
 
-Generated from `mac.schema.json` **0.1.18** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in a worked bundle, with that source's own name replaced by `<source>`: this is the grammar, so no page here teaches you about one ontology. Nothing on these pages is authored prose — see `tools/gen_structure_reference.py` for why.
+Generated from `mac.schema.json` **0.1.19-develop** and `mac_vocabulary.yaml`. Examples are cut from 17 real concepts in a worked bundle, with that source's own name replaced by `<source>`: this is the grammar, so no page here teaches you about one ontology. Nothing on these pages is authored prose — see `tools/gen_structure_reference.py` for why.
 
 | | |
 |---|---|
 | levels | 97 |
-| keys | 471 |
-| described in the schema | **342 of 471** (73%) |
+| keys | 472 |
+| described in the schema | **343 of 472** (73%) |
 | **gaps — admitted and unexplained** | **129** |
-| **keys with no stated constellation** | **454** of 471 |
-| vocabularies | 23, 146 terms |
+| **keys with no stated constellation** | **455** of 472 |
+| vocabularies | 23, 147 terms |
 | examples | 99, from 17 concepts |
 
 ## The levels
@@ -71,7 +71,7 @@ Indented by nesting. The label is the key; the page it opens is that key's level
       - [`axis_kinds:`](structure/ontology/concept/semantics/axis_kinds.md) — 1 key
   - [`constraints:`](structure/ontology/constraints.md) — 4 keys
   - [`contract:`](structure/ontology/contract/README.md) — 4 keys
-    - [`rules:`](structure/ontology/contract/rules/README.md) — 14 keys
+    - [`rules:`](structure/ontology/contract/rules/README.md) — 15 keys
       - [`realized_by:`](structure/ontology/contract/rules/realized_by.md) — 8 keys
   - [`governance:`](structure/ontology/governance/README.md) — 4 keys
     - [`change_log:`](structure/ontology/governance/change_log.md) — 5 keys
@@ -116,7 +116,7 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
 - `mac`
   - [`binding_mode`](vocabulary/binding_mode.md) — 2 terms, closed
   - [`calendar_vocabulary`](vocabulary/calendar_vocabulary.md) — 9 terms, closed
-  - [`canon`](vocabulary/canon.md) — 22 terms, open
+  - [`canon`](vocabulary/canon.md) — 23 terms, open
   - [`column_type`](vocabulary/column_type.md) — 5 terms, closed
   - `concept`
     - [`aggregation_effect`](vocabulary/concept/aggregation_effect.md) — 3 terms, closed

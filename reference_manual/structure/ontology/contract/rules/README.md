@@ -10,6 +10,7 @@
 - [`kind`](#kind) — *string* **·** required
 - [`binds`](#binds) — *list of string*
 - [`confidence`](#confidence) — *string*
+- [`decided_in`](#decided-in) — *string*
 - [`enforced_by`](#enforced-by) — *string*
 - [`examples`](#examples) — *list of array*
 - [`never`](#never) — *string*
@@ -50,6 +51,12 @@ Legal values:
 - `C`
 - `P`
 - `R`
+
+### `decided_in`
+
+*string* · optional
+
+v0.1.19: THE DECISION THIS RULE IS THE CONSEQUENCE OF — a ref to the record, in the estate's cross-repo form `<repo>#<path>` or a bundle-relative path. A rule does not originate: somebody ruled, and the rule is how the engine obeys. Until this slot existed that link was carried by `why:` in prose, which is why `why` is the largest remaining prose block in a worked bundle — 3,501 bytes over 19 rules, most of it a sentence of the form "the operator ruled on <date> that …". A pointer carries the date, the person, the alternatives weighed and the measurement, because the RECORD carries them; a sentence carries whichever of those its author remembered, and cannot be asked whether the ruling still stands. NOT `decided_by`: that spelling is already taken in this estate for WHO ruled (mac_pointers.yaml carve-outs write `decided_by: operator`), and one name with two meanings is the defect this schema keeps removing. OPTIONAL, deliberately — requiring it would fail every rule written before it, and a slot that cannot be adopted incrementally is not adopted. Resolved by mac_pointers.yaml#rule_decided_in; nothing is validated here, because a schema cannot read another repository.
 
 ### `enforced_by`
 

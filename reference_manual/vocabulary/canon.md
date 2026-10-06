@@ -2,7 +2,7 @@
 
 # `mac.canon.<term>`
 
-**Open** — terms may be added.  ·  22 terms
+**Open** — terms may be added.  ·  23 terms
 
 The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
@@ -25,6 +25,7 @@ The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 - [`ambiguity_gate`](#ambiguity-gate)
 - [`population_select`](#population-select)
 - [`ratio_select`](#ratio-select)
+- [`path_select`](#path-select)
 - [`column_select`](#column-select)
 - [`alias_resolve`](#alias-resolve)
 - [`relation_alias_resolve`](#relation-alias-resolve)
@@ -240,6 +241,19 @@ Write it as `mac.canon.ratio_select`
 **needs_sqlglot:** `false`
 
 **doc:** WHICH DENOMINATOR A NAMED RATIO DIVIDES BY -- the twin of population_select, which says which ROWS a concept has. Both map a word a reader says to a declared body, and both were prose. `params.ratios` is a name -> {denominator, surfaces} map with an OPTIONAL `default`; the numerator is the rule's own `binds`, as it is for a population. A name is matched EXACTLY over its declared `surfaces`, case/space/underscore folded and nothing more -- no string distance, for the reason population_select records. TWO RATIOS AND NO DEFAULT IS A DECLARATION: a question naming neither must ASK, with both names offered, which is the resolution ladder's third rung. MEASURED on the worked bundle 2026-10-02: Discount's percentage is over GrossRevenue (5.93%) and not NetRevenue (6.30%) on the same money; Margin names TWO -- margin % over NetRevenue (55.91%) and markup % over SalesCost (126.79%), a factor of 2.27 on the same profit. `Intent.denominator` has always carried the choice and the planner has always read it, so a model's guess went straight through and nothing declared which was meant.
+
+
+### `path_select`
+
+Write it as `mac.canon.path_select`
+
+— no definition in the vocabulary —
+
+**serves:** competing_definitions
+
+**needs_sqlglot:** `false`
+
+**doc:** WHICH RELATION AN ANSWER IS REACHED THROUGH -- the fourth member of the family population_select, ratio_select and column_select belong to. Those three map a word a reader says to the ROWS a concept has, the FIGURE a ratio divides by, and the COLUMN that answers; this one maps it to the EDGE the answer travels. `params.paths` is a name -> {via: <edge_id>, surfaces: [...]} map with an OPTIONAL `default`, declared on the concept whose key several relations carry. A name is matched EXACTLY over its declared surfaces, case/space/underscore folded. NO DEFAULT IS A DECLARATION: a question naming no reading ASKS with every reachable one offered. IT NAMES THE LAST HOP, NOT A CHAIN -- the first hop is the measure's own edge to its dimension and is forced, so chains would need an entry per measure per reading (14 on contoso5 against 3 edges into Country) and cannot be enumerated by pattern, because an edge is named for what the relation MEANS -- `net_revenue__by__store` beside `order__placed_at__store`. MEASURED on contoso5 2026-10-06, and this canon exists because of it: `country_code` is carried by dim_customer, dim_store and dim_location, the operator ruled on 2026-09-30 that an unqualified sales question means the STORE's country (confidence C), and ALL SEVEN measures took the customer path -- because both candidate paths are two hops, ontology/graph.py breaks the tie with unweighted BFS over an adjacency built in edges.yaml DECLARATION ORDER, and `net_revenue__by__customer` sits at line 276 against `net_revenue__by__store` at 289. Germany 2025 reads +18.07% through the customer and +49.65% through the store, because the store path excludes the online channel and online is 40% of net revenue. check_plan_replay reported `0 gained` throughout and was right: nothing was lost, the answer was wrong. The ruling had no formal home -- 38 edges carry 0 defaults -- so it survived only as 1105 chars of Country.default_reading, prose telling the model something the planner then overrode. DISCLOSURE IS NOT A PARAMETER: the ruling requires the answer to say which path it took, and a flag could be set false. Consulted in planner/joins.resolve_join BEFORE find_join_path, so the line-order tie-break keeps deciding only what nobody has ruled on. The long form is reference_manual/rules_and_canons/competing_definitions/path_select.md
 
 
 ### `column_select`
