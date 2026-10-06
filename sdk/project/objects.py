@@ -1074,7 +1074,21 @@ def build_objects(data_dir, ontology_concepts_dir, lineage=None, issues=None, ou
                     "id": f"rules/{rid}",
                     "kind": "rule",
                     "plane": "ontology",
-                    "title": r.get("subject") or r.get("id") or rid,
+                    # THE RULE'S OWN NAME, which is what panel 2 lists it under. Operator, 2026-10-07:
+                    # "rules under ontology must have its own name and not concept name xN", then
+                    # "I WANT RULE NAME".
+                    #
+                    # It was `r.get("subject")` first, and on this bundle every rule's `subject:` holds
+                    # the CONCEPT NAME — so the Rules section listed `Brand, Brand, Color, Color, …`,
+                    # seventeen rows naming five concepts and no rule. Falling back to the full dotted
+                    # id was no better: the tree already groups by concept TYPE and concept NAME, so a
+                    # `country.default.` prefix on the leaf repeats both of its own ancestors.
+                    #
+                    # The name is therefore the id's LAST segment, which is the only part of it that
+                    # distinguishes this rule from its siblings. Nothing is lost: `id` carries the
+                    # dotted form for anything that cites it, and the concept is the branch the row
+                    # hangs from.
+                    "title": str(r.get("id") or rid).rsplit(".", 1)[-1] or rid,
                     "relation": None,
                     "parent": cstem,
                     "concept.rule": str(r.get("kind") or "").split(".")[-1],
