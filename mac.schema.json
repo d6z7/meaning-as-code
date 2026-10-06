@@ -740,6 +740,10 @@
                 "type": "string",
                 "description": "v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution rule that computes a business relation's instance set — e.g. the self-relation of a shared_attribute edge. A string anchor, distinct from realized_by (a canon binding). Used by a level:business type:shared_attribute edge in place of realized_by."
               },
+              "resolved_by_construction": {
+                "const": true,
+                "description": "v0.1.19 (additive): THE COLUMN DECLARATION RESOLVES THIS RELATION, so no rule and no canon binding does. A shared_attribute edge relates two concepts because one column's value space is shared rather than because a foreign key joins them, so its instance set — which products carry this brand — is produced by GROUPING that column, not by a join predicate. Where the target concept is an enumeration whose canonical column IS the shared column, that grouping is the register's own membership and the relation holds BY CONSTRUCTION: a rule restating it is a second home that will rot. Introduced because retiring such a rule (brand.resolution.by_grouping_products, 1f42457, 'the column already runs it') left its edge with no legal value for resolved_by and the bundle schema-invalid, with two more retirements blocked behind it. Deliberately NOT a widening of resolved_by's meaning: this form is CHECKABLE — tools/check_edge_definition.py verifies the target is an enumeration, that its canonical column is the shared column, and that a register backs it — where a pointer aimed at a column would only be an author's assertion."
+              },
               "aliases": {
                 "$ref": "#/$defs/relationAliasBlock",
                 "description": "v0.1.12 (additive): the first-class NL trigger vocabulary for a business relation — surfaces resolve to THIS EDGE (by edge_id) via a deterministic token→relation resolver (mac.canon.relation_alias_resolve). Optional; absent ⇒ no relation-alias resolution for this edge."
@@ -835,8 +839,23 @@
                   }
                 },
                 "then": {
-                  "required": [
-                    "resolved_by"
+                  "$comment": "v0.1.19: a SHARED_ATTRIBUTE edge must say WHAT COMPUTES IT, and there are three truthful answers where there was one. The clause required `resolved_by` — a rule — with no alternative, and that was wrong in the one case the estate actually has: the relation is computed by the COLUMN DECLARATION, and the rule that used to be pointed at was retired on 2026-10-05 as redundant precisely because the column already ran it. The edge was then schema-invalid with no legal value to give it, and the same retirement was blocked for color and product_category, both of which are cited the same way. So: a resolution rule, a canon binding, or `resolved_by_construction: true` — which is the checkable one, not merely the convenient one. An absence remains a finding, because 'the column resolves it' and 'nobody has worked this out' must not become one silence; that is the same lesson allOf/5 records for physical edges.",
+                  "anyOf": [
+                    {
+                      "required": [
+                        "resolved_by"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "realized_by"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "resolved_by_construction"
+                      ]
+                    }
                   ]
                 }
               },

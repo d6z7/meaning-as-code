@@ -72,6 +72,16 @@ THE ERROR CLASSES (exit 1)
                           not a join between concepts is a pipeline transform, not an ontology edge.
     ENDPOINT_UNRESOLVED   an endpoint naming a concept no concept file in this bundle declares. The
                           edge then reads as wired and reaches nothing.
+    CONSTRUCTION_UNPROVEN a shared_attribute edge declaring `resolved_by_construction: true` whose
+                          columns do not bear the claim out. v0.1.19 admitted that form as the third
+                          way such an edge may say what computes it — beside a resolution rule and a
+                          canon binding — because the relation's instance set is produced by GROUPING
+                          a shared column, and where the target is an enumeration whose canonical
+                          column IS that column, the register's membership already is the set. It was
+                          preferred over re-aiming `resolved_by` at a column precisely BECAUSE it can
+                          be checked: the target must be an enumeration, its canonical column must be
+                          register-backed, and the source must carry that same column. Unproven, it
+                          is an author's word with a schema's blessing.
     PLANNED_UNNAMED       a planned edge with no `edge_id`.
 
 EXIT CODES. 0 clean · 1 a finding about the bundle · 2 could not run (no edges file, an EMPTY
@@ -105,6 +115,8 @@ EDGE_UNNAMED = "EDGE_UNNAMED"
 EDGE_ID_COLLISION = "EDGE_ID_COLLISION"
 ENDPOINT_SHAPELESS = "ENDPOINT_SHAPELESS"
 ENDPOINT_UNRESOLVED = "ENDPOINT_UNRESOLVED"
+#: A shared_attribute edge claims the COLUMN resolves it, and the column does not bear that out.
+CONSTRUCTION_UNPROVEN = "CONSTRUCTION_UNPROVEN"
 PLANNED_UNNAMED = "PLANNED_UNNAMED"
 
 #: A `federation` edge relates concepts in DIFFERENT sources, so its endpoints are not expected to
@@ -151,7 +163,7 @@ class Finding:
 # edge dict, the same way protosql_render's join judge and check_edge_joins_measured's judge are.
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 def judge(edges: list, planned: list, concepts: set | None,
-          values: tuple, keys: tuple) -> tuple[list, dict]:
+          values: tuple, keys: tuple, facts: dict | None = None) -> tuple[list, dict]:
     """(edges, planned_edges, declared concept names or None, closed set, legal keys) -> findings, counts.
 
     `concepts` is None when the bundle declares no concept file: the resolution class is then NOT
@@ -242,6 +254,44 @@ def judge(edges: list, planned: list, concepts: set | None,
             else:
                 counts["cardinality_closed"] += 1
 
+        # ── the BY-CONSTRUCTION claim, held to the columns that would have to bear it ──────────
+        if e.get("resolved_by_construction"):
+            counts["by_construction"] += 1
+            if facts is None:
+                counts["by_construction_unjudged"] += 1
+            else:
+                ends = e.get("endpoints") if isinstance(e.get("endpoints"), dict) else {}
+                src = str(((ends.get("from") or {}) if isinstance(ends.get("from"), dict) else {}).get("concept") or "")
+                tgt = str(((ends.get("to") or {}) if isinstance(ends.get("to"), dict) else {}).get("concept") or "")
+                tf, sf = facts.get(tgt), facts.get(src)
+                why: list[str] = []
+                if tf is None or sf is None:
+                    why.append(f"{'target' if tf is None else 'source'} concept is not declared in this bundle")
+                else:
+                    if tf["klass"] != "enumeration":
+                        why.append(f"{tgt} is `class: {tf['klass']}`, not an enumeration — only an "
+                                   f"enumeration's membership IS the relation's instance set")
+                    if not tf["canonical"]:
+                        why.append(f"{tgt} declares no column with `identity: canonical`, so there is "
+                                   f"no column the grouping could be over")
+                    shared = [c for c in tf["canonical"] if c in sf["columns"]]
+                    if tf["canonical"] and not shared:
+                        why.append(f"{src} carries none of {tgt}'s canonical column(s) "
+                                   f"{tf['canonical']}, so the two share no attribute to resolve by")
+                    if shared and not [c for c in shared if c in tf["registered"]]:
+                        why.append(f"{tgt}.{shared[0]} is not register-backed, so its membership is "
+                                   f"not declared anywhere and the grouping is unverifiable")
+                if why:
+                    findings.append(Finding(
+                        CONSTRUCTION_UNPROVEN, where,
+                        "declares `resolved_by_construction: true` — the COLUMN resolves this "
+                        "relation, so no rule and no canon does — and the columns do not bear it "
+                        "out: " + "; ".join(why) + ". This form was admitted over a pointer at a "
+                        "column precisely BECAUSE it is checkable; unproven, it is the author's "
+                        "word with a schema's blessing."))
+                else:
+                    counts["by_construction_proven"] += 1
+
     for eid, at in sorted(homes.items()):
         if len(at) > 1:
             findings.append(Finding(
@@ -275,6 +325,38 @@ def _load(p: Path):
         return {}, str(exc)
 
 
+def concept_facts(root: Path) -> dict:
+    """{concept name: {klass, canonical, registered, columns}} — what a BY-CONSTRUCTION claim is held to.
+
+    `resolved_by_construction: true` on a shared_attribute edge asserts that the COLUMN DECLARATION
+    computes the relation, so no rule and no canon binding does. That assertion is checkable and this is
+    what checks it: the target must be an enumeration, its canonical column must be register-backed, and
+    the SOURCE concept must carry that same column — which is what makes the two concepts share an
+    attribute rather than merely mention one. Without all three the claim is an author's word, and the
+    whole reason this form was preferred over re-aiming `resolved_by` at a column is that it need not be.
+    """
+    out: dict[str, dict] = {}
+    for f in P.concept_files(root):
+        d, _err = _load(f)
+        if not isinstance(d, dict):
+            continue
+        c = d.get("concept") or {}
+        name = c.get("name")
+        if not (isinstance(name, str) and name.strip()):
+            continue
+        cols: dict = {}
+        for s in ((d.get("grounding") or {}).get("sources") or []):
+            if isinstance(s, dict):
+                cols.update(s.get("columns") or {})
+        out[name] = {
+            "klass": c.get("class"),
+            "canonical": [k for k, v in cols.items() if isinstance(v, dict) and v.get("identity") == "canonical"],
+            "registered": [k for k, v in cols.items() if isinstance(v, dict) and v.get("register")],
+            "columns": sorted(cols),
+        }
+    return out
+
+
 def concept_names(root: Path) -> set:
     """Declared concept names, through the LAYOUT RESOLVER — flat and foldered bundles alike.
 
@@ -304,7 +386,8 @@ def check(root: Path, schema: dict | None = None):
         return None, None, f, values, keys
     declared = concept_names(root)
     findings, counts = judge(edges, doc.get("planned_edges") or [],
-                             declared if declared else None, values, keys)
+                             declared if declared else None, values, keys,
+                             facts=concept_facts(root))
     counts["concepts_declared"] = len(declared)
     return findings, counts, f, values, keys
 
@@ -370,7 +453,11 @@ def main(argv=None) -> int:
             f"{counts.get('endpoints_resolved', 0)} of {counts.get('endpoints', 0)} endpoint(s) "
             f"resolve to one of {counts.get('concepts_declared', 0)} declared concept(s); "
             f"{counts.get('planned_named', 0)} of {counts.get('planned', 0)} planned edge(s) named "
-            f"(the endpoint rules do not apply to those)")
+            f"(the endpoint rules do not apply to those)"
+            # A claim nobody counts is a claim nobody can see was checked.
+            + (f"; {counts.get('by_construction_proven', 0)} of {counts.get('by_construction', 0)} "
+               f"by-construction claim(s) proven against the columns"
+               if counts.get("by_construction") else ""))
     if findings:
         print(f"FAIL: {NAME} — {len(findings)} finding(s) {by_class} — {tail}")
         return 1
@@ -398,9 +485,20 @@ _CLEAN = {
 _CONCEPTS = {"Alpha", "Beta", "Gamma"}
 
 
-def _j(edges, planned=(), concepts=_CONCEPTS):
+#: What a BY-CONSTRUCTION claim is held to: Beta is an enumeration whose canonical column is
+#: register-backed, and Alpha carries that same column. Flip any one of the three and the claim must
+#: reject — which is the point of having admitted the checkable form instead of a pointer at a column.
+_FACTS = {
+    "Alpha": {"klass": "entity", "canonical": ["alpha_key"], "registered": [],
+              "columns": ["alpha_key", "beta_code"]},
+    "Beta": {"klass": "enumeration", "canonical": ["beta_code"], "registered": ["beta_code"],
+             "columns": ["beta_code"]},
+}
+
+
+def _j(edges, planned=(), concepts=_CONCEPTS, facts=None):
     values, keys = endpoint_contract(_SCHEMA_STUB)
-    return judge(list(edges), list(planned), concepts, values, keys)
+    return judge(list(edges), list(planned), concepts, values, keys, facts=facts)
 
 
 def _mutate(**kw):
@@ -430,8 +528,8 @@ def _self_test() -> int:
         if not ok:
             bad.append(f"{label}: {why}")
 
-    def expect(label, edges, want_class, planned=(), concepts=_CONCEPTS, n=1):
-        f, _c = _j(edges, planned, concepts)
+    def expect(label, edges, want_class, planned=(), concepts=_CONCEPTS, n=1, facts=None):
+        f, _c = _j(edges, planned, concepts, facts=facts)
         got = sorted(Counter(x.cls for x in f).items())
         ok = len(f) == n and all(x.cls == want_class for x in f)
         case(label, ok, f"findings {got} (wanted {n}x {want_class})")
@@ -476,6 +574,29 @@ def _self_test() -> int:
            [_CLEAN, copy.deepcopy(_CLEAN)], EDGE_ID_COLLISION)
     expect("MUTANT an endpoint naming an undeclared concept is ENDPOINT_UNRESOLVED",
            [_mutate(to_concept="Omega")], ENDPOINT_UNRESOLVED)
+    # ── the BY-CONSTRUCTION claim: one negative control and one mutant per way it can be false ────
+    _BC = {"edge_id": "alpha__shares__beta", "level": "business", "type": "shared_attribute",
+           "resolved_by_construction": True,
+           "endpoints": {"from": {"concept": "Alpha", "cardinality": "0..N"},
+                         "to": {"concept": "Beta", "cardinality": "1"}}}
+    f, c = _j([_BC], facts=_FACTS)
+    case("NEGATIVE CONTROL a by-construction claim the columns bear out passes, and is COUNTED",
+         not f and c.get("by_construction_proven") == 1 and c.get("by_construction") == 1,
+         f"{[x.cls for x in f]} {dict(c)}")
+    case("NEGATIVE CONTROL with no concept facts the claim is UNJUDGED, not green",
+         _j([_BC])[1].get("by_construction_unjudged") == 1, _j([_BC])[1])
+    expect("MUTANT a by-construction target that is not an enumeration REJECTS", [_BC],
+           CONSTRUCTION_UNPROVEN,
+           facts={**_FACTS, "Beta": {**_FACTS["Beta"], "klass": "entity"}})
+    expect("MUTANT a by-construction target with no canonical column REJECTS", [_BC],
+           CONSTRUCTION_UNPROVEN,
+           facts={**_FACTS, "Beta": {**_FACTS["Beta"], "canonical": []}})
+    expect("MUTANT a source not carrying the shared column REJECTS", [_BC],
+           CONSTRUCTION_UNPROVEN,
+           facts={**_FACTS, "Alpha": {**_FACTS["Alpha"], "columns": ["alpha_key"]}})
+    expect("MUTANT a shared column no register backs REJECTS", [_BC],
+           CONSTRUCTION_UNPROVEN,
+           facts={**_FACTS, "Beta": {**_FACTS["Beta"], "registered": []}})
     expect("MUTANT an endpoint that is not a mapping at all is ENDPOINT_SHAPELESS",
            [_mutate(endpoints={"from": {"concept": "Alpha", "cardinality": "0..N"},
                                "to": "Beta"})], ENDPOINT_SHAPELESS)
@@ -588,15 +709,15 @@ def _self_test() -> int:
     mut = len([c for c in cases if c.startswith("MUTANT")])
     neg = len([c for c in cases if "NEGATIVE CONTROL" in c])
     e2e = len([c for c in cases if c.startswith("END TO END")])
-    print(f"PASS: {NAME} self-test — {total}/{total} case(s): {mut} mutant(s) covering all 7 reject "
+    print(f"PASS: {NAME} self-test — {total}/{total} case(s): {mut} mutant(s) covering all 8 reject "
           f"class(es) (no cardinality, an empty cardinality, `many`, `*`, the synonyms `1..1` and "
           f"`N`, a borrowed-plane message, no edge_id, a blank edge_id, two edges sharing an id, an "
           f"undeclared concept, an endpoint that is not a mapping, an endpoint keyed by relation, an "
           f"endpoint with no concept, three ends, a planned edge with no id, a bundle with no "
-          f"concept files, two classes on one endpoint, a grammar with no closed enum), {neg} "
+          f"concept files, two classes on one endpoint, a grammar with no closed enum, and four ways a\n          BY-CONSTRUCTION claim can be false: a target that is not an enumeration, no canonical column, a\n          source not carrying the shared column, a shared column no register backs), {neg} "
           f"negative control(s) (a fully-specified edge, its counts, the set read from the grammar, "
           f"every value in the set, a planned edge with no endpoints, a counted federation "
-          f"exemption) and {e2e} end-to-end case(s) (PASS with every denominator, a finding, zero "
+          f"exemption, a proven by-construction claim with its count, and one left UNJUDGED rather than\n          green when no concept facts are available) and {e2e} end-to-end case(s) (PASS with every denominator, a finding, zero "
           f"edges, no edges file, a non-directory root, --json on every state)")
     return 0
 
