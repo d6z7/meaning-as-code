@@ -265,22 +265,23 @@ exist"*, which is the defect the canon registry was written for.
 
 <!-- BEGIN generated: canon tree (tools/gen_canon_index.py) -->
 
-**22 canons across 12 patterns.** The middle layer is not a filing choice: it is each canon's own `serves`, the data pattern it exists for, which also names its page under [`patterns/`](../patterns/). A canon changes group by changing that declaration.
+**23 canons across 12 patterns.** The middle layer is not a filing choice: it is each canon's own `serves`, the data pattern it exists for, which also names its page under [`patterns/`](../patterns/). A canon changes group by changing that declaration.
 
 | | defined | described | implemented |
 |---|---|---|---|
-| **count** | 22 | 22 | 19 |
+| **count** | 23 | 23 | 20 |
 | **read from** | `mac_vocabulary.yaml#canon.terms` | `rules_and_canons/**/*.md` | `mac_runtime.canon.IMPLEMENTED` |
 
 `tools/check_canon_documented.py` holds the three together; this table is read from the same places it reads.
 
-### [`competing_definitions`](../patterns/semantic_constellations/competing_definitions.md) &nbsp;·&nbsp; 6
+### [`competing_definitions`](../patterns/semantic_constellations/competing_definitions.md) &nbsp;·&nbsp; 7
 
 | canon | long form | definition | runtime | sqlglot |
 |---|---|---|---|---|
 | `alias_resolve` | [page](competing_definitions/alias_resolve.md) | [below](#maccanonaliasresolve) | **acts** | no |
 | `ambiguity_gate` | [page](competing_definitions/ambiguity_gate.md) | [below](#maccanonambiguitygate) | **acts** | no |
 | `column_select` | [page](competing_definitions/column_select.md) | [below](#maccanoncolumnselect) | **acts** | no |
+| `path_select` | [page](competing_definitions/path_select.md) | [below](#maccanonpathselect) | **acts** | no |
 | `population_select` | [page](competing_definitions/population_select.md) | [below](#maccanonpopulationselect) | **acts** | no |
 | `ratio_select` | [page](competing_definitions/ratio_select.md) | [below](#maccanonratioselect) | **acts** | no |
 | `relation_alias_resolve` | [page](competing_definitions/relation_alias_resolve.md) | [below](#maccanonrelationaliasresolve) | declared only | no |
