@@ -1,174 +1,154 @@
 ---
-title: The column declaration — what a column says about itself, and where each fact lives
+title: The column declaration — everything a column says, and who reads each answer
 status: >-
-  PROPOSED (2026-10-07) — NOTHING ON THIS PAGE IS ENFORCED. It is the classification put to the operator
-  for review: one key where there are two vocabularies today (`role` and `query_use`), and three
-  retirements (`grounding.grain`, `concept.semantics`, `rulings.never_axis`). The `axis_kind` → `axis`
-  rename IS done (463 occurrences, 104 files); everything else below is a proposal. The pages this one
-  summarises — column_roles.md, column_rulings.md, column_specification.md — still describe what the
-  schema admits TODAY, and they are the authority until this is ruled on.
+  PROPOSED (2026-10-07) — this page describes the column model as DESIGNED. The `axis` key is enforced;
+  `roles` as a map, `identity: composite` and the removal of `grain`/`semantics`/`never_axis` are put to
+  the operator and are not yet admitted by mac.schema.json. For what the schema admits TODAY see
+  column_specification.md, which stays the authority until this is ruled on.
 audience: ontology authors, importer developers, framework developers
 companions:
-  - column_roles.md           # what `role` admits today — the scalar this proposal replaces
-  - column_rulings.md         # the rulings block, which survives this proposal almost intact
-  - column_specification.md   # the long-form spec: every flag, and the seven sections still refused
-  - measures.md               # the fold law this classification feeds
+  - column_specification.md   # the long form: every flag, with its enforcement state
+  - column_roles.md           # the role terms, generated from the vocabulary
+  - column_rulings.md         # the rulings block, in detail
+  - measures.md               # the measures this feeds
   - specification/FOLD_GRAMMAR.md
-  - ../mac_vocabulary.yaml    # the authoritative terms
+  - ../mac_vocabulary.yaml
 ---
 
 # The column declaration
 
-A concept says what it means by declaring its columns. This page is the map of **which fact goes in
-which key**, and it exists because the same fact is currently declarable in two places and three facts
-are declared twice.
-
-> **Read this first if you are deciding where to put something.** The detail of each key is in
-> [column_specification.md](column_specification.md); the terms are generated into
-> [column_roles.md](column_roles.md) and [column_rulings.md](column_rulings.md) from
-> `mac_vocabulary.yaml`. This page is the shape, not the detail.
-
-## 1. One question, one key
-
-A column answers exactly one question about itself:
+A concept means what its columns say. Each column answers one question —
 
 > **What may a question do with me, and on what terms?**
 
-Everything else a column carries is either a *parameter of one of those uses* or a *relationship to
-another column*. The proposal is that the answer lives in one key, `roles`, as a **map from each role
-to its own qualifier**:
+— and every key below is either one of those uses, a parameter of one, or a relation to another column.
 
 ```yaml
 grounding:
   sources:
     - relation: v_contoso5_sales_line
       columns:
-
-        order_key:
-          roles:
-            identity: composite
-
-        customer_key:
-          roles:
-            identity: reference
-            axis: categorical
-
-        order_date:
-          roles:
-            axis: time
-            period_binding: true
-
-        quantity:
-          roles:
-            aggregate: {type: mac.concept.column.measure_type.flow, unit: units}
-
-        valid_from:
-          roles: {}
+        order_key:     {roles: {identity: composite}}
+        customer_key:  {roles: {identity: reference, axis: categorical}}
+        order_date:    {roles: {axis: time, period_binding: true}}
+        quantity:      {roles: {aggregate: {type: …measure_type.flow, unit: units}}}
+        valid_from:    {roles: {}}
 ```
 
-### Why a map and not a list
+## The column, top level
 
-A list needs a second key to carry each role's parameter, and then the column says the same word
-twice — `roles: [identity]` beside `identity: composite`. A map carries the parameter *as the value*,
-which has three consequences worth stating:
+| key | card | value | required | says | read by |
+|---|---|---|---|---|---|
+| `roles` | **map** | role → its qualifier (next table) | **yes** — `{}` is legal and means *offered to no question* | what a question may do with this column | the planner, for every step it takes |
+| `counts` | bool | `true` | no | **a count of this concept counts THIS column**, not the canonical one | the count route; disclosed in the answer (*"counted by location_code"*) |
+| `register` | string | a lookup path | no | where this column's values come from | `resolver/registers`, `resolver/register_match` — name → code resolution |
+| `rulings` | map | see below | no | how this column relates to **another column** | the planner and the refusal path |
 
-* **Nothing is written twice.** The role and its terms are one statement.
-* **"If you claim a role, state its parameter" is structural, not a rule.** You cannot write `axis`
-  without a kind, because the kind *is* the value. The requirement needs no gate.
-* **`roles: {}` is a positive statement**, and it is exactly the definition `role: housekeeping`
-  carries today — *"it is not offered to a question"*. An absent `roles:` is a different thing: a
-  column nobody has classified, which is a finding.
+`roles: {}` is a **positive statement** — the column exists, is typed, is loaded, and no question is offered it. A column with **no** `roles` key is unclassified, which is a finding rather than a state.
 
-## 2. The five roles
+## `roles` — the five uses, each with its own terms
 
-| role | its qualifier | means |
-|---|---|---|
-| `identity` | `canonical` · `composite` · `reference` | the row is identified by me — alone, jointly, or elsewhere |
-| `axis` | `time` · `categorical` | a question may group or filter by me; the term is the fold law's lookup key |
-| `aggregate` | `{type, unit, canonical}` | a question may fold me; `type` × `axis` decides how |
-| `period_binding` | `true` | I am **the** reporting date when the relation carries several |
-| `extremum` | `[min]` · `[max]` · `[min, max]` | my earliest or latest value may be asked for — **not** a fold |
+| role | qualifier card | terms | says | read by |
+|---|---|---|---|---|
+| `identity` | scalar | `canonical` · `composite` · `reference` | the row is identified by me — alone, jointly, or elsewhere | `COUNT(DISTINCT …)`; join resolution; `composite_key_guard` |
+| `axis` | scalar | `time` · `categorical` | a question may **group or filter** by me | the fold law; `additivity_guard` |
+| `aggregate` | map | `{type, unit, canonical}` | a question may **fold** me | the fold law; unit algebra; the measure route |
+| `period_binding` | `true` | — | I am **the** reporting date when the relation carries several | period binding — *"sales in March"* cannot pick the wrong date |
+| `extremum` | list | `[min]` · `[max]` · `[min, max]` | my earliest or latest value may be **asked for** — not folded | the extremum route — *"when did we first sell in Spain"* |
 
 ### `identity` — three ways to identify
 
-| | |
-|---|---|
-| `canonical` | this column **alone** identifies an instance. What `COUNT(DISTINCT …)` counts. At most one per concept. |
-| `composite` | this column **with its siblings** identifies an instance. Declared on every column of the tuple; the set of columns carrying it *is* the key. |
-| `reference` | this column identifies an instance **elsewhere** — the row names a row in another concept. |
-
-`composite` replaces the term `part`. `part` named a fragment and left the reader to find out what it
-was part of, where `canonical` and `reference` both say what the column *does*; and `composite` is the
-word the canon that polices it already uses — `mac.canon.composite_key_guard`, whose subject is a
-parent-scoped code used without its scope columns.
-
-### `extremum` is new capability, not a rename
-
-Nothing in the schema today lets a column say *"my earliest value may be asked for"*. That is what
-*"when did we first sell in Spain"* needs, and it is not a fold: `MIN(order_date)` over a flow measure
-is legitimate where `SUM(order_date)` is nonsense. It arrives with this classification rather than
-being added by it.
-
-## 3. What is NOT a role
-
-Three keys stay beside `roles`, because they answer different questions:
-
-| key | question |
-|---|---|
-| `counts` | what does a **count of this concept** count, when it is not the canonical column? |
-| `register` | where do this column's values come from? |
-| `rulings` | how does this column relate to **another column**? |
-
-`counts` is the key-is-not-identity case, and contoso5 has exactly one: `store.store_key` is
-`identity: canonical` — one row per trading period — while `store.location_code` carries
-`counts: true`, because a count of *stores* is 67 and a count of *rows* is 74.
-
-`rulings` keeps `label_of`, `register` (which *name* of the thing — `common`/`legal`/`long`/`short`/
-`code`, not to be confused with the column-level `register:`, which is a *path*), `finer_than`,
-`scoped_by` and `sort`.
-
-## 4. What this replaces, and the measurement for each
-
-| retiring | why | replaced by |
+| term | holds when | consequence |
 |---|---|---|
-| `role` (scalar) | one slot for five orthogonal facts. **21 of 112** contoso5 columns are declared `role: key` while carrying an axis kind — a join key you group by — which the scalar cannot say. And the vocabulary contradicts itself about them: `key` is *"never aggregated"*, `dimension` is *"legitimate in GROUP BY"*. | `roles`, a map |
-| `query_use` | its own description is *"the machine-readable half of `concept.column.role`"* — one fact, two vocabularies. Declared, closed, 5 terms, and **0 occurrences in `mac.schema.json`**: no column may declare it. | its terms **become** `roles`'s terms |
-| `grounding.grain` | prose restating the identity columns, **17 of 17**. And it is *false* on one: it says *"one row per customer version"* where `dim_customer` holds 104,990 rows and 104,990 distinct `customer_key`. Nothing could tell, because prose has no reader. | `identity: canonical` / `composite` |
-| `concept.semantics` | one blanket `measure_type` per concept, where **3 of 7** measure concepts carry two measure columns of **different** types — `net_revenue` has `net_amount` (flow) and `net_price` (intensive). The concept-level form cannot express it. The schema's own comment has said since v0.1.15 that it *"is no longer required here"*. | per-column `aggregate: {type, unit}` |
-| `rulings.never_axis` | it encodes a **policy** by making a claim about the **data**. `customer_name` has 99,200 distinct values over 104,990 rows: it *is* a categorical axis, and it is forbidden for privacy. Declaring it "not an axis" would be false — the same shape as calling the `--` sentinel an exclusion rather than a population. | `roles` omits `axis`; the reason and its `evidence` move to a rule with `decided_in` |
-| `measure.additivity` | derived from `type` × `axis` by the law in `mac_vocabulary.yaml#concept.column.measure_type`. **0 uses** in contoso5. A concept writing it states the same fact twice and the two can drift. | the fold law |
+| `canonical` | this column **alone** identifies an instance | it is what `COUNT(DISTINCT …)` counts; at most one per concept |
+| `composite` | this column **with its siblings** identifies an instance | the set of columns carrying it **is** the key; none of them identifies anything alone, and using one as if it did returns a set where a row was expected |
+| `reference` | this column identifies an instance **in another concept** | the row names a row over there; whether every value is present there is a measurement, not a declaration |
 
-## 5. The case that forced the design
+### `aggregate` — the qualifier of a foldable column
 
-Two concepts, declared identically today, meaning opposite things:
+| sub-key | card | terms | says |
+|---|---|---|---|
+| `type` | scalar | `flow` · `stock` · `intensive` · `precomputed` · `target` | what kind of quantity this is — the row of the fold law |
+| `unit` | string | free (`USD`, `units`, `m2`, `to-currency per from-currency`) | what the number is in; two different units may not be combined |
+| `canonical` | bool | `true` | **which** aggregate column is *the* one, when a concept carries several |
+
+## The fold law — `type` × `axis` → what folding does
+
+This is why `axis` carries a term and not a boolean. The law is stated over **kinds**, never over column names, which is what makes it universal.
+
+| `aggregate.type` | across a `time` axis | across a `categorical` axis |
+|---|---|---|
+| `flow` | **additive** | **additive** |
+| `stock` | `none` — does not accumulate | **additive** |
+| `intensive` | `average` | `average` |
+| `precomputed` | `none` | `none` |
+| `target` | `none` | `none` |
+
+A fold the law does not permit is refused, naming the axis it crossed. A column with no `axis` role is never consulted: there is no axis to cross.
+
+## `rulings` — what a person decided about a column
+
+A ruling is a judgement measurement cannot establish. All optional; a column with none behaves as its `roles` alone dictate.
+
+| ruling | value | says | read by |
+|---|---|---|---|
+| `label_of` | a column | I am **another name for that column's thing**, not another thing — group on it, display me | `planner/sql` |
+| `register` | `common` · `legal` · `long` · `short` · `code` | **which** of that thing's names I am | the resolver, choosing a display name |
+| `finer_than` | a column | I distinguish **more members** than that column and roll up into it; both are legitimate axes and an answer must **disclose which level it used** | `planner/sql` |
+| `scoped_by` | a column | my values are unique **only within** that column, so I may not be grouped or filtered alone — the scope must travel with me | synthesises a `composite_key_guard` binding |
+| `sort` | `asc` · `desc` · `none` | the order my values are presented in when the question states none | the assembler |
+
+## Worked: the same shape meaning two different things
+
+The two cases that decide why `axis` is declared per column rather than derived from identity.
 
 | | `units_sold` | `exchange_rate` |
 |---|---|---|
-| grain | one row per `(order_key, line_number)` | one row per `(date_day, from_currency, to_currency)` |
-| those columns | `role: key`, `identity: part` | `role: key`, `identity: part` |
-| are they axes? | **no** — nobody asks "revenue by line number" | **yes** — *"the USD→EUR rate on 2025-01-03"* names the row **by** its axes |
-| how you can tell today | it carries no axis kind | it carries one |
+| the key | `order_key` + `line_number` | `date_day` + `from_currency` + `to_currency` |
+| each carries | `identity: composite` | `identity: composite` |
+| **and also** | *nothing* | `axis: time` / `axis: categorical` |
+| so a question may | join and count on them | join, count, **and group** by them |
+| because | a line number is a position in a basket; *"revenue by line number"* asks nothing | *"the USD→EUR rate on 2025-01-03"* names the row **by** its axes |
 
-The declarations are byte-identical apart from that. So the presence of an axis term is doing the
-whole work, and it is the only place the distinction is stated — which is why `axis` is not redundant
-with `identity`, and why the map form makes the rule enforceable instead of inferred.
+Both are the grain. Only one is also an axis, and the only thing that says so is the `axis` role — which is why it is a declaration and not a derivation.
 
-## 6. What is enforced today
+## Where identity and the key part company
 
-| | |
-|---|---|
-| **done** | `axis_kind` → `axis` (463 occurrences over 104 files, three repositories); `values` and `semantics` no longer `required` by `mac.schema.json` |
-| **proposed, not enforced** | everything else on this page |
-| **the bill** | `roles` as a map is a scalar→map change on a key read at **96 comparison sites over 78 files**. The plural rename is deliberate: a reader still looking for `role` fails to find it rather than silently reading a map as a string. |
+A concept's key identifies a **row**. What a **count** counts is sometimes a different column.
 
-## 7. Open questions this page does not settle
+| | `store.store_key` | `store.location_code` |
+|---|---|---|
+| roles | `identity: canonical` | `identity: reference` |
+| `counts` | — | `true` |
+| rows | 74 — one per trading period | — |
+| a count of *stores* | would say 74, wrongly | says **67** |
 
-1. **`label` as a sixth role.** `customer_name` is forbidden as an axis but still *displayable* when
-   one customer is looked up by key. `roles: {}` forbids that too. Either `label` becomes a role, or
-   display is not a query use and belongs elsewhere.
-2. **`identity` is both a role name and a key name** in the current schema. Under this proposal the
-   key disappears into the role, so the collision goes with it — but any transitional state carries
-   both.
-3. **The guard `never_axis` becomes.** Moving the privacy ruling to a rule needs a guard that refuses
-   a grouping and cites the measurement. It does not exist yet; it is one of the four guards already
-   owed by the `never`-clause classification in [rules_and_canons/rule_engine.md](rules_and_canons/rule_engine.md).
+`counts` is how a concept says *"a count of me is not a count of my rows"*, and the answer discloses which column it counted.
+
+## The complete surface, at a glance
+
+| | card | required | terms |
+|---|---|---|---|
+| `roles` | map | **yes** | `identity` · `axis` · `aggregate` · `period_binding` · `extremum` |
+| `roles.identity` | scalar | iff claimed | `canonical` · `composite` · `reference` |
+| `roles.axis` | scalar | iff claimed | `time` · `categorical` |
+| `roles.aggregate` | map | iff claimed | `{type, unit, canonical}` |
+| `roles.aggregate.type` | scalar | **yes**, within `aggregate` | `flow` · `stock` · `intensive` · `precomputed` · `target` |
+| `roles.aggregate.unit` | string | **yes**, within `aggregate` | free |
+| `roles.aggregate.canonical` | bool | no | `true` |
+| `roles.period_binding` | bool | iff claimed | `true` |
+| `roles.extremum` | list | iff claimed | `min` · `max` |
+| `counts` | bool | no | `true` |
+| `register` | string | no | a lookup path |
+| `rulings.label_of` | string | no | a column name |
+| `rulings.register` | scalar | no | `common` · `legal` · `long` · `short` · `code` |
+| `rulings.finer_than` | string | no | a column name |
+| `rulings.scoped_by` | string | no | a column name |
+| `rulings.sort` | scalar | no | `asc` · `desc` · `none` |
+
+## Rules this model holds
+
+1. **One fact, one key.** No column states the same thing twice, and no key restates what another declares.
+2. **Claim a role, state its terms.** The qualifier *is* the value, so a role cannot be claimed without it — the requirement is structural, not a gate.
+3. **A declaration describes the data; a prohibition is a rule.** A column that *is* an axis says so even when policy forbids grouping by it; the prohibition, its reason and its evidence live in a rule that refuses and cites the measurement. Declaring a real axis "not an axis" to express a policy would make the ontology lie about the warehouse.
+4. **Absence is never load-bearing except where it is declared to be.** `roles: {}` means *offered to nothing*; a missing `roles` means *unclassified*. The two are different findings.

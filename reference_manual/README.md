@@ -69,7 +69,7 @@ page that calls itself a prototype is counted as a prototype:
 | [`FINDINGS.md`](FINDINGS.md) | Findings — framework-enhancement candidates (for the maintainer's decis… | living | hand-written |
 | [`STRATEGY.md`](STRATEGY.md) | The strategy — RULED 2026-09-29 | — | `gen_strategy` **(no `check_*.py`)** |
 | [`canon_library.md`](canon_library.md) | Moved — canon_library.md | redirect | hand-written |
-| [`column_declaration.md`](column_declaration.md) | The column declaration — what a column says about itself, and where eac… | PROPOSED (2026-10-07) — NOTHING ON THIS PAGE IS ENFORCED. It is the classification put to the operator… | hand-written |
+| [`column_declaration.md`](column_declaration.md) | The column declaration — everything a column says, and who reads each a… | PROPOSED (2026-10-07) — this page describes the column model as DESIGNED. The `axis` key is enforced; `… | hand-written |
 | [`column_map.generated.md`](column_map.generated.md) | The column map — everything about one column, on the column | — | `gen_slot_reference` |
 | [`column_roles.md`](column_roles.md) | Column Roles — what a column IS, and where a query may use it | ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed… | `gen_vocabulary_terms` |
 | [`column_rulings.md`](column_rulings.md) | Column rulings — reference | PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.ru… | `gen_vocabulary_terms` |
