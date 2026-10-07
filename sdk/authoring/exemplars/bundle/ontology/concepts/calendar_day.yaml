@@ -24,12 +24,10 @@ concept:
 grounding:
   sources:
     - relation: dim_date
-      key:
-        - date_day
+      key: date_day
       columns:
         date_day:
-          roles:
-            identity: canonical
+          roles: {}
         date_key:
           roles: {}
         year:

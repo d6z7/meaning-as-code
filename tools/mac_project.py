@@ -214,27 +214,44 @@ def column_identity(spec) -> str | None:
     return "composite" if term == "part" else term
 
 
-def canonical_key(doc: dict) -> str | None:
-    """A concept's canonical key column, read from its ONE home — the column that declares it.
+def source_key(doc: dict) -> list:
+    """`grounding.sources[0].key` — WHAT MAKES ONE ROW UNIQUE, in the order the author wrote.
 
-    CONFORMANCE §2.1 retired `concept.identity.canonical_key`: "the key is a COLUMN fact, so declaring it
-    here AND under concept.identity gives it two homes that can disagree." Retiring the second home broke
-    five readers and NOT ONE of them failed loudly. Measured on contoso4 2026-09-28: zero concepts carry
-    `canonical_key` while sixteen carry `identity: canonical` on a column, and `check_answerability`
-    reported 11 of 20 concepts unable to supply their `select` step while `mac_to_graph` reported nodes
-    with no key at all. The declarations were complete; the readers were looking at the retired address.
-
-    THE FALLBACK IS GONE, 2026-10-05. It read `concept.identity.canonical_key` so an unmigrated bundle
-    kept working; the block itself has now been removed from the schema (operator ruling: *"declare on
-    concept level only what belongs to the concept level"*), so there is nothing left to fall back to
-    and a branch reading a field no file may carry would only hide a real miss.
+    THE ONE HOME since 2026-10-07, operator ruling: *"lets list columns which make indentiy
+    explicitly ... how about we name it key and put it below relation"*. It was derived from the
+    columns carrying `identity: canonical`/`composite`, which could not state an ORDER — and the
+    order reaches the SQL, so swapping two column blocks silently changed the key. A bare string is
+    a one-column key.
     """
+    for src in ((doc.get("grounding") or {}).get("sources") or [])[:1]:
+        if isinstance(src, dict) and src.get("key"):
+            k = src["key"]
+            return [str(x) for x in (k if isinstance(k, list) else [k])]
+    return []
+
+
+def canonical_key(doc: dict) -> str | None:
+    """THE single column that identifies an instance, or None — a ONE-COLUMN `key`.
+
+    "Exactly one column identifies a row" is now "the key list holds one name", which is why this
+    reads the list rather than scanning columns for a flag. CONFORMANCE §2.1 retired
+    `concept.identity.canonical_key` in 2026-09; the column flag that replaced it was retired in
+    turn on 2026-10-07, for being unable to express the key's order. Both retirements left readers
+    pointing at a dead address and NOT ONE failed loudly — measured on contoso4 the first time
+    (11 of 20 concepts reported unable to supply their `select` step) — which is why this is the
+    only reader and every gate comes here.
+
+    THE COLUMN SCAN REMAINS as a fallback, for a bundle that has not moved: `identity: canonical`
+    on a column still answers, and `part`/`composite` still answer `key_parts`.
+    """
+    key = source_key(doc)
+    if len(key) == 1:
+        return key[0]
+    if key:
+        return None
     for src in ((doc.get("grounding") or {}).get("sources") or []):
         if not isinstance(src, dict):
             continue
-        # `columns:` HAS TWO PERMITTED SHAPES — a bare LIST of names, or a MAP of name -> spec. Only the
-        # map can carry `identity`, and the list form is what the framework's own fixtures use, so a
-        # reader that assumes the map crashes on a conformant bundle instead of reporting on it.
         cols = src.get("columns")
         if not isinstance(cols, dict):
             continue
@@ -245,14 +262,17 @@ def canonical_key(doc: dict) -> str | None:
 
 
 def key_parts(doc: dict) -> list:
-    """The columns of a COMPOSITE identity — every column declaring `identity: composite`.
+    """The columns of a COMPOSITE identity — a `key` of two or more, in the authored order.
 
-    A composite key CANNOT be written as `canonical_key` at all — that field is one string and a
-    composite key is several columns — which is why `store.yaml` says so in prose rather than declaring
-    it. Within a shared relation a complete composite key discriminates the concept exactly as a single
-    canonical column does, so a reader asking "does this concept identify its own rows" must accept both.
-    Three contoso4 concepts (ExchangeRate, OrderLine, SalesAmount) identify only this way.
+    A composite key cannot be written as one string, which is why `canonical_key` returns None for
+    one and a reader asking "does this concept identify its own rows" must accept both. Three
+    contoso4 concepts (ExchangeRate, OrderLine, SalesAmount) identify only this way.
     """
+    key = source_key(doc)
+    if len(key) > 1:
+        return key
+    if key:
+        return []
     for src in ((doc.get("grounding") or {}).get("sources") or []):
         if not isinstance(src, dict):
             continue
@@ -265,7 +285,7 @@ def key_parts(doc: dict) -> list:
     return []
 
 
-def column_role(spec) -> str:
+def column_role(spec, key: list | tuple = ()) -> str:
     """The five-name scalar a column no longer authors, DERIVED from its `roles` map.
 
     ONE HOME FOR A ONE-LINE LAW, which is the whole point. The authoritative derivation is
@@ -292,9 +312,15 @@ def column_role(spec) -> str:
         return "period"
     identity = column_identity(spec)
     axis = roles.get("axis") or (spec or {}).get("axis") if isinstance(spec, dict) else None
-    if identity == "canonical" and axis:
+    # THE KEY IS AN ARGUMENT because it is on the SOURCE (2026-10-07), and a key column carries no
+    # identity role of its own. A ONE-COLUMN key whose column is also an axis derives `dimension`:
+    # an enumeration's key column IS the member you group by (brand.brand, color.color,
+    # category_name), and those three are exactly the 3 of 112 this branch exists for.
+    name = str((spec or {}).get("name") or "") if isinstance(spec, dict) else ""
+    in_key = bool(name) and name in [str(k) for k in (key or ())]
+    if in_key and len(key) == 1 and axis:
         return "dimension"
-    if identity:
+    if in_key or identity:
         return "key"
     if axis:
         return "dimension"

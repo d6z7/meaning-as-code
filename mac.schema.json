@@ -3814,7 +3814,8 @@
           "items": {
             "type": "object",
             "required": [
-              "relation"
+              "relation",
+              "key"
             ],
             "properties": {
               "relation": {
@@ -3826,7 +3827,11 @@
                   "string",
                   "array"
                 ],
-                "description": "primary / join key column(s)"
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 1,
+                "description": "WHAT MAKES ONE ROW OF THIS CONCEPT UNIQUE — the column, or the ordered list of columns. THE ORDER IS LOAD-BEARING: it becomes `cell_key` and reaches the SQL, which is why it is stated here rather than derived. It was derived until 2026-10-07, from the columns carrying `identity: canonical`/`composite`, and the order came from the order the column blocks happened to appear in — so swapping two YAML blocks, an edit no gate can see and any formatter may make, silently changed the key (measured: UnitsSold went from (order_key, line_number) to (line_number, order_key)). A single-column key may be written as a bare string. The columns do NOT repeat it: one home, so the two cannot disagree."
               },
               "columns": {
                 "oneOf": [
@@ -3857,11 +3862,9 @@
                             "identity": {
                               "type": "string",
                               "enum": [
-                                "canonical",
-                                "composite",
                                 "reference"
                               ],
-                              "description": "WHICH PART THIS COLUMN PLAYS IN IDENTIFYING A ROW. `canonical` — this column ALONE identifies an instance, is what COUNT(DISTINCT …) counts, and at most one column per concept carries it. `composite` — this column WITH its siblings identifies one, so the set carrying it IS the key, in declaration order, and using one of them as if it identified anything returns a set where a row was expected. `reference` — it identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain. The key is a COLUMN fact and this is its one home: `cell_key` and `concept.identity.canonical_key` are both derived from it.",
+                              "description": "THIS COLUMN IDENTIFIES A ROW IN ANOTHER CONCEPT — a foreign key, and the only identity statement that is a COLUMN fact. `canonical` and `composite` retired here on 2026-10-07: they answered a different question — what makes a row of THIS concept unique — which is one fact about the source, not a property of each column, and which needs an ORDER no per-column flag can express. That fact is `sources[].key`. Whether every value here is present over there is a measurement, never a declaration.",
                               "constellation": "SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's."
                             },
                             "axis": {
@@ -3918,7 +3921,7 @@
                         },
                         "counts": {
                           "type": "boolean",
-                          "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.",
+                          "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `sources[].key`; this is what a count DISTINCTs. A SEPARATE flag rather than an `identity` term because the column that counts is routinely also the one that references another concept.",
                           "constellation": "THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself."
                         },
                         "register": {
@@ -4011,7 +4014,7 @@
         },
         "key_column": {
           "type": "string",
-          "description": "THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level. Prefer the column fact — `identity: canonical` in the column map — and use this only where there is no column map: declaring it in both places gives one identity two homes that can disagree. The planner reads it alongside `code_column` and `grounds_column` to know which of the relation's columns this concept may be pinned on."
+          "description": "THE LEGACY single-column key. `sources[].key` is the declaration — one list, on the source, in the order that reaches the SQL — and this slot is derived from it when the key names one column. Prefer `key:`; a bundle carrying only this one still loads."
         },
         "code_column": {
           "type": "string",

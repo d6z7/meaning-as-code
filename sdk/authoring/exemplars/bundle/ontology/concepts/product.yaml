@@ -33,12 +33,10 @@ concept:
 grounding:
   sources:
     - relation: dim_product
-      key:
-        - product_key
+      key: product_key
       columns:
         product_key:
-          roles:
-            identity: canonical
+          roles: {}
         product_code:
           roles:
             axis: mac.concept.axis.categorical

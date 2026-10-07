@@ -59,7 +59,9 @@ def nodes(root):
         # Store distinction exists to prevent. The canonical column is read from its single home
         # (CONFORMANCE §2.1) with `identity.canonical_key` still honoured as a migration fallback.
         key = g.get("key_column") or P.canonical_key(d) or pk
-        out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "props": cols, "class": c["class"],
+        # CARRIED SO THE KEYLESS CHECK CAN SEE IT: a composite key has no single node property.
+        _parts = P.key_parts(d)
+        out[c["name"]] = {"label": c["name"], "table": tbl, "key": key, "key_parts": _parts, "props": cols, "class": c["class"],
                           "concept.identity": ident.get("kind")}
     return out
 
@@ -97,12 +99,16 @@ def main():
     # was RETIRED from mac_vocabulary.yaml#concept.identity on 2026-09-28 — 0 of 62 concepts used it —
     # and the schema enum no longer admits it, so a concept spelling it fails validate_schema before it
     # reaches this check.
-    KEYLESS_KINDS = {"composite", "sme_pending"}
+    # KEYLESS BY DESIGN IS A KEY OF TWO OR MORE. This read `concept.identity.kind` against
+    # {"composite", "sme_pending"} — a block retired from the schema on 2026-10-05, and a key this
+    # dict never carried, so the exemption had been dead rather than permissive. A graph node needs
+    # ONE key property; a concept keyed on several columns has no single one, which is a fact about
+    # the projection and not a defect in the concept.
     problems = []
     for n in N.values():
-        if not n["key"] and n.get("concept.identity") not in KEYLESS_KINDS:
-            problems.append(f'node :{n["label"]} has no key (no grounding key_column, no column '
-                            f'declaring identity: canonical, no table PK)')
+        if not n["key"] and not n.get("key_parts"):
+            problems.append(f'node :{n["label"]} has no key (no grounding key_column, no '
+                            f'one-column `sources[].key`, no table PK)')
         elif n["key"] and n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')
     for r in R:

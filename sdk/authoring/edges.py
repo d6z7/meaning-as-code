@@ -127,16 +127,18 @@ def concept_index(concepts: list) -> dict:
             if not rel:
                 continue
             cols = src.get("columns")
-            refs, canon = set(), ""
+            refs = set()
+            # THE CANONICAL KEY IS THE SOURCE'S ONE-COLUMN `key:` since 2026-10-07, not a column
+            # flag: the key moved to `sources[].key` because a per-column flag could not state its
+            # order. `canonical_key` read the flag and answered "" for every concept the moment it
+            # moved, so FK-EDGE reported four references "resolving to nothing" over a bundle whose
+            # keys were all declared. `reference` is still a COLUMN fact — it is another concept's
+            # identity, and carries no order.
+            canon = _P.canonical_key({"grounding": {"sources": [src]}}) or ""
             if isinstance(cols, dict):
                 for cn, body in cols.items():
-                    if not isinstance(body, dict):
-                        continue
-                    ident = _P.column_identity(body)
-                    if ident == "reference":
+                    if isinstance(body, dict) and _P.column_identity(body) == "reference":
                         refs.add(str(cn))
-                    elif ident == "canonical" and not canon:
-                        canon = str(cn)
             out.setdefault(rel, []).append({"name": name, "canonical_key": canon, "references": refs})
     return out
 

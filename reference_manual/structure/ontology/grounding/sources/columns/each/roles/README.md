@@ -49,9 +49,9 @@ Legal values:
 
 ### `identity`
 
-*string* · optional · 3 legal values
+*string* · optional · 1 legal value
 
-WHICH PART THIS COLUMN PLAYS IN IDENTIFYING A ROW. `canonical` — this column ALONE identifies an instance, is what COUNT(DISTINCT …) counts, and at most one column per concept carries it. `composite` — this column WITH its siblings identifies one, so the set carrying it IS the key, in declaration order, and using one of them as if it identified anything returns a set where a row was expected. `reference` — it identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain. The key is a COLUMN fact and this is its one home: `cell_key` and `concept.identity.canonical_key` are both derived from it.
+THIS COLUMN IDENTIFIES A ROW IN ANOTHER CONCEPT — a foreign key, and the only identity statement that is a COLUMN fact. `canonical` and `composite` retired here on 2026-10-07: they answered a different question — what makes a row of THIS concept unique — which is one fact about the source, not a property of each column, and which needs an ORDER no per-column flag can express. That fact is `sources[].key`. Whether every value here is present over there is a measurement, never a declaration.
 
 **When you would reach for it.**
 
@@ -59,8 +59,6 @@ SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compell
 
 Legal values:
 
-- [`canonical`](../../../../../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `composite` on every column of its key tuple instead — several composite columns and no canonical IS the composite — rather than nominating a column that does not identify.
-- [`composite`](../../../../../../../vocabulary/concept/column/identity.md#composite) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
 - [`reference`](../../../../../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
 
 ### `period_binding`

@@ -7,9 +7,12 @@ status: >-
   (`additionalProperties: false`), as does mac-runtime's `ColumnSpec` (`extra="forbid"`), so a fifth
   is a load error rather than a line nothing reads. `roles` is a map from each USE a question may
   make of the column to that use's own terms; the five scalar role names are DERIVED by
-  `ColumnSpec.role` and never authored. Every planner step asks `Grounding.offers(column, use)`,
-  which reads this map. contoso5 is authored entirely in this shape, and every example on this page
-  is a column of that bundle. column_declaration.md carries the same model on one screen.
+  `ColumnSpec.role_within(key)` and never authored. Every planner step asks
+  `Grounding.offers(column, use)`, which reads this map. WHAT MAKES ONE ROW UNIQUE IS NOT A COLUMN
+  KEY: it is `grounding.sources[].key`, an ordered list on the source, and `roles.identity` carries
+  one term — `reference`, another concept's identity. contoso5 is authored entirely in this shape,
+  and every example on this page is a column of that bundle. column_declaration.md carries the same
+  model on one screen.
 audience: ontology authors, importer developers, framework developers
 companions:
   - column_declaration.md     # the same model on one screen — the overview this page is the long form of
@@ -29,7 +32,9 @@ A concept means what its columns say. Each column answers one question —
 > **What may a question do with me, and on what terms?**
 
 — and every key on a column is one of those uses, a parameter of one, or a relation to another
-column. [column_declaration.md](column_declaration.md) states the same model on one screen.
+column. One fact is *about the source and not about any one column* — what makes one row unique —
+and that one is [`key`](#key--what-makes-one-row-unique).
+[column_declaration.md](column_declaration.md) states the same model on one screen.
 
 ## The principle
 
@@ -46,11 +51,12 @@ Nothing else. Every rule below follows from it.
 grounding:
   sources:
     - relation: <relation>
+      key: <column> | [<column>, <column>, …]     # REQUIRED — ordered; the source's, not a column's
       columns:
 
         <column-name>:
           roles:                                  # REQUIRED — `{}` is legal
-            identity: canonical | composite | reference
+            identity: reference
             axis: mac.concept.axis.time | mac.concept.axis.categorical
             aggregate:
               type: mac.concept.column.measure_type.flow | .stock | .intensive | .precomputed | .target
@@ -71,15 +77,17 @@ grounding:
 ```
 
 No column carries all of that. Most carry one or two roles and nothing else, and contoso5's
-`Customer` is typical: one canonical identity, seven axes, four of them ruled on, and two columns
+`Customer` is typical: a one-column key, seven axes, four of them ruled on, and three columns
 offered to no question.
 
 ```yaml
 sources:
   - relation: dim_store
+    key: store_key
     columns:
-      store_key: {roles: {identity: canonical}}
+      store_key: {roles: {}}
   - relation: dim_customer
+    key: customer_key
     columns:
       gender: {roles: {axis: mac.concept.axis.categorical, extremum: [min, max]}}
 ```
@@ -93,9 +101,9 @@ concept that binds two relations, where one identity legitimately has two spelli
 
 | level | what it holds | why it cannot move |
 |---|---|---|
-| `grounding.sources[]` | one relation, and the columns of THAT relation | a concept may bind several relations, and each has its own spelling of the identity they share |
+| `grounding.sources[]` | one relation, its `key`, and the columns of THAT relation | a concept may bind several relations, and each has its own grain and its own spelling of the identity they share |
 | `sources[].columns` | a map from column name to that column's four keys | the facts are per column AND per relation; a name alone is ambiguous |
-| `sources[].columns.<col>.roles` | the uses a question may make of this column | per column AND per CONCEPT — `country_code` is the identity of `Country` and a categorical axis of `Customer` |
+| `sources[].columns.<col>.roles` | the uses a question may make of this column | per column AND per CONCEPT — `country_code` is the key of `Country` and a categorical axis of `Customer` |
 
 A bundle may still write `columns:` as a flat list of names. That form says which columns a concept
 serves and nothing about what each one IS, `check_column_spec` reports it, and `Grounding.offers`
@@ -103,16 +111,66 @@ falls back to the derived role for it.
 
 ---
 
+## `key` — what makes one row unique
+
+The one fact about a source that is not a fact about any one of its columns.
+
+```yaml
+sources:
+  - relation: v_contoso5_sales_line
+    key: [order_key, line_number]              # ordered; the composite
+    columns:
+      order_key:     {roles: {}}               # a key column claims no role of its own
+      line_number:   {roles: {}}
+      customer_key:  {roles: {identity: reference, axis: mac.concept.axis.categorical}}
+  - relation: dim_store
+    key: store_key                             # one column: a bare string is legal
+    columns:
+      store_key:     {roles: {}}
+      location_code: {roles: {identity: reference}, counts: true}
+```
+
+| | |
+|---|---|
+| where | on the **source**, beside `relation` |
+| card | a string, or an ordered list of column names |
+| required | **yes** — `mac.schema.json` gives `sources[]` `required: ["relation", "key"]`; the grain the runtime reads is the PRIMARY source's, the first entry carrying a relation |
+| order | **load-bearing** — it becomes `Grounding.cell_key` and reaches the SQL |
+| read by | `cell_key` and its readers — the count route, `composite_key_guard`, the snapshot cycle, the fold plane's grain; `concept.identity.canonical_key` (a one-column key); `ColumnSpec.role_within(key)`; `key_column`, the legacy spelling of a one-column key |
+
+| the key's shape | what it means | consequence |
+|---|---|---|
+| **one column** | that column **alone** identifies an instance | it is the canonical identity — what `COUNT(DISTINCT …)` counts and what an answer discloses that it counted; `concept.identity.canonical_key` is filled from it |
+| **two or more** | the columns **together** identify an instance | `cell_key` carries them in the order written; none identifies anything alone, and using one as if it did returns a set where a row was expected — which looks like an answer |
+| any shape, on a `class: measure` concept | the **grain**, and nothing else | a measure is summed, not counted (`mac_vocabulary.yaml#concept.class.measure`: *"Decides COUNT(DISTINCT key) vs SUM(column)"*), so it has no canonical key whatever its key's length. A tall fact's DISCRIMINATOR — the column saying which measure a row states — is `grounding.code_column`, never the key: `mart.shipments` is keyed on four columns of which `metric` is one |
+
+**One home, so the two cannot disagree.** The columns do not repeat the key, and both reasons it sits
+here rather than on them are measured. It needs an ORDER and a per-column flag has nowhere to put
+one: swapping two YAML column blocks in `units_sold` turned `(order_key, line_number)` into
+`(line_number, order_key)` — an edit no gate can see and any formatter may make — and that order
+reaches the SQL. And it needs to be READABLE: 7 of contoso5's 17 concepts are keyed on a composite,
+and reading the key meant scanning every column of the source for a flag. After the move all 112 of
+contoso5's derived column roles are byte-identical to what the per-column flags produced, so no
+reader downstream reads a different answer.
+
+A key is per source **and per concept**: `country_code` is the `key` of `Country` and
+`axis: categorical` in `Customer`, the same column playing a different part in two concepts. A fact
+attached to the column's *name* could not say that.
+
+---
+
 ## The column, top level
 
 Four keys, four different questions. Only `roles` is required, and `mac.schema.json` admits no
 fifth: `rol: dimension` is a LOAD ERROR naming the four, where a misspelled sentence is just
-another sentence.
+another sentence. The source's [`key`](#key--what-makes-one-row-unique) is not one of the four, and
+that is the point: it is one statement about the relation, with an order, and it sits beside
+`relation:`.
 
 | key | card | value | required | says | read by |
 |---|---|---|---|---|---|
 | `roles` | **map** | role → that role's qualifier | **yes** — `{}` is legal | what a question may do with this column | the planner, at every step it takes, through `Grounding.offers(column, use)` |
-| `counts` | bool | `true` | no | **a count of this concept counts THIS column**, not the canonical one | the count route, via `concept.identity.counts_as`; disclosed in the answer |
+| `counts` | bool | `true` | no | **a count of this concept counts THIS column**, not the one in the `key` | the count route, via `concept.identity.counts_as`; disclosed in the answer |
 | `register` | string | a bundle-relative path | no | where this column's values come from — one virtual table per value set | `resolver/registers`, `resolver/register_match` — name → code resolution |
 | `rulings` | map | see [`rulings`](#rulings--what-a-person-decided-about-a-column) | no | how this column relates to **another column** | `planner/plan.py`, `planner/sql.py`, `interpret/vocabulary.py` |
 
@@ -123,7 +181,7 @@ another sentence.
 
 | what is written | what it means | what follows |
 |---|---|---|
-| `roles: {}` | **a positive statement** — the column exists, is typed, is served, and is offered to no question | nothing: no route reaches the column, and its absence from every answer is correct. contoso5 writes it on `valid_from` / `valid_to` |
+| `roles: {}` | **a positive statement** — the column exists, is typed, is served, and is offered to no question | nothing: no route reaches the column, and its absence from every answer is correct. contoso5 writes it on `valid_from` / `valid_to`, and on every key column — a column named in `key` is reached through the key, not through a role |
 | no `roles` key | **unclassified** — nobody has said what the column is for | a finding raised against the concept: an unjudged column is work owed, not a state |
 
 Absence is never load-bearing except where it is declared to be. These two are the declared case and
@@ -138,81 +196,53 @@ The requirement is structural: there is nothing to write that would claim a role
 
 | role | qualifier card | terms | says | read by |
 |---|---|---|---|---|
-| `identity` | scalar | `canonical` · `composite` · `reference` | the row is identified by me — alone, jointly, or elsewhere | `Grounding.cell_key`, `concept.identity.canonical_key`; join resolution; `composite_key_guard` |
+| `identity` | scalar | `reference` | I identify a row in **another** concept — a join target, never part of this grain | join resolution; `composite_key_guard`. *This* concept's grain is [`key`](#key--what-makes-one-row-unique) on the source |
 | `axis` | scalar | `time` · `categorical` | a question may **group or filter** by me | `planner/grounded_columns.axis_columns`, `column_facts.axis` — the fold law's lookup key |
 | `aggregate` | map | `{type, unit, canonical}` | a question may **fold** me | `column_facts.measure_type` / `unit`; `planner/plan._check_additivity` |
 | `period_binding` | `true` | — | I am **the** reporting date when the relation carries several | `planner/plan` period binding; `Grounding.offering('period_binding')` |
 | `extremum` | list | `[min]` · `[max]` · `[min, max]` | my earliest or latest value may be **asked for** — not folded | `planner/plan._OPERATION_NEEDS` → MIN/MAX; `Grounding.offering('extremum')` |
 
 **A map, because one column routinely has several uses.** Measured on contoso5, 2026-10-07: 21 of
-112 columns are a join key you also group by. `date_day` on the FX relation is identity *and* a time
-axis; `country_code` in `Country` is identity *and* a categorical axis; `order_date` on a sale line
-is a time axis *and* the period binding *and* an extremum. A single-valued key would have to pick
-one and lose the rest.
+112 columns are a join key you also group by. `customer_key` on a sale line is `identity: reference`
+*and* a categorical axis; `date_day` on the FX relation is in the `key` *and* a time axis;
+`order_date` on a sale line is a time axis *and* the period binding *and* an extremum. A
+single-valued key would have to pick one and lose the rest.
 
 The five role names are the `mac.concept.column.roles` vocabulary, closed, generated into
-[column_roles.md](column_roles.md). A term may be written bare or fully qualified — `categorical`
-and `mac.concept.axis.categorical` are the same term — and contoso5 writes the qualified form.
+[column_roles.md](column_roles.md). **A vocabulary term is authored FULLY QUALIFIED** —
+`axis: mac.concept.axis.time`, `type: mac.concept.column.measure_type.flow`. The bare term is the
+term's NAME and is what the tables on this page abbreviate to; written into a bundle it fails
+validation, because the schema's pattern is `^mac\.concept\.axis\.(categorical|time)$` and what
+makes a token checkable is that it names its namespace. `identity` and `extremum` are the exception:
+they are closed `enum`s, authored bare.
 
-### `roles.identity` — which column IS the thing
+### `roles.identity` — a pointer at ANOTHER concept
 
 ```yaml
-customer_key:  {roles: {identity: canonical}}          # dim_customer
-store_key:     {roles: {identity: canonical}}          # dim_store
-location_code: {roles: {identity: reference}, counts: true}   # dim_store
-order_key:     {roles: {identity: composite}}          # v_contoso5_sales_line
-line_number:   {roles: {identity: composite}}
+customer_key:  {roles: {identity: reference, axis: mac.concept.axis.categorical}}
+store_key:     {roles: {identity: reference}}                 # v_contoso5_sales_line — the KEY of dim_store
+location_code: {roles: {identity: reference}, counts: true}   # dim_store — the KEY of dim_location
 ```
 
 | term | holds when | consequence |
 |---|---|---|
-| `canonical` | this column **alone** identifies an instance | it is what `COUNT(DISTINCT …)` counts and what an answer discloses that it counted; `concept.identity.canonical_key` is filled from it, and at most one per concept, per source spelling |
-| `composite` | this column **with its siblings** identifies an instance | the set of columns carrying it **is** the key, in declaration order, and that order reaches the SQL; none of them identifies anything alone, and using one as if it did returns a set where a row was expected — which looks like an answer |
 | `reference` | this column identifies an instance **in another concept** | it is a join target and never part of this concept's grain; whether every value is present over there is a measurement, and a reference with no parent relation in the delivery is recorded AS dangling |
 
-**The key is read off the columns.** `Grounding.cell_key` is the `canonical` column, or every
-`composite` column in declaration order. A source where no column carries either — and that declares
-no legacy `key:` list — is a LOAD ERROR naming both ways to fix it. Measured across the estate before
-the derivation shipped: 38 sources declare `key:`, and in 38 of 38 it equals exactly what the columns
-declare, order included for all 10 composite keys.
+**One term, and that is the whole of what a column says about identity.** What identifies a row of
+*this* concept is [`key`](#key--what-makes-one-row-unique) on the source — one fact, with an order,
+in one place. A column named in the `key` therefore carries no identity role of its own and writes
+`roles: {}`, and a column carrying `reference` is a pointer whether or not the key also names it.
+(`canonical` and `composite` are not terms of this role: the schema's enum is `["reference"]` and
+`mac_vocabulary.yaml#concept.column.identity` holds the one term below.)
 
-**This is the only home for identity**, and it is per column **and per concept**: `country_code` is
-`identity: canonical` in `Country` and `axis: categorical` in `Customer`. A fact attached to the
-column's *name* could not say that. (An author converting a bundle will meet `part` named in a load
-error — it is refused by name so the message can say the term is now `composite`.)
-
-The three terms in full, injected from `mac_vocabulary.yaml` by `tools/gen_vocabulary_terms.py`:
+The term in full, injected from `mac_vocabulary.yaml` by `tools/gen_vocabulary_terms.py`:
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.identity (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
-> What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level
-identity block.
+> Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row of
+THIS concept unique is `grounding.sources[].key`, not a per-column flag.
 
-*`mac.concept.column.identity` · 3 terms · closed — these are all of them*
-
-#### `mac.concept.column.identity.canonical`
-
-THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
-discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-declares `composite` on every column of its key tuple instead — several composite columns and no
-canonical IS the composite — rather than nominating a column that does not identify.
-
-| field | value |
-|---|---|
-| `constellation` | EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels it: a surrogate key every fact points at, with a human-readable code and a name beside it that are both 1:1 with it. All three look alike in a profile; only this says which one the joins and the counts are about.
- |
-
-#### `mac.concept.column.identity.composite`
-
-ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
-returns a set where a row was expected, and looks like an answer. Declared on every column of
-the tuple, and that is the whole declaration: no canonical column over a key of two or more IS
-the composite, and the concept adds nothing.
-
-| field | value |
-|---|---|
-| `constellation` | NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified by its order and its line number — neither is unique alone, and declaring either as the identity would make the grain a lie. Mark each participating column, and the composite is what the concept is keyed on.
- |
+*`mac.concept.column.identity` · 1 terms · closed — these are all of them*
 
 #### `mac.concept.column.identity.reference`
 
@@ -248,9 +278,8 @@ only one of them is keyed on columns a question slices by.
 | | `UnitsSold` | `ExchangeRate` |
 |---|---|---|
 | relation | `v_contoso5_sales_line` | `v_contoso5_fx_rate` |
-| the key | `order_key` + `line_number` | `date_day` + `from_currency` + `to_currency` |
-| each key column carries | `identity: composite` | `identity: composite` |
-| **and also** | *nothing* | `axis: time` / `axis: categorical` / `axis: categorical` |
+| the key | `key: [order_key, line_number]` | `key: [date_day, from_currency, to_currency]` |
+| each key column carries | `roles: {}` | `axis: time` / `axis: categorical` / `axis: categorical` |
 | so a question may | join and count on them | join, count, **and group** by them |
 | because | a line number is a position in a basket; *"quantity by line number"* asks nothing | *"the USD→EUR rate on 2025-01-03"* names the row **by** its axes |
 
@@ -346,32 +375,40 @@ that sums across stores and not across days.
 
 ## `counts` — when a count of the concept is not a count of its rows
 
-A concept's key identifies a **row**. What a **count** counts is sometimes a different column.
+A concept's key identifies a **row**. What a **count** counts is sometimes a different column — and
+it may be a column the `key` does not name at all.
 
 | | `Store.store_key` | `Store.location_code` |
 |---|---|---|
-| roles | `identity: canonical` | `identity: reference` |
+| in `key` | **yes** — `key: store_key` | no |
+| roles | `{}` | `identity: reference` |
 | `counts` | — | `true` |
 | rows | 74 — one per trading period | — |
 | a count of *stores* | would say 74, wrongly | says **67** |
 
-`counts` is how a concept says *"a count of me is not a count of my rows"*. `identity: canonical`
-stays what the fact JOINS on; `counts` is what a count DISTINCTs, it fills
-`concept.identity.counts_as`, and the answer discloses which column it counted. It is a key of its own
-rather than a fourth `identity` term because the column that counts is routinely also the one that
-references: contoso5's `location_code` carries both at once, and a single slot could hold only one.
+`counts` is how a concept says *"a count of me is not a count of my rows"*. The `key` stays what the
+fact JOINS on; `counts` is what a count DISTINCTs, it fills `concept.identity.counts_as`, and the
+answer discloses which column it counted. It is a column key of its own rather than a second
+`identity` term because the column that counts is routinely also the one that references: contoso5's
+`location_code` carries both at once, and a single slot could hold only one.
 
 ---
 
 ## `register` — where this column's values come from
 
 ```yaml
-country_code:                                  # dim_country
-  roles: {identity: canonical}
-  register: data/lookups/contoso5_country_code.lookup.yaml
-brand:                                         # dim_product
-  roles: {identity: canonical, axis: mac.concept.axis.categorical, extremum: [min, max]}
-  register: data/lookups/contoso5_brand.lookup.yaml
+- relation: dim_country                        # Country
+  key: country_code
+  columns:
+    country_code:
+      roles: {}
+      register: data/lookups/contoso5_country_code.lookup.yaml
+- relation: dim_product                        # Brand
+  key: brand
+  columns:
+    brand:
+      roles: {axis: mac.concept.axis.categorical, extremum: [min, max]}
+      register: data/lookups/contoso5_brand.lookup.yaml
 ```
 
 One register per value set, and the column points at it. The register's rows **are** the values; the
@@ -635,15 +672,16 @@ cross-column — *"never report nine countries"* — it is a concept rule with `
 
 ## Worked: `Customer`, all 10 columns
 
-One source, one canonical identity, seven axes, four of them ruled on, two columns offered to no
+One source, a one-column key, seven axes, four of them ruled on, three columns offered to no
 question.
 
 ```yaml
 grounding:
   sources:
     - relation: dim_customer
+      key: customer_key
       columns:
-        customer_key:  {roles: {identity: canonical}}
+        customer_key:  {roles: {}}
         customer_name: {roles: {axis: mac.concept.axis.categorical, extremum: [min, max]},
                         rulings: {never_axis: privacy, evidence: DQ-IDENTIFYING-DIM_CUSTOMER-CUSTOMER_NAME}}
         continent:     {roles: {axis: mac.concept.axis.categorical, extremum: [min, max]}}
@@ -661,7 +699,8 @@ grounding:
 
 | the choice | what is written | why |
 |---|---|---|
-| `country_code` here is **not** identity | `axis` alone, plus `finer_than` | it is the identity of the `Country` concept, not of `Customer` — the same column, a different part in two concepts |
+| `customer_key` | named in `key`, and `roles: {}` | the key is the source's one statement about what a row IS; the column adds nothing to it, and the derived role `key` comes from the key naming it |
+| `country_code` here is **not** the key | `axis` alone, plus `finer_than` | it is the `key` of the `Country` concept, not of `Customer` — the same column, a different part in two concepts |
 | `valid_from`, `valid_to` | `roles: {}` | SCD-2 row-validity stamps: when the ROW was written, not when anything happened. No question is offered them, and saying so is a declaration |
 | `state` | `scoped_by: country_code` | its codes are reused across countries, so a group by `state` alone merges two places |
 | `city`, `customer_name` | `axis`, **and** `never_axis` with its evidence | they *are* axes; that no question may group by one is a ruling, and it carries the measurement |
@@ -672,17 +711,20 @@ grounding:
 `country_code` is declared in `Country`, `Customer` and `Location`, and it means something different
 in each. Nothing attached to the column's name could say that.
 
-| concept | relation | `roles` | `rulings` |
-|---|---|---|---|
-| `Country` | `dim_country` | `identity: canonical`, plus `register: data/lookups/contoso5_country_code.lookup.yaml` | — |
-| `Customer` | `dim_customer` | `axis: categorical`, `extremum: [min, max]` | `finer_than: continent` |
-| `Location` | `dim_location` | `axis: categorical`, `extremum: [min, max]` | — (and `country_name` beside it is its `label_of`) |
+| concept | relation | the source's `key` | `roles` | `rulings` |
+|---|---|---|---|---|
+| `Country` | `dim_country` | `country_code` | `{}`, plus `register: data/lookups/contoso5_country_code.lookup.yaml` | — |
+| `Customer` | `dim_customer` | `customer_key` | `axis: categorical`, `extremum: [min, max]` | `finer_than: continent` |
+| `Location` | `dim_location` | `location_code` | `axis: categorical`, `extremum: [min, max]` | — (and `country_name` beside it is its `label_of`) |
 
-**`identity` and `axis` on one column is what the map is for.** `Brand.brand` carries
-`identity: canonical`, `axis: categorical` and `extremum: [min, max]` at once: a brand *is* the thing
-the concept is about, it is also what a question slices by, and its earliest and latest value may be
-asked for. `UnitsSold.order_key` is the opposite corner — `identity: composite` and no `axis`,
-identity without groupability. One key with one value could express neither.
+**Being the key and being an axis are two statements, and that is what the map is for.**
+`Brand.brand` is the whole of `key: brand` *and* carries `axis: categorical` and
+`extremum: [min, max]`: a brand *is* the thing the concept is about, it is also what a question
+slices by, and its earliest and latest value may be asked for — which is why its derived role is
+`dimension` and not `key`, the one case where a key column's own role name changes (`brand.brand`,
+`color.color`, `category_name`). `UnitsSold.order_key` is the opposite corner — named in a
+two-column `key` and `roles: {}`, grain without groupability. A single per-column flag could express
+neither.
 
 ---
 
@@ -718,7 +760,7 @@ refusal and therefore reaches a reader. If you want to write something about a c
 | key | why it cannot descend |
 |---|---|
 | `concept.definition`, `concept.class` | about the concept |
-| `grounding.sources[].relation` | the binding itself |
+| `grounding.sources[].relation`, `grounding.sources[].key` | the binding itself, and what one row of THAT relation is — per source, because a concept may bind several and each has its own grain |
 | `grounding.snapshot_rule`, `grounding.realized_by` | how the whole relation collapses before anything is summed |
 | `edges` | between **concepts** |
 | `contract.default_reading` | what an unqualified **word** means |
@@ -730,9 +772,11 @@ about one column and they descend onto it. **Prose stays, params descend** — t
 `columns:` becoming a second dumping ground.
 
 **And the grain does not live at concept level either.** `concept.identity` holds two COLUMN NAMES,
-both filled from the column map: `canonical_key` from `identity: canonical` and `counts_as` from
-`counts: true`. A prose line restating what one row is would be a second home for a fact the
-declaration already states, and the one that disagrees is the one nothing checks.
+neither of them authored there: `canonical_key` is a ONE-column `sources[].key` — and is empty on a
+`class: measure` concept whatever the key's length, because a measure is summed rather than counted —
+and `counts_as` comes from `counts: true` on a column. A prose line restating what one row is would
+be a second home for a fact the source already states, and the one that disagrees is the one nothing
+checks.
 
 ---
 
@@ -747,7 +791,7 @@ These are **measured**. Declaring them would create a second home for a fact the
 | observed landing values | `data/sources/<relation>.yaml` |
 | the members themselves | `data/lookups/<name>.lookup.yaml` |
 | whether a `reference`'s values are all present in the parent | the dangling-key measurement over the delivery |
-| the five scalar role names — key, dimension, measure, period, housekeeping | `ColumnSpec.role`, derived from `roles` in the vocabulary's own precedence; it reproduces all 112 of contoso5's columns exactly |
+| the five scalar role names — key, dimension, measure, period, housekeeping | `ColumnSpec.role_within(key)`, derived from `roles` in the vocabulary's own precedence, **with the source's `key` as an argument** — a column alone cannot know whether it is in the key. It reproduces all 112 of contoso5's columns exactly: a column the key names is `key`, unless the key is one column that also declares an `axis`, which is `dimension` |
 
 A declaration says what a thing IS and what may be done with it. It never restates what counting would
 tell you.
@@ -756,16 +800,20 @@ tell you.
 
 ## Every key — the complete surface
 
-Thirty-three keys, each with its effect — which plane it lands on, which `mac.outcome_class` terms
+Thirty-four keys, each with its effect — which plane it lands on, which `mac.outcome_class` terms
 it can produce, and what reads it — declared in
 [column_effects.yaml](column_effects.yaml) and rendered interactively by `column_bench.html`. The
 container key `rulings` and the sub-keys of `aggregate` have their sections above. `storage_role` is
-the one key nothing authors: the data plane measures it, so it is declared there and not here.
+the one key nothing authors: the data plane measures it, so it is declared there and not here. And
+`key` is the one that is not a column key at all — it is one statement about the **source**, with its
+own [section](#key--what-makes-one-row-unique); it is listed here because this table is the complete
+surface an author writes, and the key is the first thing they write.
 
 | key | required | default | legal values | decides |
 |---|---|---|---|---|
+| `key` | **yes** | — | a column name, or an ordered list of them — *on the source, not the column* | what makes ONE ROW unique; the order becomes `cell_key` and reaches the SQL |
 | `roles` | **yes** | — | a map over `mac.concept.column.roles` — identity · axis · aggregate · period_binding · extremum | what a question may do with this column at all; `{}` means *offered to no question* |
-| `roles.identity` | iff claimed | — | `mac.concept.column.identity` — canonical · composite · reference | what part this column plays in the concept's identity — and, over a set of columns, the key |
+| `roles.identity` | iff claimed | — | `mac.concept.column.identity` — reference | that this column holds ANOTHER concept's identity, so it is a join target and never part of this concept's grain |
 | `roles.axis` | iff claimed | — | `mac.concept.axis.time` · `mac.concept.axis.categorical` | which KIND of axis this column is, which is both the permission to group and the fold law's lookup key |
 | `roles.aggregate` | iff claimed | — | a map over `type` · `unit` · `canonical` · `additivity` | that a question may fold this column, and on what terms |
 | `roles.period_binding` | iff claimed | — | `true` | which date a question's period binds to, when the relation carries several |
@@ -835,7 +883,7 @@ answers that question instead.
 | a non-null value that is not a member | `absence.sentinels` | an exclusion rule on the concept — contoso5's `country_code != '--'` |
 | that a predicate may land on the fact and skip the dimension join | `placement.fact_join` | nothing; the plan walks the join |
 | one line every answer touching the column must carry | `disclose` | nothing: a refusal reaches a reader and a successful answer does not |
-| which column selects what KIND of row this is | `discriminates` | `values.aliases.map` on the concept, read as `variant_codes` |
+| which column selects what KIND of row this is | `discriminates` | `grounding.code_column` names the column — a tall fact's discriminator is NOT its key, and on a `class: measure` concept it cannot be one; `values.aliases.map`, read as `variant_codes`, says which code is this concept's |
 | the role a reference plays when two point at the same concept | — | nothing — [role_playing_dimension](patterns/dimensional_special_cases/role_playing_dimension.md) at the column level |
 | a measure type that varies per ROW | — | nothing: `aggregate.type` is one type per column. Split the concept per measure type, or read the type from a column and accept that the fold rule is not knowable until a row is read |
 

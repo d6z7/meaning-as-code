@@ -272,7 +272,7 @@ def judge(edges: list, planned: list, concepts: set | None,
                         why.append(f"{tgt} is `class: {tf['klass']}`, not an enumeration — only an "
                                    f"enumeration's membership IS the relation's instance set")
                     if not tf["canonical"]:
-                        why.append(f"{tgt} declares no column with `identity: canonical`, so there is "
+                        why.append(f"{tgt} declares no one-column `key:`, so there is "
                                    f"no column the grouping could be over")
                     shared = [c for c in tf["canonical"] if c in sf["columns"]]
                     if tf["canonical"] and not shared:
@@ -350,7 +350,13 @@ def concept_facts(root: Path) -> dict:
                 cols.update(s.get("columns") or {})
         out[name] = {
             "klass": c.get("class"),
-            "canonical": [k for k, v in cols.items() if P.column_identity(v) == "canonical"],
+            # THE KEY IS THE SOURCE'S `key:` (2026-10-07), not a column flag — one list per source,
+            # so this collects over the sources rather than scanning the merged column map.
+            "canonical": [
+                c for s in ((d.get("grounding") or {}).get("sources") or [])
+                if isinstance(s, dict)
+                for c in [P.canonical_key({"grounding": {"sources": [s]}})] if c
+            ],
             "registered": [k for k, v in cols.items() if isinstance(v, dict) and v.get("register")],
             "columns": sorted(cols),
         }

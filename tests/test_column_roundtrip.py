@@ -75,15 +75,21 @@ exo = yaml.safe_load(open(ex, encoding="utf-8"))
 src0 = (exo.get("grounding") or {}).get("sources", [{}])[0]
 check("exemplar: columns in MAP form", isinstance(src0.get("columns"), dict))
 check("exemplar: no field_roles block", "field_roles" not in (exo.get("grounding") or {}))
-canon_cols = [
+# THE KEY IS ON THE SOURCE, in one ordered list (2026-10-07). Three things must hold together: the
+# source states it, the columns do NOT repeat it, and the retired `concept.identity` block is absent.
+_key = src0.get("key")
+_key = [_key] if isinstance(_key, str) else list(_key or [])
+_canon_cols = [
     c for c, b in (src0.get("columns") or {}).items()
-    if isinstance(b, dict) and ((b.get("roles") or {}).get("identity")) == "canonical"
+    if isinstance(b, dict)
+    and ((b.get("roles") or {}).get("identity")) in ("canonical", "composite")
 ]
-# NOT ALSO ON THE CONCEPT — and `concept.identity` is now a block the schema rejects outright, so
-# this asserts its ABSENCE rather than the absence of one key within it.
-check("exemplar: canonical key on the column, and no `concept.identity` block at all",
-      bool(canon_cols) and "identity" not in (exo.get("concept") or {}),
-      f"canonical columns {canon_cols}; concept keys {sorted(exo.get('concept') or {})}")
+check("exemplar: the key is declared on the source", bool(_key), f"key={_key!r}")
+check("exemplar: every key column is a column of the map",
+      all(c in (src0.get("columns") or {}) for c in _key), f"key={_key!r}")
+check("exemplar: no column repeats the key", not _canon_cols, f"columns claiming it: {_canon_cols}")
+check("exemplar: no `concept.identity` block at all",
+      "identity" not in (exo.get("concept") or {}), f"concept keys {sorted(exo.get('concept') or {})}")
 check("exemplar: schema_version is the schema's generation",
       str(exo["metadata"]["schema_version"]) == authoring.schema_generation(),
       f"{exo['metadata']['schema_version']} vs {authoring.schema_generation()}")
@@ -174,11 +180,21 @@ if _neighbours.runtime_src() is not None:
                 _cols = ((_doc.get("grounding") or {}).get("sources") or [{}])[0].get("columns") or {}
                 for _spec in _c.grounding.columns:
                     _authored = _cols.get(_spec.name) or {}
-                    _r = _authored.get("roles") or {}
-                    if _r.get("identity") == "canonical" and _r.get("axis"):
+                    # THE BRANCH WHOSE ABSENCE COST 3 OF 112: a one-column key whose column is
+                    # ALSO an axis derives `dimension`, not `key` (brand.brand, color.color,
+                    # category_name). The shape is now "the source's key holds one name and that
+                    # column declares an axis" — the per-column `canonical` it used to be read from
+                    # retired with the key's move.
+                    _sk = ((_doc.get("grounding") or {}).get("sources") or [{}])[0].get("key")
+                    _sk = [_sk] if isinstance(_sk, str) else list(_sk or [])
+                    if len(_sk) == 1 and _spec.name in _sk and (_authored.get("roles") or {}).get("axis"):
                         canonical_axes += 1
                     pinned += 1
-                    _mine, _theirs = _MP.column_role(_authored), _spec.role
+                    # BOTH SIDES SEE THE KEY, or the comparison is vacuous: `_spec.role` calls
+                    # `role_within(())` with an EMPTY key, so the platform half never consulted it
+                    # and the two agreed trivially — measured by mutation, which passed.
+                    _mine = _MP.column_role({**_authored, "name": _spec.name}, _sk)
+                    _theirs = _spec.role_within(tuple(_sk))
                     if _mine != _theirs:
                         disagree.append(
                             f"{_c.name}.{_spec.name}: mac {_mine!r} vs runtime {_theirs!r}")

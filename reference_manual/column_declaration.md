@@ -2,9 +2,12 @@
 title: The column declaration — everything a column says, and who reads each answer
 status: >-
   CURRENT (2026-10-07). Every key on this page is what mac.schema.json admits and what the runtime
-  reads: `roles` as a required map, `identity: canonical|composite|reference`, `axis` closed to two
+  reads: `roles` as a required map, `key` on the source, `identity: reference`, `axis` closed to two
   kinds, and `grounding.grain` retired. `never_axis` STAYS — it is a live refusal path citing its
-  evidence. The platform suite is green on it (1460 tests) and contoso5 compiles with 0 errors.
+  evidence. The platform suite is green on it (1461 tests) and contoso5 compiles with 0 errors.
+  THE KEY IS ON THE SOURCE as of this date: it was collected from `identity: canonical`/`composite`
+  on the columns, which could not state its ORDER — and that order reaches the SQL, so swapping two
+  column blocks silently changed the key.
 audience: ontology authors, importer developers, framework developers
 companions:
   - column_specification.md   # the long form: every key, with its enforcement state
@@ -27,13 +30,34 @@ A concept means what its columns say. Each column answers one question —
 grounding:
   sources:
     - relation: v_contoso5_sales_line
+      key: [order_key, line_number]          # what makes ONE ROW unique, in order
       columns:
-        order_key:     {roles: {identity: composite}}
+        order_key:     {roles: {}}           # a key column claims no role of its own
+        line_number:   {roles: {}}
         customer_key:  {roles: {identity: reference, axis: mac.concept.axis.categorical}}
         order_date:    {roles: {axis: mac.concept.axis.time, period_binding: true}}
         quantity:      {roles: {aggregate: {type: …measure_type.flow, unit: units}}}
         valid_from:    {roles: {}}
 ```
+
+## `key` — what makes one row unique
+
+| | |
+|---|---|
+| where | on the **source**, under `relation` |
+| card | a string, or a list of column names |
+| required | **yes**, on a primary source — the parser refuses one without it |
+| order | **load-bearing**: it becomes `cell_key` and reaches the SQL |
+| read by | `cell_key` (52 sites), `canonical_key` (a one-column key), `key_parts` (two or more) |
+
+A **one-column** key is the canonical identity — what `COUNT(DISTINCT …)` counts. **Two or more** is
+the composite: no column identifies anything alone, and using one as if it did returns a set where a
+row was expected. A **measure** has no canonical identity whatever its key's shape — it is summed,
+not counted — so its key is the grain and nothing else.
+
+The columns do not repeat it. One home, so the two cannot disagree — which is why it is stated here
+rather than collected from a per-column flag: a flag has nowhere to put the order, and the order is
+what reaches the SQL.
 
 ## The column, top level
 
@@ -50,7 +74,7 @@ grounding:
 
 | role | qualifier card | terms | says | read by |
 |---|---|---|---|---|
-| `identity` | scalar | `canonical` · `composite` · `reference` | the row is identified by me — alone, jointly, or elsewhere | `COUNT(DISTINCT …)`; join resolution; `composite_key_guard` |
+| `identity` | scalar | `reference` | I identify a row in **another** concept — a join target, never part of this grain | join resolution; `composite_key_guard`. *This* concept's key is `key` on the source |
 | `axis` | scalar | `time` · `categorical` | a question may **group or filter** by me | the fold law; `additivity_guard` |
 | `aggregate` | map | `{type, unit, canonical}` | a question may **fold** me | the fold law; unit algebra; the measure route |
 | `period_binding` | `true` | — | I am **the** reporting date when the relation carries several | period binding — *"sales in March"* cannot pick the wrong date |
@@ -60,16 +84,17 @@ grounding:
 > mac.concept.axis.time`, `type: mac.concept.column.measure_type.flow`. The bare term is the
 > term's NAME and is what the tables on this page abbreviate to; written into a bundle it fails
 > validation, because the schema's pattern is `^mac\.concept\.axis\.(categorical|time)$` and
-> what makes a token checkable is that it names its namespace. The three terms of `identity` and
+> what makes a token checkable is that it names its namespace. `identity`'s one term and
 > the two of `extremum` are the exception: they are closed `enum`s, authored bare.
 
-### `identity` — three ways to identify
+### `identity` — one term, about **another** concept
 
 | term | holds when | consequence |
 |---|---|---|
-| `canonical` | this column **alone** identifies an instance | it is what `COUNT(DISTINCT …)` counts; at most one per concept |
-| `composite` | this column **with its siblings** identifies an instance | the set of columns carrying it **is** the key; none of them identifies anything alone, and using one as if it did returns a set where a row was expected |
-| `reference` | this column identifies an instance **in another concept** | the row names a row over there; whether every value is present there is a measurement, not a declaration |
+| `reference` | this column identifies an instance **in another concept** | the row names a row over there; it is a join target and never part of this concept's grain. Whether every value is present there is a measurement, not a declaration |
+
+That is the only identity statement a column makes. What identifies a row of **this** concept is
+[`key`](#key--what-makes-one-row-unique) on the source — one fact, with an order, in one place.
 
 ### `aggregate` — the qualifier of a foldable column
 
@@ -113,9 +138,8 @@ The two cases that decide why `axis` is declared per column rather than derived 
 
 | | `units_sold` | `exchange_rate` |
 |---|---|---|
-| the key | `order_key` + `line_number` | `date_day` + `from_currency` + `to_currency` |
-| each carries | `identity: composite` | `identity: composite` |
-| **and also** | *nothing* | `axis: time` / `axis: categorical` |
+| `key` | `[order_key, line_number]` | `[date_day, from_currency, to_currency]` |
+| each key column carries | `roles: {}` | `axis: time` / `axis: categorical` |
 | so a question may | join and count on them | join, count, **and group** by them |
 | because | a line number is a position in a basket; *"revenue by line number"* asks nothing | *"the USD→EUR rate on 2025-01-03"* names the row **by** its axes |
 
@@ -123,11 +147,13 @@ Both are the grain. Only one is also an axis, and the only thing that says so is
 
 ## Where identity and the key part company
 
-A concept's key identifies a **row**. What a **count** counts is sometimes a different column.
+`key` identifies a **row**. What a **count** counts is sometimes a different column — and it may be
+a column that is not in the key at all.
 
 | | `store.store_key` | `store.location_code` |
 |---|---|---|
-| roles | `identity: canonical` | `identity: reference` |
+| in `key` | **yes** — `key: store_key` | no |
+| roles | `{}` | `identity: reference` |
 | `counts` | — | `true` |
 | rows | 74 — one per trading period | — |
 | a count of *stores* | would say 74, wrongly | says **67** |
@@ -139,7 +165,8 @@ A concept's key identifies a **row**. What a **count** counts is sometimes a dif
 | | card | required | terms |
 |---|---|---|---|
 | `roles` | map | **yes** | `identity` · `axis` · `aggregate` · `period_binding` · `extremum` |
-| `roles.identity` | scalar | iff claimed | `canonical` · `composite` · `reference` |
+| `key` *(on the source)* | string or list | **yes** | column names, in order |
+| `roles.identity` | scalar | iff claimed | `reference` |
 | `roles.axis` | scalar | iff claimed | `time` · `categorical` |
 | `roles.aggregate` | map | iff claimed | `{type, unit, canonical}` |
 | `roles.aggregate.type` | scalar | **yes**, within `aggregate` | `flow` · `stock` · `intensive` · `precomputed` · `target` |

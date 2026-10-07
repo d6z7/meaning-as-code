@@ -13,8 +13,8 @@ Generated from `mac.schema.json` **0.1.19-develop** and `mac_vocabulary.yaml`. E
 | described in the schema | **345 of 474** (73%) |
 | **gaps — admitted and unexplained** | **129** |
 | **keys with no stated constellation** | **458** of 474 |
-| vocabularies | 22, 138 terms |
-| examples | 187, from 17 concepts |
+| vocabularies | 22, 136 terms |
+| examples | 186, from 17 concepts |
 
 ## The levels
 
@@ -124,7 +124,7 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
     - [`axis`](vocabulary/concept/axis.md) — 2 terms, closed
     - [`class`](vocabulary/concept/class.md) — 5 terms, closed
     - `column`
-      - [`identity`](vocabulary/concept/column/identity.md) — 3 terms, closed
+      - [`identity`](vocabulary/concept/column/identity.md) — 1 terms, closed
       - [`measure_type`](vocabulary/concept/column/measure_type.md) — 5 terms, closed
       - [`roles`](vocabulary/concept/column/roles.md) — 5 terms, closed
       - [`ruling`](vocabulary/concept/column/ruling.md) — 5 terms, closed

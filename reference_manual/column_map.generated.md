@@ -24,7 +24,7 @@ columns:
         unit:         <string>
       axis:         <string>
       extremum:     <array>
-      identity:     canonical | composite | reference
+      identity:     reference
       period_binding:<any>
     rulings:
       evidence:     <string>
@@ -53,10 +53,8 @@ columns:
 
 ### `roles.identity` — `mac.concept.column.identity`  ·  CLOSED
 
-> What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.
+> Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row of THIS concept unique is `grounding.sources[].key`, not a per-column flag.
 
-- **`canonical`** — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `composite` on every column of its key tuple instead — several composite columns and no canonical IS the composite — rather …  ·  *constellation:* EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that c…
-- **`composite`** — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds …  ·  *constellation:* NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is i…
 - **`reference`** — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.  ·  *constellation:* THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on …
 
 ### `rulings.register` — `mac.name_register`  ·  CLOSED

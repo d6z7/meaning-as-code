@@ -400,10 +400,30 @@ const DATA = {
    "frontier_note": "IT REPLACES THE SCALAR `role` AND THE `query_use` TABLE BOTH, retired together 2026-10-07. The scalar held one of five values and the table mapped each value to the uses it served, so a column could serve only what its one role name served — and measured on contoso5, 21 of 112 columns are a join key you also group by. The table had to grant or deny `axis` to every `key` alike, and did: it denied it, which is how 21 columns lost their axis-ness."
   },
   {
+   "required": "yes",
+   "default": "—",
+   "legal": "a column name, or an ordered list of them — *on the source, not the column*",
+   "decides": "what makes ONE ROW unique; the order becomes cell_key and reaches the SQL",
+   "key": "key",
+   "block": "source",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "REFUSE"
+   ],
+   "status": "enforced",
+   "reader": "Grounding.cell_key — 52 read sites; canonical_key (a one-column key); key_parts (two or more)",
+   "effect": "WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source under `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A one-column key is the canonical identity, what COUNT(DISTINCT) counts; two or more is the composite, where no column identifies anything alone. A `class: measure` has no canonical identity whatever its key's shape — it is summed, not counted — so its key is the grain.",
+   "frontier_note": "NOT A COLUMN KEY, which is why it is the one row in this register whose block is `source`. It was collected from `identity: canonical`/`composite` on the columns until 2026-10-07, and moved because a per-column flag has nowhere to put the ORDER: swapping two column blocks in units_sold — an edit no gate can see and any formatter may make — turned (order_key, line_number) into (line_number, order_key). Measured after the move: all 112 of contoso5's derived column roles are byte-identical."
+  },
+  {
    "required": "iff claimed",
    "default": "—",
-   "legal": "mac.concept.column.identity — canonical · composite · reference",
-   "decides": "what part this column plays in the concept's identity — and, over a set of columns, the key",
+   "legal": "mac.concept.column.identity — reference",
+   "decides": "that this column holds ANOTHER concept's identity, so it is a join target and never part of this concept's grain",
    "key": "roles.identity",
    "block": "roles",
    "plane": [
@@ -415,9 +435,9 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "Grounding.cell_key + concept.identity.canonical_key — 22 runtime read sites",
-   "effect": "`canonical` — this column alone identifies an instance, and is what COUNT(DISTINCT) counts. `composite` — this column WITH its siblings does, and the set carrying it IS the key, in declaration order, which reaches the SQL. `reference` — it identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain.",
-   "frontier_note": "`part` is the retired spelling of `composite`, refused by name since 2026-10-07 so an unmigrated bundle is told where the term went rather than that it has a typo."
+   "reader": "planner/joins + composite_key_guard — the join target this column points at",
+   "effect": "`reference`, and nothing else — this column identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain. Whether every value is present over there is a measurement, not a declaration.",
+   "frontier_note": "`canonical`, `composite` and `part` are refused BY NAME, each naming where the fact went: what makes a row of THIS concept unique is `key` on the source. They answered a different question from `reference` and could not state an order, and the order reaches the SQL."
   },
   {
    "required": "iff claimed",
@@ -1664,8 +1684,6 @@ const DATA = {
        "key": "roles.identity",
        "values": [
         null,
-        "canonical",
-        "composite",
         "reference"
        ]
       }
@@ -2675,16 +2693,8 @@ const DATA = {
   },
   "concept.column.identity": {
    "closed": true,
-   "description": "What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.",
+   "description": "Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row of THIS concept unique is `grounding.sources[].key`, not a per-column flag.",
    "terms": {
-    "canonical": {
-     "description": "THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `composite` on every column of its key tuple instead — several composite columns and no canonical IS the composite — rather than nominating a column that does not identify.",
-     "constellation": "EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels it: a surrogate key every fact points at, with a human-readable code and a name beside it that are both 1:1 with it. All three look alike in a profile; only this says which one the joins and the counts are about.\n"
-    },
-    "composite": {
-     "description": "ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.",
-     "constellation": "NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified by its order and its line number — neither is unique alone, and declaring either as the identity would make the grain a lie. Mark each participating column, and the composite is what the concept is keyed on.\n"
-    },
     "reference": {
      "description": "A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.",
      "constellation": "THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale identifies a customer; the sale is identified by something else entirely. Without this the key reads as part of the sale's own identity, and a count of sales becomes a count of customers.\n"
@@ -2799,10 +2809,10 @@ const DATA = {
   }
  },
  "counts": {
-  "enforced": 16,
+  "enforced": 17,
   "designed": 17,
   "measured": 1,
-  "total": 34
+  "total": 35
  },
  "census": {
   "terms": {
@@ -2822,8 +2832,6 @@ const DATA = {
     "identity"
    ],
    "identity_role": [
-    "canonical",
-    "composite",
     "reference"
    ],
    "axis": [

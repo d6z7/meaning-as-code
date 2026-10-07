@@ -61,7 +61,7 @@ HOW THIS RELATION JOINS, in the bundle's own words, where the join is not a plai
 
 *string* · optional
 
-THE COLUMN THAT IDENTIFIES ONE ROW of this relation, named at the relation level. Prefer the column fact — `identity: canonical` in the column map — and use this only where there is no column map: declaring it in both places gives one identity two homes that can disagree. The planner reads it alongside `code_column` and `grounds_column` to know which of the relation's columns this concept may be pinned on.
+THE LEGACY single-column key. `sources[].key` is the declaration — one list, on the source, in the order that reaches the SQL — and this slot is derived from it when the key names one column. Prefer `key:`; a bundle carrying only this one still loads.
 
 ### `kind`
 

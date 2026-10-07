@@ -81,20 +81,40 @@ keys:
       112 columns are a join key you also group by. The table had to grant or deny `axis` to every
       `key` alike, and did: it denied it, which is how 21 columns lost their axis-ness.
 
+  - key: key
+    block: source
+    plane: [load, answer]
+    outcomes: [COMMIT, REFUSE]
+    status: enforced
+    reader: "Grounding.cell_key — 52 read sites; canonical_key (a one-column key); key_parts (two or more)"
+    effect: >-
+      WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source
+      under `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A
+      one-column key is the canonical identity, what COUNT(DISTINCT) counts; two or more is the
+      composite, where no column identifies anything alone. A `class: measure` has no canonical
+      identity whatever its key's shape — it is summed, not counted — so its key is the grain.
+    frontier_note: >-
+      NOT A COLUMN KEY, which is why it is the one row in this register whose block is `source`. It
+      was collected from `identity: canonical`/`composite` on the columns until 2026-10-07, and
+      moved because a per-column flag has nowhere to put the ORDER: swapping two column blocks in
+      units_sold — an edit no gate can see and any formatter may make — turned
+      (order_key, line_number) into (line_number, order_key). Measured after the move: all 112 of
+      contoso5's derived column roles are byte-identical.
+
   - key: roles.identity
     block: roles
     plane: [load, answer]
     outcomes: [COMMIT, REFUSE]
     status: enforced
-    reader: "Grounding.cell_key + concept.identity.canonical_key — 22 runtime read sites"
+    reader: "planner/joins + composite_key_guard — the join target this column points at"
     effect: >-
-      `canonical` — this column alone identifies an instance, and is what COUNT(DISTINCT) counts.
-      `composite` — this column WITH its siblings does, and the set carrying it IS the key, in
-      declaration order, which reaches the SQL. `reference` — it identifies a row in ANOTHER
-      concept, so it is a join target and never part of this concept's grain.
+      `reference`, and nothing else — this column identifies a row in ANOTHER concept, so it is a
+      join target and never part of this concept's grain. Whether every value is present over there
+      is a measurement, not a declaration.
     frontier_note: >-
-      `part` is the retired spelling of `composite`, refused by name since 2026-10-07 so an
-      unmigrated bundle is told where the term went rather than that it has a typo.
+      `canonical`, `composite` and `part` are refused BY NAME, each naming where the fact went:
+      what makes a row of THIS concept unique is `key` on the source. They answered a different
+      question from `reference` and could not state an order, and the order reaches the SQL.
 
   - key: roles.axis
     block: roles
@@ -960,7 +980,7 @@ bench:
           # (ColumnRoles' identity validator). The three terms are a closed `enum` and are authored
           # BARE, unlike `axis` and `aggregate.type`, which are fully qualified.
           - key: roles.identity
-            values: [null, canonical, composite, reference]
+            values: [null, reference]
         questions:
           - ask: how many customers
             cases:

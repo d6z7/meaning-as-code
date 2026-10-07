@@ -1299,30 +1299,10 @@ concept:
     identity:
       kind: vocabulary
       closed: true
-      description: What part a column plays in its concept's identity. THE ONLY HOME — there is no concept-level identity block.
+      description: >
+        Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row
+        of THIS concept unique is `grounding.sources[].key`, not a per-column flag.
       terms:
-        canonical:
-          definition: >
-            THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
-            discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-            declares `composite` on every column of its key tuple instead — several composite columns
-            and no canonical IS the composite — rather than nominating a column that does not identify.
-          constellation: >
-            EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
-            it: a surrogate key every fact points at, with a human-readable code and a name beside
-            it that are both 1:1 with it. All three look alike in a profile; only this says which
-            one the joins and the counts are about.
-        composite:
-          definition: >
-            ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
-            returns a set where a row was expected, and looks like an answer. Declared on every column of
-            the tuple, and that is the whole declaration: no canonical column over a key of two or more
-            IS the composite, and the concept adds nothing.
-          constellation: >
-            NO SINGLE COLUMN IDENTIFIES A ROW AND TWO OR MORE TOGETHER DO. A sale line is identified
-            by its order and its line number — neither is unique alone, and declaring either as the
-            identity would make the grain a lie. Mark each participating column, and the composite
-            is what the concept is keyed on.
         reference:
           definition: >
             A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
@@ -1335,6 +1315,23 @@ concept:
             identifies a customer; the sale is identified by something else entirely. Without this
             the key reads as part of the sale's own identity, and a count of sales becomes a count
             of customers.
+
+      # `canonical` AND `composite` WERE HERE AND ARE RETIRED 2026-10-07, operator ruling: "currently
+      # it is implicit and they are not undersetandable ... probably it would be more transparent if
+      # we still try to say lets list columns which make indentiy explicitly". They answered a
+      # DIFFERENT QUESTION from `reference` — what makes a row of THIS concept unique — and that is
+      # one fact about the source rather than a property of each column. Two measurements settled it:
+      #
+      #   IT COULD NOT STATE AN ORDER. `cell_key`'s order reaches the SQL and came from the order the
+      #   column blocks happened to appear in. Swapping two YAML blocks — an edit no gate can see and
+      #   any formatter may make — changed UnitsSold's key from (order_key, line_number) to
+      #   (line_number, order_key). A per-column flag has nowhere to put the order.
+      #
+      #   IT WAS UNREADABLE. On contoso5, 7 of 17 concepts are composite, and reading the key meant
+      #   scanning every column of the source for a flag. The operator's complaint, exactly.
+      #
+      # The fact now has one home, `sources[].key`, which the schema has always admitted and the
+      # parser has always preferred — it was marked deprecated while being the better declaration.
 
     # ===========================================================================
     # mac.concept.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term

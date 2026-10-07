@@ -776,45 +776,48 @@ def inv_key_position(st: dict) -> list[dict]:
 
 
 def inv_key_backed(st: dict) -> list[dict]:
-    """A concept's `key:` list and its column map agree about which columns are the identity.
+    """Every column a concept's `key:` names is a column of its map — the key points at real columns.
 
-    FOUND BY MEASUREMENT 2026-09-28, and it was already drifting: `Currency` on `currencyexchange`
-    declares `key: [FromCurrency]` and marks NO column `identity`, and `Region` on `customer` does the
-    same with `key: [State]`. Two of sixteen concept/relation pairings already disagree WITH THEMSELVES,
-    and all ten prior invariants passed — ONE-HOME compares concept-to-column and MEMBER-GRAIN only
-    fires on set-extension concepts, so nothing looked here.
+    THE INVARIANT IT REPLACES compared two homes. Until 2026-10-07 the key was declared BOTH as
+    `sources[].key` and as `identity: canonical`/`composite` on the columns, and this held the two
+    to each other because retiring either was the operator's call, not a gate's: "`key:` is a second
+    home for membership ... this does not retire it — it makes the two agree, which is the weaker
+    claim a gate can hold without pre-empting a ruling." Found by measurement 2026-09-28, already
+    drifting in 2 of 16 pairings.
 
-    `key:` is a second home for membership, which is §2.1's defect one slot over. This does not retire
-    it — that is the operator's call — it makes the two agree, which is the weaker claim a gate can hold
-    without pre-empting a ruling.
+    THE RULING CAME, and it went the other way: the LIST is the declaration and the columns stopped
+    carrying it, because a per-column flag cannot state the key's ORDER and the order reaches the
+    SQL. So there is one home and nothing to reconcile — and the check that is left is the one that
+    still bites: a key naming a column the map does not declare is a key pointing at nothing, which
+    is how `cell_key` reaches the SQL with a column the relation never served.
     """
     out = []
     for name, d in sorted(st["concepts"].items()):
         for src in ((d.get("grounding") or {}).get("sources") or []):
             rel = str(src.get("relation") or "?").split(".")[-1]
-            listed = [str(x) for x in (src.get("key") or [])]
+            k = src.get("key")
+            listed = [str(x) for x in (k if isinstance(k, list) else ([k] if k else []))]
             cm = src.get("columns")
-            marked = sorted(cn for cn, b in (cm or {}).items()
-                            if P.column_identity(b) in ("canonical", "composite")) \
-                if isinstance(cm, dict) else []
+            declared = set(cm) if isinstance(cm, dict) else set(cm or [])
             subject = f"{name} on {rel}"
-            if not listed and not marked:
-                out.append(_i(subject, NA, f"{subject} declares no key either way"))
-            elif not listed:
-                # THE COLUMN MAP ALONE IS CORRECT AND IS THE POINT. Requiring a `key:` list would
-                # enforce the second home §2.1 exists to remove — the first version of this invariant
-                # did exactly that and failed the clean fixture, which is the gate teaching the defect.
-                out.append(_i(subject, OK,
-                              f"{subject}: the key is declared on the column map only "
-                              f"({', '.join(marked)}), which is its home"))
-            elif sorted(listed) == marked:
-                out.append(_i(subject, OK, f"{subject}: `key:` and the column map agree on "
-                                           f"{', '.join(marked)}"))
-            else:
+            if not listed:
+                out.append(_i(subject, NA, f"{subject} declares no `key:` — the parser refuses a "
+                                           f"primary source without one; a secondary source may "
+                                           f"legitimately have none"))
+                continue
+            if not declared:
+                out.append(_i(subject, NA, f"{subject} lists a key over a source that declares no "
+                                           f"columns, so there is nothing to check it against"))
+                continue
+            missing = [c for c in listed if c not in declared]
+            if missing:
                 out.append(_i(subject, VIOLATION,
-                              f"{subject}: `key: {listed or '[]'}` and the column map's identity "
-                              f"columns {marked or '[]'} disagree — one fact, two homes, already "
-                              f"drifted. The column is where a key is declared"))
+                              f"{subject}: `key: {listed}` names {missing}, which the column map "
+                              f"does not declare — the key reaches `cell_key` and the SQL, so this "
+                              f"is a GROUP BY on a column this concept never served"))
+            else:
+                out.append(_i(subject, OK,
+                              f"{subject}: every column of `key: {listed}` is declared"))
     return out
 
 
@@ -894,18 +897,31 @@ def inv_measure_unit(st: dict) -> list[dict]:
                     agg = ((b.get("roles") or {}).get("aggregate") if isinstance(b, dict) else None) \
                         or (b.get("measure") if isinstance(b, dict) else None)
                     if isinstance(b, dict) and (agg or b.get("role") == "measure"):
-                        cols.append((cn, ((agg or {}).get("unit") or "")))
+                        cols.append((cn, ((agg or {}).get("unit") or ""),
+                                     bool((agg or {}).get("canonical"))))
         if not cols:
             out.append(_i(name, NA, f"concept {name!r} carries no measure column, so no unit is owed"))
             continue
         declared = str((((d.get("concept") or {}).get("semantics") or {}).get("unit") or "")).strip()
-        units = sorted({u for _c, u in cols if u})
+        units = sorted({u for _c, u, *_ in cols if u})
+        # `canonical: true` ANSWERS THIS, and reading past it told authors to state what they had
+        # stated. The invariant's whole question is "which of several factors is THE measure, so a
+        # reader does not take whichever comes first in YAML key order" — and the column standard
+        # declares exactly that on the aggregate (`roles: {aggregate: {canonical: true}}`). Measured
+        # on contoso5 2026-10-07: gross_revenue, net_revenue and product each carry two USD factors
+        # with the canonical one marked, and all three were reported as unresolved.
+        if sum(1 for c in cols if len(c) > 2 and c[2]) == 1:
+            pick = next(c for c in cols if c[2])
+            out.append(_i(name, OK,
+                          f"concept {name!r} carries {len(cols)} measure column(s) and marks "
+                          f"{pick[0]!r} `canonical`, which is which factor is THE measure"))
+            continue
         if len(cols) == 1:
             out.append(_i(name, OK,
                           f"concept {name!r} has ONE measure column ({cols[0][0]}), so its unit "
                           f"projects from the column" + (f" ({units[0]})" if units else "")))
             continue
-        shown = ", ".join(f"{c}={u or '—'}" for c, u in cols)
+        shown = ", ".join(f"{c}={u or '—'}" for c, u, *_ in cols)
         if declared:
             out.append(_i(name, OK,
                           f"concept {name!r} composes {len(cols)} measure column(s) ({shown}) and "
@@ -1026,7 +1042,7 @@ INVARIANTS = (
     ("ONE-HOME", "the canonical key is declared on the column, not also on the concept", inv_one_home),
     ("FK-QUALIFIED", "every declared reference names the relation AND the column", inv_fk_qualified),
     ("KEY-POSITION", "a composite key's positions are exactly 1..n on its key columns", inv_key_position),
-    ("KEY-BACKED", "a concept's `key:` list and its column map agree", inv_key_backed),
+    ("KEY-BACKED", "every column a concept's `key:` names is declared on its map", inv_key_backed),
     ("RETIRED-SHAPE", "a shape a ruling retired appears in no delivered artifact", inv_retired_shape),
     ("DOMAIN-HOMED", "a value domain lives in a register, not as a member list on a descriptor",
      inv_domain_homed),

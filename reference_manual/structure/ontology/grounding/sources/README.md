@@ -6,9 +6,15 @@
 
 ## Keys
 
+- [`key`](#key) — *['string', 'array']* **·** required
 - [`relation`](#relation) — *string* **·** required
 - [`columns`](#columns) — *—*
-- [`key`](#key) — *['string', 'array']*
+
+### `key`
+
+*['string', 'array']* · **required**
+
+WHAT MAKES ONE ROW OF THIS CONCEPT UNIQUE — the column, or the ordered list of columns. THE ORDER IS LOAD-BEARING: it becomes `cell_key` and reaches the SQL, which is why it is stated here rather than derived. It was derived until 2026-10-07, from the columns carrying `identity: canonical`/`composite`, and the order came from the order the column blocks happened to appear in — so swapping two YAML blocks, an edit no gate can see and any formatter may make, silently changed the key (measured: UnitsSold went from (order_key, line_number) to (line_number, order_key)). A single-column key may be written as a bare string. The columns do NOT repeat it: one home, so the two cannot disagree.
 
 ### `relation`
 
@@ -23,12 +29,6 @@ the table OR view name to query (agnostic — the AI does not care which)
 WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat LIST names columns and says nothing about them; the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis. Prefer the map. The list stays legal so a bundle written before the map still loads, and `check_column_spec` reports every concept still using it.
 
 Its own keys: [`ontology.grounding.sources.columns`](columns/README.md)
-
-### `key`
-
-*['string', 'array']* · optional
-
-primary / join key column(s)
 
 ## Levels under this one
 

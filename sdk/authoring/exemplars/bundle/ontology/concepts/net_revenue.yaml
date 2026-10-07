@@ -24,16 +24,12 @@ concept:
 grounding:
   sources:
     - relation: v_contoso5_sales_line
-      key:
-        - order_key
-        - line_number
+      key: [order_key, line_number]
       columns:
         order_key:
-          roles:
-            identity: composite
+          roles: {}
         line_number:
-          roles:
-            identity: composite
+          roles: {}
         net_amount:
           roles:
             aggregate:

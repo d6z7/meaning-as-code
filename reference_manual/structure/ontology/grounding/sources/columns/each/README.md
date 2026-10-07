@@ -25,7 +25,7 @@ Its own keys: [`ontology.grounding.sources.columns.<name>.roles`](roles/README.m
 
 *boolean* · optional
 
-WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.
+WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `sources[].key`; this is what a count DISTINCTs. A SEPARATE flag rather than an `identity` term because the column that counts is routinely also the one that references another concept.
 
 **When you would reach for it.**
 
