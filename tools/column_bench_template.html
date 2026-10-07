@@ -342,7 +342,7 @@ td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font
   <div class="tree" id="cen-tree"></div>
   <div class="sec">the two planes crossed — what a column IS, against what a query may DO with it</div>
   <div id="cen-xt"></div>
-  <div class="sec">the four column-map slots, and identity</div>
+  <div class="sec">the five uses a column may offer, and the rulings on top</div>
   <div id="cen-cov"></div>
   <div id="cen-notes"></div>
 </div></section>
@@ -414,24 +414,27 @@ function matches(when, st) {
    measure_type, where additivity is stated ONCE over the axis kind. This function reads that
    matrix; it encodes no fold rule.
    THE ADDRESSES WERE ALL WRONG, and this panel rendered nothing before 2026-10-07: the qualifier
-   is a MAP under `roles.aggregate` rather than three flat `measure.*` keys, the override is a map
-   keyed by the QUALIFIED axis term rather than a `"time: additive"` string, and
-   `DATA.vocabulary.MeasureType` / `.aggregation_effect` are not keys `load_vocabulary` produces —
-   it keys every namespace by its DOTTED identity, so both lookups were undefined and every cell
-   fell through to `none`. */
+   is a MAP under `offers.aggregate` rather than three flat `measure.*` keys, the override is a map
+   rather than a `"time: additive"` string, and `DATA.vocabulary.MeasureType` / `.aggregation_effect`
+   are not keys `load_vocabulary` produces — it keys every namespace by its DOTTED identity, so both
+   lookups were undefined and every cell fell through to `none`.
+   BOTH SIDES OF THE OVERRIDE ARE BARE TERMS as of revision 5 — `{time: additive}` — which is what
+   the schema's closed enums validate. `.split('.').pop()` is kept on each read so a fully qualified
+   term, the term's identity in mac_vocabulary.yaml, still resolves: the vocabulary's own additivity
+   matrix states its CELLS that way (`mac.concept.aggregation_effect.additive`) while keying them
+   bare. */
 const EFFECT_FOLD = {additive: ['SUM','AVG'], average: ['AVG'], none: []};
 const V_MEASURE_TYPE = 'concept.column.measure_type';
 const V_EFFECT = 'concept.aggregation_effect';
 function measureOutcome(col, st, q) {
-  const agg = st['roles.aggregate'] || {};
+  const agg = st['offers.aggregate'] || {};
   const type = agg.type;
-  const ov = st['roles.aggregate.additivity'];
+  const ov = st['offers.aggregate.additivity'];
   const mt = (((DATA.vocabulary || {})[V_MEASURE_TYPE] || {}).terms || {})[String(type).split('.').pop()] || {};
-  const axisTerm = 'mac.concept.axis.' + q.axis;
   let cell = String((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
   let overridden = false;
-  if (ov && (ov[axisTerm] || ov[q.axis])) {
-    cell = String(ov[axisTerm] || ov[q.axis]).split('.').pop();
+  if (ov && ov[q.axis] != null) {
+    cell = String(ov[q.axis]).split('.').pop();
     overridden = true;
   }
   const legal = EFFECT_FOLD[cell] || [];
@@ -444,12 +447,21 @@ function measureOutcome(col, st, q) {
     plan: ok ? `SELECT ${q.fold}(l.${col.column}) … GROUP BY <${q.axis} axis>` : null,
     result: ok
       ? `${q.fold} is legal on the ${q.axis} axis` + (unit ? ` — reported in ${unit}` : ' — with no unit declared, the number is bare')
+      /* THE EMPTY-LEGAL BRANCH SAID "a ${type} measure folds on no axis at all — its value exists
+         only at the grains it was computed for", which is `precomputed`'s own sentence and was
+         printed for every type whose cell is `none`: a `stock` across time, and any type the
+         per-axis override sets to `none`. Two different facts. */
       : (legal.length
           ? `${q.fold} is not a legal fold of a ${type} measure on the ${q.axis} axis. The correct fold is ${legal.join(' or ')}.`
-          : `A ${type} measure folds on no axis at all — its value exists only at the grains it was computed for.`),
+          : overridden
+            ? `No fold is legal on the ${q.axis} axis: this column's offers.aggregate.additivity overrides the law for it. Read the value at a stated point instead of combining several.`
+            : `No fold is legal on the ${q.axis} axis for a ${type} measure`
+              + (['precomputed','target'].includes(String(type))
+                  ? ` — and none is legal on any other axis either: its value exists only at the grains it was computed for, so you LOCATE the row.`
+                  : `. Fold it along an axis the law permits, or read the level at a stated point in time.`)),
     disclose: ok && !unit ? null : (ok ? `${type} · ${q.axis} · ${cell}` : null),
     note: `${type} · ${q.axis} → mac.concept.aggregation_effect.${cell}`
-      + (overridden ? ' (overridden on this column by roles.aggregate.additivity)' : '')
+      + (overridden ? ' (overridden on this column by offers.aggregate.additivity)' : '')
       + (eff.description ? ' — ' + eff.description : '')
   };
 }
@@ -495,17 +507,31 @@ function yamlBlock(col, st) {
   /* The wavy underline says 'this line does not load'. That is only true in TODAY mode —
      in DESIGNED mode the same line is the standard working as specified. */
   const dead = new Set(MODE === 'today' ? deadKeys(col, st).map(d => d.key) : []);
+  /* TWO KEYS ARE THE SOURCE'S AND NOT THE COLUMN'S — `key` and `counts`, each one statement about
+     the relation whose value is a column name. They are rendered above the column block, because
+     printing them inside it would show a shape the schema refuses. `block` comes from the
+     registry, so nothing here decides which keys those are. */
+  const onSource = t => (KEYS[t.key] || {}).block === 'source';
   const tree = {};
-  (col.toggles || []).forEach(t => {
+  (col.toggles || []).filter(t => !onSource(t)).forEach(t => {
     const v = st[t.key];
     if (!authored(t.key, v)) return;
     const parts = t.key.split('.');
-    if (parts.length === 1) tree[parts[0]] = {__v: v, __dead: dead.has(t.key)};
-    else { (tree[parts[0]] = tree[parts[0]] || {})[parts[1]] = {__v: v, __dead: dead.has(t.key)}; }
+    let node = tree;
+    parts.slice(0, -1).forEach(seg => { node = (node[seg] = node[seg] || {}); });
+    node[parts[parts.length - 1]] = {__v: v, __dead: dead.has(t.key)};
   });
-  let out = `<span class="y-k">${esc(col.column)}</span>:\n`;
-  if (!(col.toggles || []).some(t => String(t.key).startsWith('roles')))
-    out += `  <span class="y-k">roles</span>: <span class="y-v">${esc((col.offers || []).join(', ') || '{}')}</span>\n`;
+  let out = '';
+  const src = (col.toggles || []).filter(t => onSource(t) && authored(t.key, st[t.key]));
+  if (src.length) {
+    out += `<span class="y-c"># on the source, beside relation:</span>\n`;
+    src.forEach(t => {
+      out += `<span class="y-k">${esc(t.key)}</span>: <span class="y-v">${esc(st[t.key])}</span>\n`;
+    });
+  }
+  out += `<span class="y-k">${esc(col.column)}</span>:\n`;
+  if (!(col.toggles || []).some(t => String(t.key).startsWith('offers')))
+    out += `  <span class="y-k">offers</span>: <span class="y-v">{${esc((col.offers || []).join(', '))}}</span>\n`;
   const emit = (node, ind) => {
     Object.entries(node).forEach(([k, v]) => {
       if (v && v.__v !== undefined) {
@@ -657,11 +683,18 @@ function renderMatrix() {
 }
 
 /* ------------------------------------------------------------ constellation */
+/* EVERY FIGURE IS contoso5's, AND EVERY ONE IS MEASURED. The distincts come from
+   data/profiles/{dim_product,dim_customer}.yaml (measured 2026-09-30); the pair counts come from
+   column_rulings.md §1-§3, which names the scan that produced each. The fourth preset replaced
+   `ZipCode (alone)` — 40 639 over a relation this estate does not carry: contoso5's identifying
+   dimension is `city`, 34 581 distinct with 21 317 of them held by exactly one row
+   (DQ-IDENTIFYING-DIM_CUSTOMER-CITY), and the pair figure is the singleton count rather than a
+   cross-tab nobody measured. */
 const PRESETS = [
-  {n: 'Brand ↔ Manufacturer', a: 11, b: 11, p: 11, rows: 2517, an: 'Manufacturer', bn: 'Brand'},
-  {n: 'SubCategory ↔ Category', a: 32, b: 8, p: 32, rows: 2517, an: 'SubCategoryName', bn: 'CategoryName'},
-  {n: 'State ↔ Country', a: 563, b: 8, p: 603, rows: 104990, an: 'State', bn: 'Country'},
-  {n: 'ZipCode (alone)', a: 40639, b: 8, p: 40639, rows: 104990, an: 'ZipCode', bn: 'Country'}
+  {n: 'manufacturer ↔ brand', a: 11, b: 11, p: 11, rows: 2517, an: 'manufacturer', bn: 'brand'},
+  {n: 'sub_category_name ↔ category_name', a: 32, b: 8, p: 32, rows: 2517, an: 'sub_category_name', bn: 'category_name'},
+  {n: 'state ↔ country_code', a: 565, b: 8, p: 603, rows: 104990, an: 'state', bn: 'country_code'},
+  {n: 'city (alone)', a: 34581, b: 8, p: 21317, rows: 104990, an: 'city', bn: 'country_code'}
 ];
 let PROBE = {...PRESETS[0]};
 
@@ -672,12 +705,12 @@ const BRANCHES = [
   {key: 'rulings.finer_than', test: p => p.p === p.a && p.a > p.b,
    test_t: 'pairs = a, and a > b',
    cant: null, safe: 'Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count.'},
-  {key: 'placement.scoped_by', test: p => p.p > p.a && p.p > p.b,
+  {key: 'rulings.scoped_by', test: p => p.p > p.a && p.p > p.b,
    test_t: 'pairs > a AND pairs > b',
    cant: null, safe: 'Also safe, once you check collisions WITHIN versus ACROSS the parent. Zero within and many across is the signature.'},
-  {key: 'rulings.never_axis', test: p => p.a / p.rows >= 0.25,
+  {key: 'offers.suppressed', test: p => p.a / p.rows >= 0.25,
    test_t: 'cardinality approaches the row count',
-   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the ruling must carry the DQ id that measured it.'}
+   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the key\'s VALUE is the DQ id that measured it — so a prohibition cannot be authored without naming its evidence.'}
 ];
 
 function renderCon() {
@@ -809,24 +842,34 @@ function renderCensus(){
      is a ${T.storage_role.length}×${T.column_role.length} space and
      <b>${Object.keys(C.crosstab).length} of ${poss} pairs actually occur</b>. The collision the
      two planes once risked is structurally gone: the data plane spells its slot <code>role</code>
-     and the concept plane spells its own <code>roles</code>, a map, so a term from the wrong plane
+     and the concept plane spells <code>offers</code>, a map, so a term from the wrong plane
      can no longer be confused by spelling — <b>${C.findings.length} breach(es)</b> below.`;
 
+  /* A COUNT THE CENSUS DOES NOT CARRY PRINTS A DASH, never `undefined`. The slot names below are
+     the surface's, and the census is keyed on the vocabulary the generator reads — so a generator
+     that has not followed a retirement is visible here as a missing number rather than as a panel
+     that quietly renders nothing, which is what the retired `identity_role` term list did. */
+  const num = v => (v === undefined || v === null) ? '—' : v;
+  const len = v => Array.isArray(v) ? v.length : '—';
   $('#cen-tree').innerHTML =
 `<span class="pl2">DATA PLANE</span> <span class="ct">— data/sources/*.yaml · data/datasets/*.yaml</span>
-└── columns[].role → <span class="vo">mac.storage_role</span>   <span class="ct">CLOSED · ${T.storage_role.length} · ${T.storage_role.join(' · ')}</span>
+└── columns[].role → <span class="vo">mac.dataset.column.role</span>   <span class="ct">CLOSED · ${len(T.storage_role)} · ${(T.storage_role||[]).join(' · ')}</span>
         <span class="ct">"the PHYSICAL shape of a column in its relation" — measured, never authored</span>
 
 <span class="pl2">CONCEPT PLANE</span> <span class="ct">— ontology/concepts/**/*.yaml</span>
-└── grounding.sources[].columns[&lt;name&gt;]:   <span class="ct">← everything about a column, on the column</span>
-    ├── roles:        → <span class="vo">mac.concept.column.roles</span>  <span class="ct">CLOSED · ${T.column_role.length} · a MAP: every use a question may make of this column</span>
-    │   ├── identity        → <span class="vo">mac.concept.column.identity</span>  <span class="ct">CLOSED · ${T.identity_role.length} · ${C.slots['identity']} of ${C.bindings} claim it</span>
-    │   ├── axis            → <span class="vo">mac.concept.axis</span>  <span class="ct">CLOSED · ${T.axis.length} · ${C.slots['axis']} of ${C.bindings} claim it</span>
-    │   ├── aggregate.type  → <span class="vo">mac.concept.column.measure_type</span>  <span class="ct">CLOSED · ${T.measure_type.length} · ${C.slots['aggregate']} of ${C.bindings} claim it</span>
-    │   ├── period_binding  <span class="ct">a bare flag · ${C.slots['period_binding']} of ${C.bindings} claim it</span>
-    │   └── extremum        <span class="ct">min · max · ${C.slots['extremum']} of ${C.bindings} claim it</span>
-    └── &lt;ruling&gt;      → <span class="vo">mac.concept.column.ruling</span>  <span class="ct">CLOSED · ${T.column_ruling.length} · ${C.slots['rulings']} of ${C.bindings} filled</span>
-            <span class="ct">└── register: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${T.name_register.length}</span>`;
+└── grounding.source:   <span class="ct">← SINGULAR; a sources: LIST is a load error</span>
+    ├── key: / counts:   <span class="ct">the two facts about the RELATION, each one column name (or an ordered list of them)</span>
+    └── columns[&lt;name&gt;]:   <span class="ct">← everything about a column, on the column</span>
+        ├── offers:       → <span class="vo">mac.concept.column.offers</span>  <span class="ct">CLOSED · ${len(T.column_role)} · a MAP: every use a question may make of this column</span>
+        │   ├── axis            → <span class="vo">mac.concept.axis</span>  <span class="ct">CLOSED · ${len(T.axis)} · ${num(C.slots['axis'])} of ${C.bindings} claim it</span>
+        │   ├── suppressed     <span class="ct">a DQ register id · requires axis · ${num(C.slots['suppressed'])} of ${C.bindings} claim it</span>
+        │   ├── aggregate.type  → <span class="vo">mac.concept.column.measure_type</span>  <span class="ct">CLOSED · ${len(T.measure_type)} · ${num(C.slots['aggregate'])} of ${C.bindings} claim it</span>
+        │   ├── period_binding  <span class="ct">a bare flag · ${num(C.slots['period_binding'])} of ${C.bindings} claim it</span>
+        │   └── extremum        <span class="ct">min · max · ${num(C.slots['extremum'])} of ${C.bindings} claim it</span>
+        ├── references:   <span class="ct">a CONCEPT NAME — the one row this column's values identify</span>
+        ├── value_register:  <span class="ct">a bundle-relative path — the file whose rows ARE this column's values</span>
+        └── &lt;ruling&gt;      → <span class="vo">mac.concept.column.ruling</span>  <span class="ct">CLOSED · ${len(T.column_ruling)} · ${num(C.slots['rulings'])} of ${C.bindings} filled</span>
+                <span class="ct">└── naming: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${len(T.name_register)}</span>`;
 
   /* The cross-tab carries COUNTS, so this is the one place a real magnitude encoding is earned:
      one hue, light to dark. Every cell also prints its number, so nothing is colour-alone. */
@@ -868,13 +911,11 @@ function renderCensus(){
       <div class="vl2">${n} of ${C.bindings}</div>`;
     cov.appendChild(d);
   });
-  Object.entries(C.identity_kinds).forEach(([k,n])=>{
-    const d=el('div','cov');
-    d.innerHTML=`<div class="cn2">${esc(k)}</div>
-      <div class="tr2"><div class="fl2" style="width:${(n/C.concepts*100).toFixed(1)}%"></div></div>
-      <div class="vl2">${n} of ${C.concepts} concepts</div>`;
-    cov.appendChild(d);
-  });
+  /* THE CENSUS'S `identity_kinds` MAP WAS READ HERE AND HAS NOT BEEN EMITTED SINCE 2026-10-05, when the
+     concept-level identity block was retired: the loop threw on `Object.entries(undefined)` and
+     took the whole panel with it. A dead read, pre-existing and unrelated to the key rename. What
+     a concept is keyed on is now READ OFF its source's `key`, which is one column or an ordered
+     list — not a kind from a closed set — so there is nothing left for this bar chart to count. */
   $('#cen-cov').innerHTML=''; $('#cen-cov').appendChild(cov);
 
   const notes=$('#cen-notes'); notes.innerHTML='';
@@ -882,10 +923,11 @@ function renderCensus(){
     `<h4>${/^R1/.test(f)?'A term from the wrong plane':'A retired term still in use'}</h4><p>${esc(f)}</p>`)));
   notes.appendChild(el('div','find',
     `<h4>The column map is used ${C.forms.map} of ${C.forms.map+C.forms.flat} times</h4>
-     <p>Every source binds its columns as a FLAT LIST of names, so three of the map's four slots are
-     ${C.slots['identity']} of ${C.bindings}. The role survives only because it has a second home in
-     <code>field_roles</code>. This is the denominator for "is this bundle on the standard yet" —
-     and the answer is no, in the bundle the standard was designed against.</p>`));
+     <p>A source binding its columns as a FLAT LIST of names says WHICH columns a concept serves and
+     nothing about what each one IS, so every slot below is 0 of those bindings and
+     <code>Grounding.offers</code> falls back to the derived role for them. This is the denominator
+     for "is this bundle on the standard yet", and <code>check_column_spec</code> is what reports
+     the flat ones by name.</p>`));
   notes.appendChild(el('div','find',
     `<h4>Served: ${C.per_origin.served.unbound} of ${C.per_origin.served.total} columns bound by no concept</h4>
      <p>Clean — every served column is bound. The landing is

@@ -16,15 +16,16 @@ concept:
 grounding:
   kind: sql_table
   schema: two_plane_warehouse
-  sources:
-    - relation: customers
-      columns:
-        customer_id:
-          role: key
-          identity: canonical
-          counts: true
-        country_code:
-          role: dimension
-        created_at:
-          role: dimension
+  source:
+    relation: customers
+    key: [customer_id]
+    columns:
+      customer_id:
+        offers: {}
+      country_code:
+        offers:
+          axis: categorical
+      created_at:
+        offers:
+          axis: time
   grain: one row per customer (customer_id)

@@ -42,10 +42,17 @@ def extract(node, path):
     """Resolve a dotted path; `[]` flattens a list, `{}` flattens a map's VALUES.
 
     `{}` EXISTS BECAUSE THE COLUMN DECLARATION IS A MAP KEYED BY COLUMN NAME. A shape about a
-    column — "a measure declares its type" — has to reach `grounding.sources[].columns{}.roles.
+    column — "a measure declares its type" — has to reach `grounding.source.columns{}.offers.
     aggregate.type` and say nothing about which column names exist. Without it the only reachable
     homes were concept-level scalars, which is why three shapes still pointed at the retired
     `concept.semantics.*` after the facts moved onto the columns (2026-10-07).
+
+    THE ENGINE IS GENERIC BY DESIGN (this file's own docstring: "shapes are declared in YAML... not
+    in code"), so it does not special-case `sources` vs `source` or `roles` vs `offers` anywhere —
+    a shape's own `path:` string is read verbatim. `mac_shapes.yaml`'s three measure shapes still
+    read `grounding.sources[].columns{}.roles.aggregate.*` / `.roles.axis` as of this revision;
+    that file is outside tools/** and sdk/**, so its path strings are not changed here. See the
+    platform-developer handoff for this gap.
     """
     cur = [node]
     for p in path.split("."):
@@ -95,14 +102,21 @@ def grounded_columns_for_relation(relation, root):
 def grounded_columns(doc, root):
     """The columns of the table(s) a concept grounds to — resolved CROSS-FILE from the Physical layer,
     where columns are single-homed (v0.5 dropped grounding.columns). Supports both grounding forms:
-    grounding.table (sql_table adapter) and grounding.sources[].relation (the v0.5-agnostic form)."""
+    grounding.table (sql_table adapter) and grounding.source.relation (the current, singular form).
+
+    REWIRED 2026-10-07: `sources[]` (a LIST) -> `source` (singular). The list is now a schema load
+    error (`not: {}`), so there is at most one relation left to resolve here, not several to loop
+    over — and the old loop silently found NONE of them, which is the measured cause of
+    `rule-binds-grounded` reporting every rule's own columns as ungrounded on this bundle
+    (23 of 560 `concept_binds_column` pointers, same root cause, different reader).
+    """
     g = doc.get("grounding") or {}
     names = []
     if isinstance(g.get("table"), str):
         names.append(g["table"])
-    for s in (g.get("sources") or []):
-        if isinstance(s, dict) and isinstance(s.get("relation"), str):
-            names.append(s["relation"])
+    s = g.get("source")
+    if isinstance(s, dict) and isinstance(s.get("relation"), str):
+        names.append(s["relation"])
     cols = set()
     for t in names:
         cols |= grounded_columns_for_relation(t, root)

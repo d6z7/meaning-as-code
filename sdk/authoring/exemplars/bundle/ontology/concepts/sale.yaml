@@ -8,112 +8,119 @@ concept:
   name: Sale
   label: Sale
   class: event
-  definition: >
-    One product sold to one person on one day: the thing this whole warehouse is a record of.
-    223,974 of them over ten years, 2016-05 to 2025-12. Read from the rows: on 2016-05-18 customer
-    1293529 bought 2 of product 153 at store 430 for 751.95 USD — every other relation in this
-    bundle exists to describe one of those five facts.
+  definition: 'One product sold to one person on one day: the thing this whole warehouse is a record of.
+    223,974 of them over ten years, 2016-05 to 2025-12. Read from the rows: on 2016-05-18 customer 1293529
+    bought 2 of product 153 at store 430 for 751.95 USD — every other relation in this bundle exists to
+    describe one of those five facts.
 
 
-    THE CENTRE, deliberately. Customer says to whom, Product says what, Store and Channel say
-    where, CalendarDay says when, Currency and ExchangeRate say in what money. None of them is of
-    interest here on its own; a customer with no sales is a directory entry. So this concept comes
-    first and the others are built outward from what it needs — MODELLING-LOG.md, entries 3 and 4.
+    THE CENTRE, deliberately. Customer says to whom, Product says what, Store and Channel say where, CalendarDay
+    says when, Currency and ExchangeRate say in what money. None of them is of interest here on its own;
+    a customer with no sales is a directory entry. So this concept comes first and the others are built
+    outward from what it needs — MODELLING-LOG.md, entries 3 and 4.
 
 
-    NOT "SalesLine". That is the structure's name — a line of an order, a row of a view. The
-    landing table is already called `sales`, and a row of it is one product sold.
+    NOT "SalesLine". That is the structure''s name — a line of an order, a row of a view. The landing
+    table is already called `sales`, and a row of it is one product sold.
 
 
-    IT IS NOT AN ORDER. An order is the basket this belongs to — one to seven sales, median two —
-    and it carries no measure of its own; every amount is here. [[Order]] is the grouping.
+    IT IS NOT AN ORDER. An order is the basket this belongs to — one to seven sales, median two — and
+    it carries no measure of its own; every amount is here. [[Order]] is the grouping.
 
 
-    IT RESTS ON A PROPOSAL, NOT A RULING. The relation serving it declares
-    `driven_by: proposed` against DQ-DUP-ORDERROWS-SALES: `orderrows` delivers the same 223,974
-    rows with one column fewer, and `sales` was chosen as the fact of record. Until a person
-    answers that finding this concept stands on a recommendation.
+    IT RESTS ON A PROPOSAL, NOT A RULING. The relation serving it declares `driven_by: proposed` against
+    DQ-DUP-ORDERROWS-SALES: `orderrows` delivers the same 223,974 rows with one column fewer, and `sales`
+    was chosen as the fact of record. Until a person answers that finding this concept stands on a recommendation.
 
 
-    IT HAS NO OBSERVABLE STATE. Both dates are on every row and there is no status column, so a
-    sale is only ever "ordered on this day, delivered on that one". Nothing records cancellation or
-    return: a question about either is unanswerable from this bundle and must say so rather than
-    read an absent state as a negative.
+    IT HAS NO OBSERVABLE STATE. Both dates are on every row and there is no status column, so a sale is
+    only ever "ordered on this day, delivered on that one". Nothing records cancellation or return: a
+    question about either is unanswerable from this bundle and must say so rather than read an absent
+    state as a negative.
 
 
-    IT CARRIES NO MEASURE OF ITS OWN. A sale has four things worth summing, and each folds by its
-    own law, so each is a concept in its own right — [[UnitsSold]], [[NetRevenue]], [[GrossRevenue]],
-    [[SalesCost]] — carrying its amount and the per-unit price it composes from. This is the event
-    they hang off: its keys, its two dates, and the dimensions they are sliced by.
+    IT CARRIES NO MEASURE OF ITS OWN. A sale has four things worth summing, and each folds by its own
+    law, so each is a concept in its own right — [[UnitsSold]], [[NetRevenue]], [[GrossRevenue]], [[SalesCost]]
+    — carrying its amount and the per-unit price it composes from. This is the event they hang off: its
+    keys, its two dates, and the dimensions they are sliced by.
+
+    '
 grounding:
-  sources:
-    - relation: v_contoso5_sales_line
-      key: [order_key, line_number]
-      columns:
-        order_key:
-          roles: {}
-        line_number:
-          roles: {}
-        order_date:
-          roles:
-            axis: mac.concept.axis.time
-            period_binding: true
-            extremum: [min, max]
-        delivery_date:
-          roles:
-            axis: mac.concept.axis.time
-            extremum: [min, max]
-        customer_key:
-          roles:
-            identity: reference
-        store_key:
-          roles:
-            identity: reference
-        product_key:
-          roles:
-            identity: reference
-        currency_code:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
+  source:
+    relation: v_contoso5_sales_line
+    key: [order_key, line_number]
+    columns:
+      order_key:
+        offers: {}
+      line_number:
+        offers: {}
+      order_date:
+        offers:
+          axis: time
+          period_binding: true
+          extremum: [min, max]
+      delivery_date:
+        offers:
+          axis: time
+          extremum: [min, max]
+      customer_key:
+        offers: {}
+        references: Customer
+      store_key:
+        offers: {}
+        references: Store
+      product_key:
+        offers: {}
+        references: Product
+      currency_code:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        references: Currency
 contract:
   rules:
-    - id: sale.resolution.rate_on_order_date
-      subject: Sale
-      kind: mac.concept.rule.resolution
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - order_date
-        - currency_code
-      when: a sale's USD amount is wanted in the customer's currency
-      then: >
-        join `{v_contoso5_fx_rate}` on `{order_date}` against the rate's day AND `{currency_code}`
-        against its to-currency, with the from-currency fixed at USD — the whole rate key minus the
-        unit the amounts are already in.
-      never: >
-        join on currency alone
-      why: >
-        the rate's key is a triple; on one column the join is many:many and multiplies each sale by
-        every day the pair was quoted — 100,450 rows of it
-    - id: sale.default.period_is_order_date
-      subject: Sale
-      kind: mac.concept.rule.default
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - order_date
-        - delivery_date
-      when: sales are put in a period and the question does not say which date
-      then: >
-        bind the period to `{order_date}` — the column declared `period` — and say so in the answer;
-        `{delivery_date}` is used only when the question asks about delivery
-      never: >
-        bind the period to `{delivery_date}` unasked, or to `{order_date}` without saying so
-      why: >
-        both dates are on every row and they differ, so the choice moves revenue between periods
-        without changing the total — invisible in any one figure. Order date is the reporting
-        convention; delivery is a logistics question.
+  - id: sale.resolution.rate_on_order_date
+    subject: Sale
+    kind: mac.concept.rule.resolution
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - order_date
+    - currency_code
+    when: a sale's USD amount is wanted in the customer's currency
+    then: 'join `{v_contoso5_fx_rate}` on `{order_date}` against the rate''s day AND `{currency_code}`
+      against its to-currency, with the from-currency fixed at USD — the whole rate key minus the unit
+      the amounts are already in.
+
+      '
+    never: 'join on currency alone
+
+      '
+    why: 'the rate''s key is a triple; on one column the join is many:many and multiplies each sale by
+      every day the pair was quoted — 100,450 rows of it
+
+      '
+  - id: sale.default.period_is_order_date
+    subject: Sale
+    kind: mac.concept.rule.default
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - order_date
+    - delivery_date
+    when: sales are put in a period and the question does not say which date
+    then: 'bind the period to `{order_date}` — the column declared `period` — and say so in the answer;
+      `{delivery_date}` is used only when the question asks about delivery
+
+      '
+    never: 'bind the period to `{delivery_date}` unasked, or to `{order_date}` without saying so
+
+      '
+    why: 'both dates are on every row and they differ, so the choice moves revenue between periods without
+      changing the total — invisible in any one figure. Order date is the reporting convention; delivery
+      is a logistics question.
+
+      '
 governance:
   owner: operator
   last_reviewed: '2026-09-29'

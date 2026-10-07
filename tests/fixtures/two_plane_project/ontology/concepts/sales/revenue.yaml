@@ -28,22 +28,29 @@ concept:
 grounding:
   kind: sql_table
   schema: two_plane_warehouse
-  sources:
-    - relation: orders
-      columns:
-        order_id:
-          role: key
-          identity: canonical
-          counts: true
-        customer_id:
-          role: key
-          identity: reference
-        placed_at:
-          role: period
-          axis: mac.concept.axis.time
-        amount:
-          role: measure
-          measure:
-            type: mac.concept.column.measure_type.flow
+  source:
+    # THE KEY IS ONE ORDERED LIST ON THE SOURCE. It was `identity: canonical` on the column until
+    # 2026-10-07, which could not state an order -- and the order reaches the SQL.
+    relation: orders
+    key: [order_id]
+    columns:
+      # EVERY COLUMN DECLARES `offers:`, AND `{}` IS A STATEMENT: loaded, typed, offered to no
+      # question. A key column claims nothing of its own; `role` is DERIVED from `offers` plus the
+      # source's key and is never authored. `counts: true` is gone from this column: what one
+      # instance IS is `source.counts`, and it is only written where it DIFFERS from the key --
+      # here it would have named `order_id` twice.
+      order_id:
+        offers: {}
+      customer_id:
+        offers: {}
+        references: Customer
+      placed_at:
+        offers:
+          axis: time
+          period_binding: true
+      amount:
+        offers:
+          aggregate:
+            type: flow
             unit: EUR
   grain: one row per order (order_id)

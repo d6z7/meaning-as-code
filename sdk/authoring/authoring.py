@@ -58,11 +58,11 @@ EXEMPLAR = EXEMPLAR_BUNDLE / "ontology" / "concepts" / "product.yaml"
 def _vocabulary() -> dict:
     """mac_vocabulary.yaml, INDEXED BY DOTTED IDENTITY — which is not how the file is written.
 
-    THE TWO SPELLINGS, AND WHY THIS WENT WRONG. The file nests its blocks (`concept: column: roles:`)
-    while every lookup here asks for the dotted name (`concept.column.roles`), so a raw `.get()`
-    returns `{}` for every namespace that is nested — which is all of them. Measured 2026-10-07:
-    `vocabulary_terms` answered `[]` for concept.column.roles, concept.axis, concept.identity and
-    concept.column.role alike, so the prompt below rendered "a role from mac.concept.column.role — "
+    THE TWO SPELLINGS, AND WHY THIS WENT WRONG. The file nests its blocks (`concept: column: offers:`)
+    while every lookup here asks for the dotted name (`concept.column.offers`), so a raw `.get()`
+    returns `{}` for every namespace that is nested — which is all of them. Measured 2026-10-07,
+    against that day's shape: `vocabulary_terms` answered `[]` for concept.column.roles, concept.axis,
+    concept.identity and concept.column.role alike, so the prompt below rendered "a role from mac.concept.column.role — "
     with an empty list and then hand-typed five names after it, and test_column_roundtrip's
     "prompt lists every <ns> term" assertions passed VACUOUSLY — `"".join([]) in P` is true of any
     prompt. `mac_vocab.flatten` is the estate's one converter between the two shapes.
@@ -124,63 +124,83 @@ _SEMANTIC = {
 
 SYS_PROMPT = """You are a MAC ontology author. MAC models a data source as CONCEPT files (YAML). Author ONE concept for the business notion named below.
 
-A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and relations is M:N and you are given every relation this notion needs:
-- ONE concept may ground on SEVERAL relations — list each under `grounding.sources`, which is a LIST.
+A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and relations is M:1, not M:N — you are given every relation this notion needs:
+- ONE concept grounds on EXACTLY ONE relation, under `grounding.source` (singular). A notion that genuinely needs more than one relation is a TRANSFORM VIEW (combine it upstream, then ground on the view), or it is really TWO concepts and an edge.
 - ONE relation may serve SEVERAL concepts; grounding on a relation does not consume it.
 - A relation may back NO concept at all: a pure mapping/bridge table is not a notion, it dissolves into a rule or an edge on the notions it relates.
 - A notion may exist with NO backing table of its own (a perspective, a plan stage, a rollup) — ground it on the relation that carries its discriminating column.
 
 Shape of a concept file:
 - metadata: {concept, source, version, schema_version: '{SCHEMA_GENERATION}', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
-- concept: {name, label, class, definition}   # class is EXACTLY one of: {CLASSES}. There is NO `identity:` block on a concept — identity is declared on the COLUMNS, below.
-- grounding: {sources: [{relation, columns: {<col>: {roles, counts?, register?, rulings?}}}]}
+- concept: {name, label, class, definition}   # class is EXACTLY one of: {CLASSES}. There is NO `identity:` block on a concept — the key is `grounding.source.key`, below.
+- grounding: {source: {relation, key, columns: {<col>: {offers, references?, value_register?, rulings?}}}}
+  `source` IS SINGULAR — ONE concept binds ONE relation; many concepts may bind one relation. A
+  notion genuinely needing two relations is a transform view, or two concepts and an edge. Writing
+  the retired plural `sources` key as a list is a LOAD ERROR (mac.schema.json makes it `not: {}`), not a second relation.
+  `key` NAMES WHAT MAKES ONE ROW UNIQUE, IN ORDER — a bare column name, or an ordered list for a
+  composite grain (`key: [OrderKey, LineNumber]`). THE ORDER IS LOAD-BEARING: it becomes `cell_key`
+  and reaches the SQL, which is why it is stated here, once, rather than scattered as a flag across
+  columns.
   EVERYTHING ABOUT A COLUMN GOES ON THE COLUMN. `columns` is a MAP keyed by column name, not a list of
   names, and it is the ONLY place a column's facts are declared:
-      columns:
-        OrderKey:    {roles: {identity: composite}}
-        LineNumber:  {roles: {identity: composite}}
-        CustomerKey: {roles: {identity: reference, axis: mac.concept.axis.categorical}}
-        OrderDate:   {roles: {axis: mac.concept.axis.time, period_binding: true, extremum: [min, max]}}
-        Quantity:    {roles: {aggregate: {type: mac.concept.column.measure_type.flow, unit: units}}}
-        Surname:     {roles: {axis: mac.concept.axis.categorical}}
-        ValidFrom:   {roles: {}}   # loaded, typed, and offered to NO question
-  TODAY'S FLAGS ARE roles, counts, register, rulings — and ONLY those four, because a flag ships with
-  the code that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a
-  flag and a sentence.
-  `roles` IS REQUIRED AND IS A MAP from each USE a question may make of the column to that use's own
-  terms — {ROLES}. A column claims every use that is true of it, and one column often holds several: a
-  foreign key you also group by carries `identity: reference` AND an `axis`, which is 21 of 112 columns
-  in the worked bundle. `roles: {}` is a POSITIVE statement — the column is loaded and no question is
-  offered it. Omitting `roles` is not that; it is a column nobody classified, and a finding.
-  THE TERMS, each in its own closed vocabulary:
-    identity        {IDENTITY_TERMS} — `canonical` is the concept's key; `composite` marks one column
-                    of a key tuple (mark EVERY column of it and give NONE `canonical`); `reference`
-                    marks a foreign key, which is another concept's identity and never part of this
-                    concept's grain.
-    axis            mac.concept.axis.<{AXIS_TERMS}> — WRITE IT FULLY QUALIFIED; the bare term fails
-                    validation. The kind IS the permission: declaring one says a question may group
-                    and filter by this column, and WHICH row of the fold law a fold across it uses.
-                    It must agree with the column's type: a date is `time`, anything else
-                    `categorical`.
-    aggregate       {type, unit, canonical?} — a question may FOLD this column. Several columns may
-                    carry it when they compose ONE quantity (Quantity x NetPrice); then ONE of them
-                    adds `canonical: true` to say which is THE measure of the concept.
+      source:
+        relation: v_contoso5_sales_line
+        key: [OrderKey, LineNumber]
+        columns:
+          OrderKey:    {offers: {}}
+          LineNumber:  {offers: {}}
+          CustomerKey: {offers: {axis: categorical}, references: Customer}
+          OrderDate:   {offers: {axis: time, period_binding: true, extremum: [min, max]}}
+          Quantity:    {offers: {aggregate: {type: flow, unit: units}}}
+          Surname:     {offers: {axis: categorical}}
+          ValidFrom:   {offers: {}}   # loaded, typed, and offered to NO question
+  TODAY'S KEYS ARE offers, references, value_register, rulings — and ONLY those four, because a key
+  ships with the code that reads it. A misspelled key is a LOAD ERROR, which is the whole difference
+  between a key and a sentence.
+  `offers` IS REQUIRED AND IS A MAP from each USE a question may make of the column to that use's own
+  terms — {OFFERS}. A column claims every use that is true of it, and one column often holds several: a
+  foreign key you also group by carries `references: <Concept>` AND an `axis` in `offers`, which is
+  21 of 112 columns in the worked bundle. `offers: {}` is a POSITIVE statement — the column is
+  loaded and no question is offered it. Omitting `offers` is not that; it is a column nobody
+  classified, and a finding.
+  `references: <ConceptName>` IS A TOP-LEVEL SIBLING OF `offers`, NEVER INSIDE IT — it says this
+  column's values identify one row of THAT CONCEPT (a foreign key), named directly rather than left
+  for a reader to infer from a matching column name. It replaces the old column flag that named `reference` under `identity`; there
+  is no `identity` term any more, of any kind — the concept's own key is `source.key`, above, never a
+  column flag.
+  THE OFFERS, each in its own closed vocabulary:
+    axis            {AXIS_TERMS} — BARE, not namespaced. The kind IS the permission: declaring one
+                    says a question may group and filter by this column, and WHICH row of the fold
+                    law a fold across it uses. It must agree with the column's type: a date is
+                    `time`, anything else `categorical`.
+    aggregate       {type, unit, default?} — a question may FOLD this column. `type` is BARE, one
+                    of {MEASURE_TYPES}. Several columns may carry it when they compose ONE quantity
+                    (Quantity x NetPrice); then ONE of them adds `default: true` to say which is THE
+                    measure of the concept.
     period_binding  `true`, on THE reporting date when a relation carries several, so "sales in
                     March" cannot silently pick the delivery date.
     extremum        [min], [max] or [min, max] — this column's earliest or latest value may be ASKED
                     FOR. Not a fold: an extremum picks a value that exists.
-  `counts: true` marks the column one INSTANCE is counted by when the relation is served FINER than
-  the thing — a store dimension keyed on a version surrogate counts VERSIONS unless this says so.
-  DO NOT WRITE A `field_roles:` BLOCK, and DO NOT WRITE A SCALAR `role:`. The five role names (key,
-  dimension, measure, period, housekeeping) are DERIVED from `roles` for one legacy reader; authoring
-  either gives one fact two homes that can drift, and `role:` is refused by name.
-  DO NOT WRITE `grain:` UNDER `grounding:`. The grain IS the identity: the column marked `canonical`,
-  or the set marked `composite`. A prose restatement of it was retired on 2026-10-07 and the schema
-  no longer admits the key.
-  DO NOT WRITE AN `identity:` BLOCK UNDER `concept:` AT ALL. It was removed from the schema on
-  2026-10-05 and a file carrying one fails validation. Identity is a column fact: which column is the
-  key, which columns compose a composite, and which one a count DISTINCTs are all statements about
-  columns, so they are declared where the column is.
+    suppressed      a DQ finding id — the column IS a real axis and a person has RULED that no
+                    question may group by it. REQUIRES `axis` alongside it: this is a judgement on
+                    top of what the warehouse IS, never a denial that the axis exists.
+  `source.counts: <column name>` marks the column one INSTANCE is counted by when the relation is
+  served FINER than the thing — a store dimension keyed on a version surrogate counts VERSIONS by
+  its location code unless this says so. It is declared on the SOURCE, beside `key`, never on a
+  column: it is a fact about the CONCEPT whose value happens to be a column name.
+  DO NOT WRITE A `field_roles:` BLOCK, and DO NOT WRITE A BARE scalar role name or a map by that
+  old container name. The five
+  role names (key, dimension, measure, period, housekeeping) are DERIVED from `offers` and `key` for
+  one legacy reader; authoring any of them gives one fact two homes that can drift, and that scalar and that old container name are
+  BOTH refused by name (the column body's `additionalProperties: false` rejects both).
+  DO NOT WRITE `grain:` UNDER `grounding:`. The grain IS `source.key`, above — a prose restatement of
+  it was retired on 2026-10-07 and the schema no longer admits a second one.
+  DO NOT WRITE AN `identity:` BLOCK UNDER `concept:` AT ALL, AND DO NOT WRITE `identity:` ANYWHERE
+  ELSE EITHER. `concept.identity` was removed from the schema on 2026-10-05; the column flag
+  that briefly replaced it — naming `canonical`, `composite` or `reference` under `identity` —
+  left `offers` on 2026-10-07 for
+  good, split between `source.key` (the grain) and the top-level `references:` (a foreign key). A
+  file carrying `identity:` anywhere fails validation.
 - contract: {no_probe_guarantee?, rules: [{id, subject, kind: mac.concept.rule.<{RULE_KINDS}>, confidence, scope: ACME, binds: [<cols>], when, then, never, why}]}   # a RULE's confidence ∈ C|P|R (C=confirmed, P=proposed, R=rejected) — this is NOT the metadata C/I/Q scale; default P when unconfirmed
 - governance: {owner, last_reviewed}
 
@@ -193,8 +213,8 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
   Fill items from the CONTEXT / lookup tables when present; if the value set is not in the inputs, use closure: unknown and include only codes you can justify (never invent values).
 - a FACT / KPI / measure table (numeric values you aggregate) → class: measure. ITS FACTS GO ON THE
   COLUMNS, not on the concept: the column carrying the number declares
-  `roles: {aggregate: {type: mac.concept.column.measure_type.<{MEASURE_TYPES}>, unit: <unit>}}`, and
-  every column a question may slice it by declares its own `roles: {axis: ...}`. A concept may carry
+  `offers: {aggregate: {type: <{MEASURE_TYPES}>, unit: <unit>}}` — `type` is BARE, never namespaced —
+  and every column a question may slice it by declares its own `offers: {axis: ...}`. A concept may carry
   SEVERAL quantities that fold by different laws — gross_amount is a `flow`, unit_price an
   `intensive` — which one concept-level slot could only misreport. `concept.semantics` is optional
   and holds `purpose:` alone; the measure facts are PROJECTED onto it from the columns.
@@ -213,12 +233,12 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
           kind: rule        # 'rule' = membership computed via a FK / transitive walk; 'enumerated' = explicit named sets
           rule: <one line: how membership is computed, e.g. "region groups countries via acme_scoped_market_code">
   `members:` is a TOP-LEVEL OBJECT with a REQUIRED `over:` key (sibling of `concept:` / `grounding:` / `contract:`), NEVER a bare list and NEVER nested under `concept:`. (Placement reference: `semantics` is nested UNDER `concept:`; but `values`, `members`, and `lifecycle` are TOP-LEVEL siblings of `concept:`.)
-- a plain dimension / identifier table (keys + attributes, not a closed code list) → class: reference or entity (no extra required block).
+- a plain dimension / identifier table (keys + attributes, not a closed code list) → class: entity (no extra required block). (`reference` was RENAMED `entity` 2026-10-05; do not write `reference` — it is not in the closed set any more.)
 
 Authoring rules:
 - Ground on the REAL table and columns provided. NEVER invent a column that isn't in the schema.
-- Give EVERY column a `roles` map — every use that is true of it, or `{}` for a column no question is offered. A column with no `roles` key at all is unclassified and is a finding.
-- EXACTLY ONE column carries `identity: canonical` when a single column identifies the thing. If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), mark EVERY column of the tuple `identity: composite` and give NONE of them `canonical` — several composite columns and no canonical IS the composite, and there is no concept-level term to add.
+- Give EVERY column an `offers` map — every use that is true of it, or `{}` for a column no question is offered. A column with no `offers` key at all is unclassified and is a finding.
+- `grounding.source.key` NAMES THE GRAIN — a bare column name when ONE column identifies the thing, or an ORDERED LIST when the grain is a COMPOSITE of several (typical for fact / KPI tables). The order is load-bearing: it becomes `cell_key` and reaches the SQL, so write it in the order that makes the row unique, not alphabetically or in column-definition order. There is no column-level flag for this any more — do not write `identity:` anywhere.
 - Write a precise 2-4 sentence definition anchored in the schema + context.
 - WHERE MAC HAS A CANON FOR A RULE SHAPE, BIND — DO NOT WRITE THE CLAUSES. Supply
   `realized_by: {udf: mac.canon.<name>, params: {...}}` and OMIT when/then/never; they are RENDERED
@@ -266,8 +286,7 @@ SYS_PROMPT = (
     SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
     .replace("{CLASSES}", " | ".join(concept_classes()))
     .replace("{RULE_KINDS}", "|".join(vocabulary_terms("concept.rule")))
-    .replace("{ROLES}", " | ".join(vocabulary_terms("concept.column.roles")))
-    .replace("{IDENTITY_TERMS}", " | ".join(vocabulary_terms("concept.column.identity")))
+    .replace("{OFFERS}", " | ".join(vocabulary_terms("concept.column.offers")))
     .replace("{AXIS_TERMS}", "|".join(vocabulary_terms("concept.axis")))
     .replace("{MEASURE_TYPES}", "|".join(vocabulary_terms("concept.column.measure_type")))
     .replace("{MEASURE_TYPE_GLOSSES}", _term_glosses("concept.column.measure_type"))
@@ -277,10 +296,16 @@ SYS_PROMPT = (
 # EMPTY STRING into the prompt and the assertion above — which only looked for a surviving brace —
 # was satisfied. The model was handed "a role from mac.concept.column.role — " with nothing after
 # the dash, and the round-trip test's `sep.join(terms) in P` passed because `"" in P` is always true.
-for _ph in ("CLASSES", "RULE_KINDS", "ROLES", "IDENTITY_TERMS", "AXIS_TERMS", "MEASURE_TYPES",
+#
+# `{IDENTITY_TERMS}` / `concept.column.identity` LEFT THIS LIST 2026-10-07 WITH THE VOCABULARY ITSELF
+# (column_declaration.md rev 5): `identity` is not a use any column offers any more, of any kind —
+# a reference is the top-level `references:` key and the grain is `source.key`, neither a closed
+# term set a placeholder could render. `{ROLES}` was renamed `{OFFERS}` the same day, for the same
+# `roles:` -> `offers:` rename every other reader in this estate went through.
+for _ph in ("CLASSES", "RULE_KINDS", "OFFERS", "AXIS_TERMS", "MEASURE_TYPES",
             "MEASURE_TYPE_GLOSSES", "SCHEMA_GENERATION"):
     assert "{" + _ph + "}" not in SYS_PROMPT, f"{_ph} left unsubstituted in SYS_PROMPT"
-for _ns in ("concept.rule", "concept.column.roles", "concept.column.identity", "concept.axis",
+for _ns in ("concept.rule", "concept.column.offers", "concept.axis",
             "concept.column.measure_type"):
     assert vocabulary_terms(_ns), f"{_ns} rendered EMPTY into SYS_PROMPT — read the _vocabulary note"
 assert "resolved_axis" not in SYS_PROMPT
@@ -466,9 +491,10 @@ def author_concept(
         "## EXAMPLE MAC CONCEPT (shape reference only — do NOT copy its content)\n\n"
         f"{exemplar}\n\n"
         "## GROUNDING RELATIONS — schema, provenance and ROWS for EVERY relation this notion needs\n\n"
-        "(one concept may ground on several; list each under grounding.sources. Each relation ends "
-        "with a sample of its rows: the definition, the identity and the grain are read FROM THE ROWS, "
-        "and a claim the rows contradict is wrong.)\n\n"
+        "(choose the ONE relation this notion grounds on and declare it under `grounding.source` — "
+        "singular; a notion genuinely needing more than one relation is a transform view, or two "
+        "concepts and an edge, never a list here. Each relation ends with a sample of its rows: the "
+        "definition and the grain are read FROM THE ROWS, and a claim the rows contradict is wrong.)\n\n"
         f"{schema_md}\n\n"
         "## CONTEXT — SME docs (grounding; use what's relevant, ignore the rest)\n\n"
         f"{context or '(no context docs uploaded)'}\n\n"
@@ -514,27 +540,46 @@ def _errors(obj) -> list:
 
 def _autofix(obj: dict) -> list[str]:
     """Deterministic conformance fixes driven by the validator's own errors:
-    (0) composite grain (canonical_key list -> kind=composite), then for every enum
-    error, reconcile spelling generically against the schema's real enum, falling back
-    to the SEMANTIC near-miss map. Returns the applied fixes."""
+    (0) the retired `grounding.sources` LIST habit -> `grounding.source` (singular), (0b) a null
+    `source.key` (per-run variance) -> dropped, then for every enum error, reconcile spelling
+    generically against the schema's real enum, falling back to the SEMANTIC near-miss map.
+    Returns the applied fixes.
+
+    REWIRED 2026-10-07. (0) used to catch `concept.identity.canonical_key` given as a LIST and
+    convert it to `kind: composite`. That whole block was already DEAD before this rename:
+    `concept.identity` left the schema entirely on 2026-10-05, so a model that still writes it
+    fails on an `additionalProperties` violation at `concept`, never descending far enough to
+    raise a TYPE error at `concept/identity/canonical_key` — a fix driven by an error jsonschema
+    can no longer produce. The model's most likely REGRESSION under the new prompt is the mirror
+    habit one level up: writing `grounding.sources: [...]` (the list SYS_PROMPT taught until this
+    revision) instead of the now-singular `grounding.source: {...}` — caught here instead, by the
+    `not: {}` violation `sources:` now raises, converting the first (and, per the standard, only
+    legitimate) entry across. (0b) is re-pointed the same way: no more list index to drop a key
+    from, because there is only ever one source.
+    """
     fixes = []
     for err in _errors(obj):
         parts = list(err.path)
         path = "/".join(str(x) for x in parts)
-        # (0) composite grain: canonical_key given as a list -> kind=composite, drop it
-        if path == "concept/identity/canonical_key":
-            ident = obj.get("concept", {}).get("identity", {})
-            if isinstance(ident.get("canonical_key"), list):
-                ident["kind"] = "composite"
-                ident.pop("canonical_key", None)
+        # (0) the retired `sources:` LIST habit -> `source:` (singular). `sources` validates
+        # against NOTHING (`not: {}`), so its own presence is the whole error; there is no
+        # sub-schema for jsonschema to recurse into, which is why one error covers the whole list.
+        if path == "grounding/sources" and getattr(err, "validator", None) == "not":
+            g = obj.get("grounding") if isinstance(obj.get("grounding"), dict) else None
+            srcs = g.get("sources") if g else None
+            if isinstance(srcs, list) and srcs and isinstance(srcs[0], dict):
+                dropped = len(srcs) - 1
+                g["source"] = srcs[0]
+                g.pop("sources", None)
                 fixes.append(
-                    "concept/identity: canonical_key was a list -> kind=composite (key dropped)"
+                    "grounding/sources: list -> grounding.source (first entry kept"
+                    + (f"; {dropped} further entr{'y' if dropped == 1 else 'ies'} DROPPED — a "
+                       f"concept binds one relation" if dropped else "") + ")"
                 )
             continue
-        # (0b) a null grounding key (per-run variance) -> drop the optional key
-        m = re.fullmatch(r"grounding/sources/(\d+)/key", path)
-        if m and err.instance is None:
-            src = obj.get("grounding", {}).get("sources", [])[int(m.group(1))]
+        # (0b) a null `source.key` (per-run variance) -> drop the optional key
+        if path == "grounding/source/key" and err.instance is None:
+            src = obj.get("grounding", {}).get("source", {})
             src.pop("key", None)
             fixes.append(f"{path}: null key dropped")
             continue
@@ -685,19 +730,15 @@ def check_instruction_compliance(obj: dict) -> tuple[list, list]:
     # schema (`columns` was `type: array`, so the map was a conformance error) and the prompt (which
     # taught the flat list). Three enforcements of the old form is the full explanation of ColumnSpec's
     # "21 concepts, 0 using the standard": the standard could not be written, taught, or accepted.
+    # `grounding.source` IS SINGULAR since 2026-10-07 — one concept, one relation, one `columns` map.
     gr = obj.get("grounding")
     if isinstance(gr, dict):
-        flat, mapped, unroled = [], 0, []
-        for src in gr.get("sources") or []:
-            if not isinstance(src, dict):
-                continue
-            cols = src.get("columns")
-            if isinstance(cols, dict):
-                mapped += len(cols)
-                unroled += [n for n, body in cols.items()
-                            if isinstance(body, dict) and not body.get("role")]
-            else:
-                flat += [c for c in (cols or []) if isinstance(c, str)]
+        src = gr.get("source") if isinstance(gr.get("source"), dict) else {}
+        cols = src.get("columns")
+        if isinstance(cols, dict):
+            flat, mapped = [], len(cols)
+        else:
+            flat, mapped = [c for c in (cols or []) if isinstance(c, str)], 0
         roles = gr.get("field_roles")
         if mapped and isinstance(roles, dict) and roles:
             failures.append(
@@ -708,9 +749,9 @@ def check_instruction_compliance(obj: dict) -> tuple[list, list]:
             )
         if flat and not (isinstance(roles, dict) and roles):
             failures.append(
-                f"grounding.sources[].columns is a flat list of {len(flat)} name(s) and there is no "
+                f"grounding.source.columns is a flat list of {len(flat)} name(s) and there is no "
                 f"`field_roles` block, so nothing says what any column IS. Prefer the MAP form — "
-                f"`columns: {{<name>: {{role: ...}}}}` — which puts each column's facts on the column."
+                f"`columns: {{<name>: {{offers: ...}}}}` — which puts each column's facts on the column."
             )
     return corrections, failures
 

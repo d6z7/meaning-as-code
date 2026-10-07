@@ -164,15 +164,17 @@ things about one word and nothing could report it. Which side is right is a huma
 use `attribute` 45 times and `period`/`housekeeping` zero — but *"the framework contradicts itself
 about a closed vocabulary"* is a fact, not a judgement, and it fails.
 
-**The same law covers a PROJECTED field, and this one ended by deleting the second home.** The column
-map's `identity: canonical` projects into the runtime's `canonical_key`; a concept-level
-`identity.canonical_key` beside it gave one fact two homes, and the schema's own description said so
-all along: *"the key is a COLUMN fact, so declaring it here AND under concept.identity gives it two
-homes that can disagree."* Deprecating it was not enough — the field stayed authorable and readers
-kept a fallback branch. On **2026-10-05** the whole `concept.identity` block was removed from
-`mac.schema.json`, with its six-term `kind` vocabulary. **A concept file that carries an `identity:`
-block no longer validates.** A composite key had already settled the argument outright — a
-`canonical_key` is one string, while `identity: composite` marks as many columns as the key has.
+**The same law covers a PROJECTED field, and this one ended by deleting the second home.** A
+concept-level `identity.canonical_key` beside the key the grounding already stated gave one fact two
+homes, and the schema's own description said so all along: *"the key is a COLUMN fact, so declaring it
+here AND under concept.identity gives it two homes that can disagree."* Deprecating it was not
+enough — the field stayed authorable and readers kept a fallback branch. On **2026-10-05** the whole
+`concept.identity` block was removed from `mac.schema.json`, with its six-term `kind` vocabulary.
+**A concept file that carries an `identity:` block no longer validates.** A composite key had already
+settled the argument outright — a `canonical_key` is one string, while a key over two columns is a
+list, in the order that reaches the SQL. On **2026-10-07** the fact moved once more, off the columns
+and onto `grounding.source.key`: a per-column flag could mark key MEMBERSHIP and had nowhere to put
+the ORDER, and `canonical_key` is now projected from a one-column `key` rather than from a term.
 
 ### 2.2 EVERY VOCABULARY IS `snake_case`, AND CLOSED MEANS CLOSED
 
@@ -204,14 +206,17 @@ in either direction, and treating them as one produced both halves of a measured
   shape error), and so did the endpoint checker — `Currency` and `Region` **are** declared concepts. **A
   resolvable endpoint is not a correct one.**
 - **One foreign key fans out to many edges.** Where OrderLine, Order and SalesAmount all declare
-  `CustomerKey: identity: reference`, all three reference Customer and all three are edges. Refusing
-  that as "ambiguous" took a reference bundle from 3 wrong edges to 0.
+  `customer_key: {references: Customer}`, all three reference Customer and all three are edges.
+  Refusing that as "ambiguous" took a reference bundle from 3 wrong edges to 0.
 
-So: the **from** endpoint is every concept on the relation declaring that column `identity: reference`;
-the **to** endpoint is the one concept on the target whose canonical key **is** the referenced column —
-singular, because two notions claiming one canonical key means the key identifies two things, which is
-a defect and earns a ruling rather than a coin toss. An endpoint that cannot be resolved is **skipped
-with its reason recorded**, never guessed.
+So: the **from** endpoint is every concept on the relation whose column declares `references`;
+the **to** endpoint is what that key's VALUE names — a concept name, authored since 2026-10-07.
+Before that it was inferred: the one concept on the target whose canonical key **is** the referenced
+column, singular because two notions claiming one canonical key means the key identifies two things.
+That inference has been observed to fail, and contoso5 shows why it must: of its 25 references, three
+(`Brand`, `Color`, `ProductCategory`) are member-sets OVER `dim_product` that declare `product_key`,
+a pointer inside one relation that no descriptor can see. An endpoint that cannot be resolved is
+**skipped with its reason recorded**, never guessed.
 
 **And a shared relation carries no foreign key at all.** An inline dimension — `Brand` on the product
 row, `Location` on the store row — relates to its host with nothing to lift, which is why a reference
@@ -550,7 +555,8 @@ bundle must reach the start before anything is allowed to run.
     it, `validate_schema` passed it, and the parity gate had said so for two days. Operator: "attribute
     does not exist anymore." A bundle still on it is invalid here, which is the honest consequence.
   - **`rulings.register` requires `label_of`** (`dependentRequired`, beside `never_axis → evidence`), so
-    the runtime and the schema refuse the same file. `never_axis` stays free text — no vocabulary has
+    the runtime and the schema refuse the same file. [Both spellings were retired in `0.1.19`,
+    2026-10-07 — `rulings.naming`, and the pair folded into `offers.suppressed`.] `never_axis` stays free text — no vocabulary has
     ever declared `privacy | grain | derived`.
   - **`concept.identity.kind` no longer lists `resolved_axis`** (retired from the vocabulary 2026-09-28, 0
     of 62 concepts). The enum was landed by `tools/check_vocabulary_parity.py --write`, which is now the
@@ -579,6 +585,39 @@ bundle must reach the start before anything is allowed to run.
     first bundle on the column standard (contoso5, 17 concepts) could not load there before. One fixture
     bundle — `sdk/authoring/exemplars/bundle/` — is now the composer's exemplar and the round-trip test
     in both repos: what the composer emits, the reader loads.
+- **`0.1.19`, 2026-10-07** — **the column surface, fifth revision: one fact, one key.** NOT additive:
+  five spellings are refused and `grounding.sources` is a load error, which is the point — a silent
+  loss is worse than a refused file. The authority is
+  [column_declaration.md](../column_declaration.md); every key and its reader is in
+  [column_effects.yaml](../column_effects.yaml). All 17 contoso5 concepts are on it.
+  - **`grounding.source` is SINGULAR**, and `sources:` carries `not: {}`. The list was never
+    honoured: `Grounding` has no `sources` field, `_primary_source` took the first entry and a second
+    was SILENTLY DROPPED. 17 of 17 declared one. A notion genuinely over two relations is a transform
+    view, or two concepts and an edge.
+  - **`source.key`** (required) and **`source.counts`** (a column name) are the two facts about the
+    RELATION. `key` is ordered and that order reaches the SQL; it was collected from per-column
+    `identity` flags, which had nowhere to put it — swapping two column blocks in `units_sold` turned
+    `(order_key, line_number)` into `(line_number, order_key)`, an edit no gate can see.
+  - **`columns[].offers`** replaces `columns[].roles` and the retired scalar `role` and `query_use`
+    table both. A map from each USE to that use's terms, `{}` legal, ABSENT a different finding. 21 of
+    contoso5's 112 columns are a join key a question also groups by, which one role name could not say.
+  - **`columns[].references`** takes a CONCEPT NAME, replacing `roles: {identity: reference}`, which
+    said only THAT a column pointed somewhere. `identity`'s other two terms (`canonical`, `composite`,
+    and the older `part`) are refused BY NAME, each refusal naming where the fact went.
+  - **`offers.suppressed`** replaces `rulings: {never_axis, evidence}` — one key whose VALUE is the
+    data-quality finding, with `axis` required alongside (`dependentRequired`). Two keys let a
+    prohibition be authored with a reason code and no measurement, which is what both of contoso5's
+    uses did.
+  - **`columns[].value_register`** and **`rulings.naming`** split the one word `register`, which named
+    a file path and a closed five-term enum one nesting level apart; contoso5's `Country` concept
+    declared both seven lines apart. `aggregate.canonical` became `aggregate.default` for the same reason — `canonical` was
+    retired from `identity` the same day.
+  - **EVERY TERM IS BARE AND EVERY ENUM IS CLOSED.** `axis: categorical`, `aggregate.type: flow`,
+    `rulings.naming: legal`. `aggregate.type` was `{"type": "string"}` with NO enum, so any spelling
+    validated while the ten-cell fold law it keys could match none of them. §2.1 still holds: the enum
+    is the schema's reader of the vocabulary's one home, and both resolve a qualified term by its last
+    segment.
+
 - **`0.1.19`, 2026-10-06** — **three additive fields, and a relation may say the COLUMN resolves it.**
   All additive over `0.1.18`, so `0.1.18` files remain valid.
   - **`contract.rules[].subject`** (optional) — a short email-subject headline per rule, complementing

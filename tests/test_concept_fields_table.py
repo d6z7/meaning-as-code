@@ -18,8 +18,11 @@ FOUR CAUSES, ALL LOOKUPS THAT MISSED, none of them a missing declaration:
   2. The concept's OWN `properties[].doc` — the richest prose in the bundle — was never joined,
      because it is keyed camelCase (`productKey`) against a table keyed by the physical column
      (`ProductKey`).
-  3. Metadata was looked up for ONE relation while the table lists the union of ALL of a concept's
-     sources, so every column of a second source came back blank: 6 of 117 once `type` landed.
+  3. Metadata was looked up for ONE relation while the table listed the union of ALL of a
+     concept's sources, so every column of a second source came back blank: 6 of 117 once `type`
+     landed. HALF OF THIS CAUSE IS GONE: a concept binds ONE relation as of 2026-10-07 and a
+     `sources:` list is a load error, so there is no second source to miss. The half that remains
+     is the lookup -- a schema-qualified relation against a bare-keyed descriptor map.
   4. The join column was parsed only out of `join_rule`, which **12 of 17 edges do not carry** —
      correctly, because both concepts ground on one relation and a predicate there would be an
      invented self-join. Those edges declare `realized_by` instead, and were simply dropped.
@@ -177,26 +180,47 @@ def test_a_property_with_no_doc_contributes_nothing() -> None:
 # --------------------------------------------------------------------------------------------
 
 
-def test_a_column_of_a_SECOND_source_is_resolved() -> None:
-    """The measured symptom: 6 of 117 rows blank once the type column landed, every one of them a
-    column belonging to a concept's second grounding source."""
-    col_desc = {
-        "rel_one": {"a": {"description": "from one", "type": "integer"}},
-        "rel_two": {"b": {"description": "from two", "type": "varchar"}},
-    }
-    obj = {"grounding": {"sources": [{"relation": "rel_one"}, {"relation": "srv.rel_two"}]}}
-    merged = _merged_col_meta(col_desc, obj, "stem", "rel_one")
-    assert merged["a"]["description"] == "from one"
+def test_a_SCHEMA_QUALIFIED_relation_resolves_against_a_bare_keyed_descriptor() -> None:
+    """THE SURVIVING HALF OF CAUSE 3, and this test had to be re-pointed to it.
+
+    It read `test_a_column_of_a_SECOND_source_is_resolved` and declared TWO sources: the measured
+    symptom was 6 of 117 rows blank, every one of them a column of a concept's SECOND grounding
+    source. A concept binds ONE relation as of 2026-10-07 and `sources:` as a list is a load error,
+    so the two-source premise cannot be authored and a test asserting it would pass over an input
+    nobody can write.
+
+    WHAT REMAINS IS THE LOOKUP ITSELF: the grounding names `srv.rel_two` and the descriptor map is
+    keyed `rel_two`, so resolving the metadata means splitting the schema off the relation. That
+    was never the second source's doing -- it was the join, and it is still the join.
+    """
+    col_desc = {"rel_two": {"b": {"description": "from two", "type": "varchar"}}}
+    obj = {"grounding": {"source": {"relation": "srv.rel_two"}}}
+    merged = _merged_col_meta(col_desc, obj, "stem", None)
     assert merged["b"]["description"] == "from two"
 
 
-def test_the_first_declared_source_wins_a_name_collision() -> None:
+def test_the_PRIMARY_RELATION_wins_a_name_collision_with_the_declared_source() -> None:
+    """THE PRECEDENCE THAT IS LEFT. It used to be "the first of two declared sources wins"; with
+    one source the only ordering left is the declared source against the primary relation the
+    caller passes, and the merge still has to settle it -- a column name carried by both must
+    resolve to exactly one description rather than to whichever update ran last by accident."""
     col_desc = {
-        "rel_one": {"shared": {"description": "first", "type": "integer"}},
-        "rel_two": {"shared": {"description": "second", "type": "varchar"}},
+        "rel_one": {"shared": {"description": "primary", "type": "integer"}},
+        "rel_two": {"shared": {"description": "declared", "type": "varchar"}},
     }
-    obj = {"grounding": {"sources": [{"relation": "rel_one"}, {"relation": "rel_two"}]}}
-    assert _merged_col_meta(col_desc, obj, "stem", "rel_one")["shared"]["description"] == "first"
+    obj = {"grounding": {"source": {"relation": "rel_two"}}}
+    assert _merged_col_meta(col_desc, obj, "stem", "rel_one")["shared"]["description"] == "primary"
+
+
+def test_the_RETIRED_sources_LIST_contributes_NOTHING() -> None:
+    """A READER THAT STILL ACCEPTS THE OLD SPELLING KEEPS THE SECOND HOME ALIVE, and this is the
+    only place the page builder's half of that is visible. `sources:` is a load error at the
+    parser; nothing stops a page builder from reading it anyway, and then a bundle that cannot
+    load still renders -- which is how a retired shape survives a migration.
+    """
+    col_desc = {"rel_one": {"a": {"description": "from one", "type": "integer"}}}
+    obj = {"grounding": {"sources": [{"relation": "rel_one"}]}}
+    assert _merged_col_meta(col_desc, obj, "stem", None) == {}
 
 
 def test_a_concept_grounding_on_nothing_yields_an_empty_map() -> None:

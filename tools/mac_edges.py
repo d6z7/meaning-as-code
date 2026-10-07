@@ -147,13 +147,25 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _self_test() -> int:
-    """Endpoint resolution, which is the whole point: chosen by COLUMN, and refused when unclear."""
+    """Endpoint resolution, which is the whole point: chosen by COLUMN, and refused when unclear.
+
+    THE FIXTURE IS REWIRED 2026-10-07 for column_declaration.md rev 5, the SAME DAY it was last
+    touched for the `roles: {identity: ...}` shape: `grounding.sources` (list) -> `grounding.source`
+    (singular); the canonical key moves from a column flag to `source.key`; `identity: reference`
+    moves from the column's use-map to the top-level `references: <ConceptName>` key. Every `refs=`
+    column in this fixture resolves to "Customer" — every case here means it that way — so the
+    target name is fixed rather than threaded through as another parameter nothing varies.
+    """
     from sdk.authoring import edges
     C = lambda n, rel, canon=None, refs=(): {
-        "concept": {"name": n, **({"identity": {"canonical_key": canon}} if canon else {})},
-        "grounding": {"sources": [{"relation": rel, "columns": {
-            **({canon: {"role": "key", "identity": "canonical"}} if canon else {}),
-            **{r: {"role": "key", "identity": "reference"} for r in refs}}}]}}
+        "concept": {"name": n},
+        "grounding": {"source": {
+            "relation": rel,
+            **({"key": canon} if canon else {}),
+            "columns": {
+                **({canon: {"offers": {}}} if canon else {}),
+                **{r: {"offers": {}, "references": "Customer"} for r in refs},
+            }}}}
     di = [{"relation_bare": "sales", "produces_relation": "v_sales", "roles": {},
            "foreign_keys": [{"from_column": "CustomerKey", "to_table": "customer",
                              "to_column": "CustomerKey"}]}]

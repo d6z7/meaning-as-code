@@ -342,7 +342,7 @@ td.cell{text-align:center;width:62px;font-family:var(--mono);font-size:11px;font
   <div class="tree" id="cen-tree"></div>
   <div class="sec">the two planes crossed — what a column IS, against what a query may DO with it</div>
   <div id="cen-xt"></div>
-  <div class="sec">the four column-map slots, and identity</div>
+  <div class="sec">the five uses a column may offer, and the rulings on top</div>
   <div id="cen-cov"></div>
   <div id="cen-notes"></div>
 </div></section>
@@ -362,11 +362,13 @@ const DATA = {
   "schema_version": "0.1.19",
   "companions": [
    "column_declaration.md",
+   "column_specification.md",
    "column_rulings.md",
    "../mac_vocabulary.yaml"
   ],
   "measured_at": "2026-10-07",
-  "enforced_evidence": "mac-platform/packages/mac-runtime/src/mac_runtime/ontology/models.py::ColumnSpec"
+  "enforced_evidence": "mac-platform/packages/mac-runtime/src/mac_runtime/ontology/models.py::ColumnSpec",
+  "measured_against": "mac-platform@d366d7c"
  },
  "modes": {
   "today": {
@@ -379,26 +381,6 @@ const DATA = {
   }
  },
  "keys": [
-  {
-   "required": "yes",
-   "default": "—",
-   "legal": "a map over mac.concept.column.roles — identity · axis · aggregate · period_binding · extremum",
-   "decides": "what a question may do with this column at all; {} means *offered to no question*",
-   "key": "roles",
-   "block": "root",
-   "plane": [
-    "load",
-    "answer"
-   ],
-   "outcomes": [
-    "COMMIT",
-    "BLOCK"
-   ],
-   "status": "enforced",
-   "reader": "ontology/models.ColumnRoles; Grounding.offers(column, use) — every planner step asks it",
-   "effect": "The one required key: a map from each USE a question may make of this column to that use's own terms. An empty map is a statement — the column is loaded and offered to no question, which is what `role: housekeeping` said. An ABSENT `roles` is a column nobody classified, and a different finding.",
-   "frontier_note": "IT REPLACES THE SCALAR `role` AND THE `query_use` TABLE BOTH, retired together 2026-10-07. The scalar held one of five values and the table mapped each value to the uses it served, so a column could serve only what its one role name served — and measured on contoso5, 21 of 112 columns are a join key you also group by. The table had to grant or deny `axis` to every `key` alike, and did: it denied it, which is how 21 columns lost their axis-ness."
-  },
   {
    "required": "yes",
    "default": "—",
@@ -415,17 +397,17 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "Grounding.cell_key — 25 read sites in src, 23 in tests (AST-measured); canonical_key (a one-column key); key_parts (two or more)",
-   "effect": "WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source under `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A one-column key is the canonical identity, what COUNT(DISTINCT) counts; two or more is the composite, where no column identifies anything alone. A `class: measure` has no canonical identity whatever its key's shape — it is summed, not counted — so its key is the grain.",
-   "frontier_note": "NOT A COLUMN KEY, which is why it is the one row in this register whose block is `source`. It was collected from `identity: canonical`/`composite` on the columns until 2026-10-07, and moved because a per-column flag has nowhere to put the ORDER: swapping two column blocks in units_sold — an edit no gate can see and any formatter may make — turned (order_key, line_number) into (line_number, order_key). Measured after the move: all 112 of contoso5's derived column roles are byte-identical."
+   "reader": "parser._cell_key -> Grounding.cell_key; concept.identity.canonical_key for a one-column key; tools/mac_project.key_parts for two or more, read by mac_to_graph, check_answerability and sdk/project/ontology_quality. AST-measured at mac-platform@d366d7c over packages/**.py, counting Attribute and Name nodes: cell_key 21 src / 13 tests, canonical_key 23 / 19.",
+   "effect": "WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source beside `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A one-column key is the canonical identity, what COUNT(DISTINCT) counts; two or more is the composite, where no column identifies anything alone. A `class: measure` has no canonical identity whatever its key's shape — it is summed, not counted — so its key is the grain.",
+   "frontier_note": "NOT A COLUMN KEY, which is why its block is `source`. It was collected from `identity: canonical`/`composite` on the columns until 2026-10-07, and moved because a per-column flag has nowhere to put the ORDER: swapping two column blocks in units_sold — an edit no gate can see and any formatter may make — turned (order_key, line_number) into (line_number, order_key). Measured after the move: all 112 of contoso5's derived column roles are byte-identical. THE REGISTRY'S OWN COUNT WAS ALSO WRONG. It read \"25 read sites in src, 23 in tests (AST-measured)\" and no AST pass reproduces it: 21/13 counting Attribute and Name, 22/15 if string constants are counted too, over packages/ or over the whole repo alike. The figures above are this file's own measurement, with the method stated so the next reader can disagree with it."
   },
   {
-   "required": "iff claimed",
-   "default": "—",
-   "legal": "mac.concept.column.identity — reference",
-   "decides": "that this column holds ANOTHER concept's identity, so it is a join target and never part of this concept's grain",
-   "key": "roles.identity",
-   "block": "roles",
+   "required": "no",
+   "default": "the key",
+   "legal": "a column name — *on the source, not the column*",
+   "decides": "which column one INSTANCE is counted by, when the relation is served finer than the thing",
+   "key": "counts",
+   "block": "source",
    "plane": [
     "load",
     "answer"
@@ -435,17 +417,37 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "planner/sql.py:238 `_filterable` — whether a predicate may land on this column",
-   "effect": "`reference`, and nothing else — this column identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain. Whether every value is present over there is a measurement, not a declaration.",
-   "frontier_note": "`canonical`, `composite` and `part` are refused BY NAME, each naming where the fact went: what makes a row of THIS concept unique is `key` on the source. They answered a different question from `reference` and could not state an order, and the order reaches the SQL. AND ITS ONE LIVE EFFECT IS NARROWER THAN THIS REGISTER CLAIMED. The reader above read \"planner/joins + composite_key_guard\" until 2026-10-07; measured, `joins.py` reads `concept.identity.canonical_key` (the CONCEPT block) and `composite_key_guard` takes its columns from the `scoped_by` ruling, so neither consults this key. A join comes from `edges.yaml`: `Store.country_code` carries NO `reference` and `store__trades_in__country` still has a join_rule on it. The TARGET this points at is not declared here at all — `data/datasets/*.yaml` MEASURES it as `references.to` and `_parse_physical_descriptors` drops it, after which `sdk/authoring/edges.py` infers it back by matching column names."
+   "reader": "parser._check_counts_target refuses a name that is not a column of THIS source's own map, then the source-level value projects to concept.identity.counts_as — read by the count route (planner/sql.assemble_plan names `identity.counts_as` as the declaration that chose the key) and by planner/snapshot as the business key a versioned relation collapses to.",
+   "effect": "A COLUMN NAME: a count of this CONCEPT counts THAT column, not the rows. dim_store is keyed on store_key over 74 trading periods and counts 67 stores by `location_code`; the answer discloses which column it counted. It sits on the source for the same reason `key` does — it is one fact about the concept whose value is a column name, and the column it names does not carry it.",
+   "frontier_note": "IT WAS A BOOLEAN ON THE COLUMN until 2026-10-07, and a boolean could not be checked: `counts: true` on a misspelled column name loaded silently and `identity.counts_as` carried a column the relation does not have. A column NAME on the source can be, and is — which is the second reason it moved, the first being that it is a fact about the concept rather than about the column it names. A concept still on the flat `columns:` list has no map to check against and is exempt."
+  },
+  {
+   "required": "yes",
+   "default": "—",
+   "legal": "a map over mac.concept.column.offers — axis · suppressed · aggregate · period_binding · extremum",
+   "decides": "what a question may do with this column at all; {} means *offered to no question*",
+   "key": "offers",
+   "block": "root",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "BLOCK"
+   ],
+   "status": "enforced",
+   "reader": "ontology/models.ColumnOffers; ColumnSpec.offers(use) -> Grounding.offers(column, use) and Grounding.offering(use) — the question every planner step asks, with no projection standing between the declaration and the gate.",
+   "effect": "The one required key: a map from each USE a question may make of this column to that use's own terms. An empty map is a statement — the column is loaded and offered to no question, which is what `role: housekeeping` said. An ABSENT `offers` is a column nobody classified, and a different finding.",
+   "frontier_note": "IT REPLACES THE SCALAR `role` AND THE `query_use` TABLE BOTH, retired together 2026-10-07. The scalar held one of five values and the table mapped each value to the uses it served, so a column could serve only what its one role name served — and measured on contoso5, 21 of 112 columns are a join key you also group by. The table had to grant or deny `axis` to every `key` alike, and did: it denied it, which is how 21 columns lost their axis-ness. The five scalar names survive as a DERIVED read-only property (ColumnSpec.role, models._ROLE_OFFERS its inverse), reproducing all 112 authored values exactly."
   },
   {
    "required": "iff claimed",
    "default": "—",
-   "legal": "mac.concept.axis.time · mac.concept.axis.categorical",
+   "legal": "time · categorical (mac.concept.axis)",
    "decides": "which KIND of axis this column is, which is both the permission to group and the fold law's lookup key",
-   "key": "roles.axis",
-   "block": "roles",
+   "key": "offers.axis",
+   "block": "offers",
    "plane": [
     "load",
     "answer"
@@ -455,17 +457,36 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "planner/grounded_columns.axis_columns; column_facts.axis — the fold law's lookup key",
+   "reader": "column_facts.axis (attribute access on `spec.offers.axis`, so the declared-but-unread gate can match it); planner/grounded_columns.axis_columns -> grounding.offering(\"axis\") minus the columns a suppression denies — the fold law's lookup key. The BARE term is what ColumnOffers validates.",
    "effect": "`time` or `categorical`: a question may GROUP BY or FILTER ON this column, and the term is which row of the fold law a fold across it resolves against. The kind IS the permission — a column offered as an axis always has a kind, and a column claiming none is never consulted.",
-   "frontier_note": "MEASURED ON ALL 70 of contoso5's axis columns 2026-10-07: every declared kind agrees with the column's declared TYPE family (temporal -> time, everything else -> categorical). 39 were authored by hand; the other 31 were derived from that type when `role: dimension`/`period` stopped carrying the permission implicitly. The agreement is a measurement, not a convention, and is the obvious next gate."
+   "frontier_note": "MEASURED ON ALL 70 of contoso5's axis columns 2026-10-07: every declared kind agrees with the column's declared TYPE family (temporal -> time, everything else -> categorical). 39 were authored by hand; the other 31 were derived from that type when `role: dimension`/`period` stopped carrying the permission implicitly. The agreement is a measurement, not a convention, and is the obvious next gate. TWO TERMS AND NO MORE: the law is `measure_type x axis` and test_foldplane_law asserts 5 x 2 == 10, so a third kind would leave cells nobody has ruled on. That is also why a prohibition is `suppressed` beside the kind and never a third term."
   },
   {
    "required": "iff claimed",
    "default": "—",
-   "legal": "a map over type · unit · canonical · additivity",
+   "legal": "a DQ register id",
+   "decides": "that no question may group by this column — the finding the refusal quotes; requires axis",
+   "key": "offers.suppressed",
+   "block": "offers",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "BLOCK"
+   ],
+   "status": "enforced",
+   "reader": "planner/plan._axis_denied -> planner/plan._suppressed_why, which quotes the DQ register's own sentence back; column_facts.suppressed for the display-withheld disclosures in planner/sql; planner/grounded_columns drops the column from axis_columns, so the set the prompt OFFERS and the set a refusal LISTS stay one set. Deliberately NOT a member of plan.py's \"uses a column's offers map can grant\" tuple — it withholds a use rather than granting one.",
+   "effect": "THE VALUE IS THE FINDING. A data-quality id, and the column IS the axis it names: a prohibition cannot be authored without its evidence, and the refusal quotes the register rather than a word. REQUIRES `axis` beside it (schema dependentRequired) — the ontology states what the warehouse is, and a suppression is a judgement on top of that. contoso5: Customer.city and Customer.customer_name, each citing its DQ id.",
+   "frontier_note": "IT WAS `rulings: {never_axis, evidence}` — two keys in a block whose every other member names ANOTHER column, and this one never did. The prose field also carried a reason CODE in both of contoso5's uses (`privacy`), while the sentence it claimed to hold already lived in the register: DQ-IDENTIFYING-DIM_CUSTOMER-CITY reads \"21,317 of 34,581 distinct values (62%) over 104,990 rows are held by exactly one row\". Two keys, one of them a word, and the measurement in neither."
+  },
+  {
+   "required": "iff claimed",
+   "default": "—",
+   "legal": "a map over type · unit · default · additivity",
    "decides": "that a question may fold this column, and on what terms",
-   "key": "roles.aggregate",
-   "block": "roles",
+   "key": "offers.aggregate",
+   "block": "offers",
    "plane": [
     "load",
     "answer"
@@ -475,17 +496,37 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "column_facts.measure_type/unit; planner/plan._check_additivity — 3 runtime read sites",
-   "effect": "A question may FOLD this column, and the qualifier says on what terms — `type` (the fold law's row), `unit` (what the number is in; two different units may not be combined) and `canonical` (which of several is THE one). A fold the law does not permit is refused, naming the axis it crossed.",
-   "frontier_note": "PER COLUMN, NOT PER CONCEPT. `concept.semantics.{measure_type,unit}` said it once for the whole concept, which GrossRevenue (`gross_amount` flow, `unit_price` intensive) could only misreport — and did: `SUM(unit_price)` planned instead of refusing until the narrowing was taught to rewrite the declaration and not just the projection (2026-10-07)."
+   "reader": "column_facts.measure_type, column_facts.unit and column_facts.canonical_measure (which reads `default`); planner/plan._check_additivity, 3 call sites in plan.py; parser._column_measure -> semantics.{measure_type,unit,additivity}.",
+   "effect": "A question may FOLD this column, and the qualifier says on what terms — `type` (the fold law's row), `unit` (what the number is in; two different units may not be combined) and `default` (which of several is THE one). A fold the law does not permit is refused, naming the axis it crossed.",
+   "frontier_note": "PER COLUMN, NOT PER CONCEPT. `concept.semantics.{measure_type,unit}` said it once for the whole concept, which GrossRevenue (`gross_amount` flow USD, `unit_price` intensive USD) could only misreport — and did: `SUM(unit_price)` planned instead of refusing until the narrowing was taught to rewrite the declaration and not just the projection (2026-10-07). `type` IS A CLOSED ENUM AS OF THAT DATE; it was `{\"type\": \"string\"}` with no enum, so any spelling validated while the law it keys could match none of them."
+  },
+  {
+   "required": "no",
+   "default": "the fold law",
+   "legal": "{<axis>: <effect>} over mac.concept.aggregation_effect",
+   "decides": "the effect of folding along ONE named axis, overriding the law — authoring it means authoring both premise and conclusion, so leave it unwritten",
+   "key": "offers.aggregate.additivity",
+   "block": "offers",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "REFUSE"
+   ],
+   "status": "enforced",
+   "reader": "parser._column_measure -> semantics.additivity, read by planner/plan._check_additivity and foldplane/law.py.",
+   "effect": "THE PER-AXIS OVERRIDE, and the one thing on a column that a law already answers. Folding is decided by `measure_type x axis` in mac_vocabulary.yaml; an entry here states the effect for one named axis directly. Authoring it means authoring both the premise and the conclusion, which is how a `target` measure once declared `geography: additive` and had its value summed across models for weeks.",
+   "frontier_note": "ADMITTED, AND BETTER LEFT UNWRITTEN. It stays because a measured exception to the law has nowhere else to live; the law covers every case contoso5 declares, which authors none."
   },
   {
    "required": "iff claimed",
    "default": "—",
    "legal": "true",
    "decides": "which date a question's period binds to, when the relation carries several",
-   "key": "roles.period_binding",
-   "block": "roles",
+   "key": "offers.period_binding",
+   "block": "offers",
    "plane": [
     "load",
     "answer"
@@ -494,16 +535,16 @@ const DATA = {
     "COMMIT"
    ],
    "status": "enforced",
-   "reader": "planner/plan period binding; Grounding.offering('period_binding')",
-   "effect": "THE reporting date, when a relation carries several. A bare flag — this use has no parameter. \"Sales in March\" cannot silently pick the delivery date instead of the order date."
+   "reader": "planner/plan._period_columns -> grounding.offering(\"period_binding\"), and interpret/vocabulary offers the same population to the model.",
+   "effect": "THE reporting date, when a relation carries several. A bare flag — this use has no parameter. \"Sales in March\" cannot silently pick the delivery date instead of the order date; contoso5's sale line carries both and marks `order_date`."
   },
   {
    "required": "iff claimed",
    "default": "—",
    "legal": "a list over min · max — at least one, no repeats",
    "decides": "that the earliest or latest value may be asked for — a pick, never a fold",
-   "key": "roles.extremum",
-   "block": "roles",
+   "key": "offers.extremum",
+   "block": "offers",
    "plane": [
     "answer"
    ],
@@ -512,53 +553,17 @@ const DATA = {
     "ASK"
    ],
    "status": "enforced",
-   "reader": "planner/plan._OPERATION_NEEDS -> MIN/MAX; Grounding.offering('extremum')",
-   "effect": "`[min]`, `[max]` or both: this column's earliest or latest value may be ASKED FOR. Not a fold — an extremum PICKS a value that exists rather than combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM. Where several columns of a concept admit it and the question names none, the planner ASKS which."
+   "reader": "planner/plan._OPERATION_NEEDS maps OperationKind.MIN/MAX to this use, and planner/plan._column_owner_for refuses a column that does not admit it; Grounding.offering(\"extremum\") is the population an ASK names back.",
+   "effect": "`[min]`, `[max]` or both: this column's earliest or latest value may be ASKED FOR. Not a fold — an extremum PICKS a value that exists rather than combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM. Where several columns of a concept admit it and the question names none, the planner ASKS which.",
+   "frontier_note": "ITS OWN USE SINCE 2026-10-07, and that is what makes a decline expressible. `_ROLE_OFFERS` folded it into `dimension` and `measure`, so every dimension could be asked for a MIN whether or not anyone had said so, and no column could say no."
   },
   {
-   "required": "no",
-   "default": "false",
-   "legal": "true",
-   "decides": "which column one INSTANCE is counted by, when the relation is served finer than the thing",
-   "key": "counts",
-   "block": "root",
-   "plane": [
-    "answer"
-   ],
-   "outcomes": [
-    "COMMIT"
-   ],
-   "status": "enforced",
-   "reader": "the count route; disclosed in the answer",
-   "effect": "A count of this CONCEPT counts THIS column, not the canonical one — how a concept says \"a count of me is not a count of my rows\". Store has 74 rows, one per trading period, and 67 stores; `location_code` carries `counts` and the answer discloses which column it counted."
-  },
-  {
-   "required": "no",
+   "required": "iff it points",
    "default": "—",
-   "legal": "a bundle-relative lookup path",
-   "decides": "where this column's values come from, so a word resolves to the exact value it holds instead of probing for a match",
-   "key": "register",
+   "legal": "a concept name",
+   "decides": "which concept this column's values identify a row of, so it is a join target and never part of this concept's grain",
+   "key": "references",
    "block": "root",
-   "plane": [
-    "load",
-    "answer"
-   ],
-   "outcomes": [
-    "COMMIT",
-    "ASK"
-   ],
-   "status": "enforced",
-   "reader": "resolver/registers + resolver/register_match — name -> code resolution; ColumnSpec.value_register",
-   "effect": "WHERE THIS COLUMN'S VALUES COME FROM — a lookup path. A question naming a member by word (\"Spain\", \"Contoso Audio\") resolves it against the register to the exact value the column holds, through the resolution ladder, instead of probing the warehouse for a match.",
-   "frontier_note": "A TOP-LEVEL KEY, not a ruling, though `rulings.register` is spelled the same word: this one says WHERE the values come from, the ruling says WHICH of a thing's names this column is. Added to this register 2026-10-07 — it was a live key with a named reader and no entry, so the manual's \"complete surface\" could not be complete."
-  },
-  {
-   "required": "no",
-   "default": "the fold law",
-   "legal": "{<axis>: mac.concept.aggregation_effect.<term>}",
-   "decides": "the effect of folding along ONE named axis, overriding the law — authoring it means authoring both premise and conclusion, so leave it unwritten",
-   "key": "roles.aggregate.additivity",
-   "block": "roles",
    "plane": [
     "load",
     "answer"
@@ -568,25 +573,126 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "parser._column_measure -> semantics.additivity — 8 runtime read sites",
-   "effect": "THE PER-AXIS OVERRIDE, and the one thing on a column that a law already answers. Folding is decided by `measure_type x axis` in mac_vocabulary.yaml; an entry here states the effect for one named axis directly. Authoring it means authoring both the premise and the conclusion, which is how a `target` measure once declared `geography: additive` and had its value summed across models for weeks.",
-   "frontier_note": "ADMITTED, AND BETTER LEFT UNWRITTEN. It stays because a measured exception to the law has nowhere else to live; the law covers every case contoso5 declares, which authors none."
+   "reader": "ColumnSpec.references; parser._check_references_known refuses a concept the bundle does not declare; ColumnSpec.offers(\"identity\") answers from its presence, which is what planner/sql._filterable asks to place a predicate — and ColumnSpec.role derives `key` from `in_key or self.references`. NOT a join driver: see the frontier note.",
+   "effect": "A CONCEPT NAME: this column's values identify one row of THAT concept. Whether every value is PRESENT over there is a separate measurement — a declared reference says the relationship is intended, not that it holds, and a reference with no parent relation in the delivery is recorded AS dangling.",
+   "frontier_note": "IT IS READ, AND IT DOES NOT YET DRIVE A JOIN. All 25 of contoso5's references already have a matching edge in edges.yaml and the planner joins from there, so the key's target is checked against the concept set and otherwise unexercised on the join path. The TARGET is what the retired spelling could not carry: `roles: {identity: reference}` said only THAT a column pointed somewhere, and the target was recovered by matching column names against concepts whose key is that column — an inference that has been observed to fail, and that contoso5 breaks by construction. Of its 25 references the data plane's own descriptors resolve 22 from `references.to`; three cannot, because `Brand`, `Color` and `ProductCategory` are member-sets OVER dim_product and declare `product_key`, a pointer inside one relation that no descriptor can see. So the descriptor is the check, not the source."
   },
   {
-   "required": "never — not a column flag; a load error",
+   "required": "no",
    "default": "—",
-   "legal": "a concept name",
-   "decides": "which concept a reference points at; the edge that realizes the join names it today",
-   "key": "references",
+   "legal": "a bundle-relative lookup path",
+   "decides": "where this column's values come from, so a word resolves to the exact value it holds instead of probing for a match",
+   "key": "value_register",
    "block": "root",
    "plane": [
-    "load"
+    "load",
+    "answer"
    ],
-   "outcomes": [],
-   "status": "designed",
-   "reader": "none",
-   "effect": "Names the concept this column's values point at. Whether every value is PRESENT over there is a separate measurement — a declared reference says the relationship is intended, not that it holds, and a reference with no parent relation in the delivery is recorded AS dangling.",
-   "frontier_note": "`identity: reference` loads; `references:` next to it does not. ColumnSpec has no such field, so the pointer's target cannot yet be declared on the column that carries it."
+   "outcomes": [
+    "COMMIT",
+    "ASK"
+   ],
+   "status": "enforced",
+   "reader": "resolver/registers._scan_concepts — it reads the key off the raw concept YAML and synthesises an `enum_from_register` declaration from it, which is what puts the register's rows in front of the resolution ladder. ColumnSpec.value_register holds the parsed value and column_facts.value_register exists to read it — AND HAS ZERO CALLERS: measured over packages/**.py, the only occurrences of that symbol are its own definition and its __all__ entry, so the live path goes round the typed one.",
+   "effect": "WHERE THIS COLUMN'S VALUES COME FROM — a bundle-relative lookup path. A question naming a member by word (\"Spain\", \"Contoso Audio\") resolves it against the register to the exact value the column holds, through the resolution ladder, instead of probing the warehouse for a match. One register per value set: its identity is the value set, not the column that points at it, so two columns carrying the same values point at the same file.",
+   "frontier_note": "THIS REGISTER'S READER WAS FALSE UNTIL 2026-10-07, in both halves. It read \"resolver/registers + resolver/register_match — name -> code resolution\", and neither module mentioned the column's register at all: both read a canon declaration — `contract.rules[].realized_by.params.register` for mac.canon.resolve_by_register, `values.realized_by.params.register` for enum_from_register — which resolver/registers.py's own docstring names as the stopgap this key replaces (\"Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule\"). `_scan_concepts` now reads the column, so the key has a reader; the typed accessor still has none, which is the residue worth watching, because a second path is how two homes start. THE NAME: it was `register`, one word that also named `rulings.register` one nesting level away, and contoso5's Country concept declared both seven lines apart. The attribute had carried the unambiguous name all along and the schema key only caught up on 2026-10-07, which is why a raw read of the old key would have gone quietly empty on a converted bundle — `_scan_concepts` says so in its own comment."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column of the same source map",
+   "decides": "that this column NAMES that one; group there, display here",
+   "key": "rulings.label_of",
+   "block": "rulings",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "enforced",
+   "reader": "planner/sql.assemble_plan — groups on the named column, SELECTs this one as the label, and discloses both.",
+   "effect": "Two names for one thing, not two things. The named column stays the axis and this one supplies the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different labels with nothing relating them — and GROUP BY both yields 11 rows where a reader expects 121.",
+   "frontier_note": "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso, Ltd are one company in two registers. Fabrikam Group and Contoso are two companies."
+  },
+  {
+   "required": "with label_of — schema dependentRequired",
+   "default": "—",
+   "legal": "mac.name_register — common · legal · long · short · code",
+   "decides": "which of the thing's names this column carries, so an answer can say which it showed",
+   "key": "rulings.naming",
+   "block": "rulings",
+   "plane": [
+    "load",
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "enforced",
+   "reader": "planner/sql.assemble_plan, as `ruling.naming` — which of the thing's names was shown, named in the disclosure. ColumnRulings.naming is the field; the `naming_register` workaround the pydantic shadowing forced is gone with the key it worked around.",
+   "effect": "WHICH of that thing's names this column is, so an answer can say which it showed — 'Contoso' the common name, 'Contoso, Ltd' the legal one, 'GB' the code. Required with `label_of` and legal only beside it (schema dependentRequired, both directions).",
+   "frontier_note": "THE ATTRIBUTE WAS ALREADY RIGHT AND THE KEY WAS NOT. `naming_register` was the model's name from the day the block shipped, for an unrelated reason — `register` is a classmethod on pydantic's BaseModel, so a field of that name shadows it and the field then validates as optional holding a bound method — and the author was still asked to write the word that collided with `value_register` one level up. Renaming the KEY removed the need for the workaround on both."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column of the same source map",
+   "decides": "that this column rolls up into that one, and that an answer discloses which level it used",
+   "key": "rulings.finer_than",
+   "block": "rulings",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK"
+   ],
+   "status": "enforced",
+   "reader": "planner/sql.assemble_plan — the level used is named in the disclosure.",
+   "effect": "Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a child has two parents and the roll-up double-counts.",
+   "frontier_note": "Mistaking `scoped_by` for this one is the expensive error: it merges unrelated members and nothing in the result betrays it."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "a column of the same source map",
+   "decides": "that the scope column must travel with this one, which is unique only within it — synthesising a composite_key_guard binding",
+   "key": "rulings.scoped_by",
+   "block": "rulings",
+   "plane": [
+    "answer",
+    "check"
+   ],
+   "outcomes": [
+    "COMMIT",
+    "ASK",
+    "REFUSE"
+   ],
+   "status": "enforced",
+   "reader": "planner/contract_guards.sql_guard_bindings — synthesises the composite_key_guard binding (code_column + scope_columns) from the ruling. The one reader address in this register whose LINE number was still exact when the line numbers were checked and dropped.",
+   "effect": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY state merges three unrelated regions into one plausible-looking row.",
+   "frontier_note": "IT HAD TWO HOMES IN THE MANUAL until 2026-10-07 — column_specification.md's key table put it under `placement`, column_rulings.md documented it as §3 of `rulings`. One key, two spellings, which is the shape of every drift this standard exists to end. `rulings` is the only home."
+  },
+  {
+   "required": "no",
+   "default": "—",
+   "legal": "asc · desc · none",
+   "decides": "the order this column's values are presented in when the question states none",
+   "key": "rulings.sort",
+   "block": "rulings",
+   "plane": [
+    "answer"
+   ],
+   "outcomes": [
+    "COMMIT"
+   ],
+   "status": "enforced",
+   "reader": "planner/sql.column_sort -> the ORDER BY this column contributes, and the emitter skips a column ruled `none`.",
+   "effect": "The order this column's values are presented in when the question states none. `asc` is alphanumeric and is the reading for a NAME, `desc` largest-first for a MAGNITUDE, `none` means never an ordering key. PER COLUMN, never per concept: one breakdown legitimately wants brand asc, country_code asc and net_amount desc at once, which no concept-level flag can express.",
+   "frontier_note": "THE ONE RULING WITH NO MEASUREMENT CONSTELLATION, and that is the point rather than a gap: SQL guarantees no row order without ORDER BY, so nothing in the data can establish the order a reader expects — only a person can say it. Measured 2026-10-02 on an 88-row breakdown: the grader compared approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. A column declaring nothing falls to query_grammar.yaml#projection.default_ordering, which reads the column's declared type family; `Intent.ordering` outranks both."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -648,7 +754,7 @@ const DATA = {
    "required": "never — not a column flag; a load error",
    "default": "—",
    "legal": "a bundle-relative path",
-   "decides": "which register's rows ARE the members; the live spelling of this fact is the top-level register",
+   "decides": "which register's rows ARE the members; the live spelling of this fact is value_register",
    "key": "domain.register",
    "block": "domain",
    "plane": [
@@ -657,7 +763,7 @@ const DATA = {
    "outcomes": [],
    "status": "designed",
    "reader": "none",
-   "effect": "The register file whose rows ARE the members. One register per dimension."
+   "effect": "The register file whose rows ARE the members. One register per dimension — and the live spelling of this fact is the top-level `value_register`, which is why this slot stays designed rather than arriving as a second home for it."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -799,27 +905,6 @@ const DATA = {
    "effect": "The fact carries this identity itself, so a predicate lands on the fact and the dimension is never joined. A plan difference, not an answer difference — until the join it skips is the one that fans the grain out."
   },
   {
-   "required": "no",
-   "default": "—",
-   "legal": "a column of the same source map",
-   "decides": "that the scope column must travel with this one, which is unique only within it — synthesising a composite_key_guard binding",
-   "key": "rulings.scoped_by",
-   "block": "rulings",
-   "plane": [
-    "answer",
-    "check"
-   ],
-   "outcomes": [
-    "COMMIT",
-    "ASK",
-    "REFUSE"
-   ],
-   "status": "enforced",
-   "reader": "planner/contract_guards.py:361 — synthesises the composite_key_guard binding (code_column + scope_columns)",
-   "effect": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY state merges three unrelated regions into one plausible-looking row.",
-   "frontier_note": "Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by` under `placement`, column_rulings.md documents it as §3 of `rulings`. One key, two spellings, which is the shape of every drift this standard exists to end."
-  },
-  {
    "required": "never — not a column flag; a load error",
    "default": "—",
    "legal": "a reading of NULL, per column",
@@ -856,117 +941,6 @@ const DATA = {
    "effect": "The '--' that is not a country. Declared per column and per source: it appears on the store side's country_code and not on the customer side's country_code, which a flat block could not say."
   },
   {
-   "required": "no",
-   "default": "—",
-   "legal": "a column of the same source map",
-   "decides": "that this column NAMES that one; group there, display here",
-   "key": "rulings.label_of",
-   "block": "rulings",
-   "plane": [
-    "answer",
-    "check"
-   ],
-   "outcomes": [
-    "COMMIT"
-   ],
-   "status": "enforced",
-   "reader": "planner/sql.py:1292 — groups on the code, shows the label, and discloses both",
-   "effect": "Two names for one thing, not two things. The named column stays canonical and this one supplies the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different labels with nothing relating them — and GROUP BY both yields 11 rows where a reader expects 121.",
-   "frontier_note": "1:1 gets you to the door; only a person can say the two names denote one thing. Contoso and Contoso, Ltd are one company in two registers. Fabrikam Group and Contoso are two companies."
-  },
-  {
-   "required": "with label_of — schema dependentRequired",
-   "default": "—",
-   "legal": "mac.name_register — common · legal · long · short · code",
-   "decides": "which of the thing's names this column carries, so an answer can say which it showed",
-   "key": "rulings.register",
-   "block": "rulings",
-   "plane": [
-    "load",
-    "answer"
-   ],
-   "outcomes": [
-    "COMMIT"
-   ],
-   "status": "enforced",
-   "reader": "planner/sql.py:1304 as `ruling.naming_register` — which of the thing's names was shown",
-   "effect": "Which naming register the label belongs to, so an answer can say WHICH name it showed — 'Contoso' the common name, 'Contoso, Ltd' the legal one, 'GB' the code."
-  },
-  {
-   "required": "no",
-   "default": "—",
-   "legal": "a column of the same source map",
-   "decides": "that this column rolls up into that one, and that an answer discloses which level it used",
-   "key": "rulings.finer_than",
-   "block": "rulings",
-   "plane": [
-    "answer",
-    "check"
-   ],
-   "outcomes": [
-    "COMMIT",
-    "ASK"
-   ],
-   "status": "enforced",
-   "reader": "planner/sql.py:1307 — the level used is named in the disclosure",
-   "effect": "Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a child has two parents and the roll-up double-counts.",
-   "frontier_note": "Mistaking `scoped_by` for this one is the expensive error: it merges unrelated members and nothing in the result betrays it."
-  },
-  {
-   "required": "no",
-   "default": "—",
-   "legal": "asc · desc · none",
-   "decides": "the order this column's values are presented in when the question states none",
-   "key": "rulings.sort",
-   "block": "rulings",
-   "plane": [
-    "answer"
-   ],
-   "outcomes": [
-    "COMMIT"
-   ],
-   "status": "enforced",
-   "reader": "planner/sql.py column_sort -> the ORDER BY this column contributes",
-   "effect": "The order this column's values are presented in when the question states none. `asc` is alphanumeric and is the reading for a NAME, `desc` largest-first for a MAGNITUDE, `none` means never an ordering key. PER COLUMN, never per concept: one breakdown legitimately wants brand asc, country_code asc and net_amount desc at once, which no concept-level flag can express.",
-   "frontier_note": "THE ONE RULING WITH NO MEASUREMENT CONSTELLATION, and that is the point rather than a gap: SQL guarantees no row order without ORDER BY, so nothing in the data can establish the order a reader expects — only a person can say it. Measured 2026-10-02 on an 88-row breakdown: the grader compared approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. A column declaring nothing falls to query_grammar.yaml#projection.default_ordering, which reads the column's declared type family; `Intent.ordering` outranks both."
-  },
-  {
-   "required": "no",
-   "default": "—",
-   "legal": "the measurement, in prose",
-   "decides": "that no question may group by this column — the sentence the refusal quotes",
-   "key": "rulings.never_axis",
-   "block": "rulings",
-   "plane": [
-    "load",
-    "answer"
-   ],
-   "outcomes": [
-    "BLOCK"
-   ],
-   "status": "enforced",
-   "reader": "planner/grounded_columns._ruled_never_axis -> _axis_denied — a Refusal citing the evidence",
-   "effect": "A legitimate dimension that must not be an axis, for a reason outside the data. The refusal cites the measurement: GROUP BY city plans, executes, and returns 29 193 rows that each describe one person.",
-   "frontier_note": "column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on `field_roles[col] == \"attribute\"`, the role spelling `housekeeping` replaced, not on this ruling. `rulings.never_axis` has 0 readers in platform src and is a load error if authored. The ruling is enforced under a name its own vocabulary no longer defines."
-  },
-  {
-   "required": "with never_axis — schema dependentRequired",
-   "default": "—",
-   "legal": "a DQ register id",
-   "decides": "which measurement the ruling rests on, so the refusal cites rather than asserts",
-   "key": "rulings.evidence",
-   "block": "rulings",
-   "plane": [
-    "load",
-    "check"
-   ],
-   "outcomes": [],
-   "status": "enforced",
-   "reader": "planner/plan.py:1471 — the refusal quotes the finding this ruling rests on",
-   "effect": "Required with never_axis, and the reason the key is worth having: a prohibition without a measurement is a preference. It is what the refusal quotes back.",
-   "frontier_note": "never_axis without evidence is a LOAD refusal in the designed standard — the one place the standard refuses an AUTHOR rather than a question."
-  },
-  {
    "required": "never — not a column flag; a load error",
    "default": "—",
    "legal": "one line of prose",
@@ -981,8 +955,8 @@ const DATA = {
    ],
    "status": "designed",
    "reader": "none",
-   "effect": "The ONLY free-text key in the block, and it earns its place because it reaches the reader of an ANSWER, which prose in a YAML file never does.",
-   "frontier_note": "There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's 1 044-character note stated a measured privacy ruling in a field nothing reads, while the runtime planned GROUP BY city. A block designed to end that must not ship a slot that restarts it."
+   "effect": "The ONLY free-text key the block would carry, and it earns the reservation because it reaches the reader of an ANSWER, which prose in a YAML file never does.",
+   "frontier_note": "There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's 1 044-character note stated a measured privacy ruling in a field nothing reads, while the runtime planned GROUP BY city. A block designed to end that must not ship a slot that restarts it — which is also why `offers.suppressed` takes a finding id and not a sentence."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -1014,7 +988,7 @@ const DATA = {
    "outcomes": [],
    "status": "measured",
    "reader": "data/datasets/<relation>.yaml — written by the profile and reference planes",
-   "effect": "The OTHER role every column carries. `column_role` says what a QUERY may do; `storage_role` says what SHAPE it is. You never author this one: the profile plane counts distincts and nulls, the reference plane measures inclusion against candidate parents.",
+   "effect": "The OTHER role every column carries. `offers` says what a QUERY may do; `storage_role` says what SHAPE it is. You never author this one: the profile plane counts distincts and nulls, the reference plane measures inclusion against candidate parents.",
    "frontier_note": "If you are hand-writing a storage_role, something upstream failed."
   }
  ],
@@ -1036,88 +1010,43 @@ const DATA = {
       "axis"
      ],
      "headline": "A legitimate dimension that names individuals",
-     "reads": "34 581 distinct values over 104 990 rows. Nothing in that ratio is illegal, and nothing in it is safe.",
+     "reads": "34 581 distinct values over 104 990 rows, 21 317 of them held by exactly one row. Nothing in that ratio is illegal, and nothing in it is safe.",
      "measured": [
       {
-       "claim": "29 193 of 34 581 postcodes are held by exactly one customer",
-       "source": "DQ-CUSTOMER-02"
+       "claim": "21 317 of 34 581 distinct values (62%) over 104 990 rows are held by exactly one row",
+       "source": "DQ-IDENTIFYING-DIM_CUSTOMER-CITY"
       }
      ],
      "toggles": [
       {
-       "key": "rulings.never_axis",
+       "key": "offers.suppressed",
        "values": [
         null,
-        "privacy",
-        "grain",
-        "derived"
-       ]
-      },
-      {
-       "key": "rulings.evidence",
-       "values": [
-        null,
-        "DQ-CUSTOMER-02"
+        "DQ-IDENTIFYING-DIM_CUSTOMER-CITY"
        ]
       }
      ],
      "questions": [
       {
-       "ask": "customers by postcode",
+       "ask": "customers by city",
        "cases": [
         {
          "when": {
-          "rulings.never_axis": null
+          "offers.suppressed": null
          },
          "outcome": "COMMIT",
          "plan": "GROUP BY c.city",
          "result": "34 581 rows",
-         "note": "Plans, executes, returns. 29 193 of those rows describe one person each. The ontology's own measurement forbids this and nothing connected the two."
+         "note": "Plans, executes, returns. 21 317 of those rows describe one person each. The ontology's own measurement forbids this and nothing connected the two."
         },
         {
          "when": {
-          "rulings.never_axis": "privacy",
-          "rulings.evidence": null
+          "offers.suppressed": "DQ-IDENTIFYING-DIM_CUSTOMER-CITY"
          },
-         "mode": "designed",
-         "outcome": "LOAD_ERROR",
-         "note": "never_axis without evidence is refused at load. A prohibition without a measurement is a preference, and the refusal would have nothing to cite."
-        },
-        {
-         "when": {
-          "rulings.evidence": null
-         },
-         "mode": "designed",
-         "outcome": "LOAD_ERROR",
-         "note": "never_axis without evidence is refused at load, whatever the reason code."
-        },
-        {
-         "when": {
-          "rulings.never_axis": "privacy"
-         },
-         "mode": "designed",
          "outcome": "BLOCK",
          "reason_code": "POLICY_DENIED",
-         "result": "Customer.city is declared never_axis: privacy — DQ-CUSTOMER-02 measured that 29 193 of 34 581 postcodes are held by exactly one customer, so grouping on it names individuals. Customer can be grouped by: Continent, country_code, gender, state, birth_date.",
-         "note": "The refusal cites the measurement. That is the whole difference."
-        },
-        {
-         "when": {
-          "rulings.never_axis": "grain"
-         },
-         "mode": "designed",
-         "outcome": "BLOCK",
-         "reason_code": "POLICY_DENIED",
-         "result": "Grouping here would report at a grain the relation does not hold — the reason code changes, the refusal is the same shape, and it still cites its evidence."
-        },
-        {
-         "when": {
-          "rulings.never_axis": "derived"
-         },
-         "mode": "designed",
-         "outcome": "BLOCK",
-         "reason_code": "POLICY_DENIED",
-         "result": "The column is a derived convenience, not a fact to partition by. Same shape, different reason a reader can act on."
+         "result": "Customer.city is suppressed by DQ-IDENTIFYING-DIM_CUSTOMER-CITY — 21 317 of 34 581 distinct values over 104 990 rows are held by exactly one row, so grouping on it names individuals. Customer can be grouped by: continent, country_code, state, gender, birth_date.",
+         "note": "The refusal cites the measurement, because the value IS the measurement's id. That is the whole difference, and it is why there is no second key to forget: the two keys this replaced let a prohibition be authored with a reason CODE and no finding, which is what both of contoso5's uses did."
         }
        ]
       },
@@ -1128,111 +1057,7 @@ const DATA = {
          "when": {},
          "outcome": "COMMIT",
          "plan": "WHERE c.city = '98052'",
-         "note": "never_axis forbids the AXIS, not the filter. A postcode is a legitimate thing to ask about; it is grouping BY one that hands out a list of people."
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "column": "continent",
-     "offers": [
-      "axis"
-     ],
-     "headline": "Two names for one thing — or two things",
-     "reads": "3 distinct, beside country_code's 8. Equal counts get you to the door and no further.",
-     "measured": [
-      {
-       "claim": "8 distinct country_code, 3 distinct continent, and the same number of distinct pairs — 1:1",
-       "source": "column_rulings.md §1, measured over dim_customer"
-      }
-     ],
-     "toggles": [
-      {
-       "key": "rulings.label_of",
-       "values": [
-        null,
-        "country_code"
-       ]
-      },
-      {
-       "key": "rulings.register",
-       "values": [
-        "common",
-        "legal",
-        "long",
-        "short",
-        "code"
-       ]
-      }
-     ],
-     "questions": [
-      {
-       "ask": "customers by country name",
-       "cases": [
-        {
-         "when": {
-          "rulings.label_of": null
-         },
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.continent",
-         "result": "3 rows",
-         "note": "The same cut as 'by country', under different labels, with nothing saying they are the same cut. Two answers to one question."
-        },
-        {
-         "when": {
-          "rulings.label_of": "country_code"
-         },
-         "mode": "designed",
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.country_code",
-         "result": "8 rows, labelled from continent",
-         "disclose": "grouped by country_code, shown as continent",
-         "note": "Grouped on the canonical column, displayed in the words the question used. The register says WHICH name that is."
-        }
-       ]
-      },
-      {
-       "ask": "revenue by country and country name",
-       "cases": [
-        {
-         "when": {
-          "rulings.label_of": null
-         },
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.country_code, c.continent",
-         "result": "8 rows",
-         "note": "A reader expecting a cross product expects 8 squared. Getting 8 reads as a data bug, and it is not one."
-        },
-        {
-         "when": {
-          "rulings.label_of": "country_code"
-         },
-         "mode": "designed",
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.country_code",
-         "result": "8 rows",
-         "disclose": "one axis — continent names country_code rather than crossing it"
-        }
-       ]
-      },
-      {
-       "ask": "customers in Germany",
-       "cases": [
-        {
-         "when": {
-          "rulings.label_of": "country_code"
-         },
-         "mode": "designed",
-         "outcome": "COMMIT",
-         "plan": "WHERE c.country_code = 'DE'",
-         "note": "The label resolves to the canonical value; the predicate lands on the code."
-        },
-        {
-         "when": {},
-         "outcome": "COMMIT",
-         "plan": "WHERE c.continent = 'Germany'",
-         "note": "Works — on this column. The same question phrased 'in DE' lands on a different column with nothing relating the two."
+         "note": "A suppression forbids the AXIS, not the filter. A city is a legitimate thing to ask about; it is grouping BY one that hands out a list of people. `axis: categorical` stays declared beside the suppression, which is what keeps the filter legal."
         }
        ]
       }
@@ -1244,7 +1069,7 @@ const DATA = {
       "axis"
      ],
      "headline": "A code that is only unique inside its parent",
-     "reads": "565 distinct codes over 104 990 rows — bigger than country_code, smaller than City. Cardinality alone cannot tell this from a hierarchy.",
+     "reads": "565 distinct codes over 104 990 rows — bigger than country_code, smaller than city. Cardinality alone cannot tell this from a hierarchy.",
      "measured": [
       {
        "claim": "40 of 565 state codes are carried by more than one country; 0 collide within a country",
@@ -1557,10 +1382,429 @@ const DATA = {
     {
      "column": "birth_date",
      "offers": [
-      "axis"
+      "axis",
+      "extremum"
      ],
-     "headline": "A derived column that must announce itself",
-     "reads": "24 147 distinct — fifteen bands a transform made.",
+     "headline": "A column whose values are not what a reader will ask for",
+     "reads": "24 147 distinct, from 1935-02-04 to 2002-02-20.",
+     "toggles": [
+      {
+       "key": "disclose",
+       "values": [
+        null,
+        "a date of birth — an age is computed against the question's date, not stored"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "customers by age",
+       "cases": [
+        {
+         "when": {
+          "disclose": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.birth_date",
+         "result": "24 147 rows",
+         "note": "24 147 rows where the reader expected a handful of age brackets. The column is a DATE and the question was about an age; nothing is wrong, nothing is stated, and the answer is unusable."
+        },
+        {
+         "when": {},
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.birth_date",
+         "result": "24 147 rows",
+         "disclose": "a date of birth — an age is computed against the question's date, not stored",
+         "note": "One line, quoted into every answer that touches the column. The only free-text key the block reserves, and it earns the reservation by reaching the reader."
+        }
+       ]
+      },
+      {
+       "ask": "the earliest birth date",
+       "cases": [
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "SELECT MIN(c.birth_date)",
+         "result": "1935-02-04",
+         "note": "`extremum: [min, max]` beside the axis. A pick, not a fold — which is why a time axis no law would let anyone SUM can still answer this, and why the use is its own key rather than a corner of `aggregate`."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "valid_from",
+     "offers": [],
+     "headline": "A perfect-looking date axis that means nothing to the business",
+     "reads": "11 305 distinct dates from 1980-01-01 to 2010-12-30. Shaped exactly like a date dimension. It is when the ROW was written.",
+     "toggles": [
+      {
+       "key": "offers.axis",
+       "values": [
+        null,
+        "time"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "sales by start date",
+       "cases": [
+        {
+         "when": {
+          "offers.axis": null
+         },
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "Customer.valid_from is pipeline bookkeeping, not business vocabulary — an SCD-2 validity window. Customer can be grouped by: continent, country_code, state, gender, birth_date.",
+         "note": "THE ONE GUARDRAIL IN THIS WHOLE BLOCK THAT FIRES TODAY. Measured at mac-platform@d366d7c: `plan._axis_denied` asks `spec.offers(\"axis\")` directly and refuses when the column offers none — the question asked OF THE COLUMN. It fired two projections away from the declaration until 2026-10-07: an empty map derived `ColumnSpec.role == \"housekeeping\"`, parser.py projected that word into `field_roles`, and the refusal branched on the word — so a column declaring a reference and no axis derived `key`, matched neither branch, and GROUP BY on it was planned."
+        },
+        {
+         "when": {
+          "offers.axis": "time"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY c.valid_from",
+         "result": "11 305 rows",
+         "note": "Sales grouped by when a customer record was loaded. Valid SQL, a plausible row count, and a meaningless question answered as though it were a good one."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "customer_key",
+     "offers": [],
+     "headline": "The column COUNT(DISTINCT) counts — and it says so on the SOURCE",
+     "reads": "104 990 distinct over 104 990 rows — distinct EQUALS the row count, which is what makes it the identity rather than a very selective dimension.",
+     "toggles": [
+      {
+       "key": "key",
+       "values": [
+        null,
+        "customer_key"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "how many customers",
+       "cases": [
+        {
+         "when": {
+          "key": "customer_key"
+         },
+         "outcome": "COMMIT",
+         "plan": "SELECT count(DISTINCT c.customer_key)",
+         "result": "104 990",
+         "disclose": "counted distinct customer_key",
+         "note": "ENFORCED TODAY. A one-column `key` fills `concept.identity.canonical_key`, which is what the count route reads; the column states nothing, so nothing can drift from it."
+        },
+        {
+         "when": {
+          "key": null
+         },
+         "outcome": "REFUSE",
+         "result": "Customer declares no identity at all — no key — so there is nothing for COUNT(DISTINCT) to count.",
+         "note": "`key` is REQUIRED on the source (mac.schema.json gives it `required: [relation, key]`), so this state is reachable only as a load refusal — which is the point of showing it: the bench cannot UNSAY a required key, and the one shape this column could previously take that it can no longer take is \"canonical, over a concept that named no identity kind\"."
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "concept": "Location",
+   "relation": "dim_location",
+   "profile": {
+    "relation": "contoso_served.dim_location",
+    "rows": 67,
+    "measured_at": "2026-09-29T18:02:25+02:00",
+    "engine": "None@None",
+    "method": "mac_profile.py/6"
+   },
+   "columns": [
+    {
+     "column": "country_name",
+     "offers": [
+      "axis",
+      "extremum"
+     ],
+     "headline": "Two names for one thing — or two things",
+     "reads": "9 distinct, beside country_code's 9 over 67 rows. Equal counts get you to the door and no further.",
+     "measured": [
+      {
+       "claim": "9 distinct country_code and 9 distinct country_name over 67 rows — one name per code",
+       "source": "data/profiles/dim_location.yaml"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.label_of",
+       "values": [
+        null,
+        "country_code"
+       ]
+      },
+      {
+       "key": "rulings.naming",
+       "values": [
+        "common",
+        "legal",
+        "long",
+        "short",
+        "code"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "locations by country name",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": null
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_name",
+         "result": "9 rows",
+         "note": "The same cut as 'by country', under different labels, with nothing saying they are the same cut. Two answers to one question."
+        },
+        {
+         "when": {
+          "rulings.label_of": "country_code",
+          "rulings.naming": "long"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_code",
+         "result": "9 rows, labelled from country_name",
+         "disclose": "grouped by country_code, shown as country_name (long register)",
+         "note": "WHAT contoso5 DECLARES. Grouped on the code, displayed in the words the question used, and the disclosure names WHICH of the thing's names that is."
+        },
+        {
+         "when": {
+          "rulings.label_of": "country_code"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_code",
+         "result": "9 rows, labelled from country_name",
+         "disclose": "grouped by country_code, shown as country_name",
+         "note": "`naming` is REQUIRED with `label_of` (schema dependentRequired, both directions), so this row is unreachable at load — it is here to show what the disclosure loses without it: which name the answer showed."
+        }
+       ]
+      },
+      {
+       "ask": "units by country and country name",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": "country_code"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_code",
+         "result": "9 rows",
+         "disclose": "one axis — country_name names country_code rather than crossing it"
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_code, l.country_name",
+         "result": "9 rows",
+         "note": "A reader expecting a cross product expects 9 squared. Getting 9 reads as a data bug, and it is not one."
+        }
+       ]
+      },
+      {
+       "ask": "locations in Germany",
+       "cases": [
+        {
+         "when": {
+          "rulings.label_of": "country_code"
+         },
+         "outcome": "COMMIT",
+         "plan": "WHERE l.country_code = 'DE'",
+         "note": "The label resolves to the code; the predicate lands on the exact value the column holds."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "WHERE l.country_name = 'Germany'",
+         "note": "Works — on this column. The same question phrased 'in DE' lands on a different column with nothing relating the two."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "state",
+     "offers": [
+      "axis",
+      "extremum"
+     ],
+     "headline": "The same code space as Customer.state, and the opposite ruling",
+     "reads": "67 distinct over 67 rows — one per location.",
+     "measured": [
+      {
+       "claim": "every state here sits in exactly one country — a clean N:1, which is what separates this from Customer.state's 40 cross-country collisions",
+       "source": "column_rulings.md §2 vs §3"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "rulings.finer_than",
+       "values": [
+        null,
+        "country_code"
+       ]
+      },
+      {
+       "key": "rulings.scoped_by",
+       "values": [
+        null,
+        "country_code"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "units by state",
+       "cases": [
+        {
+         "when": {
+          "rulings.finer_than": "country_code"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.state",
+         "result": "67 rows",
+         "disclose": "the finer of two levels; rolls up into 9 countries",
+         "note": "WHAT contoso5 DECLARES. Both levels stay legal axes and the answer says which one it used."
+        },
+        {
+         "when": {
+          "rulings.scoped_by": "country_code"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.country_code, l.state",
+         "result": "67 rows",
+         "disclose": "country_code added — state is scoped by it",
+         "note": "THE EXPENSIVE CONFUSION, from the harmless side. Reading a clean hierarchy as a colliding code space costs a column nobody needed. Reading a colliding code space as a hierarchy — Customer.state — merges Corse, Como and Colorado into one row and nothing in the result betrays it. Measure the pairs before ruling."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.state",
+         "result": "67 rows",
+         "note": "Correct, and a reader cannot tell whether these roll up to the countries they would get by country."
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "concept": "Store",
+   "relation": "dim_store",
+   "profile": {
+    "relation": "contoso_served.dim_store",
+    "rows": 74,
+    "measured_at": "2026-10-01T14:05:36+02:00",
+    "engine": "None@None",
+    "method": "mac_profile.py/6"
+   },
+   "columns": [
+    {
+     "column": "location_code",
+     "offers": [],
+     "headline": "A count of the concept is not a count of its rows",
+     "reads": "67 distinct over 74 rows. The relation is served FINER than the thing: a row is a trading period, and a store is a location.",
+     "measured": [
+      {
+       "claim": "74 rows over 67 distinct location_code — one location has at most one store with no close date",
+       "source": "store.yaml grounding.snapshot_rule"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "counts",
+       "values": [
+        null,
+        "location_code"
+       ]
+      },
+      {
+       "key": "references",
+       "values": [
+        null,
+        "Location"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "how many stores",
+       "cases": [
+        {
+         "when": {
+          "counts": "location_code"
+         },
+         "outcome": "COMMIT",
+         "plan": "SELECT count(DISTINCT s.location_code)",
+         "result": "67",
+         "disclose": "counted distinct location_code, not rows",
+         "note": "The fact the key cannot state. `key: store_key` stays what the fact JOINS on; `counts` is what a count DISTINCTs, and the answer discloses which column it counted."
+        },
+        {
+         "when": {
+          "counts": null
+         },
+         "outcome": "COMMIT",
+         "plan": "SELECT count(DISTINCT s.store_key)",
+         "result": "74",
+         "note": "74 where the truth is 67. Valid SQL, a plausible number, and it answers a question about trading periods to somebody who asked about stores."
+        }
+       ]
+      },
+      {
+       "ask": "units sold by location",
+       "cases": [
+        {
+         "when": {
+          "references": "Location"
+         },
+         "mode": "designed",
+         "outcome": "COMMIT",
+         "plan": "JOIN dim_location l ON l.location_code = s.location_code",
+         "note": "The column names the concept it points at, so the join target is DECLARED. Without it the target is recovered by matching column names against concepts whose key is that column — an inference that has been observed to fail."
+        },
+        {
+         "when": {},
+         "outcome": "COMMIT",
+         "plan": "JOIN dim_location l ON l.location_code = s.location_code",
+         "note": "Same plan today, from `edges.yaml` rather than from the column. The edge is where a join lives; what the column adds is that its values IDENTIFY a Location, which is also what makes the dangling-key measurement meaningful."
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "column": "status_annotation",
+     "offers": [
+      "axis",
+      "extremum"
+     ],
+     "headline": "A derived column, and the one null that is a fact",
+     "reads": "3 distinct, 1 null, over 74 rows.",
+     "measured": [
+      {
+       "claim": "a RESTRUCTURED location always has a later row at the same code (6 of 6); a CLOSED one never does (0 of 8) — the rule reproduces all 15 stated values and fills only the 16th",
+       "source": "data/transforms/dim_store.sql"
+      }
+     ],
      "toggles": [
       {
        "key": "domain.warranty",
@@ -1571,39 +1815,16 @@ const DATA = {
        ]
       },
       {
-       "key": "disclose",
+       "key": "absence.nulls",
        "values": [
         null,
-        "banded to 5 years, as of 2025-12-31"
+        "no status event recorded — the store never closed"
        ]
       }
      ],
      "questions": [
       {
-       "ask": "customers by age band",
-       "cases": [
-        {
-         "when": {
-          "disclose": null
-         },
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.birth_date",
-         "result": "24 147 rows",
-         "note": "A reader sees a band labelled 40 and does not learn it is a five-year bucket fixed at a date. Nothing is wrong and nothing is stated."
-        },
-        {
-         "when": {},
-         "mode": "designed",
-         "outcome": "COMMIT",
-         "plan": "GROUP BY c.birth_date",
-         "result": "24 147 rows",
-         "disclose": "banded to 5 years, as of 2025-12-31",
-         "note": "One line, quoted into every answer that touches the column. The only free-text key in the block, and it earns its place by reaching the reader."
-        }
-       ]
-      },
-      {
-       "ask": "can a sixteenth band appear",
+       "ask": "can a fourth status appear",
        "cases": [
         {
          "when": {
@@ -1612,7 +1833,7 @@ const DATA = {
          "mode": "designed",
          "outcome": "COMMIT",
          "result": "No — a CASE expression in the transform makes the members, so a new load cannot add one.",
-         "note": "No watchdog needed. The rule that makes the members is the warranty."
+         "note": "No watchdog needed: the rule that makes the members IS the warranty, and dim_store.sql carries it with the measurement that justified each branch."
         },
         {
          "when": {
@@ -1629,101 +1850,27 @@ const DATA = {
          "result": "Unanswerable from declarations. The closure is unstated, so nothing promises anything."
         }
        ]
-      }
-     ]
-    },
-    {
-     "column": "valid_from",
-     "offers": [],
-     "headline": "A perfect-looking date axis that means nothing to the business",
-     "reads": "11 305 distinct dates from 1980-01-01 to 2010-12-30. Shaped exactly like a date dimension. It is when the ROW was written.",
-     "toggles": [
+      },
       {
-       "key": "roles.axis",
-       "values": [
-        null,
-        "mac.concept.axis.time"
-       ]
-      }
-     ],
-     "questions": [
-      {
-       "ask": "sales by start date",
+       "ask": "stores with no status",
        "cases": [
         {
          "when": {
-          "roles.axis": null
-         },
-         "outcome": "BLOCK",
-         "reason_code": "POLICY_DENIED",
-         "result": "Customer.valid_from is pipeline bookkeeping, not business vocabulary — an SCD-2 validity window. Customer can be grouped by: Continent, country_code, gender, state, birth_date.",
-         "note": "THE ONE GUARDRAIL IN THIS WHOLE BLOCK THAT FIRES TODAY, and it fires two projections away from the declaration. Re-measured 2026-10-07: `roles: {}` makes `ColumnSpec.role` derive `housekeeping` (its last branch — \"a column offered to no question is housekeeping\"), parser.py:634 projects that word into `field_roles`, and `plan._axis_denied` refuses on `field_roles[column] == \"housekeeping\"` — never on the absent `axis` role. `housekeeping` occurs 24 times in mac-platform's packages, so the earlier reading here (\"it fires on the spelling `attribute`; `housekeeping` occurs 0 times in platform src\") is retired with the scalar: BOTH words are branched on, `attribute` as the explicitly retired one."
-        },
-        {
-         "when": {
-          "roles.axis": "mac.concept.axis.time"
+          "absence.nulls": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.valid_from",
-         "result": "11 305 rows",
-         "note": "Sales grouped by when a customer record was loaded. Valid SQL, a plausible row count, and a meaningless question answered as though it were a good one."
-        }
-       ]
-      }
-     ]
-    },
-    {
-     "column": "customer_key",
-     "offers": [
-      "identity"
-     ],
-     "headline": "The column COUNT(DISTINCT) counts",
-     "reads": "104 990 distinct over 104 990 rows — distinct EQUALS the row count, which is what makes it the identity rather than a very selective dimension.",
-     "toggles": [
-      {
-       "key": "roles.identity",
-       "values": [
-        null,
-        "reference"
-       ]
-      }
-     ],
-     "questions": [
-      {
-       "ask": "how many customers",
-       "cases": [
+         "plan": "WHERE s.status_annotation IS NULL",
+         "result": "1 row",
+         "note": "One row, and nothing says whether that means 'not applicable' or 'no event recorded'. The count betrays nothing either way."
+        },
         {
-         "when": {
-          "roles.identity": "canonical"
-         },
+         "when": {},
+         "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "SELECT count(DISTINCT c.customer_key)",
-         "result": "104 990",
-         "disclose": "counted distinct customer_key",
-         "note": "ENFORCED TODAY. `roles: {identity: canonical}` is projected into the identity the count route already reads — `roles.identity`'s reader above names 22 runtime read sites — so the column states it once, as an authoring surface and not a second home, and no internal duplicate can drift from it."
-        },
-        {
-         "when": {
-          "roles.identity": "composite"
-         },
-         "outcome": "REFUSE",
-         "result": "customer_key is one column of a composite identity and identifies nothing alone. Counting it would return a set where a row was expected."
-        },
-        {
-         "when": {
-          "roles.identity": "reference"
-         },
-         "outcome": "REFUSE",
-         "result": "Customer declares no canonical identity — customer_key points at another concept.",
-         "note": "The row names a row in ANOTHER concept, so it is a join target and never part of this concept's grain. It is not what an unstated identity falls back to — that is the case below, and the two were one answer while the concept-level identity block existed."
-        },
-        {
-         "when": {
-          "roles.identity": null
-         },
-         "outcome": "REFUSE",
-         "result": "Customer declares no identity at all — no canonical column and no composite tuple — so there is nothing for COUNT(DISTINCT) to count.",
-         "note": "`roles: {}` is a POSITIVE statement: the column is typed, loaded, and offered to no question. So the refusal is an answer-plane refusal and not a load error, which is the one behaviour on this column that 2026-10-07 changed. An ABSENT `roles:` is the other finding — a column nobody classified — and this bench cannot show it, because a toggle can only set a key, never unsay the map that carries it."
+         "plan": "WHERE s.status_annotation IS NULL",
+         "result": "1 row",
+         "disclose": "no status event recorded — the store never closed",
+         "note": "Per column, because that is where nulls happen."
         }
        ]
       }
@@ -1745,7 +1892,8 @@ const DATA = {
     {
      "column": "sub_category_name",
      "offers": [
-      "axis"
+      "axis",
+      "extremum"
      ],
      "headline": "A level, not a collision — and telling them apart is the expensive part",
      "reads": "32 distinct, rolling up into category_name's 8.",
@@ -1772,7 +1920,6 @@ const DATA = {
          "when": {
           "rulings.finer_than": "category_name"
          },
-         "mode": "designed",
          "outcome": "COMMIT",
          "plan": "GROUP BY p.sub_category_name",
          "result": "32 rows",
@@ -1794,7 +1941,6 @@ const DATA = {
          "when": {
           "rulings.finer_than": "category_name"
          },
-         "mode": "designed",
          "outcome": "ASK",
          "result": "Which level — category (8) or subcategory (32)?",
          "note": "The ruling is what lets the engine know there are two levels to offer."
@@ -1812,7 +1958,8 @@ const DATA = {
     {
      "column": "manufacturer",
      "offers": [
-      "axis"
+      "axis",
+      "extremum"
      ],
      "headline": "The 1:1 that only a person can rule on",
      "reads": "11 distinct, beside brand's 11.",
@@ -1831,7 +1978,7 @@ const DATA = {
        ]
       },
       {
-       "key": "rulings.register",
+       "key": "rulings.naming",
        "values": [
         "common",
         "legal",
@@ -1848,25 +1995,24 @@ const DATA = {
         {
          "when": {
           "rulings.label_of": "brand",
-          "rulings.register": "legal"
+          "rulings.naming": "legal"
          },
-         "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "SELECT p.Brand AS \"manufacturer\", SUM(l.net_price) GROUP BY p.Brand",
+         "plan": "SELECT p.brand AS \"manufacturer\", SUM(l.net_price) GROUP BY p.brand",
          "result": "11 rows — Contoso, Ltd · Fabrikam, Inc. · …",
          "disclose": "grouped by brand, shown as manufacturer (legal register)",
-         "note": "A question asked in these words is answered in them, never refused. 'Contoso' is what the world calls it; 'Contoso, Ltd' is what the register calls it."
+         "note": "WHAT contoso5 DECLARES. A question asked in these words is answered in them, never refused. 'Contoso' is what the world calls it; 'Contoso, Ltd' is what the register calls it."
         },
         {
          "when": {
-          "rulings.label_of": "brand"
+          "rulings.label_of": "brand",
+          "rulings.naming": "common"
          },
-         "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY p.Brand",
+         "plan": "GROUP BY p.brand",
          "result": "11 rows",
          "disclose": "grouped by brand, shown as manufacturer (common register)",
-         "note": "The register is wrong here — these ARE the legal names. Nothing breaks; the answer just claims the wrong thing about which name it showed."
+         "note": "The naming term is wrong here — these ARE the legal names. Nothing breaks; the answer just claims the wrong thing about which name it showed."
         },
         {
          "when": {},
@@ -1882,7 +2028,7 @@ const DATA = {
    ]
   },
   {
-   "concept": "OrderLine",
+   "concept": "NetRevenue",
    "relation": "v_contoso5_sales_line",
    "profile": {
     "relation": "contoso_served.v_contoso5_sales_line",
@@ -1893,9 +2039,87 @@ const DATA = {
    },
    "columns": [
     {
+     "column": "customer_key",
+     "offers": [
+      "axis"
+     ],
+     "headline": "A join key you also group by — the overlap one role name could not state",
+     "reads": "52 189 distinct over 223 974 rows. It points at a Customer AND it is a legitimate axis, and those are two declarations.",
+     "measured": [
+      {
+       "claim": "21 of contoso5's 112 columns are a join key a question may also group by; 18 of them a reference key that is also a legitimate axis",
+       "source": "column_declaration.md, measured 2026-10-07"
+      }
+     ],
+     "toggles": [
+      {
+       "key": "references",
+       "values": [
+        null,
+        "Customer"
+       ]
+      },
+      {
+       "key": "offers.axis",
+       "values": [
+        null,
+        "categorical"
+       ]
+      }
+     ],
+     "questions": [
+      {
+       "ask": "revenue by customer country",
+       "cases": [
+        {
+         "when": {
+          "references": "Customer",
+          "offers.axis": "categorical"
+         },
+         "outcome": "COMMIT",
+         "plan": "JOIN dim_customer c USING (customer_key) GROUP BY c.country_code",
+         "note": "WHAT contoso5 DECLARES on this concept, and it needs both keys: the pointer says whose rows to join, the axis says a question may slice by this column. The retired scalar `role` could hold one name, so it held `key` — and `key` denied the axis."
+        },
+        {
+         "when": {
+          "offers.axis": "categorical"
+         },
+         "outcome": "COMMIT",
+         "plan": "JOIN dim_customer c USING (customer_key) GROUP BY c.country_code",
+         "note": "Same plan, from `edges.yaml`. What is missing is the DECLARED target, which is what makes a dangling-key measurement possible at all."
+        }
+       ]
+      },
+      {
+       "ask": "revenue by customer_key",
+       "cases": [
+        {
+         "when": {
+          "offers.axis": "categorical"
+         },
+         "outcome": "COMMIT",
+         "plan": "GROUP BY l.customer_key",
+         "result": "52 189 rows",
+         "note": "52 189 rows naming one person each. Legal, declared, and a suppression is the key that says otherwise — `offers.suppressed` beside the axis, citing a finding."
+        },
+        {
+         "when": {
+          "offers.axis": null
+         },
+         "outcome": "BLOCK",
+         "reason_code": "POLICY_DENIED",
+         "result": "NetRevenue.customer_key offers no axis — it is a pointer and a join target, not something a question slices by.",
+         "note": "AND contoso5 DECLARES BOTH STATES ON THE SAME COLUMN. `Order.customer_key` is `offers: {}` with `references: Customer`; `NetRevenue.customer_key` is `offers: {axis: categorical}` with the same pointer — one column, two concepts, two different permissions. Under one role name both read `key`, and the planner's predicate tuple granted them the same thing by coincidence."
+        }
+       ]
+      }
+     ]
+    },
+    {
      "column": "net_price",
      "offers": [
-      "aggregate"
+      "aggregate",
+      "extremum"
      ],
      "headline": "One column, five declarable types, ten universal folds",
      "reads": "18 407 distinct values over 223 974 rows — a numeric payload, never an axis.",
@@ -1903,45 +2127,50 @@ const DATA = {
      "derives_note": "This panel computes nothing of its own. The legal fold per axis comes from mac_vocabulary.yaml#concept.column.measure_type, where additivity is stated ONCE over mac.concept.axis — five types × two kinds = ten universal cells, each naming a mac.concept.aggregation_effect term. An applied ontology references those members; it never re-encodes the matrix, and neither does this page.",
      "toggles": [
       {
-       "key": "roles.aggregate",
+       "key": "offers.aggregate",
        "values": [
         {
-         "type": "mac.concept.column.measure_type.flow",
+         "type": "flow",
          "unit": "USD"
         },
         {
-         "type": "mac.concept.column.measure_type.stock",
+         "type": "stock",
          "unit": "USD"
         },
         {
-         "type": "mac.concept.column.measure_type.intensive",
+         "type": "intensive",
          "unit": "USD"
         },
         {
-         "type": "mac.concept.column.measure_type.precomputed",
+         "type": "precomputed",
          "unit": "USD"
         },
         {
-         "type": "mac.concept.column.measure_type.target",
+         "type": "target",
          "unit": "USD"
         },
         {
-         "type": "mac.concept.column.measure_type.flow"
+         "type": "flow"
+        },
+        {
+         "type": "intensive",
+         "unit": "USD",
+         "default": true
         }
        ]
       },
       {
-       "key": "roles.aggregate.additivity",
+       "key": "offers.aggregate.additivity",
        "values": [
         null,
         {
-         "mac.concept.axis.time": "mac.concept.aggregation_effect.additive"
+         "time": "additive"
         },
         {
-         "mac.concept.axis.time": "mac.concept.aggregation_effect.average"
+         "time": "average"
         },
         {
-         "mac.concept.axis.time": "mac.concept.aggregation_effect.none"
+         "time": "none"
         }
        ]
       }
@@ -2670,12 +2899,12 @@ const DATA = {
     }
    }
   },
-  "concept.column.roles": {
+  "concept.column.offers": {
    "closed": true,
-   "description": "WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `roles:` as a MAP from the term to that role's own qualifier — `identity: composite`, `axis: time`, `aggregate: {type, unit}` — so the role and its parameter are one statement and a role cannot be claimed without its terms. THIS WAS `query_use`, 'the machine-readable half of concept.column.role', and `role` was the other half: one fact in two vocabularies, of which only one had a key in mac.schema.json and neither could say that a join key is also an axis. 21 of contoso5's 112 columns are exactly that. `role` is gone and this is the whole declaration. AN EMPTY MAP IS A STATEMENT: the column is offered to no question, which is what `role: housekeeping` said. A MISSING `roles:` is a column nobody classified, and the two are different findings.",
+   "description": "WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `offers:` as a MAP from the use to that use's own terms — `axis: categorical`, `aggregate: {type, unit}` — so a use cannot be claimed without stating them. IT WAS `roles:` UNTIL 2026-10-07, and `role` before that: a scalar holding one of five names, beside a `query_use` table mapping each name to the uses it served. One fact in two vocabularies, neither able to say that a join key is also an axis — 21 of contoso5's 112 columns are exactly that. The word changed because `role` is what the five DERIVED names are still called, and the container is not those names. `identity` LEFT THIS SET. It answered \"does this column point at another concept\", which is not a use a question makes of the column but a statement about another concept: it is the top-level `references:` key, whose value is that concept's name. AN EMPTY MAP IS A STATEMENT: the column is offered to no question, which is what `role: housekeeping` said. A MISSING `offers:` is a column nobody classified, and the two are different findings.",
    "terms": {
     "axis": {
-     "description": "LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A per-column `rulings.never_axis` still overrides this with its own measurement: the role says the KIND of column may be an axis, the ruling says this ONE may not."
+     "description": "LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A sibling `suppressed` still overrides this with its own measurement: the kind says this column MAY be an axis, the suppression says no question may group by this ONE — and its value is the finding, so the prohibition cannot be authored without its evidence."
     },
     "aggregate": {
      "description": "A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is `concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's ruling, not this one's."
@@ -2686,18 +2915,8 @@ const DATA = {
     "extremum": {
      "description": "THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a \"when did X first ...\" question wants. NOT A FOLD, and that is why it is a separate use rather than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable."
     },
-    "identity": {
-     "description": "WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated, an identifier that is summed being a number nobody asked for."
-    }
-   }
-  },
-  "concept.column.identity": {
-   "closed": true,
-   "description": "Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row of THIS concept unique is `grounding.sources[].key`, not a per-column flag.",
-   "terms": {
-    "reference": {
-     "description": "A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.",
-     "constellation": "THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale identifies a customer; the sale is identified by something else entirely. Without this the key reads as part of the sale's own identity, and a count of sales becomes a count of customers.\n"
+    "suppressed": {
+     "description": "THE COLUMN IS A REAL AXIS AND A PERSON HAS RULED THAT NO QUESTION MAY GROUP BY IT. The value IS the finding that justifies it — a data-quality issue id — so a prohibition cannot be authored without naming its evidence, and the refusal quotes the register rather than a word. `axis` must be declared alongside it: the ontology states what the warehouse IS and the suppression is a judgement on top, never a denial that the axis exists. IT WAS `rulings: {never_axis, evidence}`, two keys in a block whose every other member names ANOTHER column — this one never did. And the prose field carried a reason CODE in both of contoso5's uses (`privacy`), while the sentence it claimed to hold already lived in the register: \"21,317 of 34,581 distinct values (62%) over 104,990 rows are held by exactly one row\"."
     }
    }
   },
@@ -2706,7 +2925,7 @@ const DATA = {
    "description": "An authored judgement about a column, beyond what measurement can establish.",
    "terms": {
     "label_of": {
-     "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso, Ltd\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.",
+     "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `naming` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — \"Contoso\" is what the world calls it, \"Contoso, Ltd\" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.",
      "constellation": "TWO COLUMNS ARE 1:1 AND ONE IS THE OTHER'S NAME. Cardinality is symmetric so the data cannot say which direction it runs; a person must. Getting it backwards produces an answer with the wrong column as its axis rather than an error.\n"
     },
     "finer_than": {
@@ -2720,10 +2939,6 @@ const DATA = {
     "sort": {
      "description": "THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `asc` is alphanumeric / smallest-first and is the reading for a NAME; `desc` is largest-first and is the reading for a MAGNITUDE; `none` means this column is never an ordering key. PER COLUMN AND NEVER PER CONCEPT -- operator ruling, 2026-10-02: \"it must be sort per column and not concept\" -- because one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at the same time. NOT A FORMATTING PREFERENCE, WHICH IS WHY IT IS A RULING. SQL guarantees NO row order without ORDER BY, so an unordered answer is not a reading of the question: it is whatever the engine happened to emit, and it changes between runs. MEASURED 2026-10-02 on AGG-15 (\"net revenue by brand and customer country for 2024\"), an 88-row breakdown -- the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged. An ordering is also what makes a truncated view honest: the first N rows of a descending measure are the N that matter. A COLUMN THAT DECLARES NOTHING falls to query_grammar.yaml#projection.default_ordering (an aggregate desc, a bare list asc on its slice columns), and `Intent.ordering` -- the reader's own words, \"top 5 by price\" -- outranks both.",
      "constellation": "THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises none without ORDER BY, so the answer changes between runs on unchanged data — measured, on an 88-row breakdown that passed and failed alternately.\n"
-    },
-    "never_axis": {
-     "description": "THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row.",
-     "constellation": "GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990 postcodes identify a single customer. The query is legal and the result is a customer list pretending to be a breakdown.\n"
     }
    }
   },
@@ -2809,10 +3024,10 @@ const DATA = {
   }
  },
  "counts": {
-  "enforced": 17,
-  "designed": 17,
+  "enforced": 16,
+  "designed": 16,
   "measured": 1,
-  "total": 35
+  "total": 33
  },
  "census": {
   "terms": {
@@ -2829,10 +3044,7 @@ const DATA = {
     "aggregate",
     "period_binding",
     "extremum",
-    "identity"
-   ],
-   "identity_role": [
-    "reference"
+    "suppressed"
    ],
    "axis": [
     "time",
@@ -2849,8 +3061,7 @@ const DATA = {
     "label_of",
     "finer_than",
     "scoped_by",
-    "sort",
-    "never_axis"
+    "sort"
    ],
    "name_register": [
     "common",
@@ -2873,21 +3084,21 @@ const DATA = {
    "aggregate": 14,
    "period_binding": 7,
    "extremum": 63,
-   "identity": 25,
-   "rulings": 11
+   "suppressed": 2,
+   "rulings": 9
   },
   "crosstab": {
    "value|axis": 39,
    "value|extremum": 53,
-   "primary_key|identity": 3,
-   "primary_key|None": 19,
+   "primary_key|None": 22,
+   "value|suppressed": 2,
    "foreign_key|axis": 28,
    "foreign_key|extremum": 10,
    "value|None": 2,
    "value|aggregate": 14,
    "value|period_binding": 7,
-   "foreign_key|identity": 22,
-   "primary_key|axis": 3
+   "primary_key|axis": 3,
+   "foreign_key|None": 4
   },
   "suspicious": {
    "foreign_key|axis": "a pointer used as a category — 'that is a pointer, not a category, even though its cardinality looks dimension-sized' (column_roles.md §1). NOT a breach: a reference key that is also a legitimate axis is 18 of contoso5's columns, which is why this reports",
@@ -2966,24 +3177,27 @@ function matches(when, st) {
    measure_type, where additivity is stated ONCE over the axis kind. This function reads that
    matrix; it encodes no fold rule.
    THE ADDRESSES WERE ALL WRONG, and this panel rendered nothing before 2026-10-07: the qualifier
-   is a MAP under `roles.aggregate` rather than three flat `measure.*` keys, the override is a map
-   keyed by the QUALIFIED axis term rather than a `"time: additive"` string, and
-   `DATA.vocabulary.MeasureType` / `.aggregation_effect` are not keys `load_vocabulary` produces —
-   it keys every namespace by its DOTTED identity, so both lookups were undefined and every cell
-   fell through to `none`. */
+   is a MAP under `offers.aggregate` rather than three flat `measure.*` keys, the override is a map
+   rather than a `"time: additive"` string, and `DATA.vocabulary.MeasureType` / `.aggregation_effect`
+   are not keys `load_vocabulary` produces — it keys every namespace by its DOTTED identity, so both
+   lookups were undefined and every cell fell through to `none`.
+   BOTH SIDES OF THE OVERRIDE ARE BARE TERMS as of revision 5 — `{time: additive}` — which is what
+   the schema's closed enums validate. `.split('.').pop()` is kept on each read so a fully qualified
+   term, the term's identity in mac_vocabulary.yaml, still resolves: the vocabulary's own additivity
+   matrix states its CELLS that way (`mac.concept.aggregation_effect.additive`) while keying them
+   bare. */
 const EFFECT_FOLD = {additive: ['SUM','AVG'], average: ['AVG'], none: []};
 const V_MEASURE_TYPE = 'concept.column.measure_type';
 const V_EFFECT = 'concept.aggregation_effect';
 function measureOutcome(col, st, q) {
-  const agg = st['roles.aggregate'] || {};
+  const agg = st['offers.aggregate'] || {};
   const type = agg.type;
-  const ov = st['roles.aggregate.additivity'];
+  const ov = st['offers.aggregate.additivity'];
   const mt = (((DATA.vocabulary || {})[V_MEASURE_TYPE] || {}).terms || {})[String(type).split('.').pop()] || {};
-  const axisTerm = 'mac.concept.axis.' + q.axis;
   let cell = String((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
   let overridden = false;
-  if (ov && (ov[axisTerm] || ov[q.axis])) {
-    cell = String(ov[axisTerm] || ov[q.axis]).split('.').pop();
+  if (ov && ov[q.axis] != null) {
+    cell = String(ov[q.axis]).split('.').pop();
     overridden = true;
   }
   const legal = EFFECT_FOLD[cell] || [];
@@ -2996,12 +3210,21 @@ function measureOutcome(col, st, q) {
     plan: ok ? `SELECT ${q.fold}(l.${col.column}) … GROUP BY <${q.axis} axis>` : null,
     result: ok
       ? `${q.fold} is legal on the ${q.axis} axis` + (unit ? ` — reported in ${unit}` : ' — with no unit declared, the number is bare')
+      /* THE EMPTY-LEGAL BRANCH SAID "a ${type} measure folds on no axis at all — its value exists
+         only at the grains it was computed for", which is `precomputed`'s own sentence and was
+         printed for every type whose cell is `none`: a `stock` across time, and any type the
+         per-axis override sets to `none`. Two different facts. */
       : (legal.length
           ? `${q.fold} is not a legal fold of a ${type} measure on the ${q.axis} axis. The correct fold is ${legal.join(' or ')}.`
-          : `A ${type} measure folds on no axis at all — its value exists only at the grains it was computed for.`),
+          : overridden
+            ? `No fold is legal on the ${q.axis} axis: this column's offers.aggregate.additivity overrides the law for it. Read the value at a stated point instead of combining several.`
+            : `No fold is legal on the ${q.axis} axis for a ${type} measure`
+              + (['precomputed','target'].includes(String(type))
+                  ? ` — and none is legal on any other axis either: its value exists only at the grains it was computed for, so you LOCATE the row.`
+                  : `. Fold it along an axis the law permits, or read the level at a stated point in time.`)),
     disclose: ok && !unit ? null : (ok ? `${type} · ${q.axis} · ${cell}` : null),
     note: `${type} · ${q.axis} → mac.concept.aggregation_effect.${cell}`
-      + (overridden ? ' (overridden on this column by roles.aggregate.additivity)' : '')
+      + (overridden ? ' (overridden on this column by offers.aggregate.additivity)' : '')
       + (eff.description ? ' — ' + eff.description : '')
   };
 }
@@ -3047,17 +3270,31 @@ function yamlBlock(col, st) {
   /* The wavy underline says 'this line does not load'. That is only true in TODAY mode —
      in DESIGNED mode the same line is the standard working as specified. */
   const dead = new Set(MODE === 'today' ? deadKeys(col, st).map(d => d.key) : []);
+  /* TWO KEYS ARE THE SOURCE'S AND NOT THE COLUMN'S — `key` and `counts`, each one statement about
+     the relation whose value is a column name. They are rendered above the column block, because
+     printing them inside it would show a shape the schema refuses. `block` comes from the
+     registry, so nothing here decides which keys those are. */
+  const onSource = t => (KEYS[t.key] || {}).block === 'source';
   const tree = {};
-  (col.toggles || []).forEach(t => {
+  (col.toggles || []).filter(t => !onSource(t)).forEach(t => {
     const v = st[t.key];
     if (!authored(t.key, v)) return;
     const parts = t.key.split('.');
-    if (parts.length === 1) tree[parts[0]] = {__v: v, __dead: dead.has(t.key)};
-    else { (tree[parts[0]] = tree[parts[0]] || {})[parts[1]] = {__v: v, __dead: dead.has(t.key)}; }
+    let node = tree;
+    parts.slice(0, -1).forEach(seg => { node = (node[seg] = node[seg] || {}); });
+    node[parts[parts.length - 1]] = {__v: v, __dead: dead.has(t.key)};
   });
-  let out = `<span class="y-k">${esc(col.column)}</span>:\n`;
-  if (!(col.toggles || []).some(t => String(t.key).startsWith('roles')))
-    out += `  <span class="y-k">roles</span>: <span class="y-v">${esc((col.offers || []).join(', ') || '{}')}</span>\n`;
+  let out = '';
+  const src = (col.toggles || []).filter(t => onSource(t) && authored(t.key, st[t.key]));
+  if (src.length) {
+    out += `<span class="y-c"># on the source, beside relation:</span>\n`;
+    src.forEach(t => {
+      out += `<span class="y-k">${esc(t.key)}</span>: <span class="y-v">${esc(st[t.key])}</span>\n`;
+    });
+  }
+  out += `<span class="y-k">${esc(col.column)}</span>:\n`;
+  if (!(col.toggles || []).some(t => String(t.key).startsWith('offers')))
+    out += `  <span class="y-k">offers</span>: <span class="y-v">{${esc((col.offers || []).join(', '))}}</span>\n`;
   const emit = (node, ind) => {
     Object.entries(node).forEach(([k, v]) => {
       if (v && v.__v !== undefined) {
@@ -3209,11 +3446,18 @@ function renderMatrix() {
 }
 
 /* ------------------------------------------------------------ constellation */
+/* EVERY FIGURE IS contoso5's, AND EVERY ONE IS MEASURED. The distincts come from
+   data/profiles/{dim_product,dim_customer}.yaml (measured 2026-09-30); the pair counts come from
+   column_rulings.md §1-§3, which names the scan that produced each. The fourth preset replaced
+   `ZipCode (alone)` — 40 639 over a relation this estate does not carry: contoso5's identifying
+   dimension is `city`, 34 581 distinct with 21 317 of them held by exactly one row
+   (DQ-IDENTIFYING-DIM_CUSTOMER-CITY), and the pair figure is the singleton count rather than a
+   cross-tab nobody measured. */
 const PRESETS = [
-  {n: 'Brand ↔ Manufacturer', a: 11, b: 11, p: 11, rows: 2517, an: 'Manufacturer', bn: 'Brand'},
-  {n: 'SubCategory ↔ Category', a: 32, b: 8, p: 32, rows: 2517, an: 'SubCategoryName', bn: 'CategoryName'},
-  {n: 'State ↔ Country', a: 563, b: 8, p: 603, rows: 104990, an: 'State', bn: 'Country'},
-  {n: 'ZipCode (alone)', a: 40639, b: 8, p: 40639, rows: 104990, an: 'ZipCode', bn: 'Country'}
+  {n: 'manufacturer ↔ brand', a: 11, b: 11, p: 11, rows: 2517, an: 'manufacturer', bn: 'brand'},
+  {n: 'sub_category_name ↔ category_name', a: 32, b: 8, p: 32, rows: 2517, an: 'sub_category_name', bn: 'category_name'},
+  {n: 'state ↔ country_code', a: 565, b: 8, p: 603, rows: 104990, an: 'state', bn: 'country_code'},
+  {n: 'city (alone)', a: 34581, b: 8, p: 21317, rows: 104990, an: 'city', bn: 'country_code'}
 ];
 let PROBE = {...PRESETS[0]};
 
@@ -3224,12 +3468,12 @@ const BRANCHES = [
   {key: 'rulings.finer_than', test: p => p.p === p.a && p.a > p.b,
    test_t: 'pairs = a, and a > b',
    cant: null, safe: 'Safe to read off the data — pairs = finer_distinct proves every child has exactly one parent, so the roll-up cannot double-count.'},
-  {key: 'placement.scoped_by', test: p => p.p > p.a && p.p > p.b,
+  {key: 'rulings.scoped_by', test: p => p.p > p.a && p.p > p.b,
    test_t: 'pairs > a AND pairs > b',
    cant: null, safe: 'Also safe, once you check collisions WITHIN versus ACROSS the parent. Zero within and many across is the signature.'},
-  {key: 'rulings.never_axis', test: p => p.a / p.rows >= 0.25,
+  {key: 'offers.suppressed', test: p => p.a / p.rows >= 0.25,
    test_t: 'cardinality approaches the row count',
-   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the ruling must carry the DQ id that measured it.'}
+   cant: 'Whether the identification MATTERS. The ratio is a measurement; that grouping on it names individuals is a judgement, and the key\'s VALUE is the DQ id that measured it — so a prohibition cannot be authored without naming its evidence.'}
 ];
 
 function renderCon() {
@@ -3361,24 +3605,34 @@ function renderCensus(){
      is a ${T.storage_role.length}×${T.column_role.length} space and
      <b>${Object.keys(C.crosstab).length} of ${poss} pairs actually occur</b>. The collision the
      two planes once risked is structurally gone: the data plane spells its slot <code>role</code>
-     and the concept plane spells its own <code>roles</code>, a map, so a term from the wrong plane
+     and the concept plane spells <code>offers</code>, a map, so a term from the wrong plane
      can no longer be confused by spelling — <b>${C.findings.length} breach(es)</b> below.`;
 
+  /* A COUNT THE CENSUS DOES NOT CARRY PRINTS A DASH, never `undefined`. The slot names below are
+     the surface's, and the census is keyed on the vocabulary the generator reads — so a generator
+     that has not followed a retirement is visible here as a missing number rather than as a panel
+     that quietly renders nothing, which is what the retired `identity_role` term list did. */
+  const num = v => (v === undefined || v === null) ? '—' : v;
+  const len = v => Array.isArray(v) ? v.length : '—';
   $('#cen-tree').innerHTML =
 `<span class="pl2">DATA PLANE</span> <span class="ct">— data/sources/*.yaml · data/datasets/*.yaml</span>
-└── columns[].role → <span class="vo">mac.storage_role</span>   <span class="ct">CLOSED · ${T.storage_role.length} · ${T.storage_role.join(' · ')}</span>
+└── columns[].role → <span class="vo">mac.dataset.column.role</span>   <span class="ct">CLOSED · ${len(T.storage_role)} · ${(T.storage_role||[]).join(' · ')}</span>
         <span class="ct">"the PHYSICAL shape of a column in its relation" — measured, never authored</span>
 
 <span class="pl2">CONCEPT PLANE</span> <span class="ct">— ontology/concepts/**/*.yaml</span>
-└── grounding.sources[].columns[&lt;name&gt;]:   <span class="ct">← everything about a column, on the column</span>
-    ├── roles:        → <span class="vo">mac.concept.column.roles</span>  <span class="ct">CLOSED · ${T.column_role.length} · a MAP: every use a question may make of this column</span>
-    │   ├── identity        → <span class="vo">mac.concept.column.identity</span>  <span class="ct">CLOSED · ${T.identity_role.length} · ${C.slots['identity']} of ${C.bindings} claim it</span>
-    │   ├── axis            → <span class="vo">mac.concept.axis</span>  <span class="ct">CLOSED · ${T.axis.length} · ${C.slots['axis']} of ${C.bindings} claim it</span>
-    │   ├── aggregate.type  → <span class="vo">mac.concept.column.measure_type</span>  <span class="ct">CLOSED · ${T.measure_type.length} · ${C.slots['aggregate']} of ${C.bindings} claim it</span>
-    │   ├── period_binding  <span class="ct">a bare flag · ${C.slots['period_binding']} of ${C.bindings} claim it</span>
-    │   └── extremum        <span class="ct">min · max · ${C.slots['extremum']} of ${C.bindings} claim it</span>
-    └── &lt;ruling&gt;      → <span class="vo">mac.concept.column.ruling</span>  <span class="ct">CLOSED · ${T.column_ruling.length} · ${C.slots['rulings']} of ${C.bindings} filled</span>
-            <span class="ct">└── register: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${T.name_register.length}</span>`;
+└── grounding.source:   <span class="ct">← SINGULAR; a sources: LIST is a load error</span>
+    ├── key: / counts:   <span class="ct">the two facts about the RELATION, each one column name (or an ordered list of them)</span>
+    └── columns[&lt;name&gt;]:   <span class="ct">← everything about a column, on the column</span>
+        ├── offers:       → <span class="vo">mac.concept.column.offers</span>  <span class="ct">CLOSED · ${len(T.column_role)} · a MAP: every use a question may make of this column</span>
+        │   ├── axis            → <span class="vo">mac.concept.axis</span>  <span class="ct">CLOSED · ${len(T.axis)} · ${num(C.slots['axis'])} of ${C.bindings} claim it</span>
+        │   ├── suppressed     <span class="ct">a DQ register id · requires axis · ${num(C.slots['suppressed'])} of ${C.bindings} claim it</span>
+        │   ├── aggregate.type  → <span class="vo">mac.concept.column.measure_type</span>  <span class="ct">CLOSED · ${len(T.measure_type)} · ${num(C.slots['aggregate'])} of ${C.bindings} claim it</span>
+        │   ├── period_binding  <span class="ct">a bare flag · ${num(C.slots['period_binding'])} of ${C.bindings} claim it</span>
+        │   └── extremum        <span class="ct">min · max · ${num(C.slots['extremum'])} of ${C.bindings} claim it</span>
+        ├── references:   <span class="ct">a CONCEPT NAME — the one row this column's values identify</span>
+        ├── value_register:  <span class="ct">a bundle-relative path — the file whose rows ARE this column's values</span>
+        └── &lt;ruling&gt;      → <span class="vo">mac.concept.column.ruling</span>  <span class="ct">CLOSED · ${len(T.column_ruling)} · ${num(C.slots['rulings'])} of ${C.bindings} filled</span>
+                <span class="ct">└── naming: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${len(T.name_register)}</span>`;
 
   /* The cross-tab carries COUNTS, so this is the one place a real magnitude encoding is earned:
      one hue, light to dark. Every cell also prints its number, so nothing is colour-alone. */
@@ -3420,13 +3674,11 @@ function renderCensus(){
       <div class="vl2">${n} of ${C.bindings}</div>`;
     cov.appendChild(d);
   });
-  Object.entries(C.identity_kinds).forEach(([k,n])=>{
-    const d=el('div','cov');
-    d.innerHTML=`<div class="cn2">${esc(k)}</div>
-      <div class="tr2"><div class="fl2" style="width:${(n/C.concepts*100).toFixed(1)}%"></div></div>
-      <div class="vl2">${n} of ${C.concepts} concepts</div>`;
-    cov.appendChild(d);
-  });
+  /* THE CENSUS'S `identity_kinds` MAP WAS READ HERE AND HAS NOT BEEN EMITTED SINCE 2026-10-05, when the
+     concept-level identity block was retired: the loop threw on `Object.entries(undefined)` and
+     took the whole panel with it. A dead read, pre-existing and unrelated to the key rename. What
+     a concept is keyed on is now READ OFF its source's `key`, which is one column or an ordered
+     list — not a kind from a closed set — so there is nothing left for this bar chart to count. */
   $('#cen-cov').innerHTML=''; $('#cen-cov').appendChild(cov);
 
   const notes=$('#cen-notes'); notes.innerHTML='';
@@ -3434,10 +3686,11 @@ function renderCensus(){
     `<h4>${/^R1/.test(f)?'A term from the wrong plane':'A retired term still in use'}</h4><p>${esc(f)}</p>`)));
   notes.appendChild(el('div','find',
     `<h4>The column map is used ${C.forms.map} of ${C.forms.map+C.forms.flat} times</h4>
-     <p>Every source binds its columns as a FLAT LIST of names, so three of the map's four slots are
-     ${C.slots['identity']} of ${C.bindings}. The role survives only because it has a second home in
-     <code>field_roles</code>. This is the denominator for "is this bundle on the standard yet" —
-     and the answer is no, in the bundle the standard was designed against.</p>`));
+     <p>A source binding its columns as a FLAT LIST of names says WHICH columns a concept serves and
+     nothing about what each one IS, so every slot below is 0 of those bindings and
+     <code>Grounding.offers</code> falls back to the derived role for them. This is the denominator
+     for "is this bundle on the standard yet", and <code>check_column_spec</code> is what reports
+     the flat ones by name.</p>`));
   notes.appendChild(el('div','find',
     `<h4>Served: ${C.per_origin.served.unbound} of ${C.per_origin.served.total} columns bound by no concept</h4>
      <p>Clean — every served column is bound. The landing is

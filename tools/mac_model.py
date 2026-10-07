@@ -715,7 +715,18 @@ def clear_cache() -> None:
 
 
 def _law() -> Law:
-    """The framework law, parsed once per process. It lives beside tools/, never inside a bundle."""
+    """The framework law, parsed once per process. It lives beside tools/, never inside a bundle.
+
+    `mac_vocabulary.yaml` NESTS ITS DOTTED BLOCKS (`concept: column: measure_type:`); a dotted
+    lookup against the RAW parse (`data.get("concept.column.measure_type")`) asks a nested document
+    for a key it was never given — `dict.get` does not walk dots — so it answered `{}` always, not
+    only after today's column rename. MEASURED: `Law.measure_types` and `.axis_kinds` were EMPTY
+    every time this ran, so `Law.additivity()` returned None for every (type, axis) pair and
+    `tests/test_mac_model.py` crashed asserting one. `tools/mac_vocab.flatten` is this estate's one
+    converter between the file's nested spelling and the dotted identity every reader asks for —
+    the SAME fix `check_additivity_in_sql.py`, `check_vocabulary_parity.py` and five more already
+    apply to the same file for the same reason.
+    """
     path = Path(__file__).resolve().parent.parent / VOCABULARY
     hit = _LAW_CACHE.get(str(path))
     if hit is not None:
@@ -723,15 +734,26 @@ def _law() -> Law:
     data, err = _parse_yaml(path)
     doc = Doc(relpath=f"{FRAMEWORK}/{VOCABULARY}", abspath=path, plane=FRAMEWORK, source="",
               kind="vocabulary", data=data, parse_error=err, anchors=collect_anchors(data))
+    flat = _as_dict(_flatten_vocab(data)) if not err else {}
     law = Law(
         doc=doc,
-        measure_types=_as_dict(_as_dict(data.get("concept.column.measure_type")).get("terms")),
-        aggregation_effects=frozenset(_as_dict(_as_dict(data.get("concept.aggregation_effect")).get("terms"))),
-        axis_kinds=frozenset(_as_dict(_as_dict(data.get("concept.axis")).get("terms"))),
-        namespaces=frozenset(k for k, v in data.items() if isinstance(v, dict) and v.get("kind")),
+        measure_types=_as_dict(_as_dict(flat.get("concept.column.measure_type")).get("terms")),
+        aggregation_effects=frozenset(_as_dict(_as_dict(flat.get("concept.aggregation_effect")).get("terms"))),
+        axis_kinds=frozenset(_as_dict(_as_dict(flat.get("concept.axis")).get("terms"))),
+        namespaces=frozenset(k for k, v in flat.items() if isinstance(v, dict) and v.get("kind")),
     )
     _LAW_CACHE[str(path)] = law
     return law
+
+
+def _flatten_vocab(data: dict) -> dict:
+    """`tools/mac_vocab.flatten`, imported lazily so a process that never builds a Law (most of
+    this module's callers do not) pays nothing for it."""
+    try:
+        import mac_vocab as _mv
+    except ImportError:                                                   # pragma: no cover
+        return data
+    return _mv.flatten(data)
 
 
 # The libyaml-backed loaders when PyYAML was built with them, else the pure-Python ones. MEASURED
@@ -946,16 +968,29 @@ def _build_concept(doc: Doc, selectors: frozenset) -> Concept:
     if isinstance(g.get("table"), str):       # the sql_table adapter form
         groundings.append(Grounding(name, g["table"], None, (), (),
                                     Site(doc.relpath, "grounding.table")))
-    for i, s in enumerate(_as_list(g.get("sources"))):
-        s = _as_dict(s)
+    # `grounding.source` IS SINGULAR since 2026-10-07 (column_declaration.md rev 5) — `sources:` as
+    # a list is now a schema load error (`not: {}`), so there is at most ONE source to build a
+    # Grounding from, not several to enumerate. MEASURED the day this was found:
+    # tests/test_mac_model.py crashed with `IndexError: tuple index out of range` reading
+    # `orphan.groundings[0]` — every concept on the standard built an EMPTY groundings tuple,
+    # because `g.get("sources")` answers nothing and always has.
+    s = g.get("source")
+    if isinstance(s, dict):
         ref = s.get("relation")
-        if not isinstance(ref, str):
-            continue
-        groundings.append(Grounding(
-            concept=name, relation_ref=ref, relation=None,
-            key=tuple(str(k) for k in _as_list(s.get("key"))),
-            columns=tuple(str(x) for x in _as_list(s.get("columns"))),
-            site=Site(doc.relpath, f"grounding.sources[{i}].relation")))
+        if isinstance(ref, str):
+            cols = s.get("columns")
+            # `columns` IS A MAP, KEYED BY COLUMN NAME, on the standard (the flat list of names is
+            # the legacy form `_as_list` already read). `_as_list` answers `[]` for a dict, so this
+            # branch was ALSO silently empty for every concept using the map form — a second,
+            # independent reason `columns=()` for all of them, on top of the `sources` rename.
+            col_names = (sorted(cols) if isinstance(cols, dict)
+                        else [str(x) for x in _as_list(cols)])
+            groundings.append(Grounding(
+                concept=name, relation_ref=ref, relation=None,
+                key=tuple(str(k) for k in _as_list(s.get("key")))
+                    or ((str(s["key"]),) if isinstance(s.get("key"), str) else ()),
+                columns=tuple(col_names),
+                site=Site(doc.relpath, "grounding.source.relation")))
 
     values = _build_values(doc, name, kind)
     measure = _build_measure(doc, name, c, kind, selectors) if cls == "measure" else None

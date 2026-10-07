@@ -72,14 +72,14 @@ antipattern: >
   `AVG(total_amount)` as "average sale" (it's average-of-sums); joining summary to detail and summing
   (double-counts); querying below the declared grain (the detail isn't there).
 status: scattered   # grain + guarantee + reused additivity_guard express it; the grain bound is the fact to state
-canon_ref: [canon/additivity_guard.md, column_declaration.md (identity: composite), shape_reference.md (ConceptFile; guarantee), MODELLERS_COOKBOOK.md C6]
+canon_ref: [canon/additivity_guard.md, column_declaration.md (source.key, the ordered list), shape_reference.md (ConceptFile; guarantee), MODELLERS_COOKBOOK.md C6]
 ```
 
 ## The determinism border
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| The summary's grain + "pre-aggregated" fact | **skeleton** | the columns that carry `identity: composite` + a `guarantee` |
+| The summary's grain + "pre-aggregated" fact | **skeleton** | the source's `key`, in order, + a `guarantee` |
 | No decomposition below grain; correct cross-grain sums | **canon-backed** (reused) | [`additivity_guard`](../rules_and_canons/semi_additive_balance/additivity_guard.md), sub-grain axes `non_aggregable` |
 | Don't mix with the detail fact | **canon-able / rule** | a no-UNION-with-detail rule |
 | interpretative remainder | **minimal** | the grain decides |

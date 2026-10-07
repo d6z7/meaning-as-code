@@ -803,9 +803,11 @@ def probe_alternatives(cap: Capability, b: Bundle, fw: Framework) -> list:
                 out.append(f"declares a `{sorted(set(m))[0]}.field_role.*` vocabulary in {rel} — "
                            f"a format check_references does not read (it rglobs vocabulary.yaml)")
                 break
+        # `grounding.source` IS SINGULAR since 2026-10-07 — one relation per concept.
         ncols = sum(len(s.get("columns") or [])
                     for d in b.concepts.values()
-                    for s in ((d.get("grounding") or {}).get("sources") or []))
+                    for s in [(d.get("grounding") or {}).get("source")]
+                    if isinstance(s, dict))
         if ncols:
             out.append(f"lists {ncols} columns under grounding.sources[].columns with no role on any of them — "
                        f"the whitelist exists, the MEANING of each column does not")
@@ -851,7 +853,7 @@ def probe_alternatives(cap: Capability, b: Bundle, fw: Framework) -> list:
 
     if k.startswith("grounding.serves_from"):
         rels = {s.get("relation") for d in b.concepts.values()
-                for s in ((d.get("grounding") or {}).get("sources") or []) if isinstance(s, dict)}
+                for s in [(d.get("grounding") or {}).get("source")] if isinstance(s, dict)}
         rels.discard(None)
         if rels:
             out.append(f"grounds on {len(rels)} relation name(s) via grounding.sources[].relation with no "

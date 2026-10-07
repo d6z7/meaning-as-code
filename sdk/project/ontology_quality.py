@@ -336,7 +336,13 @@ def measure_type_declared(concept_doc: dict, members) -> bool:
     legacy = ((concept_doc.get("concept") or {}).get("semantics") or {}).get("measure_type")
     if isinstance(legacy, str):
         types.append(legacy)
-    types = [t for t in types if t.startswith("mac.concept.column.measure_type.")]
+    # `aggregate.type` IS BARE since 2026-10-07 AFTERNOON (column_declaration.md rev 5: "Bare, like
+    # every other column term") — it carried the `mac.concept.column.measure_type.` prefix that
+    # morning, which this filter required, so EVERY current declaration failed it and this function
+    # answered False for every measure on the standard. `concept.semantics.measure_type` (the
+    # legacy/projected fallback) may still be dotted; a bare non-empty string is kept too, and the
+    # `in members` check below is what actually validates it against the real vocabulary.
+    types = [t for t in types if t]
     if not types:
         return False
     if members is None:
@@ -422,11 +428,13 @@ def is_refuse_stub(doc: dict) -> bool:
         return True
     if _P.canonical_key(doc) or _P.key_parts(doc):
         return False
-    return any(
-        isinstance(spec, dict) and isinstance(spec.get("roles"), dict)
-        for src in ((doc.get("grounding") or {}).get("sources") or [])
-        if isinstance(src, dict) and isinstance(src.get("columns"), dict)
-        for spec in src["columns"].values()
+    # `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now a schema load
+    # error) — one relation, so no loop over several to check for the column-standard gate.
+    src = (doc.get("grounding") or {}).get("source")
+    columns = src.get("columns") if isinstance(src, dict) else None
+    return isinstance(columns, dict) and any(
+        isinstance(spec, dict) and isinstance(spec.get("offers"), dict)
+        for spec in columns.values()
     )
 
 
@@ -492,14 +500,14 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
         )
 
     if refuse_stub:
-        # THE POINTER MOVED WITH THE FACT. `concept.identity` is not a key mac.schema.json admits,
-        # so an ask filed against it named a place its answer could not be written.
+        # THE POINTER MOVED WITH THE FACT, TWICE. `concept.identity` is not a key mac.schema.json
+        # admits (retired 2026-10-05); the column flag that briefly replaced it (`roles.identity`)
+        # is gone too (2026-10-07 afternoon) — the key is `source.key`, on the SOURCE, not a column.
         add(
             f"concept:{key_fragment(stem)}#identity",
             "question",
-            f"What is the canonical identity (the key) of “{title}”? No column of it declares "
-            f"`roles.identity: canonical`, and none declares `composite`.",
-            "grounding.sources[].columns[].roles.identity",
+            f"What is the canonical identity (the key) of “{title}”? Its source declares no `key:`.",
+            "grounding.source.key",
         )
 
     if klass == "enumeration" and value_set_unresolved(doc):
@@ -513,12 +521,13 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
     if klass == "measure" and not measure_type_declared(doc, members):
         # THE POINTER IS WHERE AN SME CAN ACT, which `concept.semantics.measure_type` no longer is:
         # it is the runtime's projection of the columns and the grammar admits no author there.
+        # `roles.aggregate.type` -> `offers.aggregate.type` 2026-10-07 afternoon.
         add(
             f"concept:{key_fragment(stem)}#measure_type",
             "question",
             f"How does the measure “{title}” add up across its axes? No column of it declares "
-            f"`roles.aggregate.type` that mac.concept.column.measure_type resolves.",
-            "grounding.sources[].columns[].roles.aggregate.type",
+            f"`offers.aggregate.type` that mac.concept.column.measure_type resolves.",
+            "grounding.source.columns[].offers.aggregate.type",
         )
 
     #: THE CONCEPT NO LONGER CARRIES A QUESTION. `open_questions[]`, `values[].open_question` and
@@ -931,7 +940,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
                     # THE DETAIL NAMES THE AUTHORED HOME. It said `concept.semantics.measure_type`,
                     # which is the runtime's projection of the columns and not a key an author may
                     # write — so the finding told a reader to fix a place the grammar refuses.
-                    "detail": "No column declares `roles.aggregate.type` that "
+                    "detail": "No column declares `offers.aggregate.type` that "
                     "mac.concept.column.measure_type resolves, so how it rolls up across its axes "
                     "is unspecified.",
                 }

@@ -271,14 +271,15 @@ def _parse(p: Path):
 # without an entry it pairs with nothing and this gate reports agreement it never checked.
 _PLANE_ALIAS = {
     "rule_kind": "concept.rule",
-    # `column_role` -> `concept.column.role` WAS HERE and is retired 2026-10-07 with the vocabulary
-    # it named. The code-side constant it paired (`check_delivery_consistency.COLUMN_ROLES`) read
-    # that vocabulary's enum and now answers `()`, so the pairing vanished SILENTLY and this gate
-    # went on reporting agreement — "0 disagreeing over 5 checked" — exactly the failure its own
-    # comment below warns about. The constant's invariant no longer has a subject (nothing authors
-    # `field_roles`), and the five derived role names have no MAC-side home to pair with: the
-    # derivation lives in the platform's `ColumnSpec.role`. Listing an alias for a vocabulary that
-    # does not exist would restore the pairing in name only.
+    # `column_role` -> `concept.column.role` WAS HERE, retired 2026-10-07 MORNING with the scalar
+    # vocabulary it named (`role` + `query_use`). `check_delivery_consistency.COLUMN_ROLES` moved
+    # the SAME DAY, afternoon, to read `concept.column.offers` instead (column_declaration.md
+    # rev 5 — `roles:` -> `offers:`), which is a REAL, current vocabulary again (5 terms: axis,
+    # aggregate, period_binding, extremum, suppressed) — not the dead end the morning's retirement
+    # left. RESTORED, re-pointed, rather than left absent: an absent entry here is exactly how the
+    # pairing vanished silently the first time, "0 disagreeing over 5 checked" read as agreement
+    # when it was really "nothing paired".
+    "column_role": "concept.column.offers",
 }
 
 

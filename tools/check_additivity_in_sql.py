@@ -60,7 +60,17 @@ def law(fw: pathlib.Path) -> dict:
 
 
 def measures(root: pathlib.Path, law_: dict) -> list[dict]:
-    """Each measure concept, with the axis effects its declared type implies."""
+    """Each measure concept, with the axis effects its declared type implies.
+
+    `measure_type` AND `axis_kinds` ARE COLUMN FACTS since 2026-10-07 (`offers.aggregate.type`,
+    `offers.axis`) — `concept.semantics.{measure_type,axis_kinds}` is the runtime's PROJECTION of
+    them, never the authored home (column_declaration.md: "the measure facts are PROJECTED onto it
+    from the columns"), and a bundle on the standard carries neither concept-level key at all. This
+    read only the projected address and so found NO measure concept on contoso5's six: `aggregate.
+    type` is BARE now (no `mac.concept.column.measure_type.` prefix to strip), read through
+    `mac_project.column_roles`, the same reader every other gate in this estate uses for it. The
+    legacy `concept.semantics.*` fallback is kept for a bundle that still writes it.
+    """
     out = []
     # DISCOVERY GOES THROUGH THE LAYOUT RESOLVER — flat and foldered concepts, in whichever plane
     # the project declares (mac_project.concept_files).
@@ -70,18 +80,28 @@ def measures(root: pathlib.Path, law_: dict) -> list[dict]:
         if str(c.get("class")) != "measure":
             continue
         sem = d.get("semantics") or c.get("semantics") or {}
-        mt = str(sem.get("measure_type") or "").split(".")[-1]
-        if mt not in law_:
+        types = [str((a or {}).get("type") or "").split(".")[-1]
+                 for a in P.column_roles(d, "aggregate").values() if isinstance(a, dict)]
+        legacy_mt = str(sem.get("measure_type") or "").split(".")[-1]
+        if legacy_mt:
+            types.append(legacy_mt)
+        mt = next((t for t in types if t in law_), "")
+        if not mt:
             continue
+        axis_kinds = {col: str(kind).split(".")[-1]
+                      for col, kind in P.column_roles(d, "axis").items()}
+        for ax, kind in (sem.get("axis_kinds") or {}).items():
+            axis_kinds.setdefault(str(ax), str(kind).split(".")[-1])
         eff = {}
-        for axis, kind in (sem.get("axis_kinds") or {}).items():
-            k = str(kind).split(".")[-1]
+        for axis, k in axis_kinds.items():
             e = str(law_[mt].get(k) or "").split(".")[-1]
             if e:
                 eff[axis] = e
+        # `grounding.source` IS SINGULAR since 2026-10-07 — one relation, not a list to comprehend.
+        _src = (d.get("grounding") or {}).get("source")
         out.append({"concept": str(c.get("name")), "type": mt, "axis_effects": eff,
-                    "grounding": [str(s.get("relation") or "").split(".")[-1]
-                                  for s in ((d.get("grounding") or {}).get("sources") or [])]})
+                    "grounding": ([str(_src.get("relation") or "").split(".")[-1]]
+                                  if isinstance(_src, dict) else [])})
     return out
 
 

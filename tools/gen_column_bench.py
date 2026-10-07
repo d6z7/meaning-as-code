@@ -269,7 +269,9 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
     import check_column_planes as G
 
     terms = G.load_terms()
-    storage, rows, kinds, forms = G.read_planes(bundle)
+    # `read_planes` RETURNS THREE VALUES since 2026-10-07 (`kinds` — the retired
+    # `concept.identity.kind` census — was dropped with the block it counted; see the note below).
+    storage, rows, forms = G.read_planes(bundle)
     findings = G.check(storage, rows, terms)
     origin = forms.get("_origin") or {}
 
@@ -294,8 +296,11 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
         # that measured nothing while printing a layout. One map, in the producer.
         "terms": {
             "storage_role": terms["dataset.column.role"],
-            "column_role": terms["concept.column.roles"],
-            "identity_role": terms["concept.column.identity"],
+            "column_role": terms["concept.column.offers"],
+            # `identity_role` DROPPED 2026-10-07: `concept.column.identity` is not renamed, it is
+            # GONE — `identity` left `offers` for the top-level `references:` key (a concept name,
+            # an open string, not a closed vocabulary with terms to census). A page reading this
+            # key would get a KeyError, same as `read_planes`'s own fourth return value did.
             "axis": terms["concept.axis"],
             "measure_type": terms["concept.column.measure_type"],
             "column_ruling": terms["concept.column.ruling"],
@@ -311,7 +316,7 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
         # the moment `read_planes` moved to `offers` — a row no longer carries a `role` at all.
         "slots": {
             **{use: sum(1 for r in rows if use in (r.get("offers") or []))
-               for use in terms["concept.column.roles"]},
+               for use in terms["concept.column.offers"]},
             "rulings": sum(1 for r in rows if r.get("rulings")),
         },
         # `concept.identity.kind` AND ITS CENSUS ARE RETIRED (2026-10-05) with the block they

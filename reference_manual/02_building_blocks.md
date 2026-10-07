@@ -67,9 +67,10 @@ are the structures a data domain's meaning takes (a relation between them is an 
 and explicitly open (§2.7).
 
 `reference` and `entity` were TWO NAMES FOR THE SET-WITH-IDENTITY ROW ABOVE, which is why they shared one
-cell; they merged under `entity` on 2026-10-05. `reference` also collided with
-`concept.column.identity.reference` one plane down, where it means a POINTER AT such a set rather than the
-set itself. The terms below are generated from the vocabulary and cannot drift from it.
+cell; they merged under `entity` on 2026-10-05. `reference` also collided with the column term of the
+same name one plane down, where it meant a POINTER AT such a set rather than the set itself — that
+collision is gone too: a pointer is now the column key `references:`, whose value is the name of the
+concept it points at. The terms below are generated from the vocabulary and cannot drift from it.
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.class (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 

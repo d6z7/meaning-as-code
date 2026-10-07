@@ -99,9 +99,9 @@ rather than wrong SQL.
 
 **The three things to notice.**
 
-`COUNT(DISTINCT CustomerKey)` was not chosen by the word "count". It came from `[2]`: Customer
-declares `identity: canonical` on `CustomerKey`. The operation only licensed a non-measure subject
-to be counted at all — **the key decided what to count**.
+`COUNT(DISTINCT customer_key)` was not chosen by the word "count". It came from `[2]`: Customer's
+source declares `key: customer_key` — one column, so it is the canonical identity. The operation
+only licensed a non-measure subject to be counted at all — **the key decided what to count**.
 
 **`Germany` became `DE` before any SQL existed.** The `Country` concept declares a register, and the
 register maps the search key `germany` to the code `DE` offline. No query was run to find that out,

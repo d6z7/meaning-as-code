@@ -81,16 +81,35 @@ PAIRS = (
     # (`meta` validated and then failed to load). Declared in mac_vocabulary.yaml now, and policed here.
     ("concept `class`",
      ["$defs", "ConceptFile", "properties", "concept", "properties", "class"], "concept.class"),
-    # `concept column role` RETIRED 2026-10-07 with the slot it governed. The scalar `role` and
-    # its `query_use` companion are gone: a column declares `roles`, a MAP of the uses it offers,
-    # whose MEMBER NAMES the property-set arm below polices and whose terms are the pairs here.
-    ("concept column `roles.identity`",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "roles", "properties", "identity"],
-     "concept.column.identity"),
-    ("column ruling `register`",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "register"],
+    # `concept column role` RETIRED 2026-10-07 MORNING with the slot it governed. The scalar `role`
+    # and its `query_use` companion are gone: a column declared `roles`, a MAP of the uses it
+    # offers — and THAT MAP WAS ITSELF RETIRED THE SAME AFTERNOON for `offers` (column_declaration.md
+    # rev 5), whose MEMBER NAMES the property-set arm below polices and whose terms are the pairs here.
+    #
+    # `concept column roles.identity` -> `concept.column.identity` is NOT RENAMED, it is DROPPED. The
+    # afternoon revision moved `identity` out of the column's use-map entirely, to the top-level
+    # `references: <ConceptName>` key — a concept name is an open string, not a closed vocabulary, so
+    # there is no enum on either side left to compare. `concept.column.identity` left
+    # mac_vocabulary.yaml the same day (confirmed: no `concept.column.identity` block remains), so a
+    # pair naming it would report `missing_block` forever — a disagreement that is not there, the
+    # exact defect category this module's own history (2026-10-05, see above) already paid for once.
+    ("column `offers.axis`",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "offers", "properties", "axis"],
+     "concept.axis"),
+    # ADDED 2026-10-07 AFTERNOON: `offers.aggregate.type` was `{"type": "string"}` with NO enum until
+    # this same revision closed it to the fold law's five kinds — a slot that could not be governed
+    # a moment before this task started. It is bare, like `axis`, and belongs in PAIRS rather than
+    # PATTERNS for the same reason `axis` moved out of PATTERNS below: a closed `enum` is compared
+    # directly, a PATTERN is only for a namespaced TOKEN inside a regex.
+    ("column `offers.aggregate.type`",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "offers", "properties", "aggregate",
+      "properties", "type"],
+     "concept.column.measure_type"),
+    ("column ruling `naming`",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "naming"],
      "name_register"),
     ("dataset column `role`",
      ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "dataset.column.role"),
@@ -125,14 +144,11 @@ PATTERNS = (
      "concept.column.measure_type"),
     ("semantics.axis_kinds token",
      ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis"),
-    # ADDED 2026-10-07 with the per-column axis. The slot was `{"type": "string"}` while the
-    # vocabulary had been closed to two terms since that morning — any string validated, and the
-    # fold law's lookup key is the one place in this estate where an unmatched token silently
-    # permits a sum rather than refusing one.
-    ("column `roles.axis` token",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "roles", "properties", "axis"],
-     "concept.axis"),
+    # `column \`roles.axis\` token` MOVED TO PAIRS 2026-10-07 AFTERNOON, not dropped. It was a
+    # PATTERN that morning because the term was namespaced (`mac.concept.axis.<term>`); the same
+    # revision that renamed `roles` to `offers` also made `axis` BARE (column_declaration.md rev 5:
+    # "offers.axis: categorical — BARE, closed enum"), so the slot is now a plain `enum` and
+    # belongs with the other direct comparisons, not with the regex half of this module.
     ("additivity axis token", ["$defs", "additivityAxis", "oneOf", 1], "concept.aggregation_effect"),
 )
 
@@ -146,21 +162,25 @@ PATTERNS = (
 #: is named here, so "the schema admits a key the vocabulary does not declare" stays a finding
 #: rather than a shrug.
 PROPERTY_SETS = (
-    # ADDED 2026-10-07 with the slot. `roles:` is a MAP whose KEYS are the five uses a question may
-    # make of a column, so the vocabulary's terms are this object's property names and
-    # `additionalProperties: false` is what closes the set — the same shape `rulings` has, and the
-    # same reason it is policed here rather than as an enum.
-    ("column `roles` keys",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "roles"],
-     "concept.column.roles",
+    # ADDED 2026-10-07 MORNING with the slot, as `roles`; RE-HOMED THE SAME AFTERNOON to `offers`
+    # (column_declaration.md rev 5) with no change in kind — it is still a MAP whose KEYS are the
+    # uses a question may make of a column, so the vocabulary's terms are this object's property
+    # names and `additionalProperties: false` is what closes the set, the same shape `rulings` has.
+    ("column `offers` keys",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "offers"],
+     "concept.column.offers",
      {}),
     ("column `rulings` keys",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "rulings"],
      "concept.column.ruling",
-     {"evidence": "the measurement `never_axis` must cite — an argument to a ruling, not a ruling",
-      "register": "which naming register a `label_of` column carries — governed by `name_register`"}),
+     # `evidence`/`never_axis` LEFT THIS OBJECT 2026-10-07: both folded into the single `offers.
+     # suppressed` key (a use, not a ruling about another column), so there is no longer a
+     # companion here to explain them. `register` was RENAMED `naming` the same day; it remains a
+     # companion rather than a term because it is an ARGUMENT `label_of` requires, not a judgement
+     # of its own — `concept.column.ruling`'s four terms are label_of/finer_than/scoped_by/sort.
+     {"naming": "which naming register a `label_of` column carries — governed by `name_register`"}),
 )
 
 #: VOCABULARIES WITH NO SCHEMA SLOT, DECLARED SO THE DENOMINATOR IS HONEST. Until 2026-10-05 this
@@ -602,15 +622,16 @@ def _self_test() -> int:
              compare(_plant(path, {"enum": ["a", "b"]}), folded, one)[0][4] == "ok")
 
     # ── THE PAGE DERIVATION: a reference page's "choices" come from PAIRS, not from a second table.
-    obj = ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+    obj = ["$defs", "grounding", "properties", "source", "properties", "columns",
            "oneOf", 1, "additionalProperties"]
     g = governs_under(obj)
-    # TWO, NOT THREE, since 2026-10-07: the scalar `role` slot is gone and `identity` moved inside
-    # `roles`. `roles.axis` is governed too but by a PATTERN, and `governs_under` reads PAIRS only —
-    # which is its documented contract, not an omission.
-    case("governs_under derives the column map's two PAIRS-governed keys",
-         g == {"roles.identity": "concept.column.identity",
-               "rulings.register": "name_register"})
+    # THREE, since 2026-10-07 AFTERNOON — up from the morning's two. `roles.identity` DROPPED (no
+    # enum survives it to govern); `roles.axis` MOVED IN from PATTERNS, now bare; `aggregate.type`
+    # is newly closed and newly governed; `rulings.register` is `rulings.naming`, renamed in place.
+    case("governs_under derives the column map's three PAIRS-governed keys",
+         g == {"offers.axis": "concept.axis",
+               "offers.aggregate.type": "concept.column.measure_type",
+               "rulings.naming": "name_register"})
     case("governs_under claims nothing for an object that governs nothing",
          governs_under(["$defs", "nothing_here"]) == {})
     case("governs_under does not claim a slot reached through `items`/`oneOf` rather than a property",

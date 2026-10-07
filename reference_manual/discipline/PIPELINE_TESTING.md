@@ -336,7 +336,7 @@ column: the test it grounds, with no domain knowledge added.
 | `profiles/*.yaml` → `columns[].distinct/nulls/min/max` | "when measured, it looked like this" | **STRUCTURE · VOCABULARY · COMPLETENESS** — drift only | prior measurement |
 | `profiles/*.yaml` → `identity_evidence` | a measured key with a verdict | **IDENTITY**, and a cross-check on the grain prose | prior measurement |
 | `concepts/*.yaml` → `values.closure` + `items[]` | "these are all the codes" | **VOCABULARY** — an undeclared code is a defect | declaration |
-| `concepts/*.yaml` → a column's `roles.aggregate.type` | flow · stock · intensive · precomputed · target | **ARITHMETIC** — sum the parts, compare to the whole | declaration |
+| `concepts/*.yaml` → a column's `offers.aggregate.type` | flow · stock · intensive · precomputed · target | **ARITHMETIC** — sum the parts, compare to the whole | declaration |
 | `concepts/*.yaml` → `values.items[].served` | "these rows must never be read" | **SCOPE** — served material only | declaration |
 | `transforms` + `datasets` + the fact | a produced relation and its inputs | **CONSISTENCY** — the same fact stated twice must agree | internal coherence |
 
@@ -686,7 +686,7 @@ Four controls make the comparison mean something. **None is optional.**
 
 | tier | how the bundle is produced | human effort | runs on |
 |---|---|---|---|
-| **L0 — schema** | **generated**: tables → concepts, FKs → edges, column types → field_roles, PKs → `identity: canonical` on the column | none | all 95 DBs |
+| **L0 — schema** | **generated**: tables → concepts, FKs → edges, column types → `offers`, PKs → `key` on the source | none | all 95 DBs |
 | **L1 — profiled** | L0 + **generated** from a data profile: cardinality, null rates, candidate keys, value registers auto-cut from low-cardinality columns | none | all 95 DBs |
 | **L2 — authored** | L1 + a human adds rules, default readings, refusal scope, disclosures | hours per DB | a handful |
 

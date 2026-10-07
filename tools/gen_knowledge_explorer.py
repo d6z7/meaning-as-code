@@ -44,70 +44,58 @@ def sections(md: str) -> list[dict]:
     return out
 
 
-def _identity_columns(cols) -> list:
-    """The columns that identify a row — the grain, since `grounding.grain` was retired 2026-10-07.
-
-    The prose key said "one row per sale (order_key, line_number)" beside columns already declaring
-    `identity: composite` on exactly those two. The page now states the grain from the declaration,
-    so it cannot drift from it.
-    """
-    if not isinstance(cols, dict):
-        return []
-    out = []
-    for name, spec in cols.items():
-        roles = (spec or {}).get("roles") if isinstance(spec, dict) else None
-        term = str((roles or {}).get("identity") or "").rsplit(".", 1)[-1]
-        if term in ("canonical", "composite"):
-            out.append(str(name))
-    return out
-
-
 def declaration_view(doc: dict) -> str:
-    """The formal side, rendered as markdown so the two panes read alike."""
+    """The formal side, rendered as markdown so the two panes read alike.
+
+    REWIRED 2026-10-07 AFTERNOON for column_declaration.md rev 5. `grounding.source` is SINGULAR
+    (`sources:` as a list is now a schema load error — a concept binds one relation), and the grain
+    is `source.key` ALONE: the column-scan fallback this carried (`identity: composite`) is retired
+    with the flag it scanned for, and `source.key` is now REQUIRED, so a bundle that validates
+    always has one to read and there is nothing left for a fallback to catch.
+    """
     g = (doc.get("grounding") or {})
-    src = (g.get("sources") or [{}])[0]
+    src = g.get("source") or {}
     cols = src.get("columns") or {}
     L = [f"**Relation** · `{src.get('relation', '—')}`", ""]
     if src.get("key"):
-        L += [f"**Grain** · one row per {', '.join(str(k) for k in src['key'])}", ""]
-    elif _identity_columns(cols):
-        L += [f"**Grain** · one row per {', '.join(_identity_columns(cols))}", ""]
+        k = src["key"]
+        L += [f"**Grain** · one row per "
+              + ', '.join(str(x) for x in (k if isinstance(k, list) else [k])), ""]
     if g.get("snapshot_rule"):
         L += [f"**Snapshot rule** · {' '.join(str(g['snapshot_rule']).split())}", ""]
-    if cols:
+    if isinstance(cols, dict) and cols:
         # OFFERS, NOT A ROLE NAME. The column says which uses a question may make of it, and a
         # column holding several (a join key you also group by — 21 of contoso5's 112) had no
         # honest single-role spelling. The page shows what it offers, in the order the standard
-        # lists them, and the retired scalar is not reconstructed for display.
-        L += ["| column | offers | terms |", "|---|---|---|"]
+        # lists them, and the retired scalar is not reconstructed for display. `references` is
+        # shown separately — it left `offers` for a top-level key the same revision `identity` left
+        # it, naming the CONCEPT the column points at rather than a use of the column itself.
+        L += ["| column | offers | terms | references |", "|---|---|---|---|"]
         for n, b in cols.items():
             b = b if isinstance(b, dict) else {}
-            roles = b.get("roles") if isinstance(b.get("roles"), dict) else {}
+            offers_map = b.get("offers") if isinstance(b.get("offers"), dict) else {}
             offers, terms = [], []
-            if roles.get("identity"):
-                offers.append("identity")
-                terms.append(str(roles["identity"]).rsplit(".", 1)[-1])
-            if roles.get("axis"):
+            if offers_map.get("axis"):
                 offers.append("axis")
-                terms.append(str(roles["axis"]).rsplit(".", 1)[-1])
-            if isinstance(roles.get("aggregate"), dict):
-                m = roles["aggregate"]
+                terms.append(str(offers_map["axis"]))
+            if isinstance(offers_map.get("aggregate"), dict):
+                m = offers_map["aggregate"]
                 offers.append("aggregate")
-                terms.append(
-                    f"{str(m.get('type', '')).rsplit('.', 1)[-1]} {m.get('unit', '')}".strip()
-                )
-                if m.get("canonical"):
-                    terms.append("canonical")
-            if roles.get("period_binding"):
+                terms.append(f"{m.get('type', '')} {m.get('unit', '')}".strip())
+                if m.get("default"):
+                    terms.append("default")
+            if offers_map.get("period_binding"):
                 offers.append("period_binding")
-            if roles.get("extremum"):
+            if offers_map.get("extremum"):
                 offers.append("extremum")
-                terms.append(", ".join(str(x) for x in roles["extremum"]))
-            if b.get("counts"):
-                terms.append("counted by this column")
-            if b.get("register"):
-                terms.append("register")
-            L.append(f"| `{n}` | {', '.join(offers) or '— (offered to no question)'} | {', '.join(terms) or '—'} |")
+                terms.append(", ".join(str(x) for x in offers_map["extremum"]))
+            if offers_map.get("suppressed"):
+                terms.append(f"suppressed: {offers_map['suppressed']}")
+            if b.get("value_register"):
+                terms.append("value_register")
+            ref = str(b.get("references") or "")
+            L.append(f"| `{n}` | {', '.join(offers) or '— (offered to no question)'} | "
+                     f"{', '.join(terms) or '—'} | {ref or '—'} |")
         L.append("")
     return "\n".join(L)
 
@@ -171,9 +159,10 @@ def build(root: pathlib.Path) -> dict:
             "topics": topics,
             "rules": rule_topics,
             "declaration": declaration_view(doc),
-            "columns": len((doc.get("grounding", {}).get("sources") or [{}])[0].get("columns") or {}),
+            # `grounding.source` IS SINGULAR since 2026-10-07 — one relation, not a list to index.
+            "columns": len((doc.get("grounding", {}).get("source") or {}).get("columns") or {}),
             "bound": sum(1 for r in rule_topics if r["canons"]),
-            "relation": (doc.get("grounding", {}).get("sources") or [{}])[0].get("relation") or "—",
+            "relation": (doc.get("grounding", {}).get("source") or {}).get("relation") or "—",
         })
     idx = kdir / "index.md"
     return {

@@ -79,7 +79,7 @@ def grounding_relations(doc: dict):
                 out.append(t["name"])
             elif isinstance(t, str):
                 out.append(t)
-    for s in (g.get("sources") or []):
+    for s in ([_s] if isinstance(_s := (g).get("source"), dict) else []):
         if isinstance(s, dict) and isinstance(s.get("relation"), str):
             out.append(s["relation"])
     return out

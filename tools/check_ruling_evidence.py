@@ -1,37 +1,44 @@
 #!/usr/bin/env python3
-"""check_ruling_evidence — a ruling that cites a measurement must cite one that EXISTS.
+"""check_ruling_evidence — a suppression that cites a measurement must cite one that EXISTS.
 
 WHAT THIS GUARDS, and it is the only place in the estate where a hazard is both registered AND
-enforced. `rulings.never_axis` is the pattern: a measurement raises a DQ finding, the finding's own
+enforced. `offers.suppressed` is the pattern: a measurement raises a DQ finding, the finding's own
 `needs` field PRESCRIBES the declaration that would enforce it, a person writes that declaration on the
 column, and the refusal a reader eventually sees carries the finding's id back to them:
 
-    Customer.city is declared `never_axis` -- privacy -- and the ruling cites
-    DQ-IDENTIFYING-DIM_CUSTOMER-CITY. This is the bundle's ruling from a measurement, not a runtime
-    limit; the refusal carries the evidence so a reader can challenge it.
+    Customer.city offers `axis` and is declared `suppressed: DQ-IDENTIFYING-DIM_CUSTOMER-CITY`. This
+    is the bundle's ruling from a measurement, not a runtime limit; the refusal carries the evidence
+    so a reader can challenge it.
 
-THE BRIDGE IS AN UNCHECKED STRING. `ontology/parser.py::_check_ruling_targets` validates three ruling
-fields -- `label_of`, `finer_than`, `scoped_by` -- against the concept's declared columns, and NOT
-`evidence`. The model validator requires only that it be non-empty. Measured 2026-10-06: no tool in
-this directory resolves `rulings.evidence` against `issues[].id`, so `evidence: DQ-TOTALLY-MADE-UP`
-loads, plans, and produces a refusal citing nothing. The sentence a reader is given to challenge the
-ruling with points at a finding that does not exist.
+REWIRED 2026-10-07 AFTERNOON (column_declaration.md rev 5). The pattern was `rulings: {never_axis,
+evidence}` — two keys in a `rulings` block whose every OTHER member (`label_of`, `finer_than`,
+`scoped_by`) names ANOTHER column, which `never_axis` never did; it named a judgement about THIS
+column, which is what `offers` is for. Both keys folded into the single `offers.suppressed`, whose
+value IS the finding id directly — one key where there were two, and a `dependentRequired: axis` in
+the schema takes over "a prohibition is a judgement on top of what the column IS" from the pairing
+`never_axis` + `evidence` used to assert in prose alone.
+
+THE BRIDGE IS AN UNCHECKED STRING. `offers.suppressed`'s own schema description requires only that it
+be non-empty. Measured 2026-10-06, against the THEN-current `rulings.evidence`: no tool in this
+directory resolved it against `issues[].id`, so `evidence: DQ-TOTALLY-MADE-UP` loaded, planned, and
+produced a refusal citing nothing. The sentence a reader is given to challenge the ruling with pointed
+at a finding that does not exist. The same gap exists at the new address until this gate moves with it.
 
 That matters more than a dangling pointer usually does, because the whole claim of the pattern is that
-a prohibition WITHOUT a measurement is a preference -- the runtime says exactly that when it refuses
-`never_axis` with no `evidence` at all (`ontology/models.py`: "a prohibition without a measurement is
-a preference; name the DQ register id that establishes it"). A citation that resolves to nothing is the
-same preference wearing a reference.
+a prohibition WITHOUT a measurement is a preference -- the runtime says exactly that when it refuses a
+real axis with no `suppressed` at all. A citation that resolves to nothing is the same preference
+wearing a reference.
 
 BOTH DIRECTIONS, because the interesting number is the second one. A dangling citation is a defect and
 gates. A register finding that NOTHING cites is not a defect -- a finding may legitimately await a
 ruling, which is what `status: open` means -- but it is the backlog, and it is invisible unless counted.
 
-Measured on contoso5 2026-10-06: 10 findings, **2 cited by a ruling**, 8 by none. A third id appears in
-a rule's `why:` prose, and this gate deliberately does not count that -- prose is not a citation
-anything resolves, which is the whole distinction the estate is working through. So the number here is
-smaller than "appears anywhere in the ontology plane" (3 of 10) and it is the number that means
-something: how many measured hazards a DECLARATION acts on.
+Measured on contoso5 2026-10-06, against `rulings.evidence`: 10 findings, **2 cited**, 8 by none. The
+address has since moved to `offers.suppressed`; the same two columns (Customer.city,
+Customer.customer_name) still carry the same two citations, now at the new address, so the count is
+unchanged — it is the READER that had stopped seeing them. A third id appears in a rule's `why:`
+prose, and this gate deliberately does not count that -- prose is not a citation anything resolves,
+which is the whole distinction the estate is working through.
 
 WHAT IT DOES NOT DO. It does not judge whether the ruling is the RIGHT answer to the finding, or
 whether `status` has been kept current. Both need a person. It asks only whether the two halves of the
@@ -54,13 +61,14 @@ import mac_project as P  # noqa: E402  — ONE home for where a bundle keeps its
 #: a gate that read a projection would agree with it by construction.
 REGISTER_REL = pathlib.Path("data") / "quality" / "data_quality_register.yaml"
 
-#: Every ruling field whose value is a DQ finding id rather than a column name. `evidence` is the only
-#: one today; named as a tuple so a second one is a one-line change and not a second loop.
-EVIDENCE_FIELDS = ("evidence",)
-
 
 def _citations(root: pathlib.Path) -> list[tuple[str, str, str, str]]:
-    """(file, concept, column, cited_id) for every evidence citation on a column ruling."""
+    """(file, concept, column, cited_id) for every `offers.suppressed` citation.
+
+    `offers.suppressed` IS THE ONE HOME since 2026-10-07 afternoon — it was `rulings.evidence`
+    (paired with `rulings.never_axis`) before that; both are gone from the column body
+    (`additionalProperties: false`), so there is nothing left to read at the old address.
+    """
     import yaml
     out: list[tuple[str, str, str, str]] = []
     for f in P.concept_files(root):
@@ -69,20 +77,21 @@ def _citations(root: pathlib.Path) -> list[tuple[str, str, str, str]]:
         except Exception:                                                # noqa: BLE001
             continue
         name = str(((doc.get("concept") or {}).get("name")) or f.stem)
-        for src in ((doc.get("grounding") or {}).get("sources") or []):
-            cols = (src or {}).get("columns") or {}
-            #: THE MAP FORM AND THE LIST FORM. A bundle may spell columns either way and the estate
-            #: has both; reading only the map would silently measure zero on half of them.
-            items = cols.items() if isinstance(cols, dict) else (
-                ((c or {}).get("name"), c) for c in cols)
-            for col, body in items:
-                rulings = (body or {}).get("rulings") or {}
-                if not isinstance(rulings, dict):
-                    continue
-                for field in EVIDENCE_FIELDS:
-                    cited = str(rulings.get(field) or "").strip()
-                    if cited:
-                        out.append((P.rel(root, f), name, str(col), cited))
+        src = (doc.get("grounding") or {}).get("source")
+        if not isinstance(src, dict):
+            continue
+        cols = src.get("columns") or {}
+        #: THE MAP FORM AND THE LIST FORM. A bundle may spell columns either way and the estate
+        #: has both; reading only the map would silently measure zero on half of them.
+        items = cols.items() if isinstance(cols, dict) else (
+            ((c or {}).get("name"), c) for c in cols)
+        for col, body in items:
+            offers = (body or {}).get("offers") or {}
+            if not isinstance(offers, dict):
+                continue
+            cited = str(offers.get("suppressed") or "").strip()
+            if cited:
+                out.append((P.rel(root, f), name, str(col), cited))
     return out
 
 
@@ -162,9 +171,8 @@ def _self_test() -> int:
         def concept(stem: str, cited: str) -> None:
             (cdir / f"{stem}.yaml").write_text(yaml.safe_dump(
                 {"concept": {"name": stem.title()},
-                 "grounding": {"sources": [{"relation": "r", "columns": {
-                     "c": {"role": "dimension",
-                           "rulings": {"never_axis": "privacy", "evidence": cited}}}}]}}),
+                 "grounding": {"source": {"relation": "r", "key": "c", "columns": {
+                     "c": {"offers": {"axis": "categorical", "suppressed": cited}}}}}}),
                 encoding="utf-8")
 
         concept("good", "DQ-REAL-ONE")

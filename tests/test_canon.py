@@ -159,7 +159,7 @@ _root = _tf.mkdtemp()
 _os.makedirs(_os.path.join(_root, "data", "profiles"))
 with open(_os.path.join(_root, "data", "profiles", "sales_fact.yaml"), "w") as _fh:
     _fh.write("relation: warehouse.sales_fact\nidentity_evidence:\n  key: [region, product, day]\n")
-_concept = {"grounding": {"sources": [{"relation": "warehouse.sales_fact"}]}}
+_concept = {"grounding": {"source": {"relation": "warehouse.sales_fact"}}}
 
 check("render_sql (natural_key READ from the measured profile, not retyped)",
       canon.render_sql("mac.canon.snapshot_collapse",
@@ -172,7 +172,7 @@ check("render_sql (natural_key READ from the measured profile, not retyped)",
 expect("render_sql (no declared cell_key → refuses, never guesses a partition)",
        _raises(lambda: canon.render_sql(
            "mac.canon.snapshot_collapse", {"table": "warehouse.other", "order_by": "loaded_at"},
-           concept={"grounding": {"sources": [{"relation": "warehouse.other"}]}}, root=_root)))
+           concept={"grounding": {"source": {"relation": "warehouse.other"}}}, root=_root)))
 
 d_ask = canon.ambiguity_gate("Europe", candidates=["continent_europe", "eu_members", "eu_sales_region"])
 expect("ambiguity_gate (>1 unpinned → ask)", d_ask.action == "ask" and d_ask.chosen is None)

@@ -10,98 +10,102 @@ concept:
   class: entity
   semantics:
     unit: USD
-  definition: >
+  definition: '
 
-    A thing Contoso sells, at the level the shelf knows it: a SKU. 2,517 of them. Read from the
-    rows — "Contoso 4G MP3 Player E400 Green" and "... E400 Orange" are two product keys — so a
-    product here is a colour variant of a model, and the name carries brand, capacity, type, model
-    and colour all at once.
-
-
-    A2: a keyed dimension that facts point at → `reference`. Not `entity`: it has no life of its
-    own in this data beyond being sold.
+    A thing Contoso sells, at the level the shelf knows it: a SKU. 2,517 of them. Read from the rows —
+    "Contoso 4G MP3 Player E400 Green" and "... E400 Orange" are two product keys — so a product here
+    is a colour variant of a model, and the name carries brand, capacity, type, model and colour all at
+    once.
 
 
-    ITS PRICES ARE LIST, NOT SOLD. `list_price` and `list_cost` are the catalogue; what a sale
-    actually charged is on [[Sale]]. Revenue from list price is the revenue Contoso would have had
-    if nobody ever discounted.
+    A2: a keyed dimension that facts point at → `reference`. Not `entity`: it has no life of its own in
+    this data beyond being sold.
 
 
-    IT IS NOT ITS BRAND, CATEGORY OR COLOUR. Those are words a question uses and they will be
-    lifted to concepts of their own once the centre's direct needs are grounded — MODELLING-LOG
-    entry 6. Here they are the columns those concepts will be computed from.
+    ITS PRICES ARE LIST, NOT SOLD. `list_price` and `list_cost` are the catalogue; what a sale actually
+    charged is on [[Sale]]. Revenue from list price is the revenue Contoso would have had if nobody ever
+    discounted.
+
+
+    IT IS NOT ITS BRAND, CATEGORY OR COLOUR. Those are words a question uses and they will be lifted to
+    concepts of their own once the centre''s direct needs are grounded — MODELLING-LOG entry 6. Here they
+    are the columns those concepts will be computed from.
+
+    '
 grounding:
-  sources:
-    - relation: dim_product
-      key: product_key
-      columns:
-        product_key:
-          roles: {}
-        product_code:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-          rulings:
-            label_of: product_key
-            register: code
-        product_name:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-          rulings:
-            label_of: product_key
-            register: common
-        manufacturer:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-          rulings:
-            label_of: brand
-            register: legal
-        brand:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        color:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        category_name:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        sub_category_name:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        list_cost:
-          roles:
-            aggregate:
-              type: mac.concept.column.measure_type.intensive
-              unit: USD
-            extremum: [min, max]
-        list_price:
-          roles:
-            aggregate:
-              type: mac.concept.column.measure_type.intensive
-              unit: USD
-            extremum: [min, max]
+  source:
+    relation: dim_product
+    key: product_key
+    columns:
+      product_key:
+        offers: {}
+      product_code:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        rulings:
+          label_of: product_key
+          naming: code
+      product_name:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        rulings:
+          label_of: product_key
+          naming: common
+      manufacturer:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        rulings:
+          label_of: brand
+          naming: legal
+      brand:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      color:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      category_name:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      sub_category_name:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      list_cost:
+        offers:
+          aggregate:
+            type: intensive
+            unit: USD
+          extremum: [min, max]
+      list_price:
+        offers:
+          aggregate:
+            type: intensive
+            unit: USD
+          extremum: [min, max]
 contract:
   rules:
-    - id: product.ambiguity.list_price_is_not_revenue
-      subject: Product
-      kind: mac.concept.rule.ambiguity
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - list_price
-        - list_cost
-      when: a question asks what a product sold for, or what it earned
-      then: read the amounts on [[NetRevenue]] and [[GrossRevenue]] — they are what was charged
-      never: >
-        multiply `{list_price}` by the quantity sold
-      why: >
-        the difference is every discount ever given, and the result is always too high
+  - id: product.ambiguity.list_price_is_not_revenue
+    subject: Product
+    kind: mac.concept.rule.ambiguity
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - list_price
+    - list_cost
+    when: a question asks what a product sold for, or what it earned
+    then: read the amounts on [[NetRevenue]] and [[GrossRevenue]] — they are what was charged
+    never: 'multiply `{list_price}` by the quantity sold
+
+      '
+    why: 'the difference is every discount ever given, and the result is always too high
+
+      '
 governance:
   owner: operator
   last_reviewed: '2026-09-29'

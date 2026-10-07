@@ -90,11 +90,12 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
     ct = doc.get("contract") or {}
     s = c.get("semantics") or {}
     ident = c.get("identity") or {}
-    src = (g.get("sources") or [{}])[0]
+    # `grounding.source` IS SINGULAR since 2026-10-07 — one concept, one relation.
+    src = g.get("source") or {}
     cls = c.get("class")
 
     path: dict = {}
-    path["read"] = (f"grounding.sources[0]: {src['relation']}"
+    path["read"] = (f"grounding.source: {src['relation']}"
                     if src.get("relation") and (src.get("columns") or src.get("key")) else None)
 
     if not shared:
@@ -110,10 +111,9 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
             if amap:
                 path["select"] = f"values.aliases.map -> {', '.join(sorted(amap))}"
             elif P.canonical_key(doc):
-                path["select"] = (f"grounding.sources[0].columns.{P.canonical_key(doc)}."
-                                  "roles.identity: canonical")
+                path["select"] = f"grounding.source.key: {P.canonical_key(doc)}"
             elif P.key_parts(doc):
-                path["select"] = ("grounding.sources[0].columns -> roles.identity: composite on "
+                path["select"] = ("grounding.source.key (composite): "
                                   + ", ".join(P.key_parts(doc)))
             elif v.get("items"):
                 path["select"] = f"values.items ({len(v['items'])} members)"
@@ -121,6 +121,15 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
                 path["select"] = None
 
     if cls in ("reference", "enumeration"):
+        # `reference` RENAMED `entity` 2026-10-05 — a SEPARATE, earlier retirement than today's
+        # column rename, and left AS IS rather than widened to `entity`: the two classes drew a
+        # real distinction (a keyed dimension facts point at, vs a thing with its own life) that
+        # `entity` alone cannot recover, and widening this to `entity` regresses every plain
+        # entity (Widget here; Customer/Location/Store on contoso5) into a register-resolution
+        # branch they were never meant to enter — measured: the shared Widget fixture's own
+        # `resolve` step broke. `reference` is therefore dead code (unreachable by any bundle
+        # that validates) rather than a live comparison; re-drawing the line is a human ruling
+        # this task is not authorised to make, and is reported as a gap, not patched here.
         regs = sorted(set(re.findall(r"data/lookups/[\w.\-]+\.csv", raw)))
         # THE REGISTER'S HOME IS THE DATA-PLANE COLUMN. Grepping this file finds a register only when
         # someone also named it in prose here, which is the second home §2.1 removes. Region grounds
@@ -175,22 +184,20 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
     else:
         path["resolve"] = "delegated — a measure resolves names through the concepts it references"
 
-    # THE GRAIN IS THE IDENTITY, and since 2026-10-07 it has no other home. The prose
-    # `grounding.grain` was retired (operator ruling: a restatement of the key, in words no reader
-    # could act on), and the `key:` list beside the columns is the deprecated spelling of the same
-    # fact — so what supplies this step is the column that says `identity: canonical`, or the set
-    # that says `identity: composite`. A snapshot relation still answers first: its grain is one
+    # THE GRAIN IS THE KEY, and since 2026-10-07 `source.key` is its ONLY home. The prose
+    # `grounding.grain` was retired first (operator ruling: a restatement of the key, in words no
+    # reader could act on); the per-column `identity: canonical`/`composite` flag that then carried
+    # it was retired in turn the SAME DAY, afternoon, for `source.key` itself — an ordered list, on
+    # the source, because a column flag could not state the key's ORDER and the order reaches the
+    # SQL (column_declaration.md rev 5). A snapshot relation still answers first: its grain is one
     # row per cell per cycle, which the key alone does not say.
     _canonical, _parts = P.canonical_key(doc), P.key_parts(doc)
     if g.get("snapshot_rule"):
         path["grain"] = f"grounding.snapshot_rule ({(g.get('realized_by') or {}).get('udf', 'prose')})"
-    elif src.get("key"):
-        path["grain"] = f"grounding.sources[0].key: {src['key']} (deprecated spelling)"
     elif _canonical:
-        path["grain"] = f"grounding.sources[0].columns.{_canonical}.roles.identity: canonical"
+        path["grain"] = f"grounding.source.key: {_canonical}"
     elif _parts:
-        path["grain"] = ("grounding.sources[0].columns -> roles.identity: composite on "
-                         + ", ".join(_parts))
+        path["grain"] = "grounding.source.key (composite): " + ", ".join(_parts)
     else:
         path["grain"] = None
 
@@ -242,31 +249,38 @@ def _self_resolving(doc: dict) -> str:
     NOT A WAIVER. A concept with no register, no inline values, no ISO identity and no declared date
     column still reads None — the mutant this check rests on.
     """
+    # `concept.identity.kind` LEFT THE SCHEMA 2026-10-05 (two days before the column standard's own
+    # rename) WITH NO REPLACEMENT DECLARED ANYWHERE — unlike every other address this file touches,
+    # there is no current vocabulary term for "this concept's identity is a universal external
+    # standard" to re-point this branch to. Reading it costs nothing (a document that validates
+    # against the current schema never carries `concept.identity`, so this simply never matches),
+    # and inventing a replacement mechanism is outside what this task is authorised to decide — left
+    # as a known, reported gap rather than papered over.
     ident = (doc.get("concept") or {}).get("identity") or {}
     if str(ident.get("kind") or "").strip().lower() == "iso":
         return "identity.kind: iso"
     found = []
-    for src in ((doc.get("grounding") or {}).get("sources") or []):
-        if not isinstance(src, dict):
-            continue
+    # `grounding.source` IS SINGULAR since 2026-10-07.
+    src = (doc.get("grounding") or {}).get("source")
+    if isinstance(src, dict):
         columns = src.get("columns")
-        if not isinstance(columns, dict):
-            # THE LEGACY FORM IS A LIST OF NAMES, and it carries no type and no role — 21 concepts
-            # were on it when the column standard landed. A list says nothing about a date, so it
-            # supplies nothing here. Reading it as a mapping raised AttributeError and turned a
-            # clean rejection into an unattributed crash: two of this gate's own mutants caught it
-            # the minute it was written (2026-09-30), which is what they are for.
-            continue
-        for name, spec in columns.items():
-            if not isinstance(spec, dict):
-                continue
-            declared = str(spec.get("type") or "").strip().lower()
-            roles = spec.get("roles") if isinstance(spec.get("roles"), dict) else {}
-            binds = bool(roles.get("period_binding")) or (
-                str(spec.get("role") or "").strip().lower().rsplit(".", 1)[-1] == "period"
-            )
-            if declared in _TEMPORAL_TYPES or binds:
-                found.append(str(name))
+        if isinstance(columns, dict):
+            for name, spec in columns.items():
+                if not isinstance(spec, dict):
+                    continue
+                declared = str(spec.get("type") or "").strip().lower()
+                # `offers.period_binding` since 2026-10-07 afternoon (`roles` -> `offers`, the same
+                # revision as the column map's own rename); there is no bare `role: period` left to
+                # fall back to — the column body's `additionalProperties: false` refuses it.
+                offers = spec.get("offers") if isinstance(spec.get("offers"), dict) else {}
+                binds = bool(offers.get("period_binding"))
+                if declared in _TEMPORAL_TYPES or binds:
+                    found.append(str(name))
+        # THE LEGACY FORM IS A LIST OF NAMES, and it carries no type and no role — 21 concepts
+        # were on it when the column standard landed. A list says nothing about a date, so it
+        # supplies nothing here. Reading it as a mapping raised AttributeError and turned a
+        # clean rejection into an unattributed crash: two of this gate's own mutants caught it
+        # the minute it was written (2026-09-30), which is what they are for.
     return ", ".join(sorted(set(found)))
 
 
@@ -278,9 +292,9 @@ def check_answerability(root) -> list:
         return [D.empty_denominator("MAC011", "check_answerability", P.concepts_dir(root))]
     users = collections.Counter()
     for _n, (_rel, d, _raw) in concepts.items():
-        for src in ((d.get("grounding") or {}).get("sources") or []):
-            if isinstance(src, dict) and src.get("relation"):
-                users[src["relation"]] += 1
+        src = (d.get("grounding") or {}).get("source")
+        if isinstance(src, dict) and src.get("relation"):
+            users[src["relation"]] += 1
 
     registers = P.column_registers(root)
     # THE CONCEPT KEY-REGISTRY, computed once: which reference/enumeration concept owns which
@@ -294,7 +308,7 @@ def check_answerability(root) -> list:
         if ident.get("kind") == "sme_pending":
             stubs.append(name)
             continue
-        src = ((d.get("grounding") or {}).get("sources") or [{}])[0]
+        src = (d.get("grounding") or {}).get("source") or {}
         path = answer_path(d, raw, users.get(src.get("relation"), 0) > 1, registers=registers,
                            registry=registry)
         for step in STEPS:
@@ -335,18 +349,15 @@ _SUBJECT_GADGET = """concept:
   name: Gadget
   label: Gadget
   class: entity
-  identity:
-    kind: code
   semantics:
     definition: A second concept on the SAME relation, so `shared` is true and the select rule runs.
 grounding:
-  sources:
-    - relation: widget_register
-      key: [gadget_code]
-      columns:
-        gadget_code:
-          roles:
-            identity: canonical
+  source:
+    relation: widget_register
+    key: gadget_code
+    columns:
+      gadget_code:
+        offers: {}
 """
 
 _SUBJECT_DESCRIPTOR = """table:
@@ -363,8 +374,21 @@ def _subject(root):
 
     Two facts the bare fixture lacks. A SECOND concept on the same relation, because `select` is only
     demanded when a relation is shared — with one concept the gate takes the dedicated-relation
-    exemption and the rule never runs. And a DESCRIPTOR carrying a register, because `resolve` for a
-    reference concept now reads the register from the data-plane column, which is where it lives."""
+    exemption and the rule never runs. And an ENUMERATION with no register, because `resolve` for a
+    reference/enumeration concept reads EITHER a register declared on the data-plane column OR an
+    inline `values.items` block — Hue exercises the second address.
+
+    DROPPED 2026-10-07: the Doodad/attribute-resolution pair. It demonstrated a `reference`-classed
+    concept with NO register of its own resolving THROUGH an enumeration it grounds (Hue) — a real
+    mechanism `resolvers()` still computes. `reference` was RENAMED `entity` 2026-10-05 (a SEPARATE,
+    earlier retirement), which collapsed "a keyed dimension facts point at" into the SAME class word
+    as "a thing with its own life" — so `answer_path`'s `cls in ("reference", "enumeration")` check
+    can no longer be told to recognise Doodad's shape without ALSO recognising every plain entity
+    (Widget here; Customer/Location/Store on contoso5), which regresses them into a register-
+    resolution branch they were never meant to enter (measured: doing so broke Widget's own
+    `resolve` step in this very fixture). Re-drawing that line is a human ruling outside today's
+    task; the mechanism this pair tested is left AS A REPORTED GAP, not asserted here as working.
+    """
     (Path(root) / "ontology" / "concepts").mkdir(parents=True, exist_ok=True)
     cdir = Path(root) / "ontology" / "concepts"
     if not cdir.is_dir() or not any(cdir.rglob("*.yaml")):
@@ -373,20 +397,13 @@ def _subject(root):
     dd = Path(root) / "data" / "datasets"
     dd.mkdir(parents=True, exist_ok=True)
     (dd / "widget_register.yaml").write_text(_SUBJECT_DESCRIPTOR, encoding="utf-8")
-    # THE ATTRIBUTE-RESOLUTION PAIR. Doodad is a reference whose key carries NO register and whose
-    # file cites none — like a 2,517-row SKU dimension — and it resolves only because it grounds
-    # `hue`, which Hue owns with a values block. The control must derive; the mutant below demotes
-    # Hue to an entity, which drops it from the key-registry, and Doodad must then read None.
     (cdir / "hue.yaml").write_text(_SUBJECT_HUE, encoding="utf-8")
-    (cdir / "doodad.yaml").write_text(_SUBJECT_DOODAD, encoding="utf-8")
-    (dd / "doodad_register.yaml").write_text(_SUBJECT_DOODAD_DESCRIPTOR, encoding="utf-8")
 
 
 _SUBJECT_HUE = """metadata: {concept: Hue, schema_version: 0.1.16, status: draft, owner: t, confidence: I, provenance: authored}
 concept:
   name: Hue
   class: enumeration
-  identity: {kind: code}
   definition: a colour word
 values:
   closure: closed
@@ -394,51 +411,12 @@ values:
     - {code: red, label: red, meaning: red}
     - {code: blue, label: blue, meaning: blue}
 grounding:
-  sources:
-    - relation: doodad_register
-      key: [hue]
-      columns:
-        hue: {roles: {identity: canonical, axis: mac.concept.axis.categorical}}
+  source:
+    relation: hue_register
+    key: hue
+    columns:
+      hue: {offers: {axis: categorical}}
 """
-
-_SUBJECT_DOODAD = """metadata: {concept: Doodad, schema_version: 0.1.16, status: draft, owner: t, confidence: I, provenance: authored}
-concept:
-  name: Doodad
-  class: reference
-  identity: {kind: fk_name}
-  definition: a keyed thing nobody names directly; reached by its hue
-grounding:
-  sources:
-    - relation: doodad_register
-      key: [doodad_key]
-      columns:
-        doodad_key: {roles: {identity: canonical}}
-        hue: {roles: {axis: mac.concept.axis.categorical}}
-"""
-
-_SUBJECT_DOODAD_DESCRIPTOR = """metadata: {table: doodad_register, schema_version: 0.1.15, status: measured, kind: served_dataset}
-table:
-  name: doodad_register
-  schema: main
-  type: view
-  rows_measured: 3
-columns:
-- {name: doodad_key, type: integer, role: primary_key}
-- {name: hue, type: string, role: value}
-"""
-
-
-def _break_attribute_resolution(root):
-    """Demote Hue to an entity: it leaves the key-registry, and Doodad — which resolves through
-    nothing else — must read None on `resolve`. Proves the new path is DERIVED from a real
-    reference/enumeration owner, not granted to any concept that happens to share a column."""
-    for c in (Path(root) / "ontology" / "concepts", Path(root) / "concepts"):
-        h = c / "hue.yaml"
-        if h.exists():
-            h.write_text(h.read_text(encoding="utf-8").replace("class: enumeration", "class: entity"),
-                         encoding="utf-8")
-            return
-    raise AssertionError("fixture hue.yaml not found")
 
 
 def _widget(root):
@@ -452,38 +430,54 @@ def _widget(root):
 def _break_select(root):
     """Take away every declaration that can supply `select` on a SHARED relation.
 
-    THE IDENTITY IS WHAT DISCRIMINATES, and since 2026-10-07 it is declared on the column. This
-    removed `concept.identity.canonical_key` — a block the schema no longer admits — so after the
-    fixture moved onto the column standard the mutation deleted nothing and the mutant stopped
-    being one. `roles: {}` is the honest mutation: the column still exists and is still loaded,
-    and nothing says it identifies anything.
+    RE-POINTED 2026-10-07 AFTERNOON, the SAME DAY this was last re-pointed (morning: the flag moved
+    from `concept.identity.canonical_key` to a column `roles: {identity: canonical}` flag). That flag
+    is ALSO gone now: `source.key` is the one and only home for the grain (column_declaration.md
+    rev 5), on the SOURCE rather than a column, so stripping a column's `offers` proves nothing —
+    `widget_code` would still be the key via `source.key` regardless of what its `offers` says, and
+    the old mutation text would have matched nothing (a mutant that cannot mutate). The live
+    mutation removes `source.key` itself.
+
+    THIS ALSO BREAKS `grain`, not only `select`, and that is not a loosening of the test: `select`
+    and `grain` are BOTH derived from `source.key` now (there is no second, independent address for
+    either), so a bundle that loses its key loses both truthfully. The assertion below only requires
+    `answer_path.select` to be among the reported gaps, which it still is.
     """
     f = _widget(root)
     t = f.read_text(encoding="utf-8")
-    broken = t.replace(
-        "          roles:\n            identity: canonical\n"
-        "            axis: mac.concept.axis.categorical\n",
-        "          roles: {}\n",
-    )
-    assert broken != t, "the select mutation matched nothing — the fixture's identity block moved"
+    broken = t.replace("    key: widget_code\n", "")
+    assert broken != t, "the select mutation matched nothing — the fixture's key moved"
     f.write_text(broken, encoding="utf-8")
 
 
 def _break_resolve(root):
-    """Take away the register — the only thing that turns a NAME into this reference concept's code."""
-    d = Path(root) / "data" / "datasets" / "widget_register.yaml"
-    d.write_text(d.read_text(encoding="utf-8").replace(
-        "  register: data/lookups/widget.lookup.csv\n", ""), encoding="utf-8")
+    """Take away Hue's `values.items` — the only thing that turns a NAME into its code, now that
+    it carries no register of its own either.
+
+    RE-POINTED 2026-10-07: the old mutant removed WIDGET's data-plane register pointer, but Widget
+    is class `entity`, which `answer_path` has never routed through the register-resolution branch
+    (`cls in ("reference", "enumeration")` — `entity` is not in it, deliberately; see `_subject`'s
+    docstring) — so that mutation was ALREADY inert, independent of today's rename. Hue IS an
+    `enumeration`, the one class this branch still reaches, and stripping its inline `values` is
+    the live equivalent: no register, no items, nothing left to resolve a name through.
+    """
+    for c in (Path(root) / "ontology" / "concepts", Path(root) / "concepts"):
+        h = c / "hue.yaml"
+        if h.exists():
+            t = h.read_text(encoding="utf-8")
+            broken = t.split("\ngrounding:", 1)
+            assert len(broken) == 2, "fixture hue.yaml has no `grounding:` to split on"
+            h.write_text("concept:\n  name: Hue\n  class: enumeration\n  definition: a colour word"
+                         "\ngrounding:" + broken[1], encoding="utf-8")
+            return
+    raise AssertionError("fixture hue.yaml not found")
 
 
 _MUTANTS = (
     ("select_gone",  _break_select,  "answer_path.select",
      "a concept sharing its relation, with nothing that discriminates it"),
     ("resolve_gone", _break_resolve, "answer_path.resolve",
-     "a reference concept whose names resolve through no declared register"),
-    ("attribute_resolver_gone", _break_attribute_resolution, "answer_path.resolve",
-     "a reference with no register of its own, whose only resolving attribute stops being a "
-     "reference/enumeration concept"),
+     "an enumeration with no register and no inline values cannot resolve a name offline"),
 )
 
 
@@ -512,11 +506,10 @@ def resolvers(doc: dict, registry: dict) -> list:
     code. Enumerating it here is what keeps a generated guarantee from telling a one-shot agent to go
     and navigate three other files."""
     g = doc.get("grounding") or {}
-    cols = set()
-    for s in (g.get("sources") or []):
-        cols |= set(s.get("columns") or [])
-        k = s.get("key")
-        cols |= {k} if isinstance(k, str) else set(k or ())
+    s = g.get("source") or {}
+    cols = set(s.get("columns") or [])
+    k = s.get("key")
+    cols |= {k} if isinstance(k, str) else set(k or ())
     mine = ((doc.get("concept") or {}).get("name"))
     out = []
     for col in sorted(cols):
@@ -536,6 +529,8 @@ def key_registry(concepts: dict) -> dict:
     for name, (_rel, d, raw) in concepts.items():
         c = d.get("concept") or {}
         if c.get("class") not in ("reference", "enumeration"):
+            # `reference` is dead (see answer_path's matching comment) — left unwidened for the
+            # same reason, same gap.
             continue
         ck = P.canonical_key(d)
         if not ck:
@@ -561,12 +556,12 @@ def consumers(doc: dict, concepts: dict) -> list:
     for name, (_rel, d, _raw) in concepts.items():
         if name == mine:
             continue
-        for s in ((d.get("grounding") or {}).get("sources") or []):
-            cols = set(s.get("columns") or [])
-            k = s.get("key")
-            cols |= {k} if isinstance(k, str) else set(k or ())
-            if ck in cols and s.get("relation"):
-                out.add(s["relation"])
+        s = (d.get("grounding") or {}).get("source") or {}
+        cols = set(s.get("columns") or [])
+        k = s.get("key")
+        cols |= {k} if isinstance(k, str) else set(k or ())
+        if ck in cols and s.get("relation"):
+            out.add(s["relation"])
     return sorted(out)
 
 
@@ -613,7 +608,7 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool, registry: dic
     v = doc.get("values") or {}
     ct = doc.get("contract") or {}
     s = c.get("semantics") or {}
-    src = (g.get("sources") or [{}])[0]
+    src = g.get("source") or {}
     path = answer_path(doc, raw, shared, registry=registry)
     L = [f"GENERATED from this concept's declarations — do not edit; edit the declarations.",
          f"To use {c.get('label') or name} an agent needs ONLY:"]
@@ -638,6 +633,7 @@ def render_guarantee(name: str, doc: dict, raw: str, shared: bool, registry: dic
         L.append(f"  {n}. WHEN THE QUESTION IS SILENT: {dr}")
 
     if c.get("class") in ("reference", "enumeration"):
+        # `reference` is dead (see answer_path's matching comment) — left unwidened, same gap.
         n += 1
         L.append(f"  {n}. RESOLVE a name to its code OFFLINE: {path['resolve']}")
     else:

@@ -344,20 +344,18 @@ def concept_facts(root: Path) -> dict:
         name = c.get("name")
         if not (isinstance(name, str) and name.strip()):
             continue
-        cols: dict = {}
-        for s in ((d.get("grounding") or {}).get("sources") or []):
-            if isinstance(s, dict):
-                cols.update(s.get("columns") or {})
+        # `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now a schema
+        # load error) — one relation, so one column map, not several to merge.
+        s = (d.get("grounding") or {}).get("source")
+        cols: dict = s.get("columns") or {} if isinstance(s, dict) else {}
         out[name] = {
             "klass": c.get("class"),
-            # THE KEY IS THE SOURCE'S `key:` (2026-10-07), not a column flag — one list per source,
-            # so this collects over the sources rather than scanning the merged column map.
-            "canonical": [
-                c for s in ((d.get("grounding") or {}).get("sources") or [])
-                if isinstance(s, dict)
-                for c in [P.canonical_key({"grounding": {"sources": [s]}})] if c
-            ],
-            "registered": [k for k, v in cols.items() if isinstance(v, dict) and v.get("register")],
+            # THE KEY IS THE SOURCE'S `key:` (2026-10-07), not a column flag.
+            "canonical": [P.canonical_key(d)] if P.canonical_key(d) else [],
+            # `register` -> `value_register` 2026-10-07 (column_declaration.md rev 5) — the SAME
+            # rename `rulings.register` went through as `rulings.naming`, one address over.
+            "registered": [k for k, v in cols.items()
+                           if isinstance(v, dict) and v.get("value_register")],
             "columns": sorted(cols),
         }
     return out

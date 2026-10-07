@@ -1275,11 +1275,11 @@ concept:
         `role: housekeeping` said. A MISSING `offers:` is a column nobody classified, and the two are
         different findings.
       terms:
-      terms:
         axis: >
           LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
-          A per-column `rulings.never_axis` still overrides this with its own measurement: the role
-          says the KIND of column may be an axis, the ruling says this ONE may not.
+          A sibling `suppressed` still overrides this with its own measurement: the kind says this
+          column MAY be an axis, the suppression says no question may group by this ONE — and its
+          value is the finding, so the prohibition cannot be authored without its evidence.
         aggregate: >
           A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
           `concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through
@@ -1321,7 +1321,7 @@ concept:
         label_of:
           definition: >
             THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument
-            is the column it labels; `register` says WHICH of that thing's names this one is. Group on the
+            is the column it labels; `naming` says WHICH of that thing's names this one is. Group on the
             named column and DISPLAY this one: a question asking in these words gets answered in them,
             never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what
             the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under

@@ -14,28 +14,27 @@ host's row key.
 ```yaml
 columns:
   <column-name>:
-    counts:       <boolean>
-    register:     <string>
-    roles:
+    offers:
       aggregate:
         additivity:   <object>
-        canonical:    <boolean>
-        type:         <string>
+        default:      <boolean>
+        type:         flow | stock | intensive | precomputed | target
         unit:         <string>
-      axis:         <string>
+      axis:         time | categorical
       extremum:     <array>
-      identity:     reference
       period_binding:<any>
+      suppressed:   <string>
+      # `suppressed` REQUIRES `axis`
+    references:   <string>
     rulings:
-      evidence:     <string>
       finer_than:   <string>
       label_of:     <string>
-      never_axis:   <string>
-      register:     common | legal | long | short | code
+      naming:       common | legal | long | short | code
       scoped_by:    <string>
       sort:         asc | desc | none
-      # `never_axis` REQUIRES `evidence`
-      # `register` REQUIRES `label_of`
+      # `label_of` REQUIRES `naming`
+      # `naming` REQUIRES `label_of`
+    value_register:<string>
 ```
 
 **4 key(s)**, and the map is **CLOSED** — any other key is a conformance error (MAC012).
@@ -44,20 +43,31 @@ columns:
 
 | key | type | required | choices | comment |
 |---|---|---|---|---|
-| `counts` | boolean | no | — | WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.… |
-| `register` | string | no | — | THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (… |
-| `roles` | object | **yes** | — | WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each role to that role's own qualifier… |
-| `rulings` | object | no | — | AUTHORED JUDGEMENTS about this column — what a person decided that measurement cannot estab… |
+| `offers` | object | **yes** | — | WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each use to that use's own terms. An E… |
+| `references` | string | no | — | THIS COLUMN'S VALUES IDENTIFY ONE ROW OF THAT CONCEPT — a foreign key, named by the concept… |
+| `rulings` | object | no | — | WHAT A PERSON DECIDED ABOUT THIS COLUMN'S RELATION TO ANOTHER COLUMN. Every member names on… |
+| `value_register` | string | no | — | THE FILE WHOSE ROWS ARE THIS COLUMN'S VALUES, bundle-relative — so a question naming a memb… |
 
 ## TERM MEANINGS
 
-### `roles.identity` — `mac.concept.column.identity`  ·  CLOSED
+### `offers.aggregate.type` — `mac.concept.column.measure_type`  ·  CLOSED
 
-> Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row of THIS concept unique is `grounding.sources[].key`, not a per-column flag.
+> How a measure aggregates — defined once, over axis.
 
-- **`reference`** — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.  ·  *constellation:* THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on …
+- **`flow`** — A quantity that accrues per period and accumulates over time (e.g. units sold in a period).  ·  *additivity:* time: mac.concept.aggregation_effect.additive · categorical: mac.concept.aggreg…
+- **`stock`** — A level read at a point in time; it does not accumulate over time (e.g. inventory on hand).  ·  *additivity:* time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregatio…
+- **`intensive`** — A per-entity magnitude that is meaningful only as an average, never a total (e.g. a duration, an age, a rate, a ratio, or a signed deviation). Summing it across a population double-counts or is meaningless; the correct fold on ANY axis is a mean / median / percentile, not a SUM.  ·  *additivity:* time: mac.concept.aggregation_effect.average · categorical: mac.concept.aggrega…
+- **`precomputed`** — A measure whose value EXISTS ONLY at the grains it was computed for — you locate the row matching the requested axis/parameter combination and read it. Nothing is derivable from narrower cells: the source documentation describes one such reach measure as non-additive (a sum or average of the measure is not the measure…  ·  *additivity:* time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregatio…
+- **`target`** — A planning target, not an observed quantity (e.g. a sales goal); not summable on any axis.  ·  *additivity:* time: mac.concept.aggregation_effect.none · categorical: mac.concept.aggregatio…
 
-### `rulings.register` — `mac.name_register`  ·  CLOSED
+### `offers.axis` — `mac.concept.axis`  ·  CLOSED
+
+> WHETHER A COLUMN IS AN AXIS, and if so the additivity-relevant kind. RENAMED from `axis` 2026-10-07 (operator: "cant we just call it axis ?"): the VALUE was always the kind, so carrying "kind" in the name restated it — the same redundancy `semantics.measure_type` and the prose `grain` were carrying. REQUIRED on every declared column from the same date, which is the substantive half of the change:…
+
+- **`time`** — An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it.
+- **`categorical`** — A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it.
+
+### `rulings.naming` — `mac.name_register`  ·  CLOSED
 
 > Which register a name belongs to, when one thing carries several names.
 

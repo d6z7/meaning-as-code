@@ -40,6 +40,18 @@ is always schema vocabulary — never an entity name, never a data value. (So an
 after a column becomes `{ name: PaymentMethod, grounds_column: payment_method }`, not a
 `payment_method:` key.)
 
+**One declared exception, and it is a MAP rather than a name.** `grounding.source.columns` and
+`grounding.field_roles` are keyed by COLUMN NAME, because what they hold is one entry *per column of
+one relation* and the key is the lookup. Rule 2 exists to stop a physical name standing in for an
+ontology identifier; a map key that can only ever be a column of the named `relation` is not doing
+that, and the alternative — a list of `{column: …, offers: …}` objects — makes "what does this
+bundle say about `country_code` on `dim_customer`" a scan instead of a lookup, which is the cost the
+column standard was built to remove. The scoping is what makes it safe: a column name means nothing
+outside its relation, and contoso5 carries `country_code` on four of them. Everything the map's
+VALUES hold still obeys rule 2 — `references:` takes a CONCEPT name, `label_of`, `finer_than`,
+`scoped_by`, `key:` and `counts:` take column names as values, and every term is from a closed
+vocabulary. See [column_declaration.md](column_declaration.md).
+
 **`rule` is reserved for derivations** (the rules layer — see the `RulesFile` shape below). A data-quality
 constraint's description field is `assert:`, never `rule:` — so the word `rule` means one thing only.
 

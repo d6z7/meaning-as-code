@@ -1,33 +1,35 @@
 ---
 title: Column rulings — reference
 status: >-
-  The schema admits all five under `grounding.sources[].columns.<col>.rulings`, and `register` requires
-  `label_of` (`dependentRequired`). READ by mac-runtime `planner/sql.py`: `label_of` + `register` (the
-  label is selected, the named column grouped on, with a disclosure naming the register), `finer_than`
-  (a disclosure that the finer level was used) and `sort` (`column_sort` → the ORDER BY this column
-  contributes). `scoped_by` is LOADED, NOT PLANNED-ON (`ontology/models.py` `ColumnRulings`) — the
-  protection it describes comes today from the `composite_key_guard` canon. The prohibition route of
-  §"When the judgement is a prohibition" is PROPOSED (2026-10-07): no canon realizes an axis prohibition
-  yet, and a contract rule has no dedicated key for the DQ id it cites. Per-ruling status is on each
-  section below.
+  CURRENT (2026-10-07, revision 5). FIVE rulings, under `grounding.source.columns.<col>.rulings`:
+  `label_of`, `naming`, `finer_than`, `scoped_by`, `sort`. Each names ANOTHER column or says which
+  of that other column's names this one is — which is the test for membership, and is why
+  `never_axis` left this block on 2026-10-07: it named no other column, and a prohibition on a
+  column's OWN use is `offers.suppressed`, whose value is the finding that justifies it. `label_of`
+  and `naming` require each other (schema `dependentRequired`, both directions). READ by mac-runtime
+  `planner/sql.assemble_plan`: `label_of` + `naming` (the label is selected, the named column grouped
+  on, with a disclosure naming which name it showed) and `finer_than` (a disclosure that the finer
+  level was used); `planner/sql.column_sort` for `sort`; and
+  `planner/contract_guards.sql_guard_bindings` synthesises a `composite_key_guard` binding from
+  `scoped_by`. Per-ruling status is on each section below. Every example is a column of contoso5.
 audience: ontology authors, importer developers
-companions: [column_declaration.md, column_roles.md, column_specification.md, ../mac_vocabulary.yaml]
+companions: [column_declaration.md, column_specification.md, column_roles.md, ../mac_vocabulary.yaml]
 ---
 
 # Column rulings
 
 A **ruling** is a judgement about a column that measurement cannot establish. Rulings are declared
 under `rulings:` on a column and are always optional; a column with no rulings behaves as its
-[roles](column_roles.md) alone dictate.
+[offers](column_roles.md) alone dictate.
 
 ```
 SYNOPSIS
     columns:
       <column>:
-        roles: { … }                                     # what a question may DO with it — column_roles.md
+        offers: { … }                                        # what a question may DO with it — column_roles.md
         rulings:
           label_of:   <column>
-          register:   common | legal | long | short | code      # REQUIRES label_of (schema dependentRequired)
+          naming:     common | legal | long | short | code   # REQUIRES label_of, and is required BY it
           finer_than: <column>
           scoped_by:  <column>
           sort:       asc | desc | none
@@ -37,18 +39,29 @@ SYNOPSIS
 
 | ruling | value | required | says | the measurement that gets you to the door | read by |
 |---|---|---|---|---|---|
-| `label_of` | a column of the same relation | — | I am **another name for that column's thing**, not another thing — group on it, display me | `a = b = pairs` | `planner/sql.py` |
-| `register` | `common` · `legal` · `long` · `short` · `code` | **with `label_of`** | **which** of that thing's names I carry | — only a person can say | `planner/sql.py`, in the disclosure |
-| `finer_than` | a column of the same relation | — | I distinguish **more members** than that column and roll up into it; both are legitimate axes and an answer must disclose which level it used | `pairs = finer_distinct` | `planner/sql.py` |
-| `scoped_by` | a column of the same relation | — | my values are unique **only within** that column, so I may not be grouped or filtered alone — the scope must travel with me | 0 collisions within, many across | loaded (`ontology/models.py`); enforced today by `composite_key_guard` |
-| `sort` | `asc` · `desc` · `none` | — | the order my values are presented in when the question states none | **none — and that is the point:** SQL guarantees no row order without `ORDER BY` | `planner/sql.py` `column_sort` |
+| `label_of` | a column of the same source map | — | I am **another name for that column's thing**, not another thing — group on it, display me | `a = b = pairs` | `planner/sql.assemble_plan` |
+| `naming` | `common` · `legal` · `long` · `short` · `code` | **with `label_of`**, and it with this | **which** of that thing's names I carry | — only a person can say | `planner/sql.assemble_plan`, in the disclosure |
+| `finer_than` | a column of the same source map | — | I distinguish **more members** than that column and roll up into it; both are legitimate axes and an answer must disclose which level it used | `pairs = finer_distinct` | `planner/sql.assemble_plan` |
+| `scoped_by` | a column of the same source map | — | my values are unique **only within** that column, so I may not be grouped or filtered alone — the scope must travel with me | 0 collisions within, many across | `planner/contract_guards.sql_guard_bindings` → a `composite_key_guard` binding |
+| `sort` | `asc` · `desc` · `none` | — | the order my values are presented in when the question states none | **none — and that is the point:** SQL guarantees no row order without `ORDER BY` | `planner/sql.column_sort` |
 
-### Two keys spelled `register`
+### Every ruling names another column
 
-| key | value | says |
+That is the membership test, and it is what tells a ruling from a judgement about the column itself.
+
+| the judgement | names another column? | where it lives |
 |---|---|---|
-| `register:` on the column | a lookup path | where this column's VALUES come from — the register a name resolves through |
-| `rulings.register` | a `mac.name_register` term | **which of the thing's names** this column carries |
+| this column is another name for that one | yes | `rulings.label_of` |
+| which of that thing's names this is | yes — the companion of `label_of` | `rulings.naming` |
+| this column rolls up into that one | yes | `rulings.finer_than` |
+| this column's values are unique only within that one | yes | `rulings.scoped_by` |
+| the order this column's values are presented in | its own, and nothing else is affected | `rulings.sort` |
+| **no question may group by this column** | **no** | **[`offers.suppressed`](column_specification.md#offerssuppressed--the-axis-no-question-may-group-by)** — beside the `axis` it suppresses, and its value is the DQ finding the refusal quotes |
+
+`naming` was spelled `register` until 2026-10-07, one word that also named the column's own
+`value_register` a single nesting level away — contoso5's `Country` concept declared both seven
+lines apart. The runtime had already been forced to split them (`ColumnSpec.value_register` /
+`ColumnRulings.naming_register`) while the author was still asked to write one word for both.
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.ruling (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -136,29 +149,30 @@ served customers and is the dominant identifier in the row.
  |
 <!-- END GENERATED:vocabulary-terms:concept.column.ruling -->
 
-**A prohibition is not a ruling.** A ruling relates a column to another column. A judgement that a
-column may not be used a particular way leaves the column unchanged and lives in a contract rule —
-[When the judgement is a prohibition](#when-the-judgement-is-a-prohibition).
+**A prohibition is not a ruling, and it is not a rule either.** A ruling relates a column to another
+column. That no question may group by a column is a judgement about the column's own use, so it
+sits in `offers` beside the axis it suppresses —
+[`offers.suppressed`](#when-the-judgement-is-a-prohibition), whose value IS the measurement's id.
 
 ---
 
 # 1 · `label_of`
 
-**Status: READ** — `planner/sql.py` selects the label, groups on the named column, and discloses the
-register it showed.
+**Status: READ** — `planner/sql.assemble_plan` selects the label, groups on the named column, and
+discloses which of the thing's names it showed.
 
 ## Synopsis
 
 ```yaml
 rulings:
   label_of: <column>
-  register: common | legal | long | short | code      # optional, default: common
+  naming: common | legal | long | short | code      # REQUIRED with label_of
 ```
 
 ## Description
 
 Declares that this column is **another name for the thing the named column identifies**, not a
-different thing. The named column stays canonical: queries group and filter on it, and this column
+different thing. The named column stays the axis: queries group and filter on it, and this column
 supplies the words shown to the reader.
 
 Without the ruling both columns are independent axes, and *"by X"* and *"by Y"* return the same
@@ -168,53 +182,67 @@ cut under different labels with nothing relating them.
 
 | parameter | required | default | legal values | meaning |
 |---|---|---|---|---|
-| `label_of` | yes | — | a column of the same relation | the canonical column this one names |
-| `register` | no | `common` | `common` · `legal` · `long` · `short` · `code` | which of the thing's names this column carries |
+| `label_of` | yes | — | a column of the same source map | the column this one names |
+| `naming` | **yes, with `label_of`** | — | `common` · `legal` · `long` · `short` · `code` | which of the thing's names this column carries |
+
+Both directions are `dependentRequired` in `mac.schema.json`: `naming` without `label_of` has no
+thing to name, and `label_of` without `naming` leaves the disclosure unable to say which name it
+showed. There is no default — `common` was one until 2026-10-07, and a default here is a claim about
+the data that nobody made.
 
 ## When to use it — the constellation
 
 Two columns, **equal distinct counts and an equal pair count**:
 
-| measured over `dim_contoso_product` | |
+| measured over `dim_product` | |
 |---|---:|
-| distinct `Brand` | 11 |
-| distinct `Manufacturer` | 11 |
+| distinct `brand` | 11 |
+| distinct `manufacturer` | 11 |
 | distinct pairs | **11** |
 
-| `Brand` | `Manufacturer` | products |
-|---|---|---:|
-| A. Datum | A. Datum Corporation | 132 |
-| Contoso | Contoso, Ltd | 710 |
-| Fabrikam | Fabrikam, Inc. | 267 |
-| Adventure Works | Adventure Works | 192 |
+| `brand` | `manufacturer` |
+|---|---|
+| A. Datum | A. Datum Corporation |
+| Adventure Works | Adventure Works |
+| Contoso | Contoso, Ltd |
+| Fabrikam | Fabrikam, Inc. |
+
+The two registers `mac_lookups.py` cut from the same relation each measure **11 members**
+(`data/lookups/contoso5_brand.lookup.yaml`, `data/lookups/contoso5_manufacturer.lookup.yaml`), and
+the fourth row
+is the one that matters: `Adventure Works` is the SAME string in both, so the pair's 1:1 is not even
+a difference in spelling. Nothing in the data says which of the two is the name.
 
 1:1 gets you to the door. **Only a person can say the two names denote one thing.** Contoso and
 Contoso, Ltd are one company in two registers; Fabrikam Group and Contoso are two companies, and
-that pair would be one-to-many — an `identity: reference` pointing at a parent, not a label.
+that pair would be one-to-many — a `references` pointing at a parent, not a label.
 
 ## What happens without it
 
 | | |
 |---|---|
 | **Two answers to one question** | *by brand* → 11 rows. *by manufacturer* → 11 rows. Identical numbers, different labels, nothing says they are the same cut. |
-| **Meaningless cross-product** | `GROUP BY Brand, Manufacturer` yields 11 rows where a reader expects 121, and reads as a data bug. |
-| **A refusal instead of a redirect** | Prohibiting the second column as an axis refuses *"by manufacturer"* — a good question asked in the reader's own words. The right behaviour is to group on `Brand` and DISPLAY `Manufacturer`, which is what this ruling buys. |
+| **Meaningless cross-product** | `GROUP BY brand, manufacturer` yields 11 rows where a reader expects 121, and reads as a data bug. |
+| **A refusal instead of a redirect** | Suppressing the second column as an axis refuses *"by manufacturer"* — a good question asked in the reader's own words. The right behaviour is to group on `brand` and DISPLAY `manufacturer`, which is what this ruling buys. |
 
 ## Examples
 
-**Declaring it**
+**Declaring it** — contoso5's `Product`, verbatim:
 
 ```yaml
-# ontology/concepts/catalog/brand.yaml
+# ontology/concepts/product.yaml
 grounding:
-  columns:
-    Brand:
-      roles: { axis: mac.concept.axis.categorical }
-    Manufacturer:
-      roles: { axis: mac.concept.axis.categorical }
-      rulings:
-        label_of: Brand
-        register: legal
+  source:
+    relation: dim_product
+    key: product_key
+    columns:
+      brand:
+        offers: {axis: categorical, extremum: [min, max]}
+      manufacturer:
+        offers: {axis: categorical, extremum: [min, max]}
+        rulings:
+          label_of: brand
+          naming: legal
 ```
 
 **Asking for the label**
@@ -223,17 +251,17 @@ grounding:
 > revenue by manufacturer
 ```
 ```sql
-SELECT p.Brand AS "Manufacturer", SUM(l.NetPrice) AS revenue
-FROM   contoso_served.v_contoso_order_line l
-JOIN   contoso_served.dim_contoso_product  p USING (ProductKey)
-GROUP  BY p.Brand
+SELECT p.brand AS "manufacturer", SUM(l.net_amount) AS revenue
+FROM   v_contoso5_sales_line l
+JOIN   dim_product           p USING (product_key)
+GROUP  BY p.brand
 ```
-| Manufacturer | revenue |
+| manufacturer | revenue |
 |---|---:|
 | Contoso, Ltd | … |
 | Fabrikam, Inc. | … |
 
-> *grouped by Brand, shown as Manufacturer (legal register)*
+> *grouped by brand, shown as manufacturer (legal register)*
 
 **Filtering by the label**
 
@@ -241,24 +269,34 @@ GROUP  BY p.Brand
 > revenue for Contoso Ltd
 ```
 ```sql
-WHERE p.Brand = 'Contoso'
+WHERE p.brand = 'Contoso'
 ```
 
-**Chaining** — a label of a scoped column is scoped too:
+**The other two in contoso5** — one thing, three names, each saying which it is:
 
 ```yaml
-State:     { roles: { axis: mac.concept.axis.categorical }, rulings: { scoped_by: Country } }
-StateFull: { roles: { axis: mac.concept.axis.categorical }, rulings: { label_of: State, register: long } }
+product_code: {offers: {axis: categorical, extremum: [min, max]},
+               rulings: {label_of: product_key, naming: code}}
+product_name: {offers: {axis: categorical, extremum: [min, max]},
+               rulings: {label_of: product_key, naming: common}}
+```
+
+**Chaining** — a label of a scoped column is scoped too. contoso5 carries no such pair; this is the
+shape, and the column names are illustrative:
+
+```yaml
+state:      {offers: {axis: categorical}, rulings: {scoped_by: country_code}}
+state_full: {offers: {axis: categorical}, rulings: {label_of: state, naming: long}}
 ```
 
 ## Errors
 
 | condition | outcome |
 |---|---|
-| `label_of` names a column not in this relation | load refuses — a column is never assumed to exist |
+| `label_of` names a column not in this source's map | load refuses — a column is never assumed to exist |
 | the pair is not 1:1 in the data | `check_column_rulings` reds: the ruling claims one thing, the data shows many |
-| `register` without `label_of` | the schema refuses — `dependentRequired` |
-| `register` is not a `mac.name_register` term | load refuses |
+| `naming` without `label_of`, or `label_of` without `naming` | the schema refuses — `dependentRequired`, both directions |
+| `naming` is not a `mac.name_register` term | load refuses |
 
 ## See also
 
@@ -269,7 +307,7 @@ StateFull: { roles: { axis: mac.concept.axis.categorical }, rulings: { label_of:
 
 ---
 
-## The `register` argument
+## The `naming` argument
 
 <!-- BEGIN GENERATED:vocabulary-terms:name_register (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -302,7 +340,7 @@ A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 # 2 · `finer_than`
 
-**Status: READ** — `planner/sql.py` discloses that the finer of two levels was used.
+**Status: READ** — `planner/sql.assemble_plan` discloses that the finer of two levels was used.
 
 ## Synopsis
 
@@ -321,20 +359,20 @@ which level it used, and so an ambiguous question can offer both.
 
 | parameter | required | default | legal values | meaning |
 |---|---|---|---|---|
-| `finer_than` | yes | — | a column of the same relation | the coarser column this one rolls up into |
+| `finer_than` | yes | — | a column of the same source map | the coarser column this one rolls up into |
 
 ## When to use it — the constellation
 
 N:1, and **the pair count equals the finer column's distinct count** — which is what proves every
 child has exactly one parent:
 
-| measured over `dim_contoso_product` | |
+| measured over `dim_product` | |
 |---|---:|
-| distinct `SubCategoryName` (finer) | 32 |
-| distinct `CategoryName` (coarser) | 8 |
+| distinct `sub_category_name` (finer) | 32 |
+| distinct `category_name` (coarser) | 8 |
 | distinct pairs | **32** |
 
-| `CategoryName` | `SubCategoryName` |
+| `category_name` | `sub_category_name` |
 |---|---|
 | Contosoo | Bluetooth Headphones |
 | Contosoo | MP4&MP3 |
@@ -353,20 +391,36 @@ parent the totals stop adding up, with no symptom.
 
 ## Examples
 
+contoso5 declares it on `ProductCategory`, which grounds `dim_product` on `key: category_name` —
+one relation, four concepts, and this ruling belongs to the one the hierarchy is about:
+
 ```yaml
+# ontology/concepts/product_category.yaml
 grounding:
-  columns:
-    CategoryName:    { roles: { axis: mac.concept.axis.categorical } }
-    SubCategoryName:
-      roles:   { axis: mac.concept.axis.categorical }
-      rulings: { finer_than: CategoryName }
+  source:
+    relation: dim_product
+    key: category_name
+    columns:
+      category_name:
+        offers: {axis: categorical, extremum: [min, max]}
+        value_register: data/lookups/contoso5_category_name.lookup.yaml
+      sub_category_name:
+        offers: {axis: categorical, extremum: [min, max]}
+        rulings: {finer_than: category_name}
+      product_key:
+        offers: {}
+        references: Product
 ```
 
 | you ask | plan | result |
 |---|---|---|
-| *sales by category* | `GROUP BY p.CategoryName` | 8 rows |
-| *sales by subcategory* | `GROUP BY p.SubCategoryName` | 32 rows · *"the finer of two levels; rolls up into 8 categories"* |
-| *sales by product line* | **CLARIFY** | *"which level — category (8) or subcategory (32)?"* |
+| *sales by category* | `GROUP BY p.category_name` | 8 rows |
+| *sales by subcategory* | `GROUP BY p.sub_category_name` | 32 rows · *"the finer of two levels; rolls up into 8 categories"* |
+| *sales by product line* | **ASK** | *"which level — category (8) or subcategory (32)?"* |
+
+The second case in the bundle is `Customer.country_code finer_than continent` — 8 codes rolling into
+3 continents — and the third is `Location.state finer_than country_code`, which is the same column
+`Customer` rules `scoped_by`. §3 is why both are right.
 
 ## Errors
 
@@ -384,9 +438,10 @@ self-reference rather than two columns
 
 # 3 · `scoped_by`
 
-**Status: LOADED, NOT PLANNED-ON.** Schema-admitted and parsed into `ColumnRulings` (mac-runtime
-`ontology/models.py`), and no planner step reads it — waived in `test_declared_but_unread` as a ticket.
-The protection this describes comes today from the `composite_key_guard` canon, not from this key.
+**Status: READ** — `planner/contract_guards.sql_guard_bindings` synthesises a `composite_key_guard`
+binding from it (`code_column` + `scope_columns`), which is what refuses the shape. The guard
+REFUSES rather than adding the scope column or asking which parent was meant; the designed
+behaviour below is what the §Examples table describes.
 
 ## Synopsis
 
@@ -407,7 +462,7 @@ column-level shorthand. If the two ever disagree, the pattern wins.
 
 ## When to use it — the constellation
 
-| `State` | `Country` | `StateFull` | customers |
+| `state` | `country_code` | the place | customers |
 |---|---|---|---:|
 | `CO` | FR | Corse | 37 |
 | `CO` | IT | Como | 64 |
@@ -415,37 +470,47 @@ column-level shorthand. If the two ever disagree, the pattern wins.
 | `PA` | FR | Provence-Alpes-Côte d'Azur | 495 |
 | `PA` | US | Pennsylvania | 2 017 |
 
-| measured over `dim_contoso_customer` | |
-|---|---:|
-| distinct `State` codes | 563 |
-| carried by **more than one** country | **40** |
-| colliding **within** a country | **0** |
+| measured over `dim_customer` | | source |
+|---|---:|---|
+| distinct `state` codes | 565 | `data/profiles/dim_customer.yaml`, measured 2026-09-30 |
+| carried by **more than one** country | **40** | the collision scan, taken when the column held 563 codes |
+| colliding **within** a country | **0** | the same scan |
 
 **Zero within, many across** is the signature. It separates a scoped code from a hierarchy, which
-cardinality alone cannot.
+cardinality alone cannot. The two rows above come from two measurements of the same column two days
+apart, and they are kept apart rather than reconciled: re-badging a 563-code scan as a 565-code one
+would be a number nobody took.
 
 ## What happens without it
 
-`GROUP BY State` puts Corse, Como and Colorado in one row labelled `CO`, totalling 810 customers.
+`GROUP BY state` puts Corse, Como and Colorado in one row labelled `CO`, totalling 810 customers.
 The query succeeds, the row count is plausible, the number is meaningless. *"Customers in CO"*
 returns French, Italian and American customers.
 
 ## Examples
 
 ```yaml
-grounding:
-  columns:
-    Country: { roles: { axis: mac.concept.axis.categorical } }
-    State:
-      roles:   { axis: mac.concept.axis.categorical }
-      rulings: { scoped_by: Country }
+# ontology/concepts/customer.yaml
+columns:
+  country_code:
+    offers: {axis: categorical, extremum: [min, max]}
+    rulings: {finer_than: continent}
+  state:
+    offers: {axis: categorical, extremum: [min, max]}
+    rulings: {scoped_by: country_code}
 ```
 
 | you ask | plan | result |
 |---|---|---|
-| *customers by state* | `GROUP BY c.Country, c.State` | 603 rows · *"Country added — State is scoped by it"* |
-| *customers in CO* | **CLARIFY** | *"'CO' is carried by 3 countries — Corse (FR), Como (IT), Colorado (US)"* |
-| *customers in Colorado* | `WHERE c.Country='US' AND c.State='CO'` | 709 — scope inferred from the label |
+| *customers by state* | `GROUP BY c.country_code, c.state` | 603 rows · *"country_code added — state is scoped by it"* |
+| *customers in CO* | **ASK** | *"'CO' is carried by 3 countries — Corse (FR), Como (IT), Colorado (US)"* |
+| *customers in Colorado* | `WHERE c.country_code='US' AND c.state='CO'` | 709 — scope inferred from the label |
+
+**The same column, the opposite ruling, in the same bundle.** `Location.state` is
+`finer_than: country_code`: `dim_location` holds one state per location, 67 over 67 rows, and every
+one of them sits in exactly one country. `Customer.state` is `scoped_by: country_code`, because
+there the same code space is reused per parent. The ruling is per source and per concept because
+the measurement is — which is the whole reason a column's facts cannot hang off its name.
 
 ## Errors
 
@@ -458,7 +523,7 @@ grounding:
 
 # 4 · `sort`
 
-**Status: READ** — `planner/sql.py` `column_sort` turns it into the `ORDER BY` this column contributes.
+**Status: READ** — `planner/sql.column_sort` turns it into the `ORDER BY` this column contributes.
 
 ## Synopsis
 
@@ -512,71 +577,88 @@ the N that matter.
 ## Examples
 
 ```yaml
-grounding:
-  columns:
-    Brand:
-      roles:   { axis: mac.concept.axis.categorical }
-      rulings: { sort: asc }
-    NetPrice:
-      roles:   { aggregate: { type: flow, unit: the order's own CurrencyCode } }
-      rulings: { sort: desc }
-    ZipCode:
-      roles:   { axis: mac.concept.axis.categorical }
-      rulings: { sort: none }
+columns:
+  brand:
+    offers:  {axis: categorical, extremum: [min, max]}
+    rulings: {sort: asc}
+  net_amount:
+    offers:  {aggregate: {type: flow, unit: USD, default: true}, extremum: [min, max]}
+    rulings: {sort: desc}
+  city:
+    offers:  {axis: categorical, suppressed: DQ-IDENTIFYING-DIM_CUSTOMER-CITY}
+    rulings: {sort: none}
 ```
 
 | you ask | ordering applied | why |
 |---|---|---|
-| *net revenue by brand* | `ORDER BY SUM(NetPrice) DESC` | the measure's `desc` — the rows that matter come first |
-| *list the brands* | `ORDER BY Brand ASC` | a name reads alphabetically |
-| *top 5 brands by price* | `ORDER BY ... DESC LIMIT 5` | `Intent.ordering` outranks the column's ruling |
+| *net revenue by brand* | `ORDER BY SUM(net_amount) DESC` | the measure's `desc` — the rows that matter come first |
+| *list the brands* | `ORDER BY brand ASC` | a name reads alphabetically |
+| *top 5 brands by price* | `ORDER BY … DESC LIMIT 5` | `Intent.ordering` outranks the column's ruling |
+
+`sort` and `suppressed` on the same column are not in tension: the suppression says the column is
+never an AXIS, and `sort: none` says it is never an ORDERING KEY. Two different operations, and a
+column a question may still filter on and display earns both statements.
 
 ---
 
 # When the judgement is a prohibition
 
-A judgement that a column **may not be used** a particular way is not a ruling about the column,
-because the column has not changed: it still is what the warehouse made it. `ZipCode` is
-`{axis: categorical}` and declares it. The prohibition is a **rule**.
+A judgement that a column **may not be grouped on** leaves the column unchanged: it still is what
+the warehouse made it. So it is declared **beside** what the column is, in the same map, and never
+instead of it.
 
-| measured over `dim_contoso_customer` | |
+```yaml
+city:
+  offers:
+    axis: categorical                              # what the column IS
+    extremum: [min, max]
+    suppressed: DQ-IDENTIFYING-DIM_CUSTOMER-CITY   # what no question may do with it
+```
+
+| measured over `dim_customer` | |
 |---|---:|
 | customers | 104 990 |
-| distinct `ZipCode` | 40 639 |
-| postcodes held by **exactly one** customer | **29 193** |
+| distinct `city` | 34 581 |
+| values held by **exactly one** row | **21 317** |
 
-`City` is the same shape at 34 581 distinct. `GROUP BY ZipCode` plans, executes and returns 29 193 rows
-that each describe one person: the query is valid, and only a rule stands between it and an answer.
+`customer_name` is the same shape at 99 200 distinct and 94 488 singletons. `GROUP BY city` plans,
+executes and returns 34 581 rows, 21 317 of which each describe one person: the query is valid, and
+only a declaration stands between it and an answer.
 
-**Where each part of the judgement lives** — a `contract.rules[]` entry, anchored to the column:
-
-| the rule carries | in | note |
-|---|---|---|
-| what it governs | `kind` | a `mac.concept.rule.*` term — mac.schema.json closes the slot to the six |
-| the prohibition | `when` / `then` / `never` | the situation, the directive, the anti-pattern |
-| the reason | `why` | one line, and it is what the refusal quotes back |
-| the column | `binds: [ZipCode]` | the field-anchoring: `binds` must name columns the concept grounds to, enforced cross-file by the rule-binds-grounded shape in `mac_shapes.yaml` |
-| the deterministic realization | `realized_by` | the canon that executes the `when`/`then`; a refusal from a canon is filed `POLICY_DENIED` (`planner/contract_guards.py`) |
-| where the decision came from | `decided_in` | a ref to the record, `<repo>#<path>` or bundle-relative |
-| its standing | `status` · `confidence` | `proposed` · `ruled` · `retired` · and `C` · `P` · `R` |
-
-**The refusal cites the measurement.** A judgement made from a measurement must produce a refusal that
-names it, never a silent success:
+**The value IS the evidence.** `offers.suppressed` takes the id of a finding in
+`data/quality/data_quality_register.yaml`, so a prohibition cannot be authored without naming the
+measurement that justifies it, and the refusal quotes the register rather than a word:
 
 ```
-> customers by postcode
+> customers by city
 ```
 ```
 REFUSED (POLICY_DENIED)
-Customer.ZipCode is a categorical axis, and the rule bound to it refuses grouping: DQ-CUSTOMER-02
-measured that 29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names
-individuals. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.
+Customer.city is a categorical axis and is suppressed by DQ-IDENTIFYING-DIM_CUSTOMER-CITY, which
+measured that 21,317 of 34,581 distinct values (62%) over 104,990 rows are held by exactly one row,
+so grouping on it names individuals. Customer can be grouped by: continent, country_code, state,
+gender, birth_date.
 ```
 
-**Why it is not on the column.** A declaration describes the data; a prohibition is a rule. A column
-that *is* an axis says so even where policy forbids grouping by it — declaring a real axis "not an axis"
-would make the ontology lie about the warehouse, and the measurement that justifies the prohibition
-would then contradict the declaration that hides it.
+| where each part lives | |
+|---|---|
+| what the column IS | `offers: {axis: categorical, extremum: [min, max]}` — so joins, resolution, the extremum route and the fold law all read it correctly |
+| that no question may group by it | `offers.suppressed`, in the same map; `axis` is required alongside (schema `dependentRequired`) |
+| the measurement | the key's own value — a DQ register id, raised from `data/profiles/<relation>.yaml` `singletons` |
+| the refusal | `planner/plan._axis_denied` → `POLICY_DENIED`, quoting the finding; `planner/grounded_columns.axis_columns` drops the column, so the set the prompt OFFERS and the set a refusal LISTS stay one set |
+
+**Why it is not a ruling.** Every member of `rulings` names another column; this names none. It was
+two keys in that block — `never_axis`, carrying a prose reason, and `evidence`, carrying the id —
+and the prose field held a reason CODE (`privacy`) in both of contoso5's uses while the sentence it
+claimed to carry already lived in the register. One key whose value is the finding says the same
+thing once, and cannot be authored half-done.
+
+**Why it is not a rule either.** A cross-column prohibition — *"never report nine countries"* — IS a
+`contract.rules[]` entry with `kind`, `never`, `why`, `binds` and `realized_by`; contoso5 declares
+one on `Country.country_code` for the `--` sentinel. The shape and the `never` → refusal path are in
+[identity_and_rules.md](rules_and_canons/identity_and_rules.md). A prohibition on ONE column's own
+use needs none of that machinery, and routing it through a rule is what left the measurement in
+prose for twelve concepts.
 
 ## See also
 
@@ -598,11 +680,11 @@ FROM   <relation>
 
 | measurement | ruling | the thing measurement cannot tell you |
 |---|---|---|
-| `a = b = pairs` | [`label_of`](#1--label_of) | whether the two names denote one thing or two |
+| `a = b = pairs` | [`label_of`](#1--label_of) + [`naming`](#the-naming-argument) | whether the two names denote one thing or two, and which name this one is |
 | `pairs = a`, `a > b` | [`finer_than`](#2--finer_than) | — this one is safe to read off the data |
 | `pairs > a` **and** `pairs > b` | [`scoped_by`](#3--scoped_by) | — also safe: check collisions within vs across |
 | none — the data cannot say | [`sort`](#4--sort) | the order a reader expects; SQL promises none |
-| cardinality ≈ row count | **not a ruling** — the column is an axis and says so; the prohibition is a [contract rule](#when-the-judgement-is-a-prohibition) | whether the identification matters |
+| cardinality ≈ row count | **not a ruling** — [`offers.suppressed`](#when-the-judgement-is-a-prohibition) beside the axis it suppresses | whether the identification MATTERS; the ratio is a measurement, the judgement is not, and the key's value is the id of the one that was taken |
 
 **`scoped_by` mistaken for `finer_than` is the expensive error**: it merges unrelated members and
 nothing in the result betrays it.

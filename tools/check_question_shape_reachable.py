@@ -44,7 +44,7 @@ def _concepts_by_relation(ontology: pathlib.Path) -> dict[str, list[str]]:
         except Exception:
             continue
         name = ((doc.get("concept") or {}).get("name")) or path.stem
-        for src in ((doc.get("grounding") or {}).get("sources") or []):
+        for src in ([_s] if isinstance(_s := ((doc).get("grounding") or {}).get("source"), dict) else []):
             rel = str((src or {}).get("relation") or "").strip()
             if rel:
                 out.setdefault(rel, []).append(str(name))

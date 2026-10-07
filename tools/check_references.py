@@ -525,7 +525,7 @@ class ReferenceChecker:
                             elif isinstance(t, str):
                                 tbls.append(t)
                     # v0.5 agnostic form: grounding.sources: [{relation, key, columns}]
-                    for s in (grounding.get("sources") or []):
+                    for s in ([_s] if isinstance(_s := (grounding).get("source"), dict) else []):
                         if isinstance(s, dict) and isinstance(s.get("relation"), str):
                             tbls.append(s["relation"])
                     for tname in tbls:

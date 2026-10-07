@@ -8,99 +8,107 @@ concept:
   name: NetRevenue
   label: Net Revenue
   class: measure
-  definition: >
+  definition: '
 
-    What Contoso actually charged: quantity times the discounted price, per sale, summed. Read from
-    the rows: 681.72 net against 717.60 gross on one sale — the gap is the discount.
-
-
-    THE DEFAULT READING OF "REVENUE", and it is after discount. [[GrossRevenue]] is the same
-    figure before it. Answering one when a question meant the other moves every derived figure —
-    margin most of all — in a direction somebody will like.
+    What Contoso actually charged: quantity times the discounted price, per sale, summed. Read from the
+    rows: 681.72 net against 717.60 gross on one sale — the gap is the discount.
 
 
-    IT IS IN USD. The sale's `currency_code` names what the customer paid in, not what this is
-    stated in; conversion goes through [[ExchangeRate]] at the sale's own order date.
+    THE DEFAULT READING OF "REVENUE", and it is after discount. [[GrossRevenue]] is the same figure before
+    it. Answering one when a question meant the other moves every derived figure — margin most of all
+    — in a direction somebody will like.
+
+
+    IT IS IN USD. The sale''s `currency_code` names what the customer paid in, not what this is stated
+    in; conversion goes through [[ExchangeRate]] at the sale''s own order date.
+
+    '
 grounding:
-  sources:
-    - relation: v_contoso5_sales_line
-      key: [order_key, line_number]
-      columns:
-        order_key:
-          roles: {}
-        line_number:
-          roles: {}
-        net_amount:
-          roles:
-            aggregate:
-              type: mac.concept.column.measure_type.flow
-              unit: USD
-              canonical: true
-            extremum: [min, max]
-        net_price:
-          roles:
-            aggregate:
-              type: mac.concept.column.measure_type.intensive
-              unit: USD
-            extremum: [min, max]
-        order_date:
-          roles:
-            axis: mac.concept.axis.time
-            period_binding: true
-            extremum: [min, max]
-        delivery_date:
-          roles:
-            axis: mac.concept.axis.time
-            extremum: [min, max]
-        customer_key:
-          roles:
-            identity: reference
-            axis: mac.concept.axis.categorical
-        store_key:
-          roles:
-            identity: reference
-            axis: mac.concept.axis.categorical
-        product_key:
-          roles:
-            identity: reference
-            axis: mac.concept.axis.categorical
-        currency_code:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
+  source:
+    relation: v_contoso5_sales_line
+    key: [order_key, line_number]
+    columns:
+      order_key:
+        offers: {}
+      line_number:
+        offers: {}
+      net_amount:
+        offers:
+          aggregate:
+            type: flow
+            unit: USD
+            default: true
+          extremum: [min, max]
+      net_price:
+        offers:
+          aggregate:
+            type: intensive
+            unit: USD
+          extremum: [min, max]
+      order_date:
+        offers:
+          axis: time
+          period_binding: true
+          extremum: [min, max]
+      delivery_date:
+        offers:
+          axis: time
+          extremum: [min, max]
+      customer_key:
+        offers:
+          axis: categorical
+        references: Customer
+      store_key:
+        offers:
+          axis: categorical
+        references: Store
+      product_key:
+        offers:
+          axis: categorical
+        references: Product
+      currency_code:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        references: Currency
 contract:
   rules:
-    - id: net_revenue.aggregation.never_from_unit_prices
-      subject: NetRevenue
-      kind: mac.concept.rule.aggregation
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - net_amount
-        - net_price
-      when: revenue is asked for over any set of sales
-      then: sum `{net_amount}` — it is already quantity x `{net_price}` on the row
-      never: >
-        sum or average `{net_price}`
-      why: >
-        a per-unit level added across sales is a number that still looks like money and understates the
-        true total on every row with quantity above one
-    - id: net_revenue.default.revenue_means_net
-      subject: NetRevenue
-      kind: mac.concept.rule.default
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - net_amount
-      when: a question says "revenue" or "sales" without saying net or gross
-      then: >
-        answer with `{net_amount}` and say NET — it is after discount; the figure before discount is
-        [[GrossRevenue]]
-      never: >
-        pick one silently
-      why: >
-        the gap between net and gross is the discount, so the wrong choice moves every derived
-        figure by exactly the amount somebody wanted to see
+  - id: net_revenue.aggregation.never_from_unit_prices
+    subject: NetRevenue
+    kind: mac.concept.rule.aggregation
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - net_amount
+    - net_price
+    when: revenue is asked for over any set of sales
+    then: sum `{net_amount}` — it is already quantity x `{net_price}` on the row
+    never: 'sum or average `{net_price}`
+
+      '
+    why: 'a per-unit level added across sales is a number that still looks like money and understates
+      the true total on every row with quantity above one
+
+      '
+  - id: net_revenue.default.revenue_means_net
+    subject: NetRevenue
+    kind: mac.concept.rule.default
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - net_amount
+    when: a question says "revenue" or "sales" without saying net or gross
+    then: 'answer with `{net_amount}` and say NET — it is after discount; the figure before discount is
+      [[GrossRevenue]]
+
+      '
+    never: 'pick one silently
+
+      '
+    why: 'the gap between net and gross is the discount, so the wrong choice moves every derived figure
+      by exactly the amount somebody wanted to see
+
+      '
 governance:
   owner: operator
   last_reviewed: '2026-09-29'

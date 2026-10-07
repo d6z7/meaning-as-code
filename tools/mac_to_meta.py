@@ -656,7 +656,21 @@ def _concept_doc(name, spec, tables, source):
       "concept": {
         "name": name, "label": spec["label"], "class": _sub(_META_CLASS, source),
         "identity": identity, "definition": _sub(spec["definition"], source)},
-      "grounding": {"field_roles": field_roles, "sources": sources, "grain": _sub(spec["grain"], source)},
+      # `grounding.grain` IS RETIRED 2026-10-07 (column_declaration.md rev 5: "DO NOT WRITE `grain:`
+      # UNDER `grounding:`... a prose restatement of it"). The grain is now `source.key`, already
+      # carried per-relation above as `"key": key` — dropping the prose here removes a restatement,
+      # not a fact.
+      #
+      # `sources` (plural) IS NOT RENAMED HERE. `grounding.sources` is now `not: {}` in
+      # mac.schema.json — a hard load error — but 4 of these 8 meta-concepts (Measure, Dimension,
+      # Rule, Edge) are genuinely grounded on TWO OR THREE relations each (e.g. Measure:
+      # meta_measures + meta_kpi_variants), which the new standard says is "a transform view, or
+      # two concepts and an edge" — an ARCHITECTURAL decision (which relations fold into a view,
+      # which become separate meta-concepts joined by an edge) that this task is not authorised to
+      # make unilaterally for the meaning plane's own self-description. Converting to `source:`
+      # singular by silently keeping only the first relation would re-create the exact silent data
+      # loss the schema's `not: {}` ban exists to prevent, one layer up. Left AS A REPORTED GAP.
+      "grounding": {"field_roles": field_roles, "sources": sources},
       "contract": {
         "governing_rule": _META_GOVERNING_RULE,
         "answers": _sub(spec["answers"], source),

@@ -123,10 +123,10 @@ concept:
 {measure_type}
     unit: widgets
 grounding:
-  sources:
-    - relation: {relation}
-      key: [widget_code]
-      columns: [widget_code, amount]
+  source:
+    relation: {relation}
+    key: [widget_code]
+    columns: [widget_code, amount]
 """
 
 ENUM_CONCEPT = """\
@@ -316,7 +316,7 @@ try:
     check("datasets" in " ".join(u.searched),
           f"Unresolved carries the dirs actually searched {u.searched} — that is how a gate "
           f"reproduces its own wording")
-    eq(u.site.path, "grounding.sources[0].relation", "Unresolved carries the referring SITE")
+    eq(u.site.path, "grounding.source.relation", "Unresolved carries the referring SITE")
 
     ve = [c for c in Bd.concepts() if c.stem == "badenum"][0]
     check(isinstance(ve.values.register, M.Unresolved), "a missing register resolves to Unresolved")
@@ -430,7 +430,7 @@ try:
     grounding = Bf.concept("WidgetCount").groundings[0]
     check(bool(grounding.relation), "a grounding resolves to its Relation")
     eq(grounding.columns, ("widget_code", "amount"),
-       "grounding.sources[].columns is carried as a SELECTION, not folded into the descriptor")
+       "grounding.source.columns is carried as a SELECTION, not folded into the descriptor")
 
     # ===============================================================================================
     # 5. scopes + caching

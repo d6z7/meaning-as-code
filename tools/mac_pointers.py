@@ -1566,10 +1566,17 @@ def _judge(bundle: Path, name: str, kind: dict, rel: str, locator: str, value: s
         cols: dict[str, str | None] = {}
         g = (doc or {}).get("grounding") if isinstance(doc, dict) else None
         if isinstance(g, dict):
-            for src in (g.get("sources") or []):
-                relation = (src or {}).get("relation")
+            # `grounding.source` IS SINGULAR since 2026-10-07 (column_declaration.md rev 5):
+            # `sources:` as a list is now a schema load error, so there is one relation to read,
+            # not several to loop over. MEASURED the day this was found: 23 of 560
+            # `concept_binds_column` pointers resolved to nothing on contoso5 because this read the
+            # dead plural key and saw zero columns for every concept — the exact "reader on a dead
+            # address while reporting success" failure this estate keeps naming.
+            src = g.get("source")
+            if isinstance(src, dict):
+                relation = src.get("relation")
                 relation = relation if isinstance(relation, str) and relation else None
-                c = (src or {}).get("columns")
+                c = src.get("columns")
                 if isinstance(c, dict):
                     for col in c:
                         cols.setdefault(col, relation)

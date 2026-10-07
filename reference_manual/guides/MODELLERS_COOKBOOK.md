@@ -112,7 +112,7 @@ Inside a concept, facts still have one home each (SPEC §6):
 
 ```
 "how to REASON with this" (purpose, scope, null meaning)                    → concept.semantics:
-how a NUMBER FOLDS (the aggregate's type and unit)                          → a column's roles:
+how a NUMBER FOLDS (the aggregate's type and unit)                          → a column's offers:
 the VALUE SET of an enumeration (+ its closure)                             → values: / value_set:
 a primitive attribute of the thing                                          → properties:
 the state machine of an event                                              → lifecycle:

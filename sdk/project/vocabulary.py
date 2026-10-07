@@ -39,23 +39,22 @@ import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
 import mac_vocab as _mv  # noqa: E402
 
-#: THE ONE READER OF A COLUMN'S DECLARATION, for the counts below. This module's own docstring records
-#: what a SECOND COPY of a closed term set costs — the curated list "had drifted every way a copy can"
-#: — and on 2026-10-07 it drifted the other way: the vocabularies it NAMES were retired under it.
-#: MEASURED on `sdk/authoring/exemplars/bundle`: the `Field roles` group rendered 0 terms and the
-#: `Identity kind` group 0 terms, because `mac.concept.column.role` and `mac.concept.identity` no
-#: longer exist — so the glossary showed two empty groups and the page read as a framework with no
-#: roles and no identity vocabulary at all.
-import mac_project as _P  # noqa: E402
+#: `mac_project` ISN'T IMPORTED HERE ANY MORE. It was, for `column_identity` — the "Identity kind"
+#: group's per-use counter — and that group is DROPPED (see `_GROUP_ORDER`'s comment): the fact
+#: `column_identity` reads (`references:`, a concept name) is an open string, not a closed term set
+#: a glossary counts uses of. This module's own docstring records what a SECOND COPY of a closed
+#: term set costs ("had drifted every way a copy can") — removing a dead import is the same
+#: discipline the other direction: no reader left pointing at a fact this file no longer renders.
 
 
-# THE ROLE NAMESPACE STOPPED BEING A SOURCE FACT ON 2026-10-07. It was one: every source defined its
-# own `<source>.field_role.dimension`, and `build()` substituted the prefix it MEASURED so the public
-# bundles would not carry one instance's name. The `roles:` map that replaced the scalar is MAC-CORE —
-# `mac.concept.column.roles.<term>`, the same five terms in every bundle — so there is no per-source
-# prefix left to measure and a placeholder standing in for one would be a hole with no filler. The
-# constant survives as the group's namespace, now a fact rather than a template.
-FIELD_ROLE_NS = "mac.concept.column.roles.*"
+# THE ROLE NAMESPACE STOPPED BEING A SOURCE FACT ON 2026-10-07 MORNING. It was one: every source
+# defined its own `<source>.field_role.dimension`, and `build()` substituted the prefix it MEASURED
+# so the public bundles would not carry one instance's name. The `roles:` map that replaced the
+# scalar is MAC-CORE — `mac.concept.column.roles.<term>`, the same five terms in every bundle — so
+# there is no per-source prefix left to measure and a placeholder standing in for one would be a hole
+# with no filler. The constant survives as the group's namespace, now a fact rather than a template.
+# RENAMED THE SAME AFTERNOON, `roles:` -> `offers:` (column_declaration.md rev 5).
+FIELD_ROLE_NS = "mac.concept.column.offers.*"
 
 # group, namespace, note, [(term, meaning)] — the groups NO framework vocabulary declares. Anything
 # that has a block in mac_vocabulary.yaml does not belong here; see FRAMEWORK below.
@@ -116,36 +115,24 @@ CURATED = [
 # their meanings are read from the block at build time; nothing here names a term.
 FRAMEWORK = [
     (
-        # `mac.concept.column.role` WAS RETIRED WITH THE SCALAR IT NAMED, 2026-10-07, together with
-        # `mac.concept.column.query_use` — "the machine-readable half" of it. One fact in two
-        # vocabularies, of which only one had a key in mac.schema.json and neither could say that a
-        # join key is also an axis (21 of contoso5's 112 columns). `mac.concept.column.roles` is the
-        # whole declaration now, and this group measured 0 terms until it pointed there.
+        # `mac.concept.column.role` WAS RETIRED WITH THE SCALAR IT NAMED, 2026-10-07 MORNING,
+        # together with `mac.concept.column.query_use` — "the machine-readable half" of it. One
+        # fact in two vocabularies, of which only one had a key in mac.schema.json and neither
+        # could say that a join key is also an axis (21 of contoso5's 112 columns). THE SAME
+        # AFTERNOON `roles:` -> `offers:` (column_declaration.md rev 5); `mac.concept.column.offers`
+        # is the whole declaration now, and this group measured 0 terms until it pointed there.
         "Field roles",
         FIELD_ROLE_NS,
         "What a question may DO with each column of a concept's grounding — declared as a MAP under "
-        "`roles:`, each term carrying its own qualifier; the closed term set is "
-        "mac.concept.column.roles.",
-        "concept.column.roles",
+        "`offers:`, each term carrying its own qualifier; the closed term set is "
+        "mac.concept.column.offers.",
+        "concept.column.offers",
     ),
     (
         "Rule kinds",
         "mac.concept.rule.*",
         "The kind of behavioural contract a rule expresses (MAC-core, source-agnostic).",
         "concept.rule",
-    ),
-    (
-        # `mac.concept.identity` IS GONE AND SO IS THE BLOCK IT DESCRIBED. `concept.identity` left
-        # mac.schema.json on 2026-10-05 (operator: "declare on concept level only what belongs to the
-        # concept level") because identity is a COLUMN fact — which column is the key, which compose a
-        # composite, which a count DISTINCTs. The surviving vocabulary is
-        # `mac.concept.column.identity`, whose own description says "THE ONLY HOME — there is no
-        # concept-level identity block". This group measured 0 terms until it pointed there.
-        "Identity kind",
-        "grounding.sources[].columns[].roles.identity",
-        "What part a column plays in identifying one row of a concept (MAC-core; "
-        "mac.concept.column.identity).",
-        "concept.column.identity",
     ),
     (
         "Additivity",
@@ -157,10 +144,20 @@ FRAMEWORK = [
     ),
 ]
 
-#: The order the glossary renders in — stable across the 2026-09-29 change of source.
+#: "Identity kind" LEFT THIS GLOSSARY 2026-10-07 AFTERNOON — not renamed, DROPPED, and not because
+#: the block moved again: `mac.concept.column.identity` (the group's OWN vocabulary pointer, set
+#: when `concept.identity` retired 2026-10-05) is gone from mac_vocabulary.yaml WITH NO SUCCESSOR
+#: BLOCK. The fact it named split into two, neither of them a closed TERM SET: whether a column is
+#: part of the grain is now `source.key` membership — structural, not a vocabulary a glossary lists
+#: terms for — and a column's `references:` names a CONCEPT, an open string with as many "terms" as
+#: the bundle has concepts. Keeping the group would have rendered it permanently empty (`_terms`
+#: answers `[]` for a block that does not exist) while this file's own counters still populated
+#: `idkind` from every `references:` — the glossary would COUNT usages of a group it could never
+#: SHOW, which is the "subject vanished, the check stayed green" shape this estate names outright.
+#: The order list below is one shorter for it.
 _GROUP_ORDER = [
     "Field roles", "Rule kinds", "Concept class", "Concept confidence", "Rule confidence",
-    "Identity kind", "Additivity", "Edge level",
+    "Additivity", "Edge level",
 ]
 
 
@@ -243,25 +240,21 @@ def glossary(vocab: dict) -> list:
 
 
 def _column_specs(doc: dict):
-    """Every column spec of a concept, over EVERY source — `(name, spec)` pairs.
+    """Every column spec of a concept — `(name, spec)` pairs.
 
-    THE COUNTS ARE PER COLUMN NOW, because the facts are. `mac_project.column_roles` answers for the
-    PRIMARY source only, which would undercount a concept grounded on two relations; the glossary's
-    job is "how many times is this term actually used in this ontology", so it must see all of them.
-    The part that needs judgement — the identity term, and the retired `part` -> `composite` spelling —
-    still goes through `mac_project.column_identity` below.
+    `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now a schema load
+    error) — one relation, so no union over several is needed any more.
     """
-    for src in ((doc.get("grounding") or {}).get("sources") or []):
-        if not isinstance(src, dict) or not isinstance(src.get("columns"), dict):
-            continue
-        for name, spec in src["columns"].items():
-            yield str(name), (spec if isinstance(spec, dict) else {})
+    src = (doc.get("grounding") or {}).get("source")
+    if not isinstance(src, dict) or not isinstance(src.get("columns"), dict):
+        return
+    for name, spec in src["columns"].items():
+        yield str(name), (spec if isinstance(spec, dict) else {})
 
 
 def build(concepts: dict, ont_edges: list | None = None) -> dict:
     # count how often each term is actually used across this ontology
-    field_roles, rule_kinds, classes, mconf, rconf, idkind, additiv = (
-        Counter(),
+    field_roles, rule_kinds, classes, mconf, rconf, additiv = (
         Counter(),
         Counter(),
         Counter(),
@@ -273,25 +266,20 @@ def build(concepts: dict, ont_edges: list | None = None) -> dict:
         con = c.get("concept") or {}
         classes[con.get("class")] += 1
         mconf[(c.get("metadata") or {}).get("confidence")] += 1
-        # THE TWO COLUMN GROUPS ARE COUNTED FROM THE COLUMNS, 2026-10-07. `Field roles` counted
-        # `grounding.field_roles`, the LEGACY block a bundle on the column standard does not carry at
-        # all, and `Identity kind` counted `concept.identity.kind`, a key mac.schema.json no longer
-        # admits. MEASURED on `sdk/authoring/exemplars/bundle`: both counters came out EMPTY over 35
-        # columns declaring 65 role terms and 12 identity terms, so the two groups rendered as a
-        # framework with no roles and no identity vocabulary.
+        # `Field roles` IS COUNTED FROM THE COLUMNS, 2026-10-07. It counted `grounding.field_roles`,
+        # the LEGACY block a bundle on the column standard does not carry at all, so the group
+        # rendered as a framework with no roles. `Identity kind` (which counted
+        # `concept.identity.kind`, also gone) is DROPPED, not fixed — see `_GROUP_ORDER`'s comment.
         #
         # ONE COLUMN CONTRIBUTES SEVERAL ROLE TERMS and that is the whole point of the map replacing
-        # the scalar: a join key a question also groups by claims `identity` AND `axis`, which the
-        # single `field_roles` value could not express and which is 21 of contoso5's 112 columns.
-        # Counting the map's KEYS is therefore counting uses, not columns, and the denominator a
-        # reader should compare against is the role count, never the column count.
+        # the scalar: a join key a question also groups by claims `axis` AND `aggregate`, which a
+        # single scalar could not express and which is 21 of contoso5's 112 columns. Counting the
+        # map's KEYS is therefore counting uses, not columns, and the denominator a reader should
+        # compare against is the role count, never the column count.
         for _name, spec in _column_specs(c):
-            roles = spec.get("roles") if isinstance(spec.get("roles"), dict) else {}
-            for term in roles:
+            offers = spec.get("offers") if isinstance(spec.get("offers"), dict) else {}
+            for term in offers:
                 field_roles[_strip(term)] += 1
-            ident = _P.column_identity(spec)
-            if ident:
-                idkind[ident] += 1
         # fold effects may be written bare or `mac.`-qualified; the glossary's terms are bare, so the
         # count is keyed bare too
         for ax in ((con.get("semantics") or {}).get("additivity") or {}).values():
@@ -306,7 +294,6 @@ def build(concepts: dict, ont_edges: list | None = None) -> dict:
         "Concept class": classes,
         "Concept confidence": mconf,
         "Rule confidence": rconf,
-        "Identity kind": idkind,
         "Additivity": additiv,
         "Edge level": edge_levels,
     }

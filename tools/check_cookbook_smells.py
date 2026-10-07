@@ -97,7 +97,7 @@ def check_cookbook_smells(root) -> list:
     for rel, doc, r in _rules(root):
         rid = str(r["id"])
         shape = ".".join(rid.split(".")[1:]) or rid
-        for s in ((doc.get("grounding") or {}).get("sources") or []):
+        for s in ([_s] if isinstance(_s := ((doc).get("grounding") or {}).get("source"), dict) else []):
             k = s.get("key") if isinstance(s, dict) else None
             declared |= {k} if isinstance(k, str) else set(k or ())
         declared |= set(((doc.get("concept") or {}).get("semantics") or {}).get("axis_kinds") or {})

@@ -197,96 +197,70 @@ def column_reference(col: dict) -> dict | None:
 
 
 def column_identity(spec) -> str | None:
-    """A column's declared identity, from the ONE home the column standard gives it.
+    """A column's declared foreign key TARGET — the concept its values identify, or None.
 
-    `roles: {identity: ...}` since 2026-10-07; the flat `identity:` beside `role:` before that.
-    Both are read, because a reader that only knew the new shape would report a conformant older
-    bundle as having no key at all — the exact failure CONFORMANCE §2.1 records from the last move
-    (five readers broke, not one loudly). `part` is the old spelling of `composite`.
+    REWIRED 2026-10-07 (column_declaration.md rev 5, the four-agent design review). `roles: {identity:
+    reference}` only ever said THAT a column pointed elsewhere; the target then had to be RECOVERED
+    by matching column names against concepts whose own key was that column — an inference that has
+    been observed to fail (see the key's own docstring on the authoring side, `references`'s
+    schema description). `identity: canonical`/`identity: composite` LEFT THIS READER ENTIRELY: a
+    row's grain is `source.key`, one ordered list on the SOURCE, not a flag that can be scattered
+    across columns and go out of order when two YAML blocks are swapped — `canonical_key`/`key_parts`
+    read that list directly and never come through here.
+
+    So `column_identity` now answers exactly one question — "does this column carry `references:`,
+    and if so, which concept?" — the same question `references` itself answers; this helper exists so
+    every reader of the old name keeps a one-line call instead of inlining `spec.get("references")`.
     """
     if not isinstance(spec, dict):
         return None
-    roles = spec.get("roles")
-    found = (roles.get("identity") if isinstance(roles, dict) else None) or spec.get("identity")
-    if not found:
-        return None
-    term = str(found).rsplit(".", 1)[-1].strip().lower()
-    return "composite" if term == "part" else term
+    ref = spec.get("references")
+    return ref.strip() if isinstance(ref, str) and ref.strip() else None
 
 
 def source_key(doc: dict) -> list:
-    """`grounding.sources[0].key` — WHAT MAKES ONE ROW UNIQUE, in the order the author wrote.
+    """`grounding.source.key` — WHAT MAKES ONE ROW UNIQUE, in the order the author wrote.
 
-    THE ONE HOME since 2026-10-07, operator ruling: *"lets list columns which make indentiy
-    explicitly ... how about we name it key and put it below relation"*. It was derived from the
-    columns carrying `identity: canonical`/`composite`, which could not state an ORDER — and the
-    order reaches the SQL, so swapping two column blocks silently changed the key. A bare string is
-    a one-column key.
+    `source:` is SINGULAR as of 2026-10-07 (column_declaration.md rev 5) — `sources:` as a list is
+    now `not: {}` in mac.schema.json, a LOAD ERROR rather than the silent drop it used to be (a
+    second entry was never honoured; 17 of 17 contoso5 concepts declared exactly one). A concept
+    binds one relation, so there is one `key` to read, never a list to scan `[:1]` off.
     """
-    for src in ((doc.get("grounding") or {}).get("sources") or [])[:1]:
-        if isinstance(src, dict) and src.get("key"):
-            k = src["key"]
-            return [str(x) for x in (k if isinstance(k, list) else [k])]
+    src = (doc.get("grounding") or {}).get("source")
+    if isinstance(src, dict) and src.get("key"):
+        k = src["key"]
+        return [str(x) for x in (k if isinstance(k, list) else [k])]
     return []
 
 
 def canonical_key(doc: dict) -> str | None:
     """THE single column that identifies an instance, or None — a ONE-COLUMN `key`.
 
-    "Exactly one column identifies a row" is now "the key list holds one name", which is why this
-    reads the list rather than scanning columns for a flag. CONFORMANCE §2.1 retired
-    `concept.identity.canonical_key` in 2026-09; the column flag that replaced it was retired in
-    turn on 2026-10-07, for being unable to express the key's order. Both retirements left readers
-    pointing at a dead address and NOT ONE failed loudly — measured on contoso4 the first time
-    (11 of 20 concepts reported unable to supply their `select` step) — which is why this is the
-    only reader and every gate comes here.
-
-    THE COLUMN SCAN REMAINS as a fallback, for a bundle that has not moved: `identity: canonical`
-    on a column still answers, and `part`/`composite` still answer `key_parts`.
+    Reads `source.key` ONLY. The column-scan fallback this carried until 2026-10-07 (`identity:
+    canonical` on a column, read when the source had no `key` of its own) is retired WITH the flag
+    it scanned for: `source.key` is now REQUIRED (`mac.schema.json#$defs.grounding.source.required:
+    [relation, key]`), so a bundle that validates always has one to read here, and a bundle that
+    does not validate is not a case this reader should paper over by guessing from a column instead.
     """
     key = source_key(doc)
-    if len(key) == 1:
-        return key[0]
-    if key:
-        return None
-    for src in ((doc.get("grounding") or {}).get("sources") or []):
-        if not isinstance(src, dict):
-            continue
-        cols = src.get("columns")
-        if not isinstance(cols, dict):
-            continue
-        for col, spec in cols.items():
-            if column_identity(spec) == "canonical":
-                return str(col)
-    return None
+    return key[0] if len(key) == 1 else None
 
 
 def key_parts(doc: dict) -> list:
     """The columns of a COMPOSITE identity — a `key` of two or more, in the authored order.
 
     A composite key cannot be written as one string, which is why `canonical_key` returns None for
-    one and a reader asking "does this concept identify its own rows" must accept both. Three
-    contoso4 concepts (ExchangeRate, OrderLine, SalesAmount) identify only this way.
+    one and a reader asking "does this concept identify its own rows" must accept both. See
+    `canonical_key` for why the old `identity: composite` column-scan fallback is gone rather than
+    kept beside this: `source.key` is required, so there is nothing left for it to catch.
     """
     key = source_key(doc)
-    if len(key) > 1:
-        return key
-    if key:
-        return []
-    for src in ((doc.get("grounding") or {}).get("sources") or []):
-        if not isinstance(src, dict):
-            continue
-        cols = src.get("columns")
-        if not isinstance(cols, dict):
-            continue
-        parts = [str(c) for c, spec in cols.items() if column_identity(spec) == "composite"]
-        if parts:
-            return parts
-    return []
+    return key if len(key) > 1 else []
 
 
 def column_role(spec, key: list | tuple = ()) -> str:
-    """The five-name scalar a column no longer authors, DERIVED from its `roles` map.
+    """The five-name scalar a column no longer authors, DERIVED from its `offers` map and the
+    source's own `key`.
 
     ONE HOME FOR A ONE-LINE LAW, which is the whole point. The authoritative derivation is
     mac-platform's `ontology/models.py#ColumnSpec.role`, verified there against all 112 of
@@ -295,32 +269,43 @@ def column_role(spec, key: list | tuple = ()) -> str:
     `tests/test_column_roundtrip.py` pins the two together whenever the platform sits beside this
     repo — a second copy is only safe while something compares it, and that is the comparison.
 
+    REWIRED for the `roles:` -> `offers:` rename (column_declaration.md rev 5), and CORRECTED the
+    same day: `references` does NOT leave the derivation. An earlier revision of this docstring said
+    it did, citing the reference manual's "Derived" table — that table was wrong, and the tests
+    agent's `tests/test_column_roundtrip.py` (which pins this function against mac-platform's
+    `ColumnSpec.role_within` over every column of contoso5) caught it: dropping `references` moved
+    25 of 112 columns from `key` to `dimension`, every one of them a foreign key with no key-making
+    `offers` of its own (`customer_key`, `store_key`, `product_key` on GrossRevenue and five
+    siblings — `offers: {axis: categorical}`, `references: Customer/Store/Product`, not a member of
+    the concept's OWN `key`). `role: key` always meant "identity OR join column", and a reference IS
+    a join column — 18 of them were authored `key` before any of this moved, which the regression
+    gate (that same test) now holds this derivation to.
+
     THE PRECEDENCE IS THE OLD VOCABULARY'S AND IT IS CHECKED. A column that folds is a measure; one
-    that binds the period is the period; one that identifies is a key -- EXCEPT where it is also the
-    canonical column of an axis, which an enumeration's member column is (`brand.brand`,
-    `color.color`), and those three were authored `dimension` where 18 reference keys that are also
-    axes were authored `key`. Without that branch the derivation reproduced 109 of 112; with it,
-    112 of 112.
+    that binds the period is the period; one that identifies OR REFERENCES is a key -- EXCEPT where
+    the identifying column is ALSO the canonical column of an axis, which an enumeration's member
+    column is (`brand.brand`, `color.color`), and those three were authored `dimension` where 18
+    reference keys that are also axes were authored `key`. Without that branch the derivation
+    reproduced 109 of 112; with it and with `references` restored, 112 of 112.
     """
-    roles = (spec or {}).get("roles") if isinstance(spec, dict) else None
-    roles = roles if isinstance(roles, dict) else {}
-    if roles.get("aggregate") is not None or (isinstance(spec, dict) and spec.get("measure")):
+    offers = (spec or {}).get("offers") if isinstance(spec, dict) else None
+    offers = offers if isinstance(offers, dict) else {}
+    if offers.get("aggregate") is not None:
         return "measure"
-    if roles.get("period_binding") or (
-        isinstance(spec, dict) and str(spec.get("role") or "").rsplit(".", 1)[-1] == "period"
-    ):
+    if offers.get("period_binding"):
         return "period"
-    identity = column_identity(spec)
-    axis = roles.get("axis") or (spec or {}).get("axis") if isinstance(spec, dict) else None
+    axis = offers.get("axis")
     # THE KEY IS AN ARGUMENT because it is on the SOURCE (2026-10-07), and a key column carries no
-    # identity role of its own. A ONE-COLUMN key whose column is also an axis derives `dimension`:
-    # an enumeration's key column IS the member you group by (brand.brand, color.color,
-    # category_name), and those three are exactly the 3 of 112 this branch exists for.
+    # role of its own beyond membership. A ONE-COLUMN key whose column is also an axis derives
+    # `dimension`: an enumeration's key column IS the member you group by (brand.brand, color.color,
+    # category_name), and those three are exactly the 3 of 112 this branch exists for. This
+    # exception applies ONLY to the concept's OWN key — a column that merely `references` another
+    # concept and also carries an axis (18 of 112) is a key regardless, checked next.
     name = str((spec or {}).get("name") or "") if isinstance(spec, dict) else ""
     in_key = bool(name) and name in [str(k) for k in (key or ())]
     if in_key and len(key) == 1 and axis:
         return "dimension"
-    if in_key or identity:
+    if in_key or column_identity(spec):
         return "key"
     if axis:
         return "dimension"
@@ -328,32 +313,26 @@ def column_role(spec, key: list | tuple = ()) -> str:
 
 
 def column_roles(doc: dict, role: str) -> dict:
-    """`{column: <the role's value>}` for every column of the PRIMARY source claiming ``role``.
+    """`{column: <the use's value>}` for every column of the source claiming `offers.<role>`.
 
     The one reader for "which columns of this concept fold / are axes / bind the period", over the
-    `roles` map the column standard authors. A bare `true` flag comes back as `True`; an absent role
-    is simply not a key. The OLD flat spellings are read too (`measure:` for `aggregate`, `axis:`,
-    `role: period` for `period_binding`) so an unmigrated bundle still measures.
+    `offers` map the column standard authors (`roles` until 2026-10-07). THE OLD FLAT SPELLINGS this
+    used to fall back to (`measure:`, `axis:`, `role: period`) are not read any more: they belonged
+    to a shape that predates `roles:` itself, and `sources:` as a list — the only place they could
+    have lived — is now a schema load error (`not: {}`), so there is no bundle left for the fallback
+    to catch that would not already fail to validate.
     """
     out: dict = {}
-    for src in ((doc.get("grounding") or {}).get("sources") or [])[:1]:
-        if not isinstance(src, dict):
+    src = (doc.get("grounding") or {}).get("source")
+    cols = src.get("columns") if isinstance(src, dict) else None
+    if not isinstance(cols, dict):
+        return out
+    for col, spec in cols.items():
+        if not isinstance(spec, dict):
             continue
-        cols = src.get("columns")
-        if not isinstance(cols, dict):
-            continue
-        for col, spec in cols.items():
-            if not isinstance(spec, dict):
-                continue
-            roles = spec.get("roles") if isinstance(spec.get("roles"), dict) else {}
-            if role in roles:
-                out[str(col)] = roles[role]
-                continue
-            legacy = {"aggregate": spec.get("measure"), "axis": spec.get("axis")}.get(role)
-            if legacy:
-                out[str(col)] = legacy
-            elif role == "period_binding" and str(spec.get("role") or "").rsplit(".", 1)[-1] == "period":
-                out[str(col)] = True
+        offers = spec.get("offers") if isinstance(spec.get("offers"), dict) else {}
+        if role in offers:
+            out[str(col)] = offers[role]
     return out
 
 
@@ -411,24 +390,34 @@ def rel(root, path) -> str:
 # admits, retired 2026-10-05) and the legacy `columns:` LIST, which can hold no identity at all —
 # so every gate shipping this harness asked its question of a bundle that answered nothing, and
 # check_answerability's own `select` mutant fired on the clean fixture because of it.
+#
+# REWIRED 2026-10-07 for column_declaration.md rev 5: `grounding.sources` (list) -> `grounding.source`
+# (singular, `not: {}` on the old list makes it a load error rather than a silent drop);
+# `roles` -> `offers`; `roles.identity: canonical` -> `source.key` (the key now names itself, in
+# order, on the source — not a flag scattered across columns); `roles.axis: mac.concept.axis.*` ->
+# bare `offers.axis: categorical`; `rulings.label_of` now REQUIRES its companion `rulings.naming`
+# (`dependentRequired` in mac.schema.json). `concept.class: reference` is ALSO gone (shrunk to four
+# terms 2026-10-05, operator ruling) — `entity` is its replacement — fixed here too, since a fixture
+# that fails schema validation on an unrelated retired term is not the clean fixture this harness needs.
 _CONCEPT_DOC = """concept:
   name: Widget
   label: Widget
-  class: reference
+  class: entity
   semantics:
     definition: A fixture object. Domain-neutral on purpose - it names nothing real.
 grounding:
-  sources:
-    - relation: widget_register
-      columns:
-        widget_code:
-          roles:
-            identity: canonical
-            axis: mac.concept.axis.categorical
-        widget_name:
-          roles: {}
-          rulings:
-            label_of: widget_code
+  source:
+    relation: widget_register
+    key: widget_code
+    columns:
+      widget_code:
+        offers:
+          axis: categorical
+      widget_name:
+        offers: {}
+        rulings:
+          label_of: widget_code
+          naming: common
 """
 
 # (name, expect_refusal, what it proves). A fixture that cannot fail is not a fixture: the three

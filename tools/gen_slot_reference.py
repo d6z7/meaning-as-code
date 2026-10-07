@@ -76,7 +76,7 @@ import check_vocabulary_parity as parity  # noqa: E402 — the ONE home of the s
 #: parity gate declares three pairs, this declares the rest"): two tables of one fact.
 PAGES = (
     ("column_map", "The column map — everything about one column, on the column",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+     ["$defs", "grounding", "properties", "source", "properties", "columns",
       "oneOf", 1, "additionalProperties"],
      "Keyed by column name; each value is that column's flags, or `null` to serve the column and say "
      "nothing more. This is the CONCEPT plane's view of a column — what a query may do with it. The "

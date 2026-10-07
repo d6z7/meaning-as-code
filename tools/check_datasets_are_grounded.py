@@ -71,7 +71,7 @@ def bound_relations(concepts: list[dict]) -> set[str]:
     concept may write `mart.dim_thing` while a descriptor writes schema and name apart."""
     out: set[str] = set()
     for c in concepts:
-        for s in ((c.get("grounding") or {}).get("sources") or []):
+        for s in ([_s] if isinstance(_s := ((c).get("grounding") or {}).get("source"), dict) else []):
             rel = str(s.get("relation") or "").strip()
             if rel:
                 out.add(rel)

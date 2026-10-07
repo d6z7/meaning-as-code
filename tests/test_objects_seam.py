@@ -154,9 +154,9 @@ def _concept(name: str, relation: str) -> str:
         "metadata:\n"
         "  confidence: I\n"
         "grounding:\n"
-        "  sources:\n"
-        f"    - relation: {relation}\n"
-        "      key: alpha_key\n"
+        "  source:\n"
+        f"    relation: {relation}\n"
+        "    key: alpha_key\n"
     )
 
 

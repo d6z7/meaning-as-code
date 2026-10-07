@@ -47,7 +47,7 @@ shapes:
     severity: error
     constraint:
       kind: required
-      path: grounding.sources[].columns{}.roles.aggregate.type
+      path: grounding.source.columns{}.offers.aggregate.type
 
   # v0.1.18: the UNIT is what makes an operation decidable. Two measures may be compared or
   # subtracted only if their units are equal; a ratio is always defined and yields unit_a/unit_b.
@@ -61,7 +61,7 @@ shapes:
     severity: error
     constraint:
       kind: required
-      path: grounding.sources[].columns{}.roles.aggregate.unit
+      path: grounding.source.columns{}.offers.aggregate.unit
 
   # THE AXIS IS PER COLUMN, AND ALWAYS WAS. `concept.semantics.axis_kinds` was a map keyed by
   # COLUMN name sitting on the concept, and the fold law looked it up by a lowercased CONCEPT name:
@@ -75,7 +75,7 @@ shapes:
     severity: error
     constraint:
       kind: required
-      path: grounding.sources[].columns{}.roles.axis
+      path: grounding.source.columns{}.offers.axis
 
   # CANONICAL IDENTITY — the shape `concept-declares-identity` was RETIRED 2026-10-05 with the slot it
   # policed. It required `concept.identity.kind`; identity is now read off the columns alone

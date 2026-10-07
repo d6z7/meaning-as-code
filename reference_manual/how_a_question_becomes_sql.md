@@ -95,14 +95,15 @@ loader infers it.
 
 ### What the specification changes
 
-`domain.register` on the column turns an inference into a statement:
+A register **on the column** turns an inference into a statement — `value_register` is the live
+key for it, and the designed `domain` block adds only whether the list is complete:
 
 ```yaml
-Gender:
-  roles: {axis: mac.concept.axis.categorical}
-  domain:
+gender:
+  offers: {axis: categorical}
+  value_register: data/lookups/contoso5_gender.lookup.yaml   # the live key
+  domain:                                                    # DESIGNED — a load error today
     closure: closed
-    register: data/lookups/contoso_gender.lookup.csv
 ```
 
 Now the link is readable where the column is, and renaming either side is a **load error** instead
@@ -141,13 +142,13 @@ This is the step everyone forgets, and the one that fails silently.
 > held it, so the planner fell back to the concept's identity column and emitted:
 >
 > ```sql
-> WHERE dim_contoso_customer.CustomerKey = 'female'
+> WHERE dim_customer.customer_key = 'female'
 > ```
 >
 > DuckDB refused to cast `'female'` to INT32, which is the *lucky* outcome. **On a varchar key the
 > same plan returns zero rows and reads as an answer.**
 
-**Switch:** `grounding.columns.<C>` — and note this one is *implemented but declared nowhere*: the
+**Switch:** `grounding.source.columns.<C>` — and note this one is *implemented but declared nowhere*: the
 runtime assumes the CSV's first field is the source column, and no schema says so.
 
 ---
@@ -220,16 +221,21 @@ Both work. Only one can be read.
 > answered.
 
 **Switches:** which canon, and whether the runtime implements it → `mac.canon.*`,
-`check_canon_implemented.py`. In the specification this becomes `domain.register` +
-`resolution.search` + `resolution.display` on the column itself.
+`check_canon_implemented.py`. On the column standard the register itself is already there, as
+`value_register`; what is still designed is `resolution.search` + `resolution.display`, which say
+which of its columns a word is matched and printed from.
 
 ## Step 5 — what is being counted?
 
 "How many customers" needs to know what **one customer** is.
 
-| decided by | `identity: canonical` on `CustomerKey` |
+| decided by | `key: customer_key` on the **source** — one column, so it is the canonical identity |
 |---|---|
-| **what it produces** | `COUNT(DISTINCT CustomerKey)`, and a disclosure naming the key it counted |
+| **what it produces** | `COUNT(DISTINCT customer_key)`, and a disclosure naming the key it counted |
+
+Where the relation is served FINER than the thing, `counts:` on the source names the column a count
+DISTINCTs instead: `dim_store` is keyed on `store_key` over 74 trading periods and declares
+`counts: location_code`, so a count of stores answers 67 and says which column it counted.
 
 Without it the question is not wrong — it is **unanswerable**, because nothing declares which
 column identifies one instance. The dimension over-covers the fact here (52 189 of 104 990
@@ -246,7 +252,7 @@ The SQL is not the answer. What travels with it:
 |---|---|
 | `constraints[].assert` | *"Country determines Continent — the roll-up is a function, measured 0 of 8 countries on two continents"* |
 | `contract.rules[].why` | why a store-side continent figure is refused |
-| the canonical column | *"counted by CustomerKey"* |
+| the source's `key` | *"counted by customer_key"* — or the column `counts:` names, where the two differ |
 | `metadata.confidence` | reduced to the minimum over everything touched |
 
 ---
@@ -266,7 +272,7 @@ The SQL is not the answer. What travels with it:
    ├───────────────────────────┤
    │ 4  Which codes?           │   C · RESOLUTION   — canon, roll-up, scope
    ├───────────────────────────┤
-   │ 5  What is counted?       │   B · CAPABILITY   — identity, role, additivity
+   │ 5  What is counted?       │   B · CAPABILITY   — the source's key, offers, additivity
    ├───────────────────────────┤
    │ 6  What is disclosed?     │   F · DISCLOSURE   — caveats, defaults, confidence
    └───────────────────────────┘
@@ -286,6 +292,6 @@ cannot say it.
 | you want to | read |
 |---|---|
 | declare everything about a column, in one place | [column_specification.md](column_specification.md) |
-| decide what a column IS | [column_roles.md](column_roles.md) |
+| decide what a column offers | [column_roles.md](column_roles.md) |
 | declare something measurement cannot establish | [column_rulings.md](column_rulings.md) |
 | recognise a shape you have been handed | [patterns/](patterns/) — 22 constellations |

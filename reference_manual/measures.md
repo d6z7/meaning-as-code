@@ -1,8 +1,15 @@
 ---
 title: How a measure folds — measure_type, axes, and what a question binds
-status: measure_type and additivity are READ and enforced; binding_mode is not yet read
+status: >-
+  CURRENT (2026-10-07). `measure_type` and `additivity` are READ and enforced; `binding_mode` is not
+  yet read. A column declares its type under `offers.aggregate.type` and its axis kind under
+  `offers.axis`, both as BARE terms — `{aggregate: {type: flow, unit: USD}}`, `{axis: time}` — which
+  are closed enums in mac.schema.json as of 2026-10-07; `type` carried no enum at all before that,
+  so any spelling validated while the law it keys could match none of them. The fully qualified
+  spelling is the term's identity in mac_vocabulary.yaml and is what this page cites; it is not what
+  an author writes. Every worked measure below is a concept of contoso5.
 audience: ontology authors declaring a measure
-companions: [column_roles.md, ../mac_vocabulary.yaml, patterns/aggregation_hazards/semi_additive_balance.md]
+companions: [column_declaration.md, column_roles.md, ../mac_vocabulary.yaml, patterns/aggregation_hazards/semi_additive_balance.md]
 ---
 
 # How a measure folds
@@ -101,23 +108,36 @@ Step 4 is the one that is got wrong. *"Does it accumulate?"* — units sold in J
 in February **is** units sold in the quarter, so `Flow`. Inventory in January plus inventory in
 February is **not** inventory in the quarter, so `Stock`.
 
-### Worked — contoso's four measures
+### Worked — contoso5, every declared type
 
-| measure | type | why |
-|---|---|---|
-| `QuantitySold` | `Flow` | items sold accumulate; summable across markets and currencies |
-| `GrossSalesAmount` | `Flow` | accrues per period — **but carries a currency**, see below |
-| `NetSalesAmount` | `Flow` | likewise |
-| `ExchangeRate` | `Precomputed` | a ratio that exists at the (pair, day) it was computed for; you **locate** the row, never fold it |
+The type is on the COLUMN, not the concept, so a concept with two measure columns declares two
+types. All five terms occur in this one bundle.
 
-**`unit` does work the type does not.** `GrossSalesAmount` is `Flow`, so `SUM` is legal along every
-axis — and its unit declares that it is *"denominated in the order's own CurrencyCode (5 measured
-values) — NOT a single reporting currency"*, so two figures may be compared *"only when both are
-restricted to one currency, or both converted"*.
+| concept | column | `offers.aggregate` | why |
+|---|---|---|---|
+| `UnitsSold` | `quantity` | `{type: flow, unit: units}` | items sold accumulate; summable across markets and currencies |
+| `NetRevenue` | `net_amount` | `{type: flow, unit: USD, default: true}` | accrues per period, and it is the one a bare question about the concept folds |
+| `NetRevenue` | `net_price` | `{type: intensive, unit: USD}` | a per-unit rate on the same rows: a TOTAL of prices is not a price |
+| `ExchangeRate` | `rate` | `{type: intensive, unit: to-currency per from-currency}` | a ratio — an average across days is a reading, a sum is nothing |
+| `Store` | `square_metres` | `{type: stock, unit: m2}` | a level: additive across stores, never across months |
+| `Location` | `units_ever_here` | `{type: precomputed, unit: units}` | it exists only at the grain it was computed for; you **locate** the row and never fold it, on any axis |
 
-**The type licenses the fold. The unit licenses the comparison.** `QuantitySold` shows the other
-edge of it: summable everywhere, and its unit says a television and a cable each count 1, so a total
-across categories answers *"how many"* and never *"how much"*.
+`target` is the one term contoso5 declares nowhere, and that is a statement about the bundle rather
+than about the law: it carries no planning numbers.
+
+**One concept, two types, which is why the type is per column.** `NetRevenue` grounds `net_amount`
+(`flow`) and `net_price` (`intensive`) on one relation. `concept.semantics.measure_type` said it
+once for the whole concept and could only misreport one of them — and did: `SUM(unit_price)` planned
+and was permitted. `default: true` says which column a bare question about the concept folds, and
+with it the unit of that answer.
+
+**`unit` does work the type does not.** `net_amount` is `flow`, so `SUM` is legal along every axis —
+and its unit is what says the figure is in USD, so two figures may be compared only when both are in
+one currency or both converted.
+
+**The type licenses the fold. The unit licenses the comparison.** `quantity` shows the other edge of
+it: summable everywhere, and its unit says a television and a cable each count 1, so a total across
+categories answers *"how many"* and never *"how much"*.
 
 ---
 
@@ -274,11 +294,12 @@ something failed.
 
 - **`measure_type` and `additivity` are read and enforced** — `_check_additivity` in the planner,
   with a typed `ADDITIVITY_VIOLATION`.
-- **An axis no column classifies is defaulted, not declared.** The `axis` role on the column carries
-  the fold law and is read; where no column of the folded relation carries it, the law falls back to
-  the vocabulary's own reading of the axis's name — `time` for the temporal axis, `categorical`
-  otherwise — and a default is not a declaration.
+- **An axis no column classifies is defaulted, not declared.** The `axis` a column offers carries
+  the fold law and is read (`column_facts.axis`); where no column of the folded relation carries it,
+  the law falls back to the vocabulary's own reading of the axis's name — `time` for the temporal
+  axis, `categorical` otherwise — and a default is not a declaration.
 - **`binding_mode` is not read.**
 - **`unit` is prose.** It carries the comparison rules — same-currency, dimensionless, what a count
-  does not license — and nothing enforces them. Two `GrossSalesAmount` figures in different
-  currencies will add without complaint.
+  does not license — and nothing enforces them beyond `check_delivery_consistency`'s MEASURE-UNIT
+  invariant, which only requires that a multi-carrier concept state its composed `semantics.unit`.
+  Two `net_amount` figures in different currencies will add without complaint.

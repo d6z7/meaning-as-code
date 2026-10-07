@@ -35,14 +35,16 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
-#: THE ONE READER OF A COLUMN'S DECLARATION. The column standard moved on 2026-10-07 — a column's
-#: facts are now `grounding.sources[].columns.<name>.roles.*` and the scalar `role:` is gone — and
-#: this module read the PRE-MOVE flat keys (`identity:`, `measure:`, `axis:`) plus `grounding.grain`
-#: and `concept.identity.kind`. It therefore rendered EMPTY instead of failing: MEASURED on
-#: `sdk/authoring/exemplars/bundle`, `_configuration()` produced 0 statements for net_revenue, 0 for
-#: sale and 0 for calendar_day, and the only 3 it produced anywhere came from `rulings`, the one
-#: address the move did not touch. `tools/mac_project` already owns the read (and the retired
-#: `part` -> `composite` mapping); importing it is what keeps a sixth copy from existing.
+#: THE ONE READER OF A COLUMN'S DECLARATION. The column standard moved on 2026-10-07 MORNING — a
+#: column's facts became `grounding.sources[].columns.<name>.roles.*` and the scalar `role:` was
+#: gone — and this module read the PRE-MOVE flat keys (`identity:`, `measure:`, `axis:`) plus
+#: `grounding.grain` and `concept.identity.kind`. It therefore rendered EMPTY instead of failing:
+#: MEASURED on `sdk/authoring/exemplars/bundle`, `_configuration()` produced 0 statements for
+#: net_revenue, 0 for sale and 0 for calendar_day, and the only 3 it produced anywhere came from
+#: `rulings`, the one address the move did not touch. THE SAME AFTERNOON `roles:` moved AGAIN to
+#: `offers:` (column_declaration.md rev 5), and `grounding.sources` (list) to `grounding.source`
+#: (singular) — this module is rewired for both. `tools/mac_project` already owns the read (and
+#: the key's one home, `source.key`); importing it is what keeps a sixth copy from existing.
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / "tools"))
 import mac_project as _P  # noqa: E402
@@ -180,24 +182,25 @@ def _section(heading: str, body: list[str]) -> list[str]:
 
 
 def _columns(grounding: dict) -> dict[str, dict]:
-    out: dict[str, dict] = {}
-    for source in (grounding.get("sources") or []):
-        if isinstance(source, dict) and isinstance(source.get("columns"), dict):
-            for name, body in source["columns"].items():
-                out.setdefault(str(name), body if isinstance(body, dict) else {})
-    return out
+    """`grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now a schema load
+    error — a concept binds one relation) — the union this function used to build over several
+    sources is now just the one source's columns."""
+    source = grounding.get("source")
+    if isinstance(source, dict) and isinstance(source.get("columns"), dict):
+        return {str(n): (b if isinstance(b, dict) else {}) for n, b in source["columns"].items()}
+    return {}
 
 
-def _roles(spec: dict) -> dict:
-    """One column's `roles:` map — its ONE home since 2026-10-07, `{}` when the column declares none.
+def _offers(spec: dict) -> dict:
+    """One column's `offers:` map — its ONE home since 2026-10-07 afternoon (`roles` that morning,
+    `role`+`query_use` before that), `{}` when the column declares none.
 
     NOT A SIXTH READER OF THE STANDARD. `mac_project.column_roles(doc, role)` is the estate's reader
-    and it answers for the PRIMARY source only; `_columns` above deliberately unions EVERY source, so
-    a concept grounded on two relations keeps the second one's measures on this page. This function is
-    therefore the map lookup and nothing else — the part that needs judgement (identity, and the
-    retired `part` -> `composite` spelling) still goes through `mac_project.column_identity`.
+    and it answers for the source only; this function is the map lookup and nothing else — the part
+    that needs judgement (a column's `references`, and the key's order) goes through
+    `mac_project.column_identity` / `canonical_key` / `key_parts` instead.
     """
-    r = spec.get("roles") if isinstance(spec, dict) else None
+    r = spec.get("offers") if isinstance(spec, dict) else None
     return r if isinstance(r, dict) else {}
 
 
@@ -221,31 +224,42 @@ def _configuration(obj: dict) -> list[str]:
     grounding = obj.get("grounding") or {}
     columns = _columns(grounding)
     out: list[str] = []
-    key = [n for n, b in columns.items() if _P.column_identity(b) in ("canonical", "composite")]
+    # THE KEY IS `source.key`, ITS ONE HOME — not a column flag. `canonical_key`/`key_parts` read
+    # the WHOLE document (grounding.source.key), not this function's per-column union, which is
+    # why they take `obj` rather than `columns`.
+    key = [_P.canonical_key(obj)] if _P.canonical_key(obj) else _P.key_parts(obj)
     if key:
         out.append(f"- One row is identified by {', '.join(f'`{k}`' for k in key)}.")
     measures = {
-        n: _roles(b)["aggregate"]
+        n: _offers(b)["aggregate"]
         for n, b in columns.items()
-        if isinstance(_roles(b).get("aggregate"), dict)
+        if isinstance(_offers(b).get("aggregate"), dict)
     }
     for name, measure in measures.items():
-        bits = [str(measure.get("type", "")).rsplit(".", 1)[-1], str(measure.get("unit") or "")]
+        bits = [str(measure.get("type", "")), str(measure.get("unit") or "")]
         word = " ".join(b for b in bits if b)
-        canonical = " — the number a question about this concept folds" if measure.get("canonical") else ""
-        out.append(f"- `{name}` is a {word} measure{canonical}.")
-    axes = {n: _roles(b)["axis"] for n, b in columns.items() if _roles(b).get("axis")}
+        default = " — the number a question about this concept folds" if measure.get("default") else ""
+        out.append(f"- `{name}` is a {word} measure{default}.")
+    axes = {n: _offers(b)["axis"] for n, b in columns.items() if _offers(b).get("axis")}
     if axes:
         out.append(
             "- It is aggregated along "
-            + ", ".join(f"`{n}` ({str(k).rsplit('.', 1)[-1]})" for n, k in axes.items())
+            + ", ".join(f"`{n}` ({k})" for n, k in axes.items())
             + "."
         )
+    # `offers.suppressed`: the column IS one of the axes above and a person has ruled no question
+    # may group by it. It was `rulings: {never_axis, evidence}` — two keys in a block whose every
+    # other member names ANOTHER column, which this one never did; it is now the axis's own
+    # sibling use, required to carry `axis` alongside it (mac.schema.json dependentRequired).
+    suppressed = {n: _offers(b)["suppressed"] for n, b in columns.items() if _offers(b).get("suppressed")}
+    for name, finding in suppressed.items():
+        out.append(f"- `{name}` is a real axis and a person has ruled no question may group by "
+                   f"it: {finding}.")
     # THE REPORTING DATE, and it is the one role whose absence changes a number silently. A relation
     # with two dates answers "sales in March" from whichever one the planner picks, and the old
     # scalar spelling of this was `role: period` — a key this module never read at all, so the page
     # said nothing about it either before or after the move.
-    period = [n for n, b in columns.items() if _roles(b).get("period_binding")]
+    period = [n for n, b in columns.items() if _offers(b).get("period_binding")]
     if period:
         out.append(
             "- A period binds to "
@@ -259,19 +273,17 @@ def _configuration(obj: dict) -> list[str]:
         if rulings.get("label_of"):
             out.append(
                 f"- `{name}` is another name for `{rulings['label_of']}`'s thing"
-                + (f", in the {rulings['register']} register" if rulings.get("register") else "")
+                + (f", named {rulings['naming']}" if rulings.get("naming") else "")
                 + " — group on the named column and show this one."
             )
-        if rulings.get("never_axis"):
-            out.append(
-                f"- `{name}` must never be grouped on: {rulings['never_axis']}"
-                + (f" ({rulings['evidence']})" if rulings.get("evidence") else "")
-                + "."
-            )
+        # `never_axis`/`evidence` LEFT THIS BLOCK 2026-10-07 for `offers.suppressed`, rendered
+        # above beside the axis it suppresses rather than here beside `label_of`/`finer_than`/
+        # `scoped_by`/`sort` — every OTHER member of `rulings` names another column, which
+        # `never_axis` never did.
     # `concept.identity.kind` USED TO BE READ HERE AND IS GONE: the whole `concept.identity` block
     # was removed from mac.schema.json on 2026-10-05 (`concept` is `additionalProperties: false`, so
-    # a file carrying one FAILS validation). What it said is now the `identity:` role on the columns,
-    # which the "One row is identified by" line above states from its one home.
+    # a file carrying one FAILS validation). What it said is now the key on the source, which the
+    # "One row is identified by" line above states from its one home.
     return out
 
 
@@ -296,8 +308,10 @@ def _values(obj: dict) -> list[str]:
     """Where the members come from — a register, or (banned) an inline list."""
     out: list[str] = []
     for name, body in _columns(obj.get("grounding") or {}).items():
-        if body.get("register"):
-            out.append(f"- `{name}` takes its members from `{body['register']}`.")
+        # `register` -> `value_register` 2026-10-07 (column_declaration.md rev 5): it also named
+        # `rulings.register` (now `naming`), one nesting level away — two facts, one word.
+        if body.get("value_register"):
+            out.append(f"- `{name}` takes its members from `{body['value_register']}`.")
     inline = ((obj.get("values") or {}) if isinstance(obj.get("values"), dict) else {}).get("items")
     if inline:
         out.append(

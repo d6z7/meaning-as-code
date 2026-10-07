@@ -355,10 +355,11 @@ def inv_concept_relation(st: dict) -> list[dict]:
     known = set(st["served"]) | set(st["sources"])
     out, claimed = [], set()
     for name, d in st["concepts"].items():
-        for src in (d.get("grounding") or {}).get("sources") or []:
-            r = str(src.get("relation") or "").split(".")[-1]
-            if not r:
-                continue
+        # `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now `not: {}` in
+        # mac.schema.json — a load error, not a second relation). A concept binds one relation.
+        src = (d.get("grounding") or {}).get("source") or {}
+        r = str(src.get("relation") or "").split(".")[-1]
+        if r:
             claimed.add(r)
             subject = f"{name} grounds on {r}"
             if r in known:
@@ -415,7 +416,9 @@ def _column_roles() -> tuple:
         import mac_vocab as _mv
         vp = pathlib.Path(__file__).resolve().parent.parent / "mac_vocabulary.yaml"
         block = _mv.flatten(_yaml.safe_load(vp.read_text(encoding="utf-8")) or {})
-        terms = (block.get("concept.column.roles") or {}).get("terms") or {}
+        # `concept.column.roles` -> `concept.column.offers` 2026-10-07 (`roles:` -> `offers:`, the
+        # SAME-DAY rename this whole function's docstring is already about one address earlier).
+        terms = (block.get("concept.column.offers") or {}).get("terms") or {}
         return tuple(terms)
     except (OSError, ImportError, KeyError, ValueError, _yaml.YAMLError):
         return ()
@@ -424,7 +427,9 @@ def _column_roles() -> tuple:
 COLUMN_ROLES = _column_roles()
 
 _ROLE_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
-_NS_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.[A-Za-z0-9_.]+$")
+# `_NS_TOKEN` (the bare `role:` scalar's namespace matcher) is RETIRED WITH THE SCALAR: the column
+# body's `additionalProperties: false` means a bundle that validates can no longer carry it, and
+# `inv_role_vocab` no longer reads past `offers` looking for one.
 
 
 def _ns_ok(ns: str, st: dict) -> bool:
@@ -449,6 +454,14 @@ def inv_role_vocab(st: dict) -> list[dict]:
 
     IT READS BOTH SHAPES NOW. `field_roles` is still enumerated, because a legacy bundle must stay
     checked rather than silently skipped — that is how coverage collapses behind a perfect fraction.
+
+    REWIRED 2026-10-07, SAME DAY, FOR THE NEXT ADDRESS. `roles:` — this function's own "CURRENT
+    shape" as of that morning — was itself retired that afternoon for `offers:`
+    (column_declaration.md rev 5), and the scalar `role:` this used to fall back to is gone WITH
+    `roles:`: the schema closes the column body (`additionalProperties: false` on each column,
+    admitting only `offers`/`references`/`value_register`/`rulings`), so a bundle that validates can
+    no longer carry either of the two dead shapes this invariant used to read past `offers`. There is
+    nothing left to fall back to, and the ~45 lines that used to try are gone with it.
     """
     out = []
     for name, d in sorted(st["concepts"].items()):
@@ -468,29 +481,28 @@ def inv_role_vocab(st: dict) -> list[dict]:
                               f"concept {name!r} column {col!r} carries role {role!r}, and namespace "
                               f"{m.group(1).lower()!r} is declared by no vocabulary.yaml — the token "
                               f"resolves to nothing and no resolver will say so"))
-        # ── the CURRENT shape: the column map ───────────────────────────────────────────────────
-        for src in g.get("sources") or []:
-            cols = src.get("columns")
-            if not isinstance(cols, dict):
-                continue      # the array form carries no flags; MEMBER-GRAIN and FK-EDGE cover it
+        # ── the CURRENT shape: the column map, `grounding.source` SINGULAR ─────────────────────
+        src = g.get("source") or {}
+        cols = src.get("columns")
+        if isinstance(cols, dict):
             rel = str(src.get("relation") or "?").split(".")[-1]
             for col, body in cols.items():
                 if not isinstance(body, dict):
                     continue  # `null` means "serve it and say nothing more" — a declaration of silence
-                subject = f"{name}.{rel}.{col} role"
-                # ── the CURRENT shape: `roles`, a map whose KEYS are the uses ──────────────────
-                roles = body.get("roles")
-                if isinstance(roles, dict):
-                    if not roles:
-                        out.append(_i(f"{name}.{rel}.{col} roles", OK,
-                                      f"{name}.{rel}.{col} declares `roles: {{}}` — offered to no "
+                subject = f"{name}.{rel}.{col} offers"
+                # ── `offers`, A MAP WHOSE KEYS ARE THE USES — the only shape left to read ───────
+                offers = body.get("offers")
+                if isinstance(offers, dict):
+                    if not offers:
+                        out.append(_i(subject, OK,
+                                      f"{name}.{rel}.{col} declares `offers: {{}}` — offered to no "
                                       f"question, which is a statement and not an omission"))
-                    for offered in roles:
-                        s = f"{name}.{rel}.{col} roles.{offered}"
+                    for offered in offers:
+                        s = f"{name}.{rel}.{col} offers.{offered}"
                         if not COLUMN_ROLES:
                             out.append(_i(s, NA,
                                           f"{s} could not be judged: the closed set did not read "
-                                          f"from mac_vocabulary.yaml#concept.column.roles"))
+                                          f"from mac_vocabulary.yaml#concept.column.offers"))
                         elif offered in COLUMN_ROLES:
                             out.append(_i(s, OK, f"{s!r} is a declared use"))
                         else:
@@ -501,52 +513,16 @@ def inv_role_vocab(st: dict) -> list[dict]:
                                           f"A use nothing recognises offers the column to nothing "
                                           f"and no planner step will say so"))
                     continue
-                role = body.get("role")
-                if role is None and not any(k in body for k in ("roles", "role")):
-                    # UNCLASSIFIED IS A FINDING, NOT A STATE. `roles: {}` says "offered to no
-                    # question" and is handled above; a column carrying other flags and NO `roles`
-                    # key has had nothing said about what a question may do with it, and the
-                    # standard rules those two different findings (column_declaration.md, rule 4).
-                    out.append(_i(subject, NA,
-                                  f"concept {name!r} column {col!r} on {rel!r} declares flags but no "
-                                  f"`roles` map, so nothing says what a question may do with it — "
-                                  f"`roles: {{}}` is how a column says 'offered to nothing'"))
-                    continue
-                if role is None:
-                    # NOT A SUBJECT, AND NOT AN n/a ROW EITHER. The scalar `role:` was retired on
-                    # 2026-10-07; a column on the current standard declares `roles`, a map, whose
-                    # member names are closed and are checked where they are enforced —
-                    # `ColumnRoles`' field validators refuse a non-member at LOAD, and
-                    # check_column_planes R2 says the same thing over a bundle on disk. Counting
-                    # each such column as n/a is what made this invariant report `[ok]` with
-                    # "112 enumerated · 0 failed · 112 n/a" on contoso5: a green verdict over a
-                    # population it had not judged, which is the shape the estate's own rule
-                    # forbids. Skipping them leaves the population EMPTY, and an empty population
-                    # reports NOTHING TO CHECK — which is the truth.
-                    continue
-                token = str(role)
-                if "." in token:
-                    m = _NS_TOKEN.match(token)
-                    if m and _ns_ok(m.group(1), st):
-                        out.append(_i(subject, OK, f"{subject} carries {token!r} in a declared namespace"))
-                    else:
-                        ns = m.group(1).lower() if m else token
-                        out.append(_i(subject, VIOLATION,
-                                      f"concept {name!r} column {col!r} on {rel!r} carries role {token!r} "
-                                      f"and namespace {ns!r} is declared by no vocabulary.yaml — the "
-                                      f"token resolves to nothing and no resolver will say so"))
-                elif not COLUMN_ROLES:
-                    out.append(_i(subject, NA, f"{subject} carries bare role {token!r} and the closed "
-                                               "set could not be read from mac.schema.json, so nothing "
-                                               "here can say whether it is a member"))
-                elif token in COLUMN_ROLES:
-                    out.append(_i(subject, OK, f"{subject} is {token!r}, a member of the closed set"))
-                else:
-                    out.append(_i(subject, VIOLATION,
-                                  f"concept {name!r} column {col!r} on {rel!r} carries role {token!r}, "
-                                  f"which is in neither the closed column-role set "
-                                  f"({', '.join(COLUMN_ROLES)}) nor any declared namespace. A role "
-                                  f"nothing recognises places no predicate and no resolver will say so"))
+                # UNCLASSIFIED IS A FINDING, NOT A STATE. `offers: {}` (above) says "offered to no
+                # question"; a column body with no `offers` key at all has had nothing said about
+                # what a question may do with it (column_declaration.md, rule 4). There is no bare
+                # `role:` scalar left to check first: the schema's `additionalProperties: false`
+                # on the column body refuses it outright, so a column in neither shape is simply
+                # unclassified rather than a second population this invariant must still judge.
+                out.append(_i(subject, NA,
+                              f"concept {name!r} column {col!r} on {rel!r} declares no `offers` map, "
+                              f"so nothing says what a question may do with it — `offers: {{}}` is "
+                              f"how a column says 'offered to nothing'"))
     return out
 
 
@@ -561,34 +537,48 @@ def inv_member_grain(st: dict) -> list[dict]:
 
     EVERY CONCEPT IS ENUMERATED, not only the ones that declare a set — so "10 of 19 were checked" is
     on the page instead of a bare 10, and a reader can see which nine were excluded and why.
+
+    REWIRED 2026-10-07 FOR A SECOND, INDEPENDENT REASON — THIS ONE NOT A RENAME. `concept.identity`
+    left the schema 2026-10-05 and the per-column `identity: canonical` flag left WITH `roles:` on
+    2026-10-07, so the key lookup below was reading two dead addresses and answering "" for every
+    concept — but that was not even reached: `values:`/`members:` is INLINE member authoring, which
+    the operator's register ruling (2026-09-26, "these values could be in lookup") retired in
+    practice, so contoso5's five `class: enumeration` concepts write NEITHER and all 17 concepts hit
+    the FIRST branch. MEASURED on contoso5, 2026-10-07, before this fix: 17 enumerated / 0 held / 17
+    n/a — `[ok]` printed over a population this invariant had never actually judged, the shape this
+    estate's own rule forbids. `mac.schema.json`'s own comment on the `values:` requirement it
+    dropped says why: "a closed set may delegate its members to a register... A concept MAY still
+    write `values:` and its shape is still checked where it is declared" — delegation, not absence
+    of a set. `concept.class` is what still says a concept's extension IS a set when the members
+    live in a register instead of inline: `enumeration` ("members a register states") and
+    `grouping` ("a roll-up ABOVE a leaf concept", `members.over` mandatory). A LIVE SUBJECT, not a
+    retirement: brand/color/country/currency/product_category is a real, non-empty population on
+    contoso5 today, each with a genuine single-column key to check.
     """
     out = []
     for name, d in st["concepts"].items():
-        if not (d.get("values") or d.get("members")):
+        cls = str((d.get("concept") or {}).get("class") or "").strip().lower()
+        is_set = bool(d.get("values") or d.get("members")) or cls in ("enumeration", "grouping")
+        if not is_set:
             out.append(_i(name, NA,
-                          f"concept {name!r} does not declare its extension as a set (no values/members), "
-                          f"so no member-grain sample is owed and no canonical key is required here"))
+                          f"concept {name!r} does not declare its extension as a set (no values/members, "
+                          f"and class {cls!r} is not enumeration/grouping), so no member-grain sample is "
+                          f"owed and no canonical key is required here"))
             continue
-        ident = str(((d.get("concept") or {}).get("identity") or {}).get("canonical_key") or "").strip()
-        if not ident:
-            for src in (d.get("grounding") or {}).get("sources") or []:
-                cols = src.get("columns")
-                if isinstance(cols, dict):
-                    for cn, body in cols.items():
-                        if P.column_identity(body) == "canonical":
-                            ident = str(cn)
-                            break
-                if ident:
-                    break
+        # THE ONE HOME — `source.key`, read through `canonical_key`. `concept.identity.canonical_key`
+        # and the column flag `identity: canonical` are BOTH gone (see above); there is nothing else
+        # to scan for and nothing left to fall back to.
+        ident = P.canonical_key(d) or ""
         if ident:
-            out.append(_i(name, OK, f"concept {name!r} declares a set extension and names {ident!r} as "
-                                    f"its canonical key, so its sample can be drawn at member grain"))
+            out.append(_i(name, OK, f"concept {name!r} declares a set extension (class {cls!r}) and "
+                                    f"names {ident!r} as its canonical key, so its sample can be drawn "
+                                    f"at member grain"))
         else:
             out.append(_i(name, VIOLATION,
-                          f"concept {name!r} declares its extension as a SET (values/members) and names "
-                          f"no canonical key anywhere — neither concept.identity.canonical_key nor a "
-                          f"column with `identity: canonical` — so its sample can only be drawn at ROW "
-                          f"grain and will show its host's rows instead of its own members"))
+                          f"concept {name!r} declares its extension as a SET (class {cls!r}) and names "
+                          f"no single-column `source.key` — either it has none or its key is composite — "
+                          f"so its sample can only be drawn at ROW grain and will show its host's rows "
+                          f"instead of its own members"))
     return out
 
 
@@ -793,72 +783,80 @@ def inv_key_backed(st: dict) -> list[dict]:
     """
     out = []
     for name, d in sorted(st["concepts"].items()):
-        for src in ((d.get("grounding") or {}).get("sources") or []):
-            rel = str(src.get("relation") or "?").split(".")[-1]
-            k = src.get("key")
-            listed = [str(x) for x in (k if isinstance(k, list) else ([k] if k else []))]
-            cm = src.get("columns")
-            declared = set(cm) if isinstance(cm, dict) else set(cm or [])
-            subject = f"{name} on {rel}"
-            if not listed:
-                out.append(_i(subject, NA, f"{subject} declares no `key:` — the parser refuses a "
-                                           f"primary source without one; a secondary source may "
-                                           f"legitimately have none"))
-                continue
-            if not declared:
-                out.append(_i(subject, NA, f"{subject} lists a key over a source that declares no "
-                                           f"columns, so there is nothing to check it against"))
-                continue
-            missing = [c for c in listed if c not in declared]
-            if missing:
-                out.append(_i(subject, VIOLATION,
-                              f"{subject}: `key: {listed}` names {missing}, which the column map "
-                              f"does not declare — the key reaches `cell_key` and the SQL, so this "
-                              f"is a GROUP BY on a column this concept never served"))
-            else:
-                out.append(_i(subject, OK,
-                              f"{subject}: every column of `key: {listed}` is declared"))
+        # `grounding.source` IS SINGULAR since 2026-10-07 — one concept, one relation, one `key:`.
+        src = (d.get("grounding") or {}).get("source") or {}
+        rel = str(src.get("relation") or "?").split(".")[-1]
+        k = src.get("key")
+        listed = [str(x) for x in (k if isinstance(k, list) else ([k] if k else []))]
+        cm = src.get("columns")
+        declared = set(cm) if isinstance(cm, dict) else set(cm or [])
+        subject = f"{name} on {rel}"
+        if not listed:
+            out.append(_i(subject, NA, f"{subject} declares no `key:` — the parser refuses a "
+                                       f"primary source without one; a secondary source may "
+                                       f"legitimately have none"))
+            continue
+        if not declared:
+            out.append(_i(subject, NA, f"{subject} lists a key over a source that declares no "
+                                       f"columns, so there is nothing to check it against"))
+            continue
+        missing = [c for c in listed if c not in declared]
+        if missing:
+            out.append(_i(subject, VIOLATION,
+                          f"{subject}: `key: {listed}` names {missing}, which the column map "
+                          f"does not declare — the key reaches `cell_key` and the SQL, so this "
+                          f"is a GROUP BY on a column this concept never served"))
+        else:
+            out.append(_i(subject, OK,
+                          f"{subject}: every column of `key: {listed}` is declared"))
     return out
 
 
 def inv_one_home(st: dict) -> list[dict]:
-    """The canonical key is declared ONCE — on the column, not also on the concept.
+    """The key is declared in ONE home, not two that can disagree.
 
-    CONFORMANCE §2.1 states this and until now NOTHING ENFORCED IT, which is the shape of defect this
-    whole checklist exists to find: a law written in prose beside a framework that cannot check it.
+    CONFORMANCE §2.1 states this and until 2026-09-27 NOTHING ENFORCED IT, which is the shape of
+    defect this whole checklist exists to find: a law written in prose beside a framework that
+    cannot check it. The ORIGINAL two homes were `concept.identity.canonical_key` and a per-column
+    `identity: canonical`/`composite` flag — and BOTH are gone: the first left mac.schema.json
+    entirely on 2026-10-05, the second left `roles`/`offers` on 2026-10-07 along with `identity`
+    itself. MEASURED on contoso5, 2026-10-07, before this fix: 17 enumerated / 0 held / 17 n/a —
+    `[ok]` printed over a population this invariant could no longer even address, because the fact
+    it compared had only one home left to read and nothing to compare it AGAINST. That is this
+    estate's own named failure, guarding an address that no longer exists.
 
-    THE SCHEMA HAS SAID IT ALL ALONG, in the column map's own `identity` description: "the key is a
-    COLUMN fact, so declaring it here AND under concept.identity gives it two homes that can disagree."
-    Measured 2026-09-27: 15 of 19 concepts in the reference bundle carried it only on the column, and
-    the ONLY two carrying both were the two I had authored that day — while writing the law. A
-    composite key settles the argument outright: `canonical_key` is one string, and `identity: part`
-    marks as many columns as the key has.
+    THE SECOND HOME THAT STILL EXISTS, so this is a RE-POINTING and not an invention:
+    `grounding.key_column`, the single-column LEGACY shorthand mac.schema.json keeps admitting
+    beside `source.key` ("a bundle carrying only this one still loads" — its own description).
+    `mac_to_graph.py` reads it FIRST, ahead of `canonical_key`
+    (`g.get("key_column") or P.canonical_key(d) or pk`) — so an author who edits `source.key` and
+    forgets the legacy sibling gets a node keyed on whichever `key_column` still says, while every
+    other reader (this checklist's own KEY-BACKED, MEMBER-GRAIN, FK-EDGE) takes `source.key`. Two
+    readers of one concept choosing different keys is exactly the hazard this invariant was built
+    to name, one address later.
     """
     out = []
     for name, d in sorted(st["concepts"].items()):
-        declared = str((((d.get("concept") or {}).get("identity") or {}).get("canonical_key") or "")).strip()
-        cols = []
-        for src in ((d.get("grounding") or {}).get("sources") or []):
-            cm = src.get("columns")
-            if isinstance(cm, dict):
-                cols += [cn for cn, b in cm.items()
-                         if P.column_identity(b) in ("canonical", "composite")]
-        if declared and cols:
-            out.append(_i(name, VIOLATION,
-                          f"concept {name!r} declares canonical_key {declared!r} AND marks "
-                          f"{', '.join(cols)} on the column map — two homes for one fact, which can "
-                          f"disagree. The column is the home; remove the concept-level key"))
-        elif declared:
-            out.append(_i(name, VIOLATION,
-                          f"concept {name!r} declares canonical_key {declared!r} at CONCEPT level with "
-                          f"no column marked `identity: canonical` — the key is a column fact and must "
-                          f"be declared on the column"))
-        elif cols:
-            out.append(_i(name, OK, f"concept {name!r} declares its key only on the column map "
-                                    f"({', '.join(cols)})"))
+        legacy = str((d.get("grounding") or {}).get("key_column") or "").strip()
+        current = P.canonical_key(d) or ""
+        if not legacy:
+            out.append(_i(name, NA, f"concept {name!r} declares no `grounding.key_column` — the "
+                                    f"legacy single-column shorthand — so there is only the one home "
+                                    f"(`source.key`) and nothing left to disagree with it"))
+        elif not current:
+            out.append(_i(name, NA, f"concept {name!r} declares `key_column: {legacy!r}` and "
+                                    f"`source.key` names zero or more-than-one column, so the two "
+                                    f"cannot be compared as a single key"))
+        elif legacy == current:
+            out.append(_i(name, OK, f"concept {name!r} declares `key_column: {legacy!r}`, which "
+                                    f"agrees with `source.key`"))
         else:
-            out.append(_i(name, NA, f"concept {name!r} marks no key column, so there is no key to "
-                                    f"have two homes for"))
+            out.append(_i(name, VIOLATION,
+                          f"concept {name!r} declares `key_column: {legacy!r}` and `source.key` "
+                          f"names {current!r} — two homes for the key that disagree. "
+                          f"mac_to_graph.py reads `key_column` FIRST, so that reader and this "
+                          f"checklist's own KEY-BACKED/MEMBER-GRAIN/FK-EDGE would key this concept's "
+                          f"node differently"))
     return out
 
 
@@ -883,38 +881,41 @@ def inv_measure_unit(st: dict) -> list[dict]:
     units and taking the first would make an answer's unit depend on YAML key order. That last clause
     is the original reason, kept — solved by requiring the author to say rather than by forbidding the
     composition.
+
+    REWIRED 2026-10-07: `roles.aggregate` -> `offers.aggregate` and `roles.aggregate.canonical` ->
+    `offers.aggregate.default` (column_declaration.md rev 5 — `canonical` was retired from
+    `identity` the same day, and reusing the word here would have been the exact confusion that
+    review was about). The flat `measure:` key and the scalar `role: measure` this used to fall back
+    to are gone WITH `roles:`: the column body's `additionalProperties: false` admits neither, so an
+    unmigrated bundle fails `validate_schema` before it ever reaches this invariant — there is
+    nothing left for the fallback to catch.
     """
     out = []
     for name, d in sorted(st["concepts"].items()):
         cols = []
-        for src in ((d.get("grounding") or {}).get("sources") or []):
-            cm = src.get("columns")
-            if isinstance(cm, dict):
-                for cn, b in cm.items():
-                    # THE AGGREGATE IS INSIDE `roles` since 2026-10-07; the flat `measure:` and the
-                    # scalar `role: measure` are the retired spellings, read so an unmigrated bundle
-                    # is still measured rather than silently skipped.
-                    agg = ((b.get("roles") or {}).get("aggregate") if isinstance(b, dict) else None) \
-                        or (b.get("measure") if isinstance(b, dict) else None)
-                    if isinstance(b, dict) and (agg or b.get("role") == "measure"):
-                        cols.append((cn, ((agg or {}).get("unit") or ""),
-                                     bool((agg or {}).get("canonical"))))
+        src = (d.get("grounding") or {}).get("source") or {}
+        cm = src.get("columns")
+        if isinstance(cm, dict):
+            for cn, b in cm.items():
+                agg = (b.get("offers") or {}).get("aggregate") if isinstance(b, dict) else None
+                if isinstance(b, dict) and agg:
+                    cols.append((cn, (agg.get("unit") or ""), bool(agg.get("default"))))
         if not cols:
             out.append(_i(name, NA, f"concept {name!r} carries no measure column, so no unit is owed"))
             continue
         declared = str((((d.get("concept") or {}).get("semantics") or {}).get("unit") or "")).strip()
         units = sorted({u for _c, u, *_ in cols if u})
-        # `canonical: true` ANSWERS THIS, and reading past it told authors to state what they had
+        # `default: true` ANSWERS THIS, and reading past it told authors to state what they had
         # stated. The invariant's whole question is "which of several factors is THE measure, so a
         # reader does not take whichever comes first in YAML key order" — and the column standard
-        # declares exactly that on the aggregate (`roles: {aggregate: {canonical: true}}`). Measured
+        # declares exactly that on the aggregate (`offers: {aggregate: {default: true}}`). Measured
         # on contoso5 2026-10-07: gross_revenue, net_revenue and product each carry two USD factors
-        # with the canonical one marked, and all three were reported as unresolved.
+        # with the default one marked, and all three were reported as unresolved before this fix.
         if sum(1 for c in cols if len(c) > 2 and c[2]) == 1:
             pick = next(c for c in cols if c[2])
             out.append(_i(name, OK,
                           f"concept {name!r} carries {len(cols)} measure column(s) and marks "
-                          f"{pick[0]!r} `canonical`, which is which factor is THE measure"))
+                          f"{pick[0]!r} `default`, which is which factor is THE measure"))
             continue
         if len(cols) == 1:
             out.append(_i(name, OK,
@@ -1220,19 +1221,24 @@ def _self_test() -> int:
                                              "register": "data/lookups/b_x.lookup.csv"}]}},
             "sources": {},
             "profiles": {"v_s": {}, "v_c": {}},
-            # THE CONCEPTS CARRY THEIR NAME AND THEIR IDENTITY FLAGS, because FK-EDGE now resolves an
-            # endpoint through `concept.name` and `identity: reference` / `identity: canonical`. The
-            # fixture used to carry neither and its edge carried no `endpoints` — which is precisely how
-            # it certified an invariant that matched an id STRING while three real edges said
-            # `Currency -> Region`. A fixture thinner than the artifact proves nothing about it.
+            # THE CONCEPTS CARRY THEIR NAME AND THEIR GROUNDING, because FK-EDGE now resolves an
+            # endpoint through `concept.name` and `references:` / `source.key`. The fixture used to
+            # carry neither and its edge carried no `endpoints` — which is precisely how it certified
+            # an invariant that matched an id STRING while three real edges said `Currency -> Region`.
+            # A fixture thinner than the artifact proves nothing about it.
+            #
+            # REWIRED 2026-10-07 for column_declaration.md rev 5: `grounding.sources` (list) ->
+            # `grounding.source` (singular); `roles: {identity: reference}` -> the top-level
+            # `references: <ConceptName>` key; `roles: {identity: canonical}` -> `source.key`, which
+            # is now where a key is declared at all (there is no column flag for it any more).
             "concepts": {
                 "line": {"concept": {"name": "Line"},
-                         "grounding": {"sources": [{"relation": "v_s", "columns": {
-                             "CK": {"roles": {"identity": "reference"}}}}],
+                         "grounding": {"source": {"relation": "v_s", "columns": {
+                             "CK": {"offers": {}, "references": "Cust"}}},
                                        "field_roles": {"CK": "mac.field_role.key"}}},
                 "cust": {"concept": {"name": "Cust"},
-                         "grounding": {"sources": [{"relation": "v_c", "columns": {
-                             "CK": {"roles": {"identity": "canonical"}}}}]}},
+                         "grounding": {"source": {"relation": "v_c", "key": "CK", "columns": {
+                             "CK": {"offers": {"axis": "categorical"}}}}}},
             },
             "refs": {},
             "edges": [{"edge_id": "Line__CK__to__Cust",
@@ -1267,7 +1273,7 @@ def _self_test() -> int:
          lambda st: st["concepts"].pop("cust"), "CONCEPT-RELATION")
     case("MUTANT a concept grounds on an undescribed relation",
          lambda st: st["concepts"].__setitem__(
-             "ghost", {"grounding": {"sources": [{"relation": "nope"}]}}), "CONCEPT-RELATION")
+             "ghost", {"grounding": {"source": {"relation": "nope"}}}), "CONCEPT-RELATION")
     case("MUTANT an undeclared vocabulary namespace",
          lambda st: st["concepts"]["line"]["grounding"]["field_roles"].__setitem__(
              "CK", "CONTOSO4.field_role.key"), "ROLE-VOCAB")
@@ -1295,7 +1301,7 @@ def _self_test() -> int:
          lambda st: st["served"]["v_c"]["columns"].append(
              {"name": "Z", "role": "value", "key_position": 1}), "KEY-POSITION")
     case("MUTANT a `key:` list no column backs",
-         lambda st: st["concepts"]["cust"]["grounding"]["sources"][0].__setitem__("key", ["NOPE"]),
+         lambda st: st["concepts"]["cust"]["grounding"]["source"].__setitem__("key", ["NOPE"]),
          "KEY-BACKED")
 
     # ── RETIRED-SHAPE: the ruled-away `foreign_keys:` block coming back ───────────────────────────
@@ -1303,10 +1309,15 @@ def _self_test() -> int:
          lambda st: st["served"]["v_s"].__setitem__(
              "foreign_keys", [{"from_column": "CK", "to_table": "v_c"}]), "RETIRED-SHAPE")
 
-    # ── ONE-HOME: CONFORMANCE §2.1, unenforced until now ──────────────────────────────────────────
-    case("MUTANT the canonical key declared on the concept AS WELL as the column",
-         lambda st: st["concepts"]["cust"].setdefault("concept", {}).setdefault(
-             "identity", {}).__setitem__("canonical_key", "CK"), "ONE-HOME")
+    # ── ONE-HOME: CONFORMANCE §2.1, RE-POINTED 2026-10-07 ─────────────────────────────────────────
+    # The original mutant set `concept.identity.canonical_key` beside a column `identity: canonical`
+    # flag — BOTH addresses are gone (see inv_one_home's docstring), so that mutation is now a no-op
+    # that proves nothing. The home that still exists, and that `mac_to_graph.py` still reads AHEAD
+    # of `source.key`, is the legacy `grounding.key_column` — so the live mutation is the two
+    # disagreeing, not a concept-level key that no longer parses into anything.
+    case("MUTANT `grounding.key_column` disagrees with `source.key`",
+         lambda st: st["concepts"]["cust"]["grounding"].__setitem__("key_column", "NOPE"),
+         "ONE-HOME")
 
     # ── DOMAIN-HOMED: the member list the 2026-09-26 ruling moved into a register, coming back ────
     # TWO MUTANTS, because the rule has two failure shapes and only one of them looks wrong at a glance:
@@ -1335,11 +1346,9 @@ def _self_test() -> int:
     # ── MEASURE-UNIT: the composed measure, which the old `only ONE column` rule forbade ──────────
     def _compose(st, unit=None):
         """Make `line` a composed measure: Quantity x CK, two factor units, one amount."""
-        cols = st["concepts"]["line"]["grounding"]["sources"][0]["columns"]
-        cols["CK"] = {"roles": {"aggregate": {
-            "type": "mac.concept.column.measure_type.flow", "unit": "USD"}}}
-        cols["Qty"] = {"roles": {"aggregate": {
-            "type": "mac.concept.column.measure_type.flow", "unit": "units"}}}
+        cols = st["concepts"]["line"]["grounding"]["source"]["columns"]
+        cols["CK"] = {"offers": {"aggregate": {"type": "flow", "unit": "USD"}}}
+        cols["Qty"] = {"offers": {"aggregate": {"type": "flow", "unit": "units"}}}
         if unit:
             st["concepts"]["line"].setdefault("concept", {}).setdefault("semantics", {})["unit"] = unit
     case("MUTANT two measure columns and NO concept unit — the composed unit would be key order",
@@ -1431,13 +1440,13 @@ def _self_test() -> int:
           all(i["verdict"] == "ok" for i in rv))
 
     st = base()
-    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["roles"] = {"identty": "reference"}
+    st["concepts"]["line"]["grounding"]["source"]["columns"]["CK"]["offers"] = {"identty": "reference"}
     check("MUTANT a misspelled USE is a VIOLATION, not silence",
           [c for c, _w, fn in INVARIANTS if violations(fn(st))] == ["ROLE-VOCAB"])
 
     st = base()
-    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["roles"] = {}
-    check("CLEAN `roles: {}` is a statement, not a missing declaration",
+    st["concepts"]["line"]["grounding"]["source"]["columns"]["CK"]["offers"] = {}
+    check("CLEAN `offers: {}` is a statement, not a missing declaration",
           not [c for c, _w, fn in INVARIANTS if violations(fn(st))])
 
     # THE LEGACY ARM STAYS CHECKED. Nothing in the estate authors `field_roles` any more (contoso5
@@ -1449,42 +1458,52 @@ def _self_test() -> int:
     check("MUTANT an undeclared namespace in an authored field_roles is a violation",
           [c for c, _w, fn in INVARIANTS if violations(fn(st))] == ["ROLE-VOCAB"])
 
+    # RE-POINTED 2026-10-07: the old mutant wrote a namespaced token to the bare `role:` scalar,
+    # which the column body no longer admits AT ALL (`additionalProperties: false`) — so that
+    # mutation became a no-op the moment `offers:` replaced `roles:`. The field_roles arm is the
+    # one namespaced-token path still standing, so this re-uses it for the same intent: a
+    # namespaced token resolves once the bundle's own vocabulary.yaml declares the namespace.
     st = base()
     st["vocab_ns"] = {"contoso4"}
-    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"]["role"] = "CONTOSO4.field_role.key"
-    check("CLEAN a namespaced column role RESOLVES once the vocabulary declares it",
+    st["concepts"]["line"]["grounding"]["field_roles"]["CK"] = "CONTOSO4.field_role.key"
+    check("CLEAN a namespaced field_role RESOLVES once the vocabulary declares it",
           not violations(inv_role_vocab(st)))
 
     st = base()
     st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
-    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = None
+    st["concepts"]["line"]["grounding"]["source"]["columns"]["CK"] = None
     # `null` means "serve it and say nothing more" -- a declaration of silence, so NO item for that
     # column. The fixture's other concept still contributes its own, which is why this asserts the
     # absence of the null column rather than an empty list.
     check("a column declared `null` says nothing and is not graded",
           not any(i["subject"].startswith("line.") for i in inv_role_vocab(st)))
 
+    # RE-POINTED 2026-10-07: the old mutant wrote `counts: true` — a PER-COLUMN flag. It moved to
+    # `source.counts: <column name>` the same revision (column_declaration.md rev 5), so a column
+    # can no longer carry it at all; the mutation would otherwise be exercising a key nobody can
+    # write any more. `value_register` is the realistic version of the same mistake today: pointing
+    # a column at its register and forgetting to classify what a question may DO with it.
     st = base()
     st["concepts"]["line"]["grounding"]["field_roles"] = {}      # isolate the column map
-    st["concepts"]["line"]["grounding"]["sources"][0]["columns"]["CK"] = {"counts": True}
+    st["concepts"]["line"]["grounding"]["source"]["columns"]["CK"] = {
+        "value_register": "data/lookups/x.lookup.yaml"}
     # EXACTLY ONE n/a, not a list equality: the fixture's other concept contributes a real role, and a
     # test that pins the whole list breaks whenever the fixture grows a column — which is a test
     # measuring the fixture rather than the behaviour.
-    # A COLUMN WITH FLAGS AND NO `roles` IS UNCLASSIFIED — not n/a, and not a pass. `counts: true`
-    # alone says a count uses this column while saying nothing about what a question may DO with
-    # it, which is the one state the standard calls a finding rather than a declaration.
-    check("a column with flags but no `roles` is n/a, and SAYS SO rather than passing",
+    # A COLUMN WITH FLAGS AND NO `offers` IS UNCLASSIFIED — not n/a, and not a pass.
+    check("a column with other flags but no `offers` is n/a, and SAYS SO rather than passing",
           [i["verdict"] for i in inv_role_vocab(st)].count("n/a") == 1)
 
     # BOTH SHAPES AT ONCE, which is the state a bundle mid-migration is in: the legacy token and the
     # column map must BOTH be enumerated, or migrating silently halves the coverage.
     st = base()
-    # line carries a field_role AND a column role; cust carries a column role. Three declarations, and
-    # the legacy shape must still be among them or migrating a bundle halves its coverage in silence.
+    # line carries a field_role AND a column offer (empty); cust carries a column offer (`axis`).
+    # Three declarations, and the legacy shape must still be among them or migrating a bundle
+    # halves its coverage in silence.
     rv = inv_role_vocab(st)
     check("a concept carrying BOTH shapes has both enumerated",
           counts(rv)[0] == 3 and any("field_role" in i["subject"] for i in rv)
-          and any(" roles." in i["subject"] for i in rv))
+          and any(" offers." in i["subject"] for i in rv))
 
     # THERE IS ONE HOME NOW, so the old assertion — two literals agreeing — has nothing to compare and
     # was itself the thing that hid a third home. What must hold instead is that the set was actually

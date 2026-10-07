@@ -84,7 +84,7 @@ def _grounding_relations(doc: dict):
     if not isinstance(g, dict):
         return []
     out = []
-    for s in (g.get("sources") or []):
+    for s in ([_s] if isinstance(_s := (g).get("source"), dict) else []):
         rel = s.get("relation") if isinstance(s, dict) else s
         if isinstance(rel, str) and rel.strip():
             out.append(rel.strip())

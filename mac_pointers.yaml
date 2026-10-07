@@ -827,7 +827,7 @@ pointer_kinds:
     required: true
     invert: false
     case_fold: true
-    population: 'ontology/concepts/*.yaml -> grounding.sources[].relation'
+    population: 'ontology/concepts/*.yaml -> grounding.source.relation'
     producers: [a human authoring a concept]
     consumers: [the planner]
     checkers: [check_ontology_grounds_on_datasets.py, check_relation_identity.py]
@@ -897,7 +897,7 @@ pointer_kinds:
   - reference_kind: concept_grounds_column
     what: >
       A CONCEPT NAMING THE COLUMNS IT IS GROUNDED ON, carried as the KEYS of
-      `grounding.sources[].columns` rather than as values.
+      `grounding.source.columns` rather than as values.
     src_kind: concept
     dst_kind: column
     dst_name: canonical
@@ -907,7 +907,7 @@ pointer_kinds:
     # -- the densest real dependency in the data plane, and the reason a column showed 0
     # dependents the day columns got identity.
     carrier: map_key
-    key_pattern: 'grounding.sources[].columns'
+    key_pattern: 'grounding.source.columns'
     # A MAP KEY IS LOCALLY UNIQUE AT BEST. `store_key` is a key under two relations, so the kind
     # declares which SIBLING of the map makes it global -- `relation`, giving `dim_store.store_key`
     # and matching the descriptor`s own sub_file naming so the two join.
@@ -918,7 +918,7 @@ pointer_kinds:
     required: true
     invert: false
     case_fold: false
-    population: 'ontology/concepts/*.yaml -> grounding.sources[].columns (the KEYS)'
+    population: 'ontology/concepts/*.yaml -> grounding.source.columns (the KEYS)'
     producers: [a human authoring a concept's grounding]
     consumers: [the planner, the compiler, impact analysis]
     checkers: []

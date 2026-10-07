@@ -8,10 +8,9 @@
     "concept": 2,
     "concepts_multi_grounded": 0,
     "dataset": 2,
-    "edges": 3,
+    "edges": 1,
     "edges_by_kind": {
-      "claims": 1,
-      "grounds": 2
+      "claims": 1
     },
     "lookup": 0,
     "source": 1
@@ -22,16 +21,6 @@
     "note": "no warehouse measurement on this bundle; relation edges are transform descriptor CLAIMS (tools/mac_lineage.py has not run)"
   },
   "edges": [
-    {
-      "from": "ds:customers",
-      "kind": "grounds",
-      "to": "con:customer"
-    },
-    {
-      "from": "ds:orders",
-      "kind": "grounds",
-      "to": "con:revenue"
-    },
     {
       "from": "src:orders_raw",
       "kind": "claims",
@@ -93,8 +82,14 @@
   ],
   "orphans": {
     "columns_with_no_traceable_source": [],
-    "concepts_grounded_in_nothing": [],
-    "datasets_bound_by_no_concept": [],
+    "concepts_grounded_in_nothing": [
+      "customer",
+      "revenue"
+    ],
+    "datasets_bound_by_no_concept": [
+      "customers",
+      "orders"
+    ],
     "datasets_with_no_input": [
       "customers"
     ],

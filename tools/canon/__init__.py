@@ -305,7 +305,14 @@ def _params_from_registry(udf: str) -> dict:
 
 
 def _dig(doc, dotted: str):
-    """Dotted path with list indices — `grounding.sources.0.relation` reaches the first source."""
+    """Dotted path with list indices — `edges.0.join_rule` reaches the first edge.
+
+    THE INDEX IS STILL SUPPORTED and no longer used for the grounding: `source:` is singular as of
+    2026-10-07, so the relation is `grounding.source.relation`. `grounding.sources.0.relation` dug
+    through a list that no longer exists and returned None, which reached `resolve_params` as a
+    missing keyword and took test_canon down with `snapshot_collapse() missing 1 required
+    keyword-only argument: 'natural_key'` — a TypeError three frames from the actual cause.
+    """
     cur = doc
     for part in dotted.split("."):
         if isinstance(cur, list):
@@ -398,9 +405,9 @@ def resolve_params(udf: str, params: dict, concept=None, root=None) -> dict:
         return merged
     for prm, path in _params_from_registry(udf).items():
         if path.startswith("descriptor#"):
-            val = _descriptor(root, _dig(concept, "grounding.sources.0.relation"), path.split("#", 1)[1])
+            val = _descriptor(root, _dig(concept, "grounding.source.relation"), path.split("#", 1)[1])
         elif path.startswith("profile#"):
-            val = _profile(root, _dig(concept, "grounding.sources.0.relation"), path.split("#", 1)[1])
+            val = _profile(root, _dig(concept, "grounding.source.relation"), path.split("#", 1)[1])
         else:
             val = _dig(concept, path)
         if val:

@@ -47,8 +47,11 @@ def nodes(root):
         if c.get("class") not in NODE_CLASSES or not c.get("name"):
             continue
         g = d.get("grounding") or {}
-        tbl = g.get("table") or next((s.get("relation", "").split(".")[-1]
-                                      for s in (g.get("sources") or []) if isinstance(s, dict)), None)
+        # `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now a schema
+        # load error) — one relation, not several to pick the first of.
+        src = g.get("source")
+        tbl = g.get("table") or (src.get("relation", "").split(".")[-1]
+                                 if isinstance(src, dict) and src.get("relation") else None)
         cols, pk = table_cols(root, tbl) if tbl else ([], None)
         ident = c.get("identity") or {}
         # THE CONCEPT'S OWN KEY BEATS THE RELATION'S PK. This read the PK first and the concept's key
@@ -108,7 +111,7 @@ def main():
     for n in N.values():
         if not n["key"] and not n.get("key_parts"):
             problems.append(f'node :{n["label"]} has no key (no grounding key_column, no '
-                            f'one-column `sources[].key`, no table PK)')
+                            f'one-column `source.key`, no table PK)')
         elif n["key"] and n["props"] and n["key"] not in n["props"]:
             problems.append(f'node :{n["label"]} key "{n["key"]}" is not a grounded column')
     for r in R:

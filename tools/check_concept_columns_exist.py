@@ -59,34 +59,29 @@ def scan(root: pathlib.Path) -> list[dict]:
         d = yaml.safe_load(pathlib.Path(f).read_text(encoding="utf-8")) or {}
         c = d.get("concept") or {}
         name = str(c.get("name") or pathlib.Path(f).stem)
-        srcs = ((d.get("grounding") or {}).get("sources") or [])
-        if not srcs:
+        # `grounding.source` IS SINGULAR since 2026-10-07 (column_declaration.md rev 5) — `sources:`
+        # as a list is now a schema load error, so there is one relation to check, not several.
+        s = (d.get("grounding") or {}).get("source") or {}
+        rel = str(s.get("relation") or "")
+        h = columns_of(root, rel) if rel else None
+        if not h:
             continue
-        rel = str(srcs[0].get("relation") or "")
-        have = columns_of(root, rel) if rel else None
-        if not have:
-            continue
-        # THE `identity.canonical_key` BRANCH IS RETIRED, 2026-10-07, with the block it read.
-        # It caught a concept whose canonical key named a column the relation does not have
-        # (Brand/Market, the prefix disagreement this gate was built for). That class cannot occur
-        # any more: the key is declared ON the column as `roles: {identity: canonical}`, so it is
-        # by construction a member of the columns map below — and a column of that map which the
-        # relation lacks is exactly what the `columns` reject class reports. One reject class, not
-        # two, because there is now only one way to name a key.
-        for i, s in enumerate(srcs):
-            r = str(s.get("relation") or "")
-            h = columns_of(root, r) if r else None
-            if not h:
-                continue
-            k = s.get("key")
-            for col in ([k] if isinstance(k, str) else list(k or ())):
-                if col not in h:
-                    out.append({"concept": name, "field": f"grounding.sources[{i}].key",
-                                "relation": r, "names": str(col), "nearest": nearest(h, str(col))})
-            for col in (s.get("columns") or []):
-                if col not in h:
-                    out.append({"concept": name, "field": f"grounding.sources[{i}].columns",
-                                "relation": r, "names": str(col), "nearest": nearest(h, str(col))})
+        # THE `identity.canonical_key` BRANCH IS RETIRED, 2026-10-05, with the block it read; the
+        # `roles: {identity: canonical}` column flag that briefly replaced it left `offers` in turn
+        # on 2026-10-07 for `source.key` — an ordered list, ON THE SOURCE, which is checked here
+        # directly rather than scanned for on a column. A column named by `key` that the columns
+        # map does not declare is `check_delivery_consistency`'s KEY-BACKED invariant's subject,
+        # not this gate's — this gate asks the RELATION, not the concept's own map, whether the
+        # name exists.
+        k = s.get("key")
+        for col in ([k] if isinstance(k, str) else list(k or ())):
+            if col not in h:
+                out.append({"concept": name, "field": "grounding.source.key",
+                            "relation": rel, "names": str(col), "nearest": nearest(h, str(col))})
+        for col in (s.get("columns") or []):
+            if col not in h:
+                out.append({"concept": name, "field": "grounding.source.columns",
+                            "relation": rel, "names": str(col), "nearest": nearest(h, str(col))})
     return out
 
 
@@ -138,17 +133,20 @@ def _concept_text(root, replace: tuple[str, str]) -> None:
 
 # (name, mutate, marker that must appear in the output, what it proves)
 _MUTANTS = (
+    # RE-POINTED 2026-10-07: the key moved OFF the column (`identity: canonical`) and ONTO the
+    # source (`key:`), so the live mutation renames what `key:` points at rather than a column's
+    # own flag — the exact Brand/Market defect this gate was built for, one address later.
     ("identity-column-missing",
-     lambda r: _concept_text(r, ("        widget_code:\n", "        widget_id:\n")),
-     "grounding.sources[0].columns",
-     "the column declaring `identity: canonical` names a column the relation does not have — "
-     "Brand/Market, the prefix disagreement this gate was built for, now reported as what it is: "
-     "a column of the map that is not on the relation"),
+     lambda r: _concept_text(r, ("    key: widget_code\n", "    key: widget_id\n")),
+     "grounding.source.key",
+     "the source's `key:` names a column the relation does not have — Brand/Market, the prefix "
+     "disagreement this gate was built for, now reported as what it is: the key pointing at "
+     "nothing on the relation"),
     ("grounding-column-missing",
-     lambda r: _concept_text(r, ("        widget_name:\n          roles: {}\n",
-                                 "        widget_name:\n          roles: {}\n"
-                                 "        widget_colour:\n          roles: {}\n")),
-     "grounding.sources[0].columns",
+     lambda r: _concept_text(r, ("      widget_name:\n        offers: {}\n",
+                                 "      widget_name:\n        offers: {}\n"
+                                 "      widget_colour:\n        offers: {}\n")),
+     "grounding.source.columns",
      "a projected column is not on the relation — the class a COLUMN_NOT_FOUND from Athena is"),
 )
 

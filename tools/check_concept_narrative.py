@@ -69,7 +69,7 @@ def _declared(doc: dict) -> tuple[set[str], set[str]]:
     """(columns, rule ids) a concept document declares."""
     cols: set[str] = set()
     rules: set[str] = set()
-    for src in ((doc.get("grounding") or {}).get("sources") or []):
+    for src in ([_s] if isinstance(_s := ((doc).get("grounding") or {}).get("source"), dict) else []):
         if not isinstance(src, dict):
             continue
         c = src.get("columns")
@@ -112,7 +112,7 @@ def check(root: pathlib.Path) -> tuple[list[Reject], dict[str, int]]:
             continue
         c0, _ = _declared(d0)
         bundle_cols |= c0
-        for src in ((d0.get("grounding") or {}).get("sources") or []):
+        for src in ([_s] if isinstance(_s := ((d0).get("grounding") or {}).get("source"), dict) else []):
             if isinstance(src, dict) and src.get("relation"):
                 rel = str(src["relation"])
                 relations.add(rel)
@@ -272,16 +272,21 @@ def _self_test() -> int:
 concept:
   name: Thing
 grounding:
-  sources:
-    - relation: v_thing
-      columns:
-        close_date: {role: dimension}
+  source:
+    relation: v_thing
+    key: thing_code
+    columns:
+      thing_code: {offers: {}}
+      close_date: {offers: {axis: time, extremum: [min, max]}}
 contract:
   rules:
     - id: thing.default.open
       kind: mac.concept.rule.default
 """
-    GOOD = "Thing closes when `close_date` is set. The rule thing.default.open takes the open ones.\n"
+    GOOD = (
+        "A Thing is identified by `thing_code` and closes when `close_date` is set. "
+        "The rule thing.default.open takes the open ones.\n"
+    )
 
     def build(tmp, yaml_text=YAML, md_text=GOOD, rule_page=True):
         # THE FIXTURE DECLARES ITS PLANE, because mac_project.resolve falls back to the bundle ROOT
@@ -317,9 +322,14 @@ contract:
                                 "thing.default.open applies.\n")
         c = root / "ontology" / "concepts"
         (c / "other.yaml").write_text(
-            "concept:\n  name: Other\ngrounding:\n  sources:\n    - relation: v_other\n"
-            "      columns:\n        other_key: {role: key}\n", encoding="utf-8")
-        (c / "other.md").write_text("Other keys on `other_key`.\n", encoding="utf-8")
+            "concept:\n  name: Other\ngrounding:\n  source:\n    relation: v_other\n"
+            "    key: other_key\n    columns:\n      other_key: {offers: {}}\n", encoding="utf-8")
+        # THE NARRATIVE NAMES A COLUMN THE CONCEPT DOES NOT DECLARE -- the phantom this advisory is
+        # for. It must stay a WARNING: a narrative may legitimately mention a warehouse column the
+        # concept chose not to serve, and a gate that failed on prose would make the pages terser
+        # rather than truer.
+        (c / "other.md").write_text("Other keys on `other_key`, not on `ghost_code`.\n",
+                                    encoding="utf-8")
         _, warns, _ = check(root)
         expect(main([str(root)]) == 0, "an advisory phantom-reference must not fail the gate")
         expect(any(w.cls == "phantom-reference" for w in warns),

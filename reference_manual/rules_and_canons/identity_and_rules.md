@@ -20,13 +20,16 @@ The vocabulary a concept declares to say **what the engine must do**.
 > carries `^mac\.concept\.rule\.(aggregation|ambiguity|default|exclusion|guarantee|resolution)$`,
 > generated from the terms below, and `check_vocabulary_parity` fails if the two ever disagree.
 
-> **Identity moved, 2026-10-05.** This page also carried `mac.concept.identity` — a six-term
-> vocabulary for HOW a concept's identity was established. It is retired: identity is a fact about
-> COLUMNS, so it is declared on them (`identity: canonical` / `composite` / `reference`, and `counts` for
-> what one instance is) and nowhere else. See
-> [`mac.concept.column.identity`](../column_specification.md). Operator ruling: *"declare on concept
-> level only what belongs to the concept level … identity of the concept is given by column
-> combination and it belongs there."*
+> **Identity moved, 2026-10-05, and again on 2026-10-07.** This page also carried
+> `mac.concept.identity` — a six-term vocabulary for HOW a concept's identity was established. It is
+> retired: identity is a fact about COLUMNS, so it is declared where they are and nowhere else.
+> Operator ruling: *"declare on concept level only what belongs to the concept level … identity of
+> the concept is given by column combination and it belongs there."* Its second move was within the
+> grounding: what makes one row unique is `source.key`, an ORDERED list of column names, and what a
+> count of the concept counts is `source.counts`, one column name — both beside `relation:`, because
+> a per-column flag could mark key membership and had nowhere to put the order. A column pointing at
+> ANOTHER concept carries `references: <ConceptName>`. See
+> [column_declaration.md](../column_declaration.md).
 
 ---
 

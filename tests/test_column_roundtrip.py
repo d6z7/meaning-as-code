@@ -72,22 +72,38 @@ for path in CONCEPTS:
 ex = str(authoring.EXEMPLAR)
 check("the exemplar lives in the fixture bundle", ex.startswith(BUNDLE) and os.path.isfile(ex), ex)
 exo = yaml.safe_load(open(ex, encoding="utf-8"))
-src0 = (exo.get("grounding") or {}).get("sources", [{}])[0]
+_grounding = exo.get("grounding") or {}
+# `source` IS SINGULAR (2026-10-07). The list spelling is a load error, so the exemplar asserting
+# the singular key is also the assertion that it is not on the retired one -- read through
+# `.get("source")` and nothing else, because a reader that falls back to `sources` here would let
+# the exemplar teach the shape the schema refuses.
+check("exemplar: `source:` is singular and `sources:` is absent",
+      isinstance(_grounding.get("source"), dict) and "sources" not in _grounding,
+      f"grounding keys {sorted(_grounding)}")
+src0 = _grounding.get("source") or {}
 check("exemplar: columns in MAP form", isinstance(src0.get("columns"), dict))
-check("exemplar: no field_roles block", "field_roles" not in (exo.get("grounding") or {}))
+check("exemplar: no field_roles block", "field_roles" not in _grounding)
 # THE KEY IS ON THE SOURCE, in one ordered list (2026-10-07). Three things must hold together: the
 # source states it, the columns do NOT repeat it, and the retired `concept.identity` block is absent.
 _key = src0.get("key")
 _key = [_key] if isinstance(_key, str) else list(_key or [])
-_canon_cols = [
+# EVERY COLUMN DECLARES `offers:` AND NOTHING ELSE FROM THE RETIRED SET. `roles:` was the container
+# until 2026-10-07 and `identity:` was a use inside it; both are `additionalProperties: false`
+# violations now, and a column still carrying one is a column whose key the loader cannot see.
+_retired_cols = [
+    f"{c}.{k}" for c, b in (src0.get("columns") or {}).items() if isinstance(b, dict)
+    for k in ("roles", "identity", "register", "counts") if k in b
+]
+_unclassified = [
     c for c, b in (src0.get("columns") or {}).items()
-    if isinstance(b, dict)
-    and ((b.get("roles") or {}).get("identity")) in ("canonical", "composite")
+    if not isinstance(b, dict) or "offers" not in b
 ]
 check("exemplar: the key is declared on the source", bool(_key), f"key={_key!r}")
 check("exemplar: every key column is a column of the map",
       all(c in (src0.get("columns") or {}) for c in _key), f"key={_key!r}")
-check("exemplar: no column repeats the key", not _canon_cols, f"columns claiming it: {_canon_cols}")
+check("exemplar: no column carries a retired flag", not _retired_cols, f"{_retired_cols}")
+check("exemplar: every column declares `offers:`", not _unclassified,
+      f"a missing `offers` is a column nobody classified: {_unclassified}")
 check("exemplar: no `concept.identity` block at all",
       "identity" not in (exo.get("concept") or {}), f"concept keys {sorted(exo.get('concept') or {})}")
 check("exemplar: schema_version is the schema's generation",
@@ -103,23 +119,42 @@ P = authoring.SYS_PROMPT
 # (mac_vocabulary.yaml folds its blocks; the lookup asked for the dotted name), so `sep.join([])`
 # was `""` and `"" in P` is true of any prompt — four assertions that could not fail. The terms are
 # asserted non-empty FIRST, which is what makes the membership check mean something.
-for ns, sep in (("concept.rule", "|"), ("concept.column.roles", " | "),
-                ("concept.column.identity", " | "), ("concept.axis", "|"),
-                ("concept.column.measure_type", "|")):
+# `concept.column.roles` BECAME `concept.column.offers` and `concept.column.identity` IS GONE
+# ENTIRELY -- a foreign key's declaration is the CONCEPT IT POINTS AT, which is a name and not a
+# term from a closed set, so there is no term list left to render. Asking for the retired namespace
+# would resolve to `[]` and pass vacuously, which is the defect the non-empty check below exists
+# for; it is asserted ABSENT instead.
+check("the retired `concept.column.identity` vocabulary is gone",
+      not authoring.vocabulary_terms("concept.column.identity"),
+      "it still resolves to terms — the use set moved to `references:`, which takes a concept name")
+for ns, sep in (("concept.rule", "|"), ("concept.column.offers", " | "),
+                ("concept.axis", "|"), ("concept.column.measure_type", "|")):
     terms = authoring.vocabulary_terms(ns)
     check(f"{ns} resolves to terms at all", bool(terms))
     check(f"prompt lists every {ns} term", bool(terms) and sep.join(terms) in P, sep.join(terms))
 for retired in ("resolved_axis", "role: attribute", "mac.MeasureType", "non-additive",
                 "Only ONE column per concept", "identity: part", "{role: key", "{role: dimension",
-                "mac.concept.column.role", "mac.concept.column.query_use"):
+                "mac.concept.column.role", "mac.concept.column.query_use",
+                # RETIRED 2026-10-07, and every one of them is a key an author would otherwise
+                # copy straight out of the prompt into a file the loader refuses. `roles:` is
+                # checked separately, with a word boundary: `field_roles:` legitimately appears
+                # inside a prohibition, and a plain substring would fire on the prohibition.
+                "sources:", "identity: reference", "identity: canonical", "identity: composite",
+                "never_axis", "mac.concept.column.roles", "mac.concept.column.identity"):
     check(f"prompt carries no retired token: {retired!r}", retired not in P)
 
 # A PROHIBITION MUST NAME WHAT IT PROHIBITS, so these may appear — and ONLY inside one. A model
 # that is told "do not write a `lifecycle:` block" needs to read the word; a blunt "the token is
 # absent" check would force the instruction to be vague instead. Each occurrence must sit within
 # 160 characters after a DO-NOT, which is where the prohibition's own sentence is.
+#
+# `roles:` BELONGS HERE, not in the blunt list above, and a word-boundary check alone was not
+# enough: the prompt forbids the container by name ("DO NOT WRITE A SCALAR `role:` OR A `roles:`
+# MAP"), so both of its occurrences are bare `roles:` inside a prohibition. Banning the substring
+# outright would force the one instruction an author most needs to be vague.
 _DONT = [i for i in range(len(P)) if P.startswith("DO NOT", i)]
-for named in ("lifecycle:", "field_roles:", "`grain:`", "additivity:", "`identity:` BLOCK"):
+for named in ("lifecycle:", "field_roles:", "`grain:`", "additivity:", "`identity:` BLOCK",
+              "`roles:`", "roles:"):
     hits = [i for i in range(len(P)) if P.startswith(named, i)]
     loose = [i for i in hits if not any(0 <= i - d <= 160 for d in _DONT)]
     check(f"prompt names {named!r} only inside a prohibition",
@@ -137,7 +172,9 @@ if _neighbours.runtime_src() is not None:
         p = cs["Product"]
         check("runtime: Product manufacturer label_of brand (legal)",
               p.grounding.spec("manufacturer").rulings.label_of == "brand"
-              and p.grounding.spec("manufacturer").rulings.naming_register == "legal")
+              # `naming`, not `register`: ONE word named this closed five-term enum AND the file
+              # whose rows are a column's values, one nesting level apart.
+              and p.grounding.spec("manufacturer").rulings.naming == "legal")
         check("runtime: Product composed unit USD", p.semantics.unit == "USD")
         n = cs["NetRevenue"]
         check("runtime: NetRevenue composed unit and two measure carriers",
@@ -177,7 +214,7 @@ if _neighbours.runtime_src() is not None:
                 _c = _cs.get((_doc.get("concept") or {}).get("name"))
                 if _c is None or _c.grounding is None:
                     continue
-                _cols = ((_doc.get("grounding") or {}).get("sources") or [{}])[0].get("columns") or {}
+                _cols = ((_doc.get("grounding") or {}).get("source") or {}).get("columns") or {}
                 for _spec in _c.grounding.columns:
                     _authored = _cols.get(_spec.name) or {}
                     # THE BRANCH WHOSE ABSENCE COST 3 OF 112: a one-column key whose column is
@@ -185,9 +222,9 @@ if _neighbours.runtime_src() is not None:
                     # category_name). The shape is now "the source's key holds one name and that
                     # column declares an axis" — the per-column `canonical` it used to be read from
                     # retired with the key's move.
-                    _sk = ((_doc.get("grounding") or {}).get("sources") or [{}])[0].get("key")
+                    _sk = ((_doc.get("grounding") or {}).get("source") or {}).get("key")
                     _sk = [_sk] if isinstance(_sk, str) else list(_sk or [])
-                    if len(_sk) == 1 and _spec.name in _sk and (_authored.get("roles") or {}).get("axis"):
+                    if len(_sk) == 1 and _spec.name in _sk and (_authored.get("offers") or {}).get("axis"):
                         canonical_axes += 1
                     pinned += 1
                     # BOTH SIDES SEE THE KEY, or the comparison is vacuous: `_spec.role` calls
@@ -205,6 +242,12 @@ if _neighbours.runtime_src() is not None:
               f"{pinned} column(s) pinned, {canonical_axes} of them canonical-and-an-axis")
     except ImportError as e:  # the platform's deps are not this repo's
         print(f"  runtime half skipped: {e}")
+    except Exception as e:  # noqa: BLE001
+        # A REFUSAL IS A DISAGREEMENT, NOT A CRASH. The reader raising on the exemplar is exactly
+        # what this file exists to catch -- "the first bundle written on the standard could not
+        # load" is its opening measurement -- and it must arrive as a NAMED check among the others,
+        # not as a traceback that hides the five sides already checked above it.
+        check("the runtime reader loads the exemplar at all", False, f"{type(e).__name__}: {e}")
 else:
     print("  runtime half skipped: mac-platform is not beside this repo")
 

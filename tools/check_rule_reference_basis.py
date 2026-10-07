@@ -281,7 +281,7 @@ def _binds_conformance(concepts: dict) -> list:
     the key instead of restating it, which a template still would not."""
     known_rel, known_schema = set(), set()
     for info in concepts.values():
-        for s in ((info["doc"].get("grounding") or {}).get("sources") or []):
+        for s in ([_s] if isinstance(_s := ((info["doc"]).get("grounding") or {}).get("source"), dict) else []):
             r = s.get("relation") if isinstance(s, dict) else None
             if isinstance(r, str) and "." in r:
                 known_rel.add(r); known_schema.add(r.split(".", 1)[0])
@@ -290,7 +290,7 @@ def _binds_conformance(concepts: dict) -> list:
     for name, info in concepts.items():
         rel = info["rel"]
         own = set()
-        for s in ((info["doc"].get("grounding") or {}).get("sources") or []):
+        for s in ([_s] if isinstance(_s := ((info["doc"]).get("grounding") or {}).get("source"), dict) else []):
             own |= set(s.get("columns") or [])
             k = s.get("key")
             own |= {k} if isinstance(k, str) else set(k or ())
@@ -521,7 +521,7 @@ def _concept(name: str, *, unit: str = "", cols=("zz_code", "zz_name"), relation
     return (f"concept:\n  name: {name}\n  label: {name}\n  class: measure\n"
             + (f"  semantics:\n    unit: {unit}\n" if unit else "")
             + (f"  german: {noun}\n" if noun else "")
-            + f"grounding:\n  sources:\n    - relation: {relation}\n      key: zz_code\n"
+            + f"grounding:\n  source:\n    relation: {relation}\n    key: zz_code\n""    columns:\n      zz_code: {offers: {}}\n"
               f"      columns: [{cols_s}]\n"
             + (f"contract:\n  rules:\n{rules}" if rules else "")
             + extra)

@@ -131,7 +131,7 @@ def check(root: str) -> list[dict]:
         d = yaml.safe_load(open(f, encoding="utf-8")) or {}
         if ((d.get("concept") or {}).get("class")) != "measure":
             continue
-        for s in ((d.get("grounding") or {}).get("sources") or []):
+        for s in ([_s] if isinstance(_s := ((d).get("grounding") or {}).get("source"), dict) else []):
             rel = str(s.get("relation") or "")
             if rel:
                 needed.setdefault(rel.split(".")[-1], os.path.basename(str(f))[:-5])

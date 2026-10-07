@@ -30,7 +30,7 @@ single naïve join (`JOIN calendar ON cal_date = placed_date`) silently answers 
 
 > **The question:** *Are these three date columns three dimensions, or one dimension in three roles?*
 >
-> **The answer:** *One dimension, three roles. Model ONE `reference` (Calendar) and THREE `edges`, each
+> **The answer:** *One dimension, three roles. Model ONE `references: Calendar` and THREE `edges`, each
 > tagged with a distinct `role`; a query names the role it means.*
 
 ## The pattern (the structured entry)

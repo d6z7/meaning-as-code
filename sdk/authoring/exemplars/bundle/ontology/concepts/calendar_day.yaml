@@ -8,68 +8,72 @@ concept:
   name: CalendarDay
   label: Calendar Day
   class: entity
-  definition: >
+  definition: '
 
-    One day, with the parts of it a question names: year, quarter, month, weekday. 4,018 days,
-    2016-01-01 onward.
-
-
-    A2: a keyed dimension that facts point at → `reference`. Every date in the bundle points here
-    — a sale twice, a rate once — so "last March" means one thing everywhere.
+    One day, with the parts of it a question names: year, quarter, month, weekday. 4,018 days, 2016-01-01
+    onward.
 
 
-    NAMES RESOLVE THROUGH `data/lookups/contoso5_year_month.lookup.csv` and
-    `data/lookups/contoso5_year_quarter.lookup.csv` — a question says "January 2016" or "Q1 2016",
-    and those are the registers that turn the words into the day set.
+    A2: a keyed dimension that facts point at → `reference`. Every date in the bundle points here — a
+    sale twice, a rate once — so "last March" means one thing everywhere.
+
+
+    NAMES RESOLVE THROUGH `data/lookups/contoso5_year_month.lookup.csv` and `data/lookups/contoso5_year_quarter.lookup.csv`
+    — a question says "January 2016" or "Q1 2016", and those are the registers that turn the words into
+    the day set.
+
+    '
 grounding:
-  sources:
-    - relation: dim_date
-      key: date_day
-      columns:
-        date_day:
-          roles: {}
-        date_key:
-          roles: {}
-        year:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        year_quarter:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-          rulings:
-            finer_than: year
-        year_month:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-          rulings:
-            finer_than: year_quarter
-        month_name:
-          roles:
-            axis: mac.concept.axis.categorical
-            extremum: [min, max]
-        day_of_week:
-          roles:
-            axis: mac.concept.axis.time
-            extremum: [min, max]
+  source:
+    relation: dim_date
+    key: date_day
+    columns:
+      date_day:
+        offers: {}
+      date_key:
+        offers: {}
+      year:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      year_quarter:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        rulings:
+          finer_than: year
+      year_month:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+        rulings:
+          finer_than: year_quarter
+      month_name:
+        offers:
+          axis: categorical
+          extremum: [min, max]
+      day_of_week:
+        offers:
+          axis: time
+          extremum: [min, max]
 contract:
   rules:
-    - id: calendar_day.aggregation.month_name_does_not_sort
-      subject: CalendarDay
-      kind: mac.concept.rule.aggregation
-      confidence: P
-      scope: CONTOSO5
-      binds:
-        - month_name
-        - year_month
-      when: a monthly series is asked for
-      then: group by `{year_month}`, which orders correctly and keeps years apart
-      never: >
-        group by `{month_name}`
-      why: >
-        twelve values with no year merge every January into one row and sort alphabetically
+  - id: calendar_day.aggregation.month_name_does_not_sort
+    subject: CalendarDay
+    kind: mac.concept.rule.aggregation
+    confidence: P
+    scope: CONTOSO5
+    binds:
+    - month_name
+    - year_month
+    when: a monthly series is asked for
+    then: group by `{year_month}`, which orders correctly and keeps years apart
+    never: 'group by `{month_name}`
+
+      '
+    why: 'twelve values with no year merge every January into one row and sort alphabetically
+
+      '
 governance:
   owner: operator
   last_reviewed: '2026-09-29'
