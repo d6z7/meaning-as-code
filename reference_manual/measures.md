@@ -12,7 +12,7 @@ the axis you are summing along — and the two combine into one answer per pair.
 
 ## The whole system in one table
 
-Declare **one** thing per measure — `semantics.measure_type` — and the correct fold along every axis
+Declare **one** thing per measure — the aggregate's `type` — and the correct fold along every axis
 follows:
 
 | `measure_type` | along **time** | along **categorical** | example |
@@ -125,7 +125,12 @@ across categories answers *"how many"* and never *"how much"*.
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.axis (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
-> The additivity-relevant classification of an aggregation axis.
+> WHETHER A COLUMN IS AN AXIS, and if so the additivity-relevant kind. RENAMED from `axis`
+2026-10-07 (operator: "cant we just call it axis ?"): the VALUE was always the kind, so carrying
+"kind" in the name restated it — the same redundancy `semantics.measure_type` and the prose
+`grain` were carrying. REQUIRED on every declared column from the same date, which is the
+substantive half of the change: absence used to mean two different things that nothing could
+separate.
 
 *`mac.concept.axis` · 2 terms · closed — these are all of them*
 
@@ -269,8 +274,10 @@ something failed.
 
 - **`measure_type` and `additivity` are read and enforced** — `_check_additivity` in the planner,
   with a typed `ADDITIVITY_VIOLATION`.
-- **`semantics.axis_kinds` is declared and read by nothing.** Zero contoso concepts populate it, so
-  axis classification is inferred rather than declared.
+- **An axis no column classifies is defaulted, not declared.** The `axis` role on the column carries
+  the fold law and is read; where no column of the folded relation carries it, the law falls back to
+  the vocabulary's own reading of the axis's name — `time` for the temporal axis, `categorical`
+  otherwise — and a default is not a declaration.
 - **`binding_mode` is not read.**
 - **`unit` is prose.** It carries the comparison rules — same-currency, dimensionless, what a count
   does not license — and nothing enforces them. Two `GrossSalesAmount` figures in different

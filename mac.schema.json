@@ -3845,59 +3845,86 @@
                         "object",
                         "null"
                       ],
-                      "description": "A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.",
+                      "description": "EVERYTHING ABOUT ONE COLUMN, ON THE COLUMN. Four flags and only four — `roles` (required: which uses a question may make of this column, each with its own terms), `counts` (a count of this concept counts THIS column), `register` (where its values come from) and `rulings` (how it relates to another column). A flag ships with the code that reads it, and `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.",
                       "additionalProperties": false,
                       "properties": {
-                        "role": {
-                          "type": "string",
-                          "description": "projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.",
-                          "enum": [
-                            "key",
-                            "dimension",
-                            "measure",
-                            "period",
-                            "housekeeping"
-                          ],
-                          "$comment": "RE-CLOSED 2026-09-29 TO THE VOCABULARY'S TERMS — operator ruling: `attribute` was deprecated (mac_vocabulary.yaml#concept.column.role says it IS DELIBERATELY ABSENT) and this enum still offered it, so an author reading the schema, the authoring guidance (sdk/authoring/authoring.py showed `Surname: {role: attribute}`) and the neighbouring bundle (contoso4, 44 uses) was handed the deprecated term by every surface at once, and validate_schema passed 20 such columns in one day. check_vocabulary_parity had reported the disagreement since 09-27; it ran in the framework gate run and nobody stopped. Per CONFORMANCE §2.1 this enum IS the vocabulary's term list; contoso4's 45 `attribute` columns become invalid, which is the honest consequence — the earlier comment kept the term precisely so they would not. HISTORY — CLOSED 2026-09-27. It was `type: string` with NO enum while `identity` beside it was closed to three values, so `role: dimensio` passed validate_schema in SILENCE — the same silence the 141 inert CONTOSO4.field_role.* tokens had, reached by a different mechanism. THE FOUR MEMBERS ARE NOT INVENTED: they are the four in use across contoso4's 142 column declarations (dimension 57, attribute 45, key 37, measure 3 = 142), so closing the set invalidates no delivered file. DELIBERATELY NOT VERSION-BUMPED: nothing delivered becomes invalid, a bump re-keys every cached completion (which is backlog item 1's own complaint), and `version.py --check` is RED on this tree with four disagreeing current-version claims while exiting 0 — tightening a rule into that state is how the version line got into it.",
-                          "constellation": "A RELATION HAS MORE THAN ONE KIND OF COLUMN, which is every relation. The moment a question could filter on a column, group by it, or total it, something has to decide which of those three are legal — and the column's NAME cannot, because `Quantity` and `CustomerKey` are both numbers and only one of them may be summed. Declare it on every column you serve: the planner reads it to place a predicate, and an undeclared column is one it has to guess about."
-                        },
-                        "identity": {
-                          "type": "string",
-                          "enum": [
-                            "canonical",
-                            "part",
-                            "reference"
-                          ],
-                          "description": "`canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a foreign key. IDENTITY IS A COLUMN FACT AND HAS NO CONCEPT-LEVEL HOME: the `concept.identity` block was removed 2026-10-05 (operator ruling: \"identity of the concept is given by column combination and it belongs there\").",
-                          "constellation": "SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's."
-                        },
-                        "measure": {
+                        "roles": {
                           "type": "object",
                           "additionalProperties": false,
-                          "description": "THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.",
+                          "minProperties": 0,
+                          "description": "WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each role to that role's own qualifier, so the role and its parameter are one statement and a role cannot be claimed without its terms. Terms: mac.concept.column.roles. AN EMPTY MAP IS A STATEMENT (the column is offered to no question, which is what `role: housekeeping` said); an ABSENT `roles` is a column nobody classified, and the two are different findings. v0.1.19: replaces the scalar `role` and absorbs `mac.concept.column.query_use`, which was 'the machine-readable half' of it and had no key here at all — one fact in two vocabularies, neither able to say that a join key is also an axis, which 21 of contoso5's 112 columns are.",
                           "properties": {
-                            "type": {
+                            "identity": {
                               "type": "string",
-                              "description": "WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.",
-                              "constellation": "YOU HAVE DECLARED `measure` AND MUST SAY HOW THE QUANTITY BEHAVES WHEN IT IS FOLDED. A stock level and a revenue amount are both USD and both numeric; summing revenue across months is the point and summing the stock level across months is a number nobody asked for. Nothing in the data separates them. This is the half of the fold law the column owns, so getting it wrong does not produce an error — it produces a plausible wrong total."
+                              "enum": [
+                                "canonical",
+                                "composite",
+                                "reference"
+                              ],
+                              "description": "WHICH PART THIS COLUMN PLAYS IN IDENTIFYING A ROW. `canonical` — this column ALONE identifies an instance, is what COUNT(DISTINCT …) counts, and at most one column per concept carries it. `composite` — this column WITH its siblings identifies one, so the set carrying it IS the key, in declaration order, and using one of them as if it identified anything returns a set where a row was expected. `reference` — it identifies a row in ANOTHER concept, so it is a join target and never part of this concept's grain. The key is a COLUMN fact and this is its one home: `cell_key` and `concept.identity.canonical_key` are both derived from it.",
+                              "constellation": "SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's."
                             },
-                            "unit": {
+                            "axis": {
                               "type": "string",
-                              "description": "WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.",
-                              "constellation": "THE ANSWER WILL BE READ BY SOMEBODY WHO DID NOT WRITE THE QUERY. The sharp case is a rate: a column of values like 1.08 is euros per dollar or dollars per euro, and the two give answers that are each other's reciprocal. Reach for it on every measure, and reach for it hardest where the unit is a ratio or a count rather than money, because money is the one people assume correctly."
+                              "description": "WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time` or `mac.concept.axis.categorical`. THE KIND IS THE PERMISSION: a column that declares one may be grouped and filtered by, a column that declares none is not an axis and the fold law is never consulted on it. Two terms and no more, because the law is a grid of `measure_type x axis` and a third kind would leave cells nobody has ruled on — `.none` was added and withdrawn inside an hour on 2026-10-07 for exactly that reason. A column's declared kind must agree with its declared TYPE family (temporal -> time, everything else -> categorical), which is measured rather than assumed: 70 of 70 agree on contoso5.",
+                              "constellation": "THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time.",
+                              "pattern": "^mac\\.concept\\.axis\\.(categorical|time)$"
                             },
-                            "additivity": {
+                            "aggregate": {
                               "type": "object",
-                              "description": "PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.",
-                              "constellation": "THE MEASURE TYPE IS RIGHT IN GENERAL AND WRONG ON ONE NAMED AXIS. An inventory balance sums across stores and not across days. The type cannot say that, because the exception is a property of the AXIS rather than of the quantity — so this is the only place it can be stated. Do not restate what the type already implies: a per-axis entry that agrees with the type is a second home for it."
+                              "additionalProperties": false,
+                              "description": "THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "description": "WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.",
+                                  "constellation": "YOU HAVE DECLARED `measure` AND MUST SAY HOW THE QUANTITY BEHAVES WHEN IT IS FOLDED. A stock level and a revenue amount are both USD and both numeric; summing revenue across months is the point and summing the stock level across months is a number nobody asked for. Nothing in the data separates them. This is the half of the fold law the column owns, so getting it wrong does not produce an error — it produces a plausible wrong total."
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "description": "WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.",
+                                  "constellation": "THE ANSWER WILL BE READ BY SOMEBODY WHO DID NOT WRITE THE QUERY. The sharp case is a rate: a column of values like 1.08 is euros per dollar or dollars per euro, and the two give answers that are each other's reciprocal. Reach for it on every measure, and reach for it hardest where the unit is a ratio or a count rather than money, because money is the one people assume correctly."
+                                },
+                                "additivity": {
+                                  "type": "object",
+                                  "description": "PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.",
+                                  "constellation": "THE MEASURE TYPE IS RIGHT IN GENERAL AND WRONG ON ONE NAMED AXIS. An inventory balance sums across stores and not across days. The type cannot say that, because the exception is a property of the AXIS rather than of the quantity — so this is the only place it can be stated. Do not restate what the type already implies: a per-axis entry that agrees with the type is a second home for it."
+                                },
+                                "canonical": {
+                                  "type": "boolean",
+                                  "description": "THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity.",
+                                  "constellation": "THE CONCEPT HAS MORE THAN ONE MEASURE COLUMN AND ONE OF THEM IS THE CONCEPT'S OWN QUANTITY. A sale line carries both a net amount and a net price; the concept IS the amount, and the price is an input to it. Without this the projection cannot choose between two units and must be told the composed unit on the concept instead — so declaring the canonical column is the cheaper of the two ways to answer the same question."
+                                }
+                              },
+                              "constellation": "THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys."
                             },
-                            "canonical": {
-                              "type": "boolean",
-                              "description": "THE COLUMN THE CONCEPT IS — the number a question about the concept itself folds. It states directly what semantics.measure_type stated indirectly on a multi-measure concept: not 'I am a flow' but 'of my measure columns, fold the flow one'. That proxy works only while the columns differ in TYPE, and it is what let the fold law read the CONCEPT's type while the emitter folded another column (SUM(unit_price) AS grossrevenue, permitted, for a column declared intensive). `canonical` is the word this estate already uses for 'this column is the thing' — see concept.column.identity.",
-                              "constellation": "THE CONCEPT HAS MORE THAN ONE MEASURE COLUMN AND ONE OF THEM IS THE CONCEPT'S OWN QUANTITY. A sale line carries both a net amount and a net price; the concept IS the amount, and the price is an input to it. Without this the projection cannot choose between two units and must be told the composed unit on the concept instead — so declaring the canonical column is the cheaper of the two ways to answer the same question."
+                            "period_binding": {
+                              "const": true,
+                              "description": "THE COLUMN A QUESTION'S PERIOD BINDS TO — which date is the reporting date when a relation carries several, so \"sales in March\" cannot silently pick the wrong one. A bare flag: the role has no parameter."
+                            },
+                            "extremum": {
+                              "type": "array",
+                              "items": {
+                                "enum": [
+                                  "min",
+                                  "max"
+                                ]
+                              },
+                              "minItems": 1,
+                              "uniqueItems": true,
+                              "description": "WHICH OF THE EARLIEST OR LATEST VALUE MAY BE ASKED FOR. Not a fold: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM."
                             }
-                          },
-                          "constellation": "THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys."
+                          }
+                        },
+                        "counts": {
+                          "type": "boolean",
+                          "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.",
+                          "constellation": "THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself."
+                        },
+                        "register": {
+                          "type": "string",
+                          "description": "THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: \"A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once\" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: \"Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register\" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. measured on a worked bundle: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.",
+                          "constellation": "A QUESTION WILL NAME THE VALUE IN WORDS AND THE COLUMN HOLDS A CODE. Someone asks about Germany and the column says `DE`. Reach for it when the column's values are a closed set a person will speak — a country, a brand, a currency — and especially when THE SAME SET APPEARS ON MORE THAN ONE COLUMN: the register is what makes one name resolve to one code exactly once, instead of each column learning the mapping separately and drifting."
                         },
                         "rulings": {
                           "type": "object",
@@ -3960,23 +3987,11 @@
                             ]
                           },
                           "constellation": "SOMETHING TRUE ABOUT THE COLUMN CANNOT BE MEASURED FROM IT. That is the whole test, and it is the one that tells a ruling from a fact: if profiling the rows could establish it, it is not a ruling and does not belong here. The compelling case is two columns that are 1:1 where one is the other's NAME — cardinality is the same in both directions, so nothing in the data says which is the name and which is the thing."
-                        },
-                        "axis": {
-                          "type": "string",
-                          "description": "WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time`, `.categorical`, or `.none` (NOT AN AXIS \u2014 a surrogate row id, a housekeeping stamp, the measure payload). v0.1.19 made this key REQUIRED on every declared column and added `.none` for the same reason: before it, a column with no value could mean \"not an axis\" or \"nobody said\", and nothing could tell them apart \u2014 measured on contoso5, 12 surrogate key columns meant the first and 30 declared dimensions meant the second. `.none` is NOT `rulings.never_axis`: that one says a query WOULD group by it and may not, names the measurement, and refuses citing it. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.",
-                          "constellation": "THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time."
-                        },
-                        "register": {
-                          "type": "string",
-                          "description": "THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the bundle root (data/lookups/<name>.lookup.csv). The blueprint's own words: \"A register is a value set: one virtual table per set of values, ATTACHED TO EVERY COLUMN THAT CARRIES IT, so that a name typed by a person resolves to a code exactly once\" (guardrails/strategy.yaml). check_registers_reachable.py already said where it belongs: \"Declare a register on the column that uses it. Until `columns:` exists, that is a contract rule whose realized_by is udf: mac.canon.resolve_by_register\" — `columns:` exists now, so the contract-rule form is the stopgap and this is the shape. measured on a worked bundle: 17 lookup files, 0 referenced by anything, while 5 concepts inlined 49 values under `values.items` that were BYTE-FOR-BYTE the same sets. One fact, two homes, no link between them.",
-                          "constellation": "A QUESTION WILL NAME THE VALUE IN WORDS AND THE COLUMN HOLDS A CODE. Someone asks about Germany and the column says `DE`. Reach for it when the column's values are a closed set a person will speak — a country, a brand, a currency — and especially when THE SAME SET APPEARS ON MORE THAN ONE COLUMN: the register is what makes one name resolve to one code exactly once, instead of each column learning the mapping separately and drifting."
-                        },
-                        "counts": {
-                          "type": "boolean",
-                          "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.counts_as. A store dimension keyed on a version surrogate counts VERSIONS unless this says otherwise, and the two numbers differ with nothing in the result saying which you got. The key the fact JOINS stays `identity: canonical`; this is what a count DISTINCTs. A SEPARATE flag rather than a fourth `identity` term because the column that counts is routinely also the one that references.",
-                          "constellation": "THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself."
                         }
-                      }
+                      },
+                      "required": [
+                        "roles"
+                      ]
                     }
                   }
                 ],
@@ -4024,10 +4039,6 @@
             "string"
           ],
           "description": "HOW MANY ROWS THE RELATION HELD WHEN IT WAS MEASURED. A number, or a string where the count is approximate or qualified. It is evidence, not a constraint: nothing enforces it, and its job is to let a reader see at a glance whether a grain claim is plausible — 2,517 products against 104,990 customers says more about a model than either sentence about it."
-        },
-        "grain": {
-          "type": "string",
-          "description": "v0.5 PROMOTED to core: the committed leaf grain — one row = one.... THE grain-commitment lesson, first-class."
         },
         "grounds_column": {
           "type": "string",

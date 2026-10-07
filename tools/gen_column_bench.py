@@ -273,10 +273,13 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
     findings = G.check(storage, rows, terms)
     origin = forms.get("_origin") or {}
 
+    # ONE ROW PER ROLE OFFERED. A column may claim several (21 of contoso5's 112 are a join key
+    # you also group by), so a census keyed on a single role name cannot describe it.
     xt: dict[str, int] = {}
     for r in rows:
         s = storage.get((r["rel"], r["col"]))
-        xt[f"{s}|{r['role']}"] = xt.get(f"{s}|{r['role']}", 0) + 1
+        for role in (r.get("offers") or [None]):
+            xt[f"{s}|{role}"] = xt.get(f"{s}|{role}", 0) + 1
 
     bound = {(r["rel"], r["col"]) for r in rows}
     per_origin = {}
@@ -285,19 +288,34 @@ def two_plane_census(bundle: pathlib.Path) -> dict:
         per_origin[name] = {"total": len(pop), "unbound": sum(1 for k in pop if k not in bound)}
 
     return {
-        "terms": {k: terms[k] for k in ("relation.column.role", "concept.column.role", "concept.column.identity",
-                                        "concept.identity", "concept.column.measure_type", "concept.column.ruling",
-                                        "name_register")},
+        # THE SHORT ALIASES THE PAGE READS, mapped here from the dotted namespaces. The template
+        # says `T.storage_role` and `T.column_role`; the census emitted dotted keys, so every one
+        # of those lookups was `undefined` and the whole two-plane panel rendered blank — a page
+        # that measured nothing while printing a layout. One map, in the producer.
+        "terms": {
+            "storage_role": terms["dataset.column.role"],
+            "column_role": terms["concept.column.roles"],
+            "identity_role": terms["concept.column.identity"],
+            "axis": terms["concept.axis"],
+            "measure_type": terms["concept.column.measure_type"],
+            "column_ruling": terms["concept.column.ruling"],
+            "name_register": terms["name_register"],
+        },
         "storage_total": len(storage),
         "relations": len({r for r, _ in storage}),
         "bindings": len(rows),
         "concepts": len({r["concept"] for r in rows}),
         "forms": {"map": forms["map"], "flat": forms["flat"]},
-        "slots": {slot: sum(1 for r in rows if r[key])
-                  for slot, key in (("role", "role"), ("identity", "identity"),
-                                    ("measure.type", "mtype"), ("rulings", "rulings"))},
-        "identity_kinds": {str(k): v for k, v in kinds.most_common()},
-        "identity_kinds_unused": [x for x in terms["concept.identity"] if x not in kinds],
+        # ONE SLOT PER USE A COLUMN MAY OFFER, which is what the column standard declares. The
+        # four-slot census (`role`, `identity`, `measure.type`, `rulings`) crashed with KeyError
+        # the moment `read_planes` moved to `offers` — a row no longer carries a `role` at all.
+        "slots": {
+            **{use: sum(1 for r in rows if use in (r.get("offers") or []))
+               for use in terms["concept.column.roles"]},
+            "rulings": sum(1 for r in rows if r.get("rulings")),
+        },
+        # `concept.identity.kind` AND ITS CENSUS ARE RETIRED (2026-10-05) with the block they
+        # counted; `roles.identity` above is what identifies a row now.
         "crosstab": xt,
         "suspicious": {f"{a}|{b}": why for (a, b), why in G.SUSPICIOUS.items()},
         "per_origin": per_origin,
@@ -396,7 +414,8 @@ def main() -> int:
     out.write_text(html, encoding="utf-8")
     c = data["census"]
     print(f"  two-plane census: {c['storage_total']} measured columns / {c['bindings']} bindings, "
-          f"{len(c['crosstab'])} of {len(c['terms']['relation.column.role']) * len(c['terms']['concept.column.role'])} "
+          f"{len(c['crosstab'])} of "
+          f"{len(c['terms']['storage_role']) * len(c['terms']['column_role'])} "
           f"pairs occur, {len(c['findings'])} finding(s)")
     print(f"gen_column_bench: wrote {out} — {len(data['keys'])} keys "
           f"({data['counts']['enforced']} enforced / {data['counts']['designed']} designed / "

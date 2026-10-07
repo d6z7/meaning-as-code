@@ -1,50 +1,92 @@
 ---
-title: Column Roles — what a column IS, and where a query may use it
-status: ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.json (v0.1.16) with `role` closed to
-  the vocabulary's five terms (re-closed 2026-09-29; `attribute` retired), and mac-runtime's parser reads it
-  (ontology/parser.py projects it to field_roles; an explicit field_roles block still wins). §2B's storage
-  role is measured, not authored.
-audience: ontology authors, importer developers
+title: Column roles — the five things a question may do with a column
+status: >-
+  CURRENT (2026-10-07). The `roles` map is what mac.schema.json admits and what the runtime loads:
+  `identity: composite`, `aggregate` as a qualifier and `roles: {}` all load, and the five role NAMES
+  are derived rather than authored. Every planner step asks `Grounding.offers(column, use)`, which
+  reads this map. The fold law reads `axis` and refuses a fold it does not permit
+  (`ADDITIVITY_VIOLATION`, mac-runtime `planner/plan.py` + `foldplane/law.py`). A declared `axis` kind
+  must agree with the column's declared type family, which the runtime suite measures: 70 of 70 on
+  contoso5. column_declaration.md is the overview; this page is the detail.
+audience: ontology authors, importer developers, framework developers
 companions:
-  - column_declaration.md   # PROPOSED 2026-10-07 — the classification this page's subject would move to
-  - column_rulings.md        # what a PERSON decided about a column, on top of its role
-  - shape_reference.md       # where `columns:` nests in a concept file
-  - ../mac_vocabulary.yaml   # the authoritative terms; definitions below are generated from it
+  - column_declaration.md     # the whole column on one page — every key, and who reads each answer
+  - column_rulings.md         # what a PERSON decided about a column, on top of its roles
+  - measures.md               # the fold law, stated once: aggregate.type × axis
+  - shape_reference.md        # where `columns:` nests in a concept file
+  - ../mac_vocabulary.yaml    # the authoritative terms; the chapters below are generated from it
 ---
 
 # Column roles
 
-Every column a concept binds carries **exactly one role**, and the role decides where a query may
-use it. It is the first thing declared about a column and the only required one.
+A column declares **one** key for what a question may do with it:
 
-> **A role is READ, not decided.** All five are derivable from cardinality, type and reference
-> structure — which is why a generator assigns them over a thousand columns with no human present.
-> If you find yourself *deciding* rather than *reading*, you are holding a **ruling**, not a role.
-> See [column_rulings.md](column_rulings.md).
+> **`roles` — a map from a role to that role's own qualifier.**
+
+Five roles. A column claims every one that is true of it, and the qualifier *is* the value, so a role
+cannot be claimed without stating its terms.
+
+```yaml
+grounding:
+  sources:
+    - relation: v_contoso5_sales_line
+      columns:
+        order_key:     {roles: {identity: composite}}
+        customer_key:  {roles: {identity: reference, axis: mac.concept.axis.categorical}}
+        order_date:    {roles: {axis: mac.concept.axis.time, period_binding: true}}
+        quantity:      {roles: {aggregate: {type: flow, unit: units}}}
+        valid_from:    {roles: {}}
+```
+
+> **A role is READ, not decided.** All five follow from cardinality, type and reference structure —
+> which is why a generator assigns them over a thousand columns with no human present. If you find
+> yourself *deciding* rather than *reading*, you are holding a **ruling**, not a role. See
+> [column_rulings.md](column_rulings.md).
+
+## The key
+
+| key | card | value | required | says | read by |
+|---|---|---|---|---|---|
+| `roles` | **map** | role → that role's qualifier | **yes** — `{}` is legal | what a question may do with this column | the planner, at every step it takes |
+
+| what you write | what it means | what it is |
+|---|---|---|
+| `roles: {axis: categorical}` | a question may group or filter by this column and do nothing else with it | a classification |
+| `roles: {}` | the column exists, is typed, is loaded, and **no question is offered it** | a positive statement |
+| *no `roles` key* | nobody has said what this column is | a finding, not a state |
+
+Three keys sit beside `roles` on a column and are documented elsewhere, because none of them says what
+a question may DO with the column:
+
+| also on a column | says | page |
+|---|---|---|
+| `counts` | a count of this concept counts **this** column, not the canonical one | [column_declaration.md](column_declaration.md) |
+| `register` | where this column's values come from — a lookup path | [column_declaration.md](column_declaration.md) |
+| `rulings` | how this column relates to **another column** | [column_rulings.md](column_rulings.md) |
 
 ---
 
-## 1. Two real tables, every column assigned
+## 1 · Two real relations, every column assigned
 
-This is a fact and a dimension from the same warehouse. Every column, its type, its measured
-cardinality, and the role that follows.
+A fact and a dimension from the same warehouse. Every column, its type, its measured cardinality, and
+the roles that follow.
 
 ### `v_contoso_order_line` — the FACT, 223 974 rows
 
-| column | type | distinct | role | why this role |
+| column | type | distinct | `roles` | why these roles |
 |---|---:|---:|---|---|
-| `OrderKey` | BIGINT | 93 470 | `key` | foreign key to the order header |
-| `RowNumber` | INTEGER | 7 | `key` | the other half of the grain: `(OrderKey, RowNumber)` is unique, neither is alone |
-| `OrderDate` | DATE | 3 450 | **`period`** | THE reporting date — see §3 |
-| `DeliveryDate` | DATE | 3 498 | `dimension` | a real date, askable by name, never the default |
-| `CustomerKey` | INTEGER | 52 189 | `key` | FK → `dim_contoso_customer` |
-| `StoreKey` | INTEGER | 64 | `key` | FK → `dim_contoso_store` |
-| `ProductKey` | INTEGER | 2 517 | `key` | FK → `dim_contoso_product` |
-| `CurrencyCode` | VARCHAR | 5 | `dimension` | 5 members, a legitimate axis |
-| `Quantity` | INTEGER | 10 | `measure` | numeric payload, additive |
-| `UnitPrice` | DECIMAL | 1 760 | `measure` | numeric payload — **not** an axis, despite 1 760 values |
-| `NetPrice` | DECIMAL | 18 407 | `measure` | numeric payload |
-| `UnitCost` | DECIMAL | 1 955 | `measure` | numeric payload |
+| `OrderKey` | BIGINT | 93 470 | `{identity: composite}` | half the grain — `(OrderKey, RowNumber)` is unique, neither is alone; the order header is reached through it |
+| `RowNumber` | INTEGER | 7 | `{identity: composite}` | the other half. A position in a basket: *"revenue by line number"* asks nothing, so no `axis` |
+| `OrderDate` | DATE | 3 450 | `{axis: time, period_binding: true}` | THE reporting date — §5 |
+| `DeliveryDate` | DATE | 3 498 | `{axis: time}` | a real date, askable by name, never the one a bare period binds to |
+| `CustomerKey` | INTEGER | 52 189 | `{identity: reference}` | identifies a row in `dim_contoso_customer`; a breakdown uses Customer's own axes |
+| `StoreKey` | INTEGER | 64 | `{identity: reference}` | identifies a row in `dim_contoso_store` |
+| `ProductKey` | INTEGER | 2 517 | `{identity: reference}` | identifies a row in `dim_contoso_product` |
+| `CurrencyCode` | VARCHAR | 5 | `{axis: categorical}` | 5 members, a legitimate axis |
+| `Quantity` | INTEGER | 10 | `{aggregate: {type: flow, unit: units}}` | items sold accumulate per period |
+| `UnitPrice` | DECIMAL | 1 760 | `{aggregate: {type: intensive, unit: order currency per unit}}` | a rate: a TOTAL of unit prices is not a price. 1 760 distinct values are not an invitation to group by it |
+| `NetPrice` | DECIMAL | 18 407 | `{aggregate: {type: flow, unit: the order's own CurrencyCode}}` | accrues per period — and the **unit**, not the type, is what restricts the comparison |
+| `UnitCost` | DECIMAL | 1 955 | `{aggregate: {type: intensive, unit: order currency per unit}}` | likewise a per-unit rate |
 
 **Read the FK shape:** many rows, far fewer distinct values, and every value present in a parent
 relation. `StoreKey` has 64 distinct over 223 974 rows — that is a pointer, not a category, even
@@ -52,263 +94,170 @@ though its cardinality looks dimension-sized.
 
 ### `dim_contoso_customer` — the DIMENSION, 104 990 rows
 
-| column | type | distinct | role | ruling | why |
+| column | type | distinct | `roles` | `rulings` | why |
 |---|---:|---:|---|---|---|
-| `CustomerKey` | INTEGER | **104 990** | `key` | — | distinct **equals** row count: the identity |
-| `GeoAreaKey` | INTEGER | 608 | `key` | — | a reference — and one with no parent relation in this delivery, recorded as dangling |
-| `StartDT` | DATE | 11 305 | **`housekeeping`** | — | when the ROW was written |
-| `EndDT` | DATE | 14 711 | **`housekeeping`** | — | SCD-2 validity window |
-| `Continent` | VARCHAR | 3 | `dimension` | — | |
-| `Country` | VARCHAR | 8 | `dimension` | — | the canonical geography code |
-| `CountryFull` | VARCHAR | 8 | `dimension` | `label_of: Country` | 1:1 — the same 8 countries, spelled out |
-| `State` | VARCHAR | 563 | `dimension` | `scoped_by: Country` | 40 codes are reused across countries |
-| `StateFull` | VARCHAR | 608 | `dimension` | `label_of: State` | |
-| `City` | VARCHAR | 34 581 | `dimension` | `never_axis` | 1 in 3 rows would be its own group |
-| `ZipCode` | VARCHAR | 40 639 | `dimension` | `never_axis` | 29 193 postcodes held by exactly one customer |
-| `Gender` | VARCHAR | 2 | `dimension` | — | |
-| `age_band_5y` | INTEGER | 15 | `dimension` | — | derived by the transform, served as an ordinary column |
+| `CustomerKey` | INTEGER | **104 990** | `{identity: canonical}` | — | distinct **equals** row count: this column alone identifies a customer |
+| `GeoAreaKey` | INTEGER | 608 | `{identity: reference}` | — | identifies a row elsewhere — and no parent relation in this delivery, recorded as dangling |
+| `StartDT` | DATE | 11 305 | `{}` | — | when the ROW was written |
+| `EndDT` | DATE | 14 711 | `{}` | — | the other end of the SCD-2 validity window |
+| `Continent` | VARCHAR | 3 | `{axis: categorical}` | — | |
+| `Country` | VARCHAR | 8 | `{axis: categorical}` | — | the canonical geography code |
+| `CountryFull` | VARCHAR | 8 | `{axis: categorical}` | `label_of: Country`, `register: long` | 1:1 — the same 8 countries, spelled out |
+| `State` | VARCHAR | 563 | `{axis: categorical}` | `scoped_by: Country` | 40 codes are reused across countries |
+| `StateFull` | VARCHAR | 608 | `{axis: categorical}` | `label_of: State`, `register: long` | |
+| `City` | VARCHAR | 34 581 | `{axis: categorical}` | — | 1 in 3 rows would be its own group. It **is** an axis and says so; a contract rule carries the prohibition |
+| `ZipCode` | VARCHAR | 40 639 | `{axis: categorical}` | — | 29 193 postcodes are held by exactly one customer; same shape, same route |
+| `Gender` | VARCHAR | 2 | `{axis: categorical}` | — | |
+| `age_band_5y` | INTEGER | 15 | `{axis: categorical}` | — | derived by the transform, served as an ordinary column |
 
-**Notice what cardinality alone cannot tell you.** `CountryFull` (8) and `Country` (8) look
-identical. `City` (34 581) and `CustomerKey` (104 990) are both high. `StartDT` (11 305) looks
-exactly like a date dimension. In each case the role — or the ruling on top of it — comes from
-something the numbers do not contain.
+**Notice what cardinality alone cannot tell you.** `CountryFull` (8) and `Country` (8) are
+indistinguishable by count. `City` (34 581) and `CustomerKey` (104 990) are both high. `StartDT`
+(11 305) has the exact shape of a date axis. In each case the role — or the ruling on top of it — comes
+from something the numbers do not contain.
 
-### Reading a role off the data
+### Reading the roles off the data
 
-| what you measure | role |
+| what you measure | the role it reads to |
 |---|---|
-| distinct **equals** row count, no nulls | `key` — the primary identity |
-| many rows, few distinct, every value present in a parent | `key` — a reference |
-| distinct far below row count, categorical, repeated | `dimension` |
-| numeric payload, no identity, summable | `measure` |
-| a date, and **the** one a period filter should bind to | `period` |
-| exists for the pipeline; nobody would ask about it | `housekeeping` |
+| distinct **equals** row count, no nulls | `identity: canonical` |
+| unique only in combination with its siblings | `identity: composite` on each of them |
+| many rows, few distinct, every value present in a parent relation | `identity: reference` |
+| distinct far below row count, categorical, repeated | `axis: categorical` |
+| a date, a month, a period label | `axis: time` |
+| **the** date a bare period must bind to, where a relation carries several | `axis: time` **and** `period_binding: true` |
+| a numeric payload where adding two values means something | `aggregate` — then [measures.md](measures.md) decides the `type` |
+| the earliest or latest value is something a question asks for | `extremum` |
+| exists for the pipeline; nobody would ask about it | `roles: {}` |
 
 ---
 
-## 2. The terms
+## 2 · The five roles
 
-<!-- BEGIN GENERATED:vocabulary-terms:concept.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+| role | qualifier card | terms | says | claiming it commits the bundle to | read by |
+|---|---|---|---|---|---|
+| `identity` | scalar | `canonical` · `composite` · `reference` | the row is identified by me — alone, jointly, or elsewhere | a `COUNT(DISTINCT …)` that counts instances rather than rows, and a join that lands here | `concept.identity.canonical_key` — 22 runtime read sites · [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) |
+| `axis` | scalar | `time` · `categorical` | a question may **group or filter** by me | every fold across me being judged by the law, and the column being OFFERED as groupable to a reader | `planner/grounded_columns.py` · the fold law · [`additivity_guard`](rules_and_canons/semi_additive_balance/additivity_guard.md) |
+| `aggregate` | map | `{type, unit, canonical}` | a question may **fold** me | one fold per axis, fixed by `type`; a comparison legitimate only inside `unit` | `planner/plan.py` · `concept.semantics.measure_type` / `.unit` / `.additivity` |
+| `period_binding` | `true` | — | I am **the** reporting date of this relation | *"sales in March"* binding here and nowhere else | `planner/plan.py` · `interpret/vocabulary.py` |
+| `extremum` | list | `[min]` · `[max]` · `[min, max]` | my earliest or latest value may be **asked for** — not folded | answering *"when did we first sell in Spain"* from this column, and ASKING when a concept admits more than one | `planner/plan.py` — the MIN/MAX route |
 
-> The analytical role of a column — where a query may use it, and the default guardrail.
+A column carries as many of the five as are true of it. `customer_key` is `{identity: reference, axis:
+categorical}` — it points at a row over there **and** a question groups by it. Neither claim weakens
+the other.
 
-*`mac.concept.column.role` · 5 terms · closed — these are all of them*
+### `identity` — three ways to identify
 
-#### `mac.concept.column.role.key`
+| term | holds when | the answer it licenses | what getting it wrong does |
+|---|---|---|---|
+| `canonical` | this column **alone** identifies an instance — at most one per concept | `COUNT(DISTINCT …)` counts instances, and the answer discloses which column it counted | a count of ROWS is handed over as a count of things |
+| `composite` | this column **with its siblings** identifies an instance | the join and the count, over the whole set of columns carrying it | a filter on one part returns a SET where a row was expected, and looks like an answer — this is what [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md) catches |
+| `reference` | this column identifies an instance **in another concept** | the join: the row names a row over there | declaring the reference says the relationship is INTENDED. Whether every value is present there is a measurement, and the reference plane records a dangling reference AS dangling — `Customer.GeoAreaKey` is exactly that, 608 distinct values with no parent relation in this delivery |
 
-IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins
-on the exact value. Never matched against a label, and never aggregated — an identifier that is
-summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and
-what the fact joins on.
+### `axis` — two kinds, because only one of them has the property that matters
 
-| field | value |
-|---|---|
-| `query_use` | identity |
-| `constellation` | A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT. Reach for it when the column is what a join lands on or what a distinct count counts — and never let it be summed: an identifier that is totalled is a number nobody asked for.
- |
-
-#### `mac.concept.column.role.dimension`
-
-A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a
-register states every member, so a non-member is answerable without probing) or OPEN (names
-resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
-`WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-
-| field | value |
-|---|---|
-| `query_use` | axis, extremum |
-| `constellation` | A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender = 'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of the two is reasonable, the column is probably a key or a measure wearing a dimension's name.
- |
-
-#### `mac.concept.column.role.measure`
-
-A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
-once there and never restated per concept. Never filtered on directly: a threshold on a measure
-is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-
-| field | value |
-|---|---|
-| `query_use` | aggregate, extremum |
-| `constellation` | ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the datatype. The corollary matters as much: a threshold on a measure is a HAVING over the aggregate, never a WHERE over the column, so declaring this also declares where a filter may not go.
- |
-
-#### `mac.concept.column.role.period`
-
-THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
-relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
-`OrderDate` on a line that also carries `DeliveryDate`.
-
-| field | value |
-|---|---|
-| `query_use` | axis, extremum, period_binding |
-| `constellation` | THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order line with an order date and a delivery date is the compelling case: both are dates, both are plausible, and the question does not say. This names which one is THE reporting date so the choice is not made silently.
- |
-
-#### `mac.concept.column.role.housekeeping`
-
-PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
-housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence
-from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity
-window — when the ROW was written, not when anything happened. Grouping sales by it is
-meaningless, and until this term existed it was spelled `attribute`, which reads as "a dimension
-you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING
-TRADITION that already has a word for these columns, rather than for the system that writes
-them: a load stamp is housekeeping whoever keeps the house.
-
-| field | value |
-|---|---|
-| `query_use` | none |
-| `constellation` | THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A validity window on a versioned dimension is the case: grouping sales by the row's own start date is meaningless, but nothing in the data says so, and the column is a perfectly good date. Declaring it keeps the column out of a question's reach entirely — its absence from an answer is correct rather than a gap.
- |
-<!-- END GENERATED:vocabulary-terms:concept.column.role -->
-
----
-
-## 2A. The machine-readable half of a role — `query_use`
-
-Each role above carries a `query_use` list, and the table under each term prints it. Those values are
-not free text: they are the terms of `mac.concept.column.query_use`, which is what a planner reads
-when it decides whether a column may become a `GROUP BY`, a `SUM`, a period binding or an `ORDER BY`.
-The role is the word a person writes; `query_use` is the part a program acts on. One is derivable from
-the other, which is why the role is the only thing authored.
-
-`housekeeping` has an EMPTY `query_use`, and that is a value, not an omission: a question may use it
-nowhere.
-
-<!-- BEGIN GENERATED:vocabulary-terms:concept.column.query_use (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
-
-> Where a question may use a column — the machine-readable half of concept.column.role.
-
-*`mac.concept.column.query_use` · 5 terms · closed — these are all of them*
-
-#### `mac.concept.column.query_use.axis`
-
-LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A
-per-column `rulings.never_axis` still overrides this with its own measurement: the role says the
-KIND of column may be an axis, the ruling says this ONE may not.
-
-#### `mac.concept.column.query_use.aggregate`
-
-A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
-`concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through
-`framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is
-`none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
-ruling, not this one's.
-
-#### `mac.concept.column.query_use.period_binding`
-
-THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a relation
-carries several, so "sales in March" cannot silently pick the wrong one.
-
-#### `mac.concept.column.query_use.extremum`
-
-THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a
-"when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather
-than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
-combining several, so it answers to no additivity cell and is meaningful on a column no law
-would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
-
-#### `mac.concept.column.query_use.identity`
-
-WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved to,
-joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated,
-an identifier that is summed being a number nobody asked for.
-<!-- END GENERATED:vocabulary-terms:concept.column.query_use -->
-
----
-
-## 2B. The other role every column carries — `storage_role`
-
-A column carries **two** roles, and they answer different questions. `column_role` says what a
-QUERY may do with it; `storage_role` says what SHAPE it is in the relation.
-
-| column | storage_role | column_role |
+| term | the axis is | the law's row for it |
 |---|---|---|
-| `dim_contoso_store.StoreKey` | `primary_key` | `key` |
-| `dim_contoso_store.CountryCode` | `value` | `dimension` |
-| `v_contoso_order_line.CustomerKey` | `foreign_key` | `key` |
-| `v_contoso_order_line.RowNumber` | `primary_key` + `key_position: 2` | `key` |
-| `dim_contoso_store.Status` | `discriminator` | `dimension` |
+| `time` | ordered and temporal — day, month, quarter | a `stock` does **not** accumulate along it |
+| `categorical` | non-temporal — product, location, customer, currency | flows and stocks are both additive along it |
 
-(`composite_key_part` was retired 2026-09-27: every key column is `primary_key` and its place in a
-composite key is the integer `key_position` — see `mac.dataset.column.role`.)
+Product, store and customer all fold the same way, so they are one term. This is why `axis` carries a
+term and not a boolean. A column with **no** `axis` role is never consulted by the law: there is no
+axis to cross.
 
-**You never author this one.** It is measured — the profile plane counts distinct values and nulls,
-the reference plane measures inclusion against candidate parents, and
-`data/datasets/<relation>.yaml` records what they found. If you are hand-writing a `storage_role`,
-something upstream failed.
+**A prohibition is a rule, not a role.** A column declares truthfully what it IS, including when policy
+forbids using it that way. `ZipCode` is `{axis: categorical}` — 40 639 distinct values over 104 990
+customers — because it genuinely *is* a categorical axis of the warehouse; the prohibition, its reason
+and its evidence live in a contract rule that refuses and cites the measurement. Declaring a real axis
+"not an axis" to express a policy would make the ontology lie about the warehouse, and the next reader
+of the measurement finds 40 639 distinct values under a column the ontology says is not an axis. The
+route is in [column_rulings.md](column_rulings.md).
 
-<!-- BEGIN GENERATED:vocabulary-terms:dataset.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+### `aggregate` — the qualifier of a foldable column
 
-> The physical shape of a column in its relation, independent of its analytical role.
+| sub-key | card | required | terms | says |
+|---|---|---|---|---|
+| `type` | scalar | **yes**, within `aggregate` | `flow` · `stock` · `intensive` · `precomputed` · `target` — the members of `mac.concept.column.measure_type` | what kind of quantity this is: the law's row |
+| `unit` | string | **yes**, within `aggregate` | free prose — `USD`, `units`, `m2`, `to-currency per from-currency` | what the number is in. Two different units may not be combined |
+| `canonical` | bool | no | `true` | **which** aggregate column is *the* one, when a concept carries several |
 
-*`mac.dataset.column.role` · 6 terms · closed — these are all of them*
+**The type licenses the fold; the unit licenses the comparison.** Both are declared once per measure and
+read everywhere — [measures.md](measures.md) carries the type chapter, the worked contoso measures, and
+what a unit does that a type cannot.
 
-#### `mac.dataset.column.role.primary_key`
+### `period_binding` — which date a bare period lands on
 
-The relation's own identity: one row per distinct value, measured rather than assumed.
+| value | card | says | read by |
+|---|---|---|---|
+| `true` | the only value | this is THE reporting date of the relation | `planner/plan.py`, `interpret/vocabulary.py` |
 
-#### `mac.dataset.column.role.foreign_key`
+One per relation. The claim only matters where a relation carries several dates — and there it decides
+the number: *"lines in 2025"* answers **37 708** or **37 616** depending which date is bound, and
+nothing in the result says which. See §5.
 
-A reference to another relation's identity. Whether every value is PRESENT in the parent is a
-separate measurement — a declared key says the relationship is intended, not that it holds.
+### `extremum` — a value asked for, never folded
 
-#### `mac.dataset.column.role.value`
+| value | says |
+|---|---|
+| `[min]` | the earliest or smallest value this column holds may be asked for |
+| `[max]` | the latest or largest |
+| `[min, max]` | both |
 
-A payload column: it carries data, not identity and not a choice of row kind.
-
-#### `mac.dataset.column.role.discriminator`
-
-A column whose value selects WHICH KIND of row this is — the column a perspective, status or
-type is read from.
-
-#### `mac.dataset.column.role.audit`
-
-A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in
-the business. A load timestamp, a batch id, a validity window on a versioned row. It is
-physically a payload column, and naming it apart is what keeps it out of a question's reach:
-grouping a measure by the row's own write time is meaningless, and nothing in the data says so.
-
-#### `mac.dataset.column.role.delivery_axis`
-
-A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
-question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
-identity but which the load still keys on — so the key survives as a physical fact without
-claiming to be the concept's identity.
-<!-- END GENERATED:vocabulary-terms:dataset.column.role -->
-
-### Anti-patterns
-
-**`composite_key_part` used as though it were a key.** It identifies nothing alone. A query
-filtering on one part of a composite identity returns a **set** where a row was expected, and looks
-like it returned an answer. That is what [`composite_key_guard`](rules_and_canons/context_dependent_meaning/composite_key_guard.md)
-catches.
-
-**A `foreign_key` assumed to be present.** Declaring the reference says it is *intended*.
-Containment — whether every child value exists in the parent — is a separate measurement, and the
-reference plane records dangling references AS dangling rather than dropping them.
-`Customer.GeoAreaKey` is exactly that: 608 distinct values and no parent relation in this delivery.
+**Not a fold.** An extremum PICKS one value that already exists in the data instead of combining
+several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM
+— a date axis admits it while remaining non-aggregatable. When a concept admits more than one such
+column, `planner/plan.py` ASKS, naming every column the declaration admits; a concept admitting exactly
+one needs no question and gets none.
 
 ---
 
-## 3. The two roles with a pattern behind them
+## 3 · The fold law — stated once, in measures.md
 
-Two of the five roles exist because of a named constellation. **Those constellations are documented
-as patterns — read them there, not here.**
+The law is `aggregate.type` × `axis` → the correct fold, over **kinds** and never over column names,
+which is what makes it universal.
 
-| role | the constellation | pattern |
+| this page declares | the law uses it as |
+|---|---|
+| `aggregate.type` | the row |
+| `axis` | the column |
+
+**The grid, its three effects (`additive` · `average` · `none`) and the refusal text live in
+[measures.md](measures.md#the-whole-system-in-one-table)** and are not repeated here. Two consequences
+belong to this page: a fold the law does not permit is refused naming the axis it crossed, and a column
+with no `axis` role is never consulted at all.
+
+## 4 · What reads each role
+
+Every role is reached through one function, so a bundle whose roles are declared is read by the
+same code everywhere.
+
+| asked | where | answers for | state |
+|---|---|---|---|
+| `framework.serves(role, use)` — does a column of this role serve this use | mac-runtime `mac_runtime/framework.py`, 8 call sites in 3 files | all five | ENFORCED |
+| the groupable set a prompt OFFERS and a refusal LISTS | `planner/grounded_columns.py` | `axis` | ENFORCED |
+| which column a fold lands on, and the fold's legality | `planner/plan.py`, `foldplane/law.py` (`ADDITIVITY_VIOLATION`) | `axis` + `aggregate` | ENFORCED |
+| which date a bare period binds to | `planner/plan.py`, `interpret/vocabulary.py` | `period_binding` | ENFORCED |
+| which column a MIN/MAX names, and whether to ask | `planner/plan.py` | `extremum` | ENFORCED |
+| what `COUNT(DISTINCT …)` counts and what a join lands on | `concept.identity.canonical_key` — 22 read sites | `identity` | ENFORCED |
+| the `roles` map as written above | — | — | PROPOSED 2026-10-07; see `status` and [column_specification.md](column_specification.md) |
+
+## 5 · The constellations behind two of the roles
+
+Two claims exist because of a named constellation. **The constellations are documented as patterns —
+read them there, not here.**
+
+| claim | the constellation | pattern |
 |---|---|---|
-| `period` | one relation, several dates, each a different ROLE of the same calendar — `OrderDate` 2016-05-18..2025-12-31 and `DeliveryDate` ..2026-01-06, so *"lines in 2025"* answers **37 708** or **37 616** depending which is bound, and nothing in the result says which | [role_playing_dimension](patterns/dimensional_special_cases/role_playing_dimension.md) |
-| `housekeeping` | a column with the shape of a perfectly good date dimension — `StartDT`, 11 305 distinct over 104 990 rows — that records when the ROW was written, not when anything happened | *no pattern yet* |
+| `period_binding: true` | one relation, several dates, each a different ROLE of the same calendar — `OrderDate` 2016-05-18..2025-12-31 and `DeliveryDate` ..2026-01-06, so *"lines in 2025"* answers **37 708** or **37 616** depending which is bound, and nothing in the result says which | [role_playing_dimension](patterns/dimensional_special_cases/role_playing_dimension.md) |
+| `roles: {}` | a column with the shape of a perfectly good date axis — `StartDT`, 11 305 distinct over 104 990 rows — that records when the ROW was written, not when anything happened | *no pattern yet* |
 
-**What this page adds that the pattern does not:** the pattern tells you what to do when you meet
-that constellation. This page tells you which ROLE it resolves to, and §1 shows you every column of
-two real relations with its role already assigned, so you can read the shapes off real data.
+**What this page adds that the pattern does not:** the pattern tells you what to do when you meet the
+constellation. This page tells you which ROLES it resolves to, and §1 shows every column of two real
+relations with its roles already assigned, so the shapes can be read off real data.
 
-## 5. Where `columns:` sits — a complete concept file
+## 6 · Where `columns:` sits — a complete concept file
 
-Roles are not a standalone block. This is `Customer`, structurally complete, abridged only in the
-prose fields (`…`):
+Roles are not a standalone block. This is `Customer`, structurally complete, abridged only in the prose
+fields (`…`):
 
 ```yaml
 # ontology/concepts/customer/customer.yaml
@@ -359,58 +308,182 @@ grounding:
   serves_from: data/transforms/dim_contoso_customer.sql
 
   columns:
-    CustomerKey:  { role: key }
-    GeoAreaKey:   { role: key }
-    StartDT:      { role: housekeeping }
-    EndDT:        { role: housekeeping }
-    Continent:    { role: dimension }
-    Country:      { role: dimension }
+    CustomerKey:  { roles: { identity: canonical } }
+    GeoAreaKey:   { roles: { identity: reference } }
+    StartDT:      { roles: {} }
+    EndDT:        { roles: {} }
+    Continent:    { roles: { axis: mac.concept.axis.categorical } }
+    Country:      { roles: { axis: mac.concept.axis.categorical } }
     CountryFull:
-      role: dimension
+      roles:   { axis: mac.concept.axis.categorical }
       rulings: { label_of: Country, register: long }
     State:
-      role: dimension
+      roles:   { axis: mac.concept.axis.categorical }
       rulings: { scoped_by: Country }
     StateFull:
-      role: dimension
+      roles:   { axis: mac.concept.axis.categorical }
       rulings: { label_of: State, register: long }
-    City:
-      role: dimension
-      rulings: { never_axis: "identifies a person (with ZipCode)", evidence: DQ-CUSTOMER-02 }
-    ZipCode:
-      role: dimension
-      rulings: { never_axis: "identifies a person — 29 193 of 104 990 values held by one customer", evidence: DQ-CUSTOMER-02 }
-    Gender:       { role: dimension }
-    age_band_5y:  { role: dimension }
-
+    City:         { roles: { axis: mac.concept.axis.categorical } }
+    ZipCode:      { roles: { axis: mac.concept.axis.categorical } }
+    Gender:       { roles: { axis: mac.concept.axis.categorical } }
+    age_band_5y:  { roles: { axis: mac.concept.axis.categorical } }
 ```
+
+`City` and `ZipCode` are axes of this warehouse and declare it. What may not be asked of them travels as
+a rule under `contract.rules`, anchored by `binds` to the column it governs —
+[column_rulings.md](column_rulings.md).
 
 **What is NOT in `columns:`, and why.** `type` and measured cardinality come from
-`data/datasets/dim_contoso_customer.yaml` and are merged at load. They are *measured*, not
-authored — putting them here would create a second home for a fact the warehouse already states.
-`columns:` carries only what a person declares: the role, and any rulings.
+`data/datasets/dim_contoso_customer.yaml` and are merged at load. They are *measured*, not authored —
+putting them here would create a second home for a fact the warehouse already states. `columns:` carries
+only what a person declares: the roles, and any rulings.
 
----
+## 7 · Claiming a role
 
-## 6. Choosing, in order
+Ask all five. Each answer is independent of the other four, so a column may leave with one role, three,
+or none.
 
 ```
-1. Would anyone ever ask a question about this column?      no  → housekeeping
-2. Does it identify a row, or point at one?                 yes → key
-3. Is it a number you would add up?                         yes → measure
-4. Is it THE date a period filter should bind to?           yes → period
-5. Otherwise                                                    → dimension
+1. Does it identify a row — alone, with siblings, or over there?   → identity: canonical|composite|reference
+2. Would a question group or filter by it?                         → axis: mac.concept.axis.time|categorical
+3. Does adding two of its values mean something?                   → aggregate: {type, unit}
+4. Is it THE date a bare period must bind to?                      → period_binding: true
+5. Is its earliest or latest value something a question asks for?  → extremum: [min|max]
+   None of the five                                                → roles: {}
 ```
 
 **Anti-patterns**
 
-- **`period` on every date.** A relation with three dates has one reporting date; the others are
-  dimensions. Marking them all makes the binding arbitrary.
-- **`measure` mistaken for an axis.** `UnitPrice` has 1 760 distinct values. That is not an
-  invitation to group by it.
-- **`housekeeping` used to hide an inconvenient column.** It means *not part of the business*, not
-  *awkward*. A column someone might legitimately ask about is a `dimension` carrying a ruling — and
-  the ruling states its reason.
-- **`attribute`.** It is gone. It was four different judgements wearing one word, and no generator
-  ever assigned it because all four are authored. They live in
-  [column_rulings.md](column_rulings.md).
+- **`period_binding` on every date.** A relation with three dates has one reporting date; the others are
+  ordinary `axis: time` columns. Marking them all makes the binding arbitrary.
+- **An aggregate mistaken for an axis.** `UnitPrice` has 1 760 distinct values. That is not an invitation
+  to group by it; `aggregate` and `axis` are different claims and a numeric payload is rarely both.
+- **`roles: {}` used to hide an inconvenient column.** It means *not part of the business*, not
+  *awkward*. A column someone might legitimately ask about is a declared role plus a rule that states
+  its own reason.
+- **A role claimed without its qualifier.** The qualifier *is* the value: `identity:` with nothing after
+  it says which of three things?
+- **`roles` omitted.** That is not `roles: {}`. One says *offered to nothing*; the other says *nobody has
+  classified this column*, and they are different findings.
+
+---
+
+## 8 · The measured companion — `storage_role`
+
+A column answers a second question that has nothing to do with a role: what SHAPE is it in the relation.
+
+| column | storage_role | roles |
+|---|---|---|
+| `dim_contoso_store.StoreKey` | `primary_key` | `{identity: canonical}` |
+| `dim_contoso_store.CountryCode` | `value` | `{axis: categorical}` |
+| `v_contoso_order_line.CustomerKey` | `foreign_key` | `{identity: reference}` |
+| `v_contoso_order_line.RowNumber` | `primary_key` + `key_position: 2` | `{identity: composite}` |
+| `dim_contoso_store.Status` | `discriminator` | `{axis: categorical}` |
+
+**You never author this one.** It is measured — the profile plane counts distinct values and nulls, the
+reference plane measures inclusion against candidate parents, and `data/datasets/<relation>.yaml`
+records what they found. If you are hand-writing a `storage_role`, something upstream failed. Every key
+column is `primary_key`, and its place in a composite key is the integer `key_position`.
+
+<!-- BEGIN GENERATED:vocabulary-terms:dataset.column.role (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> The physical shape of a column in its relation, independent of its analytical role.
+
+*`mac.dataset.column.role` · 6 terms · closed — these are all of them*
+
+#### `mac.dataset.column.role.primary_key`
+
+The relation's own identity: one row per distinct value, measured rather than assumed.
+
+#### `mac.dataset.column.role.foreign_key`
+
+A reference to another relation's identity. Whether every value is PRESENT in the parent is a
+separate measurement — a declared key says the relationship is intended, not that it holds.
+
+#### `mac.dataset.column.role.value`
+
+A payload column: it carries data, not identity and not a choice of row kind.
+
+#### `mac.dataset.column.role.discriminator`
+
+A column whose value selects WHICH KIND of row this is — the column a perspective, status or
+type is read from.
+
+#### `mac.dataset.column.role.audit`
+
+A column recording WHEN THE ROW WAS WRITTEN or by what, rather than anything that happened in
+the business. A load timestamp, a batch id, a validity window on a versioned row. It is
+physically a payload column, and naming it apart is what keeps it out of a question's reach:
+grouping a measure by the row's own write time is meaningless, and nothing in the data says so.
+
+#### `mac.dataset.column.role.delivery_axis`
+
+A column the DELIVERY partitions or orders by, carried for the pipeline's sake rather than for a
+question. `mac_admit_identity.py` assigns it to a column an SME has ruled is not the relation's
+identity but which the load still keys on — so the key survives as a physical fact without
+claiming to be the concept's identity.
+<!-- END GENERATED:vocabulary-terms:dataset.column.role -->
+
+---
+
+## 9 · The vocabulary registers
+
+The terms above are declared in `mac_vocabulary.yaml`, and the chapters below are generated from it.
+
+### The five role names — `mac.concept.column.query_use`
+
+<!-- BEGIN GENERATED:vocabulary-terms:concept.column.roles (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+
+> WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `roles:` as a MAP from the
+term to that role's own qualifier — `identity: composite`, `axis: time`, `aggregate: {type,
+unit}` — so the role and its parameter are one statement and a role cannot be claimed without
+its terms. THIS WAS `query_use`, 'the machine-readable half of concept.column.role', and `role`
+was the other half: one fact in two vocabularies, of which only one had a key in mac.schema.json
+and neither could say that a join key is also an axis. 21 of contoso5's 112 columns are exactly
+that. `role` is gone and this is the whole declaration. AN EMPTY MAP IS A STATEMENT: the column
+is offered to no question, which is what `role: housekeeping` said. A MISSING `roles:` is a
+column nobody classified, and the two are different findings.
+
+*`mac.concept.column.roles` · 5 terms · closed — these are all of them*
+
+#### `mac.concept.column.roles.axis`
+
+LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by. A
+per-column `rulings.never_axis` still overrides this with its own measurement: the role says the
+KIND of column may be an axis, the ruling says this ONE may not.
+
+#### `mac.concept.column.roles.aggregate`
+
+A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
+`concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through
+`framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is
+`none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
+ruling, not this one's.
+
+#### `mac.concept.column.roles.period_binding`
+
+THE COLUMN A QUESTION'S PERIOD BINDS TO. Says which date is THE reporting date when a relation
+carries several, so "sales in March" cannot silently pick the wrong one.
+
+#### `mac.concept.column.roles.extremum`
+
+THE EARLIEST OR LATEST VALUE THE COLUMN HOLDS may be asked for -- `min`/`max`, which is what a
+"when did X first ..." question wants. NOT A FOLD, and that is why it is a separate use rather
+than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
+combining several, so it answers to no additivity cell and is meaningful on a column no law
+would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
+
+#### `mac.concept.column.roles.identity`
+
+WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved to,
+joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated,
+an identifier that is summed being a number nobody asked for.
+<!-- END GENERATED:vocabulary-terms:concept.column.roles -->
+
+### The five role names are DERIVED, and have no chapter
+
+`mac.concept.column.role` was retired from the vocabulary on 2026-10-07 and no column carries a
+`role:` key. The five names — `key`, `dimension`, `measure`, `period`, `housekeeping` — are
+computed from a column's `roles` map by `ColumnSpec.role` for one legacy reader,
+`grounding.field_roles`, and the derivation reproduces all 112 of contoso5's previously-authored
+values. Nothing declares them, so there is nothing here to generate.

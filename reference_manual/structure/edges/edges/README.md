@@ -22,6 +22,7 @@ v0.5: edge type must be LEGAL for its level. Illegal types 'denormalized' and 'l
 - [`notes`](#notes) — *string*
 - [`realized_by`](#realized-by) — *—*
 - [`resolved_by`](#resolved-by) — *string*
+- [`resolved_by_construction`](#resolved-by-construction) — *—*
 - [`verified_by`](#verified-by) — *string*
 
 ### `edge_id`
@@ -111,6 +112,12 @@ Legal values:
 *string* · optional
 
 v0.1.12 (additive): a ref/anchor (path.yaml#anchor) to the resolution rule that computes a business relation's instance set — e.g. the self-relation of a shared_attribute edge. A string anchor, distinct from realized_by (a canon binding). Used by a level:business type:shared_attribute edge in place of realized_by.
+
+### `resolved_by_construction`
+
+*—* · optional
+
+v0.1.19 (additive): THE COLUMN DECLARATION RESOLVES THIS RELATION, so no rule and no canon binding does. A shared_attribute edge relates two concepts because one column's value space is shared rather than because a foreign key joins them, so its instance set — which products carry this brand — is produced by GROUPING that column, not by a join predicate. Where the target concept is an enumeration whose canonical column IS the shared column, that grouping is the register's own membership and the relation holds BY CONSTRUCTION: a rule restating it is a second home that will rot. Introduced because retiring such a rule (brand.resolution.by_grouping_products, 1f42457, 'the column already runs it') left its edge with no legal value for resolved_by and the bundle schema-invalid, with two more retirements blocked behind it. Deliberately NOT a widening of resolved_by's meaning: this form is CHECKABLE — tools/check_edge_definition.py verifies the target is an enumeration, that its canonical column is the shared column, and that a register backs it — where a pointer aimed at a column would only be an author's assertion.
 
 ### `verified_by`
 

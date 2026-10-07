@@ -1256,10 +1256,21 @@ concept:
     # column and per axis kind through `additivity`, which is strictly more precise — a role-level
     # boolean is what made `precomputed` look summable.
     # ===========================================================================
-    query_use:
+    roles:
       kind: vocabulary
       closed: true
-      description: Where a question may use a column — the machine-readable half of concept.column.role.
+      description: >
+        WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `roles:` as a MAP from the
+        term to that role's own qualifier — `identity: composite`, `axis: time`,
+        `aggregate: {type, unit}` — so the role and its parameter are one statement and a role cannot
+        be claimed without its terms.
+        THIS WAS `query_use`, 'the machine-readable half of concept.column.role', and `role` was the
+        other half: one fact in two vocabularies, of which only one had a key in mac.schema.json and
+        neither could say that a join key is also an axis. 21 of contoso5's 112 columns are exactly
+        that. `role` is gone and this is the whole declaration.
+        AN EMPTY MAP IS A STATEMENT: the column is offered to no question, which is what
+        `role: housekeeping` said. A MISSING `roles:` is a column nobody classified, and the two are
+        different findings.
       terms:
         axis: >
           LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
@@ -1285,92 +1296,6 @@ concept:
           to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never
           aggregated, an identifier that is summed being a number nobody asked for.
 
-    role:
-      kind: vocabulary
-      closed: true
-      description: The analytical role of a column — where a query may use it, and the default guardrail.
-      terms:
-        key:
-          query_use: [identity]
-          definition: >
-            IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or
-            joins on the exact value. Never matched against a label, and never aggregated — an identifier
-            that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT)
-            counts and what the fact joins on.
-
-          constellation: >
-            A NAME MUST RESOLVE TO AN EXACT VALUE BEFORE ANYTHING CAN BE FILTERED OR JOINED ON IT.
-            Reach for it when the column is what a join lands on or what a distinct count counts —
-            and never let it be summed: an identifier that is totalled is a number nobody asked for.
-        dimension:
-          query_use: [axis, extremum]
-          definition: >
-            A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED
-            (a register states every member, so a non-member is answerable without probing) or OPEN (names
-            resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` —
-            `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-
-          constellation: >
-            A QUESTION WILL LEGITIMATELY BOTH FILTER ON THE COLUMN AND GROUP BY IT. `WHERE gender =
-            'female'` and `GROUP BY gender` are both reasonable, which is the test. If only one of
-            the two is reasonable, the column is probably a key or a measure wearing a dimension's
-            name.
-        measure:
-          query_use: [aggregate, extremum]
-          definition: >
-            A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated
-            once there and never restated per concept. Never filtered on directly: a threshold on a
-            measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-
-          constellation: >
-            ADDING TWO OF ITS VALUES MEANS SOMETHING. That is the whole test and it is not about the
-            datatype. The corollary matters as much: a threshold on a measure is a HAVING over the
-            aggregate, never a WHERE over the column, so declaring this also declares where a filter
-            may not go.
-        period:
-          query_use: [axis, extremum, period_binding]
-          definition: >
-            THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a
-            relation carries several, so "sales in March" cannot silently pick the wrong one. Example:
-            `OrderDate` on a line that also carries `DeliveryDate`.
-
-          constellation: >
-            THE RELATION CARRIES MORE THAN ONE DATE AND "SALES IN MARCH" HAS TO PICK ONE. An order
-            line with an order date and a delivery date is the compelling case: both are dates, both
-            are plausible, and the question does not say. This names which one is THE reporting date
-            so the choice is not made silently.
-        housekeeping:
-          query_use: []
-          definition: >
-            PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate
-            housekeeping. It is not offered to a question, not grouped on, not filtered on, and its
-            absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2
-            validity window — when the ROW was written, not when anything happened. Grouping sales by it
-            is meaningless, and until this term existed it was spelled `attribute`, which reads as
-            "a dimension you may not use" rather than "not part of the business at all".
-            NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than
-            for the system that writes them: a load stamp is housekeeping whoever keeps the house.
-
-
-          constellation: >
-            THE COLUMN RECORDS WHEN THE ROW WAS WRITTEN RATHER THAN WHEN ANYTHING HAPPENED. A
-            validity window on a versioned dimension is the case: grouping sales by the row's own
-            start date is meaningless, but nothing in the data says so, and the column is a
-            perfectly good date. Declaring it keeps the column out of a question's reach entirely —
-            its absence from an answer is correct rather than a gap.
-    # ===========================================================================
-    # mac.concept.column.identity — WHAT PART A COLUMN PLAYS IN ITS CONCEPT'S IDENTITY. Per column, and strictly
-    # narrower than `mac.concept.identity`, which is per CONCEPT and says how identity is ESTABLISHED
-    # (iso · code · namespace_code · fk_name · composite · sme_pending). The two answer
-    # different questions and both are needed: the concept says identity is a composite; these say
-    # WHICH columns compose it.
-    #
-    # WHY IT IS SEPARATE, and the mistake it corrects. A draft of the column specification invented
-    # `canonical | natural | part | reference` for this slot. `part` duplicated `identity_kind.composite`
-    # and `natural` was a category error -- a natural key is a statement about the KIND of identity, not
-    # about a column's part in it, so it belongs on the concept and nowhere else. What is genuinely
-    # per-column is only the three below.
-    # ===========================================================================
     identity:
       kind: vocabulary
       closed: true
@@ -1380,14 +1305,14 @@ concept:
           definition: >
             THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer
             discloses that it counted. Exactly one per concept, and a concept that legitimately has none
-            declares `part` on every column of its key tuple instead — several parts and no canonical IS
-            the composite — rather than nominating a column that does not identify.
+            declares `composite` on every column of its key tuple instead — several composite columns
+            and no canonical IS the composite — rather than nominating a column that does not identify.
           constellation: >
             EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels
             it: a surrogate key every fact points at, with a human-readable code and a name beside
             it that are both 1:1 with it. All three look alike in a profile; only this says which
             one the joins and the counts are about.
-        part:
+        composite:
           definition: >
             ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did
             returns a set where a row was expected, and looks like an answer. Declared on every column of

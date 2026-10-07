@@ -4,7 +4,7 @@
 
 **Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  2 terms
 
-The additivity-relevant classification of an aggregation axis.
+WHETHER A COLUMN IS AN AXIS, and if so the additivity-relevant kind. RENAMED from `axis` 2026-10-07 (operator: "cant we just call it axis ?"): the VALUE was always the kind, so carrying "kind" in the name restated it — the same redundancy `semantics.measure_type` and the prose `grain` were carrying. REQUIRED on every declared column from the same date, which is the substantive half of the change: absence used to mean two different things that nothing could separate.
 
 ## Terms
 

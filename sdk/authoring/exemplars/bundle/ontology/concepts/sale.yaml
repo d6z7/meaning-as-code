@@ -1,7 +1,7 @@
 metadata:
   source: CONTOSO5
   version: '1.0'
-  schema_version: 0.1.18
+  schema_version: 0.1.19-develop
   confidence: I
   provenance: authored
 concept:
@@ -35,6 +35,12 @@ concept:
     answers that finding this concept stands on a recommendation.
 
 
+    IT HAS NO OBSERVABLE STATE. Both dates are on every row and there is no status column, so a
+    sale is only ever "ordered on this day, delivered on that one". Nothing records cancellation or
+    return: a question about either is unanswerable from this bundle and must say so rather than
+    read an absent state as a negative.
+
+
     IT CARRIES NO MEASURE OF ITS OWN. A sale has four things worth summing, and each folds by its
     own law, so each is a concept in its own right — [[UnitsSold]], [[NetRevenue]], [[GrossRevenue]],
     [[SalesCost]] — carrying its amount and the per-unit price it composes from. This is the event
@@ -47,36 +53,33 @@ grounding:
         - line_number
       columns:
         order_key:
-          role: key
-          identity: part
+          roles:
+            identity: composite
         line_number:
-          role: key
-          identity: part
+          roles:
+            identity: composite
         order_date:
-          role: period
+          roles:
+            axis: mac.concept.axis.time
+            period_binding: true
+            extremum: [min, max]
         delivery_date:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.time
+            extremum: [min, max]
         customer_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
         store_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
         product_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
         currency_code:
-          role: dimension
-  grain: one row per sale (order_key, line_number)
-lifecycle:
-  phases:
-    - ordered
-    - delivered
-  note: >
-    Both dates are on every row and there is no status column, so a sale has no observable state
-    beyond "ordered on this day, delivered on that one". Nothing records cancellation or return; a
-    question about either is unanswerable from this bundle and should say so rather than read an
-    absent state as a negative.
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
 contract:
   rules:
     - id: sale.resolution.rate_on_order_date

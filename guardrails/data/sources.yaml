@@ -348,7 +348,7 @@ conventions:
       `owner` and reads the terms from the vocabulary, the way common.yaml already defers every
       `mac.*` token. Until 2026-09-29 this item carried a copy of the four terms and, in this note,
       a copy of the analytical five — two second homes in one convention. The authored/analytical
-      roles are a different vocabulary on a different plane (mac_vocabulary.yaml#concept.column.role)
+      roles are a different vocabulary on a different plane (mac_vocabulary.yaml#concept.column.roles)
       and are NOT ruled here.
 
   - what: a landed relation's name

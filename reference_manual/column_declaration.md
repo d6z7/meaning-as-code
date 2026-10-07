@@ -1,13 +1,13 @@
 ---
 title: The column declaration — everything a column says, and who reads each answer
 status: >-
-  PROPOSED (2026-10-07) — this page describes the column model as DESIGNED. The `axis` key is enforced;
-  `roles` as a map, `identity: composite` and the removal of `grain`/`semantics`/`never_axis` are put to
-  the operator and are not yet admitted by mac.schema.json. For what the schema admits TODAY see
-  column_specification.md, which stays the authority until this is ruled on.
+  CURRENT (2026-10-07). Every key on this page is what mac.schema.json admits and what the runtime
+  reads: `roles` as a required map, `identity: canonical|composite|reference`, `axis` closed to two
+  kinds, and `grounding.grain` retired. `never_axis` STAYS — it is a live refusal path citing its
+  evidence. The platform suite is green on it (1460 tests) and contoso5 compiles with 0 errors.
 audience: ontology authors, importer developers, framework developers
 companions:
-  - column_specification.md   # the long form: every flag, with its enforcement state
+  - column_specification.md   # the long form: every key, with its enforcement state
   - column_roles.md           # the role terms, generated from the vocabulary
   - column_rulings.md         # the rulings block, in detail
   - measures.md               # the measures this feeds
@@ -29,8 +29,8 @@ grounding:
     - relation: v_contoso5_sales_line
       columns:
         order_key:     {roles: {identity: composite}}
-        customer_key:  {roles: {identity: reference, axis: categorical}}
-        order_date:    {roles: {axis: time, period_binding: true}}
+        customer_key:  {roles: {identity: reference, axis: mac.concept.axis.categorical}}
+        order_date:    {roles: {axis: mac.concept.axis.time, period_binding: true}}
         quantity:      {roles: {aggregate: {type: …measure_type.flow, unit: units}}}
         valid_from:    {roles: {}}
 ```
@@ -55,6 +55,13 @@ grounding:
 | `aggregate` | map | `{type, unit, canonical}` | a question may **fold** me | the fold law; unit algebra; the measure route |
 | `period_binding` | `true` | — | I am **the** reporting date when the relation carries several | period binding — *"sales in March"* cannot pick the wrong date |
 | `extremum` | list | `[min]` · `[max]` · `[min, max]` | my earliest or latest value may be **asked for** — not folded | the extremum route — *"when did we first sell in Spain"* |
+
+> **How a term is written.** A vocabulary term is authored **fully qualified** — `axis:
+> mac.concept.axis.time`, `type: mac.concept.column.measure_type.flow`. The bare term is the
+> term's NAME and is what the tables on this page abbreviate to; written into a bundle it fails
+> validation, because the schema's pattern is `^mac\.concept\.axis\.(categorical|time)$` and
+> what makes a token checkable is that it names its namespace. The three terms of `identity` and
+> the two of `extremum` are the exception: they are closed `enum`s, authored bare.
 
 ### `identity` — three ways to identify
 
@@ -97,6 +104,8 @@ A ruling is a judgement measurement cannot establish. All optional; a column wit
 | `finer_than` | a column | I distinguish **more members** than that column and roll up into it; both are legitimate axes and an answer must **disclose which level it used** | `planner/sql` |
 | `scoped_by` | a column | my values are unique **only within** that column, so I may not be grouped or filtered alone — the scope must travel with me | synthesises a `composite_key_guard` binding |
 | `sort` | `asc` · `desc` · `none` | the order my values are presented in when the question states none | the assembler |
+| `never_axis` | the measurement | **I am a real axis and a person has ruled that no question may group by me** — the sentence is the measurement that justifies it (*"29 193 of 40 639 postcodes are held by exactly one customer"*) | `grounded_columns._ruled_never_axis` → `_axis_denied`, which REFUSES and quotes this sentence |
+| `evidence` | a DQ issue id | which finding this ruling rests on — an argument to a ruling, not a ruling of its own | the refusal, so a reader can go and read the finding |
 
 ## Worked: the same shape meaning two different things
 
@@ -145,6 +154,8 @@ A concept's key identifies a **row**. What a **count** counts is sometimes a dif
 | `rulings.finer_than` | string | no | a column name |
 | `rulings.scoped_by` | string | no | a column name |
 | `rulings.sort` | scalar | no | `asc` · `desc` · `none` |
+| `rulings.never_axis` | string | no | the measurement, in words |
+| `rulings.evidence` | string | no | a DQ issue id |
 
 ## Rules this model holds
 

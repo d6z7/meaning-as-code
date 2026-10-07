@@ -8,13 +8,13 @@ Generated from `mac.schema.json` **0.1.19-develop** and `mac_vocabulary.yaml`. E
 
 | | |
 |---|---|
-| levels | 97 |
-| keys | 472 |
-| described in the schema | **343 of 472** (73%) |
+| levels | 98 |
+| keys | 474 |
+| described in the schema | **345 of 474** (73%) |
 | **gaps — admitted and unexplained** | **129** |
-| **keys with no stated constellation** | **455** of 472 |
-| vocabularies | 23, 147 terms |
-| examples | 99, from 17 concepts |
+| **keys with no stated constellation** | **458** of 474 |
+| vocabularies | 22, 138 terms |
+| examples | 187, from 17 concepts |
 
 ## The levels
 
@@ -75,13 +75,14 @@ Indented by nesting. The label is the key; the page it opens is that key's level
       - [`realized_by:`](structure/ontology/contract/rules/realized_by.md) — 8 keys
   - [`governance:`](structure/ontology/governance/README.md) — 4 keys
     - [`change_log:`](structure/ontology/governance/change_log.md) — 5 keys
-  - [`grounding:`](structure/ontology/grounding/README.md) — 17 keys
+  - [`grounding:`](structure/ontology/grounding/README.md) — 16 keys
     - [`field_roles:`](structure/ontology/grounding/field_roles.md) — 1 key
     - [`realized_by:`](structure/ontology/grounding/realized_by.md) — 8 keys
     - [`sources:`](structure/ontology/grounding/sources/README.md) — 3 keys
       - [`columns:`](structure/ontology/grounding/sources/columns/README.md) — 1 key
-        - [`<name>`](structure/ontology/grounding/sources/columns/each/README.md) — 7 keys
-          - [`measure:`](structure/ontology/grounding/sources/columns/each/measure.md) — 4 keys
+        - [`<name>`](structure/ontology/grounding/sources/columns/each/README.md) — 4 keys
+          - [`roles:`](structure/ontology/grounding/sources/columns/each/roles/README.md) — 5 keys
+            - [`aggregate:`](structure/ontology/grounding/sources/columns/each/roles/aggregate.md) — 4 keys
           - [`rulings:`](structure/ontology/grounding/sources/columns/each/rulings.md) — 7 keys
   - [`members:`](structure/ontology/members/README.md) — 3 keys
     - [`definitions:`](structure/ontology/members/definitions.md) — 4 keys
@@ -95,7 +96,7 @@ Indented by nesting. The label is the key; the page it opens is that key's level
     - [`items:`](structure/ontology/values/items.md) — 6 keys
     - [`realized_by:`](structure/ontology/values/realized_by.md) — 8 keys
 - [**edges**](structure/edges/README.md) — its 4 top-level keys, **1 unexplained**
-  - [`edges:`](structure/edges/edges/README.md) — 13 keys, **9 unexplained**
+  - [`edges:`](structure/edges/edges/README.md) — 14 keys, **9 unexplained**
     - [`aliases:`](structure/edges/edges/aliases/README.md) — 1 key
       - [`realized_by:`](structure/edges/edges/aliases/realized_by.md) — 8 keys
     - [`endpoints:`](structure/edges/edges/endpoints/README.md) — 2 keys
@@ -116,7 +117,7 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
 - `mac`
   - [`binding_mode`](vocabulary/binding_mode.md) — 2 terms, closed
   - [`calendar_vocabulary`](vocabulary/calendar_vocabulary.md) — 9 terms, closed
-  - [`canon`](vocabulary/canon.md) — 23 terms, open
+  - [`canon`](vocabulary/canon.md) — 19 terms, open
   - [`column_type`](vocabulary/column_type.md) — 5 terms, closed
   - `concept`
     - [`aggregation_effect`](vocabulary/concept/aggregation_effect.md) — 3 terms, closed
@@ -125,8 +126,7 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
     - `column`
       - [`identity`](vocabulary/concept/column/identity.md) — 3 terms, closed
       - [`measure_type`](vocabulary/concept/column/measure_type.md) — 5 terms, closed
-      - [`query_use`](vocabulary/concept/column/query_use.md) — 5 terms, closed
-      - [`role`](vocabulary/concept/column/role.md) — 5 terms, closed
+      - [`roles`](vocabulary/concept/column/roles.md) — 5 terms, closed
       - [`ruling`](vocabulary/concept/column/ruling.md) — 5 terms, closed
     - [`rule`](vocabulary/concept/rule.md) — 6 terms, closed
   - [`credential_mode`](vocabulary/credential_mode.md) — 6 terms, closed

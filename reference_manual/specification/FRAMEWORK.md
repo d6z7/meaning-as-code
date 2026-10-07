@@ -210,11 +210,13 @@ governance:      last_reviewed · change_log[]   (append-only)
 open_questions:  the SME-actionable unknowns
 ```
 
-Two homes for "how to reason with this," each local to what it describes:
+Three homes for "how to reason with this," each local to what it describes:
 
 - **`concept.semantics:`** — concept-level interpretive facts. `purpose` (why it exists), `scope`
-  (where it applies / does *not*), `additivity` (per-dimension — the footgun-preventer: a stock measure
-  is *non-additive over time*), `unit`, `null_semantics` (what an absent value means).
+  (where it applies / does *not*), `null_semantics` (what an absent value means).
+- **the COLUMN that holds the number** — its aggregate's `type` and `unit`, with the (type × axis)
+  law deciding what may be summed along what. This is the footgun-preventer: a stock measure is
+  *non-additive over time*, and the law says so over KINDS rather than per concept.
 - **`value_set:` / `values:`** — for enumerations, `closure` (open/closed/unknown) lives *with* the
   value set it constrains, not in `semantics`.
 

@@ -1,7 +1,7 @@
 # column_effects.yaml — WHAT EACH KEY OF THE COLUMN BLOCK ACTUALLY DOES, machine-readably.
 #
-# The column standard is documented across three pages — column_specification.md (the shape),
-# column_roles.md (the derived roles), column_rulings.md (the authored judgements) — and each states
+# The column standard is documented on column_declaration.md (the shape, and who reads each
+# answer) with column_rulings.md on the authored judgements — and each states
 # a key's EFFECT in prose: "refuses", "reds", "load refuses", "CLARIFY", "zero, disclosed". Prose is
 # exactly where this estate has lost declarations before: `grounding.note` carried ruling language in
 # 12 of 21 concepts while the runtime happily planned GROUP BY ZipCode.
@@ -27,11 +27,12 @@
 
 metadata:
   of: the column specification
-  schema_version: 0.1.18
-  companions: [column_specification.md, column_roles.md, column_rulings.md, ../mac_vocabulary.yaml]
-  measured_at: '2026-09-27'
+  schema_version: 0.1.19
+  companions: [column_declaration.md, column_rulings.md, ../mac_vocabulary.yaml]
+  measured_at: '2026-10-07'
   # The enforced set was read off mac-platform's ColumnSpec model fields, not asserted:
-  # name, role, identity, measure{type,unit,additivity}. Everything else is extra="forbid".
+  # name, roles{identity,axis,aggregate,period_binding,extremum}, counts, register, rulings.
+  # Everything else is extra="forbid".
   enforced_evidence: mac-platform/packages/mac-runtime/src/mac_runtime/ontology/models.py::ColumnSpec
 
 # ===========================================================================
@@ -62,34 +63,137 @@ modes:
 # ===========================================================================
 keys:
 
-  - key: role
+  - key: roles
     block: root
     plane: [load, answer]
     outcomes: [COMMIT, BLOCK]
     status: enforced
-    reader: "grounding.field_roles[name] — the planner reads it to place a predicate"
+    reader: "ontology/models.ColumnRoles; Grounding.offers(column, use) — every planner step asks it"
     effect: >-
-      The one required key, and the only one a generator can assign unattended. `dimension` and
-      `period` make a column an axis; `measure` makes it a payload that is folded, never filtered;
-      `key` makes it a target a name resolves TO; `housekeeping` takes it out of the business
-      vocabulary entirely, so its absence from an answer is correct rather than a gap.
+      The one required key: a map from each USE a question may make of this column to that use's
+      own terms. An empty map is a statement — the column is loaded and offered to no question,
+      which is what `role: housekeeping` said. An ABSENT `roles` is a column nobody classified,
+      and a different finding.
     frontier_note: >-
-      The refusal that exists today fires on the spelling `attribute`, which `housekeeping`
-      replaced — plan.py reads `field_roles[col] == "attribute"`, and `housekeeping` occurs 0 times
-      in platform src. The guardrail is real and is wired to a retired name.
+      IT REPLACES THE SCALAR `role` AND THE `query_use` TABLE BOTH, retired together 2026-10-07.
+      The scalar held one of five values and the table mapped each value to the uses it served, so
+      a column could serve only what its one role name served — and measured on contoso5, 21 of
+      112 columns are a join key you also group by. The table had to grant or deny `axis` to every
+      `key` alike, and did: it denied it, which is how 21 columns lost their axis-ness.
 
-  - key: identity
-    block: root
+  - key: roles.identity
+    block: roles
     plane: [load, answer]
     outcomes: [COMMIT, REFUSE]
     status: enforced
-    reader: "concept.identity.canonical_key — 22 runtime read sites; `part` derives a composite key"
+    reader: "Grounding.cell_key + concept.identity.canonical_key — 22 runtime read sites"
     effect: >-
-      `canonical` names what COUNT(DISTINCT) counts and what an answer discloses that it counted.
-      `part` marks one column of a composite identity, which identifies NOTHING alone — a filter on
-      one part returns a set where a row was expected and looks like an answer.
+      `canonical` — this column alone identifies an instance, and is what COUNT(DISTINCT) counts.
+      `composite` — this column WITH its siblings does, and the set carrying it IS the key, in
+      declaration order, which reaches the SQL. `reference` — it identifies a row in ANOTHER
+      concept, so it is a join target and never part of this concept's grain.
     frontier_note: >-
-      A canonical column whose concept declares no identity kind is refused at load, not guessed.
+      `part` is the retired spelling of `composite`, refused by name since 2026-10-07 so an
+      unmigrated bundle is told where the term went rather than that it has a typo.
+
+  - key: roles.axis
+    block: roles
+    plane: [load, answer]
+    outcomes: [COMMIT, REFUSE]
+    status: enforced
+    reader: "planner/grounded_columns.axis_columns; column_facts.axis — the fold law's lookup key"
+    effect: >-
+      `time` or `categorical`: a question may GROUP BY or FILTER ON this column, and the term is
+      which row of the fold law a fold across it resolves against. The kind IS the permission —
+      a column offered as an axis always has a kind, and a column claiming none is never consulted.
+    frontier_note: >-
+      MEASURED ON ALL 70 of contoso5's axis columns 2026-10-07: every declared kind agrees with the
+      column's declared TYPE family (temporal -> time, everything else -> categorical). 39 were
+      authored by hand; the other 31 were derived from that type when `role: dimension`/`period`
+      stopped carrying the permission implicitly. The agreement is a measurement, not a convention,
+      and is the obvious next gate.
+
+  - key: roles.aggregate
+    block: roles
+    plane: [load, answer]
+    outcomes: [COMMIT, REFUSE]
+    status: enforced
+    reader: "column_facts.measure_type/unit; planner/plan._check_additivity — 3 runtime read sites"
+    effect: >-
+      A question may FOLD this column, and the qualifier says on what terms — `type` (the fold
+      law's row), `unit` (what the number is in; two different units may not be combined) and
+      `canonical` (which of several is THE one). A fold the law does not permit is refused, naming
+      the axis it crossed.
+    frontier_note: >-
+      PER COLUMN, NOT PER CONCEPT. `concept.semantics.{measure_type,unit}` said it once for the
+      whole concept, which GrossRevenue (`gross_amount` flow, `unit_price` intensive) could only
+      misreport — and did: `SUM(unit_price)` planned instead of refusing until the narrowing was
+      taught to rewrite the declaration and not just the projection (2026-10-07).
+
+  - key: roles.period_binding
+    block: roles
+    plane: [load, answer]
+    outcomes: [COMMIT]
+    status: enforced
+    reader: "planner/plan period binding; Grounding.offering('period_binding')"
+    effect: >-
+      THE reporting date, when a relation carries several. A bare flag — this use has no parameter.
+      "Sales in March" cannot silently pick the delivery date instead of the order date.
+
+  - key: roles.extremum
+    block: roles
+    plane: [answer]
+    outcomes: [COMMIT, ASK]
+    status: enforced
+    reader: "planner/plan._OPERATION_NEEDS -> MIN/MAX; Grounding.offering('extremum')"
+    effect: >-
+      `[min]`, `[max]` or both: this column's earliest or latest value may be ASKED FOR. Not a
+      fold — an extremum PICKS a value that exists rather than combining several, so it answers to
+      no additivity cell and is meaningful on a column no law would let anyone SUM. Where several
+      columns of a concept admit it and the question names none, the planner ASKS which.
+
+  - key: counts
+    block: root
+    plane: [answer]
+    outcomes: [COMMIT]
+    status: enforced
+    reader: "the count route; disclosed in the answer"
+    effect: >-
+      A count of this CONCEPT counts THIS column, not the canonical one — how a concept says "a
+      count of me is not a count of my rows". Store has 74 rows, one per trading period, and 67
+      stores; `location_code` carries `counts` and the answer discloses which column it counted.
+
+  - key: register
+    block: root
+    plane: [load, answer]
+    outcomes: [COMMIT, ASK]
+    status: enforced
+    reader: "resolver/registers + resolver/register_match — name -> code resolution; ColumnSpec.value_register"
+    effect: >-
+      WHERE THIS COLUMN'S VALUES COME FROM — a lookup path. A question naming a member by word
+      ("Spain", "Contoso Audio") resolves it against the register to the exact value the column
+      holds, through the resolution ladder, instead of probing the warehouse for a match.
+    frontier_note: >-
+      A TOP-LEVEL KEY, not a ruling, though `rulings.register` is spelled the same word: this one
+      says WHERE the values come from, the ruling says WHICH of a thing's names this column is.
+      Added to this register 2026-10-07 — it was a live key with a named reader and no entry, so
+      the manual's "complete surface" could not be complete.
+
+  - key: roles.aggregate.additivity
+    block: roles
+    plane: [load, answer]
+    outcomes: [COMMIT, REFUSE]
+    status: enforced
+    reader: "parser._column_measure -> semantics.additivity — 8 runtime read sites"
+    effect: >-
+      THE PER-AXIS OVERRIDE, and the one thing on a column that a law already answers. Folding is
+      decided by `measure_type x axis` in mac_vocabulary.yaml; an entry here states the effect for
+      one named axis directly. Authoring it means authoring both the premise and the conclusion,
+      which is how a `target` measure once declared `geography: additive` and had its value summed
+      across models for weeks.
+    frontier_note: >-
+      ADMITTED, AND BETTER LEFT UNWRITTEN. It stays because a measured exception to the law has
+      nowhere else to live; the law covers every case contoso5 declares, which authors none.
 
   - key: references
     block: root
@@ -235,12 +339,12 @@ keys:
       never joined. A plan difference, not an answer difference — until the join it skips is the one
       that fans the grain out.
 
-  - key: placement.scoped_by
-    block: placement
+  - key: rulings.scoped_by
+    block: rulings
     plane: [answer, check]
     outcomes: [COMMIT, ASK, REFUSE]
-    status: designed
-    reader: none
+    status: enforced
+    reader: "planner/contract_guards.py:361 — synthesises the composite_key_guard binding (code_column + scope_columns)"
     effect: >-
       This column's values are unique only WITHIN the named one, so it may not be grouped or
       filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated
@@ -275,8 +379,8 @@ keys:
     block: rulings
     plane: [answer, check]
     outcomes: [COMMIT]
-    status: designed
-    reader: none
+    status: enforced
+    reader: "planner/sql.py:1292 — groups on the code, shows the label, and discloses both"
     effect: >-
       Two names for one thing, not two things. The named column stays canonical and this one supplies
       the words. Without it, 'by brand' and 'by manufacturer' return the same cut under different
@@ -289,8 +393,8 @@ keys:
     block: rulings
     plane: [load, answer]
     outcomes: [COMMIT]
-    status: designed
-    reader: none
+    status: enforced
+    reader: "planner/sql.py:1304 as `ruling.naming_register` — which of the thing's names was shown"
     effect: >-
       Which naming register the label belongs to, so an answer can say WHICH name it showed —
       'Contoso' the common name, 'Contoso, Ltd' the legal one, 'GB' the code.
@@ -299,8 +403,8 @@ keys:
     block: rulings
     plane: [answer, check]
     outcomes: [COMMIT, ASK]
-    status: designed
-    reader: none
+    status: enforced
+    reader: "planner/sql.py:1307 — the level used is named in the disclosure"
     effect: >-
       Both columns stay legal axes; the ruling lets an answer DISCLOSE which level it used and lets
       an ambiguous question offer both. pairs == finer_distinct is the whole test — higher, and a
@@ -313,7 +417,7 @@ keys:
     block: rulings
     plane: [answer]
     outcomes: [COMMIT]
-    status: implemented
+    status: enforced
     reader: "planner/sql.py column_sort -> the ORDER BY this column contributes"
     effect: >-
       The order this column's values are presented in when the question states none. `asc` is
@@ -333,8 +437,8 @@ keys:
     block: rulings
     plane: [load, answer]
     outcomes: [BLOCK]
-    status: designed
-    reader: "none under this name — see frontier_note"
+    status: enforced
+    reader: "planner/grounded_columns._ruled_never_axis -> _axis_denied — a Refusal citing the evidence"
     effect: >-
       A legitimate dimension that must not be an axis, for a reason outside the data. The refusal
       cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each
@@ -349,49 +453,14 @@ keys:
     block: rulings
     plane: [load, check]
     outcomes: []
-    status: designed
-    reader: none
+    status: enforced
+    reader: "planner/plan.py:1471 — the refusal quotes the finding this ruling rests on"
     effect: >-
       Required with never_axis, and the reason the key is worth having: a prohibition without a
       measurement is a preference. It is what the refusal quotes back.
     frontier_note: >-
       never_axis without evidence is a LOAD refusal in the designed standard — the one place the
       standard refuses an AUTHOR rather than a question.
-
-  - key: measure.type
-    block: measure
-    plane: [load, answer]
-    outcomes: [COMMIT, BLOCK]
-    status: enforced
-    reader: "concept.semantics.measure_type — 3 runtime read sites"
-    effect: >-
-      The additivity class. An illegal fold is not a wrong number to be caught later — it is
-      refused, because a semi-additive measure summed across time is a number nobody asked for.
-    frontier_note: >-
-      The spike found a shape this cannot express: one real bundle holds 70 KPIs of six measure
-      types in ONE column, the type carried per ROW. `measure.type` declares one type per column.
-      That bundle's cope is a blanket non-additive over all six — safe and lossy, refusing the Stock
-      measure that IS additive alongside the duration that is not.
-
-  - key: measure.unit
-    block: measure
-    plane: [load, answer]
-    outcomes: [COMMIT]
-    status: enforced
-    reader: "concept.semantics.unit — 3 runtime read sites; two carriers is a load refusal"
-    effect: >-
-      USD, seconds, each. Singular by construction: two measure columns on one concept is refused
-      rather than silently taking the first.
-
-  - key: measure.additivity
-    block: measure
-    plane: [answer]
-    outcomes: [COMMIT, BLOCK]
-    status: enforced
-    reader: "concept.semantics.additivity — 8 runtime read sites"
-    effect: >-
-      The per-axis exception: a balance that sums across products and not across time. The law is
-      stated once over the MeasureType and named here only where one axis departs from it.
 
   - key: disclose
     block: root
@@ -423,7 +492,7 @@ keys:
     block: measured
     required: never
     default: null
-    legal: mac.relation.column.role
+    legal: mac.dataset.column.role
     decides: the physical shape of the column in its relation
     plane: [check]
     outcomes: []
@@ -456,15 +525,36 @@ keys:
 #   * IN `today` MODE the page derives the outcome instead of reading a case: setting any key whose
 #     status is `designed` is a LOAD ERROR, because ColumnSpec forbids it. Nothing declares that per
 #     column — it follows from `keys[].status`, which is the point of keeping status machine-readable.
+#
+# EVERY `toggles[].key` AND EVERY `when:` KEY IS ONE OF THE 34 KEYS ABOVE, and check_parity's
+# `bench <Concept>.<Column>: toggles '<k>', not a declared key` is what holds it there. Re-addressed
+# 2026-10-07 when the column declaration changed: `placement.scoped_by` -> `rulings.scoped_by`,
+# `role` -> `roles.axis`, `identity` -> `roles.identity`, and `measure.{type,unit}` ->
+# `roles.aggregate` — 17 findings, 0 after. A bench naming a key the standard retired is a page
+# arguing from a surface nothing admits, which is the drift it was built to expose one floor down.
+#
+# `offers:` REPLACES THE PER-COLUMN `role:`. A column no longer holds ONE of five role names; it
+# holds a SET of the roles it offers, which is what `roles:` is a map of, and `offers` is the
+# spelling check_column_planes.py reads a bundle with (`offers=sorted(rl)`). The old names are
+# derivable from it and not the other way round: `ColumnSpec.role` is a read-only property whose
+# precedence reproduces all 112 of contoso5's authored `role` values exactly (109 of 112 without its
+# canonical-column-of-an-axis branch), and `models._ROLE_OFFERS` is the inverse — the only surviving
+# copy of the retired `mac.concept.column.role#query_use` table.
+#
+# NO `identity_kind:` ON A CONCEPT. All three carried one (`fk_name`, `fk_name`, `composite`) and
+# nothing rendered it. `mac.concept.identity` is not in mac_vocabulary.yaml any more:
+# `mac.concept.column.identity` is "THE ONLY HOME — there is no concept-level identity block", so
+# what a concept is keyed on is READ OFF its columns — one `canonical`, or `composite` on every
+# column of the tuple — and a second statement of it could only drift. The two-plane census measures
+# identity from the bundle instead of reading it here.
 # ===========================================================================
 bench:
   - concept: Customer
     relation: dim_contoso_customer
-    identity_kind: fk_name
     columns:
 
       - column: ZipCode
-        role: dimension
+        offers: [axis]
         headline: A legitimate dimension that names individuals
         reads: >-
           {ZipCode.distinct} distinct values over {rows} rows. Nothing in that ratio is illegal, and
@@ -531,7 +621,7 @@ bench:
                   ask about; it is grouping BY one that hands out a list of people.
 
       - column: CountryFull
-        role: dimension
+        offers: [axis]
         headline: Two names for one thing — or two things
         reads: >-
           {CountryFull.distinct} distinct, beside Country's {Country.distinct}. Equal counts get you
@@ -593,7 +683,7 @@ bench:
                   column with nothing relating the two.
 
       - column: State
-        role: dimension
+        offers: [axis]
         headline: A code that is only unique inside its parent
         reads: >-
           {State.distinct} distinct codes over {rows} rows — bigger than Country, smaller than City.
@@ -604,19 +694,27 @@ bench:
           - claim: "'CO' is Corse (FR, 37), Como (IT, 64) and Colorado (US, 709)"
             source: column_rulings.md §3
         toggles:
-          - key: placement.scoped_by
+          # RE-ADDRESSED 2026-10-07. The manual's key table put this under `placement` while
+          # column_rulings.md documented it as §3 of `rulings` — one key, two spellings, which the
+          # key entry's own frontier_note calls "the shape of every drift this standard exists to
+          # end". `rulings.scoped_by` is the live and only home, and it is ENFORCED:
+          # planner/contract_guards.py:361 synthesises the `composite_key_guard` binding
+          # (code_column + scope_columns) from it. The cases below stay `mode: designed` because the
+          # enforced guard REFUSES (composite_key_guard -> POLICY_DENIED) rather than adding the
+          # scope column or asking which parent was meant — the designed behaviour they describe.
+          - key: rulings.scoped_by
             values: [null, Country]
         questions:
           - ask: customers by state
             cases:
-              - when: {placement.scoped_by: null}
+              - when: {rulings.scoped_by: null}
                 outcome: COMMIT
                 plan: GROUP BY c.State
                 result: "{State.distinct} rows"
                 note: >-
                   One row labelled CO totalling 810 customers, merging Corse, Como and Colorado. The
                   query succeeds, the row count is plausible, the number is meaningless.
-              - when: {placement.scoped_by: Country}
+              - when: {rulings.scoped_by: Country}
                 mode: designed
                 outcome: COMMIT
                 plan: GROUP BY c.Country, c.State
@@ -624,12 +722,12 @@ bench:
                 disclose: Country added — State is scoped by it
           - ask: customers in CO
             cases:
-              - when: {placement.scoped_by: null}
+              - when: {rulings.scoped_by: null}
                 outcome: COMMIT
                 plan: WHERE c.State = 'CO'
                 result: 810 customers
                 note: French, Italian and American customers in one number nobody asked for.
-              - when: {placement.scoped_by: Country}
+              - when: {rulings.scoped_by: Country}
                 mode: designed
                 outcome: ASK
                 result: >-
@@ -638,7 +736,7 @@ bench:
                 note: The scope is missing, so the engine asks instead of picking one.
           - ask: customers in Colorado
             cases:
-              - when: {placement.scoped_by: Country}
+              - when: {rulings.scoped_by: Country}
                 mode: designed
                 outcome: COMMIT
                 plan: WHERE c.Country = 'US' AND c.State = 'CO'
@@ -651,7 +749,7 @@ bench:
                 note: Right answer, different column, and nothing says the two columns are one axis.
 
       - column: Gender
-        role: dimension
+        offers: [axis]
         headline: A closed set whose members ARE the kind
         reads: "{Gender.distinct} distinct, {Gender.nulls} nulls."
         toggles:
@@ -702,7 +800,7 @@ bench:
                 note: Legal under every configuration. Closure decides what happens to a word that MISSES, not whether the axis is allowed.
 
       - column: Country
-        role: dimension
+        offers: [axis]
         headline: A closed set that is complete for the DELIVERY, not the world
         reads: "{Country.distinct} distinct, {Country.nulls} nulls — the eight countries delivered."
         toggles:
@@ -764,7 +862,7 @@ bench:
                 note: Correct, joined, and printed in codes.
 
       - column: age_band_5y
-        role: dimension
+        offers: [axis]
         headline: A derived column that must announce itself
         reads: "{age_band_5y.distinct} distinct — fifteen bands a transform made."
         toggles:
@@ -808,18 +906,23 @@ bench:
                 result: Unanswerable from declarations. The closure is unstated, so nothing promises anything.
 
       - column: StartDT
-        role: housekeeping
+        offers: []
         headline: A perfect-looking date axis that means nothing to the business
         reads: >-
           {StartDT.distinct} distinct dates from {StartDT.min} to {StartDT.max}. Shaped exactly like
           a date dimension. It is when the ROW was written.
         toggles:
-          - key: role
-            values: [dimension, housekeeping]
+          # RE-ADDRESSED 2026-10-07 from the retired scalar `role: dimension|housekeeping`. The two
+          # states are unchanged and are now stated where the permission lives: a column offered as
+          # an axis carries the KIND, and a column offered to no question carries `roles: {}`. The
+          # axis term is authored FULLY QUALIFIED — the bare `time` fails schema validation, whose
+          # pattern is `^mac\.concept\.axis\.(categorical|time)$`.
+          - key: roles.axis
+            values: [null, mac.concept.axis.time]
         questions:
           - ask: sales by start date
             cases:
-              - when: {role: housekeeping}
+              - when: {roles.axis: null}
                 outcome: BLOCK
                 reason_code: POLICY_DENIED
                 result: >-
@@ -827,10 +930,16 @@ bench:
                   validity window. Customer can be grouped by: Continent, Country, Gender, State,
                   age_band_5y.
                 note: >-
-                  The one guardrail in this whole block that fires today — and it fires on the role
-                  spelling `attribute`, which `housekeeping` replaced. `housekeeping` occurs 0 times
-                  in platform src.
-              - when: {role: dimension}
+                  THE ONE GUARDRAIL IN THIS WHOLE BLOCK THAT FIRES TODAY, and it fires two
+                  projections away from the declaration. Re-measured 2026-10-07: `roles: {}` makes
+                  `ColumnSpec.role` derive `housekeeping` (its last branch — "a column offered to no
+                  question is housekeeping"), parser.py:634 projects that word into `field_roles`,
+                  and `plan._axis_denied` refuses on `field_roles[column] == "housekeeping"` — never
+                  on the absent `axis` role. `housekeeping` occurs 24 times in mac-platform's
+                  packages, so the earlier reading here ("it fires on the spelling `attribute`;
+                  `housekeeping` occurs 0 times in platform src") is retired with the scalar: BOTH
+                  words are branched on, `attribute` as the explicitly retired one.
+              - when: {roles.axis: mac.concept.axis.time}
                 outcome: COMMIT
                 plan: GROUP BY c.StartDT
                 result: "{StartDT.distinct} rows"
@@ -839,47 +948,72 @@ bench:
                   count, and a meaningless question answered as though it were a good one.
 
       - column: CustomerKey
-        role: key
+        offers: [identity]
         headline: The column COUNT(DISTINCT) counts
         reads: >-
           {CustomerKey.distinct} distinct over {rows} rows — distinct EQUALS the row count, which is
           what makes it the identity rather than a very selective dimension.
         toggles:
-          - key: identity
-            values: [null, canonical, part, reference]
+          # RE-ADDRESSED 2026-10-07 from the flat `identity:` key, and `part` is the retired
+          # spelling of `composite` — refused BY NAME since that date, with the refusal naming where
+          # the term went, so an unmigrated bundle is told it moved rather than that it has a typo
+          # (ColumnRoles' identity validator). The three terms are a closed `enum` and are authored
+          # BARE, unlike `axis` and `aggregate.type`, which are fully qualified.
+          - key: roles.identity
+            values: [null, canonical, composite, reference]
         questions:
           - ask: how many customers
             cases:
-              - when: {identity: canonical}
+              - when: {roles.identity: canonical}
                 outcome: COMMIT
                 plan: SELECT count(DISTINCT c.CustomerKey)
                 result: "{CustomerKey.distinct}"
                 disclose: counted distinct CustomerKey
                 note: >-
-                  ENFORCED TODAY. `identity: canonical` on the column projects to
-                  concept.identity.canonical_key, which 22 runtime sites read.
-              - when: {identity: part}
+                  ENFORCED TODAY. `roles: {identity: canonical}` is projected into the identity the
+                  count route already reads — `roles.identity`'s reader above names 22 runtime read
+                  sites — so the column states it once, as an authoring surface and not a second
+                  home, and no internal duplicate can drift from it.
+              - when: {roles.identity: composite}
                 outcome: REFUSE
                 result: >-
                   CustomerKey is one column of a composite identity and identifies nothing alone.
                   Counting it would return a set where a row was expected.
-              - when: {identity: reference}
+              - when: {roles.identity: reference}
                 outcome: REFUSE
                 result: "Customer declares no canonical identity — CustomerKey points at another concept."
-                note: The default when identity is unstated on a key column, which is why stating it matters.
-              - when: {identity: null}
-                outcome: LOAD_ERROR
                 note: >-
-                  A canonical column whose concept declares no identity kind is refused at load, not
-                  guessed. Enforced today.
+                  The row names a row in ANOTHER concept, so it is a join target and never part of
+                  this concept's grain. It is not what an unstated identity falls back to — that is
+                  the case below, and the two were one answer while the concept-level identity block
+                  existed.
+              # DELETED 2026-10-07 — `when: {identity: null}` -> `LOAD_ERROR`, "A canonical column
+              # whose concept declares no identity kind is refused at load, not guessed. Enforced
+              # today." IT DEMONSTRATED THAT THE CONCEPT-LEVEL `identity.kind` WAS REQUIRED, so a
+              # column claiming canonical over a concept that named no kind failed the bundle. The
+              # case is gone because the premise is: `mac.concept.identity` is no longer in
+              # mac_vocabulary.yaml, `mac.concept.column.identity` is "THE ONLY HOME — there is no
+              # concept-level identity block", `roles.identity` is required only "iff claimed", and
+              # `ColumnSpec.roles` defaults to an empty `ColumnRoles()`. An unstated identity now
+              # LOADS, and its consequence moved to the answer plane — which is the case below.
+              - when: {roles.identity: null}
+                outcome: REFUSE
+                result: >-
+                  Customer declares no identity at all — no canonical column and no composite tuple —
+                  so there is nothing for COUNT(DISTINCT) to count.
+                note: >-
+                  `roles: {}` is a POSITIVE statement: the column is typed, loaded, and offered to no
+                  question. So the refusal is an answer-plane refusal and not a load error, which is
+                  the one behaviour on this column that 2026-10-07 changed. An ABSENT `roles:` is the
+                  other finding — a column nobody classified — and this bench cannot show it, because
+                  a toggle can only set a key, never unsay the map that carries it.
 
   - concept: Product
     relation: dim_contoso_product
-    identity_kind: fk_name
     columns:
 
       - column: SubCategoryName
-        role: dimension
+        offers: [axis]
         headline: A level, not a collision — and telling them apart is the expensive part
         reads: >-
           {SubCategoryName.distinct} distinct, rolling up into CategoryName's
@@ -919,7 +1053,7 @@ bench:
                 note: An ASK either way — but one of them names the choice and the other names the failure.
 
       - column: Manufacturer
-        role: dimension
+        offers: [axis]
         headline: The 1:1 that only a person can rule on
         reads: "{Manufacturer.distinct} distinct, beside Brand's {Brand.distinct}."
         measured:
@@ -962,27 +1096,50 @@ bench:
 
   - concept: OrderLine
     relation: orderrows
-    identity_kind: composite
     columns:
 
       - column: NetPrice
-        role: measure
+        offers: [aggregate]
         headline: One column, five declarable types, ten universal folds
         reads: "{NetPrice.distinct} distinct values over {rows} rows — a numeric payload, never an axis."
         derives: measure_matrix
         derives_note: >-
           This panel computes nothing of its own. The legal fold per axis comes from
-          mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis — five
-          types × two kinds = ten universal cells, each naming a mac.concept.aggregation_effect term. An
-          applied ontology references those members; it never re-encodes the matrix, and neither
-          does this page.
+          mac_vocabulary.yaml#concept.column.measure_type, where additivity is stated ONCE over
+          mac.concept.axis — five types × two kinds = ten universal cells, each naming a
+          mac.concept.aggregation_effect term. An applied ontology references those members; it never
+          re-encodes the matrix, and neither does this page.
         toggles:
-          - key: measure.type
-            values: [Flow, Stock, Intensive, Precomputed, Target]
-          - key: measure.unit
-            values: [null, USD]
-          - key: measure.additivity
-            values: [null, "time: additive", "time: average", "time: none"]
+          # RE-ADDRESSED 2026-10-07 from `measure.type` / `measure.unit`, which were two keys. They
+          # are ONE key now: `roles.aggregate` is the role's QUALIFIER MAP — "the qualifier IS the
+          # value, so a role cannot be claimed without it" — and `type`/`unit`/`canonical` are its
+          # sub-keys, not keys of the column. So the bench can no longer cross them: the five types
+          # are five values of one toggle, and the unit's effect (whether the number is reported in
+          # something or arrives bare) is shown ONCE rather than against each type, because it is
+          # the same disclosure difference in all five rows of the law.
+          #
+          # PER COLUMN, NOT PER CONCEPT, which is the substance of the move: `concept.semantics.
+          # {measure_type,unit}` said it once for the whole concept, which GrossRevenue
+          # (`gross_amount` flow, `unit_price` intensive) could only misreport — and did.
+          - key: roles.aggregate
+            values:
+              - {type: mac.concept.column.measure_type.flow, unit: USD}
+              - {type: mac.concept.column.measure_type.stock, unit: USD}
+              - {type: mac.concept.column.measure_type.intensive, unit: USD}
+              - {type: mac.concept.column.measure_type.precomputed, unit: USD}
+              - {type: mac.concept.column.measure_type.target, unit: USD}
+              - {type: mac.concept.column.measure_type.flow}
+          # THE PER-AXIS OVERRIDE, authored as the map the manual declares — `{<axis>:
+          # mac.concept.aggregation_effect.<term>}`, both sides fully qualified. The flat
+          # `"time: additive"` spelling it replaces stated the premise and the conclusion in one
+          # string, which is the shape a `target` measure once used to declare `geography: additive`
+          # and have its value summed across models for weeks.
+          - key: roles.aggregate.additivity
+            values:
+              - null
+              - {mac.concept.axis.time: mac.concept.aggregation_effect.additive}
+              - {mac.concept.axis.time: mac.concept.aggregation_effect.average}
+              - {mac.concept.axis.time: mac.concept.aggregation_effect.none}
         questions:
           - ask: total NetPrice for 2024
             axis: time
@@ -999,15 +1156,63 @@ bench:
 #
 # THE OPERATOR'S DECOMPOSITION, 2026-09-27, and the reason this section exists: "where a query may
 # use it" was carried as ONE permission, and the vocabulary's own words force it into THREE.
-# `mac.concept.column.role.key` says: "A name resolves TO it through a register; a query then filters or
-# joins on the exact value. NEVER MATCHED AGAINST A LABEL." That is not one permission granted or
-# withheld — it is `resolve: no` beside `filter: yes`, in a single sentence.
+# `mac.concept.column.roles.identity` says: "Filtered on an exact value a register resolved to,
+# joined on, and what COUNT(DISTINCT) counts — never matched against a label and never aggregated,
+# an identifier that is summed being a number nobody asked for." That is not one permission granted
+# or withheld — it is `resolve: no` beside `filter: yes`, in a single sentence.
 #
-# SO THE LAW IS 5 ROLES x 3 OPERATIONS = 15 CELLS, with the four rulings as an OVERRIDE LAYER on
-# top — 4 more rows that do not extend the table but MODIFY the row a role already gave. That is
-# structurally the same shape as the fold plane one floor down: a base table of cells, and a small
-# set of preemptions that override it and never re-tabulate it (mac_runtime/foldplane/law.py G1-G5).
-# A ruling is a guard over the role table.
+# RE-ADDRESSED 2026-10-07 FROM ROLE NAMES TO ROLES OFFERED, which is the whole substance of the
+# column change. The law was 5 ROLE NAMES x 3 operations — key · dimension · measure · period ·
+# housekeeping, one row, and a column held exactly one of them. So the grid had to grant or deny
+# every operation to every `key` alike, and did: it denied the axis. Measured on contoso5
+# 2026-10-07, 21 of its 112 columns are a join key you also group by, 18 of them a reference key
+# that is also a legitimate axis — one role name, two different sets of permitted uses, and the
+# table had to pick one.
+#
+# SO THE ROWS ARE THE FIVE ROLES A COLUMN MAY OFFER, and a column holds a SET of them: its
+# permissions are the UNION of its rows. That is what makes those 21 expressible —
+# `roles: {identity: reference, axis: mac.concept.axis.categorical}` reads two rows, not one — and
+# it is why the law is per role OFFERED and not per role NAME.
+#
+# THREE OPERATIONS ARE NOW GRANTED BY A ROLE'S OWN NAME rather than looked up in a table: a column
+# may be GROUPED iff it offers `axis`, FOLDED iff it offers `aggregate`, and asked for an EXTREMUM
+# iff it offers `extremum`. That is `Grounding.offers` in full — `{identity: r.identity is not None,
+# axis: r.axis is not None, aggregate: r.aggregate is not None, period_binding: bool(...),
+# extremum: bool(...)}` and nothing else, with no projection standing between the declaration and
+# the gate. Those three cells are the law itself and are marked `yes` as a definition; the content
+# of this grid is the OFF-diagonal — what a role does NOT grant, and why.
+#
+# THE OLD FIVE ROWS MAP ONTO THE NEW FIVE EXACTLY, and the mapping is not a reading of this file:
+# it is `ontology/models._ROLE_OFFERS`, "the only surviving copy of the retired
+# `mac.concept.column.role#query_use` table (recovered from mac_vocabulary.yaml@b54851e before the
+# block was deleted 2026-10-07)" — key -> (identity), dimension -> (axis, extremum),
+# measure -> (aggregate, extremum), period -> (axis, extremum, period_binding), housekeeping -> ().
+# Every refusal reason the old rows recorded is carried below to the role that inherits it. TWO
+# CELLS CHANGED VALUE, both because a permission the old table granted IMPLICITLY is now declared:
+#   period.group was `undeclared` — "the vocabulary says nothing, and the planner does allow it".
+#     It is declared now, as `axis`: binding the reporting period is not grouping by it, and a
+#     period column a question may also slice by carries `axis: mac.concept.axis.time` beside the
+#     flag. `roles.axis`'s own entry carries the measurement — 31 of contoso5's 70 axis columns got
+#     that term when `role: dimension`/`period` stopped carrying the permission implicitly.
+#   extremum was folded into `dimension` and `measure` by _ROLE_OFFERS, so every dimension could be
+#     asked for a MIN whether or not anyone said so. It is its own role now, so the `axis` and
+#     `aggregate` rows grant it `no` and a column that admits it says `extremum: [min, max]`. A
+#     column that admits NONE can now say so, which is what makes the ASK ("which column did you
+#     mean?") answerable from declarations.
+#
+# THE SIXTH ROW IS NOT A ROLE. `roles: {}` is the heir of the `housekeeping` row — a POSITIVE
+# statement that the column is typed, loaded, and offered to no question — and it is kept as a row
+# because the refusal reasons it records are still the ones a reader needs. A MISSING `roles:` is a
+# different thing: a column nobody classified, which is a finding and not a state.
+#
+# THE FOUR RULINGS REMAIN AN OVERRIDE LAYER on top — 4 rows that do not extend the table but MODIFY
+# the row a role already gave. That is structurally the same shape as the fold plane one floor down:
+# a base table of cells, and a small set of preemptions that override it and never re-tabulate it
+# (mac_runtime/foldplane/law.py G1-G5). A ruling is a guard over the role table. They override
+# `resolve`/`filter`/`group` only, which is why their rows are three cells wide: none of the four
+# speaks to a fold or an extremum. `rulings.sort` is the fifth ruling and is deliberately absent —
+# it decides the ORDER values are presented in, not whether an operation is permitted, so it
+# overrides no cell.
 #
 # THE CELL VOCABULARY IS NOT BINARY, which the decomposition exposed. Six values, closed:
 #   yes         permitted outright
@@ -1018,51 +1223,94 @@ bench:
 #   undeclared  NOT A VALUE — a hole. Nothing in the vocabulary says, and it is recorded as a
 #               finding rather than guessed. `verified_by` may still show what the runtime does.
 #
-# `verified_by` IS MEASURED, NOT TYPED. gen_grammar_map.py extracts the role tuples the planner
-# actually branches on and checks the `group` and `filter` columns against them. The `resolve`
-# column has NO role-reader to check against: measured 2026-09-27, `resolver/` consults
-# `field_roles` twice and BOTH times for its keys (which columns exist), never for its values.
-# Resolution is gated by REGISTERS, not by role — so that whole column is law stated in prose and
-# read by nothing.
+# `verified_by` IS MEASURED, NOT TYPED, AND RE-ADDRESSING THE ROWS IS WHAT MAKES IT DISAGREE —
+# which is the point of measuring it. gen_grammar_map.py extracts the tuples the planner actually
+# branches on and checks the `group` and `filter` columns against them. Measured 2026-10-07:
+#   group    READS THE ROLE, and the cell agrees. `planner/grounded_columns.axis_columns` is
+#            `grounding.offering("axis")` minus the columns a `never_axis` ruling denies — the new
+#            address, asked of the column.
+#   filter   STILL READS THE RETIRED SCALAR. `planner/sql.py:1437` and `:1466` place a predicate
+#            only where `anchor_fr[col]` is in `("dimension", "key")` — `field_roles`, which
+#            parser.py:634 PROJECTS from the derived `ColumnSpec.role`. The permission holds; its
+#            address does not, so a verifier reading this grid over role names finds nothing and
+#            reports every `filter` cell as a disagreement until that tuple asks
+#            `Grounding.offers(col, "axis")` / `("identity")` instead. The disagreement is the
+#            finding, and papering over it by keeping the rows spelled in retired names would hide
+#            exactly the drift this file exists to surface.
+#   resolve  HAS NO ROLE-READER AT ALL, unchanged: measured 2026-09-27, `resolver/` consults
+#            `field_roles` twice and BOTH times for its keys (which columns exist), never for its
+#            values. Resolution is gated by REGISTERS, not by role — so that whole column is law
+#            stated in prose and read by nothing.
 # ===========================================================================
 permissions:
   authored_by: operator
   authored_on: '2026-09-27'
+  readdressed_on: '2026-10-07'
   operations:
     - id: resolve
       asks: match a user's word to this column
       gated_by: registers, not roles — measured, see the section header
     - id: filter
       asks: constrain an exact value
-      gated_by: the planner's predicate-placement role tuple
+      gated_by: >-
+        the planner's predicate tuple, still spelled in the retired role names —
+        sql.py:1437 and :1466, `anchor_fr[col] in ("dimension", "key")`
     - id: group
       asks: be an axis
-      gated_by: the planner's groupable role tuple
+      gated_by: 'the `axis` role — grounded_columns.axis_columns = grounding.offering("axis")'
+    - id: fold
+      asks: combine several rows into one number
+      gated_by: >-
+        the `aggregate` role, and then the fold law for HOW — measure_type x axis ->
+        aggregation_effect, stated once in mac_vocabulary.yaml and never restated here
+    - id: extremum
+      asks: name the earliest or latest value this column holds
+      gated_by: 'the `extremum` role — planner/plan._OPERATION_NEEDS -> MIN/MAX'
 
   values: ['yes', 'no', redirected, not_alone, obliged, undeclared]
 
+  # ONE ROW PER ROLE A COLUMN MAY OFFER, plus the empty map. A column's permissions are the UNION
+  # of the rows it offers, which is the one thing the five role NAMES could not express.
   roles:
-    key:
+    identity:
       resolve: {v: 'no', why: "never matched against a label — a name resolves TO it through a register"}
-      filter:  {v: 'yes', why: "the query filters or joins on the exact value"}
-      group:   {v: 'no', why: "it is what COUNT(DISTINCT) counts, not what you count BY"}
-    dimension:
+      filter:  {v: 'yes', why: "the query filters or joins on the exact value a register resolved to"}
+      group:   {v: 'no', why: "it is what COUNT(DISTINCT) counts, not what you count BY. A column that is ALSO an axis says so in the same map and is grouped on THAT grant — 21 of contoso5's 112 columns, which the single role name could not say"}
+      fold:    {v: 'no', why: "an identifier that is summed is a number nobody asked for (mac.concept.column.roles.identity)"}
+      extremum: {v: 'no', why: "the retired table granted `key` nothing but identity (models._ROLE_OFFERS); a MIN over a surrogate orders the keyspace, not the world"}
+    axis:
       resolve: {v: 'yes', why: "via the ladder — exact, normalized, prefix, fuzzy, then ask"}
       filter:  {v: 'yes', why: "WHERE Gender = 'female' is legitimate"}
-      group:   {v: 'yes', why: "GROUP BY Gender is legitimate — this is the categorical axis"}
-    measure:
+      group:   {v: 'yes', why: "GROUP BY Gender is legitimate — this IS the axis, and the term (time | categorical) is also the fold law's lookup key, which is why the role carries a term and not a boolean"}
+      fold:    {v: 'no', why: "an axis is what a fold crosses, not what it folds"}
+      extremum: {v: 'no', why: "a date axis admits MIN/MAX while remaining non-aggregatable, and it says so in `extremum` — _ROLE_OFFERS granted every dimension one implicitly, so no column could decline it"}
+    aggregate:
       resolve: {v: 'no', why: "a numeric payload carries no name to match"}
       filter:  {v: 'no', why: "a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column"}
-      group:   {v: 'no', why: "folded as its MeasureType allows; never an axis"}
-    period:
-      resolve: {v: undeclared, why: "the vocabulary says nothing about matching a word to the period column"}
-      filter:  {v: 'yes', why: "it is what a question's period binds to"}
-      group:   {v: undeclared, why: "the vocabulary says nothing — and the planner does allow it"}
-    housekeeping:
+      group:   {v: 'no', why: "folded as the law allows; never an axis"}
+      fold:    {v: 'yes', why: "and HOW is not this grid's to say: measure_type x axis -> aggregation_effect. A `precomputed` or `target` column offers this role and folds on NO axis at all — every cell of its row is `none` — and that is the measure type's ruling, not this one's"}
+      extremum: {v: 'no', why: "not a fold, so not reached through this role: an extremum PICKS a value that exists instead of combining several, and is meaningful on a column no law would let anyone SUM"}
+    period_binding:
+      resolve: {v: undeclared, why: "the vocabulary says nothing about matching a word to the period column, and the role is a bare flag with no parameter to match against"}
+      filter:  {v: 'yes', why: "it is what a question's period binds to, through its OWN reader — the planner looks the period column up by this role and binds Intent.period, never through the generic predicate tuple"}
+      group:   {v: 'no', why: "WAS `undeclared` — 'the vocabulary says nothing, and the planner does allow it'. Binding the reporting period is not grouping by it; a period column a question may also slice by carries `axis: mac.concept.axis.time` beside this flag, and that is where the permission is now declared"}
+      fold:    {v: 'no', why: "a reporting date is not a quantity"}
+      extremum: {v: 'no', why: "'when did we first sell in Spain' is the extremum role's own question and is declared as `extremum`, not inferred from the period binding"}
+    extremum:
+      resolve: {v: 'no', why: "min and max are an operation over the column, not words a question resolves against it"}
+      filter:  {v: 'no', why: "the role grants a PICK, not a predicate — a column a question also constrains declares `axis` beside it"}
+      group:   {v: 'no', why: "same: the axis is a separate grant, and a column may admit an extremum while being no axis at all"}
+      fold:    {v: 'no', why: "NOT A FOLD, and that is why it is a role of its own rather than a corner of `aggregate` — it answers to no additivity cell"}
+      extremum: {v: 'yes', why: "`[min]`, `[max]` or both. Where several columns of a concept admit it and the question names none, the planner ASKS which — the ladder names the population back, which only a declared role can enumerate"}
+    '{}':
       resolve: {v: 'no', why: "not business vocabulary, so it is not offered to a question"}
       filter:  {v: 'no', why: "not filtered on; its absence from an answer is correct rather than a gap"}
-      group:   {v: 'no', why: "grouping sales by a load stamp is meaningless"}
+      group:   {v: 'no', why: "grouping sales by a load stamp is meaningless. ENFORCED TODAY, and not through this map: ColumnSpec.role derives `housekeeping` from an empty `roles`, parser.py:634 projects that word into field_roles, and plan._axis_denied refuses on it with POLICY_DENIED"}
+      fold:    {v: 'no', why: "offered to nothing is offered to nothing — the empty map is the whole statement"}
+      extremum: {v: 'no', why: "same. An ABSENT `roles:` is the other finding: a column nobody classified, which is not this row"}
 
+  # THE OVERRIDE LAYER. Three cells wide, because a ruling modifies what a role already granted and
+  # none of these four speaks to a fold or an extremum.
   rulings:
     label_of:
       resolve: {v: 'yes', why: "a question asked in these words is answered in them, never refused"}
@@ -1079,4 +1327,4 @@ permissions:
     never_axis:
       resolve: {v: 'yes', why: "a postcode is a legitimate thing to ask about"}
       filter:  {v: 'yes', why: "never_axis forbids the AXIS, not the filter"}
-      group:   {v: 'no', owes: evidence, why: "grouping on it names individuals — and the refusal must cite the measurement"}
+      group:   {v: 'no', owes: evidence, why: "grouping on it names individuals — and the refusal must cite the measurement. The one ruling in this layer that overrides a cell TODAY: axis_columns drops a never_axis column and plan._axis_denied refuses it first, before either role spelling is consulted"}

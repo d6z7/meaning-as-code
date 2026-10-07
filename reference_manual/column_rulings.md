@@ -1,9 +1,16 @@
 ---
 title: Column rulings — reference
-status: PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under grounding.sources[].columns.<col>.rulings
-  (added 2026-09-28); mac-runtime READS label_of and finer_than (planner/sql.py) and never_axis (planner/plan.py
-  POLICY_DENIED, interpret/vocabulary.py never offers it); scoped_by is LOADED, NOT PLANNED-ON (waived in
-  test_declared_but_unread as a ticket). Per-ruling status is stated on each section below.
+status: >-
+  The schema admits all five under `grounding.sources[].columns.<col>.rulings`, and `register` requires
+  `label_of` (`dependentRequired`). READ by mac-runtime `planner/sql.py`: `label_of` + `register` (the
+  label is selected, the named column grouped on, with a disclosure naming the register), `finer_than`
+  (a disclosure that the finer level was used) and `sort` (`column_sort` → the ORDER BY this column
+  contributes). `scoped_by` is LOADED, NOT PLANNED-ON (`ontology/models.py` `ColumnRulings`) — the
+  protection it describes comes today from the `composite_key_guard` canon. The prohibition route of
+  §"When the judgement is a prohibition" is PROPOSED (2026-10-07): no canon realizes an axis prohibition
+  yet, and a contract rule has no dedicated key for the DQ id it cites. Per-ruling status is on each
+  section below.
+audience: ontology authors, importer developers
 companions: [column_declaration.md, column_roles.md, column_specification.md, ../mac_vocabulary.yaml]
 ---
 
@@ -11,21 +18,37 @@ companions: [column_declaration.md, column_roles.md, column_specification.md, ..
 
 A **ruling** is a judgement about a column that measurement cannot establish. Rulings are declared
 under `rulings:` on a column and are always optional; a column with no rulings behaves as its
-[role](column_roles.md) alone dictates.
+[roles](column_roles.md) alone dictate.
 
 ```
 SYNOPSIS
     columns:
       <column>:
-        role: key | dimension | measure | period | housekeeping   # a bare mac.concept.column.role term
+        roles: { … }                                     # what a question may DO with it — column_roles.md
         rulings:
           label_of:   <column>
           register:   common | legal | long | short | code      # REQUIRES label_of (schema dependentRequired)
           finer_than: <column>
           scoped_by:  <column>
-          never_axis: <the reason, one line of prose>          # free text; no privacy|grain|derived vocabulary exists
-          evidence:   <dq-id>                                  # REQUIRED with never_axis (schema dependentRequired)
+          sort:       asc | desc | none
 ```
+
+## The five rulings
+
+| ruling | value | required | says | the measurement that gets you to the door | read by |
+|---|---|---|---|---|---|
+| `label_of` | a column of the same relation | — | I am **another name for that column's thing**, not another thing — group on it, display me | `a = b = pairs` | `planner/sql.py` |
+| `register` | `common` · `legal` · `long` · `short` · `code` | **with `label_of`** | **which** of that thing's names I carry | — only a person can say | `planner/sql.py`, in the disclosure |
+| `finer_than` | a column of the same relation | — | I distinguish **more members** than that column and roll up into it; both are legitimate axes and an answer must disclose which level it used | `pairs = finer_distinct` | `planner/sql.py` |
+| `scoped_by` | a column of the same relation | — | my values are unique **only within** that column, so I may not be grouped or filtered alone — the scope must travel with me | 0 collisions within, many across | loaded (`ontology/models.py`); enforced today by `composite_key_guard` |
+| `sort` | `asc` · `desc` · `none` | — | the order my values are presented in when the question states none | **none — and that is the point:** SQL guarantees no row order without `ORDER BY` | `planner/sql.py` `column_sort` |
+
+### Two keys spelled `register`
+
+| key | value | says |
+|---|---|---|
+| `register:` on the column | a lookup path | where this column's VALUES come from — the register a name resolves through |
+| `rulings.register` | a `mac.name_register` term | **which of the thing's names** this column carries |
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.ruling (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
@@ -113,12 +136,16 @@ served customers and is the dominant identifier in the row.
  |
 <!-- END GENERATED:vocabulary-terms:concept.column.ruling -->
 
+**A prohibition is not a ruling.** A ruling relates a column to another column. A judgement that a
+column may not be used a particular way leaves the column unchanged and lives in a contract rule —
+[When the judgement is a prohibition](#when-the-judgement-is-a-prohibition).
+
 ---
 
 # 1 · `label_of`
 
-**Status: IMPLEMENTED.** Schema-admitted; read by mac-runtime `planner/sql.py` (the label is selected, the
-named column grouped on, with a disclosure naming the register).
+**Status: READ** — `planner/sql.py` selects the label, groups on the named column, and discloses the
+register it showed.
 
 ## Synopsis
 
@@ -163,7 +190,7 @@ Two columns, **equal distinct counts and an equal pair count**:
 
 1:1 gets you to the door. **Only a person can say the two names denote one thing.** Contoso and
 Contoso, Ltd are one company in two registers; Fabrikam Group and Contoso are two companies, and
-that pair would be one-to-many — a `key` pointing at a parent, not a label.
+that pair would be one-to-many — an `identity: reference` pointing at a parent, not a label.
 
 ## What happens without it
 
@@ -171,7 +198,7 @@ that pair would be one-to-many — a `key` pointing at a parent, not a label.
 |---|---|
 | **Two answers to one question** | *by brand* → 11 rows. *by manufacturer* → 11 rows. Identical numbers, different labels, nothing says they are the same cut. |
 | **Meaningless cross-product** | `GROUP BY Brand, Manufacturer` yields 11 rows where a reader expects 121, and reads as a data bug. |
-| **Refusal instead of an answer** | Marking the second column never-an-axis refuses *"by manufacturer"* — a good question asked in the user's own words. |
+| **A refusal instead of a redirect** | Prohibiting the second column as an axis refuses *"by manufacturer"* — a good question asked in the reader's own words. The right behaviour is to group on `Brand` and DISPLAY `Manufacturer`, which is what this ruling buys. |
 
 ## Examples
 
@@ -182,9 +209,9 @@ that pair would be one-to-many — a `key` pointing at a parent, not a label.
 grounding:
   columns:
     Brand:
-      role: dimension
+      roles: { axis: mac.concept.axis.categorical }
     Manufacturer:
-      role: dimension
+      roles: { axis: mac.concept.axis.categorical }
       rulings:
         label_of: Brand
         register: legal
@@ -220,8 +247,8 @@ WHERE p.Brand = 'Contoso'
 **Chaining** — a label of a scoped column is scoped too:
 
 ```yaml
-State:     { role: …dimension, rulings: { scoped_by: Country } }
-StateFull: { role: …dimension, rulings: { label_of: State, register: long } }
+State:     { roles: { axis: mac.concept.axis.categorical }, rulings: { scoped_by: Country } }
+StateFull: { roles: { axis: mac.concept.axis.categorical }, rulings: { label_of: State, register: long } }
 ```
 
 ## Errors
@@ -230,6 +257,7 @@ StateFull: { role: …dimension, rulings: { label_of: State, register: long } }
 |---|---|
 | `label_of` names a column not in this relation | load refuses — a column is never assumed to exist |
 | the pair is not 1:1 in the data | `check_column_rulings` reds: the ruling claims one thing, the data shows many |
+| `register` without `label_of` | the schema refuses — `dependentRequired` |
 | `register` is not a `mac.name_register` term | load refuses |
 
 ## See also
@@ -274,8 +302,7 @@ A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 # 2 · `finer_than`
 
-**Status: IMPLEMENTED.** Schema-admitted; read by mac-runtime `planner/sql.py` (a disclosure that the finer of
-two levels was used).
+**Status: READ** — `planner/sql.py` discloses that the finer of two levels was used.
 
 ## Synopsis
 
@@ -329,9 +356,9 @@ parent the totals stop adding up, with no symptom.
 ```yaml
 grounding:
   columns:
-    CategoryName:    { role: dimension }
+    CategoryName:    { roles: { axis: mac.concept.axis.categorical } }
     SubCategoryName:
-      role: dimension
+      roles:   { axis: mac.concept.axis.categorical }
       rulings: { finer_than: CategoryName }
 ```
 
@@ -358,7 +385,7 @@ self-reference rather than two columns
 # 3 · `scoped_by`
 
 **Status: LOADED, NOT PLANNED-ON.** Schema-admitted and parsed into `ColumnRulings` (mac-runtime
-`ontology/models.py`), but no planner step reads it yet — waived in `test_declared_but_unread` as a ticket.
+`ontology/models.py`), and no planner step reads it — waived in `test_declared_but_unread` as a ticket.
 The protection this describes comes today from the `composite_key_guard` canon, not from this key.
 
 ## Synopsis
@@ -408,9 +435,9 @@ returns French, Italian and American customers.
 ```yaml
 grounding:
   columns:
-    Country: { role: dimension }
+    Country: { roles: { axis: mac.concept.axis.categorical } }
     State:
-      role: dimension
+      roles:   { axis: mac.concept.axis.categorical }
       rulings: { scoped_by: Country }
 ```
 
@@ -429,38 +456,88 @@ grounding:
 
 ---
 
-# 4 · `never_axis`
+# 4 · `sort`
 
-**Status: IMPLEMENTED.** Refuses today with `POLICY_DENIED` (mac-runtime `planner/plan.py` `_axis_denied`,
-citing `evidence`; `interpret/vocabulary.py` never offers the column as groupable). **The value is a
-REASON in prose, not a code**: an earlier draft of this page proposed the closed set `privacy | grain |
-derived`, no vocabulary has ever declared those three, and the schema admits a free string. Closing the
-reason is an open question for the operator.
+**Status: READ** — `planner/sql.py` `column_sort` turns it into the `ORDER BY` this column contributes.
 
 ## Synopsis
 
 ```yaml
 rulings:
-  never_axis: <the reason, one line of prose>
-  evidence:   <dq-id>                          # REQUIRED — schema dependentRequired
+  sort: asc | desc | none
 ```
 
 ## Description
 
-Declares that this column, though a legitimate dimension, **must not be used as an axis**. The
-reason is outside the data, so the ruling carries both the reason (a sentence) and the measurement
-that establishes it.
+Declares the order this column's values are presented in **when the question states none**.
+
+| term | the order | the reading it is for |
+|---|---|---|
+| `asc` | alphanumeric, smallest first | a NAME |
+| `desc` | largest first | a MAGNITUDE |
+| `none` | — | a column that is never an ordering key |
+
+**Per column, never per concept** — operator ruling, 2026-10-02: *"it must be sort per column and not
+concept"* — because one breakdown legitimately wants `brand asc`, `country_code asc` and
+`net_amount desc` at the same time, which no concept-level flag can express.
 
 ## Parameters
 
 | parameter | required | default | legal values | meaning |
 |---|---|---|---|---|
-| `never_axis` | yes | — | free text — one line stating the reason | why it may not be an axis (quoted into the refusal) |
-| `evidence` | **yes** | — | a DQ register id | the measurement. A prohibition without one is a preference. |
+| `sort` | yes | — | `asc` · `desc` · `none` | the order this column's values are presented in |
 
 ## When to use it — the constellation
 
-Cardinality approaching the row count:
+**The one ruling with no measurement constellation, and that is the point rather than a gap.** SQL
+guarantees no row order without `ORDER BY`, so nothing in the data can establish the order a reader
+expects — only a person can say it. An unordered answer is not a reading of the question: it is
+whatever the engine happened to emit, and it changes between runs.
+
+Measured 2026-10-02 on AGG-15 (*"net revenue by brand and customer country for 2024"*), an 88-row
+breakdown: the grader compares the approved rows against the capture's **first 50**, which 50 depended
+on unordered output, and the question passed and failed on alternate runs with the data unchanged.
+
+An ordering is also what makes a truncated view honest: the first N rows of a descending measure are
+the N that matter.
+
+## Precedence
+
+| rank | source | example |
+|---|---|---|
+| 1 | `Intent.ordering` — the reader's own words | *"top 5 by price"* |
+| 2 | `rulings.sort` on the column | `net_amount: desc` |
+| 3 | `query_grammar.yaml#projection.default_ordering` | an aggregate `desc`; a bare list `asc` on its slice columns |
+
+## Examples
+
+```yaml
+grounding:
+  columns:
+    Brand:
+      roles:   { axis: mac.concept.axis.categorical }
+      rulings: { sort: asc }
+    NetPrice:
+      roles:   { aggregate: { type: flow, unit: the order's own CurrencyCode } }
+      rulings: { sort: desc }
+    ZipCode:
+      roles:   { axis: mac.concept.axis.categorical }
+      rulings: { sort: none }
+```
+
+| you ask | ordering applied | why |
+|---|---|---|
+| *net revenue by brand* | `ORDER BY SUM(NetPrice) DESC` | the measure's `desc` — the rows that matter come first |
+| *list the brands* | `ORDER BY Brand ASC` | a name reads alphabetically |
+| *top 5 brands by price* | `ORDER BY ... DESC LIMIT 5` | `Intent.ordering` outranks the column's ruling |
+
+---
+
+# When the judgement is a prohibition
+
+A judgement that a column **may not be used** a particular way is not a ruling about the column,
+because the column has not changed: it still is what the warehouse made it. `ZipCode` is
+`{axis: categorical}` and declares it. The prohibition is a **rule**.
 
 | measured over `dim_contoso_customer` | |
 |---|---:|
@@ -468,41 +545,38 @@ Cardinality approaching the row count:
 | distinct `ZipCode` | 40 639 |
 | postcodes held by **exactly one** customer | **29 193** |
 
-`City` is the same shape at 34 581 distinct.
+`City` is the same shape at 34 581 distinct. `GROUP BY ZipCode` plans, executes and returns 29 193 rows
+that each describe one person: the query is valid, and only a rule stands between it and an answer.
 
-## What happens without it
+**Where each part of the judgement lives** — a `contract.rules[]` entry, anchored to the column:
 
-`GROUP BY ZipCode` plans, executes, and returns 29 193 rows that each describe one person. The
-query is valid; the ontology's own measurement forbids it; nothing connects the two.
+| the rule carries | in | note |
+|---|---|---|
+| what it governs | `kind` | a `mac.concept.rule.*` term — mac.schema.json closes the slot to the six |
+| the prohibition | `when` / `then` / `never` | the situation, the directive, the anti-pattern |
+| the reason | `why` | one line, and it is what the refusal quotes back |
+| the column | `binds: [ZipCode]` | the field-anchoring: `binds` must name columns the concept grounds to, enforced cross-file by the rule-binds-grounded shape in `mac_shapes.yaml` |
+| the deterministic realization | `realized_by` | the canon that executes the `when`/`then`; a refusal from a canon is filed `POLICY_DENIED` (`planner/contract_guards.py`) |
+| where the decision came from | `decided_in` | a ref to the record, `<repo>#<path>` or bundle-relative |
+| its standing | `status` · `confidence` | `proposed` · `ruled` · `retired` · and `C` · `P` · `R` |
 
-## Examples
-
-```yaml
-grounding:
-  columns:
-    ZipCode:
-      role: dimension
-      rulings:
-        never_axis: "identifies a person — 29 193 of 104 990 values are held by exactly one customer"
-        evidence: DQ-CUSTOMER-02
-```
+**The refusal cites the measurement.** A judgement made from a measurement must produce a refusal that
+names it, never a silent success:
 
 ```
 > customers by postcode
 ```
 ```
 REFUSED (POLICY_DENIED)
-Customer.ZipCode is declared `never_axis` ("identifies a person") — DQ-CUSTOMER-02 measured that
-29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names
+Customer.ZipCode is a categorical axis, and the rule bound to it refuses grouping: DQ-CUSTOMER-02
+measured that 29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names
 individuals. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.
 ```
 
-## Errors
-
-| condition | outcome |
-|---|---|
-| `never_axis` without `evidence` | load refuses |
-| `evidence` names no entry in the DQ register | `check_dq_resolution_sync` reds |
+**Why it is not on the column.** A declaration describes the data; a prohibition is a rule. A column
+that *is* an axis says so even where policy forbids grouping by it — declaring a real axis "not an axis"
+would make the ontology lie about the warehouse, and the measurement that justifies the prohibition
+would then contradict the declaration that hides it.
 
 ## See also
 
@@ -527,7 +601,8 @@ FROM   <relation>
 | `a = b = pairs` | [`label_of`](#1--label_of) | whether the two names denote one thing or two |
 | `pairs = a`, `a > b` | [`finer_than`](#2--finer_than) | — this one is safe to read off the data |
 | `pairs > a` **and** `pairs > b` | [`scoped_by`](#3--scoped_by) | — also safe: check collisions within vs across |
-| cardinality ≈ row count | [`never_axis`](#4--never_axis) | whether the identification matters |
+| none — the data cannot say | [`sort`](#4--sort) | the order a reader expects; SQL promises none |
+| cardinality ≈ row count | **not a ruling** — the column is an axis and says so; the prohibition is a [contract rule](#when-the-judgement-is-a-prohibition) | whether the identification matters |
 
 **`scoped_by` mistaken for `finer_than` is the expensive error**: it merges unrelated members and
 nothing in the result betrays it.

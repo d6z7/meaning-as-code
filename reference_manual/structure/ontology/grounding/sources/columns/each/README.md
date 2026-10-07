@@ -4,27 +4,22 @@
 
 [ontology](../../../../README.md) · [grounding](../../../README.md) · [sources](../../README.md) · [columns](../README.md) · <name>
 
-A column's flags, or null to serve the column and say nothing more. TODAY'S FLAGS ARE role, identity and measure — only those three, because a flag ships with the code that reads it. `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.
+EVERYTHING ABOUT ONE COLUMN, ON THE COLUMN. Four flags and only four — `roles` (required: which uses a question may make of this column, each with its own terms), `counts` (a count of this concept counts THIS column), `register` (where its values come from) and `rulings` (how it relates to another column). A flag ships with the code that reads it, and `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.
 
 ## Keys
 
-- [`axis`](#axis-kind) — *string*
+- [`roles`](#roles) — *object* **·** required
 - [`counts`](#counts) — *boolean*
-- [`identity`](#identity) — *string*
-- [`measure`](#measure) — *object*
 - [`register`](#register) — *string*
-- [`role`](#role) — *string*
 - [`rulings`](#rulings) — *object*
 
-### `axis`
+### `roles`
 
-*string* · optional
+*object* · **required** · [has its own keys →](roles/README.md)
 
-WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.
+WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each role to that role's own qualifier, so the role and its parameter are one statement and a role cannot be claimed without its terms. Terms: mac.concept.column.roles. AN EMPTY MAP IS A STATEMENT (the column is offered to no question, which is what `role: housekeeping` said); an ABSENT `roles` is a column nobody classified, and the two are different findings. v0.1.19: replaces the scalar `role` and absorbs `mac.concept.column.query_use`, which was 'the machine-readable half' of it and had no key here at all — one fact in two vocabularies, neither able to say that a join key is also an axis, which 21 of contoso5's 112 columns are.
 
-**When you would reach for it.**
-
-THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time.
+Its own keys: [`ontology.grounding.sources.columns.<name>.roles`](roles/README.md)
 
 ### `counts`
 
@@ -36,34 +31,6 @@ WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concep
 
 THE RELATION HOLDS MORE ROWS THAN THERE ARE THINGS. contoso5's dim_store carries 74 trading-period rows over 67 location codes: `COUNT(DISTINCT store_key)` answers 74 and nobody asked how many store-periods there are. Only a person knows which column is the thing itself.
 
-### `identity`
-
-*string* · optional · 3 legal values
-
-`canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a foreign key. IDENTITY IS A COLUMN FACT AND HAS NO CONCEPT-LEVEL HOME: the `concept.identity` block was removed 2026-10-05 (operator ruling: "identity of the concept is given by column combination and it belongs there").
-
-**When you would reach for it.**
-
-SEVERAL COLUMNS COULD BE THE KEY AND THE DATA CANNOT TELL YOU WHICH. The compelling case is a surrogate beside its own code and its own name, all three 1:1 — `product_key`, `product_code`, `product_name`. Cardinality is identical on all three, so no profile distinguishes them; only a person knows which one every fact points at. Also reach for it when NO single column identifies a row and two together do, and when a column holds another concept's identity rather than this one's.
-
-Legal values:
-
-- [`canonical`](../../../../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a column that does not identify.
-- [`part`](../../../../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
-- [`reference`](../../../../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
-
-### `measure`
-
-*object* · optional · [has its own keys →](measure.md)
-
-THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.
-
-**When you would reach for it.**
-
-THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys.
-
-Its own keys: [`ontology.grounding.sources.columns.<name>.measure`](measure.md)
-
 ### `register`
 
 *string* · optional
@@ -73,24 +40,6 @@ THE VALUE SET THIS COLUMN CARRIES — the path of its register, relative to the 
 **When you would reach for it.**
 
 A QUESTION WILL NAME THE VALUE IN WORDS AND THE COLUMN HOLDS A CODE. Someone asks about Germany and the column says `DE`. Reach for it when the column's values are a closed set a person will speak — a country, a brand, a currency — and especially when THE SAME SET APPEARS ON MORE THAN ONE COLUMN: the register is what makes one name resolve to one code exactly once, instead of each column learning the mapping separately and drifting.
-
-### `role`
-
-*string* · optional · 5 legal values
-
-projects to grounding.field_roles[<column>], which the planner reads to place a predicate. The namespace is added by the projection and defaults to `mac` — never write it here.
-
-**When you would reach for it.**
-
-A RELATION HAS MORE THAN ONE KIND OF COLUMN, which is every relation. The moment a question could filter on a column, group by it, or total it, something has to decide which of those three are legal — and the column's NAME cannot, because `Quantity` and `CustomerKey` are both numbers and only one of them may be summed. Declare it on every column you serve: the planner reads it to place a predicate, and an undeclared column is one it has to guess about.
-
-Legal values:
-
-- [`key`](../../../../../../vocabulary/concept/column/role.md#key) — IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and what the fact joins on.
-- [`dimension`](../../../../../../vocabulary/concept/column/role.md#dimension) — A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-- [`measure`](../../../../../../vocabulary/concept/column/role.md#measure) — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-- [`period`](../../../../../../vocabulary/concept/column/role.md#period) — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
-- [`housekeeping`](../../../../../../vocabulary/concept/column/role.md#housekeeping) — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when anything happened. Grouping sales by it is meaningless, and until this term existed it was spelled `attribute`, which reads as "a dimension you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than for the system that writes them: a load stamp is housekeeping whoever keeps the house.
 
 ### `rulings`
 
@@ -106,7 +55,7 @@ Its own keys: [`ontology.grounding.sources.columns.<name>.rulings`](rulings.md)
 
 ## Levels under this one
 
-- [`measure:`](measure.md)
+- [`roles:`](roles/README.md)
 - [`rulings:`](rulings.md)
 
 ---

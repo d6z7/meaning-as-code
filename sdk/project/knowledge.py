@@ -35,6 +35,18 @@ try:
 except ImportError:  # pragma: no cover
     yaml = None
 
+#: THE ONE READER OF A COLUMN'S DECLARATION. The column standard moved on 2026-10-07 — a column's
+#: facts are now `grounding.sources[].columns.<name>.roles.*` and the scalar `role:` is gone — and
+#: this module read the PRE-MOVE flat keys (`identity:`, `measure:`, `axis:`) plus `grounding.grain`
+#: and `concept.identity.kind`. It therefore rendered EMPTY instead of failing: MEASURED on
+#: `sdk/authoring/exemplars/bundle`, `_configuration()` produced 0 statements for net_revenue, 0 for
+#: sale and 0 for calendar_day, and the only 3 it produced anywhere came from `rulings`, the one
+#: address the move did not touch. `tools/mac_project` already owns the read (and the retired
+#: `part` -> `composite` mapping); importing it is what keeps a sixth copy from existing.
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / "tools"))
+import mac_project as _P  # noqa: E402
+
 ASPECT_ORDER = (
     "definition",
     "measure_evaluation_logic",
@@ -176,29 +188,69 @@ def _columns(grounding: dict) -> dict[str, dict]:
     return out
 
 
+def _roles(spec: dict) -> dict:
+    """One column's `roles:` map — its ONE home since 2026-10-07, `{}` when the column declares none.
+
+    NOT A SIXTH READER OF THE STANDARD. `mac_project.column_roles(doc, role)` is the estate's reader
+    and it answers for the PRIMARY source only; `_columns` above deliberately unions EVERY source, so
+    a concept grounded on two relations keeps the second one's measures on this page. This function is
+    therefore the map lookup and nothing else — the part that needs judgement (identity, and the
+    retired `part` -> `composite` spelling) still goes through `mac_project.column_identity`.
+    """
+    r = spec.get("roles") if isinstance(spec, dict) else None
+    return r if isinstance(r, dict) else {}
+
+
 def _configuration(obj: dict) -> list[str]:
-    """What the declarations STATE, in sentences — the configuration half."""
-    concept = obj.get("concept") or {}
+    """What the declarations STATE, in sentences — the configuration half.
+
+    EVERY ADDRESS HERE MOVED ON 2026-10-07 AND THIS READ THE OLD ONES, so the section rendered the
+    layout's "nothing declared" sentence over a complete declaration. Measured on
+    `sdk/authoring/exemplars/bundle` before the repoint: net_revenue 0 statements, sale 0,
+    calendar_day 0, product 3 (all three from `rulings`, the one family that did not move) — 3 over
+    four concepts. The four retired reads were `grounding.grain` (gone from mac.schema.json, whose
+    `grounding` is `additionalProperties: false`, so a file carrying it no longer validates), the
+    flat `identity:` / `measure:` / `axis:` keys (now `roles.identity` / `roles.aggregate` /
+    `roles.axis`), `identity: part` (now `composite`) and `concept.identity.kind` (the whole
+    `concept.identity` block was removed on 2026-10-05).
+
+    THE GRAIN SENTENCE IS NOT LOST WITH `grounding.grain`: the line below it says what identifies one
+    row, which is the same fact, derived from the columns that declare it instead of restated in
+    prose beside them.
+    """
     grounding = obj.get("grounding") or {}
     columns = _columns(grounding)
     out: list[str] = []
-    if grounding.get("grain"):
-        out.append(f"- Its grain is **{str(grounding['grain']).strip()}**.")
-    key = [n for n, b in columns.items() if b.get("identity") in ("canonical", "part")]
+    key = [n for n, b in columns.items() if _P.column_identity(b) in ("canonical", "composite")]
     if key:
         out.append(f"- One row is identified by {', '.join(f'`{k}`' for k in key)}.")
-    measures = {n: b["measure"] for n, b in columns.items() if isinstance(b.get("measure"), dict)}
+    measures = {
+        n: _roles(b)["aggregate"]
+        for n, b in columns.items()
+        if isinstance(_roles(b).get("aggregate"), dict)
+    }
     for name, measure in measures.items():
         bits = [str(measure.get("type", "")).rsplit(".", 1)[-1], str(measure.get("unit") or "")]
         word = " ".join(b for b in bits if b)
         canonical = " — the number a question about this concept folds" if measure.get("canonical") else ""
         out.append(f"- `{name}` is a {word} measure{canonical}.")
-    axes = {n: b["axis"] for n, b in columns.items() if b.get("axis")}
+    axes = {n: _roles(b)["axis"] for n, b in columns.items() if _roles(b).get("axis")}
     if axes:
         out.append(
             "- It is aggregated along "
             + ", ".join(f"`{n}` ({str(k).rsplit('.', 1)[-1]})" for n, k in axes.items())
             + "."
+        )
+    # THE REPORTING DATE, and it is the one role whose absence changes a number silently. A relation
+    # with two dates answers "sales in March" from whichever one the planner picks, and the old
+    # scalar spelling of this was `role: period` — a key this module never read at all, so the page
+    # said nothing about it either before or after the move.
+    period = [n for n, b in columns.items() if _roles(b).get("period_binding")]
+    if period:
+        out.append(
+            "- A period binds to "
+            + ", ".join(f"`{n}`" for n in period)
+            + " — the reporting date, chosen over every other date on the row."
         )
     for name, body in columns.items():
         rulings = body.get("rulings") if isinstance(body.get("rulings"), dict) else None
@@ -216,8 +268,10 @@ def _configuration(obj: dict) -> list[str]:
                 + (f" ({rulings['evidence']})" if rulings.get("evidence") else "")
                 + "."
             )
-    if concept.get("identity", {}).get("kind"):
-        out.append(f"- Its identity is established as `{concept['identity']['kind']}`.")
+    # `concept.identity.kind` USED TO BE READ HERE AND IS GONE: the whole `concept.identity` block
+    # was removed from mac.schema.json on 2026-10-05 (`concept` is `additionalProperties: false`, so
+    # a file carrying one FAILS validation). What it said is now the `identity:` role on the columns,
+    # which the "One row is identified by" line above states from its one home.
     return out
 
 

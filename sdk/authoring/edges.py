@@ -37,6 +37,19 @@ from jsonschema import validators as jsv
 _ROOT = Path(__file__).resolve().parent.parent
 from sdk.grammar.resolve import load_schema as _load_schema  # ONE schema home
 
+#: THE ONE READER OF A COLUMN'S IDENTITY. `concept_index` chose BOTH endpoints of every physical edge
+#: from the flat `identity:` key and from `concept.identity.canonical_key`, and both addresses are
+#: gone — the first into `roles: {identity: ...}` on 2026-10-07, the second out of mac.schema.json
+#: entirely on 2026-10-05. MEASURED on `sdk/authoring/exemplars/bundle`: 0 of 4 groundings yielded a
+#: canonical key and 0 reference columns were found, over a bundle declaring 2 canonical columns and 6
+#: references — so `physical_edges` skipped every foreign key as `unclaimed` ("no concept declares it
+#: with `identity: reference`") and `make_edges_file` assembled a GRAMMAR-CLEAN, EMPTY EdgesFile. That
+#: is the failure this module's own `concept_index` docstring describes one layer up: both artifacts
+#: present, the file valid, and the checker passing on a string.
+import sys as _sys
+_sys.path.insert(0, str(_ROOT.parent / "tools"))
+import mac_project as _P  # noqa: E402
+
 _SCHEMA = _load_schema()
 _EF = dict(_SCHEMA["$defs"]["EdgesFile"])
 _EF["$defs"] = _SCHEMA["$defs"]
@@ -88,6 +101,20 @@ def concept_index(concepts: list) -> dict:
 
     A relation genuinely backs many notions. The endpoint therefore cannot be chosen from the
     relation — it has to be chosen from the COLUMN, which is what the column map now makes possible.
+
+    AND THE COLUMN MOVED, 2026-10-07, SO THE ENDPOINT CAME BACK EMPTY INSTEAD OF WRONG. This read the
+    flat `identity:` beside the retired scalar `role:`, with `concept.identity.canonical_key` as the
+    declared override; the first is now `roles: {identity: ...}` and the second was removed from
+    mac.schema.json on 2026-10-05 — a file carrying it FAILS validation, so the override could only
+    ever be empty. Measured on `sdk/authoring/exemplars/bundle`: 0 of 4 groundings produced a
+    canonical key and 0 references were found, against 2 canonical columns and 6 declared references.
+    Every FK was then skipped `unclaimed` and the generator wrote a VALID, EMPTY edges file — the same
+    silence as the nonsense endpoints above, one address later. `mac_project.column_identity` is the
+    one reader of the fact and maps the retired `part` spelling to `composite`.
+
+    THE DECLARED OVERRIDE IS GONE WITH ITS KEY. There is nothing left to fall back to, and a branch
+    reading a field no file may carry would only hide a real miss (the same ruling `mac_project`
+    records against `canonical_key`).
     """
     out: dict = {}
     for d in concepts or []:
@@ -95,18 +122,17 @@ def concept_index(concepts: list) -> dict:
         name = str(c.get("name") or "").strip()
         if not name:
             continue
-        declared = str(((c.get("identity") or {}).get("canonical_key") or "")).strip()
         for src in ((d.get("grounding") or {}).get("sources") or []):
             rel = _bare(src.get("relation"))
             if not rel:
                 continue
             cols = src.get("columns")
-            refs, canon = set(), declared
+            refs, canon = set(), ""
             if isinstance(cols, dict):
                 for cn, body in cols.items():
                     if not isinstance(body, dict):
                         continue
-                    ident = str(body.get("identity") or "")
+                    ident = _P.column_identity(body)
                     if ident == "reference":
                         refs.add(str(cn))
                     elif ident == "canonical" and not canon:
@@ -120,7 +146,7 @@ def _claimants(cands: list, col: str) -> list:
 
     THIS IS NOT AMBIGUITY AND MUST NOT BE REFUSED — the first version of this fix got that wrong.
     Measured on contoso4: OrderLine, Order and SalesAmount all ground on the sales relation and all
-    three declare `CustomerKey: identity: reference`. An order has a customer, an order line has a
+    three declare `CustomerKey: {roles: {identity: reference}}`. An order has a customer, an order line has a
     customer, and an attributable amount has a customer: three true statements, so three edges. The
     FK is a property of the RELATION; the edge is a property of the CONCEPT, and one FK legitimately
     fans out to as many edges as there are notions that reference through it.
@@ -155,8 +181,9 @@ def physical_edges(datasets_info: list, index: dict) -> tuple:
     Returns (edges, skipped). Endpoints reference the CONCEPTS; the physical join lives in join_rule.
 
     HOW AN ENDPOINT IS CHOSEN, and it is chosen from the COLUMN because a relation backs many notions:
-      from — the concept on this relation that declares the FK column with `identity: reference`
+      from — the concept on this relation declaring the FK column `roles: {identity: reference}`
       to   — the concept on the target relation whose CANONICAL KEY is the target column
+             (the column declaring `roles: {identity: canonical}`)
     Exactly one candidate each, or the edge is SKIPPED WITH A REASON. See `concept_index` for the
     three nonsense edges this replaces.
     """
@@ -182,9 +209,13 @@ def physical_edges(datasets_info: list, index: dict) -> tuple:
                 continue
             froms = _claimants(cands_from, col)
             if not froms:
+                # THE REASON NAMES THE ADDRESS, and it had to change with the declaration: a skip
+                # reading "`identity: reference`" sent a reader to a flat key the grammar now
+                # refuses, so the one output that says WHAT TO DECLARE named a place to not declare it.
                 skipped.append({"edge_id": eid, "kind": "unclaimed",
                                 "why": f"no concept on {rel!r} declares {col!r} with "
-                                       f"`identity: reference`, so no notion references through it"})
+                                       f"`roles: {{identity: reference}}`, so no notion references "
+                                       f"through it"})
                 continue
             cands_to = index.get(to_tab) or []
             if not cands_to:

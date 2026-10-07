@@ -1,18 +1,13 @@
 metadata:
   source: CONTOSO5
   version: '1.0'
-  schema_version: 0.1.18
+  schema_version: 0.1.19-develop
   confidence: I
   provenance: authored
 concept:
   name: CalendarDay
   label: Calendar Day
   class: entity
-  identity:
-    kind: iso
-    note: >-
-      The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity is
-      established. A calendar date is its own identity under the ISO calendar; `date_key` is an attribute, not the key.
   definition: >
 
     One day, with the parts of it a question names: year, quarter, month, weekday. 4,018 days,
@@ -33,25 +28,34 @@ grounding:
         - date_day
       columns:
         date_day:
-          role: key
-          identity: canonical
+          roles:
+            identity: canonical
         date_key:
-          role: housekeeping
+          roles: {}
         year:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         year_quarter:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
           rulings:
             finer_than: year
         year_month:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
           rulings:
             finer_than: year_quarter
         month_name:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         day_of_week:
-          role: dimension
-  grain: one row per calendar day (date_day)
+          roles:
+            axis: mac.concept.axis.time
+            extremum: [min, max]
 contract:
   rules:
     - id: calendar_day.aggregation.month_name_does_not_sort

@@ -66,10 +66,13 @@ def scan(root: pathlib.Path) -> list[dict]:
         have = columns_of(root, rel) if rel else None
         if not have:
             continue
-        ident = (c.get("identity") or {}).get("canonical_key")
-        if ident and ident not in have:
-            out.append({"concept": name, "field": "identity.canonical_key", "relation": rel,
-                        "names": str(ident), "nearest": nearest(have, str(ident))})
+        # THE `identity.canonical_key` BRANCH IS RETIRED, 2026-10-07, with the block it read.
+        # It caught a concept whose canonical key named a column the relation does not have
+        # (Brand/Market, the prefix disagreement this gate was built for). That class cannot occur
+        # any more: the key is declared ON the column as `roles: {identity: canonical}`, so it is
+        # by construction a member of the columns map below — and a column of that map which the
+        # relation lacks is exactly what the `columns` reject class reports. One reject class, not
+        # two, because there is now only one way to name a key.
         for i, s in enumerate(srcs):
             r = str(s.get("relation") or "")
             h = columns_of(root, r) if r else None
@@ -135,18 +138,16 @@ def _concept_text(root, replace: tuple[str, str]) -> None:
 
 # (name, mutate, marker that must appear in the output, what it proves)
 _MUTANTS = (
-    ("identity-key-missing",
-     lambda r: _concept_text(r, ("canonical_key: widget_code", "canonical_key: widget_id")),
-     "identity.canonical_key",
-     "the concept's canonical key names a column the relation does not have (Brand/Market, "
-     "the prefix disagreement this gate was built for)"),
-    ("grounding-key-missing",
-     lambda r: _concept_text(r, ("\n      key: widget_code", "\n      key: widget_id")),
-     "grounding.sources[0].key",
-     "the grounding key names a column the relation does not have (Territory.grounding.key)"),
+    ("identity-column-missing",
+     lambda r: _concept_text(r, ("        widget_code:\n", "        widget_id:\n")),
+     "grounding.sources[0].columns",
+     "the column declaring `identity: canonical` names a column the relation does not have — "
+     "Brand/Market, the prefix disagreement this gate was built for, now reported as what it is: "
+     "a column of the map that is not on the relation"),
     ("grounding-column-missing",
-     lambda r: _concept_text(r, ("columns: [widget_code, widget_name]",
-                                 "columns: [widget_code, widget_name, widget_colour]")),
+     lambda r: _concept_text(r, ("        widget_name:\n          roles: {}\n",
+                                 "        widget_name:\n          roles: {}\n"
+                                 "        widget_colour:\n          roles: {}\n")),
      "grounding.sources[0].columns",
      "a projected column is not on the relation — the class a COLUMN_NOT_FOUND from Athena is"),
 )

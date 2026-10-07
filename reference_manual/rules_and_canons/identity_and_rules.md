@@ -22,7 +22,7 @@ The vocabulary a concept declares to say **what the engine must do**.
 
 > **Identity moved, 2026-10-05.** This page also carried `mac.concept.identity` — a six-term
 > vocabulary for HOW a concept's identity was established. It is retired: identity is a fact about
-> COLUMNS, so it is declared on them (`identity: canonical` / `part` / `reference`, and `counts` for
+> COLUMNS, so it is declared on them (`identity: canonical` / `composite` / `reference`, and `counts` for
 > what one instance is) and nowhere else. See
 > [`mac.concept.column.identity`](../column_specification.md). Operator ruling: *"declare on concept
 > level only what belongs to the concept level … identity of the concept is given by column

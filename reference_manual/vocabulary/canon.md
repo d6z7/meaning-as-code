@@ -2,7 +2,7 @@
 
 # `mac.canon.<term>`
 
-**Open** — terms may be added.  ·  23 terms
+**Open** — terms may be added.  ·  19 terms
 
 The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
@@ -14,23 +14,19 @@ The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 - [`refuse_measure_no_row`](#refuse-measure-no-row)
 - [`resolve_by_register`](#resolve-by-register)
 - [`refuse_unresolvable_name`](#refuse-unresolvable-name)
+- [`exclusion_filter`](#exclusion-filter)
 - [`additivity_guard`](#additivity-guard)
 - [`axis_default`](#axis-default)
-- [`exclusion_filter`](#exclusion-filter)
 - [`snapshot_collapse`](#snapshot-collapse)
-- [`closure_anomaly_check`](#closure-anomaly-check)
 - [`scoped_latest`](#scoped-latest)
 - [`hierarchy_rollup`](#hierarchy-rollup)
 - [`densify`](#densify)
-- [`ambiguity_gate`](#ambiguity-gate)
 - [`population_select`](#population-select)
 - [`ratio_select`](#ratio-select)
 - [`path_select`](#path-select)
 - [`column_select`](#column-select)
 - [`alias_resolve`](#alias-resolve)
-- [`relation_alias_resolve`](#relation-alias-resolve)
 - [`enum_from_register`](#enum-from-register)
-- [`grouping_from_register`](#grouping-from-register)
 
 ### `composite_key_guard`
 
@@ -108,6 +104,18 @@ Write it as `mac.canon.refuse_unresolvable_name`
 
 **params_from:** `{"thing": "concept.label", "code": "concept.grounding.columns[identity=canonical]"}`
 
+### `exclusion_filter`
+
+Write it as `mac.canon.exclusion_filter`
+
+— no definition in the vocabulary —
+
+**serves:** impurity_disposition
+
+**needs_sqlglot:** `true`
+
+**doc:** inject an exclusion predicate for reliably-identifiable junk (bake)
+
 ### `additivity_guard`
 
 Write it as `mac.canon.additivity_guard`
@@ -132,18 +140,6 @@ Write it as `mac.canon.axis_default`
 
 **doc:** inject a safe default for an unconstrained orthogonal axis
 
-### `exclusion_filter`
-
-Write it as `mac.canon.exclusion_filter`
-
-— no definition in the vocabulary —
-
-**serves:** impurity_disposition
-
-**needs_sqlglot:** `true`
-
-**doc:** inject an exclusion predicate for reliably-identifiable junk (bake)
-
 ### `snapshot_collapse`
 
 Write it as `mac.canon.snapshot_collapse`
@@ -157,18 +153,6 @@ Write it as `mac.canon.snapshot_collapse`
 **doc:** collapse a versioned relation to current / as-of one row per key; the partition is a COMPOSITE column list and the order accepts a tie-break (vintage, then written-at)
 
 **params_from:** `{"natural_key": "profile#identity_evidence.key"}`
-
-### `closure_anomaly_check`
-
-Write it as `mac.canon.closure_anomaly_check`
-
-— no definition in the vocabulary —
-
-**serves:** explicit_closure
-
-**needs_sqlglot:** `false`
-
-**doc:** for a closed value set, the query that finds out-of-set values (else None)
 
 ### `scoped_latest`
 
@@ -205,18 +189,6 @@ Write it as `mac.canon.densify`
 **needs_sqlglot:** `false`
 
 **doc:** LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)
-
-### `ambiguity_gate`
-
-Write it as `mac.canon.ambiguity_gate`
-
-— no definition in the vocabulary —
-
-**serves:** competing_definitions
-
-**needs_sqlglot:** `false`
-
-**doc:** resolve a single/pinned candidate, else ASK (⊥) — never guess
 
 ### `population_select`
 
@@ -281,18 +253,6 @@ Write it as `mac.canon.alias_resolve`
 
 **doc:** resolve a surface token (scope_relative tier first, then multilingual) to a canonical value code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop
 
-### `relation_alias_resolve`
-
-Write it as `mac.canon.relation_alias_resolve`
-
-— no definition in the vocabulary —
-
-**serves:** competing_definitions
-
-**needs_sqlglot:** `false`
-
-**doc:** resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent bind/drop. The token->relation twin of alias_resolve (token->value code)
-
 ### `enum_from_register`
 
 Write it as `mac.canon.enum_from_register`
@@ -304,18 +264,6 @@ Write it as `mac.canon.enum_from_register`
 **needs_sqlglot:** `false`
 
 **doc:** realize a closed enumeration's value set by reading a PINNED register (a lookup artifact) instead of inline values.items — the value domain IS the register's `code` column (params.register names the artifact, params.key_column names the code column, default 'code'). Declarative registry entry (like alias_resolve): a consumer sources the value set from the register; the concept omits items and supplies only the register pointer. The register-sourced twin of an inline closed enumeration.
-
-### `grouping_from_register`
-
-Write it as `mac.canon.grouping_from_register`
-
-— no definition in the vocabulary —
-
-**serves:** explicit_closure
-
-**needs_sqlglot:** `false`
-
-**doc:** realize a grouping's enumerated member sets by reading an EXPLODED register (one row per (group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead of inline members.definitions. The nested-membership twin of enum_from_register (which sources a FLAT value set): params.register names the artifact, params.group_key names the identity column(s) each set is keyed by (a string or a list for a composite key), params.member_col names the column collected into each set's member array, and params.carry lists the per-group scalar columns carried through onto each set (label / count / flags). Declarative registry entry (like alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register; the concept omits members.definitions and supplies only the register pointer. The register-sourced twin of an inline enumerated grouping.
 
 ---
 

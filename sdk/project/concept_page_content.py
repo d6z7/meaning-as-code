@@ -44,6 +44,39 @@ import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
 import mac_vocab as _mv  # noqa: E402
 
+#: THE ONE READER OF A COLUMN'S DECLARATION, for the same reason. The column standard moved on
+#: 2026-10-07 and every per-column lookup below read the PRE-MOVE flat keys. MEASURED on
+#: `sdk/authoring/exemplars/bundle` before the repoint, over the 35 columns of its four concepts:
+#: role 0 of 35, identity 0 of 35, measure 0 of 35, and the `## Axes` section empty on 4 of 4
+#: concepts — while the bundle declares 4 identity tuples, 4 aggregate columns and 22 axes. Nothing
+#: failed; the page simply said "nothing is declared" 105 times. `mac_project.column_identity` owns
+#: the identity read and the retired `part` -> `composite` spelling.
+import mac_project as _P  # noqa: E402
+
+
+#: THE FIVE ROLE NAMES ARE DERIVED NOW, NOT AUTHORED — and this page is one of the readers that has
+#: to derive them. `role:` was retired from the column on 2026-10-07 in favour of the `roles:` MAP
+#: (one fact, several uses: a join key you also group by is both, which 21 of contoso5's 112 columns
+#: are and the scalar could not say). The Fields table's `role` column is declared in
+#: `guardrails/unfiled.yaml#delivers.concept_page.shape#fields_table_columns` and the frozen document
+#: `tests/golden/concept_page/calendar_day.md` shows what it holds (`key`, `dimension`,
+#: `housekeeping`), so the column stays and the reader derives it.
+#:
+#: THE PRECEDENCE IS NOT INVENTED HERE. It is mac-runtime's `ontology/models.py#ColumnSpec.role`,
+#: whose own docstring records the measurement that fixed it: 112 of 112 contoso5 columns reproduced,
+#: and the `identity == canonical and axis` branch is what took it from 109 to 112. That module is
+#: NOT importable from this repo (`import mac_runtime` -> ModuleNotFoundError, which is why
+#: check_canon_implemented REFUSES rather than guesses), and `tools/mac_project` exports no role
+#: derivation, so this is a second copy of a one-line law with nowhere better to live. Verified
+#: against the frozen goldens: it reproduces all 10 `role` cells of net_revenue, all 10 of product
+#: and all 7 of calendar_day.
+#: `_derived_role` WAS HERE and is a second home for a one-line law, which is what this whole
+#: change removes. It lives in `tools/mac_project.column_role` now, beside `column_identity`, and
+#: `tests/test_column_roundtrip.py` pins it against mac-platform's `ColumnSpec.role` whenever the
+#: platform is beside this repo.
+def _derived_role(roles: dict) -> str:
+    return _P.column_role({"roles": roles})
+
 
 from sdk.project import layout as _layout_reader
 
@@ -276,11 +309,22 @@ def _fold_law() -> dict:
 def _axes_block(obj: dict) -> list[str]:
     """`## Axes` — the axes a measure may be folded along, and WHAT FOLD each one admits.
 
-    WHY IT EXISTS. The concept declares `semantics.measure_type` and `semantics.axis_kinds`, and
-    the page said so only in prose: "the fold along each axis is resolved from measure_type x
-    axis_kinds". That names a law governing every figure the measure produces and then shows the
-    reader none of its inputs — measured on one bundle, 3 concepts declared a measure_type and 18
-    axis entries were declared, and not one of them reached the page.
+    WHY IT EXISTS. The concept declares its measure type and its axes, and the page said so only in
+    prose: "the fold along each axis is resolved from measure_type x axis_kinds". That names a law
+    governing every figure the measure produces and then shows the reader none of its inputs —
+    measured on one bundle, 3 concepts declared a measure_type and 18 axis entries were declared, and
+    not one of them reached the page.
+
+    AND THEN THE INPUTS MOVED AND THE SECTION WENT BLANK. `concept.semantics.measure_type` and
+    `.axis_kinds` are no longer the HOME of either fact: the type is `roles.aggregate.type` on the
+    column that carries the number, and the axis is `roles.axis` on each column a question may slice
+    by, because one concept can hold several quantities that fold by different laws (net_amount is a
+    `flow`, net_price an `intensive`) and one concept-level slot could only misreport that. The two
+    semantics keys survive in the schema as the runtime's PROJECTION of the columns, so a reader of a
+    loaded object still sees them — but this reads the AUTHORED YAML, where no projection has
+    happened. MEASURED on `sdk/authoring/exemplars/bundle`: the section rendered the layout's
+    "nothing declared" sentence on 4 of 4 concepts, over 4 declared aggregate columns and 22 declared
+    axes. `semantics.axis_kinds`'s own schema description says `DO NOT USE IT`.
 
     IT IS NOT A COLUMN OF THE FIELDS TABLE, and that is the substantive point. An axis is not a
     column of this concept — it is ANOTHER CONCEPT. A sales measure's columns are its price and
@@ -292,11 +336,38 @@ def _axes_block(obj: dict) -> list[str]:
     declared in the framework registry; this reads it. An unknown type, an unknown axis kind or an
     unreadable registry all render an em dash, which says "not declared" — the same thing an em
     dash says everywhere else on this page."""
-    c = obj.get("concept") or {}
-    sem = c.get("semantics") or obj.get("semantics") or {}
-    mt = str(sem.get("measure_type") or "").strip()
-    axes = sem.get("axis_kinds") or {}
-    if not mt and not axes:
+    grounding = obj.get("grounding") or {}
+    #: THE COLUMNS, UNIONED OVER EVERY SOURCE, as the Fields table above already does — a concept
+    #: grounded on two relations must not lose the second one's axes.
+    cols: dict = {}
+    for src in (grounding.get("sources") or []):
+        if isinstance(src, dict) and isinstance(src.get("columns"), dict):
+            for n, b in src["columns"].items():
+                cols.setdefault(str(n), b if isinstance(b, dict) else {})
+    def _roles(b):
+        r = b.get("roles") if isinstance(b, dict) else None
+        return r if isinstance(r, dict) else {}
+    #: WHICH TYPE THE FOLD IS RESOLVED FOR. `aggregate.canonical: true` names the column that IS the
+    #: concept's number, and that is the one the retired `semantics.measure_type` projected — so the
+    #: canonical column's type reproduces the frozen `tests/golden/concept_page/net_revenue.md`
+    #: exactly (`flow`, not the `intensive` of its unit price). With no canonical column and ONE type
+    #: across the aggregates, that type is unambiguous. With no canonical column and SEVERAL types,
+    #: the fold is genuinely several laws and this says so rather than picking by iteration order:
+    #: a silently chosen type is a wrong fold, which is the one error on this page that becomes a
+    #: wrong number downstream.
+    aggregates = {n: _roles(b)["aggregate"] for n, b in cols.items()
+                  if isinstance(_roles(b).get("aggregate"), dict)}
+    canonical = [a for a in aggregates.values() if a.get("canonical")]
+    types: list[str] = []
+    for a in aggregates.values():
+        t = str(a.get("type") or "").strip()
+        if t and t not in types:
+            types.append(t)
+    mt = str((canonical[0] if canonical else {}).get("type") or "").strip()
+    if not mt and len(types) == 1:
+        mt = types[0]
+    axes = {n: _roles(b)["axis"] for n, b in cols.items() if _roles(b).get("axis")}
+    if not mt and not axes and not types:
         return []   # the CALLER emits the heading; an empty body becomes NOTHING_DECLARED
     law = _fold_law()
     short = mt.rsplit(".", 1)[-1] if mt else ""
@@ -309,6 +380,20 @@ def _axes_block(obj: dict) -> list[str]:
     out: list[str] = []
     if mt:
         out += [f"Measure type: `{short}` — `{mt}`.", ""]
+    elif len(types) > 1:
+        #: NO FOLD IS RENDERED HERE, DELIBERATELY. Several types and no `canonical: true` means the
+        #: concept has not said which number it IS, so every cell of the fold column would be a
+        #: guess. The types are NAMED with their columns, which is what a person needs to fix it.
+        out += [
+            "Several measure types are declared and none of their columns is marked "
+            "`aggregate.canonical: true`, so there is no one type to resolve the fold against: "
+            + ", ".join(
+                f"`{n}` is `{str((a.get('type') or '')).rsplit('.', 1)[-1]}`"
+                for n, a in aggregates.items()
+            )
+            + ". Mark the column the concept's number is `canonical` and the fold resolves.",
+            "",
+        ]
     if rows:
         out += ["| axis | axis kind | fold |", "|---|---|---|"]
         out += [f"| `{a}` | {k} | {f} |" for a, k, f in rows]
@@ -326,17 +411,25 @@ def _axes_block(obj: dict) -> list[str]:
 
 def _details_block(obj: dict) -> list[str]:
     """A compact, structured header block — the small typed facts a reader (and an answering agent)
-    need at a glance: identity kind, version / schema_version / status / owner, what dissolves the
-    concept, and governance. Rendered as a plain bullet list; only present fields appear, in a fixed
-    order (deterministic — every value is authored, no timestamps/volatile fields)."""
-    c = obj.get("concept") or {}
+    need at a glance: version / schema_version / status / owner, what dissolves the concept, and
+    governance. Rendered as a plain bullet list; only present fields appear, in a fixed order
+    (deterministic — every value is authored, no timestamps/volatile fields).
+
+    THE `Identity` ROW IS GONE BECAUSE ITS SOURCE IS. `concept.identity.kind` was read here and the
+    whole `concept.identity` block was removed from mac.schema.json on 2026-10-05 (`concept` is
+    `additionalProperties: false`, so a file carrying one now FAILS validation) — operator ruling:
+    *"declare on concept level only what belongs to the concept level"*. Identity is a COLUMN fact and
+    the Fields table's `identity` column states it per column, where it varies. This read measured 0
+    of 4 concepts on `sdk/authoring/exemplars/bundle` — the Details block is 4 lines before and after
+    — so nothing on the page changes; what is removed is a branch that could only ever fire on a file
+    the grammar refuses, which is the kind of read that makes an empty page look like an empty bundle.
+    The frozen `tests/golden/concept_page/calendar_day.md` still shows `- **Identity** — iso`, from a
+    0.1.16 render; that golden is stale and is regenerated with `check_document_layout.py --accept`.
+    """
     meta = obj.get("metadata") or {}
-    ident = c.get("identity") or {}
     contract = obj.get("contract") or {}
     gov = obj.get("governance") or {}
     rows: list[tuple[str, str]] = []
-    if ident.get("kind"):
-        rows.append(("Identity", str(ident["kind"])))
     if meta.get("version"):
         rows.append(("Version", str(meta["version"])))
     if meta.get("schema_version"):
@@ -456,6 +549,13 @@ def _source_key(source: dict) -> list[str]:
 
     THE SAME PRECEDENCE AS THE RUNTIME'S `parser._cell_key`, deliberately: authored first, derived
     second. A page that disagreed with the planner about the grain would be worse than a blank one.
+
+    THE DERIVED HALF READ A RETIRED ADDRESS until 2026-10-07: the flat `identity:` beside `role:`,
+    and `part` for what is now `composite`. Every source of the exemplar bundle carries an authored
+    `key:` so this branch measured 0 there either way — the repoint is still the point, because the
+    `key:` list is the DEPRECATED spelling and a bundle that has dropped it (contoso5 has) would have
+    rendered a bare relation name under `## Grounded in` and no `(key)` anywhere. `column_identity`
+    is the one reader of that fact and maps the old spelling.
     """
     key = source.get("key")
     if key:
@@ -463,8 +563,8 @@ def _source_key(source: dict) -> list[str]:
     columns = source.get("columns")
     if not isinstance(columns, dict):
         return []
-    canonical = [n for n, b in columns.items() if (b or {}).get("identity") == "canonical"]
-    return canonical or [n for n, b in columns.items() if (b or {}).get("identity") == "part"]
+    canonical = [n for n, b in columns.items() if _P.column_identity(b) == "canonical"]
+    return canonical or [n for n, b in columns.items() if _P.column_identity(b) == "composite"]
 
 
 def _grounding_fields(grounding: dict) -> list[dict]:
@@ -484,6 +584,14 @@ def _grounding_fields(grounding: dict) -> list[dict]:
     #
     # The runtime's parser PROJECTS the map form onto `field_roles`, which is why the planner never
     # saw this; this tool reads the authored YAML, where the projection has not happened.
+    #
+    # AND THEN THE MAP MOVED AGAIN, 2026-10-07, AND THE TABLE WENT BLANK A SECOND TIME. The four
+    # flags a column carries are now `roles` / `counts` / `register` / `rulings` and nothing else
+    # (mac.schema.json makes the column spec `additionalProperties: false`), so `role:` is refused by
+    # name and `identity:` / `axis:` / `measure:` are inside `roles:`. This read all four at the old
+    # flat address. MEASURED on `sdk/authoring/exemplars/bundle`, 35 columns over four concepts:
+    # role 0 of 35, identity 0 of 35, measure 0 of 35 — and `rulings` 5 of 35, which is the whole
+    # tell, because `rulings` is the ONE family that did not move.
     fr = dict(grounding.get("field_roles") or {})
     srcs = grounding.get("sources") or []
     order: list[str] = []
@@ -501,17 +609,31 @@ def _grounding_fields(grounding: dict) -> list[dict]:
             for col, body in columns.items():
                 if not isinstance(body, dict):
                     continue
-                if body.get("identity"):
-                    ident.setdefault(col, body["identity"])
+                roles = body.get("roles") if isinstance(body.get("roles"), dict) else {}
+                if _P.column_identity(body):
+                    ident.setdefault(col, _P.column_identity(body))
                 # EVERY OTHER PER-COLUMN FAMILY THE YAML DECLARES, kept whole so the renderer can
-                # format them and this function stays a reader.
-                for family in ("axis", "measure", "rulings", "register"):
-                    if body.get(family) is not None:
-                        extra.setdefault(col, {}).setdefault(family, body[family])
-                # THE AUTHORED BLOCK WINS over the map, since a bundle carrying both is
-                # half-migrated and `field_roles` is the half being retired.
-                if isinstance(body, dict) and body.get("role") and col not in fr:
-                    fr[col] = body["role"]
+                # format them and this function stays a reader. `axis` and `aggregate` are roles —
+                # uses a question may make of the column — while `rulings` and `register` are flags
+                # of the column itself, which is why only the first two are looked up under `roles`.
+                # `measure` IS `roles.aggregate`: the family was renamed with the move and
+                # `_measure_cell` still reads `{type, unit, canonical, additivity}` out of it,
+                # unchanged, because the body did not change — only its address.
+                for family, value in (
+                    ("axis", roles.get("axis")),
+                    ("measure", roles.get("aggregate")),
+                    ("rulings", body.get("rulings")),
+                    ("register", body.get("register")),
+                ):
+                    if value is not None:
+                        extra.setdefault(col, {}).setdefault(family, value)
+                # THE ROLE IS DERIVED FROM `roles`, NOT READ. The scalar is gone; `_derived_role`
+                # reproduces the five names from the map (see its comment for the 112-of-112
+                # measurement that fixed the precedence). An authored `field_roles:` block still
+                # WINS, because a bundle carrying both is half-migrated and that block is the half
+                # being retired — the same precedence this function already used.
+                if col not in fr and "roles" in body:
+                    fr[col] = _derived_role(roles)
         for col in columns:
             if col not in seen:
                 seen.add(col)
@@ -525,7 +647,8 @@ def _grounding_fields(grounding: dict) -> list[dict]:
         {
             "column": col,
             "role": str(fr[col]).split(".")[-1] if col in fr else "",
-            # THE PART THIS COLUMN PLAYS IN THE CONCEPT'S IDENTITY -- canonical | part | reference.
+            # THE PART THIS COLUMN PLAYS IN THE CONCEPT'S IDENTITY -- canonical | composite |
+            # reference (`part` was renamed `composite`; `column_identity` maps the old spelling).
             # A PER-COLUMN fact, and the one the grain is now derived from, so it replaces the
             # `grounded in` column that used to sit here.
             "identity": str(ident.get(col, "")).split(".")[-1],
@@ -596,9 +719,34 @@ def concept_body(
             for g in ground_srcs
         ],
     )
-    parts += _section(
-        "Grain", [grounding["grain"].strip()] if grounding.get("grain") else []
-    )
+    # GRAIN — WHAT ONE ROW IS, derived from the columns that identify it.
+    #
+    # `grounding.grain` WAS A PROSE RESTATEMENT AND IT IS GONE. The key removed from mac.schema.json
+    # on 2026-10-07 (`grounding` is `additionalProperties: false`, so a file carrying it no longer
+    # validates) because the grain IS the identity: the column marked `canonical`, or the set marked
+    # `composite`. The guardrails say so where the Fields table's `identity` column is declared —
+    # "which is what the grain is derived from". This section read the retired key and so was the
+    # layout's "nothing declared" sentence on 4 of 4 concepts of `sdk/authoring/exemplars/bundle`,
+    # every one of which declares its identity. `_source_key` is the derivation, and it is the SAME
+    # one `## Grounded in` above and the runtime's `parser._cell_key` use, so the page cannot
+    # disagree with the planner about the grain.
+    #
+    # IT IS NOT A REPEAT OF `## Grounded in`. That section says WHERE the rows come from and what
+    # keys them; this says what ONE of them IS, which is the concept's own label against those
+    # columns — the sentence the retired prose carried ("one row per calendar day (date_day)").
+    grain_label = c.get("label") or c.get("name") or name
+    grain: list[str] = []
+    for g in ground_srcs:
+        gk = _source_key(g)
+        if not gk:
+            continue
+        where = f" in `{g['relation']}`" if len(ground_srcs) > 1 else ""
+        grain.append(
+            f"- One row{where} is one {grain_label}, identified by "
+            + ", ".join(f"`{k}`" for k in gk)
+            + "."
+        )
+    parts += _section("Grain", grain)
     fields = _grounding_fields(grounding)
     if fields:
         # each FK column links to the concept it joins (relative .md -> the viewer navigates it)

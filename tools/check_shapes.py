@@ -39,15 +39,29 @@ _PROSE_EQ_RE = re.compile(r"([A-Za-z_]\w*\.[A-Za-z_]\w*)\s*=\s*([A-Za-z_]\w*\.[A
 
 
 def extract(node, path):
-    """Resolve a dotted path; `[]` flattens a list. Returns a flat list of leaf values."""
+    """Resolve a dotted path; `[]` flattens a list, `{}` flattens a map's VALUES.
+
+    `{}` EXISTS BECAUSE THE COLUMN DECLARATION IS A MAP KEYED BY COLUMN NAME. A shape about a
+    column — "a measure declares its type" — has to reach `grounding.sources[].columns{}.roles.
+    aggregate.type` and say nothing about which column names exist. Without it the only reachable
+    homes were concept-level scalars, which is why three shapes still pointed at the retired
+    `concept.semantics.*` after the facts moved onto the columns (2026-10-07).
+    """
     cur = [node]
     for p in path.split("."):
-        flat, key = p.endswith("[]"), (p[:-2] if p.endswith("[]") else p)
+        flat = p.endswith("[]")
+        values = p.endswith("{}")
+        key = p[:-2] if (flat or values) else p
         nxt = []
         for c in cur:
             if isinstance(c, dict) and c.get(key) is not None:
                 v = c[key]
-                nxt.extend(v) if (flat and isinstance(v, list)) else nxt.append(v)
+                if flat and isinstance(v, list):
+                    nxt.extend(v)
+                elif values and isinstance(v, dict):
+                    nxt.extend(x for x in v.values() if x is not None)
+                else:
+                    nxt.append(v)
         cur = nxt
     out = []
     for c in cur:

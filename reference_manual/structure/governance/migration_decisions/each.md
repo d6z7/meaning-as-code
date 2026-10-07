@@ -35,9 +35,9 @@ governance · [migration_decisions](README.md) · <name>
 
 Legal values:
 
-- [`canonical`](../../../vocabulary/concept/column/identity.md#canonical) — THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a column that does not identify.
-- [`part`](../../../vocabulary/concept/column/identity.md#part) — ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
-- [`reference`](../../../vocabulary/concept/column/identity.md#reference) — A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it points at is named separately; whether every value is PRESENT in the parent is a measurement, not a declaration, and a reference with no parent relation in the delivery is recorded AS dangling rather than dropped or invented.
+- `canonical`
+- `part`
+- `reference`
 
 ### `measure`
 
@@ -53,11 +53,11 @@ Legal values:
 
 Legal values:
 
-- [`key`](../../../vocabulary/concept/column/role.md#key) — IDENTITY OR JOIN COLUMN. A name resolves TO it through a register; a query then filters or joins on the exact value. Never matched against a label, and never aggregated — an identifier that is summed is a number nobody asked for. Example: `CustomerKey`, what COUNT(DISTINCT) counts and what the fact joins on.
-- [`dimension`](../../../vocabulary/concept/column/role.md#dimension) — A CATEGORICAL AXIS — legitimate in WHERE and in GROUP BY. Its value domain is either CLOSED (a register states every member, so a non-member is answerable without probing) or OPEN (names resolve through the ladder: exact, normalized, prefix, fuzzy, then ask). Example: `Gender` — `WHERE Gender = 'female'` and `GROUP BY Gender` are both legitimate.
-- [`measure`](../../../vocabulary/concept/column/role.md#measure) — A NUMERIC PAYLOAD. Folded only as its mac.measure_type and the axis allow — the law is stated once there and never restated per concept. Never filtered on directly: a threshold on a measure is a HAVING over the aggregate, not a WHERE over the column. Example: `SalesAmount`.
-- [`period`](../../../vocabulary/concept/column/role.md#period) — THE COLUMN A QUESTION'S PERIOD BINDS TO. It says which date is THE reporting date when a relation carries several, so "sales in March" cannot silently pick the wrong one. Example: `OrderDate` on a line that also carries `DeliveryDate`.
-- [`housekeeping`](../../../vocabulary/concept/column/role.md#housekeeping) — PIPELINE BOOKKEEPING, NOT BUSINESS VOCABULARY — validity windows, load stamps, surrogate housekeeping. It is not offered to a question, not grouped on, not filtered on, and its absence from an answer is correct rather than a gap. Example: `StartDT`/`EndDT`, an SCD-2 validity window — when the ROW was written, not when anything happened. Grouping sales by it is meaningless, and until this term existed it was spelled `attribute`, which reads as "a dimension you may not use" rather than "not part of the business at all". NAMED FOR THE MODELLING TRADITION that already has a word for these columns, rather than for the system that writes them: a load stamp is housekeeping whoever keeps the house.
+- `key`
+- `dimension`
+- `measure`
+- `period`
+- `housekeeping`
 
 ### `rulings`
 

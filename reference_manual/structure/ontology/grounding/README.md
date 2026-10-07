@@ -11,7 +11,6 @@ Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in t
 - [`code_column`](#code-column) — *string*
 - [`discriminator`](#discriminator) — *string*
 - [`field_roles`](#field-roles) — *object*
-- [`grain`](#grain) — *string*
 - [`grounds_column`](#grounds-column) — *string*
 - [`join_rule`](#join-rule) — *string*
 - [`key_column`](#key-column) — *string*
@@ -45,12 +44,6 @@ THE COLUMN THAT SEPARATES THIS MEASURE FROM ITS SIBLING — not a predicate, and
 the WHITELIST of grounded columns that carry ontology meaning, each mapped to its analytical role — an APPLICATION-vocabulary reference (e.g. shop.field_role.measure), resolved by check_references and grounded by the field-roles-grounded shape. Columns not listed carry no ontology meaning. The referenced role term implies the default guardrail; behavioural specifics stay as typed contract.rules.
 
 Its own keys: [`ontology.grounding.field_roles`](field_roles.md)
-
-### `grain`
-
-*string* · optional
-
-v0.5 PROMOTED to core: the committed leaf grain — one row = one.... THE grain-commitment lesson, first-class.
 
 ### `grounds_column`
 

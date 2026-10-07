@@ -350,7 +350,7 @@ def concept_facts(root: Path) -> dict:
                 cols.update(s.get("columns") or {})
         out[name] = {
             "klass": c.get("class"),
-            "canonical": [k for k, v in cols.items() if isinstance(v, dict) and v.get("identity") == "canonical"],
+            "canonical": [k for k, v in cols.items() if P.column_identity(v) == "canonical"],
             "registered": [k for k, v in cols.items() if isinstance(v, dict) and v.get("register")],
             "columns": sorted(cols),
         }

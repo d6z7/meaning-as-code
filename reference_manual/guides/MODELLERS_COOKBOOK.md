@@ -111,7 +111,8 @@ Disambiguators that actually come up:
 Inside a concept, facts still have one home each (SPEC §6):
 
 ```
-"how to REASON with this" (purpose, scope, unit, additivity, null meaning)  → concept.semantics:
+"how to REASON with this" (purpose, scope, null meaning)                    → concept.semantics:
+how a NUMBER FOLDS (the aggregate's type and unit)                          → a column's roles:
 the VALUE SET of an enumeration (+ its closure)                             → values: / value_set:
 a primitive attribute of the thing                                          → properties:
 the state machine of an event                                              → lifecycle:
@@ -122,8 +123,8 @@ a data-quality CHECK ("this must never be null")                           → c
 Two placement traps (the validator enforces both):
 
 - **`closure:` lives WITH the value set** (`values:`/`value_set:`), **not** in `semantics:` (SPEC §6).
-- **`additivity:`, `unit:`, `scope:`, `null_semantics:` live in `semantics:`**, not loose at concept
-  top-level.
+- **`scope:` and `null_semantics:` live in `semantics:`**, not loose at concept top-level — and a
+  number's fold facts live on the COLUMN that holds it, as its aggregate's `type` and `unit`.
 
 ## A4. Which *edge level* — physical, business, or federation? (FW §7)
 

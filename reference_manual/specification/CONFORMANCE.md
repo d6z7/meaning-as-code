@@ -172,7 +172,7 @@ homes that can disagree."* Deprecating it was not enough — the field stayed au
 kept a fallback branch. On **2026-10-05** the whole `concept.identity` block was removed from
 `mac.schema.json`, with its six-term `kind` vocabulary. **A concept file that carries an `identity:`
 block no longer validates.** A composite key had already settled the argument outright — a
-`canonical_key` is one string, while `identity: part` marks as many columns as the key has.
+`canonical_key` is one string, while `identity: composite` marks as many columns as the key has.
 
 ### 2.2 EVERY VOCABULARY IS `snake_case`, AND CLOSED MEANS CLOSED
 

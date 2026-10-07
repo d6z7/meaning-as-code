@@ -44,31 +44,70 @@ def sections(md: str) -> list[dict]:
     return out
 
 
+def _identity_columns(cols) -> list:
+    """The columns that identify a row — the grain, since `grounding.grain` was retired 2026-10-07.
+
+    The prose key said "one row per sale (order_key, line_number)" beside columns already declaring
+    `identity: composite` on exactly those two. The page now states the grain from the declaration,
+    so it cannot drift from it.
+    """
+    if not isinstance(cols, dict):
+        return []
+    out = []
+    for name, spec in cols.items():
+        roles = (spec or {}).get("roles") if isinstance(spec, dict) else None
+        term = str((roles or {}).get("identity") or "").rsplit(".", 1)[-1]
+        if term in ("canonical", "composite"):
+            out.append(str(name))
+    return out
+
+
 def declaration_view(doc: dict) -> str:
     """The formal side, rendered as markdown so the two panes read alike."""
     g = (doc.get("grounding") or {})
     src = (g.get("sources") or [{}])[0]
     cols = src.get("columns") or {}
     L = [f"**Relation** · `{src.get('relation', '—')}`", ""]
-    if g.get("grain"):
-        L += [f"**Grain** · {' '.join(str(g['grain']).split())}", ""]
+    if src.get("key"):
+        L += [f"**Grain** · one row per {', '.join(str(k) for k in src['key'])}", ""]
+    elif _identity_columns(cols):
+        L += [f"**Grain** · one row per {', '.join(_identity_columns(cols))}", ""]
     if g.get("snapshot_rule"):
         L += [f"**Snapshot rule** · {' '.join(str(g['snapshot_rule']).split())}", ""]
     if cols:
-        L += ["| column | role | notes |", "|---|---|---|"]
+        # OFFERS, NOT A ROLE NAME. The column says which uses a question may make of it, and a
+        # column holding several (a join key you also group by — 21 of contoso5's 112) had no
+        # honest single-role spelling. The page shows what it offers, in the order the standard
+        # lists them, and the retired scalar is not reconstructed for display.
+        L += ["| column | offers | terms |", "|---|---|---|"]
         for n, b in cols.items():
             b = b if isinstance(b, dict) else {}
-            extra = []
-            if b.get("identity"):
-                extra.append(f"identity: {b['identity']}")
-            if isinstance(b.get("measure"), dict):
-                m = b["measure"]
-                extra.append(f"{str(m.get('type', '')).rsplit('.', 1)[-1]} {m.get('unit', '')}".strip())
+            roles = b.get("roles") if isinstance(b.get("roles"), dict) else {}
+            offers, terms = [], []
+            if roles.get("identity"):
+                offers.append("identity")
+                terms.append(str(roles["identity"]).rsplit(".", 1)[-1])
+            if roles.get("axis"):
+                offers.append("axis")
+                terms.append(str(roles["axis"]).rsplit(".", 1)[-1])
+            if isinstance(roles.get("aggregate"), dict):
+                m = roles["aggregate"]
+                offers.append("aggregate")
+                terms.append(
+                    f"{str(m.get('type', '')).rsplit('.', 1)[-1]} {m.get('unit', '')}".strip()
+                )
                 if m.get("canonical"):
-                    extra.append("canonical")
+                    terms.append("canonical")
+            if roles.get("period_binding"):
+                offers.append("period_binding")
+            if roles.get("extremum"):
+                offers.append("extremum")
+                terms.append(", ".join(str(x) for x in roles["extremum"]))
+            if b.get("counts"):
+                terms.append("counted by this column")
             if b.get("register"):
-                extra.append("register")
-            L.append(f"| `{n}` | {b.get('role', '—')} | {', '.join(extra) or '—'} |")
+                terms.append("register")
+            L.append(f"| `{n}` | {', '.join(offers) or '— (offered to no question)'} | {', '.join(terms) or '—'} |")
         L.append("")
     return "\n".join(L)
 

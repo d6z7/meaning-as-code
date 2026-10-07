@@ -12,3 +12,12 @@ metadata:
   label: The column standard — exemplar and round-trip fixture
 planes:
   ontology: ontology
+conformance:
+  out_of_scope:
+    - path: data/lookups/exemplar_brand.lookup.yaml
+      reason: >-
+        A REGISTER DESCRIPTOR of the data plane, carried so the `register:` pointer on
+        `product.brand` resolves to something a reader can open. This bundle declares only the
+        `ontology` plane — it exists to be the column standard's exemplar, not a complete
+        two-plane project — so the data-plane shape that would validate this file is not loaded
+        here. contoso5 is where that descriptor is held to its definition.

@@ -199,13 +199,22 @@ refuses:
     instead: name the notion, then ground it — the grounding may name more than one relation
 
   - id: GRAIN-UNCLAIMED
-    when: a concept that grounds a served relation and states no grain
+    when: >-
+      a concept that grounds a served relation and whose columns declare no identity — no column
+      marked `roles: {identity: canonical}` and no set marked `identity: composite`
     why: >-
       the served descriptor deliberately refuses to claim one — `mac_transforms` writes "NO GRAIN IS
       CLAIMED HERE. 'One row per X' is a RULING and belongs in ontology/concepts/". If the concept
       does not claim it either, nothing in the bundle says what one row means, and every aggregate
       over it is unverifiable.
-    instead: state the grain and the key it rests on; the measured key is in data/profiles/
+      THE GRAIN IS THE IDENTITY, which is why this no longer asks for prose. `grounding.grain` was
+      retired on 2026-10-07: measured over the 17 concepts carrying it, 14 restated in words the key
+      their own columns already declared, and the schema stopped admitting the key. What makes one
+      row unique is `roles.identity` on the column, and the parser refuses a primary source whose
+      columns declare none — so this refusal now names the same fact the enforcement does.
+    instead: >-
+      mark the key column `roles: {identity: canonical}`, or every column of a composite key
+      `roles: {identity: composite}`; the measured key is in data/profiles/#identity_evidence
 
   - id: ENDPOINT-GUESSED
     when: >-
@@ -232,10 +241,10 @@ refuses:
 
   - id: NAMEABLE-DIMENSION-NOT-LIFTED
     when: >-
-      leaving a column a question would NAME as `role: dimension` inside another concept
+      leaving a column a question would NAME as a bare `roles: {axis: ...}` inside another concept
     why: >-
-      `color`, `continent`, `channel`, `store_status` are words people say. As a column flag they
-      resolve against nothing: there is no concept to name, no members to match, no register to
+      `color`, `continent`, `channel`, `store_status` are words people say. As an axis role alone
+      they resolve against nothing: there is no concept to name, no members to match, no register to
       bind. The curated reference lifts all four; the first contoso5 draft lifted none, and its 15
       concepts against 21 is almost entirely that.
     instead: >-

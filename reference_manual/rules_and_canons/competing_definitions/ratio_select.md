@@ -228,8 +228,8 @@ them:
 
 | the prose forbade | the declaration that already forbids it |
 |---|---|
-| averaging `net_price` | `net_price` carries `measure.type: intensive` |
-| averaging `net_amount` | `canonical: true` against `grain: one row per sale line` — which is what makes 976,96 a per-line figure |
+| averaging `net_price` | `net_price`'s aggregate carries `type: intensive` |
+| averaging `net_amount` | its aggregate's `canonical: true` against a key of one row per sale line — which is what makes 976,96 a per-line figure |
 
 A ratio rule selects a denominator. It does not forbid an alternative numerator, and should not be
 asked to.

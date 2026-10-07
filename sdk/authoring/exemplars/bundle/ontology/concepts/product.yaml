@@ -1,7 +1,7 @@
 metadata:
   source: CONTOSO5
   version: '1.0'
-  schema_version: 0.1.18
+  schema_version: 0.1.19-develop
   confidence: I
   provenance: authored
 concept:
@@ -10,11 +10,6 @@ concept:
   class: entity
   semantics:
     unit: USD
-  identity:
-    kind: fk_name
-    note: >-
-      The canonical key is a COLUMN fact and is not repeated here; this says only HOW identity is
-      established. A surrogate `product_key` annotated by `product_name` and `product_code`, both 1:1 with it and neither the identity.
   definition: >
 
     A thing Contoso sells, at the level the shelf knows it: a SKU. 2,517 of them. Read from the
@@ -42,42 +37,57 @@ grounding:
         - product_key
       columns:
         product_key:
-          role: key
-          identity: canonical
+          roles:
+            identity: canonical
         product_code:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
           rulings:
             label_of: product_key
             register: code
         product_name:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
           rulings:
             label_of: product_key
             register: common
         manufacturer:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
           rulings:
             label_of: brand
             register: legal
         brand:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         color:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         category_name:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         sub_category_name:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
         list_cost:
-          role: measure
-          measure:
-            type: mac.concept.column.measure_type.intensive
-            unit: USD
+          roles:
+            aggregate:
+              type: mac.concept.column.measure_type.intensive
+              unit: USD
+            extremum: [min, max]
         list_price:
-          role: measure
-          measure:
-            type: mac.concept.column.measure_type.intensive
-            unit: USD
-  grain: one row per product (product_key)
+          roles:
+            aggregate:
+              type: mac.concept.column.measure_type.intensive
+              unit: USD
+            extremum: [min, max]
 contract:
   rules:
     - id: product.ambiguity.list_price_is_not_revenue

@@ -62,7 +62,7 @@ prior_art:
     A datatype property holding a number. RDF carries no additivity semantics at all; the "never sum across
     time" fact has nowhere to live.
 mac_expression: >
-  class: measure, with `semantics.measure_type: mac.concept.column.measure_type.stock`. The additivity LAW is
+  class: measure, with the column's aggregate declaring `type: mac.concept.column.measure_type.stock`. The additivity LAW is
   stated ONCE on the type, over axis KINDS (stock × time = none; stock × categorical = additive),
   and the measure references it rather than re-encoding it. An agent reads the law and SUMs across
   warehouses but takes the value AT the grain (or last/avg) across months — because the artifact says time

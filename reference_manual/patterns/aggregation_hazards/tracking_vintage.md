@@ -85,7 +85,7 @@ antipattern: >
   axes modelled as one); a global `MAX(date)` that lands on the plan horizon instead of the latest actual
   (the relative-period sibling of this footgun).
 status: scattered   # orthogonal axes (this pattern; formerly CONCEPT_SPEC §8) + the default/exclusion rule kinds exist; never named as a pattern
-canon_ref: [shape_reference.md (semantics.axis_kinds), mac_vocabulary.yaml (rule_kind.default / exclusion / aggregation), MODELLERS_COOKBOOK.md C9]
+canon_ref: [column_declaration.md (the axis role), mac_vocabulary.yaml (rule_kind.default / exclusion / aggregation), MODELLERS_COOKBOOK.md C9]
 ```
 
 ## The determinism border

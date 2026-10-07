@@ -480,7 +480,7 @@ glob and the 28 links with it.
 
 > The deterministic UDFs a concept's realized_by binds to; logic in tools/canon/.
 
-*`mac.canon` · 22 terms · open — a bundle may add its own*
+*`mac.canon` · 19 terms · open — a bundle may add its own*
 
 #### `mac.canon.composite_key_guard`
 
@@ -542,6 +542,15 @@ RENDER canon — a name does not resolve to a code; emit the refusal clauses
 | `needs_sqlglot` | False |
 | `params_from` | thing: concept.label · code: concept.grounding.columns[identity=canonical] |
 
+#### `mac.canon.exclusion_filter`
+
+inject an exclusion predicate for reliably-identifiable junk (bake)
+
+| field | value |
+|---|---|
+| `serves` | impurity_disposition |
+| `needs_sqlglot` | True |
+
 #### `mac.canon.additivity_guard`
 
 reject SUM of a measure across a non-additive axis
@@ -560,15 +569,6 @@ inject a safe default for an unconstrained orthogonal axis
 | `serves` | tracking_vintage |
 | `needs_sqlglot` | True |
 
-#### `mac.canon.exclusion_filter`
-
-inject an exclusion predicate for reliably-identifiable junk (bake)
-
-| field | value |
-|---|---|
-| `serves` | impurity_disposition |
-| `needs_sqlglot` | True |
-
 #### `mac.canon.snapshot_collapse`
 
 collapse a versioned relation to current / as-of one row per key; the partition is a COMPOSITE
@@ -579,15 +579,6 @@ column list and the order accepts a tie-break (vintage, then written-at)
 | `serves` | scd_type_2 |
 | `needs_sqlglot` | False |
 | `params_from` | natural_key: profile#identity_evidence.key |
-
-#### `mac.canon.closure_anomaly_check`
-
-for a closed value set, the query that finds out-of-set values (else None)
-
-| field | value |
-|---|---|
-| `serves` | explicit_closure |
-| `needs_sqlglot` | False |
 
 #### `mac.canon.scoped_latest`
 
@@ -614,15 +605,6 @@ LEFT JOIN a sparse fact onto the full grid, COALESCE 0 (genuine-zero)
 | field | value |
 |---|---|
 | `serves` | absence_semantics |
-| `needs_sqlglot` | False |
-
-#### `mac.canon.ambiguity_gate`
-
-resolve a single/pinned candidate, else ASK (⊥) — never guess
-
-| field | value |
-|---|---|
-| `serves` | competing_definitions |
 | `needs_sqlglot` | False |
 
 #### `mac.canon.population_select`
@@ -661,6 +643,40 @@ straight through and nothing declared which was meant.
 | `serves` | competing_definitions |
 | `needs_sqlglot` | False |
 
+#### `mac.canon.path_select`
+
+WHICH RELATION AN ANSWER IS REACHED THROUGH -- the fourth member of the family
+population_select, ratio_select and column_select belong to. Those three map a word a reader
+says to the ROWS a concept has, the FIGURE a ratio divides by, and the COLUMN that answers; this
+one maps it to the EDGE the answer travels. `params.paths` is a name -> {via: <edge_id>,
+surfaces: [...]} map with an OPTIONAL `default`, declared on the concept whose key several
+relations carry. A name is matched EXACTLY over its declared surfaces, case/space/underscore
+folded. NO DEFAULT IS A DECLARATION: a question naming no reading ASKS with every reachable one
+offered. IT NAMES THE LAST HOP, NOT A CHAIN -- the first hop is the measure's own edge to its
+dimension and is forced, so chains would need an entry per measure per reading (14 on contoso5
+against 3 edges into Country) and cannot be enumerated by pattern, because an edge is named for
+what the relation MEANS -- `net_revenue__by__store` beside `order__placed_at__store`. MEASURED
+on contoso5 2026-10-06, and this canon exists because of it: `country_code` is carried by
+dim_customer, dim_store and dim_location, the operator ruled on 2026-09-30 that an unqualified
+sales question means the STORE's country (confidence C), and ALL SEVEN measures took the
+customer path -- because both candidate paths are two hops, ontology/graph.py breaks the tie
+with unweighted BFS over an adjacency built in edges.yaml DECLARATION ORDER, and
+`net_revenue__by__customer` sits at line 276 against `net_revenue__by__store` at 289. Germany
+2025 reads +18.07% through the customer and +49.65% through the store, because the store path
+excludes the online channel and online is 40% of net revenue. check_plan_replay reported `0
+gained` throughout and was right: nothing was lost, the answer was wrong. The ruling had no
+formal home -- 38 edges carry 0 defaults -- so it survived only as 1105 chars of
+Country.default_reading, prose telling the model something the planner then overrode. DISCLOSURE
+IS NOT A PARAMETER: the ruling requires the answer to say which path it took, and a flag could
+be set false. Consulted in planner/joins.resolve_join BEFORE find_join_path, so the line-order
+tie-break keeps deciding only what nobody has ruled on. The long form is
+reference_manual/rules_and_canons/competing_definitions/path_select.md
+
+| field | value |
+|---|---|
+| `serves` | competing_definitions |
+| `needs_sqlglot` | False |
+
 #### `mac.canon.column_select`
 
 WHICH COLUMN OR JOIN PATH A NAMED READING RESOLVES TO -- the third member of the family
@@ -693,17 +709,6 @@ code; >1 hit or unknown-in-closed-set -> ASK; never a silent bind/drop
 | `serves` | competing_definitions |
 | `needs_sqlglot` | False |
 
-#### `mac.canon.relation_alias_resolve`
-
-resolve a surface token against a business edge's relationAliasBlock.multilingual surfaces to
-that relation (the edge_id) as the routing target; >1 hit or unknown -> ASK; never a silent
-bind/drop. The token->relation twin of alias_resolve (token->value code)
-
-| field | value |
-|---|---|
-| `serves` | competing_definitions |
-| `needs_sqlglot` | False |
-
 #### `mac.canon.enum_from_register`
 
 realize a closed enumeration's value set by reading a PINNED register (a lookup artifact)
@@ -712,24 +717,6 @@ instead of inline values.items — the value domain IS the register's `code` col
 Declarative registry entry (like alias_resolve): a consumer sources the value set from the
 register; the concept omits items and supplies only the register pointer. The register-sourced
 twin of an inline closed enumeration.
-
-| field | value |
-|---|---|
-| `serves` | explicit_closure |
-| `needs_sqlglot` | False |
-
-#### `mac.canon.grouping_from_register`
-
-realize a grouping's enumerated member sets by reading an EXPLODED register (one row per
-(group_key, member)) and RE-AGGREGATING it by the group key into nested member arrays, instead
-of inline members.definitions. The nested-membership twin of enum_from_register (which sources a
-FLAT value set): params.register names the artifact, params.group_key names the identity
-column(s) each set is keyed by (a string or a list for a composite key), params.member_col names
-the column collected into each set's member array, and params.carry lists the per-group scalar
-columns carried through onto each set (label / count / flags). Declarative registry entry (like
-alias_resolve / enum_from_register): a consumer re-aggregates the member sets from the register;
-the concept omits members.definitions and supplies only the register pointer. The
-register-sourced twin of an inline enumerated grouping.
 
 | field | value |
 |---|---|

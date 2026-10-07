@@ -111,9 +111,9 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
                 path["select"] = f"values.aliases.map -> {', '.join(sorted(amap))}"
             elif P.canonical_key(doc):
                 path["select"] = (f"grounding.sources[0].columns.{P.canonical_key(doc)}."
-                                  "identity: canonical")
+                                  "roles.identity: canonical")
             elif P.key_parts(doc):
-                path["select"] = ("grounding.sources[0].columns -> identity: part on "
+                path["select"] = ("grounding.sources[0].columns -> roles.identity: composite on "
                                   + ", ".join(P.key_parts(doc)))
             elif v.get("items"):
                 path["select"] = f"values.items ({len(v['items'])} members)"
@@ -175,13 +175,41 @@ def answer_path(doc: dict, raw: str, shared: bool, registers: dict | None = None
     else:
         path["resolve"] = "delegated — a measure resolves names through the concepts it references"
 
-    path["grain"] = (f"grounding.snapshot_rule ({(g.get('realized_by') or {}).get('udf', 'prose')})"
-                     if g.get("snapshot_rule") else
-                     (f"grounding.sources[0].key: {src['key']}" if src.get("key") else None))
+    # THE GRAIN IS THE IDENTITY, and since 2026-10-07 it has no other home. The prose
+    # `grounding.grain` was retired (operator ruling: a restatement of the key, in words no reader
+    # could act on), and the `key:` list beside the columns is the deprecated spelling of the same
+    # fact — so what supplies this step is the column that says `identity: canonical`, or the set
+    # that says `identity: composite`. A snapshot relation still answers first: its grain is one
+    # row per cell per cycle, which the key alone does not say.
+    _canonical, _parts = P.canonical_key(doc), P.key_parts(doc)
+    if g.get("snapshot_rule"):
+        path["grain"] = f"grounding.snapshot_rule ({(g.get('realized_by') or {}).get('udf', 'prose')})"
+    elif src.get("key"):
+        path["grain"] = f"grounding.sources[0].key: {src['key']} (deprecated spelling)"
+    elif _canonical:
+        path["grain"] = f"grounding.sources[0].columns.{_canonical}.roles.identity: canonical"
+    elif _parts:
+        path["grain"] = ("grounding.sources[0].columns -> roles.identity: composite on "
+                         + ", ".join(_parts))
+    else:
+        path["grain"] = None
 
     if cls == "measure":
-        path["period"] = (f"{s['measure_type']} x axis_kinds -> mac.resolve.period_reading"
-                          if s.get("measure_type") and s.get("axis_kinds") else None)
+        # THE FOLD LAW'S TWO INPUTS, BOTH ON THE COLUMN. `concept.semantics.{measure_type,
+        # axis_kinds}` is what this read until 2026-10-07; `axis_kinds` was a map keyed by COLUMN
+        # name sitting on the concept, which the runtime looked up by a lowercased CONCEPT name and
+        # could never match — 47 entries, 0 reads. What the period reading actually needs is a
+        # quantity whose kind is declared and an axis to resolve it over, and both are now stated
+        # by the columns that ARE them.
+        _folding = P.column_roles(doc, "aggregate")
+        _kinds = {c: (m or {}).get("type") for c, m in _folding.items() if isinstance(m, dict)}
+        _typed = {c: k for c, k in _kinds.items() if k}
+        _axes = P.column_roles(doc, "axis")
+        path["period"] = (
+            f"columns {', '.join(sorted(_typed))} x axis on "
+            f"{', '.join(sorted(_axes))} -> mac.resolve.period_reading"
+            if _typed and _axes else None
+        )
     else:
         path["period"] = "n/a — not a measure"
 
@@ -208,8 +236,8 @@ def _self_resolving(doc: dict) -> str:
         read None, because this check modelled one mechanism — a register — and the bundle's own log
         said so at the time.
 
-      a column declaring `type:` temporal, or `role: period` — a bundle saying which column is the
-        date a question means. Either is enough; neither is sniffed from a name.
+      a column declaring `type:` temporal, or `roles: {period_binding: true}` — a bundle saying
+        which column is the date a question means. Either is enough; neither is sniffed from a name.
 
     NOT A WAIVER. A concept with no register, no inline values, no ISO identity and no declared date
     column still reads None — the mutant this check rests on.
@@ -233,8 +261,11 @@ def _self_resolving(doc: dict) -> str:
             if not isinstance(spec, dict):
                 continue
             declared = str(spec.get("type") or "").strip().lower()
-            role = str(spec.get("role") or "").strip().lower().rsplit(".", 1)[-1]
-            if declared in _TEMPORAL_TYPES or role == "period":
+            roles = spec.get("roles") if isinstance(spec.get("roles"), dict) else {}
+            binds = bool(roles.get("period_binding")) or (
+                str(spec.get("role") or "").strip().lower().rsplit(".", 1)[-1] == "period"
+            )
+            if declared in _TEMPORAL_TYPES or binds:
                 found.append(str(name))
     return ", ".join(sorted(set(found)))
 
@@ -314,9 +345,8 @@ grounding:
       key: [gadget_code]
       columns:
         gadget_code:
-          role: key
-          identity: canonical
-  grain: one row per gadget
+          roles:
+            identity: canonical
 """
 
 _SUBJECT_DESCRIPTOR = """table:
@@ -368,8 +398,7 @@ grounding:
     - relation: doodad_register
       key: [hue]
       columns:
-        hue: {role: dimension, identity: canonical}
-  grain: one member per hue
+        hue: {roles: {identity: canonical, axis: mac.concept.axis.categorical}}
 """
 
 _SUBJECT_DOODAD = """metadata: {concept: Doodad, schema_version: 0.1.16, status: draft, owner: t, confidence: I, provenance: authored}
@@ -383,9 +412,8 @@ grounding:
     - relation: doodad_register
       key: [doodad_key]
       columns:
-        doodad_key: {role: key, identity: canonical}
-        hue: {role: dimension}
-  grain: one row per doodad
+        doodad_key: {roles: {identity: canonical}}
+        hue: {roles: {axis: mac.concept.axis.categorical}}
 """
 
 _SUBJECT_DOODAD_DESCRIPTOR = """metadata: {table: doodad_register, schema_version: 0.1.15, status: measured, kind: served_dataset}
@@ -422,10 +450,23 @@ def _widget(root):
 
 
 def _break_select(root):
-    """Take away every declaration that can supply `select` on a SHARED relation."""
+    """Take away every declaration that can supply `select` on a SHARED relation.
+
+    THE IDENTITY IS WHAT DISCRIMINATES, and since 2026-10-07 it is declared on the column. This
+    removed `concept.identity.canonical_key` — a block the schema no longer admits — so after the
+    fixture moved onto the column standard the mutation deleted nothing and the mutant stopped
+    being one. `roles: {}` is the honest mutation: the column still exists and is still loaded,
+    and nothing says it identifies anything.
+    """
     f = _widget(root)
-    f.write_text(f.read_text(encoding="utf-8").replace("    canonical_key: widget_code\n", ""),
-                 encoding="utf-8")
+    t = f.read_text(encoding="utf-8")
+    broken = t.replace(
+        "          roles:\n            identity: canonical\n"
+        "            axis: mac.concept.axis.categorical\n",
+        "          roles: {}\n",
+    )
+    assert broken != t, "the select mutation matched nothing — the fixture's identity block moved"
+    f.write_text(broken, encoding="utf-8")
 
 
 def _break_resolve(root):

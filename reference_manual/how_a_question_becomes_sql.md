@@ -99,7 +99,7 @@ loader infers it.
 
 ```yaml
 Gender:
-  role: dimension
+  roles: {axis: mac.concept.axis.categorical}
   domain:
     closure: closed
     register: data/lookups/contoso_gender.lookup.csv

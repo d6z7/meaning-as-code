@@ -9,22 +9,22 @@ What part a column plays in its concept's identity. THE ONLY HOME — there is n
 ## Terms
 
 - [`canonical`](#canonical)
-- [`part`](#part)
+- [`composite`](#composite)
 - [`reference`](#reference)
 
 ### `canonical`
 
 Write it as `mac.concept.column.identity.canonical`
 
-THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `part` on every column of its key tuple instead — several parts and no canonical IS the composite — rather than nominating a column that does not identify.
+THE column that identifies one instance. What `COUNT(DISTINCT …)` counts, and what an answer discloses that it counted. Exactly one per concept, and a concept that legitimately has none declares `composite` on every column of its key tuple instead — several composite columns and no canonical IS the composite — rather than nominating a column that does not identify.
 
 **When you would reach for it.**
 
 EXACTLY ONE COLUMN IS THE THING ITSELF AND NAMES RESOLVE TO IT. The case that compels it: a surrogate key every fact points at, with a human-readable code and a name beside it that are both 1:1 with it. All three look alike in a profile; only this says which one the joins and the counts are about.
 
-### `part`
+### `composite`
 
-Write it as `mac.concept.column.identity.part`
+Write it as `mac.concept.column.identity.composite`
 
 ONE COLUMN OF A COMPOSITE IDENTITY, which IDENTIFIES NOTHING ALONE. Using it as though it did returns a set where a row was expected, and looks like an answer. Declared on every column of the tuple, and that is the whole declaration: no canonical column over a key of two or more IS the composite, and the concept adds nothing.
 
@@ -44,8 +44,7 @@ THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a
 
 ## Keys that take one of these values
 
-- `identity` on [`governance.migration_decisions.<name>`](../../../structure/governance/migration_decisions/each.md)
-- `identity` on [`ontology.grounding.sources.columns.<name>`](../../../structure/ontology/grounding/sources/columns/each/README.md)
+- `identity` on [`ontology.grounding.sources.columns.<name>.roles`](../../../structure/ontology/grounding/sources/columns/each/roles/README.md)
 
 ---
 

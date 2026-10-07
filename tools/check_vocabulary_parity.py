@@ -81,12 +81,13 @@ PAIRS = (
     # (`meta` validated and then failed to load). Declared in mac_vocabulary.yaml now, and policed here.
     ("concept `class`",
      ["$defs", "ConceptFile", "properties", "concept", "properties", "class"], "concept.class"),
-    ("concept column `role`",
+    # `concept column role` RETIRED 2026-10-07 with the slot it governed. The scalar `role` and
+    # its `query_use` companion are gone: a column declares `roles`, a MAP of the uses it offers,
+    # whose MEMBER NAMES the property-set arm below polices and whose terms are the pairs here.
+    ("concept column `roles.identity`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "role"], "concept.column.role"),
-    ("concept column `identity`",
-     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "identity"], "concept.column.identity"),
+      "oneOf", 1, "additionalProperties", "properties", "roles", "properties", "identity"],
+     "concept.column.identity"),
     ("column ruling `register`",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "register"],
@@ -124,6 +125,14 @@ PATTERNS = (
      "concept.column.measure_type"),
     ("semantics.axis_kinds token",
      ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis"),
+    # ADDED 2026-10-07 with the per-column axis. The slot was `{"type": "string"}` while the
+    # vocabulary had been closed to two terms since that morning — any string validated, and the
+    # fold law's lookup key is the one place in this estate where an unmatched token silently
+    # permits a sum rather than refusing one.
+    ("column `roles.axis` token",
+     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "roles", "properties", "axis"],
+     "concept.axis"),
     ("additivity axis token", ["$defs", "additivityAxis", "oneOf", 1], "concept.aggregation_effect"),
 )
 
@@ -137,6 +146,15 @@ PATTERNS = (
 #: is named here, so "the schema admits a key the vocabulary does not declare" stays a finding
 #: rather than a shrug.
 PROPERTY_SETS = (
+    # ADDED 2026-10-07 with the slot. `roles:` is a MAP whose KEYS are the five uses a question may
+    # make of a column, so the vocabulary's terms are this object's property names and
+    # `additionalProperties: false` is what closes the set — the same shape `rulings` has, and the
+    # same reason it is policed here rather than as an enum.
+    ("column `roles` keys",
+     ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
+      "oneOf", 1, "additionalProperties", "properties", "roles"],
+     "concept.column.roles",
+     {}),
     ("column `rulings` keys",
      ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
       "oneOf", 1, "additionalProperties", "properties", "rulings"],
@@ -157,7 +175,6 @@ UNGOVERNED = {
     # FIELD ON each role term inside mac_vocabulary.yaml, and the planner reads it through
     # `framework.query_use(role)`. A bundle writes it zero times because a bundle never writes it
     # at all — which makes it ungoverned by design, not dead.
-    "concept.column.query_use": "a field on each concept.column.role term; read by the planner, never authored",
     "outcome_class":   "the runtime's answer classification, emitted never authored",
     "test_status":     "the acceptance suite's own verdict vocabulary",
     "test_kind":       "the acceptance suite's own test taxonomy",
@@ -588,8 +605,11 @@ def _self_test() -> int:
     obj = ["$defs", "grounding", "properties", "sources", "items", "properties", "columns",
            "oneOf", 1, "additionalProperties"]
     g = governs_under(obj)
-    case("governs_under derives the column map's three governed keys from PAIRS",
-         g == {"role": "concept.column.role", "identity": "concept.column.identity",
+    # TWO, NOT THREE, since 2026-10-07: the scalar `role` slot is gone and `identity` moved inside
+    # `roles`. `roles.axis` is governed too but by a PATTERN, and `governs_under` reads PAIRS only —
+    # which is its documented contract, not an omission.
+    case("governs_under derives the column map's two PAIRS-governed keys",
+         g == {"roles.identity": "concept.column.identity",
                "rulings.register": "name_register"})
     case("governs_under claims nothing for an object that governs nothing",
          governs_under(["$defs", "nothing_here"]) == {})

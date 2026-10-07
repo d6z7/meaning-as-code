@@ -28,6 +28,7 @@ def schema_generation() -> str:
 
 
 import re
+import sys
 from pathlib import Path
 
 import yaml
@@ -55,10 +56,26 @@ EXEMPLAR = EXEMPLAR_BUNDLE / "ontology" / "concepts" / "product.yaml"
 # lists below are rendered from mac_vocabulary.yaml at import, the way `schema_generation()` renders
 # the version, so a term the vocabulary drops disappears from the prompt in the same change.
 def _vocabulary() -> dict:
+    """mac_vocabulary.yaml, INDEXED BY DOTTED IDENTITY — which is not how the file is written.
+
+    THE TWO SPELLINGS, AND WHY THIS WENT WRONG. The file nests its blocks (`concept: column: roles:`)
+    while every lookup here asks for the dotted name (`concept.column.roles`), so a raw `.get()`
+    returns `{}` for every namespace that is nested — which is all of them. Measured 2026-10-07:
+    `vocabulary_terms` answered `[]` for concept.column.roles, concept.axis, concept.identity and
+    concept.column.role alike, so the prompt below rendered "a role from mac.concept.column.role — "
+    with an empty list and then hand-typed five names after it, and test_column_roundtrip's
+    "prompt lists every <ns> term" assertions passed VACUOUSLY — `"".join([]) in P` is true of any
+    prompt. `mac_vocab.flatten` is the estate's one converter between the two shapes.
+    """
     for parent in Path(__file__).resolve().parents:
         cand = parent / "mac_vocabulary.yaml"
         if cand.is_file():
-            return yaml.safe_load(cand.read_text(encoding="utf-8")) or {}
+            raw = yaml.safe_load(cand.read_text(encoding="utf-8")) or {}
+            tools = parent / "tools"
+            if tools.is_dir() and str(tools) not in sys.path:
+                sys.path.insert(0, str(tools))
+            import mac_vocab as _mv
+            return _mv.flatten(raw)
     raise FileNotFoundError("mac_vocabulary.yaml above sdk/authoring/authoring.py")
 
 
@@ -116,29 +133,50 @@ A CONCEPT IS A BUSINESS NOTION, NOT A TABLE. The mapping between concepts and re
 Shape of a concept file:
 - metadata: {concept, source, version, schema_version: '{SCHEMA_GENERATION}', status: draft, owner, confidence}   # metadata.confidence ∈ C|I|Q (C=confirmed, I=inferred, Q=needs-SME)
 - concept: {name, label, class, definition}   # class is EXACTLY one of: {CLASSES}. There is NO `identity:` block on a concept — identity is declared on the COLUMNS, below.
-- grounding: {sources: [{relation, key, columns: {<col>: {role, identity?, measure?}}}], grain: "one row per ..."}
+- grounding: {sources: [{relation, columns: {<col>: {roles, counts?, register?, rulings?}}}]}
   EVERYTHING ABOUT A COLUMN GOES ON THE COLUMN. `columns` is a MAP keyed by column name, not a list of
   names, and it is the ONLY place a column's facts are declared:
       columns:
-        OrderKey:    {role: key, identity: part}
-        LineNumber:  {role: key, identity: part}
-        CustomerKey: {role: key, identity: reference}
-        OrderDate:   {role: dimension}
-        Quantity:    {role: measure, measure: {type: mac.concept.column.measure_type.flow, unit: units}}
-        Surname:     {role: dimension}
-        ValidFrom:   {role: housekeeping}   # pipeline bookkeeping — never offered to a question
-        Status:                      # a bare name serves the column and says nothing more
-  TODAY'S FLAGS ARE role, identity, counts, measure, rulings — and ONLY those five, because a flag ships
-  with the code that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a
-  flag and a sentence. `identity: canonical` IS the concept's key; `part` marks one column of a
-  composite key (several parts and no canonical IS a composite — there is nothing else to declare);
-  `reference` marks a foreign key. `counts: true` marks the column one INSTANCE is counted by when the
-  relation is served FINER than the thing — a store dimension keyed on a version surrogate counts
-  VERSIONS unless this says otherwise. Several columns may carry `measure:` when they compose
-  ONE quantity (Quantity x NetPrice); then `semantics.unit` on the concept states the composed unit.
-  DO NOT WRITE A `field_roles:` BLOCK. It is PROJECTED from these roles — writing both gives one fact
-  two homes that can drift, and check_delivery_consistency's ONE-HOME invariant reports both. Do not write
-  the namespaced form (`<ns>.field_role.dimension`) either: the namespace is added by the projection.
+        OrderKey:    {roles: {identity: composite}}
+        LineNumber:  {roles: {identity: composite}}
+        CustomerKey: {roles: {identity: reference, axis: mac.concept.axis.categorical}}
+        OrderDate:   {roles: {axis: mac.concept.axis.time, period_binding: true, extremum: [min, max]}}
+        Quantity:    {roles: {aggregate: {type: mac.concept.column.measure_type.flow, unit: units}}}
+        Surname:     {roles: {axis: mac.concept.axis.categorical}}
+        ValidFrom:   {roles: {}}   # loaded, typed, and offered to NO question
+  TODAY'S FLAGS ARE roles, counts, register, rulings — and ONLY those four, because a flag ships with
+  the code that reads it. A misspelled flag is a LOAD ERROR, which is the whole difference between a
+  flag and a sentence.
+  `roles` IS REQUIRED AND IS A MAP from each USE a question may make of the column to that use's own
+  terms — {ROLES}. A column claims every use that is true of it, and one column often holds several: a
+  foreign key you also group by carries `identity: reference` AND an `axis`, which is 21 of 112 columns
+  in the worked bundle. `roles: {}` is a POSITIVE statement — the column is loaded and no question is
+  offered it. Omitting `roles` is not that; it is a column nobody classified, and a finding.
+  THE TERMS, each in its own closed vocabulary:
+    identity        {IDENTITY_TERMS} — `canonical` is the concept's key; `composite` marks one column
+                    of a key tuple (mark EVERY column of it and give NONE `canonical`); `reference`
+                    marks a foreign key, which is another concept's identity and never part of this
+                    concept's grain.
+    axis            mac.concept.axis.<{AXIS_TERMS}> — WRITE IT FULLY QUALIFIED; the bare term fails
+                    validation. The kind IS the permission: declaring one says a question may group
+                    and filter by this column, and WHICH row of the fold law a fold across it uses.
+                    It must agree with the column's type: a date is `time`, anything else
+                    `categorical`.
+    aggregate       {type, unit, canonical?} — a question may FOLD this column. Several columns may
+                    carry it when they compose ONE quantity (Quantity x NetPrice); then ONE of them
+                    adds `canonical: true` to say which is THE measure of the concept.
+    period_binding  `true`, on THE reporting date when a relation carries several, so "sales in
+                    March" cannot silently pick the delivery date.
+    extremum        [min], [max] or [min, max] — this column's earliest or latest value may be ASKED
+                    FOR. Not a fold: an extremum picks a value that exists.
+  `counts: true` marks the column one INSTANCE is counted by when the relation is served FINER than
+  the thing — a store dimension keyed on a version surrogate counts VERSIONS unless this says so.
+  DO NOT WRITE A `field_roles:` BLOCK, and DO NOT WRITE A SCALAR `role:`. The five role names (key,
+  dimension, measure, period, housekeeping) are DERIVED from `roles` for one legacy reader; authoring
+  either gives one fact two homes that can drift, and `role:` is refused by name.
+  DO NOT WRITE `grain:` UNDER `grounding:`. The grain IS the identity: the column marked `canonical`,
+  or the set marked `composite`. A prose restatement of it was retired on 2026-10-07 and the schema
+  no longer admits the key.
   DO NOT WRITE AN `identity:` BLOCK UNDER `concept:` AT ALL. It was removed from the schema on
   2026-10-05 and a file carrying one fails validation. Identity is a column fact: which column is the
   key, which columns compose a composite, and which one a count DISTINCTs are all statements about
@@ -153,11 +191,13 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
         items:
           - {code: <code>, label: <human label>, meaning: <what it means>}
   Fill items from the CONTEXT / lookup tables when present; if the value set is not in the inputs, use closure: unknown and include only codes you can justify (never invent values).
-- a FACT / KPI / measure table (numeric values you aggregate) → class: measure, and you MUST add a `concept.semantics:` block:
-      semantics:
-        purpose: <one line>
-        measure_type: mac.concept.column.measure_type.<{MEASURE_TYPES}>
-        axis_kinds: {<axis>: mac.concept.axis.<time|categorical>, ...}   # one entry per aggregation axis
+- a FACT / KPI / measure table (numeric values you aggregate) → class: measure. ITS FACTS GO ON THE
+  COLUMNS, not on the concept: the column carrying the number declares
+  `roles: {aggregate: {type: mac.concept.column.measure_type.<{MEASURE_TYPES}>, unit: <unit>}}`, and
+  every column a question may slice it by declares its own `roles: {axis: ...}`. A concept may carry
+  SEVERAL quantities that fold by different laws — gross_amount is a `flow`, unit_price an
+  `intensive` — which one concept-level slot could only misreport. `concept.semantics` is optional
+  and holds `purpose:` alone; the measure facts are PROJECTED onto it from the columns.
   DO NOT WRITE AN `additivity:` BLOCK. How the measure folds along each axis is DERIVED from
   (measure_type x axis) by the law in mac_vocabulary.yaml. Writing it out would state the same
   fact twice — and because you would be authoring both the premise and the conclusion, the two can
@@ -165,9 +205,7 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
   a value anchor summed that measure across models for weeks on the strength of it.
   CHOOSE THE TYPE CAREFULLY — it is the whole claim (mac_vocabulary.yaml#concept.column.measure_type):
 {MEASURE_TYPE_GLOSSES}
-- an EVENT table (rows that track a lifecycle / state transitions) → class: event, and you MUST add a TOP-LEVEL `lifecycle:` block using ONLY these keys (any other key is schema-rejected):
-      lifecycle:
-        phases: [<phase name>, ...]        # optional siblings: phase_sequence, states, boundary, note — and NOTHING else
+- an EVENT table (rows that track a lifecycle / state transitions) → class: event, which requires NO extra block. DO NOT WRITE A `lifecycle:` BLOCK: it is not a key mac.schema.json admits, and a file carrying one fails validation. What the phases ARE, which column records them, and what the data does NOT record (no cancellation, no return — so a question about either is unanswerable and must say so rather than read an absent state as a negative) go in the concept's `definition`, as prose, where a reader can act on them.
 - a ROLLUP / GROUPING table (rows that GROUP or ROLL UP other rows — e.g. a region→countries map, a market footprint, a membership list) → class: grouping, and you MUST add a TOP-LEVEL `members:` OBJECT (NOT a list) shaped exactly as:
       members:
         over: <the LEAF concept this rolls up — e.g. Country, Product>   # REQUIRED — the grouped concept
@@ -179,8 +217,8 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
 
 Authoring rules:
 - Ground on the REAL table and columns provided. NEVER invent a column that isn't in the schema.
-- Give every meaningful column a role from mac.concept.column.role — {ROLES}: key (identity/join), dimension (filterable, groupable), measure (numeric payload, folded as its measure_type allows), period (THE reporting date when a relation carries several), housekeeping (pipeline bookkeeping — validity windows, load stamps — never offered to a question). `attribute` is not a role.
-- EXACTLY ONE column carries `identity: canonical` when a single column identifies the thing. If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), mark EVERY column of the tuple `identity: part` and give NONE of them `canonical` — several parts and no canonical IS the composite, and there is no concept-level term to add.
+- Give EVERY column a `roles` map — every use that is true of it, or `{}` for a column no question is offered. A column with no `roles` key at all is unclassified and is a finding.
+- EXACTLY ONE column carries `identity: canonical` when a single column identifies the thing. If the grain is a COMPOSITE of several columns (typical for fact / KPI tables), mark EVERY column of the tuple `identity: composite` and give NONE of them `canonical` — several composite columns and no canonical IS the composite, and there is no concept-level term to add.
 - Write a precise 2-4 sentence definition anchored in the schema + context.
 - WHERE MAC HAS A CANON FOR A RULE SHAPE, BIND — DO NOT WRITE THE CLAUSES. Supply
   `realized_by: {udf: mac.canon.<name>, params: {...}}` and OMIT when/then/never; they are RENDERED
@@ -228,11 +266,24 @@ SYS_PROMPT = (
     SYS_PROMPT.replace("{SCHEMA_GENERATION}", schema_generation())
     .replace("{CLASSES}", " | ".join(concept_classes()))
     .replace("{RULE_KINDS}", "|".join(vocabulary_terms("concept.rule")))
-    .replace("{ROLES}", " | ".join(vocabulary_terms("concept.column.role")))
+    .replace("{ROLES}", " | ".join(vocabulary_terms("concept.column.roles")))
+    .replace("{IDENTITY_TERMS}", " | ".join(vocabulary_terms("concept.column.identity")))
+    .replace("{AXIS_TERMS}", "|".join(vocabulary_terms("concept.axis")))
     .replace("{MEASURE_TYPES}", "|".join(vocabulary_terms("concept.column.measure_type")))
     .replace("{MEASURE_TYPE_GLOSSES}", _term_glosses("concept.column.measure_type"))
 )
-assert "{" + "CLASSES}" not in SYS_PROMPT and "resolved_axis" not in SYS_PROMPT
+# EVERY PLACEHOLDER SUBSTITUTED, AND EVERY LIST NON-EMPTY. The second half is the one that was
+# missing: `vocabulary_terms` answered `[]` for every nested namespace, so `.replace` landed an
+# EMPTY STRING into the prompt and the assertion above — which only looked for a surviving brace —
+# was satisfied. The model was handed "a role from mac.concept.column.role — " with nothing after
+# the dash, and the round-trip test's `sep.join(terms) in P` passed because `"" in P` is always true.
+for _ph in ("CLASSES", "RULE_KINDS", "ROLES", "IDENTITY_TERMS", "AXIS_TERMS", "MEASURE_TYPES",
+            "MEASURE_TYPE_GLOSSES", "SCHEMA_GENERATION"):
+    assert "{" + _ph + "}" not in SYS_PROMPT, f"{_ph} left unsubstituted in SYS_PROMPT"
+for _ns in ("concept.rule", "concept.column.roles", "concept.column.identity", "concept.axis",
+            "concept.column.measure_type"):
+    assert vocabulary_terms(_ns), f"{_ns} rendered EMPTY into SYS_PROMPT — read the _vocabulary note"
+assert "resolved_axis" not in SYS_PROMPT
 
 PLAN_PROMPT = """You are a MAC ontology architect. You are given EVERY produced relation of one data source, plus SME context. Propose the BUSINESS NOTIONS this source should expose as MAC concepts.
 

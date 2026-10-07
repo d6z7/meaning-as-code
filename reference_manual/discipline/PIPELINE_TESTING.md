@@ -336,7 +336,7 @@ column: the test it grounds, with no domain knowledge added.
 | `profiles/*.yaml` → `columns[].distinct/nulls/min/max` | "when measured, it looked like this" | **STRUCTURE · VOCABULARY · COMPLETENESS** — drift only | prior measurement |
 | `profiles/*.yaml` → `identity_evidence` | a measured key with a verdict | **IDENTITY**, and a cross-check on the grain prose | prior measurement |
 | `concepts/*.yaml` → `values.closure` + `items[]` | "these are all the codes" | **VOCABULARY** — an undeclared code is a defect | declaration |
-| `concepts/*.yaml` → `semantics.measure_type` | additive · ratio · snapshot | **ARITHMETIC** — sum the parts, compare to the whole | declaration |
+| `concepts/*.yaml` → a column's `roles.aggregate.type` | flow · stock · intensive · precomputed · target | **ARITHMETIC** — sum the parts, compare to the whole | declaration |
 | `concepts/*.yaml` → `values.items[].served` | "these rows must never be read" | **SCOPE** — served material only | declaration |
 | `transforms` + `datasets` + the fact | a produced relation and its inputs | **CONSISTENCY** — the same fact stated twice must agree | internal coherence |
 
@@ -364,8 +364,8 @@ all of them.** One query per claim, written from that claim's own prose.
 
 ### A.9.3 · TRANSLATING A PROSE CLAIM INTO COLUMNS
 
-Most of the valuable claims are prose. `grounding.grain` says *"one row per (object × scope)"* and
-names no columns. Do not skip these — they are the highest-value claims in the bundle — and do not
+Most of the valuable claims are prose. A grain written as a sentence says *"one row per
+(object × scope)"* and names no columns. Do not skip these — they are the highest-value claims in the bundle — and do not
 guess the columns either. **Derive the key, then corroborate it twice:**
 
     the prose                      says WHAT identifies a row

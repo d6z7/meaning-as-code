@@ -63,13 +63,14 @@ NAME = "check_column_planes"
 
 #: The reference manual's own warnings. Reported, never failed — see the docstring.
 SUSPICIOUS = {
-    ("foreign_key", "dimension"):
+    ("foreign_key", "axis"):
         "a pointer used as a category — 'that is a pointer, not a category, even though its "
-        "cardinality looks dimension-sized' (column_roles.md §1)",
-    ("value", "key"):
+        "cardinality looks dimension-sized' (column_roles.md §1). NOT a breach: a reference key "
+        "that is also a legitimate axis is 18 of contoso5's columns, which is why this reports",
+    ("value", "identity"):
         "a payload column doing identity duty — the data plane measured no key shape here",
-    ("primary_key", "dimension"):
-        "the relation's own identity offered as an axis",
+    ("primary_key", "aggregate"):
+        "the relation's own identity offered as a quantity to fold",
 }
 
 
@@ -81,12 +82,15 @@ def load_terms() -> dict[str, list[str]]:
     # spelling survives in 8 framework files and in the runtime's fold-law drift test, where it
     # raises KeyError instead of comparing a cell. Asking for the wrong name here returned an
     # empty list in silence, which is the same defect one layer up.
-    for ns in ("dataset.column.role", "concept.column.role", "concept.column.identity", "concept.identity",
-               "concept.column.measure_type", "concept.column.ruling", "name_register"):
+    for ns in ("dataset.column.role", "concept.column.roles", "concept.column.identity",
+               "concept.identity", "concept.axis", "concept.column.measure_type",
+               "concept.column.ruling", "name_register"):
         spec = raw.get(ns) or {}
         out[ns] = list((spec.get("terms") or spec.get("members") or {}))
-    if not out["dataset.column.role"] or not out["concept.column.role"]:
-        raise RuntimeError("mac_vocabulary.yaml did not yield the two role vocabularies")
+    if not out["dataset.column.role"] or not out["concept.column.roles"]:
+        raise RuntimeError(
+            "mac_vocabulary.yaml did not yield dataset.column.role and concept.column.roles"
+        )
     return out
 
 
@@ -122,16 +126,22 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], collections.Cou
                 forms["map"] += 1
                 for name, body in cols.items():
                     body = body or {}
+                    # THE SLOT IS `roles`, A MAP, since 2026-10-07 — the scalar `role` and its
+                    # `query_use` table were retired together. `offers` is the set of role NAMES
+                    # the column claims, each of which must be a declared member; the terms within
+                    # them are checked against their own vocabularies below.
+                    rl = body.get("roles") if isinstance(body.get("roles"), dict) else {}
                     rows.append(dict(concept=con.get("name"), rel=rel, col=name, form="map",
-                                     role=body.get("role"), identity=body.get("identity"),
-                                     mtype=((body.get("measure") or {}).get("type")),
+                                     offers=sorted(rl), identity=rl.get("identity"),
+                                     axis=rl.get("axis"),
+                                     mtype=((rl.get("aggregate") or {}).get("type")),
                                      rulings=sorted(body.get("rulings") or {})))
             elif isinstance(cols, list):        # the flat list: names only, role in a second home
                 forms["flat"] += 1
                 for name in cols:
                     rows.append(dict(concept=con.get("name"), rel=rel, col=name, form="flat",
-                                     role=(fr.get(name) or "").rsplit(".", 1)[-1] or None,
-                                     identity=None, mtype=None, rulings=[]))
+                                     offers=[], identity=None, axis=None, mtype=None, rulings=[],
+                                     legacy_role=(fr.get(name) or "").rsplit(".", 1)[-1] or None))
     if not storage:
         raise RuntimeError(f"no data plane under {bundle/'data'} — nothing to place columns against")
     if not rows:
@@ -139,22 +149,49 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], collections.Cou
     return storage, rows, kinds, {**forms, "_origin": origin}
 
 
+#: Which closed vocabulary governs each role's TERM. `period_binding` is a bare flag and `extremum`
+#: takes `min`/`max`, neither of which is a mac vocabulary — the role's membership is all there is
+#: to check for those, and claiming otherwise would invent a namespace.
+_ROLE_TERM_VOCAB = {
+    "identity": "concept.column.identity",
+    "axis": "concept.axis",
+}
+
+
 def check(storage: dict, rows: list[dict], terms: dict) -> list[str]:
     bad: list[str] = []
     for (rel, col), role in sorted(storage.items()):
         if role is not None and role not in terms["dataset.column.role"]:
-            other = " — a mac.concept.column.role term in a mac.dataset.column.role slot" \
-                if role in terms["concept.column.role"] else ""
             bad.append(f"R1 {rel}.{col} declares data-plane role {role!r}, "
-                       f"not a mac.dataset.column.role term{other}")
+                       f"not a mac.dataset.column.role term")
+    # THE COLLISION THIS GATE WAS BUILT FOR IS STRUCTURALLY GONE. Both planes spelled the slot
+    # `role:` with disjoint term sets, so a term from the wrong side was detectable and detectable
+    # only once the planes were named. The concept plane has no `role:` slot any more — it declares
+    # `roles:`, a map — so the two can no longer be confused by spelling. What is still checkable,
+    # and still worth checking at the BUNDLE level without loading the runtime, is that each role
+    # a column claims is a declared member and each term within it comes from the role's own
+    # vocabulary. The runtime refuses the same thing at load (ColumnRoles' field validators); this
+    # says it over a bundle on disk, which is where a generator writes.
     seen = set()
     for r in rows:
-        role = r["role"]
-        if role is not None and role not in terms["concept.column.role"] and role not in seen:
-            seen.add(role)
-            n = sum(1 for x in rows if x["role"] == role)
-            bad.append(f"R2 concept-plane role {role!r} is not a mac.concept.column.role term "
-                       f"({n} binding(s); the closed set is {terms['concept.column.role']})")
+        for offered in r.get("offers") or []:
+            if offered not in terms["concept.column.roles"] and offered not in seen:
+                seen.add(offered)
+                n = sum(1 for x in rows if offered in (x.get("offers") or []))
+                bad.append(
+                    f"R2 concept-plane role {offered!r} is not a mac.concept.column.roles member "
+                    f"({n} binding(s); the closed set is {terms['concept.column.roles']})"
+                )
+            vocab = _ROLE_TERM_VOCAB.get(offered)
+            value = r.get(offered)
+            if vocab and value is not None:
+                term = str(value).rsplit(".", 1)[-1]
+                if term not in terms[vocab] and (offered, term) not in seen:
+                    seen.add((offered, term))
+                    bad.append(
+                        f"R2 {r['concept']}.{r['col']} declares {offered}: {term!r}, not a "
+                        f"mac.{vocab} term (the closed set is {terms[vocab]})"
+                    )
         if (r["rel"], r["col"]) not in storage:
             bad.append(f"R3 {r['concept']} binds {r['rel']}.{r['col']}, which the data plane "
                        f"does not measure")
@@ -170,36 +207,41 @@ def census(storage: dict, rows: list[dict], kinds: collections.Counter,
           f"{len({r['concept'] for r in rows})} concepts")
     print(f"  source form    {forms['map']} column-map / {forms['flat']} flat list")
 
-    print(f"\n── the four column-map slots, over {len(rows)} bindings ──")
-    for slot, f in (("role", lambda r: r["role"]), ("identity", lambda r: r["identity"]),
-                    ("measure.type", lambda r: r["mtype"]), ("rulings", lambda r: r["rulings"])):
-        n = sum(1 for r in rows if f(r))
-        note = "" if n else "   <- the standard's own form is unused here"
-        print(f"  {slot:14} {n:4} of {len(rows)}{note}")
+    print(f"\n── the five roles a column may offer, over {len(rows)} bindings ──")
+    for role in terms["concept.column.roles"]:
+        n = sum(1 for r in rows if role in (r.get("offers") or []))
+        note = "" if n else "   <- declared by no column here"
+        print(f"  {role:16} {n:4} of {len(rows)}{note}")
+    n = sum(1 for r in rows if r.get("rulings"))
+    print(f"  {'rulings':16} {n:4} of {len(rows)}"
+          f"{'' if n else '   <- no column carries a ruling here'}")
 
-    print(f"\n── identity.kind, over {sum(kinds.values())} concepts "
-          f"({len([k for k in kinds if k])} of {len(terms['concept.identity'])} terms used) ──")
-    for k, n in kinds.most_common():
-        print(f"  {str(k):16} {n}")
-    unused = [t for t in terms["concept.identity"] if t not in kinds]
-    if unused:
-        print(f"  unused: {', '.join(unused)}")
+    # `concept.identity.kind` AND ITS CENSUS ARE RETIRED (2026-10-05): the block is gone from the
+    # schema, so this counted `None` once per concept and told a reader nothing. What identifies a
+    # row is `roles.identity` on the column, counted in the table above.
 
+    # THE CROSS-TAB IS PER ROLE OFFERED, not per role name. A column may offer several — 21 of
+    # contoso5's 112 are a join key you also group by — so one binding contributes a row per role
+    # it claims, and the denominator says so rather than pretending each column has one.
     xt = collections.Counter()
+    offered = 0
     for r in rows:
         s = storage.get((r["rel"], r["col"]))
-        xt[(s, r["role"])] += 1
-    print(f"\n── storage_role x column.role, the two planes crossed "
-          f"({len(xt)} of {len(terms['dataset.column.role']) * len(terms['concept.column.role'])} possible pairs occur) ──")
+        for role in (r.get("offers") or [None]):
+            xt[(s, role)] += 1
+            offered += 1
+    print(f"\n── storage_role x role offered, the two planes crossed "
+          f"({len(xt)} of {len(terms['dataset.column.role']) * len(terms['concept.column.roles'])} "
+          f"possible pairs occur over {offered} offer(s)) ──")
     for (s, c), n in sorted(xt.items(), key=lambda x: -x[1]):
         flag = ""
         if (s, c) in SUSPICIOUS:
             flag = "  <- " + SUSPICIOUS[(s, c)]
         elif s is not None and s not in terms["dataset.column.role"]:
             flag = "  <- illegal storage_role"
-        elif c is not None and c not in terms["concept.column.role"]:
-            flag = "  <- retired/illegal column_role"
-        print(f"  {str(s):20} {str(c):16} {n:4}{flag}")
+        elif c is not None and c not in terms["concept.column.roles"]:
+            flag = "  <- a role the vocabulary does not declare"
+        print(f"  {str(s):20} {str(c or '(offered to nothing)'):22} {n:4}{flag}")
 
     bound = {(r["rel"], r["col"]) for r in rows}
     origin = forms.get("_origin") or {}
@@ -216,18 +258,27 @@ def census(storage: dict, rows: list[dict], kinds: collections.Counter,
 
 def self_test() -> int:
     """One mutant per reject class. A gate that cannot go red is the zero-denominator pass."""
-    terms = {"dataset.column.role": ["value", "primary_key"], "concept.column.role": ["key", "dimension"],
-             "concept.identity": [], "concept.column.identity": [], "measure_type": [],
+    terms = {"dataset.column.role": ["value", "primary_key"],
+             "concept.column.roles": ["identity", "axis", "aggregate", "period_binding", "extremum"],
+             "concept.identity": [], "concept.column.identity": ["canonical", "composite", "reference"],
+             "concept.axis": ["time", "categorical"], "concept.column.measure_type": [],
              "concept.column.ruling": [], "name_register": []}
     ok_store = {("t", "a"): "value"}
-    ok_rows = [dict(concept="C", rel="t", col="a", role="dimension", identity=None,
-                    mtype=None, rulings=[], form="flat")]
+    ok_rows = [dict(concept="C", rel="t", col="a", form="map", offers=["axis"],
+                    axis="mac.concept.axis.categorical", identity=None, mtype=None, rulings=[])]
     cases = [
         ("clean", ok_store, ok_rows, 0),
         ("R1 a column_role term in the storage slot", {("t", "a"): "dimension"}, ok_rows, 1),
         ("R1 an invented storage_role", {("t", "a"): "nonsense"}, ok_rows, 1),
-        ("R2 a retired column_role", ok_store,
-         [{**ok_rows[0], "role": "attribute"}], 1),
+        # THE RETIRED SCALAR IS NOW A ROLE NAME NOBODY DECLARED. `role: attribute` was the old
+        # mutant; its successor is a column claiming a USE outside the closed set, which is the
+        # same defect one level in.
+        ("R2 a role outside the closed set", ok_store,
+         [{**ok_rows[0], "offers": ["attribute"]}], 1),
+        ("R2 a retired identity term", ok_store,
+         [{**ok_rows[0], "offers": ["identity"], "identity": "part"}], 1),
+        ("R2 an axis kind nobody declared", ok_store,
+         [{**ok_rows[0], "axis": "mac.concept.axis.none"}], 1),
         ("R3 a binding the data plane does not measure", ok_store,
          [{**ok_rows[0], "col": "ghost"}], 1),
     ]

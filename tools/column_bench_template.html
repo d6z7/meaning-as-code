@@ -410,20 +410,34 @@ function matches(when, st) {
 }
 
 /* ------------------------------------------------------- the measure matrix */
-/* Outcomes for role: measure come from mac_vocabulary.yaml#MeasureType, where additivity is
-   stated ONCE over axis_kind. This function reads that matrix; it encodes no fold rule. */
+/* Outcomes for a column offering `aggregate` come from mac_vocabulary.yaml#concept.column.
+   measure_type, where additivity is stated ONCE over the axis kind. This function reads that
+   matrix; it encodes no fold rule.
+   THE ADDRESSES WERE ALL WRONG, and this panel rendered nothing before 2026-10-07: the qualifier
+   is a MAP under `roles.aggregate` rather than three flat `measure.*` keys, the override is a map
+   keyed by the QUALIFIED axis term rather than a `"time: additive"` string, and
+   `DATA.vocabulary.MeasureType` / `.aggregation_effect` are not keys `load_vocabulary` produces —
+   it keys every namespace by its DOTTED identity, so both lookups were undefined and every cell
+   fell through to `none`. */
 const EFFECT_FOLD = {additive: ['SUM','AVG'], average: ['AVG'], none: []};
+const V_MEASURE_TYPE = 'concept.column.measure_type';
+const V_EFFECT = 'concept.aggregation_effect';
 function measureOutcome(col, st, q) {
-  const type = st['measure.type'];
-  const ov = st['measure.additivity'];
-  const mt = ((DATA.vocabulary.MeasureType || {}).terms || {})[type] || {};
-  let cell = ((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
+  const agg = st['roles.aggregate'] || {};
+  const type = agg.type;
+  const ov = st['roles.aggregate.additivity'];
+  const mt = (((DATA.vocabulary || {})[V_MEASURE_TYPE] || {}).terms || {})[String(type).split('.').pop()] || {};
+  const axisTerm = 'mac.concept.axis.' + q.axis;
+  let cell = String((mt.additivity || {})[q.axis] || '').split('.').pop() || 'none';
   let overridden = false;
-  if (ov && ov.startsWith(q.axis + ':')) { cell = ov.split(':')[1].trim(); overridden = true; }
+  if (ov && (ov[axisTerm] || ov[q.axis])) {
+    cell = String(ov[axisTerm] || ov[q.axis]).split('.').pop();
+    overridden = true;
+  }
   const legal = EFFECT_FOLD[cell] || [];
   const ok = legal.includes(q.fold);
-  const unit = st['measure.unit'];
-  const eff = ((DATA.vocabulary.aggregation_effect || {}).terms || {})[cell] || {};
+  const unit = agg.unit;
+  const eff = (((DATA.vocabulary || {})[V_EFFECT] || {}).terms || {})[cell] || {};
   return {
     outcome: ok ? 'COMMIT' : 'BLOCK',
     reason_code: ok ? null : 'ADDITIVITY_VIOLATION',
@@ -434,8 +448,8 @@ function measureOutcome(col, st, q) {
           ? `${q.fold} is not a legal fold of a ${type} measure on the ${q.axis} axis. The correct fold is ${legal.join(' or ')}.`
           : `A ${type} measure folds on no axis at all — its value exists only at the grains it was computed for.`),
     disclose: ok && !unit ? null : (ok ? `${type} · ${q.axis} · ${cell}` : null),
-    note: `mac.MeasureType.${type} · ${q.axis} → mac.aggregation_effect.${cell}`
-      + (overridden ? ' (overridden on this column by measure.additivity)' : '')
+    note: `${type} · ${q.axis} → mac.concept.aggregation_effect.${cell}`
+      + (overridden ? ' (overridden on this column by roles.aggregate.additivity)' : '')
       + (eff.description ? ' — ' + eff.description : '')
   };
 }
@@ -470,7 +484,7 @@ function renderPicker() {
       box.appendChild(el('div', 'grp', esc(last) + ' <span style="opacity:.6">· ' + esc(f.concept.relation) + '</span>'));
     }
     const b = el('button', 'pick' + (idx === SEL ? ' on' : ''),
-      `<div class="cn">${esc(f.col.column)}</div><div class="cm">${esc(f.col.role)} · ${esc(f.col.headline)}</div>`);
+      `<div class="cn">${esc(f.col.column)}</div><div class="cm">${esc((f.col.offers || []).join(', ') || 'offered to nothing')} · ${esc(f.col.headline)}</div>`);
     b.onclick = () => { SEL = idx; renderBench(); };
     box.appendChild(b);
   });
@@ -490,8 +504,8 @@ function yamlBlock(col, st) {
     else { (tree[parts[0]] = tree[parts[0]] || {})[parts[1]] = {__v: v, __dead: dead.has(t.key)}; }
   });
   let out = `<span class="y-k">${esc(col.column)}</span>:\n`;
-  if (!(col.toggles || []).some(t => t.key === 'role'))
-    out += `  <span class="y-k">role</span>: <span class="y-v">${esc(col.role)}</span>\n`;
+  if (!(col.toggles || []).some(t => String(t.key).startsWith('roles')))
+    out += `  <span class="y-k">roles</span>: <span class="y-v">${esc((col.offers || []).join(', ') || '{}')}</span>\n`;
   const emit = (node, ind) => {
     Object.entries(node).forEach(([k, v]) => {
       if (v && v.__v !== undefined) {
@@ -515,7 +529,7 @@ function renderConfig() {
 
   const head = el('div', 'card');
   head.appendChild(el('div', 'card-h',
-    `<h3>${esc(concept.concept)}.${esc(col.column)}</h3><span class="pl">role: ${esc(col.role)}</span>`));
+    `<h3>${esc(concept.concept)}.${esc(col.column)}</h3><span class="pl">offers: ${esc((col.offers || []).join(', ') || 'nothing')}</span>`));
   const hb = el('div', 'card-b');
   hb.appendChild(el('p', null, `<b>${esc(col.headline)}</b>`)).style.margin = '0 0 8px';
   hb.appendChild(el('p', 'note', esc(col.reads))).style.margin = '0';
@@ -793,9 +807,10 @@ function renderCensus(){
     `${C.storage_total} columns measured across ${C.relations} relations in the data plane;
      ${C.bindings} column bindings across ${C.concepts} concepts in the concept plane. Crossing them
      is a ${T.storage_role.length}×${T.column_role.length} space and
-     <b>${Object.keys(C.crosstab).length} of ${poss} pairs actually occur</b>. The two vocabularies
-     share no term, which is what makes a term from the wrong plane detectable at all —
-     <b>${C.findings.length} such breach(es)</b> below.`;
+     <b>${Object.keys(C.crosstab).length} of ${poss} pairs actually occur</b>. The collision the
+     two planes once risked is structurally gone: the data plane spells its slot <code>role</code>
+     and the concept plane spells its own <code>roles</code>, a map, so a term from the wrong plane
+     can no longer be confused by spelling — <b>${C.findings.length} breach(es)</b> below.`;
 
   $('#cen-tree').innerHTML =
 `<span class="pl2">DATA PLANE</span> <span class="ct">— data/sources/*.yaml · data/datasets/*.yaml</span>
@@ -803,14 +818,14 @@ function renderCensus(){
         <span class="ct">"the PHYSICAL shape of a column in its relation" — measured, never authored</span>
 
 <span class="pl2">CONCEPT PLANE</span> <span class="ct">— ontology/concepts/**/*.yaml</span>
-├── concept.identity.kind → <span class="vo">mac.identity_kind</span>   <span class="ct">CLOSED · ${T.identity_kind.length}</span>
-│       <span class="ct">per CONCEPT: how identity is ESTABLISHED — ${Object.keys(C.identity_kinds).length} of ${T.identity_kind.length} terms used here</span>
-│
-└── grounding.sources[].columns[&lt;name&gt;]:   <span class="ct">← the column map, four slots on one column</span>
-    ├── role          → <span class="vo">mac.column_role</span>    <span class="ct">CLOSED · ${T.column_role.length} · ${C.slots['role']} of ${C.bindings} filled</span>
-    ├── identity      → <span class="vo">mac.identity_role</span>  <span class="ct">CLOSED · ${T.identity_role.length} · ${C.slots['identity']} of ${C.bindings} filled</span>
-    ├── measure.type  → <span class="vo">mac.measure_type</span>   <span class="ct">CLOSED · ${T.measure_type.length} · ${C.slots['measure.type']} of ${C.bindings} filled</span>
-    └── &lt;ruling&gt;      → <span class="vo">mac.column_ruling</span>  <span class="ct">CLOSED · ${T.column_ruling.length} · ${C.slots['rulings']} of ${C.bindings} filled</span>
+└── grounding.sources[].columns[&lt;name&gt;]:   <span class="ct">← everything about a column, on the column</span>
+    ├── roles:        → <span class="vo">mac.concept.column.roles</span>  <span class="ct">CLOSED · ${T.column_role.length} · a MAP: every use a question may make of this column</span>
+    │   ├── identity        → <span class="vo">mac.concept.column.identity</span>  <span class="ct">CLOSED · ${T.identity_role.length} · ${C.slots['identity']} of ${C.bindings} claim it</span>
+    │   ├── axis            → <span class="vo">mac.concept.axis</span>  <span class="ct">CLOSED · ${T.axis.length} · ${C.slots['axis']} of ${C.bindings} claim it</span>
+    │   ├── aggregate.type  → <span class="vo">mac.concept.column.measure_type</span>  <span class="ct">CLOSED · ${T.measure_type.length} · ${C.slots['aggregate']} of ${C.bindings} claim it</span>
+    │   ├── period_binding  <span class="ct">a bare flag · ${C.slots['period_binding']} of ${C.bindings} claim it</span>
+    │   └── extremum        <span class="ct">min · max · ${C.slots['extremum']} of ${C.bindings} claim it</span>
+    └── &lt;ruling&gt;      → <span class="vo">mac.concept.column.ruling</span>  <span class="ct">CLOSED · ${T.column_ruling.length} · ${C.slots['rulings']} of ${C.bindings} filled</span>
             <span class="ct">└── register: → </span><span class="vo">mac.name_register</span>  <span class="ct">CLOSED · ${T.name_register.length}</span>`;
 
   /* The cross-tab carries COUNTS, so this is the one place a real magnitude encoding is earned:

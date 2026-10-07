@@ -75,9 +75,15 @@ exo = yaml.safe_load(open(ex, encoding="utf-8"))
 src0 = (exo.get("grounding") or {}).get("sources", [{}])[0]
 check("exemplar: columns in MAP form", isinstance(src0.get("columns"), dict))
 check("exemplar: no field_roles block", "field_roles" not in (exo.get("grounding") or {}))
-canon_cols = [c for c, b in (src0.get("columns") or {}).items() if isinstance(b, dict) and b.get("identity") == "canonical"]
-check("exemplar: canonical key on the column, not also on the concept",
-      bool(canon_cols) and "canonical_key" not in ((exo.get("concept") or {}).get("identity") or {}))
+canon_cols = [
+    c for c, b in (src0.get("columns") or {}).items()
+    if isinstance(b, dict) and ((b.get("roles") or {}).get("identity")) == "canonical"
+]
+# NOT ALSO ON THE CONCEPT — and `concept.identity` is now a block the schema rejects outright, so
+# this asserts its ABSENCE rather than the absence of one key within it.
+check("exemplar: canonical key on the column, and no `concept.identity` block at all",
+      bool(canon_cols) and "identity" not in (exo.get("concept") or {}),
+      f"canonical columns {canon_cols}; concept keys {sorted(exo.get('concept') or {})}")
 check("exemplar: schema_version is the schema's generation",
       str(exo["metadata"]["schema_version"]) == authoring.schema_generation(),
       f"{exo['metadata']['schema_version']} vs {authoring.schema_generation()}")
@@ -87,12 +93,31 @@ check("check_vocabulary_tokens: clean", VT.main([BUNDLE]) == 0)
 
 # 5. the prompt's lists are the vocabulary's, and carry no retired term
 P = authoring.SYS_PROMPT
-for ns, sep in (("concept.identity", "|"), ("concept.rule", "|"), ("concept.column.role", " | "),
+# AN EMPTY LIST PASSED THIS VACUOUSLY. `vocabulary_terms` answered `[]` for every nested namespace
+# (mac_vocabulary.yaml folds its blocks; the lookup asked for the dotted name), so `sep.join([])`
+# was `""` and `"" in P` is true of any prompt — four assertions that could not fail. The terms are
+# asserted non-empty FIRST, which is what makes the membership check mean something.
+for ns, sep in (("concept.rule", "|"), ("concept.column.roles", " | "),
+                ("concept.column.identity", " | "), ("concept.axis", "|"),
                 ("concept.column.measure_type", "|")):
     terms = authoring.vocabulary_terms(ns)
-    check(f"prompt lists every {ns} term", sep.join(terms) in P, sep.join(terms))
-for retired in ("resolved_axis", "role: attribute", "mac.MeasureType", "non-additive", "Only ONE column per concept"):
+    check(f"{ns} resolves to terms at all", bool(terms))
+    check(f"prompt lists every {ns} term", bool(terms) and sep.join(terms) in P, sep.join(terms))
+for retired in ("resolved_axis", "role: attribute", "mac.MeasureType", "non-additive",
+                "Only ONE column per concept", "identity: part", "{role: key", "{role: dimension",
+                "mac.concept.column.role", "mac.concept.column.query_use"):
     check(f"prompt carries no retired token: {retired!r}", retired not in P)
+
+# A PROHIBITION MUST NAME WHAT IT PROHIBITS, so these may appear — and ONLY inside one. A model
+# that is told "do not write a `lifecycle:` block" needs to read the word; a blunt "the token is
+# absent" check would force the instruction to be vague instead. Each occurrence must sit within
+# 160 characters after a DO-NOT, which is where the prohibition's own sentence is.
+_DONT = [i for i in range(len(P)) if P.startswith("DO NOT", i)]
+for named in ("lifecycle:", "field_roles:", "`grain:`", "additivity:", "`identity:` BLOCK"):
+    hits = [i for i in range(len(P)) if P.startswith(named, i)]
+    loose = [i for i in hits if not any(0 <= i - d <= 160 for d in _DONT)]
+    check(f"prompt names {named!r} only inside a prohibition",
+          not loose, f"{len(loose)} of {len(hits)} occurrence(s) outside one")
 
 # 6. the reader, when it is beside us
 import _neighbours  # noqa: E402  — ONE home for the sibling runtime's location
@@ -116,6 +141,52 @@ if _neighbours.runtime_src() is not None:
         check("runtime: CalendarDay date_key is housekeeping; year_quarter finer_than year",
               d.grounding.field_roles["date_key"].endswith(".housekeeping")
               and d.grounding.spec("year_quarter").rulings.finer_than == "year")
+
+        # THE ONE-LINE LAW, PINNED ACROSS THE TWO REPOS. `ColumnSpec.role` derives the five role
+        # names from `roles` and is the authority; `mac_project.column_role` is this repo's reader
+        # of the same law, because `mac_runtime` is not importable from the SDK and three modules
+        # here need the answer. A second copy is only safe while something compares it, and nothing
+        # did: the comparison is this check, over every column of every concept in the fixture.
+        import glob as _g
+        import mac_project as _MP
+        import yaml as _y
+
+        # OVER EVERY BUNDLE BESIDE US, because this fixture alone cannot exercise the law.
+        # Measured: 0 of its 35 columns are `identity: canonical` AND an axis -- the branch whose
+        # absence made the derivation reproduce 109 of 112 instead of 112 -- while contoso5 has 3.
+        # A pin over a population that cannot contain the case is a pin that cannot go red, so the
+        # denominator is asserted below rather than printed and trusted.
+        _roots = [BUNDLE] + [
+            r for r in (os.path.join(ROOT, "..", "cap-ontology-sources", "example", "contoso5"),)
+            if os.path.isdir(os.path.join(r, "ontology", "concepts"))
+        ]
+        disagree, pinned, canonical_axes = [], 0, 0
+        for _root in _roots:
+            _ix = OntologyIndex.from_directory(_root)
+            _cs = {c.name: c for c in (_ix.concepts.values() if isinstance(_ix.concepts, dict)
+                                       else _ix.concepts)}
+            for _f in sorted(_g.glob(os.path.join(_root, "ontology", "concepts", "**", "*.yaml"),
+                                     recursive=True)):
+                _doc = _y.safe_load(open(_f, encoding="utf-8")) or {}
+                _c = _cs.get((_doc.get("concept") or {}).get("name"))
+                if _c is None or _c.grounding is None:
+                    continue
+                _cols = ((_doc.get("grounding") or {}).get("sources") or [{}])[0].get("columns") or {}
+                for _spec in _c.grounding.columns:
+                    _authored = _cols.get(_spec.name) or {}
+                    _r = _authored.get("roles") or {}
+                    if _r.get("identity") == "canonical" and _r.get("axis"):
+                        canonical_axes += 1
+                    pinned += 1
+                    _mine, _theirs = _MP.column_role(_authored), _spec.role
+                    if _mine != _theirs:
+                        disagree.append(
+                            f"{_c.name}.{_spec.name}: mac {_mine!r} vs runtime {_theirs!r}")
+        check("mac_project.column_role agrees with the runtime's ColumnSpec.role on every column",
+              not disagree, "; ".join(disagree[:3]))
+        check("and the population is big enough to disagree",
+              pinned > 100 and canonical_axes > 0,
+              f"{pinned} column(s) pinned, {canonical_axes} of them canonical-and-an-axis")
     except ImportError as e:  # the platform's deps are not this repo's
         print(f"  runtime half skipped: {e}")
 else:

@@ -1,7 +1,7 @@
 metadata:
   source: CONTOSO5
   version: '1.0'
-  schema_version: 0.1.18
+  schema_version: 0.1.19-develop
   confidence: I
   provenance: authored
 concept:
@@ -21,16 +21,6 @@ concept:
 
     IT IS IN USD. The sale's `currency_code` names what the customer paid in, not what this is
     stated in; conversion goes through [[ExchangeRate]] at the sale's own order date.
-  semantics:
-    measure_type: mac.concept.column.measure_type.flow
-    unit: USD
-    axis_kinds:
-      order_date: mac.concept.axis.time
-      delivery_date: mac.concept.axis.time
-      customer_key: mac.concept.axis.categorical
-      store_key: mac.concept.axis.categorical
-      product_key: mac.concept.axis.categorical
-      currency_code: mac.concept.axis.categorical
 grounding:
   sources:
     - relation: v_contoso5_sales_line
@@ -39,37 +29,49 @@ grounding:
         - line_number
       columns:
         order_key:
-          role: key
-          identity: part
+          roles:
+            identity: composite
         line_number:
-          role: key
-          identity: part
+          roles:
+            identity: composite
         net_amount:
-          role: measure
-          measure:
-            type: mac.concept.column.measure_type.flow
-            unit: USD
+          roles:
+            aggregate:
+              type: mac.concept.column.measure_type.flow
+              unit: USD
+              canonical: true
+            extremum: [min, max]
         net_price:
-          role: measure
-          measure:
-            type: mac.concept.column.measure_type.intensive
-            unit: USD
+          roles:
+            aggregate:
+              type: mac.concept.column.measure_type.intensive
+              unit: USD
+            extremum: [min, max]
         order_date:
-          role: period
+          roles:
+            axis: mac.concept.axis.time
+            period_binding: true
+            extremum: [min, max]
         delivery_date:
-          role: dimension
+          roles:
+            axis: mac.concept.axis.time
+            extremum: [min, max]
         customer_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
+            axis: mac.concept.axis.categorical
         store_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
+            axis: mac.concept.axis.categorical
         product_key:
-          role: key
-          identity: reference
+          roles:
+            identity: reference
+            axis: mac.concept.axis.categorical
         currency_code:
-          role: dimension
-  grain: one row per sale (order_key, line_number)
+          roles:
+            axis: mac.concept.axis.categorical
+            extremum: [min, max]
 contract:
   rules:
     - id: net_revenue.aggregation.never_from_unit_prices

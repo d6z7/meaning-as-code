@@ -8,7 +8,7 @@ It measures three things the data-quality dashboard cannot:
                     and confirmed (C) vs proposed (P) for rules. The direct analog of DQ's resolved/gap.
   - CONNECTIVITY  — how many concepts are related to another concept, whether by an ontology EDGE or
                     by a contract RULE that binds another concept's canonical key. Refuse-stubs
-                    (identity.kind = sme_pending, no key) are excluded: they are authored to be
+                    (no `roles.identity` column at all) are excluded: they are authored to be
                     unlinked, so counting them as a shortfall argues for asserting a false relationship.
   - DOCUMENTATION / COVERAGE — column descriptions, rule-kind coverage, edge depth.
   - EXECUTION VALIDATION — FRAMEWORK.md §8's THIRD rung. MATURITY above measures the fourth
@@ -48,7 +48,7 @@ is a read-time view (`sdk.project.sme_questions`), never a projected file.
 
 ORIGIN KEYS — ids only, never file paths, so moving a file orphans nothing:
 
-    concept:<concept>#identity                      identity awaiting an SME (no key)
+    concept:<concept>#identity                      identity awaiting an SME (no key column)
     concept:<concept>#confidence                    concept confidence below confirmed   sign_off
     concept:<concept>#enumeration                   the value set is not resolved
     concept:<concept>#measure_type                  a measure declares no resolvable type
@@ -87,6 +87,16 @@ from pathlib import Path
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[2] / 'tools'))
 import mac_vocab as _mv  # noqa: E402
+
+#: THE ONE READER OF A COLUMN'S DECLARATION — `mac_project.column_identity` / `.column_roles`, which
+#: already know the 2026-10-07 addresses and the retired `part` -> `composite` spelling. This module
+#: read the pre-move homes and so raised findings AGAINST ADDRESSES NO AUTHOR CAN FIX, which is worse
+#: than a missed finding: MEASURED on `sdk/authoring/exemplars/bundle`, `noagg.net_revenue` fired —
+#: "Measure Net Revenue declares no measure type ... No `concept.semantics.measure_type`" — over a
+#: concept whose `net_amount` column declares
+#: `roles.aggregate: {type: mac.concept.column.measure_type.flow, unit: USD, canonical: true}`. The
+#: SME catalogue carried the same false ask with the same unfixable pointer.
+import mac_project as _P  # noqa: E402
 
 
 
@@ -287,20 +297,53 @@ def measure_type_members(repo_root: Path | None = None):
 
 
 def measure_type_declared(concept_doc: dict, members) -> bool:
-    """Does a measure declare how it adds up, the way the answerability check reads it
-    (`concept.semantics.measure_type`), resolvable in mac.concept.column.measure_type?
+    """Does a measure declare how it adds up — on the COLUMN that carries the number, resolvable in
+    mac.concept.column.measure_type?
 
     WHY THIS AND NOT "has an aggregation rule": per-concept aggregation rules were retired in
     favour of the declared type, after which the old detector asked "how does it aggregate?" of
-    every measure in a bundle that had answered it for every measure."""
-    mt = ((concept_doc.get("concept") or {}).get("semantics") or {}).get("measure_type")
-    if not isinstance(mt, str) or not mt.startswith("mac.concept.column.measure_type."):
+    every measure in a bundle that had answered it for every measure.
+
+    AND THEN THE TYPE MOVED ONTO THE COLUMN AND THE DETECTOR ASKED IT AGAIN. It read
+    `concept.semantics.measure_type`, which since 2026-10-07 is the runtime's PROJECTION of the
+    columns and not the authored home: a concept may carry several quantities that fold by different
+    laws (an amount is a `flow`, its unit price an `intensive`) and one concept-level slot could only
+    misreport that, so the type is `roles.aggregate.type` on each column. This module reads AUTHORED
+    YAML, where no projection has happened. MEASURED on `sdk/authoring/exemplars/bundle`: net_revenue
+    declares `type: mac.concept.column.measure_type.flow` with `canonical: true` on `net_amount` and
+    `intensive` on `net_price`, and this returned False — one false `noagg` finding and one false SME
+    question, both POINTING AT `concept.semantics.measure_type`, a key no author may now fill. A
+    finding whose pointer names an address the grammar refuses cannot be closed by anyone.
+
+    `column_roles` is the one reader of that address. ANY aggregate column with a resolvable type
+    answers the question: the detector asks whether the measure says how it folds, and a concept that
+    says it for its canonical number has said it.
+
+    AND `concept.semantics.measure_type` IS STILL READ — AS A FALLBACK, NEVER AS THE HOME. That is the
+    same rule `mac_project.column_identity` follows for the retired flat keys: a reader that knew only
+    the new shape would report a conformant OLDER bundle as declaring nothing, which is this very
+    false finding one migration earlier. What was wrong was never the read; it was the POINTER on the
+    finding and on the SME ask, both of which named a key no author may now fill. Those now name the
+    column. MEASURED: dropping the fallback took `sdk/project/test_sme_register.py` from 28 passed to
+    6 failed on fixtures that declare the type at the old address and ground no columns at all.
+    """
+    aggregates = _P.column_roles(concept_doc, "aggregate")
+    types = [
+        str((a or {}).get("type") or "")
+        for a in aggregates.values()
+        if isinstance(a, dict)
+    ]
+    legacy = ((concept_doc.get("concept") or {}).get("semantics") or {}).get("measure_type")
+    if isinstance(legacy, str):
+        types.append(legacy)
+    types = [t for t in types if t.startswith("mac.concept.column.measure_type.")]
+    if not types:
         return False
     if members is None:
         # The vocabulary is unreadable: say so once (the caller does) instead of manufacturing a
         # question for every measure that did declare a type.
         return True
-    return mt.split(".")[-1] in members
+    return any(t.split(".")[-1] in members for t in types)
 
 
 def value_set_unresolved(doc: dict) -> bool:
@@ -344,6 +387,49 @@ def _value_items(doc: dict):
                 )
 
 
+def is_refuse_stub(doc: dict) -> bool:
+    """Is this concept authored PRECISELY so the engine can say "this source has no information about
+    X" — unlinked and unconfirmed ON PURPOSE, so that neither is a defect?
+
+    THE DECLARATION THAT SAID SO IS GONE AND NOTHING REPLACED IT. It was
+    `concept.identity.kind: sme_pending` with no `canonical_key`, and the whole `concept.identity`
+    block left mac.schema.json on 2026-10-05 — `concept` is `additionalProperties: false`, so a file
+    carrying the marker now FAILS validation. TWO copies of that test lived here (this one and
+    `build`'s), both permanently False on any conformant file, which silently withdrew the exemption:
+    every refuse-stub draws a `maturity` AND an `isolated` finding, the second arguing to wire a
+    relationship that deliberately does not exist.
+
+    WHAT IS READ INSTEAD, AND WHAT IS DELIBERATELY NOT. On the column standard the fact survives as
+    the ABSENCE of an identity column — no `canonical`, no `composite`. But absence must not be read
+    as a claim: a concept with no `grounding` at all, or one grounding the legacy FLAT LIST of column
+    names (21 concepts were written that way and the grammar still admits it), declares no identity
+    either and is NOT a refuse-stub. The first version of this fix did read it that way and the cost
+    was MEASURED immediately: `sdk/project/test_sme_register.py` went from 28 passed to 6 failed,
+    every failure a fixture concept with no grounding newly reported as a stub — which suppressed its
+    confidence sign-off and invented an identity question. So the column test is GATED on the concept
+    actually being on the standard (at least one column spec carrying a `roles` map), and the explicit
+    legacy marker is still honoured for a bundle that has not migrated. On
+    `sdk/authoring/exemplars/bundle`: 0 refuse-stubs before and 0 after, all four concepts declaring
+    an identity — the repair is for the bundles that carry a stub, and the gate is what keeps it from
+    firing on the ones that carry no columns.
+
+    AN EXPLICIT MARKER IS STILL OWED, and this is the one place that can say so. "Has no key" and "has
+    no key ON PURPOSE" are different facts and only the second exempts anything; deriving the second
+    from the first is the inference the paragraph above refuses. There is no key in the grammar for it.
+    """
+    ident = ((doc.get("concept") or {}).get("identity") or {}) if isinstance(doc, dict) else {}
+    if isinstance(ident, dict) and ident.get("kind") == "sme_pending" and not ident.get("canonical_key"):
+        return True
+    if _P.canonical_key(doc) or _P.key_parts(doc):
+        return False
+    return any(
+        isinstance(spec, dict) and isinstance(spec.get("roles"), dict)
+        for src in ((doc.get("grounding") or {}).get("sources") or [])
+        if isinstance(src, dict) and isinstance(src.get("columns"), dict)
+        for spec in src["columns"].values()
+    )
+
+
 def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) -> tuple[list, list]:
     """The rows and findings one concept file contributes to the SME catalogue."""
     rows, findings = [], []
@@ -351,8 +437,7 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
     meta = doc.get("metadata") or {}
     klass = con.get("class")
     title = title_of.get(stem) or stem
-    ident = con.get("identity") or {}
-    refuse_stub = ident.get("kind") == "sme_pending" and not ident.get("canonical_key")
+    refuse_stub = is_refuse_stub(doc)
 
     def src(pointer):
         return {"path": rel_path, "pointer": pointer}
@@ -406,12 +491,15 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
             f"contract.rules[id={r['id']}]",
         )
 
-    if ident.get("kind") == "sme_pending":
+    if refuse_stub:
+        # THE POINTER MOVED WITH THE FACT. `concept.identity` is not a key mac.schema.json admits,
+        # so an ask filed against it named a place its answer could not be written.
         add(
             f"concept:{key_fragment(stem)}#identity",
             "question",
-            f"What is the canonical identity (the key) of “{title}”?",
-            "concept.identity",
+            f"What is the canonical identity (the key) of “{title}”? No column of it declares "
+            f"`roles.identity: canonical`, and none declares `composite`.",
+            "grounding.sources[].columns[].roles.identity",
         )
 
     if klass == "enumeration" and value_set_unresolved(doc):
@@ -423,12 +511,14 @@ def concept_sme(stem: str, doc: dict, title_of: dict, members, rel_path: str) ->
         )
 
     if klass == "measure" and not measure_type_declared(doc, members):
+        # THE POINTER IS WHERE AN SME CAN ACT, which `concept.semantics.measure_type` no longer is:
+        # it is the runtime's projection of the columns and the grammar admits no author there.
         add(
             f"concept:{key_fragment(stem)}#measure_type",
             "question",
-            f"How does the measure “{title}” add up across its axes? It declares no measure type "
-            f"that mac.concept.column.measure_type resolves.",
-            "concept.semantics.measure_type",
+            f"How does the measure “{title}” add up across its axes? No column of it declares "
+            f"`roles.aggregate.type` that mac.concept.column.measure_type resolves.",
+            "grounding.sources[].columns[].roles.aggregate.type",
         )
 
     #: THE CONCEPT NO LONGER CARRIES A QUESTION. `open_questions[]`, `values[].open_question` and
@@ -730,11 +820,17 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
     # "isolated" while eight measures were pinning it by rule, and the only way to satisfy it was to
     # restate in edges what the rules already said (2026-08-16, acme2 `perspective`). So relationships
     # expressed as rules count too, in both directions: the rule connects its subject AND its object.
+    # THE KEY IS A COLUMN FACT AND THIS READ THE RETIRED CONCEPT-LEVEL ONE. `concept.identity` was
+    # removed from mac.schema.json on 2026-10-05, so `key_owner` came out EMPTY on every conformant
+    # bundle — and an empty key_owner means `bound` is empty, which means "connected by rule" counts
+    # NOTHING and every concept with no edge is reported isolated. That is precisely the metric this
+    # block was added (2026-08-16) to stop producing. MEASURED on `sdk/authoring/exemplars/bundle`
+    # before the repoint: key_owner 0 entries over 4 concepts, 2 of which declare a canonical column.
     key_owner: dict[str, set[str]] = {}
     for stem, c in concepts.items():
-        ck = ((c.get("concept") or {}).get("identity") or {}).get("canonical_key")
-        if ck:
-            key_owner.setdefault(ck, set()).add((c.get("concept") or {}).get("name") or stem)
+        nm_c = (c.get("concept") or {}).get("name") or stem
+        for ck in ([_P.canonical_key(c)] if _P.canonical_key(c) else []) + _P.key_parts(c):
+            key_owner.setdefault(ck, set()).add(nm_c)
 
     bound, rule_links = set(), []
     for stem, c in concepts.items():
@@ -760,20 +856,16 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
         con = c.get("concept") or {}
         meta = c.get("metadata") or {}
         title, nm, klass = title_of[stem], name_of[stem], con.get("class")
-        # A REFUSE-STUB is a concept authored precisely so the engine can say "this source has no
-        # information about X" instead of inventing one: identity.kind = sme_pending, no canonical key.
-        # It is SUPPOSED to be unlinked and unconfirmed, so neither is a defect — reporting them as
-        # findings argues for wiring a relationship that does not exist. The open question is still
-        # real, so it stays in the SME backlog below; only the FINDINGS are suppressed.
-        is_refuse_stub = (con.get("identity") or {}).get("kind") == "sme_pending" and not (
-            con.get("identity") or {}
-        ).get("canonical_key")
-        if is_refuse_stub:
+        # ONE PREDICATE, SHARED WITH THE SME CATALOGUE — see `is_refuse_stub` above. It was two
+        # copies of the same two retired reads, which is how one address change breaks a metric at
+        # a distance from itself.
+        stub = is_refuse_stub(c)
+        if stub:
             refuse_stubs.append(stem)
         mc = meta.get("confidence", "?")
         if mc in conf_c:
             conf_c[mc] += 1
-        if mc in ("I", "Q") and not is_refuse_stub:
+        if mc in ("I", "Q") and not stub:
             findings.append(
                 {
                     "id": f"maturity.{stem}",
@@ -790,7 +882,7 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
             by_edge += 1
         elif nm in bound:
             by_rule += 1
-        elif not is_refuse_stub:
+        elif not stub:
             findings.append(
                 {
                     "id": f"isolated.{stem}",
@@ -836,8 +928,12 @@ def build(concepts: dict, datasets: dict, ont_edges: list, root=None, concept_pa
                     "concept": stem,
                     "concept_title": title,
                     "title": f"Measure {title} declares no measure type",
-                    "detail": "No `concept.semantics.measure_type` that mac.concept.column.measure_type resolves, so "
-                    "how it rolls up across its axes is unspecified.",
+                    # THE DETAIL NAMES THE AUTHORED HOME. It said `concept.semantics.measure_type`,
+                    # which is the runtime's projection of the columns and not a key an author may
+                    # write — so the finding told a reader to fix a place the grammar refuses.
+                    "detail": "No column declares `roles.aggregate.type` that "
+                    "mac.concept.column.measure_type resolves, so how it rolls up across its axes "
+                    "is unspecified.",
                 }
             )
 
