@@ -1152,20 +1152,6 @@ concept:
     terms:
       time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
       categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
-      none: >
-        NOT AN AXIS. No question groups or filters by it, so there is nothing for the fold law to judge:
-        a surrogate row identifier (`line_number`), a housekeeping stamp, the measure payload itself.
-        THIS TERM EXISTS SO SILENCE STOPS BEING AMBIGUOUS. Before it, a column with no `axis` could
-        mean "not an axis" or "the author did not say", and nothing could tell the two apart — measured
-        2026-10-07 on contoso5: 12 surrogate key columns meant the first and 30 declared dimensions meant
-        the second, and both read identically. The operator's own test, from the brand-edge ruling of the
-        same week: an absence may be a declaration only when nothing else could be meant.
-        IT IS NOT `never_axis`, and the two must not be merged. `none` says no one would group by it;
-        `rulings.never_axis` says someone WOULD and may not, names the measurement that establishes the
-        harm, and makes a query that tries it a REFUSAL THAT CITES THE REASON. A privacy-ruled column is
-        therefore `axis: categorical` AND `never_axis:` — what it is, and that you may not.
-
-
   # ===========================================================================
   # mac.concept.class — WHAT KIND OF THING A CONCEPT IS. The one genuinely concept-level typology:
   # unlike identity (retired 2026-10-05), no column can express it. `Store/square_metres` and
