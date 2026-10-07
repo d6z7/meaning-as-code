@@ -231,9 +231,7 @@
             }
           },
           "then": {
-            "required": [
-              "values"
-            ]
+            "$comment": "v0.1.19: `values` IS NO LONGER REQUIRED, and this clause is kept rather than deleted as the record of why. It required a closed set to list its members INLINE, and the operator banned inline values outright — `values.items` is BANNED; members live in a register and the column points at it with `register:`. So all five of contoso5's enumerations were reported as broken BECAUSE they obey the ruling, and they held the compile at DOES_NOT_COMPILE for as long as nothing ran it. The requirement was also already contradicted inside this very file: the measure clause below argues `semantics` should not be required and cites \"`values` carries no `required` either\" as its precedent — a precedent that was false while this constraint stood. Enforcement does not weaken: `check_enumeration_closure` resolves a register delegation and `check_register_membership` compares the register against the warehouse, which is more than a copy of the members in the concept could ever prove. A concept MAY still write `values:` and its shape is still checked where it is declared."
           }
         },
         {
@@ -250,12 +248,9 @@
             }
           },
           "then": {
-            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#concept.column.measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy.",
+            "$comment": "v0.1.15: a measure declares WHAT IT IS (`measure_type`) and WHAT ITS AXES ARE (`axis_kinds`); the per-axis `additivity` block is DERIVED from those two by the law in mac_vocabulary.yaml#concept.column.measure_type and is no longer required here. A concept that writes it as well states the same fact twice — and because it authored both the premise and the conclusion, the two could drift: a target-inventory measure declared `Target` and wrote `geography: additive`, which the law forbids, and a value anchor summed it across products on the strength of it. You cannot contradict a value you do not write. Precedent: `values` carries no `required` either — a closed set may delegate its members to a register and check_enumeration_closure honours that rather than demanding a copy. THAT PRECEDENT WAS FALSE WHEN WRITTEN: `values` was still required by the enumeration clause above, and both requirements were dropped together in v0.1.19 after they held contoso5 at DOES_NOT_COMPILE. v0.1.19 also drops the `required` here, which is what this paragraph had been arguing for since v0.1.15; the SHAPE below still applies, so a concept that writes `semantics` must still write it completely.",
             "properties": {
               "concept": {
-                "required": [
-                  "semantics"
-                ],
                 "properties": {
                   "semantics": {
                     "required": [

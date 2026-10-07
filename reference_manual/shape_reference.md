@@ -259,8 +259,7 @@ governance:  # Housekeeping
 
 **Per `concept.class` (conditional shape):**
 
-- **measure** — requires `concept.semantics.measure_type`; requires `concept.semantics.axis_kinds`; requires `concept.semantics`
-- **enumeration** — requires `values`
+- **measure** — requires `concept.semantics.measure_type`; requires `concept.semantics.axis_kinds`
 - **grouping** — requires `members`
 
 ### RulesFile
