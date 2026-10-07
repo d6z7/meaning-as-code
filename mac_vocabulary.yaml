@@ -1256,21 +1256,25 @@ concept:
     # column and per axis kind through `additivity`, which is strictly more precise — a role-level
     # boolean is what made `precomputed` look summable.
     # ===========================================================================
-    roles:
+    offers:
       kind: vocabulary
       closed: true
       description: >
-        WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `roles:` as a MAP from the
-        term to that role's own qualifier — `identity: composite`, `axis: time`,
-        `aggregate: {type, unit}` — so the role and its parameter are one statement and a role cannot
-        be claimed without its terms.
-        THIS WAS `query_use`, 'the machine-readable half of concept.column.role', and `role` was the
-        other half: one fact in two vocabularies, of which only one had a key in mac.schema.json and
-        neither could say that a join key is also an axis. 21 of contoso5's 112 columns are exactly
-        that. `role` is gone and this is the whole declaration.
+        WHAT A QUESTION MAY DO WITH A COLUMN. A column declares these under `offers:` as a MAP from
+        the use to that use's own terms — `axis: categorical`, `aggregate: {type, unit}` — so a use
+        cannot be claimed without stating them.
+        IT WAS `roles:` UNTIL 2026-10-07, and `role` before that: a scalar holding one of five names,
+        beside a `query_use` table mapping each name to the uses it served. One fact in two
+        vocabularies, neither able to say that a join key is also an axis — 21 of contoso5's 112
+        columns are exactly that. The word changed because `role` is what the five DERIVED names are
+        still called, and the container is not those names.
+        `identity` LEFT THIS SET. It answered "does this column point at another concept", which is
+        not a use a question makes of the column but a statement about another concept: it is the
+        top-level `references:` key, whose value is that concept's name.
         AN EMPTY MAP IS A STATEMENT: the column is offered to no question, which is what
-        `role: housekeeping` said. A MISSING `roles:` is a column nobody classified, and the two are
+        `role: housekeeping` said. A MISSING `offers:` is a column nobody classified, and the two are
         different findings.
+      terms:
       terms:
         axis: >
           LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question can slice by.
@@ -1291,58 +1295,24 @@ concept:
           than a corner of `aggregate`: an extremum PICKS one value that exists in the data instead of
           combining several, so it answers to no additivity cell and is meaningful on a column no law
           would let anyone SUM. A date axis therefore admits it while remaining non-aggregatable.
-        identity: >
-          WHAT THE ROW IS, FOR JOINING AND COUNTING. Filtered on an exact value a register resolved
-          to, joined on, and what COUNT(DISTINCT) counts — never matched against a label and never
-          aggregated, an identifier that is summed being a number nobody asked for.
-
-    identity:
-      kind: vocabulary
-      closed: true
-      description: >
-        Whether a column holds ANOTHER concept's identity. One term, deliberately: what makes a row
-        of THIS concept unique is `grounding.sources[].key`, not a per-column flag.
-      terms:
-        reference:
-          definition: >
-            A POINTER AT ANOTHER CONCEPT'S IDENTITY — this concept's row names a row over there. What it
-            points at is named separately; whether every value is PRESENT in the parent is a measurement,
-            not a declaration, and a reference with no parent relation in the delivery is recorded AS
-            dangling rather than dropped or invented.
-
-          constellation: >
-            THE COLUMN HOLDS ANOTHER CONCEPT'S IDENTITY, NOT THIS ONE'S. A customer key on a sale
-            identifies a customer; the sale is identified by something else entirely. Without this
-            the key reads as part of the sale's own identity, and a count of sales becomes a count
-            of customers.
-
-      # `canonical` AND `composite` WERE HERE AND ARE RETIRED 2026-10-07, operator ruling: "currently
-      # it is implicit and they are not undersetandable ... probably it would be more transparent if
-      # we still try to say lets list columns which make indentiy explicitly". They answered a
-      # DIFFERENT QUESTION from `reference` — what makes a row of THIS concept unique — and that is
-      # one fact about the source rather than a property of each column. Two measurements settled it:
-      #
-      #   IT COULD NOT STATE AN ORDER. `cell_key`'s order reaches the SQL and came from the order the
-      #   column blocks happened to appear in. Swapping two YAML blocks — an edit no gate can see and
-      #   any formatter may make — changed UnitsSold's key from (order_key, line_number) to
-      #   (line_number, order_key). A per-column flag has nowhere to put the order.
-      #
-      #   IT WAS UNREADABLE. On contoso5, 7 of 17 concepts are composite, and reading the key meant
-      #   scanning every column of the source for a flag. The operator's complaint, exactly.
-      #
-      # The fact now has one home, `sources[].key`, which the schema has always admitted and the
-      # parser has always preferred — it was marked deprecated while being the better declaration.
-
-    # ===========================================================================
-    # mac.concept.column.ruling — WHAT A PERSON DECIDED ABOUT A COLUMN, beyond what the data can say. Every term
-    # here is a JUDGEMENT and none is derivable: that a registered name belongs to the same company, that
-    # a postcode identifies people, that one geography level is finer than another. This is why they must
-    # not share a slot with `column.role`, which is derived — a slot that accepts both silts up, and
-    # `attribute` is what that looks like after two years.
-    #
-    # A ruling is always ABOUT a column and always carries its reason. `never_axis` additionally requires
-    # `evidence` naming the measurement, so the refusal can cite it rather than assert it.
-    # ===========================================================================
+        suppressed: >
+          THE COLUMN IS A REAL AXIS AND A PERSON HAS RULED THAT NO QUESTION MAY GROUP BY IT. The
+          value IS the finding that justifies it — a data-quality issue id — so a prohibition
+          cannot be authored without naming its evidence, and the refusal quotes the register
+          rather than a word. `axis` must be declared alongside it: the ontology states what the
+          warehouse IS and the suppression is a judgement on top, never a denial that the axis
+          exists.
+          IT WAS `rulings: {never_axis, evidence}`, two keys in a block whose every other member
+          names ANOTHER column — this one never did. And the prose field carried a reason CODE in
+          both of contoso5's uses (`privacy`), while the sentence it claimed to hold already lived
+          in the register: "21,317 of 34,581 distinct values (62%) over 104,990 rows are held by
+          exactly one row".
+    # `concept.column.identity` IS RETIRED, 2026-10-07. Its last term was `reference`, and a
+    # foreign key's declaration is the CONCEPT IT POINTS AT, not a term from a closed set: the
+    # top-level `references:` key takes a concept name. `canonical` and `composite` went earlier the
+    # same day, to `sources[].key`, which can state the key's ORDER. Operator: "we still use wording
+    # identity in some columns even though we used now key to denote primary key identifiers. this
+    # under cicumtstances confusing".
     ruling:
       kind: vocabulary
       closed: true
@@ -1408,18 +1378,11 @@ concept:
             THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises
             none without ORDER BY, so the answer changes between runs on unchanged data — measured,
             on an 88-row breakdown that passed and failed alternately.
-        never_axis:
-          definition: >
-            THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the
-            measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT
-            CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of
-            104 990 served customers and is the dominant identifier in the row.
-
-          constellation: >
-            GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990
-            postcodes identify a single customer. The query is legal and the result is a customer
-            list pretending to be a breakdown.
-
+        # `never_axis` IS RETIRED FROM THIS SET, 2026-10-07 -> `offers.suppressed`. Every other
+        # ruling here names ANOTHER COLUMN — label_of, finer_than and scoped_by all take a column
+        # name — and this one never did: it was a judgement about the column's OWN use, which is
+        # what `offers` declares. Its companion `evidence` went with it, folded into the single
+        # value: `suppressed` IS the finding id, so a prohibition cannot be authored without one.
     # ===========================================================================
     # mac.measure_type — the additivity class of a measure (the classic additive / semi-additive /
     # non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
