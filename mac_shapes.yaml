@@ -79,14 +79,26 @@ shapes:
   # ontology — the shop/tpch examples + self-tests stay green). It is seeded per serving-source as
   # `<source>/ontology/shapes.yaml`, loaded by check_all.sh's `--shapes` step. See
   # docs/HARVEST_RIGHT_FIRST_TIME.md gap #4 + the harvest scaffold.
-  - id: enumeration-declares-closure
-    description: an enumeration concept should declare its value-set closure (values.closure)
-    target: concept
-    where: { concept.class: enumeration }
-    severity: warning
-    constraint:
-      kind: required
-      path: values.closure
+  # RETIRED 2026-10-07, operator ruling. `enumeration-declares-closure` required `values.closure` —
+  # whether a value set is CLOSED (this is all of them) or OPEN (the warehouse may hold one we have not
+  # listed). It is retired because the fact has no home, no reader, and its question is already answered
+  # better elsewhere:
+  #
+  #   NO HOME.    The members moved to a register when inline `values.items` was banned, and a register
+  #               declares `name, csv, members, grain` — not closure. The old home went with the values
+  #               block; the new one never carried it.
+  #   NO READER.  Its one consumer in the runtime is `contract_guards.anomaly_checks`, which feeds
+  #               `mac.canon.closure_anomaly_check` — retired the same day — and which has ZERO callers.
+  #               The only other mention hardcodes `closure="closed"` instead of reading a declaration.
+  #   ANSWERED.   "Is there a value out there that is not in our set?" is what
+  #               `tools/check_register_membership.py` asks, against the WAREHOUSE, per register:
+  #               MISSING / NEW / NULLS / ORPHANED. It ran clean over contoso5's 17 registers on
+  #               2026-10-04. Comparing the register to the data is strictly stronger than comparing a
+  #               copy of the members inside the concept, which is all closure+items could ever support.
+  #
+  # So this was a leftover of the inline-values world: a declaration nothing reads, enabling a check a
+  # better check replaced. It held 5 of contoso5's concepts in violation for obeying the ruling that
+  # removed its subject.
 
   # FIELD-ANCHORING (v0.1.6, FRAMEWORK §6d): a typed rule's `binds` must name a column of the table the
   # concept grounds to — a RELATIONAL, CROSS-FILE invariant the schema cannot express (columns are
