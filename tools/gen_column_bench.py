@@ -30,8 +30,8 @@ held by one person each. This page renders the same evidence interactively, and 
 and its measured_at beside every panel, which the prose tables do not.
 
 Usage:
-  python3 tools/gen_column_bench.py --bundle ../mac-ontology-contoso
-  python3 tools/gen_column_bench.py --bundle ../mac-ontology-contoso --check   # drift + parity gate
+  python3 tools/gen_column_bench.py --bundle ../cap-ontology-sources/example/contoso5
+  python3 tools/gen_column_bench.py --bundle ../cap-ontology-sources/example/contoso5 --check   # drift + parity gate
 """
 from __future__ import annotations
 
