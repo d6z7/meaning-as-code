@@ -415,7 +415,7 @@ const DATA = {
     "REFUSE"
    ],
    "status": "enforced",
-   "reader": "Grounding.cell_key — 52 read sites; canonical_key (a one-column key); key_parts (two or more)",
+   "reader": "Grounding.cell_key — 25 read sites in src, 23 in tests (AST-measured); canonical_key (a one-column key); key_parts (two or more)",
    "effect": "WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source under `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A one-column key is the canonical identity, what COUNT(DISTINCT) counts; two or more is the composite, where no column identifies anything alone. A `class: measure` has no canonical identity whatever its key's shape — it is summed, not counted — so its key is the grain.",
    "frontier_note": "NOT A COLUMN KEY, which is why it is the one row in this register whose block is `source`. It was collected from `identity: canonical`/`composite` on the columns until 2026-10-07, and moved because a per-column flag has nowhere to put the ORDER: swapping two column blocks in units_sold — an edit no gate can see and any formatter may make — turned (order_key, line_number) into (line_number, order_key). Measured after the move: all 112 of contoso5's derived column roles are byte-identical."
   },

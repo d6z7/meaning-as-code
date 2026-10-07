@@ -86,7 +86,7 @@ keys:
     plane: [load, answer]
     outcomes: [COMMIT, REFUSE]
     status: enforced
-    reader: "Grounding.cell_key — 52 read sites; canonical_key (a one-column key); key_parts (two or more)"
+    reader: "Grounding.cell_key — 25 read sites in src, 23 in tests (AST-measured); canonical_key (a one-column key); key_parts (two or more)"
     effect: >-
       WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list of columns, stated on the source
       under `relation`. The order is load-bearing: it becomes `cell_key` and reaches the SQL. A
