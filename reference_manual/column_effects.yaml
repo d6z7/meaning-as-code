@@ -4,7 +4,7 @@
 # answer) with column_rulings.md on the authored judgements — and each states
 # a key's EFFECT in prose: "refuses", "reds", "load refuses", "CLARIFY", "zero, disclosed". Prose is
 # exactly where this estate has lost declarations before: `grounding.note` carried ruling language in
-# 12 of 21 concepts while the runtime happily planned GROUP BY ZipCode.
+# 12 of 21 concepts while the runtime happily planned GROUP BY city.
 #
 # So the effect is declared here, on three axes a machine can read:
 #
@@ -264,7 +264,7 @@ keys:
       `world`: the members ARE the kind, so a third gender is not a member and refuses.
     frontier_note: >-
       Without it, 'sales in Asia' and 'gender Q' get the same answer, and only one of them
-      deserves it. Country and Gender have the SAME closure and opposite answers.
+      deserves it. country_code and gender have the SAME closure and opposite answers.
 
   - key: domain.warranty
     block: domain
@@ -277,7 +277,7 @@ keys:
       observed, so a scheduled check reconciles them. There is no third value — a closed set nobody
       watches is a refusal backed by a stale sample.
     frontier_note: >-
-      age_band_5y is `derived` (a CASE expression in the transform); Country is `monitored`
+      birth_date is `derived` (a CASE expression in the transform); country_code is `monitored`
       (observed from the served plane). Same closure, different warranty, different watchdog.
 
   - key: domain.register
@@ -376,7 +376,7 @@ keys:
     reader: "planner/contract_guards.py:361 — synthesises the composite_key_guard binding (code_column + scope_columns)"
     effect: >-
       This column's values are unique only WITHIN the named one, so it may not be grouped or
-      filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated
+      filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY state merges three unrelated
       regions into one plausible-looking row.
     frontier_note: >-
       Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by`
@@ -402,7 +402,7 @@ keys:
     reader: none
     effect: >-
       The '--' that is not a country. Declared per column and per source: it appears on the store
-      side's CountryCode and not on the customer side's Country, which a flat block could not say.
+      side's country_code and not on the customer side's country_code, which a flat block could not say.
 
   - key: rulings.label_of
     block: rulings
@@ -470,7 +470,7 @@ keys:
     reader: "planner/grounded_columns._ruled_never_axis -> _axis_denied — a Refusal citing the evidence"
     effect: >-
       A legitimate dimension that must not be an axis, for a reason outside the data. The refusal
-      cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each
+      cites the measurement: GROUP BY city plans, executes, and returns 29 193 rows that each
       describe one person.
     frontier_note: >-
       column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on
@@ -504,7 +504,7 @@ keys:
       There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling
       language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's
       1 044-character note stated a measured privacy ruling in a field nothing reads, while the
-      runtime planned GROUP BY ZipCode. A block designed to end that must not ship a slot that
+      runtime planned GROUP BY city. A block designed to end that must not ship a slot that
       restarts it.
 
   - key: discriminates
@@ -538,7 +538,7 @@ keys:
 # THE BENCH — real columns, real measured cardinalities, and the outcome each configuration
 # produces for a real question.
 #
-# NUMBERS ARE NEVER TYPED HERE. `{ZipCode.distinct}` and `{rows}` are substituted by
+# NUMBERS ARE NEVER TYPED HERE. `{city.distinct}` and `{rows}` are substituted by
 # gen_column_bench.py from the bundle's own profile plane (data/profiles/<relation>.yaml), so a
 # number in the rendered page is a measurement with a timestamp, not a remembered figure. A
 # placeholder naming a column the profile does not carry is a generator error, not a blank.
@@ -579,17 +579,17 @@ keys:
 # ===========================================================================
 bench:
   - concept: Customer
-    relation: dim_contoso_customer
+    relation: dim_customer
     columns:
 
-      - column: ZipCode
+      - column: city
         offers: [axis]
         headline: A legitimate dimension that names individuals
         reads: >-
-          {ZipCode.distinct} distinct values over {rows} rows. Nothing in that ratio is illegal, and
+          {city.distinct} distinct values over {rows} rows. Nothing in that ratio is illegal, and
           nothing in it is safe.
         measured:
-          - claim: "29 193 of {ZipCode.distinct} postcodes are held by exactly one customer"
+          - claim: "29 193 of {city.distinct} postcodes are held by exactly one customer"
             source: DQ-CUSTOMER-02
         toggles:
           - key: rulings.never_axis
@@ -601,8 +601,8 @@ bench:
             cases:
               - when: {rulings.never_axis: null}
                 outcome: COMMIT
-                plan: GROUP BY c.ZipCode
-                result: "{ZipCode.distinct} rows"
+                plan: GROUP BY c.city
+                result: "{city.distinct} rows"
                 note: >-
                   Plans, executes, returns. 29 193 of those rows describe one person each. The
                   ontology's own measurement forbids this and nothing connected the two.
@@ -621,10 +621,10 @@ bench:
                 outcome: BLOCK
                 reason_code: POLICY_DENIED
                 result: >-
-                  Customer.ZipCode is declared never_axis: privacy — DQ-CUSTOMER-02 measured that
-                  29 193 of {ZipCode.distinct} postcodes are held by exactly one customer, so
-                  grouping on it names individuals. Customer can be grouped by: Continent, Country,
-                  Gender, State, age_band_5y.
+                  Customer.city is declared never_axis: privacy — DQ-CUSTOMER-02 measured that
+                  29 193 of {city.distinct} postcodes are held by exactly one customer, so
+                  grouping on it names individuals. Customer can be grouped by: Continent, country_code,
+                  gender, state, birth_date.
                 note: The refusal cites the measurement. That is the whole difference.
               - when: {rulings.never_axis: grain}
                 mode: designed
@@ -644,23 +644,23 @@ bench:
             cases:
               - when: {}
                 outcome: COMMIT
-                plan: WHERE c.ZipCode = '98052'
+                plan: WHERE c.city = '98052'
                 note: >-
                   never_axis forbids the AXIS, not the filter. A postcode is a legitimate thing to
                   ask about; it is grouping BY one that hands out a list of people.
 
-      - column: CountryFull
+      - column: continent
         offers: [axis]
         headline: Two names for one thing — or two things
         reads: >-
-          {CountryFull.distinct} distinct, beside Country's {Country.distinct}. Equal counts get you
+          {continent.distinct} distinct, beside country_code's {country_code.distinct}. Equal counts get you
           to the door and no further.
         measured:
-          - claim: "{Country.distinct} distinct Country, {CountryFull.distinct} distinct CountryFull, and the same number of distinct pairs — 1:1"
-            source: column_rulings.md §1, measured over dim_contoso_customer
+          - claim: "{country_code.distinct} distinct country_code, {continent.distinct} distinct continent, and the same number of distinct pairs — 1:1"
+            source: column_rulings.md §1, measured over dim_customer
         toggles:
           - key: rulings.label_of
-            values: [null, Country]
+            values: [null, country_code]
           - key: rulings.register
             values: [common, legal, long, short, code]
         questions:
@@ -668,17 +668,17 @@ bench:
             cases:
               - when: {rulings.label_of: null}
                 outcome: COMMIT
-                plan: GROUP BY c.CountryFull
-                result: "{CountryFull.distinct} rows"
+                plan: GROUP BY c.continent
+                result: "{continent.distinct} rows"
                 note: >-
                   The same cut as 'by country', under different labels, with nothing saying they are
                   the same cut. Two answers to one question.
-              - when: {rulings.label_of: Country}
+              - when: {rulings.label_of: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY c.Country
-                result: "{Country.distinct} rows, labelled from CountryFull"
-                disclose: grouped by Country, shown as CountryFull
+                plan: GROUP BY c.country_code
+                result: "{country_code.distinct} rows, labelled from continent"
+                disclose: grouped by country_code, shown as continent
                 note: >-
                   Grouped on the canonical column, displayed in the words the question used. The
                   register says WHICH name that is.
@@ -686,40 +686,40 @@ bench:
             cases:
               - when: {rulings.label_of: null}
                 outcome: COMMIT
-                plan: GROUP BY c.Country, c.CountryFull
-                result: "{Country.distinct} rows"
+                plan: GROUP BY c.country_code, c.continent
+                result: "{country_code.distinct} rows"
                 note: >-
-                  A reader expecting a cross product expects {Country.distinct} squared. Getting
-                  {Country.distinct} reads as a data bug, and it is not one.
-              - when: {rulings.label_of: Country}
+                  A reader expecting a cross product expects {country_code.distinct} squared. Getting
+                  {country_code.distinct} reads as a data bug, and it is not one.
+              - when: {rulings.label_of: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY c.Country
-                result: "{Country.distinct} rows"
-                disclose: one axis — CountryFull names Country rather than crossing it
+                plan: GROUP BY c.country_code
+                result: "{country_code.distinct} rows"
+                disclose: one axis — continent names country_code rather than crossing it
           - ask: customers in Germany
             cases:
-              - when: {rulings.label_of: Country}
+              - when: {rulings.label_of: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: WHERE c.Country = 'DE'
+                plan: WHERE c.country_code = 'DE'
                 note: The label resolves to the canonical value; the predicate lands on the code.
               - when: {}
                 outcome: COMMIT
-                plan: WHERE c.CountryFull = 'Germany'
+                plan: WHERE c.continent = 'Germany'
                 note: >-
                   Works — on this column. The same question phrased 'in DE' lands on a different
                   column with nothing relating the two.
 
-      - column: State
+      - column: state
         offers: [axis]
         headline: A code that is only unique inside its parent
         reads: >-
-          {State.distinct} distinct codes over {rows} rows — bigger than Country, smaller than City.
+          {state.distinct} distinct codes over {rows} rows — bigger than country_code, smaller than City.
           Cardinality alone cannot tell this from a hierarchy.
         measured:
-          - claim: "40 of {State.distinct} state codes are carried by more than one country; 0 collide within a country"
-            source: column_rulings.md §3, measured over dim_contoso_customer
+          - claim: "40 of {state.distinct} state codes are carried by more than one country; 0 collide within a country"
+            source: column_rulings.md §3, measured over dim_customer
           - claim: "'CO' is Corse (FR, 37), Como (IT, 64) and Colorado (US, 709)"
             source: column_rulings.md §3
         toggles:
@@ -732,31 +732,31 @@ bench:
           # enforced guard REFUSES (composite_key_guard -> POLICY_DENIED) rather than adding the
           # scope column or asking which parent was meant — the designed behaviour they describe.
           - key: rulings.scoped_by
-            values: [null, Country]
+            values: [null, country_code]
         questions:
           - ask: customers by state
             cases:
               - when: {rulings.scoped_by: null}
                 outcome: COMMIT
-                plan: GROUP BY c.State
-                result: "{State.distinct} rows"
+                plan: GROUP BY c.state
+                result: "{state.distinct} rows"
                 note: >-
                   One row labelled CO totalling 810 customers, merging Corse, Como and Colorado. The
                   query succeeds, the row count is plausible, the number is meaningless.
-              - when: {rulings.scoped_by: Country}
+              - when: {rulings.scoped_by: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY c.Country, c.State
+                plan: GROUP BY c.country_code, c.state
                 result: 603 rows
-                disclose: Country added — State is scoped by it
+                disclose: country_code added — state is scoped by it
           - ask: customers in CO
             cases:
               - when: {rulings.scoped_by: null}
                 outcome: COMMIT
-                plan: WHERE c.State = 'CO'
+                plan: WHERE c.state = 'CO'
                 result: 810 customers
                 note: French, Italian and American customers in one number nobody asked for.
-              - when: {rulings.scoped_by: Country}
+              - when: {rulings.scoped_by: country_code}
                 mode: designed
                 outcome: ASK
                 result: >-
@@ -765,22 +765,22 @@ bench:
                 note: The scope is missing, so the engine asks instead of picking one.
           - ask: customers in Colorado
             cases:
-              - when: {rulings.scoped_by: Country}
+              - when: {rulings.scoped_by: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: WHERE c.Country = 'US' AND c.State = 'CO'
+                plan: WHERE c.country_code = 'US' AND c.state = 'CO'
                 result: 709
                 note: The scope is inferred from the label. Asking in words the ladder can resolve needs no clarification.
               - when: {}
                 outcome: COMMIT
-                plan: WHERE c.StateFull = 'Colorado'
+                plan: WHERE c.state = 'Colorado'
                 result: 709
                 note: Right answer, different column, and nothing says the two columns are one axis.
 
-      - column: Gender
+      - column: gender
         offers: [axis]
         headline: A closed set whose members ARE the kind
-        reads: "{Gender.distinct} distinct, {Gender.nulls} nulls."
+        reads: "{gender.distinct} distinct, {gender.nulls} nulls."
         toggles:
           - key: domain.closure
             values: [open, closed]
@@ -806,7 +806,7 @@ bench:
               - when: {domain.closure: closed, domain.complete_for: world}
                 mode: designed
                 outcome: REFUSE
-                result: "'Q' is not a member of Gender. The members are the kind: female, male."
+                result: "'Q' is not a member of gender. The members are the kind: female, male."
                 note: Answered from the register alone — no probe, no warehouse.
               - when: {domain.closure: closed, domain.complete_for: data, domain.warranty: null}
                 mode: designed
@@ -824,14 +824,14 @@ bench:
             cases:
               - when: {}
                 outcome: COMMIT
-                plan: GROUP BY c.Gender
-                result: "{Gender.distinct} rows"
+                plan: GROUP BY c.gender
+                result: "{gender.distinct} rows"
                 note: Legal under every configuration. Closure decides what happens to a word that MISSES, not whether the axis is allowed.
 
-      - column: Country
+      - column: country_code
         offers: [axis]
         headline: A closed set that is complete for the DELIVERY, not the world
-        reads: "{Country.distinct} distinct, {Country.nulls} nulls — the eight countries delivered."
+        reads: "{country_code.distinct} distinct, {country_code.nulls} nulls — the eight countries delivered."
         toggles:
           - key: domain.closure
             values: [open, closed]
@@ -840,14 +840,14 @@ bench:
           - key: resolution.display
             values: [null, label]
           - key: placement.fact_join
-            values: [null, Country]
+            values: [null, country_code]
         questions:
           - ask: sales in Japan
             cases:
               - when: {domain.closure: closed, domain.complete_for: world}
                 mode: designed
                 outcome: REFUSE
-                result: "'Japan' is not a member of Country."
+                result: "'Japan' is not a member of country_code."
                 note: >-
                   WRONG, and instructively so. Japan is a country; it is not in this delivery. Declaring
                   `world` here refuses a real word and tells the reader their question was invalid.
@@ -865,35 +865,35 @@ bench:
                   have settled without either.
           - ask: sales by country
             cases:
-              - when: {resolution.display: label, placement.fact_join: Country}
+              - when: {resolution.display: label, placement.fact_join: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY f.Country
-                result: "{Country.distinct} rows, shown as Germany / France / …"
+                plan: GROUP BY f.country_code
+                result: "{country_code.distinct} rows, shown as Germany / France / …"
                 disclose: filtered on the fact — no customer join walked
                 note: "Both keys at once: the label the reader asked in, and the join the plan did not need."
-              - when: {placement.fact_join: Country}
+              - when: {placement.fact_join: country_code}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY f.Country
-                result: "{Country.distinct} rows, shown as DE / FR / …"
+                plan: GROUP BY f.country_code
+                result: "{country_code.distinct} rows, shown as DE / FR / …"
                 note: The fact carries the identity, so the dimension is never joined. Same numbers, one less join.
               - when: {resolution.display: label}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY c.Country
-                result: "{Country.distinct} rows, shown as Germany / France / …"
+                plan: GROUP BY c.country_code
+                result: "{country_code.distinct} rows, shown as Germany / France / …"
                 note: A person asked for Germany and is shown Germany, not DE.
               - when: {}
                 outcome: COMMIT
-                plan: JOIN dim_contoso_customer c USING (CustomerKey) GROUP BY c.Country
-                result: "{Country.distinct} rows, shown as DE / FR / …"
+                plan: JOIN dim_customer c USING (customer_key) GROUP BY c.country_code
+                result: "{country_code.distinct} rows, shown as DE / FR / …"
                 note: Correct, joined, and printed in codes.
 
-      - column: age_band_5y
+      - column: birth_date
         offers: [axis]
         headline: A derived column that must announce itself
-        reads: "{age_band_5y.distinct} distinct — fifteen bands a transform made."
+        reads: "{birth_date.distinct} distinct — fifteen bands a transform made."
         toggles:
           - key: domain.warranty
             values: [null, derived, monitored]
@@ -904,16 +904,16 @@ bench:
             cases:
               - when: {disclose: null}
                 outcome: COMMIT
-                plan: GROUP BY c.age_band_5y
-                result: "{age_band_5y.distinct} rows"
+                plan: GROUP BY c.birth_date
+                result: "{birth_date.distinct} rows"
                 note: >-
                   A reader sees a band labelled 40 and does not learn it is a five-year bucket fixed
                   at a date. Nothing is wrong and nothing is stated.
               - when: {}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY c.age_band_5y
-                result: "{age_band_5y.distinct} rows"
+                plan: GROUP BY c.birth_date
+                result: "{birth_date.distinct} rows"
                 disclose: banded to 5 years, as of 2025-12-31
                 note: >-
                   One line, quoted into every answer that touches the column. The only free-text key
@@ -934,11 +934,11 @@ bench:
                 outcome: COMMIT
                 result: Unanswerable from declarations. The closure is unstated, so nothing promises anything.
 
-      - column: StartDT
+      - column: valid_from
         offers: []
         headline: A perfect-looking date axis that means nothing to the business
         reads: >-
-          {StartDT.distinct} distinct dates from {StartDT.min} to {StartDT.max}. Shaped exactly like
+          {valid_from.distinct} distinct dates from {valid_from.min} to {valid_from.max}. Shaped exactly like
           a date dimension. It is when the ROW was written.
         toggles:
           # RE-ADDRESSED 2026-10-07 from the retired scalar `role: dimension|housekeeping`. The two
@@ -955,9 +955,9 @@ bench:
                 outcome: BLOCK
                 reason_code: POLICY_DENIED
                 result: >-
-                  Customer.StartDT is pipeline bookkeeping, not business vocabulary — an SCD-2
-                  validity window. Customer can be grouped by: Continent, Country, Gender, State,
-                  age_band_5y.
+                  Customer.valid_from is pipeline bookkeeping, not business vocabulary — an SCD-2
+                  validity window. Customer can be grouped by: Continent, country_code, gender, state,
+                  birth_date.
                 note: >-
                   THE ONE GUARDRAIL IN THIS WHOLE BLOCK THAT FIRES TODAY, and it fires two
                   projections away from the declaration. Re-measured 2026-10-07: `roles: {}` makes
@@ -970,17 +970,17 @@ bench:
                   words are branched on, `attribute` as the explicitly retired one.
               - when: {roles.axis: mac.concept.axis.time}
                 outcome: COMMIT
-                plan: GROUP BY c.StartDT
-                result: "{StartDT.distinct} rows"
+                plan: GROUP BY c.valid_from
+                result: "{valid_from.distinct} rows"
                 note: >-
                   Sales grouped by when a customer record was loaded. Valid SQL, a plausible row
                   count, and a meaningless question answered as though it were a good one.
 
-      - column: CustomerKey
+      - column: customer_key
         offers: [identity]
         headline: The column COUNT(DISTINCT) counts
         reads: >-
-          {CustomerKey.distinct} distinct over {rows} rows — distinct EQUALS the row count, which is
+          {customer_key.distinct} distinct over {rows} rows — distinct EQUALS the row count, which is
           what makes it the identity rather than a very selective dimension.
         toggles:
           # RE-ADDRESSED 2026-10-07 from the flat `identity:` key, and `part` is the retired
@@ -995,9 +995,9 @@ bench:
             cases:
               - when: {roles.identity: canonical}
                 outcome: COMMIT
-                plan: SELECT count(DISTINCT c.CustomerKey)
-                result: "{CustomerKey.distinct}"
-                disclose: counted distinct CustomerKey
+                plan: SELECT count(DISTINCT c.customer_key)
+                result: "{customer_key.distinct}"
+                disclose: counted distinct customer_key
                 note: >-
                   ENFORCED TODAY. `roles: {identity: canonical}` is projected into the identity the
                   count route already reads — `roles.identity`'s reader above names 22 runtime read
@@ -1006,11 +1006,11 @@ bench:
               - when: {roles.identity: composite}
                 outcome: REFUSE
                 result: >-
-                  CustomerKey is one column of a composite identity and identifies nothing alone.
+                  customer_key is one column of a composite identity and identifies nothing alone.
                   Counting it would return a set where a row was expected.
               - when: {roles.identity: reference}
                 outcome: REFUSE
-                result: "Customer declares no canonical identity — CustomerKey points at another concept."
+                result: "Customer declares no canonical identity — customer_key points at another concept."
                 note: >-
                   The row names a row in ANOTHER concept, so it is a join target and never part of
                   this concept's grain. It is not what an unstated identity falls back to — that is
@@ -1038,99 +1038,99 @@ bench:
                   a toggle can only set a key, never unsay the map that carries it.
 
   - concept: Product
-    relation: dim_contoso_product
+    relation: dim_product
     columns:
 
-      - column: SubCategoryName
+      - column: sub_category_name
         offers: [axis]
         headline: A level, not a collision — and telling them apart is the expensive part
         reads: >-
-          {SubCategoryName.distinct} distinct, rolling up into CategoryName's
-          {CategoryName.distinct}.
+          {sub_category_name.distinct} distinct, rolling up into category_name's
+          {category_name.distinct}.
         measured:
-          - claim: "{SubCategoryName.distinct} distinct pairs over {SubCategoryName.distinct} subcategories — every subcategory has exactly ONE parent"
-            source: column_rulings.md §2, measured over dim_contoso_product
+          - claim: "{sub_category_name.distinct} distinct pairs over {sub_category_name.distinct} subcategories — every subcategory has exactly ONE parent"
+            source: column_rulings.md §2, measured over dim_product
         toggles:
           - key: rulings.finer_than
-            values: [null, CategoryName]
+            values: [null, category_name]
         questions:
           - ask: sales by subcategory
             cases:
-              - when: {rulings.finer_than: CategoryName}
+              - when: {rulings.finer_than: category_name}
                 mode: designed
                 outcome: COMMIT
-                plan: GROUP BY p.SubCategoryName
-                result: "{SubCategoryName.distinct} rows"
-                disclose: "the finer of two levels; rolls up into {CategoryName.distinct} categories"
+                plan: GROUP BY p.sub_category_name
+                result: "{sub_category_name.distinct} rows"
+                disclose: "the finer of two levels; rolls up into {category_name.distinct} categories"
               - when: {}
                 outcome: COMMIT
-                plan: GROUP BY p.SubCategoryName
-                result: "{SubCategoryName.distinct} rows"
+                plan: GROUP BY p.sub_category_name
+                result: "{sub_category_name.distinct} rows"
                 note: >-
-                  Correct, and a reader cannot tell whether these {SubCategoryName.distinct} sum to
-                  the {CategoryName.distinct} they would get by category.
+                  Correct, and a reader cannot tell whether these {sub_category_name.distinct} sum to
+                  the {category_name.distinct} they would get by category.
           - ask: sales by product line
             cases:
-              - when: {rulings.finer_than: CategoryName}
+              - when: {rulings.finer_than: category_name}
                 mode: designed
                 outcome: ASK
-                result: "Which level — category ({CategoryName.distinct}) or subcategory ({SubCategoryName.distinct})?"
+                result: "Which level — category ({category_name.distinct}) or subcategory ({sub_category_name.distinct})?"
                 note: The ruling is what lets the engine know there are two levels to offer.
               - when: {}
                 outcome: ASK
                 result: "No axis named 'product line'."
                 note: An ASK either way — but one of them names the choice and the other names the failure.
 
-      - column: Manufacturer
+      - column: manufacturer
         offers: [axis]
         headline: The 1:1 that only a person can rule on
-        reads: "{Manufacturer.distinct} distinct, beside Brand's {Brand.distinct}."
+        reads: "{manufacturer.distinct} distinct, beside brand's {brand.distinct}."
         measured:
-          - claim: "{Brand.distinct} distinct Brand, {Manufacturer.distinct} distinct Manufacturer, {Manufacturer.distinct} distinct pairs"
-            source: column_rulings.md §1, measured over dim_contoso_product
+          - claim: "{brand.distinct} distinct brand, {manufacturer.distinct} distinct manufacturer, {manufacturer.distinct} distinct pairs"
+            source: column_rulings.md §1, measured over dim_product
         toggles:
           - key: rulings.label_of
-            values: [null, Brand]
+            values: [null, brand]
           - key: rulings.register
             values: [common, legal, long, short, code]
         questions:
           - ask: revenue by manufacturer
             cases:
-              - when: {rulings.label_of: Brand, rulings.register: legal}
+              - when: {rulings.label_of: brand, rulings.register: legal}
                 mode: designed
                 outcome: COMMIT
-                plan: SELECT p.Brand AS "Manufacturer", SUM(l.NetPrice) GROUP BY p.Brand
-                result: "{Brand.distinct} rows — Contoso, Ltd · Fabrikam, Inc. · …"
-                disclose: grouped by Brand, shown as Manufacturer (legal register)
+                plan: SELECT p.Brand AS "manufacturer", SUM(l.net_price) GROUP BY p.Brand
+                result: "{brand.distinct} rows — Contoso, Ltd · Fabrikam, Inc. · …"
+                disclose: grouped by brand, shown as manufacturer (legal register)
                 note: >-
                   A question asked in these words is answered in them, never refused. 'Contoso' is what
                   the world calls it; 'Contoso, Ltd' is what the register calls it.
-              - when: {rulings.label_of: Brand}
+              - when: {rulings.label_of: brand}
                 mode: designed
                 outcome: COMMIT
                 plan: GROUP BY p.Brand
-                result: "{Brand.distinct} rows"
-                disclose: grouped by Brand, shown as Manufacturer (common register)
+                result: "{brand.distinct} rows"
+                disclose: grouped by brand, shown as manufacturer (common register)
                 note: >-
                   The register is wrong here — these ARE the legal names. Nothing breaks; the answer
                   just claims the wrong thing about which name it showed.
               - when: {}
                 outcome: COMMIT
-                plan: GROUP BY p.Manufacturer
-                result: "{Manufacturer.distinct} rows"
+                plan: GROUP BY p.manufacturer
+                result: "{manufacturer.distinct} rows"
                 note: >-
                   Identical numbers to 'by brand', different labels, nothing relating them. And
-                  GROUP BY both gives {Brand.distinct} where a reader expects
-                  {Brand.distinct} squared.
+                  GROUP BY both gives {brand.distinct} where a reader expects
+                  {brand.distinct} squared.
 
   - concept: OrderLine
-    relation: orderrows
+    relation: v_contoso5_sales_line
     columns:
 
-      - column: NetPrice
+      - column: net_price
         offers: [aggregate]
         headline: One column, five declarable types, ten universal folds
-        reads: "{NetPrice.distinct} distinct values over {rows} rows — a numeric payload, never an axis."
+        reads: "{net_price.distinct} distinct values over {rows} rows — a numeric payload, never an axis."
         derives: measure_matrix
         derives_note: >-
           This panel computes nothing of its own. The legal fold per axis comes from
@@ -1170,13 +1170,13 @@ bench:
               - {mac.concept.axis.time: mac.concept.aggregation_effect.average}
               - {mac.concept.axis.time: mac.concept.aggregation_effect.none}
         questions:
-          - ask: total NetPrice for 2024
+          - ask: total net_price for 2024
             axis: time
             fold: SUM
-          - ask: NetPrice by category
+          - ask: net_price by category
             axis: categorical
             fold: SUM
-          - ask: average NetPrice per line
+          - ask: average net_price per line
             axis: categorical
             fold: AVG
 
@@ -1309,8 +1309,8 @@ permissions:
       extremum: {v: 'no', why: "the retired table granted `key` nothing but identity (models._ROLE_OFFERS); a MIN over a surrogate orders the keyspace, not the world"}
     axis:
       resolve: {v: 'yes', why: "via the ladder — exact, normalized, prefix, fuzzy, then ask"}
-      filter:  {v: 'yes', why: "WHERE Gender = 'female' is legitimate"}
-      group:   {v: 'yes', why: "GROUP BY Gender is legitimate — this IS the axis, and the term (time | categorical) is also the fold law's lookup key, which is why the role carries a term and not a boolean"}
+      filter:  {v: 'yes', why: "WHERE gender = 'female' is legitimate"}
+      group:   {v: 'yes', why: "GROUP BY gender is legitimate — this IS the axis, and the term (time | categorical) is also the fold law's lookup key, which is why the role carries a term and not a boolean"}
       fold:    {v: 'no', why: "an axis is what a fold crosses, not what it folds"}
       extremum: {v: 'no', why: "a date axis admits MIN/MAX while remaining non-aggregatable, and it says so in `extremum` — _ROLE_OFFERS granted every dimension one implicitly, so no column could decline it"}
     aggregate:
@@ -1352,7 +1352,7 @@ permissions:
     scoped_by:
       resolve: {v: not_alone, why: "'CO' is Corse, Como and Colorado — the word does not identify"}
       filter:  {v: not_alone, why: "the scope column must travel with the code"}
-      group:   {v: not_alone, why: "GROUP BY State alone merges three unrelated regions into one plausible row"}
+      group:   {v: not_alone, why: "GROUP BY state alone merges three unrelated regions into one plausible row"}
     never_axis:
       resolve: {v: 'yes', why: "a postcode is a legitimate thing to ask about"}
       filter:  {v: 'yes', why: "never_axis forbids the AXIS, not the filter"}

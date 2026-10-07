@@ -625,7 +625,7 @@ const DATA = {
    "status": "designed",
    "reader": "none",
    "effect": "The single bit that separates \"complete for this delivery\" from \"complete for the world\". `data`: the members are the ones DELIVERED, so 'sales in Japan' answers zero, disclosed. `world`: the members ARE the kind, so a third gender is not a member and refuses.",
-   "frontier_note": "Without it, 'sales in Asia' and 'gender Q' get the same answer, and only one of them deserves it. Country and Gender have the SAME closure and opposite answers."
+   "frontier_note": "Without it, 'sales in Asia' and 'gender Q' get the same answer, and only one of them deserves it. country_code and gender have the SAME closure and opposite answers."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -642,7 +642,7 @@ const DATA = {
    "status": "designed",
    "reader": "none",
    "effect": "`derived`: a rule makes the members, so a new load CANNOT add one. `monitored`: they were observed, so a scheduled check reconciles them. There is no third value — a closed set nobody watches is a refusal backed by a stale sample.",
-   "frontier_note": "age_band_5y is `derived` (a CASE expression in the transform); Country is `monitored` (observed from the served plane). Same closure, different warranty, different watchdog."
+   "frontier_note": "birth_date is `derived` (a CASE expression in the transform); country_code is `monitored` (observed from the served plane). Same closure, different warranty, different watchdog."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -816,7 +816,7 @@ const DATA = {
    ],
    "status": "enforced",
    "reader": "planner/contract_guards.py:361 — synthesises the composite_key_guard binding (code_column + scope_columns)",
-   "effect": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY State merges three unrelated regions into one plausible-looking row.",
+   "effect": "This column's values are unique only WITHIN the named one, so it may not be grouped or filtered alone. 'CO' is Corse, Como and Colorado; GROUP BY state merges three unrelated regions into one plausible-looking row.",
    "frontier_note": "Declared in TWO homes by the manual: column_specification.md's key table puts `scoped_by` under `placement`, column_rulings.md documents it as §3 of `rulings`. One key, two spellings, which is the shape of every drift this standard exists to end."
   },
   {
@@ -853,7 +853,7 @@ const DATA = {
    ],
    "status": "designed",
    "reader": "none",
-   "effect": "The '--' that is not a country. Declared per column and per source: it appears on the store side's CountryCode and not on the customer side's Country, which a flat block could not say."
+   "effect": "The '--' that is not a country. Declared per column and per source: it appears on the store side's country_code and not on the customer side's country_code, which a flat block could not say."
   },
   {
    "required": "no",
@@ -946,7 +946,7 @@ const DATA = {
    ],
    "status": "enforced",
    "reader": "planner/grounded_columns._ruled_never_axis -> _axis_denied — a Refusal citing the evidence",
-   "effect": "A legitimate dimension that must not be an axis, for a reason outside the data. The refusal cites the measurement: GROUP BY ZipCode plans, executes, and returns 29 193 rows that each describe one person.",
+   "effect": "A legitimate dimension that must not be an axis, for a reason outside the data. The refusal cites the measurement: GROUP BY city plans, executes, and returns 29 193 rows that each describe one person.",
    "frontier_note": "column_rulings.md marks this key IMPLEMENTED, and a refusal does fire — but on `field_roles[col] == \"attribute\"`, the role spelling `housekeeping` replaced, not on this ruling. `rulings.never_axis` has 0 readers in platform src and is a load error if authored. The ruling is enforced under a name its own vocabulary no longer defines."
   },
   {
@@ -982,7 +982,7 @@ const DATA = {
    "status": "designed",
    "reader": "none",
    "effect": "The ONLY free-text key in the block, and it earns its place because it reaches the reader of an ANSWER, which prose in a YAML file never does.",
-   "frontier_note": "There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's 1 044-character note stated a measured privacy ruling in a field nothing reads, while the runtime planned GROUP BY ZipCode. A block designed to end that must not ship a slot that restarts it."
+   "frontier_note": "There is deliberately no `note`. Measured on contoso: `grounding.note` carried ruling language — never, must not, display-only, because — in 12 of 21 concepts. customer.yaml's 1 044-character note stated a measured privacy ruling in a field nothing reads, while the runtime planned GROUP BY city. A block designed to end that must not ship a slot that restarts it."
   },
   {
    "required": "never — not a column flag; a load error",
@@ -1021,25 +1021,25 @@ const DATA = {
  "bench": [
   {
    "concept": "Customer",
-   "relation": "dim_contoso_customer",
+   "relation": "dim_customer",
    "profile": {
-    "relation": "contoso_served.dim_contoso_customer",
+    "relation": "contoso_served.dim_customer",
     "rows": 104990,
-    "measured_at": "2026-09-19T14:11:05+02:00",
-    "engine": "contoso@duckdb-local",
-    "method": "mac_profile.py/5"
+    "measured_at": "2026-09-30T08:28:02+02:00",
+    "engine": "None@None",
+    "method": "mac_profile.py/6"
    },
    "columns": [
     {
-     "column": "ZipCode",
+     "column": "city",
      "offers": [
       "axis"
      ],
      "headline": "A legitimate dimension that names individuals",
-     "reads": "40 639 distinct values over 104 990 rows. Nothing in that ratio is illegal, and nothing in it is safe.",
+     "reads": "34 581 distinct values over 104 990 rows. Nothing in that ratio is illegal, and nothing in it is safe.",
      "measured": [
       {
-       "claim": "29 193 of 40 639 postcodes are held by exactly one customer",
+       "claim": "29 193 of 34 581 postcodes are held by exactly one customer",
        "source": "DQ-CUSTOMER-02"
       }
      ],
@@ -1070,8 +1070,8 @@ const DATA = {
           "rulings.never_axis": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.ZipCode",
-         "result": "40 639 rows",
+         "plan": "GROUP BY c.city",
+         "result": "34 581 rows",
          "note": "Plans, executes, returns. 29 193 of those rows describe one person each. The ontology's own measurement forbids this and nothing connected the two."
         },
         {
@@ -1098,7 +1098,7 @@ const DATA = {
          "mode": "designed",
          "outcome": "BLOCK",
          "reason_code": "POLICY_DENIED",
-         "result": "Customer.ZipCode is declared never_axis: privacy — DQ-CUSTOMER-02 measured that 29 193 of 40 639 postcodes are held by exactly one customer, so grouping on it names individuals. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.",
+         "result": "Customer.city is declared never_axis: privacy — DQ-CUSTOMER-02 measured that 29 193 of 34 581 postcodes are held by exactly one customer, so grouping on it names individuals. Customer can be grouped by: Continent, country_code, gender, state, birth_date.",
          "note": "The refusal cites the measurement. That is the whole difference."
         },
         {
@@ -1127,7 +1127,7 @@ const DATA = {
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "WHERE c.ZipCode = '98052'",
+         "plan": "WHERE c.city = '98052'",
          "note": "never_axis forbids the AXIS, not the filter. A postcode is a legitimate thing to ask about; it is grouping BY one that hands out a list of people."
         }
        ]
@@ -1135,16 +1135,16 @@ const DATA = {
      ]
     },
     {
-     "column": "CountryFull",
+     "column": "continent",
      "offers": [
       "axis"
      ],
      "headline": "Two names for one thing — or two things",
-     "reads": "8 distinct, beside Country's 8. Equal counts get you to the door and no further.",
+     "reads": "3 distinct, beside country_code's 8. Equal counts get you to the door and no further.",
      "measured": [
       {
-       "claim": "8 distinct Country, 8 distinct CountryFull, and the same number of distinct pairs — 1:1",
-       "source": "column_rulings.md §1, measured over dim_contoso_customer"
+       "claim": "8 distinct country_code, 3 distinct continent, and the same number of distinct pairs — 1:1",
+       "source": "column_rulings.md §1, measured over dim_customer"
       }
      ],
      "toggles": [
@@ -1152,7 +1152,7 @@ const DATA = {
        "key": "rulings.label_of",
        "values": [
         null,
-        "Country"
+        "country_code"
        ]
       },
       {
@@ -1175,19 +1175,19 @@ const DATA = {
           "rulings.label_of": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.CountryFull",
-         "result": "8 rows",
+         "plan": "GROUP BY c.continent",
+         "result": "3 rows",
          "note": "The same cut as 'by country', under different labels, with nothing saying they are the same cut. Two answers to one question."
         },
         {
          "when": {
-          "rulings.label_of": "Country"
+          "rulings.label_of": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Country",
-         "result": "8 rows, labelled from CountryFull",
-         "disclose": "grouped by Country, shown as CountryFull",
+         "plan": "GROUP BY c.country_code",
+         "result": "8 rows, labelled from continent",
+         "disclose": "grouped by country_code, shown as continent",
          "note": "Grouped on the canonical column, displayed in the words the question used. The register says WHICH name that is."
         }
        ]
@@ -1200,19 +1200,19 @@ const DATA = {
           "rulings.label_of": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Country, c.CountryFull",
+         "plan": "GROUP BY c.country_code, c.continent",
          "result": "8 rows",
          "note": "A reader expecting a cross product expects 8 squared. Getting 8 reads as a data bug, and it is not one."
         },
         {
          "when": {
-          "rulings.label_of": "Country"
+          "rulings.label_of": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Country",
+         "plan": "GROUP BY c.country_code",
          "result": "8 rows",
-         "disclose": "one axis — CountryFull names Country rather than crossing it"
+         "disclose": "one axis — continent names country_code rather than crossing it"
         }
        ]
       },
@@ -1221,17 +1221,17 @@ const DATA = {
        "cases": [
         {
          "when": {
-          "rulings.label_of": "Country"
+          "rulings.label_of": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "WHERE c.Country = 'DE'",
+         "plan": "WHERE c.country_code = 'DE'",
          "note": "The label resolves to the canonical value; the predicate lands on the code."
         },
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "WHERE c.CountryFull = 'Germany'",
+         "plan": "WHERE c.continent = 'Germany'",
          "note": "Works — on this column. The same question phrased 'in DE' lands on a different column with nothing relating the two."
         }
        ]
@@ -1239,16 +1239,16 @@ const DATA = {
      ]
     },
     {
-     "column": "State",
+     "column": "state",
      "offers": [
       "axis"
      ],
      "headline": "A code that is only unique inside its parent",
-     "reads": "563 distinct codes over 104 990 rows — bigger than Country, smaller than City. Cardinality alone cannot tell this from a hierarchy.",
+     "reads": "565 distinct codes over 104 990 rows — bigger than country_code, smaller than City. Cardinality alone cannot tell this from a hierarchy.",
      "measured": [
       {
-       "claim": "40 of 563 state codes are carried by more than one country; 0 collide within a country",
-       "source": "column_rulings.md §3, measured over dim_contoso_customer"
+       "claim": "40 of 565 state codes are carried by more than one country; 0 collide within a country",
+       "source": "column_rulings.md §3, measured over dim_customer"
       },
       {
        "claim": "'CO' is Corse (FR, 37), Como (IT, 64) and Colorado (US, 709)",
@@ -1260,7 +1260,7 @@ const DATA = {
        "key": "rulings.scoped_by",
        "values": [
         null,
-        "Country"
+        "country_code"
        ]
       }
      ],
@@ -1273,19 +1273,19 @@ const DATA = {
           "rulings.scoped_by": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.State",
-         "result": "563 rows",
+         "plan": "GROUP BY c.state",
+         "result": "565 rows",
          "note": "One row labelled CO totalling 810 customers, merging Corse, Como and Colorado. The query succeeds, the row count is plausible, the number is meaningless."
         },
         {
          "when": {
-          "rulings.scoped_by": "Country"
+          "rulings.scoped_by": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Country, c.State",
+         "plan": "GROUP BY c.country_code, c.state",
          "result": "603 rows",
-         "disclose": "Country added — State is scoped by it"
+         "disclose": "country_code added — state is scoped by it"
         }
        ]
       },
@@ -1297,13 +1297,13 @@ const DATA = {
           "rulings.scoped_by": null
          },
          "outcome": "COMMIT",
-         "plan": "WHERE c.State = 'CO'",
+         "plan": "WHERE c.state = 'CO'",
          "result": "810 customers",
          "note": "French, Italian and American customers in one number nobody asked for."
         },
         {
          "when": {
-          "rulings.scoped_by": "Country"
+          "rulings.scoped_by": "country_code"
          },
          "mode": "designed",
          "outcome": "ASK",
@@ -1317,18 +1317,18 @@ const DATA = {
        "cases": [
         {
          "when": {
-          "rulings.scoped_by": "Country"
+          "rulings.scoped_by": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "WHERE c.Country = 'US' AND c.State = 'CO'",
+         "plan": "WHERE c.country_code = 'US' AND c.state = 'CO'",
          "result": 709,
          "note": "The scope is inferred from the label. Asking in words the ladder can resolve needs no clarification."
         },
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "WHERE c.StateFull = 'Colorado'",
+         "plan": "WHERE c.state = 'Colorado'",
          "result": 709,
          "note": "Right answer, different column, and nothing says the two columns are one axis."
         }
@@ -1337,7 +1337,7 @@ const DATA = {
      ]
     },
     {
-     "column": "Gender",
+     "column": "gender",
      "offers": [
       "axis"
      ],
@@ -1396,7 +1396,7 @@ const DATA = {
          },
          "mode": "designed",
          "outcome": "REFUSE",
-         "result": "'Q' is not a member of Gender. The members are the kind: female, male.",
+         "result": "'Q' is not a member of gender. The members are the kind: female, male.",
          "note": "Answered from the register alone — no probe, no warehouse."
         },
         {
@@ -1428,7 +1428,7 @@ const DATA = {
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Gender",
+         "plan": "GROUP BY c.gender",
          "result": "2 rows",
          "note": "Legal under every configuration. Closure decides what happens to a word that MISSES, not whether the axis is allowed."
         }
@@ -1437,7 +1437,7 @@ const DATA = {
      ]
     },
     {
-     "column": "Country",
+     "column": "country_code",
      "offers": [
       "axis"
      ],
@@ -1469,7 +1469,7 @@ const DATA = {
        "key": "placement.fact_join",
        "values": [
         null,
-        "Country"
+        "country_code"
        ]
       }
      ],
@@ -1484,7 +1484,7 @@ const DATA = {
          },
          "mode": "designed",
          "outcome": "REFUSE",
-         "result": "'Japan' is not a member of Country.",
+         "result": "'Japan' is not a member of country_code.",
          "note": "WRONG, and instructively so. Japan is a country; it is not in this delivery. Declaring `world` here refuses a real word and tells the reader their question was invalid."
         },
         {
@@ -1514,22 +1514,22 @@ const DATA = {
         {
          "when": {
           "resolution.display": "label",
-          "placement.fact_join": "Country"
+          "placement.fact_join": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY f.Country",
+         "plan": "GROUP BY f.country_code",
          "result": "8 rows, shown as Germany / France / …",
          "disclose": "filtered on the fact — no customer join walked",
          "note": "Both keys at once: the label the reader asked in, and the join the plan did not need."
         },
         {
          "when": {
-          "placement.fact_join": "Country"
+          "placement.fact_join": "country_code"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY f.Country",
+         "plan": "GROUP BY f.country_code",
          "result": "8 rows, shown as DE / FR / …",
          "note": "The fact carries the identity, so the dimension is never joined. Same numbers, one less join."
         },
@@ -1539,14 +1539,14 @@ const DATA = {
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.Country",
+         "plan": "GROUP BY c.country_code",
          "result": "8 rows, shown as Germany / France / …",
          "note": "A person asked for Germany and is shown Germany, not DE."
         },
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "JOIN dim_contoso_customer c USING (CustomerKey) GROUP BY c.Country",
+         "plan": "JOIN dim_customer c USING (customer_key) GROUP BY c.country_code",
          "result": "8 rows, shown as DE / FR / …",
          "note": "Correct, joined, and printed in codes."
         }
@@ -1555,12 +1555,12 @@ const DATA = {
      ]
     },
     {
-     "column": "age_band_5y",
+     "column": "birth_date",
      "offers": [
       "axis"
      ],
      "headline": "A derived column that must announce itself",
-     "reads": "15 distinct — fifteen bands a transform made.",
+     "reads": "24 147 distinct — fifteen bands a transform made.",
      "toggles": [
       {
        "key": "domain.warranty",
@@ -1587,16 +1587,16 @@ const DATA = {
           "disclose": null
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.age_band_5y",
-         "result": "15 rows",
+         "plan": "GROUP BY c.birth_date",
+         "result": "24 147 rows",
          "note": "A reader sees a band labelled 40 and does not learn it is a five-year bucket fixed at a date. Nothing is wrong and nothing is stated."
         },
         {
          "when": {},
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.age_band_5y",
-         "result": "15 rows",
+         "plan": "GROUP BY c.birth_date",
+         "result": "24 147 rows",
          "disclose": "banded to 5 years, as of 2025-12-31",
          "note": "One line, quoted into every answer that touches the column. The only free-text key in the block, and it earns its place by reaching the reader."
         }
@@ -1633,7 +1633,7 @@ const DATA = {
      ]
     },
     {
-     "column": "StartDT",
+     "column": "valid_from",
      "offers": [],
      "headline": "A perfect-looking date axis that means nothing to the business",
      "reads": "11 305 distinct dates from 1980-01-01 to 2010-12-30. Shaped exactly like a date dimension. It is when the ROW was written.",
@@ -1656,7 +1656,7 @@ const DATA = {
          },
          "outcome": "BLOCK",
          "reason_code": "POLICY_DENIED",
-         "result": "Customer.StartDT is pipeline bookkeeping, not business vocabulary — an SCD-2 validity window. Customer can be grouped by: Continent, Country, Gender, State, age_band_5y.",
+         "result": "Customer.valid_from is pipeline bookkeeping, not business vocabulary — an SCD-2 validity window. Customer can be grouped by: Continent, country_code, gender, state, birth_date.",
          "note": "THE ONE GUARDRAIL IN THIS WHOLE BLOCK THAT FIRES TODAY, and it fires two projections away from the declaration. Re-measured 2026-10-07: `roles: {}` makes `ColumnSpec.role` derive `housekeeping` (its last branch — \"a column offered to no question is housekeeping\"), parser.py:634 projects that word into `field_roles`, and `plan._axis_denied` refuses on `field_roles[column] == \"housekeeping\"` — never on the absent `axis` role. `housekeeping` occurs 24 times in mac-platform's packages, so the earlier reading here (\"it fires on the spelling `attribute`; `housekeeping` occurs 0 times in platform src\") is retired with the scalar: BOTH words are branched on, `attribute` as the explicitly retired one."
         },
         {
@@ -1664,7 +1664,7 @@ const DATA = {
           "roles.axis": "mac.concept.axis.time"
          },
          "outcome": "COMMIT",
-         "plan": "GROUP BY c.StartDT",
+         "plan": "GROUP BY c.valid_from",
          "result": "11 305 rows",
          "note": "Sales grouped by when a customer record was loaded. Valid SQL, a plausible row count, and a meaningless question answered as though it were a good one."
         }
@@ -1673,7 +1673,7 @@ const DATA = {
      ]
     },
     {
-     "column": "CustomerKey",
+     "column": "customer_key",
      "offers": [
       "identity"
      ],
@@ -1697,9 +1697,9 @@ const DATA = {
           "roles.identity": "canonical"
          },
          "outcome": "COMMIT",
-         "plan": "SELECT count(DISTINCT c.CustomerKey)",
+         "plan": "SELECT count(DISTINCT c.customer_key)",
          "result": "104 990",
-         "disclose": "counted distinct CustomerKey",
+         "disclose": "counted distinct customer_key",
          "note": "ENFORCED TODAY. `roles: {identity: canonical}` is projected into the identity the count route already reads — `roles.identity`'s reader above names 22 runtime read sites — so the column states it once, as an authoring surface and not a second home, and no internal duplicate can drift from it."
         },
         {
@@ -1707,14 +1707,14 @@ const DATA = {
           "roles.identity": "composite"
          },
          "outcome": "REFUSE",
-         "result": "CustomerKey is one column of a composite identity and identifies nothing alone. Counting it would return a set where a row was expected."
+         "result": "customer_key is one column of a composite identity and identifies nothing alone. Counting it would return a set where a row was expected."
         },
         {
          "when": {
           "roles.identity": "reference"
          },
          "outcome": "REFUSE",
-         "result": "Customer declares no canonical identity — CustomerKey points at another concept.",
+         "result": "Customer declares no canonical identity — customer_key points at another concept.",
          "note": "The row names a row in ANOTHER concept, so it is a join target and never part of this concept's grain. It is not what an unstated identity falls back to — that is the case below, and the two were one answer while the concept-level identity block existed."
         },
         {
@@ -1733,26 +1733,26 @@ const DATA = {
   },
   {
    "concept": "Product",
-   "relation": "dim_contoso_product",
+   "relation": "dim_product",
    "profile": {
-    "relation": "contoso_served.dim_contoso_product",
+    "relation": "contoso_served.dim_product",
     "rows": 2517,
-    "measured_at": "2026-09-18T15:53:14+02:00",
-    "engine": "contoso@duckdb-local",
-    "method": "mac_profile.py/5"
+    "measured_at": "2026-09-30T08:17:49+02:00",
+    "engine": "None@None",
+    "method": "mac_profile.py/6"
    },
    "columns": [
     {
-     "column": "SubCategoryName",
+     "column": "sub_category_name",
      "offers": [
       "axis"
      ],
      "headline": "A level, not a collision — and telling them apart is the expensive part",
-     "reads": "32 distinct, rolling up into CategoryName's 8.",
+     "reads": "32 distinct, rolling up into category_name's 8.",
      "measured": [
       {
        "claim": "32 distinct pairs over 32 subcategories — every subcategory has exactly ONE parent",
-       "source": "column_rulings.md §2, measured over dim_contoso_product"
+       "source": "column_rulings.md §2, measured over dim_product"
       }
      ],
      "toggles": [
@@ -1760,7 +1760,7 @@ const DATA = {
        "key": "rulings.finer_than",
        "values": [
         null,
-        "CategoryName"
+        "category_name"
        ]
       }
      ],
@@ -1770,18 +1770,18 @@ const DATA = {
        "cases": [
         {
          "when": {
-          "rulings.finer_than": "CategoryName"
+          "rulings.finer_than": "category_name"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "GROUP BY p.SubCategoryName",
+         "plan": "GROUP BY p.sub_category_name",
          "result": "32 rows",
          "disclose": "the finer of two levels; rolls up into 8 categories"
         },
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "GROUP BY p.SubCategoryName",
+         "plan": "GROUP BY p.sub_category_name",
          "result": "32 rows",
          "note": "Correct, and a reader cannot tell whether these 32 sum to the 8 they would get by category."
         }
@@ -1792,7 +1792,7 @@ const DATA = {
        "cases": [
         {
          "when": {
-          "rulings.finer_than": "CategoryName"
+          "rulings.finer_than": "category_name"
          },
          "mode": "designed",
          "outcome": "ASK",
@@ -1810,16 +1810,16 @@ const DATA = {
      ]
     },
     {
-     "column": "Manufacturer",
+     "column": "manufacturer",
      "offers": [
       "axis"
      ],
      "headline": "The 1:1 that only a person can rule on",
-     "reads": "11 distinct, beside Brand's 11.",
+     "reads": "11 distinct, beside brand's 11.",
      "measured": [
       {
-       "claim": "11 distinct Brand, 11 distinct Manufacturer, 11 distinct pairs",
-       "source": "column_rulings.md §1, measured over dim_contoso_product"
+       "claim": "11 distinct brand, 11 distinct manufacturer, 11 distinct pairs",
+       "source": "column_rulings.md §1, measured over dim_product"
       }
      ],
      "toggles": [
@@ -1827,7 +1827,7 @@ const DATA = {
        "key": "rulings.label_of",
        "values": [
         null,
-        "Brand"
+        "brand"
        ]
       },
       {
@@ -1847,31 +1847,31 @@ const DATA = {
        "cases": [
         {
          "when": {
-          "rulings.label_of": "Brand",
+          "rulings.label_of": "brand",
           "rulings.register": "legal"
          },
          "mode": "designed",
          "outcome": "COMMIT",
-         "plan": "SELECT p.Brand AS \"Manufacturer\", SUM(l.NetPrice) GROUP BY p.Brand",
+         "plan": "SELECT p.Brand AS \"manufacturer\", SUM(l.net_price) GROUP BY p.Brand",
          "result": "11 rows — Contoso, Ltd · Fabrikam, Inc. · …",
-         "disclose": "grouped by Brand, shown as Manufacturer (legal register)",
+         "disclose": "grouped by brand, shown as manufacturer (legal register)",
          "note": "A question asked in these words is answered in them, never refused. 'Contoso' is what the world calls it; 'Contoso, Ltd' is what the register calls it."
         },
         {
          "when": {
-          "rulings.label_of": "Brand"
+          "rulings.label_of": "brand"
          },
          "mode": "designed",
          "outcome": "COMMIT",
          "plan": "GROUP BY p.Brand",
          "result": "11 rows",
-         "disclose": "grouped by Brand, shown as Manufacturer (common register)",
+         "disclose": "grouped by brand, shown as manufacturer (common register)",
          "note": "The register is wrong here — these ARE the legal names. Nothing breaks; the answer just claims the wrong thing about which name it showed."
         },
         {
          "when": {},
          "outcome": "COMMIT",
-         "plan": "GROUP BY p.Manufacturer",
+         "plan": "GROUP BY p.manufacturer",
          "result": "11 rows",
          "note": "Identical numbers to 'by brand', different labels, nothing relating them. And GROUP BY both gives 11 where a reader expects 11 squared."
         }
@@ -1883,17 +1883,17 @@ const DATA = {
   },
   {
    "concept": "OrderLine",
-   "relation": "orderrows",
+   "relation": "v_contoso5_sales_line",
    "profile": {
-    "relation": "main.orderrows",
+    "relation": "contoso_served.v_contoso5_sales_line",
     "rows": 223974,
-    "measured_at": "2026-09-18T08:02:46+02:00",
-    "engine": "contoso@duckdb-local",
-    "method": "mac_profile.py/5"
+    "measured_at": "2026-09-30T21:44:33+02:00",
+    "engine": "None@None",
+    "method": "mac_profile.py/6"
    },
    "columns": [
     {
-     "column": "NetPrice",
+     "column": "net_price",
      "offers": [
       "aggregate"
      ],
@@ -1948,17 +1948,17 @@ const DATA = {
      ],
      "questions": [
       {
-       "ask": "total NetPrice for 2024",
+       "ask": "total net_price for 2024",
        "axis": "time",
        "fold": "SUM"
       },
       {
-       "ask": "NetPrice by category",
+       "ask": "net_price by category",
        "axis": "categorical",
        "fold": "SUM"
       },
       {
-       "ask": "average NetPrice per line",
+       "ask": "average net_price per line",
        "axis": "categorical",
        "fold": "AVG"
       }
@@ -2860,29 +2860,34 @@ const DATA = {
     "code"
    ]
   },
-  "storage_total": 168,
-  "relations": 14,
-  "bindings": 143,
-  "concepts": 21,
+  "storage_total": 156,
+  "relations": 16,
+  "bindings": 112,
+  "concepts": 17,
   "forms": {
-   "map": 0,
-   "flat": 24
+   "map": 17,
+   "flat": 0
   },
   "slots": {
-   "axis": 0,
-   "aggregate": 0,
-   "period_binding": 0,
-   "extremum": 0,
-   "identity": 0,
-   "rulings": 0
+   "axis": 70,
+   "aggregate": 14,
+   "period_binding": 7,
+   "extremum": 63,
+   "identity": 25,
+   "rulings": 11
   },
   "crosstab": {
-   "primary_key|None": 14,
-   "discriminator|None": 54,
-   "value|None": 43,
-   "composite_key_part|None": 14,
-   "foreign_key|None": 16,
-   "dimension|None": 2
+   "value|axis": 39,
+   "value|extremum": 53,
+   "primary_key|identity": 3,
+   "primary_key|None": 19,
+   "foreign_key|axis": 28,
+   "foreign_key|extremum": 10,
+   "value|None": 2,
+   "value|aggregate": 14,
+   "value|period_binding": 7,
+   "foreign_key|identity": 22,
+   "primary_key|axis": 3
   },
   "suspicious": {
    "foreign_key|axis": "a pointer used as a category — 'that is a pointer, not a category, even though its cardinality looks dimension-sized' (column_roles.md §1). NOT a breach: a reference key that is also a legitimate axis is 18 of contoso5's columns, which is why this reports",
@@ -2891,31 +2896,17 @@ const DATA = {
   },
   "per_origin": {
    "served": {
-    "total": 72,
-    "unbound": 0
+    "total": 60,
+    "unbound": 2
    },
    "landing": {
     "total": 96,
     "unbound": 96
    }
   },
-  "findings": [
-   "R1 currencyexchange.Date declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 currencyexchange.FromCurrency declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 currencyexchange.ToCurrency declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 dim_contoso_store.Channel declares data-plane role 'dimension', not a mac.dataset.column.role term",
-   "R1 orderrows.OrderKey declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 orderrows.RowNumber declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 sales.LineNumber declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 sales.OrderKey declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 v_contoso_fx_rate_day.Date declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 v_contoso_fx_rate_day.FromCurrency declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 v_contoso_fx_rate_day.ToCurrency declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 v_contoso_order_line.OrderKey declares data-plane role 'composite_key_part', not a mac.dataset.column.role term",
-   "R1 v_contoso_order_line.RowNumber declares data-plane role 'composite_key_part', not a mac.dataset.column.role term"
-  ]
+  "findings": []
  },
- "bundle": "mac-ontology-contoso"
+ "bundle": "contoso5"
 };
 
 /* ------------------------------------------------------------------ helpers */
