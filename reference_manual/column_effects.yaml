@@ -106,7 +106,7 @@ keys:
     plane: [load, answer]
     outcomes: [COMMIT, REFUSE]
     status: enforced
-    reader: "planner/joins + composite_key_guard — the join target this column points at"
+    reader: "planner/sql.py:238 `_filterable` — whether a predicate may land on this column"
     effect: >-
       `reference`, and nothing else — this column identifies a row in ANOTHER concept, so it is a
       join target and never part of this concept's grain. Whether every value is present over there
@@ -115,6 +115,15 @@ keys:
       `canonical`, `composite` and `part` are refused BY NAME, each naming where the fact went:
       what makes a row of THIS concept unique is `key` on the source. They answered a different
       question from `reference` and could not state an order, and the order reaches the SQL.
+      AND ITS ONE LIVE EFFECT IS NARROWER THAN THIS REGISTER CLAIMED. The reader above read
+      "planner/joins + composite_key_guard" until 2026-10-07; measured, `joins.py` reads
+      `concept.identity.canonical_key` (the CONCEPT block) and `composite_key_guard` takes its
+      columns from the `scoped_by` ruling, so neither consults this key. A join comes from
+      `edges.yaml`: `Store.country_code` carries NO `reference` and
+      `store__trades_in__country` still has a join_rule on it. The TARGET this points at is not
+      declared here at all — `data/datasets/*.yaml` MEASURES it as `references.to` and
+      `_parse_physical_descriptors` drops it, after which `sdk/authoring/edges.py` infers it back
+      by matching column names.
 
   - key: roles.axis
     block: roles
