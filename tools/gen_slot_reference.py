@@ -385,20 +385,74 @@ def self_test(schema: dict, vocab: dict) -> int:
         mutate(clean.replace("## PARAMETERS", "## PARAMETERS (edited)", 1),
                "stale-page", "a hand-edited page")
 
-        # python-repr — THE measured defect: a vocabulary record str()'d into the manual.
-        mutate(re.sub(r"^- \*\*`key`\*\* — .*$",
-                      "- **`key`** — {'query_use': ['identity'], 'definition': 'IDENTITY OR JOIN "
-                      "COLUMN. A name resolves TO it'}", clean, count=1, flags=re.M),
+        # ── THE THREE TARGETS BELOW ARE DERIVED, NEVER TYPED ──────────────────────────────────
+        # Every one of them was a hardcoded name on the RETIRED column surface, and all three
+        # stopped mutating on 2026-10-07 without a single assertion going red for the right
+        # reason. MEASURED on this file before the repair: the `python-repr` mutant rewrote
+        # `- **`key`** — …`, the `uncovered-term` mutant dropped `- **`housekeeping`** …` — both
+        # terms of `mac.concept.column.role`, a vocabulary this slot no longer governs, so
+        # `re.sub`/the line filter matched NOTHING and the page came back byte-identical; and the
+        # `uncovered-key` mutant deleted every line holding `` `axis` ``, which is now a key of
+        # `offers` and not of this slot, so `check()` never looks for it and the only reject was
+        # `[stale-page]`. That is the failure mode this file's own docstring is about —
+        # "a mutant that deleted a table row silently stopped deleting anything" — one surface
+        # over, and the `new_text != clean` assertion is what caught it (3 of the 5 failures).
+        #
+        # So the targets now come FROM THE SOURCES: a term read out of the vocabulary this page
+        # declares it is governed by, and a key read out of the schema object this page renders.
+        # A vocabulary rename or a schema rename moves the mutant with it.
+        terms = [t for t, _m, _r in members_of(vocab, "concept.column.measure_type")]
+        governs = [s for s in SLOTS if s[0] == "column_map"][0][3]
+        admitted = sorted(dig(schema, [s for s in SLOTS if s[0] == "column_map"][0][2])
+                          .get("properties") or {})
+        # `flow`'s bullet, and `precomputed`'s, each appear ONCE on the page (measured: every one
+        # of the 12 terms this page carries occurs exactly once, in its own bullet), so dropping
+        # or rewriting one line is the whole mutation.
+        repr_term = "flow" if "flow" in terms else terms[0]
+        drop_name = "precomputed" if "precomputed" in terms else terms[-1]
+        drop_key = "value_register" if "value_register" in admitted else admitted[-1]
+        # THE FIXTURE'S OWN PREMISE, ASSERTED RATHER THAN ASSUMED -- and an `expect`, not an
+        # `assert`, because a traceback is not a verdict. Each target must occur EXACTLY ONCE on
+        # the clean page: the two line filters below delete every line holding the token, so a
+        # token that also appears in another key's description cell would mutate two facts at
+        # once, and a token that appears zero times (the 2026-10-07 state) mutates none.
+        expect(repr_term != drop_name and bool(governs)
+               and clean.count(f"`{repr_term}`") == 1
+               and clean.count(f"`{drop_name}`") == 1
+               and clean.count(f"`{drop_key}`") == 1,
+               f"the three mutant targets must be distinct and occur ONCE each on the page: "
+               f"{repr_term} x{clean.count(f'`{repr_term}`')}, "
+               f"{drop_name} x{clean.count(f'`{drop_name}`')}, "
+               f"{drop_key} x{clean.count(f'`{drop_key}`')}; governs={sorted(governs)}")
+
+        # python-repr — THE measured defect, REPRODUCED BY ITS MECHANISM rather than imitated:
+        # `str()` on a vocabulary RECORD. `concept.column.measure_type`'s terms are records
+        # ({definition, additivity}), which is the same two-shape vocabulary that put five of
+        # these into column_map.generated.md on 2026-10-04. Because the record's own `definition`
+        # is still inside the repr, the term's MEANING is still on the page and this mutant trips
+        # `python-repr` alone — one mutant, one reject class.
+        _meaning, _rest = next((m, r) for t, m, r in
+                               members_of(vocab, "concept.column.measure_type") if t == repr_term)
+        # A LAMBDA, not a replacement STRING: `str()` of a record is arbitrary text, and a
+        # replacement string is ESCAPE-PROCESSED -- a backslash or a group reference in a
+        # definition would be re-interpreted by re.sub, or raise on the fixture. A callable
+        # replacement is inserted verbatim.
+        mutate(re.sub(rf"^- \*\*`{re.escape(repr_term)}`\*\* — .*$",
+                      lambda _m: f"- **`{repr_term}`** — " + str({"definition": _meaning, **_rest}),
+                      clean, count=1, flags=re.M),
                "python-repr", "a Python dict repr rendered into the manual")
 
         # uncovered-term — the renderer dropping a term the vocabulary closes
-        drop_term = re.compile(r"^- \*\*`housekeeping`\*\*")
+        drop_term = re.compile(rf"^- \*\*`{re.escape(drop_name)}`\*\*")
         mutate("\n".join(ln for ln in clean.splitlines() if not drop_term.match(ln)) + "\n",
-               "uncovered-term", "a term the vocabulary closes and the page omits")
+               "uncovered-term", f"a term the vocabulary closes and the page omits ({drop_name})")
 
-        # uncovered-key — the renderer dropping a key the schema admits at this slot
-        mutate("\n".join(ln for ln in clean.splitlines() if "`axis`" not in ln) + "\n",
-               "uncovered-key", "a key the schema admits and the page omits")
+        # uncovered-key — the renderer dropping a key the schema admits AT THIS SLOT. It must be a
+        # key of the slot's own object: `check()` iterates `dig(schema, path).properties`, so a
+        # NESTED key (`axis`, `suppressed`, `naming`) is not in that population and deleting it
+        # produces `[stale-page]` and nothing else.
+        mutate("\n".join(ln for ln in clean.splitlines() if f"`{drop_key}`" not in ln) + "\n",
+               "uncovered-key", f"a key the schema admits and the page omits ({drop_key})")
 
         # missing-page — a declared slot with no page at all
         keep = target.read_text(encoding="utf-8")

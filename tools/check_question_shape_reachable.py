@@ -184,9 +184,25 @@ def _self_test() -> int:
         (d / "ontology" / "concepts").mkdir(parents=True, exist_ok=True)
         (d / "data" / "references_served").mkdir(parents=True, exist_ok=True)
         for name, rel in (("Fact", "f_line"), ("Dim", "d_thing")):
+            # THE FIXTURE IS A LEGAL DECLARATION, not the minimum this gate's reader happens to
+            # touch. `_concepts_by_relation` reads only `source.relation`, so a fixture carrying
+            # nothing else would still measure 1 pair -- and that is exactly how this self-test
+            # went blind: it wrote `grounding.sources: [{relation: ...}]`, the reader moved to the
+            # singular `source` on 2026-10-07, and `by_rel` came back EMPTY. `checked` fell to 0,
+            # so "a measured join with NO edge is a hole" and "the same join WITH an edge is
+            # clean" BOTH stopped distinguishing anything: with no concept pair there is no hole
+            # to find and no edge to need. Both arms asserted `checked == 1`, which is the only
+            # reason the breakage surfaced at all.
+            #
+            # `key` is REQUIRED on `source` (mac.schema.json#$defs.grounding.source.required), and
+            # `k` is the very column the served reference below measures as the join -- so the
+            # declaration and the measurement name the same column instead of agreeing by luck.
             (d / "ontology" / "concepts" / f"{name.lower()}.yaml").write_text(
                 yaml.safe_dump({"concept": {"name": name},
-                                "grounding": {"sources": [{"relation": rel}]}}), encoding="utf-8")
+                                "grounding": {"source": {
+                                    "relation": rel, "key": "k",
+                                    "columns": {"k": {"offers": {"axis": "categorical"}}}}}}),
+                encoding="utf-8")
         (d / "ontology" / "edges.yaml").write_text(yaml.safe_dump({"edges": edges}), encoding="utf-8")
         (d / "data" / "references_served" / "f_line.yaml").write_text(yaml.safe_dump(
             {"references": [{"id": "f_line.k__d_thing.k",

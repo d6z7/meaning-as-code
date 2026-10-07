@@ -308,37 +308,85 @@ contract:
             (c / "rules" / "thing.default.open.md").write_text("thing.default.open\n", encoding="utf-8")
         return root
 
+    def classes(root) -> set:
+        """The reject CLASSES one run produces.
+
+        A VERDICT-ONLY ASSERTION (`main(...) == 1`) DOES NOT SAY WHICH RULE REJECTED, and this
+        self-test has already been fooled by exactly that: when `thing_code` joined the YAML
+        fixture on 2026-10-07 the advisory arm began exiting 1 on `uncovered-declaration` — a
+        class it was not testing — and the phantom it exists for was never the reason.
+        MEASURED on a probe copy of this file with the base narrative broken the same way (it no
+        longer names `thing_code`): the three arms below stayed GREEN on the wrong class, and
+        only "a pair that agrees must pass" and the advisory CONTROL went red. So each arm now
+        names the class it is testing, and names it EXACTLY — a superset is a second rule firing
+        on the same fixture, which is the shape the probe produced.
+        """
+        rejects, _warns, _n = check(root)
+        return {r.cls for r in rejects}
+
     with tempfile.TemporaryDirectory() as t:
         expect(main([str(build(t))]) == 0, "a pair that agrees must pass")
     with tempfile.TemporaryDirectory() as t:
-        expect(main([str(build(t, md_text=None))]) == 1, "unpaired-concept must reject")
+        root = build(t, md_text=None)
+        expect(main([str(root)]) == 1 and classes(root) == {"unpaired-concept"},
+               f"unpaired-concept must reject, as THAT class: got {classes(root)}")
     with tempfile.TemporaryDirectory() as t:
-        expect(main([str(build(t, md_text="Thing is a thing. thing.default.open applies.\n"))]) == 1,
-               "a declared column no narrative names must reject")
+        root = build(t, md_text="Thing is a thing. thing.default.open applies.\n")
+        expect(main([str(root)]) == 1 and classes(root) == {"uncovered-declaration"},
+               f"a declared column no narrative names must reject, as THAT class: "
+               f"got {classes(root)}")
     with tempfile.TemporaryDirectory() as t:
         # ADVISORY, so it must NOT change the verdict. The mutant names a column of another
         # concept — the only form the narrowed test judges — and the gate must still pass.
-        root = build(t, md_text="Thing uses `close_date`; [[Other]] keys on `other_key`. "
-                                "thing.default.open applies.\n")
+        #
+        # RUN TWICE OVER ONE TREE, control first, because "it did not fail" is the verdict a
+        # fixture that mentions no phantom AT ALL also produces, and this arm could therefore
+        # pass having exercised nothing. The only difference between the two runs is the sentence
+        # in thing.md. MEASURED here: control -> 0 reject(s), 0 warning(s); mutant -> 0 reject(s),
+        # exactly 1 `phantom-reference` on `thing.md:other_key`, both over the same denominators
+        # (2 concepts, 2 narratives, 1 rule page, 3 declared columns, 1 declared rule).
+        root = build(t)                                       # build() writes the GOOD narrative
         c = root / "ontology" / "concepts"
         (c / "other.yaml").write_text(
             "concept:\n  name: Other\ngrounding:\n  source:\n    relation: v_other\n"
             "    key: other_key\n    columns:\n      other_key: {offers: {}}\n", encoding="utf-8")
-        # THE NARRATIVE NAMES A COLUMN THE CONCEPT DOES NOT DECLARE -- the phantom this advisory is
-        # for. It must stay a WARNING: a narrative may legitimately mention a warehouse column the
-        # concept chose not to serve, and a gate that failed on prose would make the pages terser
-        # rather than truer.
+        # `ghost_code` IS THE DECLARED BLIND SPOT, not a phantom this gate reports. The docstring
+        # says so in full -- "WHAT THIS NO LONGER CATCHES ... a wholly INVENTED column name, one
+        # that belongs to no concept in the bundle" -- because the narrowed reader only judges a
+        # token that IS a column of this bundle. It is in the fixture to PIN that: if someone
+        # broadens the reader back to the shape that scored 23/23 false positives on contoso5,
+        # the control assertion below goes red and the docstring must be rewritten with it.
         (c / "other.md").write_text("Other keys on `other_key`, not on `ghost_code`.\n",
                                     encoding="utf-8")
+        _, warns0, n0 = check(root)
+        expect(main([str(root)]) == 0 and not warns0,
+               f"CONTROL: the same tree with NO phantom sentence must be silent -- 0 advisory, "
+               f"and `ghost_code` (a column of no concept) is the documented blind spot, not a "
+               f"finding. Got {[w.where for w in warns0]}")
+        expect((n0["concepts"], n0["narratives"]) == (2, 2),
+               f"CONTROL: both concepts must be DISCOVERED, or the phantom below is measured "
+               f"against a bundle_cols set that never held `other_key` and the advisory arm is "
+               f"vacuous. Got {n0}")
+        # THE MUTANT: one sentence names ANOTHER concept's column as if it were Thing's. The
+        # narrative must still name every column Thing declares -- `thing_code` and `close_date`
+        # -- or this arm fails on `uncovered-declaration` and never reaches the advisory. That is
+        # what it did when `thing_code` joined the YAML fixture: 1 reject, exit 1, and the
+        # phantom it was written for was never the reason.
+        (c / "thing.md").write_text(
+            "A Thing is identified by `thing_code` and closes when `close_date` is set; "
+            "[[Other]] keys on `other_key`. The rule thing.default.open takes the open ones.\n",
+            encoding="utf-8")
         _, warns, _ = check(root)
         expect(main([str(root)]) == 0, "an advisory phantom-reference must not fail the gate")
-        expect(any(w.cls == "phantom-reference" for w in warns),
-               "the advisory must still be reported")
+        expect([w.where for w in warns if w.cls == "phantom-reference"] == ["thing.md:other_key"],
+               f"the advisory must still be reported, and ON THE PAGE THAT CLAIMS THE COLUMN: "
+               f"got {[(w.cls, w.where) for w in warns]}")
     with tempfile.TemporaryDirectory() as t:
         root = build(t)
         (root / "ontology" / "concepts" / "rules" / "thing.default.gone.md").write_text("x\n",
                                                                                         encoding="utf-8")
-        expect(main([str(root)]) == 1, "unpaired-rule must reject")
+        expect(main([str(root)]) == 1 and classes(root) == {"unpaired-rule"},
+               f"unpaired-rule must reject, as THAT class: got {classes(root)}")
     with tempfile.TemporaryDirectory() as t:
         root = pathlib.Path(t)
         (root / "mac.project.yaml").write_text("planes:\n  ontology: ontology\n", encoding="utf-8")

@@ -334,6 +334,22 @@ def main() -> int:
 _SYN_ESTATE_COL = "zzcycle_col"
 _SYN_GENERIC_COL = "zzsnapshot_col"          # contains the GENERIC hint `snapshot`
 
+# THE SUBJECT OF RULES (4) AND (6), and the ONE fixture whose shape decides whether they can fire at
+# all. `check()` builds `needed` -- the relations a MEASURE concept grounds on -- by reading
+# `grounding.source.relation`; while this said `grounding.sources: [ ... ]` (the list retired
+# 2026-10-07, now `not: {}` in mac.schema.json) `needed` came back EMPTY, and an empty `needed` takes
+# BOTH of those rules offline by construction: "no measured key, but concept:X grounds a MEASURE on
+# it" and "concept:X grounds a measure on it and no descriptor exists" are the only two findings that
+# iterate it. MEASURED on this file before the conversion: `key-required` and `descriptor-missing`
+# both exited 0 -- the gate saw no measure concept, so deleting the profile and deleting the
+# descriptor were not defects of anything.
+#
+# `source` is SINGULAR (mac.schema.json#$defs.grounding.properties.source) and `key` is REQUIRED
+# there, so a fixture without one is not a legal declaration. The key is the SAME ordered tuple
+# `_subject` writes into the profile -- (gadget_code, period_code) -- because a fixture whose concept
+# and whose measurement disagree about the grain would make every mutant below argue about which of
+# the two was wrong. The columns use the MAP form with `offers`, the fifth-revision surface:
+# reference_manual/column_declaration.md, "The column -- four keys".
 _MEASURE_CONCEPT = """concept:
   name: Gadget
   label: Gadget
@@ -341,10 +357,13 @@ _MEASURE_CONCEPT = """concept:
   semantics:
     unit: widgets
 grounding:
-  sources:
-    - relation: zzsch.gadget_fact
-      key: gadget_code
-      columns: [gadget_code, period_code, amount]
+  source:
+    relation: zzsch.gadget_fact
+    key: [gadget_code, period_code]
+    columns:
+      gadget_code: {offers: {axis: categorical}}
+      period_code: {offers: {axis: time, period_binding: true}}
+      amount: {offers: {aggregate: {type: flow, unit: widgets}}}
 """
 
 _DESCRIPTOR_COLS = ["gadget_code", "period_code", "amount",
