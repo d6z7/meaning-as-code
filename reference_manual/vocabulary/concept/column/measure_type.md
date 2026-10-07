@@ -4,7 +4,7 @@
 
 **Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  5 terms
 
-How a measure aggregates — defined once, over axis_kind.
+How a measure aggregates — defined once, over axis.
 
 ## Terms
 

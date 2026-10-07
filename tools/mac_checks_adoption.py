@@ -26,7 +26,7 @@ NOTHING IS HARDCODED — the register is DERIVED, five ways, at run time
                           what it REQUIRES. A capability added to MAC tomorrow is measured tomorrow.
   S2 mac_shapes.yaml      every built-in shape's constrained slot. A shape is machinery; the slot it
                           constrains is a slot MAC expects filled.
-  S3 mac_vocabulary.yaml  every `mac.<namespace>` NAMED IN A SCHEMA DESCRIPTION — see the axis_kind
+  S3 mac_vocabulary.yaml  every `mac.<namespace>` NAMED IN A SCHEMA DESCRIPTION — see the axis
                           guard below — plus the `mac.canon` registry × the executable library.
   S4 tools/*.py           bundle-relative artifacts a framework tool searches for BY NAME, and the
                           manifest keys a framework tool reads. The tools are the single home of
@@ -278,7 +278,7 @@ def _schema_offers(fw: Framework, since: dict) -> tuple:
                     if slot in seen or "." not in slot:
                         continue                       # a bare top-level key is a document, not a slot
                     # A DERIVED slot is not an unadopted capability. v0.1.16 made
-                    # `concept.semantics.additivity` derivable from (measure_type x axis_kind), so its
+                    # `concept.semantics.additivity` derivable from (measure_type x axis), so its
                     # ABSENCE is the desired state — and this check promptly reported 9 sites as
                     # failing to adopt the very block that was just removed on purpose, i.e. it told
                     # the reader to re-add what the framework had stopped asking for. The slot says so

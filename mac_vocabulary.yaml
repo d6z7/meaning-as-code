@@ -15,7 +15,7 @@ metadata:
   namespace: mac
   version: '0.1.13'
   status: active
-  defines: [concept.aggregation_effect, concept.axis_kind, concept.class, binding_mode, concept.column.measure_type, concept.rule, canon,
+  defines: [concept.aggregation_effect, concept.axis, concept.class, binding_mode, concept.column.measure_type, concept.rule, canon,
             concept.column.role, concept.column.identity, dataset.column.role, concept.column.ruling, name_register]
 
 # ===========================================================================
@@ -156,7 +156,7 @@ calendar_vocabulary:
 # ===========================================================================
 # mac.binding_mode — HOW a question binds a dimension: the ROLE a referenced dimension plays in the query.
 # This is the categorial answer to "GROUP BY or not". It is a PER-QUESTION classification the interpreter
-# assigns to every dimension token (not an intrinsic property a concept declares — its neighbours axis_kind
+# assigns to every dimension token (not an intrinsic property a concept declares — its neighbours axis
 # and measure_type are intrinsic; this one types a runtime decision). The grain LAW is stated ONCE over these
 # two modes (measure.grain_mandatory), so it is universal: a rule rules over the MODE, never over the
 # instance (a specific member, or a specific way a member-set is spelled). Set cardinality is irrelevant —
@@ -1136,17 +1136,34 @@ concept:
         # answer that must then be special-cased -- the same shape as a population axis with no default.
 
   # ===========================================================================
-  # mac.concept.axis_kind — the KIND of an aggregation axis, for additivity purposes.
+  # mac.concept.axis — the KIND of an aggregation axis, for additivity purposes.
   # An applied ontology maps each concrete dimension to one kind; the additivity LAW is stated over kinds,
   # so it is universal (domain-independent).
   # ===========================================================================
-  axis_kind:
+  axis:
     kind: vocabulary
     closed: true
-    description: The additivity-relevant classification of an aggregation axis.
+    description: >
+      WHETHER A COLUMN IS AN AXIS, and if so the additivity-relevant kind. RENAMED from `axis`
+      2026-10-07 (operator: "cant we just call it axis ?"): the VALUE was always the kind, so carrying
+      "kind" in the name restated it — the same redundancy `semantics.measure_type` and the prose `grain`
+      were carrying. REQUIRED on every declared column from the same date, which is the substantive half
+      of the change: absence used to mean two different things that nothing could separate.
     terms:
       time:        "An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it."
       categorical: "A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it."
+      none: >
+        NOT AN AXIS. No question groups or filters by it, so there is nothing for the fold law to judge:
+        a surrogate row identifier (`line_number`), a housekeeping stamp, the measure payload itself.
+        THIS TERM EXISTS SO SILENCE STOPS BEING AMBIGUOUS. Before it, a column with no `axis` could
+        mean "not an axis" or "the author did not say", and nothing could tell the two apart — measured
+        2026-10-07 on contoso5: 12 surrogate key columns meant the first and 30 declared dimensions meant
+        the second, and both read identically. The operator's own test, from the brand-edge ruling of the
+        same week: an absence may be a declaration only when nothing else could be meant.
+        IT IS NOT `never_axis`, and the two must not be merged. `none` says no one would group by it;
+        `rulings.never_axis` says someone WOULD and may not, names the measurement that establishes the
+        harm, and makes a query that tries it a REFUSAL THAT CITES THE REASON. A privacy-ruled column is
+        therefore `axis: categorical` AND `never_axis:` — what it is, and that you may not.
 
 
   # ===========================================================================
@@ -1264,7 +1281,7 @@ concept:
           says the KIND of column may be an axis, the ruling says this ONE may not.
         aggregate: >
           A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
-          `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through
+          `concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through
           `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell
           is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
           ruling, not this one's.
@@ -1498,7 +1515,7 @@ concept:
     # ===========================================================================
     # mac.measure_type — the additivity class of a measure (the classic additive / semi-additive /
     # non-additive / averageable fact taxonomy). Additivity is INTRINSIC to the type and stated ONCE here,
-    # over axis_kind (5 types × 2 kinds = 10 universal cells). Each cell references a mac.concept.aggregation_effect term.
+    # over axis (5 types × 2 kinds = 10 universal cells). Each cell references a mac.concept.aggregation_effect term.
     # The count was written as "4 types × 2 kinds = 8" and the table below has listed FIVE members since
     # v0.1.15 — a comment that drifted from its own table and was believed for as long as nobody counted.
     # An applied ontology's measures reference these members; they never re-encode the matrix.
@@ -1506,7 +1523,7 @@ concept:
     measure_type:
       kind: value_domain
       closed: true
-      description: How a measure aggregates — defined once, over axis_kind.
+      description: How a measure aggregates — defined once, over axis.
       terms:
         flow:
           definition: "A quantity that accrues per period and accumulates over time (e.g. units sold in a period)."

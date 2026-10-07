@@ -120,7 +120,7 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
   - [`column_type`](vocabulary/column_type.md) — 5 terms, closed
   - `concept`
     - [`aggregation_effect`](vocabulary/concept/aggregation_effect.md) — 3 terms, closed
-    - [`axis_kind`](vocabulary/concept/axis_kind.md) — 2 terms, closed
+    - [`axis`](vocabulary/concept/axis.md) — 2 terms, closed
     - [`class`](vocabulary/concept/class.md) — 5 terms, closed
     - `column`
       - [`identity`](vocabulary/concept/column/identity.md) — 3 terms, closed

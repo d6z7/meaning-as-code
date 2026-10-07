@@ -35,7 +35,7 @@ read rather than folded.
 
 <!-- BEGIN GENERATED:vocabulary-terms:concept.column.measure_type (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
-> How a measure aggregates — defined once, over axis_kind.
+> How a measure aggregates — defined once, over axis.
 
 *`mac.concept.column.measure_type` · 5 terms · closed — these are all of them*
 
@@ -121,23 +121,23 @@ across categories answers *"how many"* and never *"how much"*.
 
 ---
 
-## `mac.concept.axis_kind` — which kind of axis you are folding along
+## `mac.concept.axis` — which kind of axis you are folding along
 
-<!-- BEGIN GENERATED:vocabulary-terms:concept.axis_kind (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
+<!-- BEGIN GENERATED:vocabulary-terms:concept.axis (tools/gen_vocabulary_terms.py — do not edit inside this block) -->
 
 > The additivity-relevant classification of an aggregation axis.
 
-*`mac.concept.axis_kind` · 2 terms · closed — these are all of them*
+*`mac.concept.axis` · 2 terms · closed — these are all of them*
 
-#### `mac.concept.axis_kind.time`
+#### `mac.concept.axis.time`
 
 An ordered temporal axis (day, month, quarter). Stocks do not accumulate along it.
 
-#### `mac.concept.axis_kind.categorical`
+#### `mac.concept.axis.categorical`
 
 A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are
 additive along it.
-<!-- END GENERATED:vocabulary-terms:concept.axis_kind -->
+<!-- END GENERATED:vocabulary-terms:concept.axis -->
 
 Two kinds, because only time has the property that matters: **a stock does not accumulate along it.**
 Product, store and customer all behave the same way for folding, so they are one kind.

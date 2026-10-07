@@ -31,7 +31,7 @@ LOUDLY. One fails SILENTLY, and that one is why this is a proposal and not a mig
 
 All six ground the same relation `v_contoso5_sales_line` at the same grain (`one row per sale
 (order_key, line_number)`), class `measure`, `measure_type: flow`. The table below is every declared
-column of all six. `m:` is the column's `measure` block, `ax:` its `axis_kind`, `id:` its `identity`.
+column of all six. `m:` is the column's `measure` block, `ax:` its `axis`, `id:` its `identity`.
 
 | column | GrossRevenue | NetRevenue | SalesCost | Margin | Discount | UnitsSold |
 |---|---|---|---|---|---|---|
@@ -53,7 +53,7 @@ column of all six. `m:` is the column's `measure` block, `ax:` its `axis_kind`, 
 | discount_amount | — | — | — | — | measure m:flow/USD | — |
 | quantity | — | — | — | — | — | measure m:flow/**units** |
 
-**The eight shared columns are byte-identical in role, identity and axis_kind across all six.**
+**The eight shared columns are byte-identical in role, identity and axis across all six.**
 57 declared column blocks across the six files; 17 distinct ones. **40 of 57 (70 %) are copies.**
 504 YAML lines across six files; the merged single concept is 198.
 
@@ -201,12 +201,12 @@ grounding:
         margin_amount:   {role: measure, measure: {type: ….flow,      unit: USD}}
         discount_amount: {role: measure, measure: {type: ….flow,      unit: USD}}
         quantity:        {role: measure, measure: {type: ….flow,      unit: units}}
-        order_date:      {role: period,    axis_kind: ….time}
-        delivery_date:   {role: dimension, axis_kind: ….time}
-        customer_key:    {role: key, identity: reference, axis_kind: ….categorical}
-        store_key:       {role: key, identity: reference, axis_kind: ….categorical}
-        product_key:     {role: key, identity: reference, axis_kind: ….categorical}
-        currency_code:   {role: dimension, axis_kind: ….categorical}
+        order_date:      {role: period,    axis: ….time}
+        delivery_date:   {role: dimension, axis: ….time}
+        customer_key:    {role: key, identity: reference, axis: ….categorical}
+        store_key:       {role: key, identity: reference, axis: ….categorical}
+        product_key:     {role: key, identity: reference, axis: ….categorical}
+        currency_code:   {role: dimension, axis: ….categorical}
   grain: one row per sale (order_key, line_number)
 contract:
   default_reading: >-

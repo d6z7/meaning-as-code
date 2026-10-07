@@ -157,9 +157,9 @@ CHOOSE THE CLASS FIRST, and INCLUDE ITS REQUIRED BLOCK — this is mandatory and
       semantics:
         purpose: <one line>
         measure_type: mac.concept.column.measure_type.<{MEASURE_TYPES}>
-        axis_kinds: {<axis>: mac.concept.axis_kind.<time|categorical>, ...}   # one entry per aggregation axis
+        axis_kinds: {<axis>: mac.concept.axis.<time|categorical>, ...}   # one entry per aggregation axis
   DO NOT WRITE AN `additivity:` BLOCK. How the measure folds along each axis is DERIVED from
-  (measure_type x axis_kind) by the law in mac_vocabulary.yaml. Writing it out would state the same
+  (measure_type x axis) by the law in mac_vocabulary.yaml. Writing it out would state the same
   fact twice — and because you would be authoring both the premise and the conclusion, the two can
   drift: a concept once declared `Target` and wrote `geography: additive`, which the law forbids, and
   a value anchor summed that measure across models for weeks on the strength of it.

@@ -4,7 +4,7 @@ status: PARTIALLY ENFORCED (2026-09-29) — the schema admits all four under gro
   (added 2026-09-28); mac-runtime READS label_of and finer_than (planner/sql.py) and never_axis (planner/plan.py
   POLICY_DENIED, interpret/vocabulary.py never offers it); scoped_by is LOADED, NOT PLANNED-ON (waived in
   test_declared_but_unread as a ticket). Per-ruling status is stated on each section below.
-companions: [column_roles.md, column_specification.md, ../mac_vocabulary.yaml]
+companions: [column_declaration.md, column_roles.md, column_specification.md, ../mac_vocabulary.yaml]
 ---
 
 # Column rulings

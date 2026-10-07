@@ -193,7 +193,7 @@ def _configuration(obj: dict) -> list[str]:
         word = " ".join(b for b in bits if b)
         canonical = " — the number a question about this concept folds" if measure.get("canonical") else ""
         out.append(f"- `{name}` is a {word} measure{canonical}.")
-    axes = {n: b["axis_kind"] for n, b in columns.items() if b.get("axis_kind")}
+    axes = {n: b["axis"] for n, b in columns.items() if b.get("axis")}
     if axes:
         out.append(
             "- It is aggregated along "

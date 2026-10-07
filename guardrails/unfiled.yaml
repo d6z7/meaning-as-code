@@ -113,11 +113,11 @@ delivers:
       # now, which varies per column. Where a concept IS M:N over relations the relation does vary,
       # and the answer is a sub-heading per relation, never a repeated column.
       # EVERY PER-COLUMN FACT THE CONCEPT YAML DECLARES, measured 2026-10-02 over 112 declared
-      # columns: role 112, identity 50, axis_kind 39, measure 14 (type+unit, canonical on 3),
+      # columns: role 112, identity 50, axis 39, measure 14 (type+unit, canonical on 3),
       # rulings 11 (label_of 5, register 5, finer_than 3, never_axis 2, evidence 2, scoped_by 1).
       # The table showed role and identity only, so THREE fact families carrying 64 declarations
       # were invisible on the page that exists to show them -- including the ones that decide an
-      # answer (`measure.canonical` picks the column a question folds, `axis_kind` keys the fold
+      # answer (`measure.canonical` picks the column a question folds, `axis` keys the fold
       # law, `never_axis` refuses a grouping outright).
       #
       # COMPOUND FLAGS RENDER AS ONE CELL, dot-separated: `measure` is `flow · USD · canonical`,

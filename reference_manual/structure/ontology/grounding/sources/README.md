@@ -20,7 +20,7 @@ the table OR view name to query (agnostic — the AI does not care which)
 
 *—* · optional · [has its own keys →](columns/README.md)
 
-WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat LIST names columns and says nothing about them; the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list stays legal so a bundle written before the map still loads, and `check_column_spec` reports every concept still using it.
+WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat LIST names columns and says nothing about them; the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis. Prefer the map. The list stays legal so a bundle written before the map still loads, and `check_column_spec` reports every concept still using it.
 
 Its own keys: [`ontology.grounding.sources.columns`](columns/README.md)
 

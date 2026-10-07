@@ -25,12 +25,12 @@ concept:
     measure_type: mac.concept.column.measure_type.flow
     unit: USD
     axis_kinds:
-      order_date: mac.concept.axis_kind.time
-      delivery_date: mac.concept.axis_kind.time
-      customer_key: mac.concept.axis_kind.categorical
-      store_key: mac.concept.axis_kind.categorical
-      product_key: mac.concept.axis_kind.categorical
-      currency_code: mac.concept.axis_kind.categorical
+      order_date: mac.concept.axis.time
+      delivery_date: mac.concept.axis.time
+      customer_key: mac.concept.axis.categorical
+      store_key: mac.concept.axis.categorical
+      product_key: mac.concept.axis.categorical
+      currency_code: mac.concept.axis.categorical
 grounding:
   sources:
     - relation: v_contoso5_sales_line

@@ -54,7 +54,7 @@ homes:
       - CONFORMANCE.md        # the strict-syntax contract a bundle is held to
       - SEAM_CONTRACT.md      # mac.seam/1 — how a framework tool is invoked
       - QUERY_GRAMMAR.md      # the grammar a question is written in
-      - FOLD_GRAMMAR.md       # the fold law — (measure_type x axis_kind) -> aggregation effect
+      - FOLD_GRAMMAR.md       # the fold law — (measure_type x axis) -> aggregation effect
     population: {of: 5 named pages, from: «this declaration», empty_is: EMPTY}
     consumers:
       - {tool: mac-platform console_api.py, role: serves them in the documentation window}

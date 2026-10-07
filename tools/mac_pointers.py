@@ -673,7 +673,7 @@ def _matches(kind: dict, locator: str, value: Any, rel: str = "",
         # than made.
         # CASE DOES NOT DECIDE MEMBERSHIP, and requiring lowercase here was a hole rather than a
         # tightening. Measured by a differential against check_references: break
-        # `mac.concept.axis_kind.time` to `...NOPE_time` and the count went 196 -> 195 — the
+        # `mac.concept.axis.time` to `...NOPE_time` and the count went 196 -> 195 — the
         # value did not become DANGLING, it left the population, because one capital made it stop
         # looking like a framework term. A required pointer that can be escaped by malforming it
         # is not required.
@@ -1232,8 +1232,8 @@ NAMESPACE_ONLY = object()
 def _vocab_block(doc: Any, group: str) -> Any:
     """The vocabulary block at `group`, under EITHER addressing the framework has used.
 
-    `mac_vocabulary.yaml` was FOLDED on 2026-10-04 from flat dotted keys (`concept.axis_kind:`)
-    into a nested tree (`concept:` -> `axis_kind:`), 25 top-level keys down to 17. The block
+    `mac_vocabulary.yaml` was FOLDED on 2026-10-04 from flat dotted keys (`concept.axis:`)
+    into a nested tree (`concept:` -> `axis:`), 25 top-level keys down to 17. The block
     SHAPE did not change at all -- only its address did. This reader looked the group up as a
     flat key, found nothing, and reported 77 correct references as dangling, which is "renames
     break readers silently" from the other side: the fold had no way to know this reader existed,

@@ -59,7 +59,7 @@ shapes:
       path: concept.semantics.unit
 
   - id: measure-declares-axis-kinds
-    description: a measure concept must declare axis_kinds — the law resolves per (measure_type x axis_kind)
+    description: a measure concept must declare axis_kinds — the law resolves per (measure_type x axis)
     target: concept
     where: { concept.class: measure }
     severity: error

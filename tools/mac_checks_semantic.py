@@ -132,7 +132,7 @@ def check_fact_homes(b) -> list:
 
     HOME vs COPY. Each fact's statements are ordered home-first: `statements[0]` is what the others
     are derivable FROM (for `measure.additivity`, the framework law reached through the concept's own
-    declared measure_type + axis_kind bridge). So the WITNESS is the copy, and the home is named in
+    declared measure_type + axis bridge). So the WITNESS is the copy, and the home is named in
     its detail — the reader needs to know which line to delete and which one to keep.
 
     SEVERITY. Restated-and-agreeing is a WARNING: nothing is wrong today and nothing keeps the copies
@@ -147,7 +147,7 @@ def check_fact_homes(b) -> list:
     cannot be compared against a law term and reported as agreement or as drift.
 
     A LEGITIMATE CASE THAT MUST NOT FIRE: a measure that declares its additivity on an axis the law
-    says nothing about (no declared axis_kind, or a measure_selector axis). One statement, one home —
+    says nothing about (no declared axis, or a measure_selector axis). One statement, one home —
     the fact is stated exactly once and deriving it was never possible. Measured on <dataset>: 8 of 35
     facts are in exactly that state and none of them is reported.
 
@@ -183,7 +183,7 @@ def check_fact_homes(b) -> list:
                        f"and nothing keeps them in step")
             note = ("delete the copy, or make the shape that demands it derive the value instead. Every "
                     "witness here is a fact the framework can compute from the object's own declared "
-                    "measure_type and axis_kind; the ontology restates it because the shape REQUIRES a "
+                    "measure_type and axis; the ontology restates it because the shape REQUIRES a "
                     "literal. That is the framework mandating the drift it later fails on.")
         else:
             summary = (f"{M.de(len(group))} statement(s) of `{subject}` DISAGREE with the home they are "

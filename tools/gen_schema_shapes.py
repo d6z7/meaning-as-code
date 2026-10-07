@@ -19,7 +19,7 @@ TWO FALSE STATEMENTS THIS FILE PRINTED, MEASURED 2026-10-04, and what caused eac
      carried since 2026-09-28. The column map is a FREE-KEY level — `columns:` is
      `additionalProperties: {…}`, the author chooses the key names — and `render()` iterated
      `node["properties"]` only, so it emitted `columns:` as a leaf and dropped the entire per-column
-     level: `role`, `identity`, `measure`, `rulings`, `register`, `axis_kind` and everything under
+     level: `role`, `identity`, `measure`, `rulings`, `register`, `axis` and everything under
      them. A second, independent cause sat behind it: a hard `depth < 4` cutoff that truncated
      SILENTLY. Both are fixed — free-key levels render as `<name>:`, and the depth cap is gone (the
      `$ref` cycle guard already terminates the walk; inline nesting cannot cycle).

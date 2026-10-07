@@ -22,8 +22,8 @@ concept:
     measure_type: mac.concept.column.measure_type.flow
     unit: EUR
     axis_kinds:
-      placed_at: mac.concept.axis_kind.time
-      customer_id: mac.concept.axis_kind.categorical
+      placed_at: mac.concept.axis.time
+      customer_id: mac.concept.axis.categorical
 
 grounding:
   kind: sql_table
@@ -40,7 +40,7 @@ grounding:
           identity: reference
         placed_at:
           role: period
-          axis_kind: mac.concept.axis_kind.time
+          axis: mac.concept.axis.time
         amount:
           role: measure
           measure:

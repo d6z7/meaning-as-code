@@ -6,6 +6,7 @@ status: ENFORCED (2026-09-29) — the `columns:` map is admitted by mac.schema.j
   role is measured, not authored.
 audience: ontology authors, importer developers
 companions:
+  - column_declaration.md   # PROPOSED 2026-10-07 — the classification this page's subject would move to
   - column_rulings.md        # what a PERSON decided about a column, on top of its role
   - shape_reference.md       # where `columns:` nests in a concept file
   - ../mac_vocabulary.yaml   # the authoritative terms; definitions below are generated from it
@@ -189,7 +190,7 @@ KIND of column may be an axis, the ruling says this ONE may not.
 #### `mac.concept.column.query_use.aggregate`
 
 A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is
-`concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through
+`concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through
 `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is
 `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's
 ruling, not this one's.

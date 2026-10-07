@@ -123,7 +123,7 @@ PATTERNS = (
     ("semantics.measure_type token", ["$defs", "semantics", "properties", "measure_type"],
      "concept.column.measure_type"),
     ("semantics.axis_kinds token",
-     ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis_kind"),
+     ["$defs", "semantics", "properties", "axis_kinds", "additionalProperties"], "concept.axis"),
     ("additivity axis token", ["$defs", "additivityAxis", "oneOf", 1], "concept.aggregation_effect"),
 )
 

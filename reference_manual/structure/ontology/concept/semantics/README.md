@@ -26,7 +26,7 @@ Its own keys: [`ontology.concept.semantics.additivity`](additivity.md)
 
 *object* · optional · [has its own keys →](axis_kinds.md)
 
-v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.
+v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis term. This lets the universal (measure_type x axis) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis.*` references.
 
 Its own keys: [`ontology.concept.semantics.axis_kinds`](axis_kinds.md)
 
@@ -34,7 +34,7 @@ Its own keys: [`ontology.concept.semantics.axis_kinds`](axis_kinds.md)
 
 *string* · optional
 
-v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.
+v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.
 
 ### `purpose`
 

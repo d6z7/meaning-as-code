@@ -93,7 +93,7 @@ def build(root) -> dict:
             "warnings": len(warns),
         },
         # WHY THIS NUMBER IS THE HEADLINE: every restated fact here is DERIVABLE — the framework canon
-        # already determines it from the concept's own measure_type and axis_kind. The concepts write
+        # already determines it from the concept's own measure_type and axis. The concepts write
         # it down again because mac_shapes.yaml#measure-declares-additivity REQUIRES them to. So the
         # framework mandates copies of a fact it can compute, and some have already drifted.
         "note": ("no measure writes `semantics.additivity`, so there is nothing stated twice to "

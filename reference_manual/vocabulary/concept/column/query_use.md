@@ -24,7 +24,7 @@ LEGITIMATE IN A FILTER AND IN A GROUP BY. The column names a thing a question ca
 
 Write it as `mac.concept.column.query_use.aggregate`
 
-A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is `concept.column.measure_type` x `concept.axis_kind` -> `aggregation_effect`, read through `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's ruling, not this one's.
+A NUMBER A QUESTION MAY FOLD. HOW it folds is not stated here and must not be: it is `concept.column.measure_type` x `concept.axis` -> `aggregation_effect`, read through `framework.vocabulary().additivity`. A column carrying this use whose every additivity cell is `none` — `precomputed`, `target` — is foldable by nothing, and that is the measure type's ruling, not this one's.
 
 ### `period_binding`
 

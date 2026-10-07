@@ -244,8 +244,8 @@ def _relationships_panel(joins: dict, over) -> str:
 
 
 #: The fold law, read from the framework registry rather than restated here. A measure's
-#: `measure_type` crossed with an axis's `axis_kind` yields an `aggregation_effect`, and the
-#: registry declares that crossing itself — `measure_type.members.<Type>.additivity.<axis_kind>`.
+#: `measure_type` crossed with an axis's `axis` yields an `aggregation_effect`, and the
+#: registry declares that crossing itself — `measure_type.members.<Type>.additivity.<axis>`.
 #: THIS FILE MUST NOT CARRY A SECOND COPY OF IT: the whole reason the page is worth rendering is
 #: that it shows the law the runtime obeys, and a page quoting its own private table would be a
 #: second home for the one fact, free to drift from the one the planner reads.
@@ -253,7 +253,7 @@ _VOCAB_PATH = Path(__file__).resolve().parents[2] / "mac_vocabulary.yaml"
 
 
 def _fold_law() -> dict:
-    """{measure_type term -> {axis_kind term -> aggregation_effect term}}, from the registry.
+    """{measure_type term -> {axis term -> aggregation_effect term}}, from the registry.
 
     Returns {} when the registry cannot be read. An ABSENT law renders an em dash in the fold
     column — never a guessed SUM, because a wrong fold is the one error on this page that turns
@@ -280,7 +280,7 @@ def _axes_block(obj: dict) -> list[str]:
     the page said so only in prose: "the fold along each axis is resolved from measure_type x
     axis_kinds". That names a law governing every figure the measure produces and then shows the
     reader none of its inputs — measured on one bundle, 3 concepts declared a measure_type and 18
-    axis_kind entries were declared, and not one of them reached the page.
+    axis entries were declared, and not one of them reached the page.
 
     IT IS NOT A COLUMN OF THE FIELDS TABLE, and that is the substantive point. An axis is not a
     column of this concept — it is ANOTHER CONCEPT. A sales measure's columns are its price and
@@ -288,7 +288,7 @@ def _axes_block(obj: dict) -> list[str]:
     four columns would be the same category error as sampling a host relation instead of a
     concept's members.
 
-    THE FOLD IS DERIVED, NEVER AUTHORED HERE. `measure_type x axis_kind -> aggregation_effect` is
+    THE FOLD IS DERIVED, NEVER AUTHORED HERE. `measure_type x axis -> aggregation_effect` is
     declared in the framework registry; this reads it. An unknown type, an unknown axis kind or an
     unreadable registry all render an em dash, which says "not declared" — the same thing an em
     dash says everywhere else on this page."""
@@ -490,7 +490,7 @@ def _grounding_fields(grounding: dict) -> list[dict]:
     seen: set = set()
     src_of: dict = {}  # column -> [(relation_bare, is_key), ...]
     ident: dict = {}  # column -> its identity part, from the map form
-    extra: dict = {}  # column -> {axis_kind, measure, rulings} as declared
+    extra: dict = {}  # column -> {axis, measure, rulings} as declared
     for s in srcs:
         if not isinstance(s, dict):
             continue
@@ -505,7 +505,7 @@ def _grounding_fields(grounding: dict) -> list[dict]:
                     ident.setdefault(col, body["identity"])
                 # EVERY OTHER PER-COLUMN FAMILY THE YAML DECLARES, kept whole so the renderer can
                 # format them and this function stays a reader.
-                for family in ("axis_kind", "measure", "rulings", "register"):
+                for family in ("axis", "measure", "rulings", "register"):
                     if body.get(family) is not None:
                         extra.setdefault(col, {}).setdefault(family, body[family])
                 # THE AUTHORED BLOCK WINS over the map, since a bundle carrying both is
@@ -529,7 +529,7 @@ def _grounding_fields(grounding: dict) -> list[dict]:
             # A PER-COLUMN fact, and the one the grain is now derived from, so it replaces the
             # `grounded in` column that used to sit here.
             "identity": str(ident.get(col, "")).split(".")[-1],
-            "axis_kind": str((extra.get(col) or {}).get("axis_kind") or "").rsplit(".", 1)[-1],
+            "axis": str((extra.get(col) or {}).get("axis") or "").rsplit(".", 1)[-1],
             "measure": (extra.get(col) or {}).get("measure") or {},
             "rulings": (extra.get(col) or {}).get("rulings") or {},
             # THE VALUE SET THIS COLUMN CARRIES. Shown as the file's BARE NAME: the path is

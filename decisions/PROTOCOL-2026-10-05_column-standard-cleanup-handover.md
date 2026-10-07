@@ -75,7 +75,7 @@ requirement. contoso5 has been failing validation on this block the whole time, 
 existed to satisfy a requirement with nothing in it.
 
 Measured usage across contoso5's 17 concepts, before the cleanup: `additivity` 0, `axis_kinds` 0,
-`measure_type` 0, `purpose` 0, `unit` 1. Against column homes: 112 `role`, 50 `identity`, 39 `axis_kind`,
+`measure_type` 0, `purpose` 0, `unit` 1. Against column homes: 112 `role`, 50 `identity`, 39 `axis`,
 14 `measure.type`, 14 `measure.unit`, 11 `rulings`, 5 `register`, 3 `measure.canonical`.
 
 **The replacement for each, and why it is a replacement rather than a move:**
@@ -84,7 +84,7 @@ Measured usage across contoso5's 17 concepts, before the cleanup: `additivity` 0
 |---|---|---|
 | `measure_type` | `columns.<n>.measure.type` | on a multi-measure concept it was a DISAMBIGUATOR, read by `planner/grounded_columns._by_declared_measure_type`; `measure.canonical` now states it directly |
 | `unit` | `columns.<n>.measure.unit` + unanimity | done, see above |
-| `axis_kinds` | `columns.<n>.axis_kind` | the record measured **47 entries and the fold law read ZERO of them** — the keys were column names and the planner looked them up by a lowercased CONCEPT name, so no key could match and "a two-branch guess decided every fold in the estate" |
+| `axis_kinds` | `columns.<n>.axis` | the record measured **47 entries and the fold law read ZERO of them** — the keys were column names and the planner looked them up by a lowercased CONCEPT name, so no key could match and "a two-branch guess decided every fold in the estate" |
 | `additivity` | `columns.<n>.measure.additivity`, and the LAW | the concept-level map RESTATED the law: `mac_vocabulary.yaml#concept.column.measure_type.flow.additivity` is `{time: additive, categorical: additive}`, which reproduces the hand-written `{time, customer, product}` exactly, since customer and product are categorical |
 | `purpose` | `concept.definition` | `ontology/retrieval.py:62` tokenises both as separate sets; 0 of 17 wrote `purpose`, so that half scored nothing on every query |
 
@@ -112,15 +112,15 @@ files carrying a non-empty `semantics:` block, excluding another session's workt
 so those two migrate together or neither.
 
 **THE TRAP IN MIGRATING THEM, and the reason this was not attempted:** across those 26 files, **0 of 69
-axis columns declare `axis_kind`**. Dropping `axis_kinds` without authoring those 69 leaves the fold law
-unconsultable for 26 concepts — `axis_kind` absent returns None by design, never a default — so tests
-asserting folds go red. And `axis_kind` is a judgement per column, not a text transform:
+axis columns declare `axis`**. Dropping `axis_kinds` without authoring those 69 leaves the fold law
+unconsultable for 26 concepts — `axis` absent returns None by design, never a default — so tests
+asserting folds go red. And `axis` is a judgement per column, not a text transform:
 `customer.yaml:created_at(dimension)` is a date and wants `time`; `customer.yaml:email(dimension)` wants
-`categorical`. Inferring 69 is how a wrong `axis_kind` silently changes a fold.
+`categorical`. Inferring 69 is how a wrong `axis` silently changes a fold.
 
 There IS a safe oracle for that migration, and it should be used: the old hand-written `additivity` maps
-state what each concept's fold was. Derive `axis_kind`, recompute the fold from
-`measure_type × axis_kind`, and require it to match the old map. The thing being deleted validates its
+state what each concept's fold was. Derive `axis`, recompute the fold from
+`measure_type × axis`, and require it to match the old map. The thing being deleted validates its
 own replacement.
 
 **Two of those files are ALREADY schema-invalid** and that is a separate bug introduced 2026-10-04 when

@@ -1170,7 +1170,7 @@ The rules, so you can predict it: `ruled_by:` → `confirmed`, `derived_by:` →
 | "the regional goal splits to stores like this" | allocation / disaggregation: **0 hits** for the concept in the design and all three runtime modules |
 | "brand and category are independent" / "one is a level of the other" / "a product can have two brands" | no axis level in the plane. An `axes:` block is dropped (M7) |
 | "1 means holiday, not working day" | the runtime hardcodes `= 1` for `indicator` |
-| "this categorical axis is ordered (small < medium < large)" | `mac.concept.axis_kind` conflates orderedness with temporality and is **not read** |
+| "this categorical axis is ordered (small < medium < large)" | `mac.concept.axis` conflates orderedness with temporality and is **not read** |
 | "by currency means the currency we convert INTO" | no term for the direction of an ordered pair |
 | "at 40% share, stop answering and refuse" | the sentinel threshold is undecided |
 | "this ratio is not stored; recompute it after the fold" | `evaluate_at: after_fold` parses and is read by 0 lines |

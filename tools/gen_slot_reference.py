@@ -397,7 +397,7 @@ def self_test(schema: dict, vocab: dict) -> int:
                "uncovered-term", "a term the vocabulary closes and the page omits")
 
         # uncovered-key — the renderer dropping a key the schema admits at this slot
-        mutate("\n".join(ln for ln in clean.splitlines() if "`axis_kind`" not in ln) + "\n",
+        mutate("\n".join(ln for ln in clean.splitlines() if "`axis`" not in ln) + "\n",
                "uncovered-key", "a key the schema admits and the page omits")
 
         # missing-page — a declared slot with no page at all

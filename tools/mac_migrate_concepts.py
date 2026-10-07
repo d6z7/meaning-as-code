@@ -5,7 +5,7 @@ WHAT MOVES. `grounding.table` / `schema` / `key_column` / `field_roles` become `
 with a `columns:` MAP (role on the column); `concept.identity.canonical_key` becomes `identity:
 canonical` on that column and is removed from the concept (one home); the retired namespaces are
 renamed in place — `mac.MeasureType.Flow` -> `mac.concept.column.measure_type.flow`,
-`mac.rule_kind.` -> `mac.concept.rule.`, `mac.axis_kind.` -> `mac.concept.axis_kind.`,
+`mac.rule_kind.` -> `mac.concept.rule.`, `mac.axis.` -> `mac.concept.axis.`,
 `mac.identity_kind.` -> `mac.concept.identity.`; a single measure column receives the concept's
 `semantics.measure_type` / `unit` as its `measure:` block; `schema_version` is lifted to the
 schema's generation. Only the `grounding:` block is re-rendered (its comments do not survive);
@@ -57,7 +57,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 RENAMES = [
     (re.compile(r"mac\.MeasureType\.([A-Za-z]+)"), lambda m: "mac.concept.column.measure_type." + m.group(1).lower()),
     (re.compile(r"mac\.rule_kind\."), lambda m: "mac.concept.rule."),
-    (re.compile(r"mac\.axis_kind\."), lambda m: "mac.concept.axis_kind."),
+    (re.compile(r"mac\.axis\."), lambda m: "mac.concept.axis."),
     (re.compile(r"mac\.identity_kind\."), lambda m: "mac.concept.identity."),
     (re.compile(r"mac\.aggregation_effect\."), lambda m: "mac.concept.aggregation_effect."),
 ]

@@ -51,7 +51,7 @@ one"), which `grounded_columns._by_declared_measure_type` reads.
 unmigrated bundle reads identically. `ConceptSemantics` is `extra="forbid"` and 13 locked files stop
 parsing if a field disappears: **deprecate, never delete.**
 
-New flags: `axis_kind` on a column; `measure.canonical` (the column the concept IS, stated directly
+New flags: `axis` on a column; `measure.canonical` (the column the concept IS, stated directly
 instead of inferred from a type match, which cannot work when two columns share a type).
 
 **Measured outcome:** 8 real dimension axes now resolve from the declaration, 0 before; 157 planned

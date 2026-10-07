@@ -6,7 +6,7 @@ vocabulary a flat list of DOTTED keys (`concept.column.role:`) when a concept is
 never "it cannot be". It is that nothing stood between the file and its readers:
 
   MEASURED 2026-10-04. 25 top-level keys, 11 of them dotted (`concept.aggregation_effect`,
-  `concept.axis_kind`, `concept.column.{query_use,role,identity,ruling,measure_type}`,
+  `concept.axis`, `concept.column.{query_use,role,identity,ruling,measure_type}`,
   `concept.{identity,rule}`, `relation.column.role`, `transform.driven_by`) folding under three roots,
   and 14 already single-segment. 9 modules load the file with their own `yaml.safe_load`, there was NO
   canonical loader, and ~30 sites index the result by the LITERAL dotted string — `vocab["concept.column.role"]`

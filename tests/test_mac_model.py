@@ -195,15 +195,15 @@ def build_bundle(root: Path, *, foldered: bool, data="data", ontology="ontology"
     write(sub("WidgetCount"), MEASURE_CONCEPT.format(
         name="WidgetCount", provenance="Harvested", relation="mart.fact_widget",
         additivity=block({"period": "additive", "place": "additive", "flavour": "non-additive"}),
-        axis_kinds=block({"period": "mac.concept.axis_kind.time", "place": "mac.concept.axis_kind.categorical",
-                          "flavour": "mac.concept.axis_kind.categorical"}),
+        axis_kinds=block({"period": "mac.concept.axis.time", "place": "mac.concept.axis.categorical",
+                          "flavour": "mac.concept.axis.categorical"}),
         measure_type="    measure_type: mac.concept.column.measure_type.flow"))
 
     # a Target measure claiming a categorical axis is additive — the law says a Target is not
     write(sub("WidgetTarget"), MEASURE_CONCEPT.format(
         name="WidgetTarget", provenance="tuned", relation="fact_widget",
         additivity=block({"place": "additive"}),
-        axis_kinds=block({"place": "mac.concept.axis_kind.categorical"}),
+        axis_kinds=block({"place": "mac.concept.axis.categorical"}),
         measure_type="    measure_type: mac.concept.column.measure_type.target"))
 
     if extras:
@@ -212,14 +212,14 @@ def build_bundle(root: Path, *, foldered: bool, data="data", ontology="ontology"
         write(sub("WidgetSpread"), MEASURE_CONCEPT.format(
             name="WidgetSpread", provenance="authored", relation="fact_widget",
             additivity=block({"place": "additive", "shape": "non-additive"}),
-            axis_kinds=block({"place": "mac.concept.axis_kind.categorical",
-                              "shape": "mac.concept.axis_kind.categorical"}),
+            axis_kinds=block({"place": "mac.concept.axis.categorical",
+                              "shape": "mac.concept.axis.categorical"}),
             measure_type=""))
         # a value outside the closed comparison domain: the statement must be DROPPED, not compared
         write(sub("WidgetRate"), MEASURE_CONCEPT.format(
             name="WidgetRate", provenance="authored", relation="fact_widget",
             additivity=block({"place": "averageable"}),
-            axis_kinds=block({"place": "mac.concept.axis_kind.categorical"}),
+            axis_kinds=block({"place": "mac.concept.axis.categorical"}),
             measure_type="    measure_type: mac.concept.column.measure_type.flow"))
         write(sub("WidgetKind"), ENUM_CONCEPT.format(register="widget_kind.lookup"))
         write(cdir / "unnamed.yaml", "metadata:\n  provenance: authored\nnote: no concept block\n")
@@ -302,7 +302,7 @@ try:
     write(dangling / "ontology" / "concepts" / "orphan.yaml", MEASURE_CONCEPT.format(
         name="Orphan", provenance="authored", relation="mart.no_such_relation",
         additivity=block({"place": "additive"}),
-        axis_kinds=block({"place": "mac.concept.axis_kind.categorical"}), measure_type=""))
+        axis_kinds=block({"place": "mac.concept.axis.categorical"}), measure_type=""))
     write(dangling / "ontology" / "concepts" / "badenum.yaml",
           ENUM_CONCEPT.format(register="no_such_register"))
     M.clear_cache()
@@ -364,7 +364,7 @@ try:
     eq(dcol.site.path, "columns[1]", "a descriptor column carries its own Site")
     eq(Bf.relation("fact_widget").doc.kind, "dataset", "a descriptor's doc kind comes from LOCATION")
 
-    law_stated = Bf.law.additivity("mac.concept.column.measure_type.target", "mac.concept.axis_kind.categorical")
+    law_stated = Bf.law.additivity("mac.concept.column.measure_type.target", "mac.concept.axis.categorical")
     eq(law_stated.value, "mac.concept.aggregation_effect.none", "the law is read as a Stated")
     check(law_stated.site.file.startswith(M.FRAMEWORK),
           f"the law's Site names the framework, not a bundle ({law_stated.site.file})")

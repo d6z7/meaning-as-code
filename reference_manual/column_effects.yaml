@@ -972,7 +972,7 @@ bench:
         derives: measure_matrix
         derives_note: >-
           This panel computes nothing of its own. The legal fold per axis comes from
-          mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis_kind — five
+          mac_vocabulary.yaml#MeasureType, where additivity is stated ONCE over axis — five
           types × two kinds = ten universal cells, each naming a mac.concept.aggregation_effect term. An
           applied ontology references those members; it never re-encodes the matrix, and neither
           does this page.

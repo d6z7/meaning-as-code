@@ -14,7 +14,7 @@ host's row key.
 ```yaml
 columns:
   <column-name>:
-    axis_kind:    <string>
+    axis:         <string>
     counts:       <boolean>
     identity:     canonical | part | reference
     measure:
@@ -42,7 +42,7 @@ columns:
 
 | key | type | required | choices | comment |
 |---|---|---|---|---|
-| `axis_kind` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorica… |
+| `axis` | string | no | — | WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time`, `.categorical`, or … |
 | `counts` | boolean | no | — | WHAT ONE INSTANCE IS, when the relation is served FINER than the thing -> concept.identity.… |
 | `identity` | string | no | `canonical`<br>`part`<br>`reference`<br>*from* `mac.concept.column.identity` | `canonical` -> the concept's key; `part` marks one column of a composite key; `reference` a… |
 | `measure` | object | no | — | THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity excepti… |

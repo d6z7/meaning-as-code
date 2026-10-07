@@ -8,7 +8,7 @@ A column's flags, or null to serve the column and say nothing more. TODAY'S FLAG
 
 ## Keys
 
-- [`axis_kind`](#axis-kind) — *string*
+- [`axis`](#axis-kind) — *string*
 - [`counts`](#counts) — *boolean*
 - [`identity`](#identity) — *string*
 - [`measure`](#measure) — *object*
@@ -16,15 +16,15 @@ A column's flags, or null to serve the column and say nothing more. TODAY'S FLAG
 - [`role`](#role) — *string*
 - [`rulings`](#rulings) — *object*
 
-### `axis_kind`
+### `axis`
 
 *string* · optional
 
-WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis_kind) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.
+WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.
 
 **When you would reach for it.**
 
-THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis_kind) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time.
+THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time.
 
 ### `counts`
 

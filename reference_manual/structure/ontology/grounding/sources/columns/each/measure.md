@@ -37,7 +37,7 @@ THE CONCEPT HAS MORE THAN ONE MEASURE COLUMN AND ONE OF THEM IS THE CONCEPT'S OW
 
 *string* · optional
 
-WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.
+WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.
 
 **When you would reach for it.**
 

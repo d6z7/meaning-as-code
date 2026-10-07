@@ -6,7 +6,7 @@ status: >-
   mac-runtime reads); seven sections are PROPOSED and REFUSED by the schema today (`references`, `domain`,
   `resolution`, `placement`, `absence`, `disclose`, `discriminates`). They are banded at the end of this page.
 audience: ontology authors, importer developers, console developers
-companions: [how_a_question_becomes_sql.md, column_rulings.md, column_roles.md, column_map.generated.md, patterns/]
+companions: [column_declaration.md, how_a_question_becomes_sql.md, column_rulings.md, column_roles.md, column_map.generated.md, patterns/]
 ---
 
 # The column specification
@@ -222,7 +222,7 @@ the schema refuses. A key is in exactly one of them.
 | `rulings.sort` | no | — | `asc` \| `desc` \| `none` | the order this column's values are presented in when the question states none — `asc` alphanumeric for a NAME, `desc` largest-first for a MAGNITUDE, `none` never an ordering key. Per column, never per concept. |
 | `rulings.never_axis` | no | — | free text — the reason, one line | may not be grouped on; the reason is quoted into the refusal |
 | `rulings.evidence` | **with never_axis** | — | a DQ id | the measurement. Without it, a prohibition is a preference. |
-| `axis_kind` | no | — | `mac.concept.axis_kind.*` | which KIND of aggregation axis this column is — the fold law is stated over kinds, so it is universal |
+| `axis` | no | — | `mac.concept.axis.*` | which KIND of aggregation axis this column is — the fold law is stated over kinds, so it is universal |
 | `register` | no | — | a bundle-relative path | the value set this column carries, one virtual table per set |
 | `measure.type` | role: measure | — | `mac.concept.column.measure_type.*` | which folds are legal |
 | `measure.unit` | no | — | free text | what the number is in |

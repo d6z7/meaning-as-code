@@ -203,7 +203,16 @@ authored:
         # IMPLEMENTED…` 2. Four terms, and 7 of the 20 carry an em-dash justification after the term
         # ("SHIPPED — implemented in mac-runtime and honoured today"). The TERM is closed; the
         # sentence after the dash is not, because it carries the evidence and must stay free prose.
-        status_closed_first_word: [reference, SHIPPED, NOT, DECLARED]
+        #
+        # `retired` ADDED 2026-10-07, and the gate is why it had to be: four canon terms left
+        # `mac_vocabulary.yaml#canon.terms` that day (ambiguity_gate, closure_anomaly_check,
+        # grouping_from_register, relation_alias_resolve) and their PAGES stay exactly where they are —
+        # 28 pages link to them, and a moved page is a broken link. A retired page must therefore be
+        # able to SAY it is retired, in the one field a reader checks first. Without the term this gate
+        # reported four STATUS_FIRST_WORD_UNDECLARED and the retirement looked like four malformed
+        # pages rather than four deliberate ones. A page opening `retired` is excluded from the canon's
+        # three-list agreement by `check_canon_documented`, which reads the same marker.
+        status_closed_first_word: [reference, SHIPPED, NOT, DECLARED, retired]
       # Measured: 17 of 20 open with a purpose sentence, 3 do not (alias_resolve,
       # refuse_unresolvable_name, relation_alias_resolve). `## Serves` is this genre's purpose
       # statement, so the sentence above it is a courtesy, not the contract. Not declared.
@@ -320,14 +329,15 @@ authored:
     path: >-
       reference_manual/README.md | reference_manual/03_pattern_reference.md |
       reference_manual/FINDINGS.md | reference_manual/rules_and_canons/README.md |
-      reference_manual/column_roles.md | reference_manual/column_rulings.md |
+      reference_manual/column_declaration.md | reference_manual/column_roles.md |
+      reference_manual/column_rulings.md |
       reference_manual/column_specification.md | reference_manual/connection.md |
       reference_manual/how_a_question_becomes_sql.md | reference_manual/rules_and_canons/identity_and_rules.md |
       reference_manual/measures.md | reference_manual/rules_and_canons/refusals_and_findings.md |
       reference_manual/rules_and_canons/rule_engine.md | reference_manual/testing_and_quality.md |
       reference_manual/shape_reference.md
     naming: the subject's own name
-    population: {of: 15 named pages, from: «this declaration», empty_is: EMPTY}
+    population: {of: 16 named pages, from: «this declaration», empty_is: EMPTY}
     lifecycle: authored
     shape:
       # A FLOOR, AND ONLY A FLOOR. These 15 share no section set and should not be made to: a page

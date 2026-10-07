@@ -81,8 +81,8 @@ antipattern: >
   Re-encoding additivity on every measure (duplication — the law belongs on the type), or omitting it
   entirely (the agent assumes additive and sums the stock across time). The rule-count smell C6 if every
   measure grows its own "don't sum over time" note instead of pointing at the type.
-status: scattered   # the additivity law (mac.concept.column.measure_type × axis_kind) exists; "semi-additive balance" was never named as a pattern
-canon_ref: [mac_vocabulary.yaml (measure_type × axis_kind), shape_reference.md (ConceptFile; semantics.additivity), MODELLERS_COOKBOOK.md C6]
+status: scattered   # the additivity law (mac.concept.column.measure_type × axis) exists; "semi-additive balance" was never named as a pattern
+canon_ref: [mac_vocabulary.yaml (measure_type × axis), shape_reference.md (ConceptFile; semantics.additivity), MODELLERS_COOKBOOK.md C6]
 ```
 
 ## The determinism border
@@ -92,7 +92,7 @@ has no interpretative remainder at all:
 
 | Behaviour | Kind | How |
 | --- | --- | --- |
-| Which axis is additive vs point-in-time | **skeleton** | `measure_type.stock × axis_kind` — typed, no prose |
+| Which axis is additive vs point-in-time | **skeleton** | `measure_type.stock × axis` — typed, no prose |
 | `SUM(units_on_hand)` may not cross the time axis unpinned | **canon-backed** | the [`additivity_guard`](../rules_and_canons/semi_additive_balance/additivity_guard.md) canon |
 | anything interpretative | **none** | the cleanest case: skeleton + canon → 100% determinism coverage |
 
@@ -106,10 +106,10 @@ additivity:
     udf: additivity_guard
     params:
       measure_column: units_on_hand
-      axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = measure_type.stock × axis_kind
+      axis_effects: { snapshot_date: point_in_time, warehouse_id: additive }   # = measure_type.stock × axis
 ```
 
-Because `axis_effects` is derived from `measure_type.stock × axis_kind` (already in the ontology), the guard
+Because `axis_effects` is derived from `measure_type.stock × axis` (already in the ontology), the guard
 is **auto-pluggable** — write the type, the params follow. Contrast `context_dependent_meaning`, which keeps
 a genuine prose-fallback ("which brand?"); here there is none.
 

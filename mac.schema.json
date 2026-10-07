@@ -3878,7 +3878,7 @@
                           "properties": {
                             "type": {
                               "type": "string",
-                              "description": "WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis_kind) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.",
+                              "description": "WHICH KIND OF QUANTITY this column holds, from mac.concept.column.measure_type. It is half of the fold law — (measure_type x axis) decides what may be summed along what — so this is not documentation: get it wrong and the engine will add up something it must not. A flow sums over time, a stock does not, an intensive quantity sums over nothing and must be weighted, and a precomputed one must not be re-aggregated at all.",
                               "constellation": "YOU HAVE DECLARED `measure` AND MUST SAY HOW THE QUANTITY BEHAVES WHEN IT IS FOLDED. A stock level and a revenue amount are both USD and both numeric; summing revenue across months is the point and summing the stock level across months is a number nobody asked for. Nothing in the data separates them. This is the half of the fold law the column owns, so getting it wrong does not produce an error — it produces a plausible wrong total."
                             },
                             "unit": {
@@ -3961,10 +3961,10 @@
                           },
                           "constellation": "SOMETHING TRUE ABOUT THE COLUMN CANNOT BE MEASURED FROM IT. That is the whole test, and it is the one that tells a ruling from a fact: if profiling the rows could establish it, it is not a ruling and does not belong here. The compelling case is two columns that are 1:1 where one is the other's NAME — cardinality is the same in both directions, so nothing in the data says which is the name and which is the thing."
                         },
-                        "axis_kind": {
+                        "axis": {
                           "type": "string",
-                          "description": "WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis_kind.time` or `.categorical`. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis_kind) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.",
-                          "constellation": "THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis_kind) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time."
+                          "description": "WHAT KIND OF AGGREGATION AXIS this column is — `mac.concept.axis.time`, `.categorical`, or `.none` (NOT AN AXIS \u2014 a surrogate row id, a housekeeping stamp, the measure payload). v0.1.19 made this key REQUIRED on every declared column and added `.none` for the same reason: before it, a column with no value could mean \"not an axis\" or \"nobody said\", and nothing could tell them apart \u2014 measured on contoso5, 12 surrogate key columns meant the first and 30 declared dimensions meant the second. `.none` is NOT `rulings.never_axis`: that one says a query WOULD group by it and may not, names the measurement, and refuses citing it. The fold law is stated over KINDS and not over column names, which is what makes it universal: (measure_type × axis) → aggregation effect. Declare it HERE, on the column, rather than in the per-column map one level up under `semantics.axis_kinds`: that map's keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the declaration is inert.",
+                          "constellation": "THE CONCEPT HAS SEVERAL COLUMNS A QUESTION COULD GROUP BY AND THEY ARE NOT THE SAME KIND OF AXIS. A sale line carries an order date, a delivery date and a customer key. The fold law is stated over KINDS rather than over names — (measure_type × axis) → aggregation effect — so without the kind the law has nothing to match on, and a stock measure will be summed across time because nobody said that axis was time."
                         },
                         "register": {
                           "type": "string",
@@ -3980,7 +3980,7 @@
                     }
                   }
                 ],
-                "description": "WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat LIST names columns and says nothing about them; the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis_kind. Prefer the map. The list stays legal so a bundle written before the map still loads, and `check_column_spec` reports every concept still using it."
+                "description": "WHICH COLUMNS THIS CONCEPT SERVES, and what each one IS. Two forms are legal and they are not equivalent: the flat LIST names columns and says nothing about them; the column MAP carries each column's own facts — role, identity, measure, rulings, register, axis. Prefer the map. The list stays legal so a bundle written before the map still loads, and `check_column_spec` reports every concept still using it."
               }
             },
             "additionalProperties": true
@@ -4188,11 +4188,11 @@
         },
         "axis_kinds": {
           "type": "object",
-          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis_kind term. This lets the universal (measure_type x axis_kind) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis_kind.*` references.",
+          "description": "v0.6: map each aggregation axis (the same axis names used in `additivity`) to its mac.concept.axis term. This lets the universal (measure_type x axis) additivity law in mac_vocabulary.yaml resolve for this concept's concrete axes — additivity becomes referenced data, not restated prose. Values are `mac.concept.concept.axis.*` references.",
           "additionalProperties": {
             "type": "string",
-            "pattern": "^mac\\.concept\\.axis_kind\\.(categorical|time)$",
-            "description": "What kind of aggregation axis one column is, keyed by column name. DO NOT USE IT: the keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the whole declaration is inert. Declare `axis_kind` on the column instead. It remains readable so a bundle that still carries it is not broken by its absence."
+            "pattern": "^mac\\.concept\\.axis\\.(categorical|time)$",
+            "description": "What kind of aggregation axis one column is, keyed by column name. DO NOT USE IT: the keys are column names while the planner looks them up by a lowercased CONCEPT name, so across 37 concepts and 47 entries not one key can ever match and the whole declaration is inert. Declare `axis` on the column instead. It remains readable so a bundle that still carries it is not broken by its absence."
           }
         },
         "unit": {
@@ -4201,7 +4201,7 @@
         },
         "measure_type": {
           "type": "string",
-          "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis_kind) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
+          "description": "v0.6: the measure's additivity class — a reference to a mac.concept.column.measure_type member (flow/stock/intensive/precomputed/target). The (type × axis) additivity law lives once on mac.concept.column.measure_type; together with semantics.axis_kinds it resolves the full per-axis matrix, so additivity is referenced rather than restated.",
           "pattern": "^mac\\.concept\\.column\\.measure_type\\.(flow|intensive|precomputed|stock|target)$",
           "$comment": "PATTERN UPDATED 2026-09-27 with the namespace rename (mac.measure_type -> mac.concept.column.measure_type, operator ruling). A pattern that hardcodes a namespace is a THIRD home for the vocabulary — after the vocabulary itself and any enum — and at the time check_vocabulary_parity did not read patterns, so this one had to be found by a bundle failing. The parity gate has read patterns since 2026-09-27 (PATTERNS in tools/check_vocabulary_parity.py) and this slot is one of the three it holds to the vocabulary's namespace."
         }

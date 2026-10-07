@@ -67,7 +67,7 @@ import mac_diag as D
 import mac_project as P
 
 SHAPE_THRESHOLD = 5
-_DECLARED_SLOTS = ("measure_type", "additivity", "grain", "closure", "concept.axis_kind")
+_DECLARED_SLOTS = ("measure_type", "additivity", "grain", "closure", "concept.axis")
 _COMPUTE_VERBS = ("derive", "comput", "sum ", "collapse", "refuse", "rollup", "roll up",
                   "average", "ratio", "divide", "pivot")
 
