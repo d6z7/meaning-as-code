@@ -164,10 +164,22 @@ def render(diags: list, root: str, *, show: str = WARNING) -> str:
 
 
 def summarise(diags: list) -> dict:
-    by_sev, by_code = {}, {}
+    """The finding set's counts — per severity, per code, AND PER CODE PER SEVERITY.
+
+    THE THIRD ONE IS WHY THIS CHANGED. `by_code` says MAC008 fired three times; it does not say
+    whether any of those was an ERROR. The console's health banner read that total and rendered
+    "INCONSISTENT — MAC008" over a bundle whose verdict was COMPILES with 0 errors: three
+    occurrences at `warning` and `info`, a prose-placement guardrail and an unmodelled rule
+    reference, not one dangling pointer. A consumer that cannot tell an error from an info cannot
+    render a traffic light, and the fault was in what it was handed.
+    """
+    by_sev, by_code, by_code_severity = {}, {}, {}
     for d in diags:
         by_sev[d.severity] = by_sev.get(d.severity, 0) + 1
         by_code[d.code] = by_code.get(d.code, 0) + 1
+        per = by_code_severity.setdefault(d.code, {})
+        per[d.severity] = per.get(d.severity, 0) + 1
     return {"total": len(diags), "by_severity": by_sev, "by_code": by_code,
+            "by_code_severity": by_code_severity,
             "errors": by_sev.get(ERROR, 0), "warnings": by_sev.get(WARNING, 0),
             "witnesses": sum(len(d.witnesses) for d in diags)}

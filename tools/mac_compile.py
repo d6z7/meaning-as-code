@@ -640,7 +640,13 @@ def payload(root: str, diags: list, rows: list, timings: dict, *, started, durat
         # A dashboard must be able to render "clean", "never computed" and "retired" as three
         # different things. `retired` names the code that replaced it, so a stored finding set from
         # before the withdrawal stays readable: the reader is told where the question went.
+        # `count` IS NOT A VERDICT, and `errors` is what a traffic light may read. The console's
+        # health banner rendered "INCONSISTENT — MAC008" off `count > 0` over a bundle that
+        # COMPILES with 0 errors, because this record carried no severity at all. Both are here
+        # now: the total for a census, the per-severity split for anything that refuses.
         "codes": {c: {"kind": k, "meaning": m, "count": stats["by_code"].get(c, 0),
+                      "by_severity": stats["by_code_severity"].get(c, {}),
+                      "errors": stats["by_code_severity"].get(c, {}).get(ERROR, 0),
                       "computed": c not in unknown and c not in RETIRED,
                       "retired": RETIRED[c][0] if c in RETIRED else None}
                   for c, (k, m) in CODES.items()},
