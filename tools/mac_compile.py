@@ -77,6 +77,7 @@ import check_common_rules as COMMON
 import check_cookbook_smells as COOKBOOK
 import check_rule_reference_basis as REFBASIS
 import check_framework_selfconform as SELFCONF
+import mac_checks_referential as REFERENTIAL     # noqa: E402
 import mac_checks_semantic as SEMANTIC            # noqa: E402
 import mac_checks_structure as STRUCTURE          # noqa: E402
 import mac_model as M                             # noqa: E402
@@ -117,6 +118,20 @@ PHASES = (
     # question nobody is asking any more.
     ("structure", ("MAC001", "MAC002", "MAC008", "MAC011"), "model",
      "what is defined, and does it satisfy its definition"),
+    # THE TRAFFIC LIGHT, added 2026-10-07 on the operator's ruling: "IT JUST DOES NOT COMPILE WITH
+    # REFERENTIAL INTEGRITY BROKEN AND YOU SHOULD REFUSE TO EXECUTE." It sits second, right after
+    # structure, because every later phase reasons about declarations REACHING each other and a bundle
+    # whose pointers are broken makes all of them answer about a graph that is not there.
+    #
+    # NOTHING HERE IS NEW EXCEPT THE REFUSAL. `mac_pointers.yaml` has catalogued what may point at what
+    # since mac.pointers/1, `tools/mac_pointers.py` has resolved it since 2026-10-04, and
+    # `estate_graph.py verify|impact` has been able to byte-compare the derived graph and answer "if I
+    # drop X, what breaks" the whole time. What did not exist was a phase that ASKED, so a bundle with
+    # dangling references compiled and published, and the only safeguard was somebody remembering to run
+    # a gate in another repository. Measured on 2026-10-07: nobody remembered for an entire session of
+    # edits, and the estate graph drifted 8 of its 11 tables unnoticed.
+    ("referential", ("MAC008", "MAC003"), "root",
+     "whether every pointer the CATALOGUE declares resolves — the traffic light"),
     ("semantic", ("MAC003", "MAC004", "MAC007", "MAC006", "MAC010"), "model",
      "what is stated twice, contradicted, unwarranted, dead, or off the record"),
     ("adoption", ("MAC005",), "conformance",
@@ -283,6 +298,8 @@ def _run_phase(name: str, bundle_model, bundle_conf, framework, root: str) -> li
     reports a CLEAN bundle, which is strictly worse than reporting nothing."""
     if name == "structure":
         return STRUCTURE.run(bundle_model, root)
+    if name == "referential":
+        return REFERENTIAL.check_referential(root)
     if name == "semantic":
         return SEMANTIC.run(bundle_model, root)
     if name == "adoption":
