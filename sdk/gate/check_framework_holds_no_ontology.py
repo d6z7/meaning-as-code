@@ -178,6 +178,52 @@ def run(root: Path) -> int:
                 f"      or it is the eleven again: an instance frozen at a generation the schema has\n"
                 f"      moved past, passing nothing because nobody asked it.")
 
+    # ── THE BUNDLE THE FRAMEWORK PRODUCES IS HELD TO THE SAME RULE ────────────────────────────────
+    # The framework carries no instance, but it still PRODUCES one: tools/mac_fixture.py emits the
+    # two-plane bundle that five self-tests resolve through. That content is hand-typed against the
+    # column surface, so it can rot exactly the way the eleven did -- and rot in a GENERATOR is
+    # quieter, because there is no file in the tree for anyone to notice. So it is emitted here and
+    # validated against the CURRENT schema and shapes, every run.
+    #
+    # WHY THIS AND NOT SCHEMA-DRIVEN GENERATION. Deriving a conformant instance from mac.schema.json
+    # would make staleness structurally impossible, which is better in principle; it is also a
+    # generator over a schema full of conditionals, and a fragile one would fail in a way that reads
+    # like a broken standard. This closes the FAILURE MODE -- silent rot -- without that risk: the
+    # day the surface moves, this gate reds and names the file and the key, which is the whole
+    # difference between the eleven and a fixture somebody fixes in ten minutes.
+    print("  the generated two-plane fixture (tools/mac_fixture.py):")
+    emitted = None
+    try:
+        sys.path.insert(0, str(root / "tools"))
+        import mac_fixture as _FIX
+        emitted = _FIX.emit_temp(prefix="holds_no_ontology_fixture_")
+        for label, tool in (("validate_schema", "validate_schema.py"),
+                            ("check_shapes", "check_shapes.py")):
+            pr = subprocess.run([sys.executable, str(root / "tools" / tool), str(emitted)],
+                                capture_output=True, text=True)
+            out = pr.stdout + pr.stderr
+            clean = pr.returncode == 0 and ("PASS" in out or "OK —" in out)
+            line = next((l.strip() for l in reversed(out.splitlines())
+                         if l.strip().startswith(("PASS", "FAIL", "✓", "✗"))), out.strip()[-140:])
+            print(f"      {'✓' if clean else '✗'} {label}: {line[:140]}")
+            if not clean:
+                findings.append(
+                    f"THE EMITTED FIXTURE DOES NOT CONFORM  ({label})\n"
+                    f"      {line[:200]}\n"
+                    f"      tools/mac_fixture.py hand-encodes the column surface. The standard has\n"
+                    f"      moved and the generator has not. Fix the templates in that file — this\n"
+                    f"      is the silent-rot failure of the eleven bundles, caught early because a\n"
+                    f"      generator's content has no file in the tree to notice.")
+    except Exception as exc:                                       # noqa: BLE001 — report, never die
+        findings.append(
+            f"THE FIXTURE COULD NOT BE EMITTED  ({exc.__class__.__name__}: {exc})\n"
+            f"      Five self-tests resolve their bundle through tools/mac_fixture.py. If it cannot\n"
+            f"      emit, those five measure nothing.")
+    finally:
+        if emitted is not None:
+            import shutil
+            shutil.rmtree(emitted, ignore_errors=True)
+
     print()
     if findings:
         for f in findings:
