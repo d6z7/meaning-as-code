@@ -20,6 +20,18 @@ roots instead of hardcoding `concepts/` / `tables/`:
 The model already binds a concept to its descriptor by RELATION NAME, not by path, so nothing in the YAML
 changes between layouts — only where the tools look.
 """
+# THE 3.9 FLOOR IS A DECLARED CONTRACT, AND THIS FILE BROKE IT. `dict | None` in an annotation is
+# PEP 604, evaluated at runtime before 3.10 -- three of them have been in this file since 70190bd
+# (2026-09-28) and cost nothing, because nothing on the 3.9 path imported it. On 2026-10-07 8c6fc9c
+# added `import mac_project` to sdk/project/ontology_quality.py, which put this module in
+# project_edges.py's import chain, and the edges seam declares a 3.9 floor. The seam gate caught it
+# at the one clause that probes the floor: check_seam_contract went 47/47 -> 46/47, FLOOR_BROKEN,
+# `TypeError: unsupported operand type(s) for |: 'type' and 'NoneType'` at line 152 -- an exit 1
+# with an empty stdout, which is the one failure no seam names. Lazy annotations fix all three at
+# once and are inert here: nothing in this module reads __annotations__, and there is no dataclass,
+# pydantic model or get_type_hints call to care.
+from __future__ import annotations
+
 from pathlib import Path
 from types import SimpleNamespace
 
