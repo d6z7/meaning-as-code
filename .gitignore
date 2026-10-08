@@ -43,3 +43,13 @@ registers/estate_terms.txt
 # never travel: committed, it would arrive disarmed in every clone. Ignored so that a
 # `git add -A` in a bundle where the operator has unlocked cannot carry it in.
 .ontology-unlocked
+
+# A GENERIC FRAMEWORK SHIPS NO ONTOLOGY. Operator ruling 2026-10-08: "mac cannot contain any
+# ontology as it is overarching generic framework ... delete or migrate everyting 'ontology
+# configuration' from mac". bundlegen/generated/ held ELEVEN complete bundles — 394 files, 350
+# concepts, 11 mac.project.yaml, 11 connection.yaml, 11 vocabulary.yaml — and all eleven FAILED this
+# repository's own validator, carrying `identity:`, `class: reference` and `grounding.sources`, three
+# shapes retired between 2026-10-05 and 2026-10-07. That is the cost of a framework owning instances:
+# it cannot move the standard without dragging instances it owns, and nothing noticed because nothing
+# validated them. bundlegen/generate.py stays; its output does not.
+bundlegen/generated/

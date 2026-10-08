@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
-# Regenerate every BIRD dev bundle, so the committed ones are a DIFF and not a snapshot.
+# Regenerate every BIRD dev bundle ON DEMAND. The output is NOT checked in.
 #
-# WHY THIS EXISTS. `bundlegen/generated/bird/` is checked in, which is only useful if it can be
-# reproduced: a committed artefact nobody can regenerate is a claim, not evidence. Run this after
-# any change to the generator and read `git diff` — 11 real schemas, 84 concepts and 106 edges
-# will tell you what the change actually did, which a passing self-test will not.
+# WHY THIS EXISTS, AND WHY ITS PREMISE CHANGED ON 2026-10-08. It used to read "`bundlegen/generated/
+# bird/` is checked in, which is only useful if it can be reproduced". The operator then ruled that a
+# generic framework ships no ontology, and the 394 committed files went: eleven complete bundles, all
+# eleven failing this repository's own validator because three column-surface shapes had been retired
+# under them without anything checking. A committed artefact nobody can regenerate is a claim rather
+# than evidence — but a committed artefact that silently rots against its own schema is worse, and
+# that is what eleven of them were.
+#
+# So read the DIFF the way you always did, just against a local run rather than against git: emit
+# once before your change to the generator and once after, and diff the two trees. 11 real schemas,
+# 84 concepts and 106 edges will tell you what the change actually did, which a passing self-test
+# will not.
 #
 # The databases are NOT in this repo (1.4 GB). benchmark/SOURCES.md carries the URL and the
 # sha256; unpack them anywhere and point BIRD_DB at the `dev_databases` directory.
