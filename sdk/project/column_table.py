@@ -95,13 +95,15 @@ def reference_cell(col: dict, *, code: bool = True) -> str:
     ref = str((_r.get("to") if isinstance(_r, dict) else _r) or "").strip()
     if ref:
         parts.append(f"→ `{ref}`" if code else f"→ {ref}")
-    reg = str(c.get("register") or "").strip()
-    if reg:
-        name = reg.rsplit("/", 1)[-1]
-        for suf in (".lookup.csv", ".csv"):
-            if name.endswith(suf):
-                name = name[: -len(suf)]
-                break
+    # THROUGH `register_name`, NOT A COPY OF IT. This block used to re-implement the suffix
+    # stripping inline — the same stale `(".lookup.csv", ".csv")` list that `register_name` carried
+    # fifty lines below, in this same module. That made THREE homes for "reduce a register pointer
+    # to its name" (here, `register_name`, and `project_data.register_users`), and when descriptors
+    # moved to `.lookup.yaml` paths all three went wrong separately: fixing two of them left this
+    # cell still printing `contoso5_..._from_currency.lookup.yaml` while the `## Registers` section
+    # two sections below had already come right. One home, so a fifth spelling cannot split them.
+    name = register_name(c)
+    if name:
         parts.append(f"register: `{name}`" if code else f"register: {name}")
     # HOW A VALUE IN THIS COLUMN IS RESOLVED is the question this cell answers, and for an open-text
     # column the answer was BLANK — indistinguishable from a column nobody had profiled. The
@@ -151,13 +153,42 @@ def _ref_parts(col: dict) -> tuple:
     return (".".join(p[:-1]), p[-1]) if len(p) >= 2 else ((p[0] if p else ""), "")
 
 
+#: EVERY SPELLING OF A REGISTER POINTER. A register is referred to four ways across this estate and
+#: `register_name` must reduce all of them to one bare name: a naming term (`contoso5_continent`),
+#: its CSV, its YAML descriptor, and its prose page. THE LIST USED TO BE `(".lookup.csv", ".csv")`
+#: and the two YAML spellings were missing, which went unnoticed for as long as descriptors pointed
+#: at the CSV. ONE HOME, because `project_data.register_users` needs the identical reduction to
+#: match a declaration against a lookup file and keying them differently is its own defect.
+REGISTER_SUFFIXES = (".lookup.csv", ".lookup.yaml", ".lookup.md", ".csv")
+
+
 def register_name(col: dict) -> str:
-    """The register's bare name from a `data/lookups/<name>.lookup.csv` pointer."""
+    """The register's bare name from a `data/lookups/<name>.lookup.{csv,yaml,md}` pointer.
+
+    MEASURED ON contoso5, 2026-10-08. Descriptors now carry
+    `register: data/lookups/<name>.lookup.yaml` — the fifth-revision column surface moved the
+    pointer from a bare term to a path at the YAML — and neither suffix in the old list matched it.
+    So this returned the name WITH its extension, and the two renderers that use it both went wrong
+    in their own way:
+
+      the columns table cell   register: `contoso5_..._from_currency.lookup.yaml`
+      `## Registers`           - `currency_code` → `data/lookups/<name>.lookup.yaml.lookup.csv`
+
+    The second is the one that matters: a DOUBLED suffix, naming a file that does not exist, on the
+    line whose entire purpose is "the file a reader can open". It reached a person as
+    `check_pages_current: 14 of 26 data-plane page(s) are not what the source renders`, with no hint
+    that the fresh render was the broken half — and that gate's advice, "re-run the data-plane
+    projector", would have delivered the broken line to all 14 pages and then reported green,
+    because the comparator renders through this same function.
+
+    Accepting a bare name unchanged is deliberate and is NOT a fallback to a dead shape: the bare
+    term is still what the page PRINTS, so a descriptor that names one is already in the output form.
+    """
     reg = str((col or {}).get("register") or "").strip()
     if not reg:
         return ""
     name = reg.rsplit("/", 1)[-1]
-    for suf in (".lookup.csv", ".csv"):
+    for suf in REGISTER_SUFFIXES:
         if name.endswith(suf):
             return name[: -len(suf)]
     return name

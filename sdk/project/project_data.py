@@ -272,13 +272,58 @@ def lookup_documents(root) -> dict:
     return out
 
 
+def _register_key(value) -> str:
+    """The bare register stem, from any of its four spellings. Empty for anything unusable.
+
+    DELEGATES TO `column_table.register_name` rather than carrying its own suffix list. A register
+    is referred to four ways — a naming term, its CSV, its YAML descriptor, its prose page — and
+    this function and that one must agree on the reduction or a declaration naming
+    `<name>.lookup.yaml` is compared with a glob yielding `<name>.lookup.csv` and never matches.
+    Two lists would be a second home for exactly the fact that broke both renderers in the first
+    place.
+    """
+    return _CT.register_name({"register": str(value or "")})
+
+
+def _concept_sources(doc) -> list:
+    """The source block(s) a concept grounds on, WHICHEVER SHAPE the file uses.
+
+    `grounding.source` is a single object (schema 0.1.19, which refuses the plural outright);
+    `grounding.sources` was a LIST. One home for that question inside this module, because reading
+    it in one place and not another is exactly how this function came to measure empty.
+    """
+    grounding = doc.get("grounding") if isinstance(doc.get("grounding"), dict) else {}
+    single = grounding.get("source")
+    if isinstance(single, dict):
+        return [single]
+    return [s for s in (grounding.get("sources") or []) if isinstance(s, dict)]
+
+
 def register_users(root) -> dict:
     """`{register filename: [(concept, column, how)]}` — WHO USES EACH LOOKUP.
 
     Two ways a register is reached, and the page must distinguish them: a column that DECLARES it
-    with `register:`, and a column whose NAME the register was cut from, which the undeclared path
-    still reads. A register neither declares nor matches is reached by nothing, and that is the
+    with `value_register:`, and a column whose NAME the register was cut from, which the undeclared
+    path still reads. A register neither declares nor matches is reached by nothing, and that is the
     evidence for deleting it.
+
+    IT MEASURED EMPTY FOR EVERY REGISTER AND SAID NOTHING, which is why this docstring is long.
+    Measured on contoso5, 2026-10-08: 17 registers, 0 with a named user. The loop read
+    `grounding.sources` — the plural list the fifth-revision column surface retired — so it never
+    executed once, and `declared`, `relations` and `by_column` were all built inside it. All three
+    of the attribution paths below therefore died together, including the two FALLBACKS that exist
+    so a register with no declaration is still attributed.
+    
+    The symptom reached a person as `check_pages_current: 14 of 26 data-plane page(s) are not what
+    the source renders` — and that gate's advice, "re-run the data-plane projector", would have
+    BAKED THE LOSS IN: 14 pages that still carried correct attribution would have been overwritten
+    with pages carrying none, and the gate would then have gone green over it. A comparator and a
+    renderer that share code agree by construction; green means "the page matches the renderer",
+    never "the page is right".
+
+    Nothing failed anywhere. A retired shape leaves its reader at a dead address, and the reader
+    measures EMPTY rather than raising — the same defect as `Edge.resolved_by_construction` one
+    plane over, found the same day.
     """
     import csv as _csv
 
@@ -294,19 +339,20 @@ def register_users(root) -> dict:
         name = ((doc.get("concept") or {}) if isinstance(doc.get("concept"), dict) else {}).get("name")
         if not name:
             continue
-        for src in ((doc.get("grounding") or {}).get("sources") or []):
-            if not isinstance(src, dict):
-                continue
+        for src in _concept_sources(doc):
             if src.get("relation"):
                 relations.setdefault(name, str(src["relation"]))
             if not isinstance(src.get("columns"), dict):
                 continue
             for column, body in src["columns"].items():
                 body = body if isinstance(body, dict) else {}
-                if body.get("register"):
-                    declared.setdefault(Path(str(body["register"])).name, []).append(
-                        (name, column, "declared")
-                    )
+                # `value_register` IS THE CURRENT KEY and carries a PATH; `register` was the same
+                # fact as a bare term. Both reduce to one key, so neither spelling is privileged.
+                pointer = body.get("value_register") or body.get("register")
+                if pointer:
+                    key = _register_key(pointer)
+                    if key:
+                        declared.setdefault(key, []).append((name, column, "declared"))
                 by_column.setdefault(str(column).casefold(), []).append((name, column))
     # THE DESCRIPTOR'S `attached:` IS THE ONE HOME of "which columns carry this set"
     # (mac.schema.json#ValueRegisterFile.attached), and it is what the runtime's loader reads. A
@@ -314,7 +360,10 @@ def register_users(root) -> dict:
     # the loader on three of 17 registers — a page that contradicts the engine is worse than none.
     out: dict = {}
     for lk in sorted((root / "data" / "lookups").glob("*.lookup.csv")):
-        users = list(declared.get(lk.name, []))
+        # KEYED ON THE STEM, not the filename: the glob yields `.lookup.csv` and a concept now
+        # declares `.lookup.yaml`. Comparing raw names could never match and would have left this
+        # function empty even with the reader above corrected.
+        users = list(declared.get(_register_key(lk.name), []))
         if not users:
             descriptor = lk.with_name(lk.name.removesuffix(".lookup.csv") + ".lookup.yaml")
             attached = []
