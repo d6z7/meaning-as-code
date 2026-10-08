@@ -54,6 +54,10 @@ A planning target, not an observed quantity (e.g. a sales goal); not summable on
 
 **additivity:** `{"time": "mac.concept.aggregation_effect.none", "categorical": "mac.concept.aggregation_effect.none"}`
 
+## Keys that take one of these values
+
+- `type` on [`ontology.grounding.source.columns.<name>.offers.aggregate`](../../../structure/ontology/grounding/source/columns/each/offers/aggregate.md)
+
 ---
 
 [↑ the whole tree](../../../README.md)

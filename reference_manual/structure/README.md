@@ -10,11 +10,11 @@ Generated from `mac.schema.json` **0.1.19-develop** and `mac_vocabulary.yaml`. E
 |---|---|
 | levels | 98 |
 | keys | 474 |
-| described in the schema | **345 of 474** (73%) |
-| **gaps — admitted and unexplained** | **129** |
-| **keys with no stated constellation** | **458** of 474 |
-| vocabularies | 22, 136 terms |
-| examples | 186, from 17 concepts |
+| described in the schema | **344 of 474** (73%) |
+| **gaps — admitted and unexplained** | **130** |
+| **keys with no stated constellation** | **464** of 474 |
+| vocabularies | 21, 134 terms |
+| examples | 181, from 17 concepts |
 
 ## The levels
 
@@ -75,15 +75,15 @@ Indented by nesting. The label is the key; the page it opens is that key's level
       - [`realized_by:`](structure/ontology/contract/rules/realized_by.md) — 8 keys
   - [`governance:`](structure/ontology/governance/README.md) — 4 keys
     - [`change_log:`](structure/ontology/governance/change_log.md) — 5 keys
-  - [`grounding:`](structure/ontology/grounding/README.md) — 16 keys
+  - [`grounding:`](structure/ontology/grounding/README.md) — 17 keys, **1 unexplained**
     - [`field_roles:`](structure/ontology/grounding/field_roles.md) — 1 key
     - [`realized_by:`](structure/ontology/grounding/realized_by.md) — 8 keys
-    - [`sources:`](structure/ontology/grounding/sources/README.md) — 3 keys
-      - [`columns:`](structure/ontology/grounding/sources/columns/README.md) — 1 key
-        - [`<name>`](structure/ontology/grounding/sources/columns/each/README.md) — 4 keys
-          - [`roles:`](structure/ontology/grounding/sources/columns/each/roles/README.md) — 5 keys
-            - [`aggregate:`](structure/ontology/grounding/sources/columns/each/roles/aggregate.md) — 4 keys
-          - [`rulings:`](structure/ontology/grounding/sources/columns/each/rulings.md) — 7 keys
+    - [`source:`](structure/ontology/grounding/source/README.md) — 4 keys
+      - [`columns:`](structure/ontology/grounding/source/columns/README.md) — 1 key
+        - [`<name>`](structure/ontology/grounding/source/columns/each/README.md) — 4 keys
+          - [`offers:`](structure/ontology/grounding/source/columns/each/offers/README.md) — 5 keys
+            - [`aggregate:`](structure/ontology/grounding/source/columns/each/offers/aggregate.md) — 4 keys
+          - [`rulings:`](structure/ontology/grounding/source/columns/each/rulings.md) — 5 keys
   - [`members:`](structure/ontology/members/README.md) — 3 keys
     - [`definitions:`](structure/ontology/members/definitions.md) — 4 keys
     - [`realized_by:`](structure/ontology/members/realized_by.md) — 8 keys
@@ -124,10 +124,9 @@ A value like `mac.concept.column.measure_type.flow` is the notion `concept.colum
     - [`axis`](vocabulary/concept/axis.md) — 2 terms, closed
     - [`class`](vocabulary/concept/class.md) — 5 terms, closed
     - `column`
-      - [`identity`](vocabulary/concept/column/identity.md) — 1 terms, closed
       - [`measure_type`](vocabulary/concept/column/measure_type.md) — 5 terms, closed
-      - [`roles`](vocabulary/concept/column/roles.md) — 5 terms, closed
-      - [`ruling`](vocabulary/concept/column/ruling.md) — 5 terms, closed
+      - [`offers`](vocabulary/concept/column/offers.md) — 5 terms, closed
+      - [`ruling`](vocabulary/concept/column/ruling.md) — 4 terms, closed
     - [`rule`](vocabulary/concept/rule.md) — 6 terms, closed
   - [`credential_mode`](vocabulary/credential_mode.md) — 6 terms, closed
   - [`data_plane_gate`](vocabulary/data_plane_gate.md) — 14 terms, closed
@@ -173,6 +172,7 @@ Each is a key the schema admits and does not explain. The fix is a description w
 | [`lookup.attached`](structure/lookup/attached.md) | `column`, `relation`, `schema` |
 | [`lookup.metadata`](structure/lookup/metadata.md) | `generated_by`, `kind` |
 | [`lookup.register`](structure/lookup/register.md) | `members` |
+| [`ontology.grounding`](structure/ontology/grounding/README.md) | `source` |
 | [`project`](structure/project/README.md) | `descriptors`, `metadata`, `sources`, `transforms` |
 | [`project.capabilities`](structure/project/capabilities.md) | `<name>` |
 | [`project.conformance`](structure/project/conformance/README.md) | `out_of_scope` |

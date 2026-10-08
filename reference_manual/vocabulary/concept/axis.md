@@ -23,6 +23,10 @@ Write it as `mac.concept.axis.categorical`
 
 A non-temporal entity/dimension axis (product, location, customer). Flows and stocks are additive along it.
 
+## Keys that take one of these values
+
+- `axis` on [`ontology.grounding.source.columns.<name>.offers`](../../structure/ontology/grounding/source/columns/each/offers/README.md)
+
 ---
 
 [↑ the whole tree](../../README.md)

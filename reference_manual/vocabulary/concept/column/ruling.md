@@ -2,7 +2,7 @@
 
 # `mac.concept.column.ruling.<term>`
 
-**Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  5 terms
+**Closed** — these are all of them. A value outside this list is a load error, not a new term.  ·  4 terms
 
 An authored judgement about a column, beyond what measurement can establish.
 
@@ -12,13 +12,12 @@ An authored judgement about a column, beyond what measurement can establish.
 - [`finer_than`](#finer-than)
 - [`scoped_by`](#scoped-by)
 - [`sort`](#sort)
-- [`never_axis`](#never-axis)
 
 ### `label_of`
 
 Write it as `mac.concept.column.ruling.label_of`
 
-THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `register` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
+THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, NOT ANOTHER THING. The argument is the column it labels; `naming` says WHICH of that thing's names this one is. Group on the named column and DISPLAY this one: a question asking in these words gets answered in them, never refused. Example: `Manufacturer` is the trade-register name of `Brand` — "Contoso" is what the world calls it, "Contoso, Ltd" is what the register calls it, and they are one company under two naming registers. NOT a parent: had the column meant the OWNING company it would be one-to-many and this ruling would be wrong. Cardinality cannot tell you which you have.
 
 **When you would reach for it.**
 
@@ -53,16 +52,6 @@ THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. `
 **When you would reach for it.**
 
 THE READER WILL SCAN THE ROWS IN ORDER AND NOBODY SAID WHAT THE ORDER IS. SQL promises none without ORDER BY, so the answer changes between runs on unchanged data — measured, on an 88-row breakdown that passed and failed alternately.
-
-### `never_axis`
-
-Write it as `mac.concept.column.ruling.never_axis`
-
-THIS COLUMN MUST NOT BE GROUPED ON, for the stated reason, and `evidence` must name the measurement that establishes it. A ruling made from a measurement must produce a REFUSAL THAT CITES IT, never a silent success. Example: `ZipCode`, which alone singles out 29 193 of 104 990 served customers and is the dominant identifier in the row.
-
-**When you would reach for it.**
-
-GROUPING BY THE COLUMN WOULD RETURN ONE ROW PER INSTANCE. Measured: 29,193 of 104,990 postcodes identify a single customer. The query is legal and the result is a customer list pretending to be a breakdown.
 
 ---
 

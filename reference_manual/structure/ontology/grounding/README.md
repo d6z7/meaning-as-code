@@ -6,6 +6,8 @@
 
 Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in the Physical layer — v0.5 removed concept/grounding-level 'columns' (single-homing).
 
+> **1 key at this level carry no description in `mac.schema.json`.** The place to fix one is the schema, which is its one home; this page is generated and cannot hold the answer.
+
 ## Keys
 
 - [`code_column`](#code-column) — *string*
@@ -21,7 +23,8 @@ Thin pointer to where the data lives (FRAMEWORK §5). Column metadata stays in t
 - [`row_count`](#row-count) — *['integer', 'string']*
 - [`schema`](#schema) — *string*
 - [`snapshot_rule`](#snapshot-rule) — *string*
-- [`sources`](#sources) — *list of object*
+- [`source`](#source) — *object*
+- [`sources`](#sources) — *—*
 - [`table`](#table) — *string*
 - [`value_filter`](#value-filter) — *string*
 
@@ -107,13 +110,19 @@ The database SCHEMA the relation lives in, where the connection does not already
 
 HOW A VERSIONED RELATION COLLAPSES TO ONE ROW PER MEMBER, in the bundle's own words. It is PROSE, deliberately: the executable form is a `realized_by: snapshot_collapse` binding, a fragment that binds the relation, or `identity.counts_as` for a count. The runtime quotes it to the reader either way — when a collapse ran, as the rule the collapse honoured; when none did, as the bundle saying its relation holds several rows per member and this query read every one of them.
 
+### `source`
+
+*object* · optional · [has its own keys →](source/README.md)
+
+— no description in the schema —
+
+Its own keys: [`ontology.grounding.source`](source/README.md)
+
 ### `sources`
 
-*list of object* · optional · [has its own keys →](sources/README.md)
+*—* · optional
 
-v0.5 agnostic source binding — the relation(s) this concept queries, each with its key + the columns it uses. A view and a base table are IDENTICAL here (query target only); a view's lineage lives on its Physical descriptor (`derived_from`), never here.
-
-Its own keys: [`ontology.grounding.sources`](sources/README.md)
+RETIRED 2026-10-07 — `source:` is singular. A concept binds ONE relation; many concepts bind one relation. The list was never honoured: `Grounding` carries no `sources` field, `_primary_source` took the first entry, and a second was SILENTLY DROPPED — 17 of 17 contoso5 concepts declared one. `not: {}` makes the old spelling a load error instead of a silent loss. A notion genuinely over two relations is a transform view, or two concepts and an edge.
 
 ### `table`
 
@@ -131,7 +140,7 @@ A PREDICATE THAT NARROWS WHAT THIS CONCEPT IS GROUNDED ON, applied inviolably to
 
 - [`field_roles:`](field_roles.md)
 - [`realized_by:`](realized_by.md)
-- [`sources:`](sources/README.md)
+- [`source:`](source/README.md)
 
 ---
 

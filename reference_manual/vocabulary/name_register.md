@@ -46,7 +46,7 @@ A machine identifier standing for the name. 'GB', 'DE', a numeric key.
 
 ## Keys that take one of these values
 
-- `register` on [`ontology.grounding.sources.columns.<name>.rulings`](../structure/ontology/grounding/sources/columns/each/rulings.md)
+- `naming` on [`ontology.grounding.source.columns.<name>.rulings`](../structure/ontology/grounding/source/columns/each/rulings.md)
 
 ---
 

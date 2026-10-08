@@ -25,3 +25,16 @@
 # The honest next step is a floor PER ROOT, so a thirteenth shape can never again hide inside one
 # number the way the three data-plane roots hid inside 161 for a day.
 465
+
+# 465 -> 464, 2026-10-08. ONE key gained a constellation, and it did so as a SIDE EFFECT of the
+# fifth-revision column surface rather than by anybody writing a paragraph: `grounding.sources[]`
+# became `grounding.source`, `roles` became `offers`, and `identity` retired, so the key population
+# itself changed shape. The pages were regenerated in the same pass (45 rejects over 120 pages:
+# 19 uncovered keys, 8 orphan pages, 7 missing pages, 6 stale pages — every one of them the manual
+# lagging that surface change).
+#
+# LOWERED BECAUSE THE GATE ASKED. Its verdict line read "constellation floor 465, measured 464 —
+# 1 of SLACK, lower the floor", which is the mechanism working: a floor above the measurement is
+# headroom, and headroom is how this estate's leak floor stood at 146 while the real count was 4.
+# One of slack is small enough to be worth nothing and exactly big enough to teach the habit.
+464
