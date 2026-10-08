@@ -94,10 +94,15 @@ def main(argv: list[str] | None = None) -> int:
         # would make this gate demand a predicate the bundle is right not to declare.
         resolved = _resolution(e)
         if not join and not realized and not resolved:
+            # THE MESSAGE NAMES EVERY SHAPE THIS GATE LOOKED FOR. It used to name three while
+            # reading three, and the key the bundle actually used — `resolved_by_construction` —
+            # was not among them, so the finding sent its reader hunting a key that was never
+            # missing. A gate's refusal has to be falsifiable from its own text.
             findings.append((eid, "INERT", f"{frm} -> {to} carries no `join_rule`, no "
-                                           f"`realized_by` and no `resolved_by`, so it joins "
-                                           f"nothing. A question needing this hop is refused with "
-                                           f"an unbound qualifier, not with this edge's name"))
+                                           f"`realized_by`, no `resolved_by` and no "
+                                           f"`resolved_by_construction`, so it joins nothing. A "
+                                           f"question needing this hop is refused with an unbound "
+                                           f"qualifier, not with this edge's name"))
             continue
         if kind == "foreign_key" and not join:
             findings.append((eid, "MISLABELLED", "declared `foreign_key` with no `join_rule` — a "
@@ -171,11 +176,45 @@ def _realization(edge) -> str:
 
 
 def _resolution(edge) -> str:
-    """The RULE that realizes this edge, when a predicate cannot carry it."""
+    """The RULE that realizes this edge, when a predicate cannot carry it.
+
+    BY CONSTRUCTION IS THE FOURTH SHAPE, and it is a BOOLEAN CLAIM rather than a pointer — which is
+    why reading only the two `resolved_by*` attributes missed it. Schema v0.1.19 admitted
+    `resolved_by_construction: true` as the third way a `shared_attribute` edge may say what
+    computes it, beside a resolution rule and a canon binding: where the target is an enumeration
+    whose canonical column IS the shared column, the register's membership already is the set, and
+    there is no join to declare because BOTH ENDS SIT ON ONE RELATION.
+
+    MEASURED ON contoso5, 2026-10-08. This gate reported `FAIL — 3 of 38 declared edges realize
+    nothing the planner can use`, naming product__sold_under__brand, __belongs_to__product_category
+    and __comes_in__color as INERT, while `check_edge_definition` reported `3 of 3 by-construction
+    claim(s) proven against the columns` over the same three. Two gates, opposite verdicts, same
+    subject. Product, Brand, Color and ProductCategory are ALL grounded on `dim_product` — Brand is
+    a COLUMN OF THE PRODUCT ROW — so "revenue by brand" groups by `dim_product.brand` after the one
+    join that already exists. There is nothing to join, the declaration is correct, and the FAIL was
+    this gate's.
+
+    THE DOCSTRING ABOVE `_realization` ALREADY ARGUED THIS CASE, one key earlier: "MEASURED
+    2026-09-26: reading only `realized_by`, this gate reported 10 of 13 edges INERT on a bundle
+    whose every question passes ... A gate that fails a working bundle is worse than no gate,
+    because the next person silences it. Read both shapes." Same failure, one key later. The
+    standing lesson is that WHAT COUNTS AS A REALIZATION has two authors — this gate's tuple and
+    `check_edge_definition`'s reader — and until that set has one home a third shape will do this
+    again.
+    """
+    if getattr(edge, "resolved_by_construction", None) is True:
+        return "by construction (the column resolves it; both ends share one relation)"
     for attr in ("resolved_by_ref", "resolved_by"):
         got = getattr(edge, attr, None)
-        if isinstance(got, str) and got.strip():
-            return got.strip().rsplit("#", 1)[-1]
+        if isinstance(got, str):
+            # A WHITESPACE-ONLY REF IS NOT A RESOLUTION, and it used to be one. The empty-string
+            # guard sat on the FIRST branch only, so `"  "` failed `got.strip()`, fell through to
+            # `if got:` — where a non-empty whitespace string is TRUTHY — and came back as the
+            # resolution `"  "`. The gate then counted the edge as REALIZED BY A RULE and printed a
+            # blank rule name. Found by this gate's own self-test the moment it was rewritten to
+            # call this function instead of re-deriving the answer inline.
+            got = got.strip()
+            return got.rsplit("#", 1)[-1] if got else ""
         if got:
             return str(got)
     return ""
@@ -199,20 +238,61 @@ def _edges(index) -> list:
         return []
 
 
+class _StubEdge:
+    """The attributes `_realization` and `_resolution` actually read, and nothing else.
+
+    A STUB RATHER THAN A `Graph`, because the two functions under test take an EDGE. Building a
+    whole index to exercise two getattr chains would test the loader instead.
+    """
+
+    def __init__(self, **kw):
+        self.join_rule = kw.get("join_rule")
+        self.realized_by = kw.get("realized_by", ())
+        self.realized_by_ref = kw.get("realized_by_ref")
+        self.resolved_by = kw.get("resolved_by", ())
+        self.resolved_by_ref = kw.get("resolved_by_ref")
+        self.resolved_by_construction = kw.get("resolved_by_construction", False)
+
+
 def _self_test() -> int:
-    """A realization is a join_rule OR a realized_by; neither is INERT; both ends must exist."""
+    """Is an edge REALIZED, and by which of the four shapes?
+
+    IT CALLS `_realization` AND `_resolution`. The previous version did not: it computed
+    `bool(join.strip() or realized.strip())` inline and compared that to its own expectation, so
+    every case was an assertion about the test's own arithmetic. It passed 4 of 4 while this gate
+    was reporting FAIL on three correct edges, and it would have passed 4 of 4 with the gate's
+    reader deleted. A self-test that cannot fail when the subject breaks is not evidence.
+
+    THE FOURTH CASE-GROUP IS THE ONE THAT WAS MISSING — `resolved_by_construction`. A shape no case
+    covers is a shape the gate may stop recognising silently, which is how the 2026-10-08
+    contradiction with `check_edge_definition` reached a live bundle.
+    """
+    #: (label, edge, wants_realized)
     cases = [
-        ("join_rule present            -> realized", "a.x = b.y", "", True),
-        ("realized_by present          -> realized", "", "rel.Col", True),
-        ("neither                      -> INERT", "", "", False),
-        ("whitespace is not a predicate -> INERT", "   ", "  ", False),
+        ("join_rule present                 -> realized",
+         _StubEdge(join_rule="a.x = b.y"), True),
+        ("realized_by_ref present           -> realized",
+         _StubEdge(realized_by_ref="rel.Col"), True),
+        ("resolved_by_ref present           -> realized",
+         _StubEdge(resolved_by_ref="file#contract.rules.r"), True),
+        ("resolved_by_construction: true    -> realized",
+         _StubEdge(resolved_by_construction=True), True),
+        ("resolved_by_construction: false   -> INERT",
+         _StubEdge(resolved_by_construction=False), False),
+        ("the STRING 'true' is not the claim -> INERT",
+         _StubEdge(resolved_by_construction="true"), False),
+        ("nothing at all                    -> INERT",
+         _StubEdge(), False),
+        ("whitespace is not a predicate      -> INERT",
+         _StubEdge(join_rule="   ", realized_by_ref="  ", resolved_by_ref=" "), False),
     ]
     bad = 0
-    for label, join, realized, want in cases:
-        got = bool(join.strip() or realized.strip())
+    for label, edge, want in cases:
+        join = (getattr(edge, "join_rule", None) or "").strip()
+        got = bool(join or _realization(edge) or _resolution(edge))
         if got != want:
             bad += 1
-            print(f"  FAIL  {label}")
+            print(f"  FAIL  {label}   (realized={got}, expected {want})")
     n = len(cases)
     print(f"\n{'FAIL' if bad else 'OK'} — self-test: {n - bad} of {n} seeded cases behaved")
     return 1 if bad else 0
