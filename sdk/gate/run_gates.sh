@@ -74,7 +74,8 @@ fi
 
 GATES=(annotation_isolation check_source_coupling check_write_paths check_rule_lock
        check_bundle_secrets check_host_coupling check_boundaries check_artifact
-       check_grammar_home check_engine_coupling check_entry_points check_seam_agreement)
+       check_grammar_home check_engine_coupling check_entry_points check_seam_agreement
+       check_framework_holds_no_ontology)
 
 # ══════════════════════════════════════════════════════════════════════════════════════════════════
 # THE DECLARED REAL-RUN SUBJECT TABLE
@@ -100,6 +101,11 @@ GATES=(annotation_isolation check_source_coupling check_write_paths check_rule_l
 real_args() {  # real_args <gate> -> prints the argv for the real run, or UNWIRED:<reason>
   case "$1" in
     annotation_isolation)   echo "--root $REPO" ;;
+    # THE FRAMEWORK ITSELF IS THE SUBJECT, not a bundle. It asserts this repository owns no ontology
+    # instance beyond its declared goldens — the ruling of 2026-10-08, after eleven bundles had
+    # accumulated here and all eleven failed this repo's own validator unnoticed for want of anyone
+    # enumerating them.
+    check_framework_holds_no_ontology) echo "$REPO" ;;
     check_source_coupling)  echo "$REPO" ;;
     check_write_paths)      echo "--root $REPO" ;;
     # a content-root carrying an `ontology/` plane; this repo's example bundles are the only ones
