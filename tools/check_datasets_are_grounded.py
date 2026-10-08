@@ -48,6 +48,12 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import mac_diag as D  # noqa: E402
 import mac_project as P  # noqa: E402
 
+#: The relation plane (v0.1.20), bound from the bundle root in `main`. A module-level
+#: default rather than a threaded parameter: the readers below sit in different functions
+#: with different signatures, and threading it would be another chance to teach one and
+#: miss another -- which is the defect this resolver exists to end.
+_RELATIONS: dict = {}
+
 UNGROUNDED = "ungrounded-dataset"
 
 
@@ -71,7 +77,10 @@ def bound_relations(concepts: list[dict]) -> set[str]:
     concept may write `mart.dim_thing` while a descriptor writes schema and name apart."""
     out: set[str] = set()
     for c in concepts:
-        for s in ([_s] if isinstance(_s := ((c).get("grounding") or {}).get("source"), dict) else []):
+        # `P.effective_source` so a RELATION-OWNED concept still counts as a claimant.
+        # Without it the fact relation read as "no concept names this relation" while SEVEN
+        # concepts named it through `bindings[].relation`.
+        for s in ([_s] if (_s := P.effective_source(c, _RELATIONS)) else []):
             rel = str(s.get("relation") or "").strip()
             if rel:
                 out.add(rel)
@@ -112,6 +121,8 @@ def main() -> int:
     a = ap.parse_args()
 
     root = pathlib.Path(a.root).resolve()
+    global _RELATIONS
+    _RELATIONS = P.relation_plane(root)
     ds_dir, c_dir = root / "data" / "datasets", root / "ontology" / "concepts"
 
     datasets = [

@@ -111,6 +111,15 @@ def _pick_def(path, layout=None):
         return 'KnowledgeSectionsFile'
     if '/protosql/' in p:
         return 'ProtoSqlFile'
+    # v0.1.20 — the SEMANTIC descriptor of a served relation, `ontology/relations/<relation>.yaml`.
+    # Routed by DIRECTORY, like protosql/ and profiles/, and deliberately not by basename: the file
+    # is named after the RELATION, so a basename route would have to know every relation name.
+    # BOTH descriptions of a relation must be routed. `data/datasets/<r>.yaml` (physical) already
+    # is; without this line the semantic one landed in the "carries no MAC definition" bucket and
+    # read as undeclared debt rather than as a plane the validator had not been taught — the same
+    # misreading the notes on references/ and lookups/ above each record paying for once.
+    if '/relations/' in p and base.endswith('.yaml'):
+        return 'RelationFile'
     if base == 'rules.yaml':
         return 'RulesFile'
     if base == 'edges.yaml':
@@ -178,7 +187,7 @@ SKIP = {'.git', 'node_modules', '.venv', '__pycache__', 'projections'}  # projec
 # twice over: version.py's own header records the field not existing at all when the claim was
 # written, and today the field exists and says 0.1.13 while this says 0.1.14-develop. A comment
 # naming a source is not a source — which is why what replaces it below is checkable instead.
-CURRENT = '0.1.19-develop'
+CURRENT = '0.1.20-develop'
 
 # ── THE RECOGNIZED SET IS DERIVED, NOT TYPED ──────────────────────────────────────────────────────
 # What stood here was a hand-typed set literal holding CURRENT, its base spelling, and the five
@@ -308,6 +317,12 @@ def enumerate_bundle(root, layout=None):
                 'interventions/vanilla_delta.yaml', 'data/quality/data_quality_register.yaml',
                 'data/quality/impurity_resolution_map.yaml', 'knowledge/*.sections.yaml',
                 'ontology/PHASE.yaml', 'ontology/shapes.yaml', 'ontology/protosql/*.yaml',
+                # v0.1.20 — FOURTH TIME THIS HALF WAS THE ONE MISSED, and the note above had
+                # already recorded the first three. `RelationFile` went into $defs, the root
+                # `oneOf` and `_pick_def`, and the semantic descriptor still read as "carries no
+                # MAC definition" because nothing enumerated it. The route and the collection are
+                # both halves of one mechanism; neither is the mechanism.
+                'ontology/relations/*.yaml',
                 'governance/*.yaml', 'governance/protosql/*.yaml'):
         files += [f for f in glob.glob(os.path.join(root, pat)) if not _skipped(f)]
     # COLLECTED BY THE SAME DISCRIMINATOR THAT ROUTES THEM. A pattern glob here would pull in every

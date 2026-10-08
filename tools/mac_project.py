@@ -230,6 +230,110 @@ def column_identity(spec) -> str | None:
     return ref.strip() if isinstance(ref, str) and ref.strip() else None
 
 
+def relation_plane(root) -> dict:
+    """`ontology/relations/<relation>.yaml` -> {key, columns}, keyed by relation name.
+
+    v0.1.20, the relation-owned column form. Empty for a bundle that has not adopted it, and an
+    absent `ontology/relations/` is not a finding -- every bundle in the estate predates it.
+    """
+    import yaml
+
+    out: dict = {}
+    rdir = Path(root) / "ontology" / "relations"
+    if not rdir.is_dir():
+        return out
+    for path in sorted(rdir.rglob("*.yaml")):
+        try:
+            doc = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+        except Exception:  # a malformed relation file is validate_schema's finding, not every gate's
+            continue
+        block = doc.get("relation") or {}
+        out[str(block.get("name") or path.stem)] = {
+            "key": block.get("key"),
+            "columns": doc.get("columns") or {},
+        }
+    return out
+
+
+def effective_source(doc: dict, relations: dict | None = None) -> dict:
+    """A concept's `source:`, or the `source`-shaped mapping its FIRST binding resolves to.
+
+    ONE HOME FOR THE READ, and it is here because SIX gates needed it within an hour of the first
+    relation being migrated. `grounding.source` is the shape every gate in this framework already
+    knows how to read; a relation-owned concept carries `bindings:` instead, and the facts live on
+    the relation. Resolving it to the familiar shape means a gate learns the new plane by changing
+    one line -- and, more to the point, that the SEVENTH gate gets it without changing any.
+
+    WHAT WENT WRONG WITHOUT IT, measured on contoso5 as the migration landed. Each of these was
+    GREEN while blind, which is the failure mode worth naming:
+
+        check_column_planes        PASS on 48 concept bindings, down from 112
+        check_delivery_consistency CONCEPT-RELATION enumerated 11 of 17; ROLE-VOCAB 83 of 184
+        check_datasets_are_grounded  the fact relation read as "no concept names this relation"
+        check_shapes               24 violations against paths that no longer resolved
+        check_answerability        12 answer-path steps reported unsupplied
+
+    Only two announced themselves as failures. The rest reported a PASS over a population that had
+    silently shrunk, which is exactly what this estate means by "a gate that proves nothing".
+
+    `relations` may be omitted when the caller has no bundle root to read -- a `source:` concept
+    resolves without it, and a relation-owned one then resolves to `{}` rather than guessing.
+    """
+    grounding = doc.get("grounding") or {}
+    src = grounding.get("source")
+    if isinstance(src, dict) and src:
+        return src
+    bindings = grounding.get("bindings")
+    if not (isinstance(bindings, list) and bindings):
+        return {}
+    binding = bindings[0] or {}
+    described = (relations or {}).get(str(binding.get("relation") or "")) or {}
+    declared = described.get("columns") or {}
+    serves = binding.get("serves") or []
+    out: dict = {
+        "relation": binding.get("relation"),
+        "key": described.get("key"),
+        "columns": {name: declared[name] for name in serves if name in declared},
+    }
+    if binding.get("counts") is not None:
+        out["counts"] = binding["counts"]
+    measure = binding.get("measure")
+    if measure and measure in out["columns"]:
+        # `bindings[].measure` IS `offers.aggregate.default` -- it sits on the binding because one
+        # relation's measure columns serve several concepts, so which one a bare question means is
+        # the CONCEPT's answer. Written onto the resolved column so every existing reader of
+        # `aggregate.default` is correct without knowing the form.
+        body = dict(out["columns"][measure] or {})
+        offers = dict(body.get("offers") or {})
+        aggregate = dict(offers.get("aggregate") or {})
+        aggregate["default"] = True
+        offers["aggregate"] = aggregate
+        body["offers"] = offers
+        out["columns"][measure] = body
+    return out
+
+
+def normalised_concept(doc: dict, relations: dict | None = None) -> dict:
+    """The concept document with `grounding.source` RESOLVED -- a copy, never a mutation.
+
+    NORMALISE AT THE DOOR. `effective_source` is the read; this is the read applied once, where a
+    gate loads its concepts, so every site downstream of the loader is correct without being
+    taught. Three gates needed exactly this within an hour of the first relation being migrated,
+    and one of them (`check_answerability`) reads `grounding.source` in SIX places -- patching six
+    sites is six chances to miss one, and `check_delivery_consistency` had four.
+
+    A `source:` concept is returned unchanged (same object), so a bundle that has not adopted the
+    relation-owned form pays nothing and cannot be affected by this at all.
+    """
+    grounding = doc.get("grounding") or {}
+    if grounding.get("source") or not grounding.get("bindings"):
+        return doc
+    resolved = effective_source(doc, relations)
+    if not resolved:
+        return doc
+    return {**doc, "grounding": {**grounding, "source": resolved}}
+
+
 def source_key(doc: dict) -> list:
     """`grounding.source.key` — WHAT MAKES ONE ROW UNIQUE, in the order the author wrote.
 
@@ -239,6 +343,10 @@ def source_key(doc: dict) -> list:
     binds one relation, so there is one `key` to read, never a list to scan `[:1]` off.
     """
     src = (doc.get("grounding") or {}).get("source")
+    if not (isinstance(src, dict) and src):
+        # a relation-owned concept keeps its key on the RELATION; callers that pass no relation
+        # plane get [] here, exactly as they would for a concept with no source at all
+        src = effective_source(doc, getattr(source_key, "_relations", None))
     if isinstance(src, dict) and src.get("key"):
         k = src["key"]
         return [str(x) for x in (k if isinstance(k, list) else [k])]

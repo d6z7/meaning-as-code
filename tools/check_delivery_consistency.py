@@ -357,7 +357,7 @@ def inv_concept_relation(st: dict) -> list[dict]:
     for name, d in st["concepts"].items():
         # `grounding.source` IS SINGULAR since 2026-10-07 (`sources:` as a list is now `not: {}` in
         # mac.schema.json — a load error, not a second relation). A concept binds one relation.
-        src = (d.get("grounding") or {}).get("source") or {}
+        src = _effective_source(d.get("grounding") or {}, _RELATIONS)
         r = str(src.get("relation") or "").split(".")[-1]
         if r:
             claimed.add(r)
@@ -432,6 +432,75 @@ _ROLE_TOKEN = re.compile(r"^([A-Za-z0-9_]+)\.field_role\.[A-Za-z0-9_]+$")
 # `inv_role_vocab` no longer reads past `offers` looking for one.
 
 
+
+#: THE RELATION PLANE, bound once in `main` from the bundle under test. A module-level default
+#: rather than a parameter threaded through four call sites: those sites are inside four separate
+#: invariant functions with four different signatures, and threading it would have been four more
+#: chances to teach three of them and miss one -- which is the defect this whole patch is about.
+_RELATIONS: dict = {}
+
+
+def _relation_plane(bundle) -> dict:
+    """`ontology/relations/<relation>.yaml` -> its `columns` map, keyed by relation name.
+
+    v0.1.20. Empty for every bundle that has not adopted the relation-owned form.
+    """
+    # `yaml` is imported INSIDE `main` in this tool (so a missing dependency reports COULD NOT RUN
+    # rather than crashing at import), which a module-level function cannot see.
+    import yaml
+
+    out: dict = {}
+    rdir = bundle / "ontology" / "relations"
+    if rdir.is_dir():
+        for p in sorted(rdir.rglob("*.yaml")):
+            d = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            block = d.get("relation") or {}
+            out[str(block.get("name") or p.stem)] = {
+                "key": block.get("key"),
+                "columns": d.get("columns") or {},
+            }
+    return out
+
+
+def _effective_source(grounding: dict, relations: dict) -> dict:
+    """A concept's `source:`, or the one its FIRST binding resolves to. One home for the read.
+
+    WHY EVERY SITE BELOW NEEDS IT, measured the hour the first relation was migrated. This gate
+    read `grounding.source` in FOUR places, and the seven concepts that moved to `bindings:` went
+    invisible to all four at once: `CONCEPT-RELATION` reported `v_contoso5_sales_line` as "claimed
+    by no concept and declined by nothing" when seven concepts claim it, and the column invariants
+    quietly lost 64 of the bundle's 112 bindings from their denominators. Teaching one site and not
+    the other three is how a gate comes to disagree with itself, so the resolution lives here.
+    """
+    src = grounding.get("source")
+    if isinstance(src, dict) and src:
+        return src
+    bindings = grounding.get("bindings")
+    if not (isinstance(bindings, list) and bindings):
+        return {}
+    binding = bindings[0] or {}
+    described = relations.get(str(binding.get("relation") or ""), {})
+    declared = described.get("columns") or {}
+    serves = binding.get("serves") or []
+    out = {
+        "relation": binding.get("relation"),
+        "key": described.get("key"),
+        "columns": {n: declared[n] for n in serves if n in declared},
+    }
+    if binding.get("counts") is not None:
+        out["counts"] = binding["counts"]
+    measure = binding.get("measure")
+    if measure and measure in out["columns"]:
+        body = dict(out["columns"][measure] or {})
+        offers = dict(body.get("offers") or {})
+        agg = dict(offers.get("aggregate") or {})
+        agg["default"] = True
+        offers["aggregate"] = agg
+        body["offers"] = offers
+        out["columns"][measure] = body
+    return out
+
+
 def _ns_ok(ns: str, st: dict) -> bool:
     """`mac` is the projection's own namespace and always resolves; anything else must be DECLARED."""
     return ns.lower() == "mac" or ns.lower() in st["vocab_ns"]
@@ -482,7 +551,7 @@ def inv_role_vocab(st: dict) -> list[dict]:
                               f"{m.group(1).lower()!r} is declared by no vocabulary.yaml — the token "
                               f"resolves to nothing and no resolver will say so"))
         # ── the CURRENT shape: the column map, `grounding.source` SINGULAR ─────────────────────
-        src = g.get("source") or {}
+        src = _effective_source(g, _RELATIONS)
         cols = src.get("columns")
         if isinstance(cols, dict):
             rel = str(src.get("relation") or "?").split(".")[-1]
@@ -784,7 +853,7 @@ def inv_key_backed(st: dict) -> list[dict]:
     out = []
     for name, d in sorted(st["concepts"].items()):
         # `grounding.source` IS SINGULAR since 2026-10-07 — one concept, one relation, one `key:`.
-        src = (d.get("grounding") or {}).get("source") or {}
+        src = _effective_source(d.get("grounding") or {}, _RELATIONS)
         rel = str(src.get("relation") or "?").split(".")[-1]
         k = src.get("key")
         listed = [str(x) for x in (k if isinstance(k, list) else ([k] if k else []))]
@@ -893,7 +962,7 @@ def inv_measure_unit(st: dict) -> list[dict]:
     out = []
     for name, d in sorted(st["concepts"].items()):
         cols = []
-        src = (d.get("grounding") or {}).get("source") or {}
+        src = _effective_source(d.get("grounding") or {}, _RELATIONS)
         cm = src.get("columns")
         if isinstance(cm, dict):
             for cn, b in cm.items():
@@ -1143,6 +1212,8 @@ def main(argv: list[str] | None = None) -> int:
     except ImportError as exc:
         print(f"COULD NOT RUN: {exc}\n\n{ACCEPTED_SHAPE}")
         return 2
+    global _RELATIONS
+    _RELATIONS = _relation_plane(root)
     if not (root / "data").is_dir():
         print(f"COULD NOT RUN: {root.name} has no data/ plane, so there is nothing to be consistent "
               f"about. This is not a pass.\n\n{ACCEPTED_SHAPE}")

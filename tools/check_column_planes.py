@@ -120,8 +120,24 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], dict]:
                     storage[(str(rel), str(c["name"]))] = c.get("role")
                     origin[(str(rel), str(c["name"]))] = "served" if sub == "datasets" else "landing"
 
+    # THE RELATION PLANE, v0.1.20 — `ontology/relations/<relation>.yaml` keyed by relation name.
+    #
+    # WHY THIS GATE HAD TO LEARN IT, measured the hour the first relation was migrated: this
+    # census read `grounding.source.columns` only, so the seven concepts that moved off it took
+    # 64 of the bundle's 112 concept bindings out of the gate's sight — and it reported
+    # "PASS, 48 concept bindings" without a word. A gate whose DENOMINATOR silently shrinks by
+    # 57 % while its verdict stays green is the exact failure this estate names "PASS on zero
+    # files": the population has to be enumerated, never inferred from the survivors.
+    relations: dict[str, dict] = {}
+    rdir = bundle / "ontology" / "relations"
+    if rdir.is_dir():
+        for p in sorted(rdir.rglob("*.yaml")):
+            d = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+            name = ((d.get("relation") or {}).get("name")) or p.stem
+            relations[str(name)] = d.get("columns") or {}
+
     rows: list[dict] = []
-    forms = {"map": 0, "flat": 0}
+    forms = {"map": 0, "flat": 0, "binding": 0}
     cdir = bundle / "ontology" / "concepts"
     for p in sorted(cdir.rglob("*.yaml")):
         d = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
@@ -133,6 +149,16 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], dict]:
         # mac.schema.json — a load error, not a second relation to loop over).
         src = g.get("source") or {}
         rel, cols = src.get("relation"), src.get("columns")
+        # A RELATION-OWNED CONCEPT names its relation and the columns of it it serves; the facts
+        # live on the relation. Resolved here so one census covers BOTH forms and the denominator
+        # is the bundle's real population either way.
+        if not src and isinstance(g.get("bindings"), list) and g["bindings"]:
+            binding = g["bindings"][0] or {}
+            rel = binding.get("relation")
+            declared = relations.get(str(rel), {})
+            serves = binding.get("serves") or []
+            cols = {name: declared.get(name) for name in serves if name in declared}
+            forms["binding"] += 1
         if isinstance(cols, dict):          # THE COLUMN MAP — the standard's own form
             forms["map"] += 1
             for name, body in cols.items():
@@ -144,7 +170,8 @@ def read_planes(bundle: pathlib.Path) -> tuple[dict, list[dict], dict]:
                 # moved to its own top-level key the same revision — so it is read separately and
                 # never folded into this census.
                 of = body.get("offers") if isinstance(body.get("offers"), dict) else {}
-                rows.append(dict(concept=con.get("name"), rel=rel, col=name, form="map",
+                rows.append(dict(concept=con.get("name"), rel=rel, col=name,
+                                 form="binding" if not src else "map",
                                  offers=sorted(of), references=body.get("references"),
                                  axis=of.get("axis"),
                                  mtype=((of.get("aggregate") or {}).get("type")),

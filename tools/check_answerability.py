@@ -73,6 +73,12 @@ def _load(root):
             d = yaml.safe_load(f.read_text(encoding="utf-8")) or {}
         except Exception:                                               # noqa: BLE001
             continue
+        # NORMALISED AT THE DOOR. This gate reads `grounding.source` in six places; a
+        # relation-owned concept carries `bindings:` instead, and resolving it here means all six
+        # are correct without any of them knowing the form. Measured before this line: 12 answer
+        # path steps across the migrated concepts reported "no declaration supplies" for
+        # declarations that were present, on the relation.
+        d = P.normalised_concept(d, P.relation_plane(root))
         if (d.get("concept") or {}).get("name"):
             out[d["concept"]["name"]] = (P.rel(root, f), d, f.read_text(encoding="utf-8"))
     return out

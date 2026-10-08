@@ -24,6 +24,12 @@ import mac_diag as D
 import mac_project as P
 from mac_project import resolve
 
+#: The relation plane (v0.1.20), bound from the bundle root in `main`. A module-level
+#: default rather than a threaded parameter: the readers below sit in different functions
+#: with different signatures, and threading it would be another chance to teach one and
+#: miss another -- which is the defect this resolver exists to end.
+_RELATIONS: dict = {}
+
 try:                                   # the SQL-parsing kinds (join_rule_grounded, no_predicate_restatement)
     import sqlglot                     # need sqlglot; the set-relational kinds do not. Import lazily so the
     from sqlglot import exp as _exp    # module stays importable without it (mirrors tools/canon).
@@ -114,7 +120,11 @@ def grounded_columns(doc, root):
     names = []
     if isinstance(g.get("table"), str):
         names.append(g["table"])
-    s = g.get("source")
+    # BOTH FORMS resolve to the shape `mac_shapes.yaml` declares its paths against. The shape
+    # paths say `grounding.source.columns{}...`, which is the SHAPE of a column declaration --
+    # and a relation-owned concept has that shape, on its relation. Resolving here keeps the
+    # blueprint untouched and makes its declared path true for a concept written either way.
+    s = g.get("source") or P.effective_source({"grounding": g}, _RELATIONS)
     if isinstance(s, dict) and isinstance(s.get("relation"), str):
         names.append(s["relation"])
     cols = set()
@@ -282,6 +292,11 @@ def main():
                          "matched exactly (same contract as check_references.py --baseline).")
     a = ap.parse_args()
 
+    global _RELATIONS
+    _RELATIONS = P.relation_plane(Path(a.root).resolve().parent
+                                            if Path(a.root).name == "ontology"
+                                            else Path(a.root).resolve())
+
     accepted = set()
     if a.baseline and Path(a.baseline).is_file():
         accepted = {ln.strip() for ln in Path(a.baseline).read_text(encoding="utf-8").splitlines()
@@ -306,6 +321,15 @@ def main():
     for f in files:
         doc = yaml.safe_load(f.read_text())
         if isinstance(doc, dict):
+            # THE SHAPE PATHS ARE MATCHED AGAINST `grounding.source.columns{}...`, which is the
+            # SHAPE of a column declaration -- and a relation-owned concept HAS that shape, on its
+            # relation. `extract` walks the raw document, so the resolved source is written onto a
+            # copy before the shapes run: the blueprint stays untouched and its declared path is
+            # true for a concept written either way. Measured when the first relation was migrated:
+            # without this, 6 measure concepts reported 18 violations against paths that simply no
+            # longer existed in their files -- a gate failing on where a fact is written rather
+            # than on whether it is declared.
+            doc = P.normalised_concept(doc, _RELATIONS)
             for s in concept_shapes:
                 check(s, doc, f.name, viol, a.root)
 
