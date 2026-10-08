@@ -29,6 +29,7 @@ from pathlib import Path
 HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, "..", "tools"))
 import mac_model as M                                            # noqa: E402
+import mac_fixture as FIX                                        # noqa: E402
 
 REPO = Path(HERE).resolve().parent
 fails = 0
@@ -249,7 +250,15 @@ try:
     # last in-repo one. What replaces it is deliberately the SMALLEST tree that still exercises all
     # four descriptor families plus edges, because what these assertions test is the RESOLVER, not
     # the size of any bundle.
-    two_plane = REPO / "tests" / "fixtures" / "two_plane_project"
+    # THE BUNDLE IS GENERATED, NEVER STORED. Operator ruling 2026-10-08 -- "mac is generic framework"
+    # -- so the framework ships tools/mac_fixture.py (the generator) and no instance. The committed
+    # fixture this replaces put an `ontology/` directory inside the framework, which the ontology guard
+    # then classified as a live meaning plane -- so maintaining the framework's own scaffolding needed
+    # an operator unlock IN the framework. mac_fixture.emit() refuses any destination inside a git work
+    # tree, so this cannot regress by anyone forgetting.
+    # emitted INTO this file's own TMP, so the `finally: rmtree(TMP)` at the bottom owns its
+    # lifetime too — a second temp root would have leaked on every run.
+    two_plane = FIX.emit(TMP / "two_plane")
     S = M.load(two_plane)
     check(S.layout.two_plane, "two-plane fixture loads")
     eq(len(S.concepts()), 2, "two-plane: 2 concept files, foldered by domain")

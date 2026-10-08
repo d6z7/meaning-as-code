@@ -1077,7 +1077,9 @@ def _self_test() -> int:
     rc, out = _run("--seam", "no-such-seam", str(Path(_REPO)))
     case("END TO END an unregistered seam id could-not-run (exit 2), never a pass over zero",
          rc == 2 and "no seam registered" in out, f"exit {rc}")
-    fixture = Path(_REPO) / "tests" / "fixtures" / "two_plane_project"
+    # GENERATED PER RUN, never stored — tools/mac_fixture.py carries the ruling.
+    import mac_fixture as _FIX
+    fixture = _FIX.emit_temp(prefix="mac_seam_fixture_")
     if fixture.is_dir():
         rc, out = _run(str(fixture), "--seam", "edges", "--corruptions", "1")
         # RE-POINTED, NOT DELETED, AND THE REASON IS THE POINT. This case read "the real runner
@@ -1108,6 +1110,7 @@ def _self_test() -> int:
              json.loads(out)["clauses"] == list(CLASSES), out.strip()[:160])
     else:
         case("END TO END the two-plane fixture bundle is present", False, f"no {fixture}")
+    shutil.rmtree(fixture, ignore_errors=True)
 
     total = len(cases)
     if bad:

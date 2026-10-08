@@ -53,13 +53,23 @@ fi
 # The bundle this suite points bundle-subject gates at. Printed on the final line: a verdict whose
 # subject is not named is not reproducible.
 #: example_tpch_ontology was REMOVED 2026-10-04 by operator ruling — "we will keep only final
-#: version of contoso ontology as example". example_shop_ontology followed it on 2026-10-05 — it was
-#: the last in-repo bundle, and it had gone stale against the column standard. The default is now the
-#: two-plane self-test fixture; a real bundle is passed as $1.
-BUNDLE="${1:-tests/fixtures/two_plane_project}"
-if [ ! -d "$REPO/$BUNDLE" ]; then
-  echo "could not run: run_gates — '$BUNDLE' is not a directory under $REPO" >&2
-  exit 2
+#: version of contoso ontology as example". example_shop_ontology followed it on 2026-10-05, and the
+#: committed fixture that replaced it was removed on 2026-10-08 on the ruling "mac is generic
+#: framework": a generic framework ships no INSTANCE. So with no argument this suite GENERATES its
+#: subject into a temp directory via tools/mac_fixture.py and removes it on exit. A real bundle is
+#: still passed as $1 — relative to the repo, or absolute.
+if [ -n "${1:-}" ]; then
+  BUNDLE="$1"
+  case "$1" in /*) BUNDLE_DIR="$1" ;; *) BUNDLE_DIR="$REPO/$1" ;; esac
+  if [ ! -d "$BUNDLE_DIR" ]; then
+    echo "could not run: run_gates — '$BUNDLE' is not a directory ($BUNDLE_DIR)" >&2
+    exit 2
+  fi
+else
+  BUNDLE_DIR="$(python3 "$REPO/tools/mac_fixture.py" --emit "$(mktemp -d)")" || {
+    echo "could not run: run_gates — could not emit the two-plane fixture" >&2; exit 2; }
+  BUNDLE="generated:two_plane (tools/mac_fixture.py)"
+  trap 'rm -rf "$BUNDLE_DIR"' EXIT
 fi
 
 GATES=(annotation_isolation check_source_coupling check_write_paths check_rule_lock
@@ -93,15 +103,15 @@ real_args() {  # real_args <gate> -> prints the argv for the real run, or UNWIRE
     check_source_coupling)  echo "$REPO" ;;
     check_write_paths)      echo "--root $REPO" ;;
     # a content-root carrying an `ontology/` plane; this repo's example bundles are the only ones
-    check_rule_lock)        echo "--content-root $REPO/$BUNDLE" ;;
-    check_bundle_secrets)   echo "$REPO/$BUNDLE" ;;
+    check_rule_lock)        echo "--content-root $BUNDLE_DIR" ;;
+    check_bundle_secrets)   echo "$BUNDLE_DIR" ;;
     check_host_coupling)    echo "UNWIRED:subject is a HOST (wiki/runtime); hosts live in mac-platform, and no directory in this repo is one — OPERATOR RULING NEEDED" ;;
     # target mode ONLY. `--mode legacy` (the argparse default) is configured over `local_harvest/`
     # and `mac_bridge/` — the pre-split layout, which is not in this repository; it exits 2 with
     # "none of the configured directories exist". Target mode's dirs (`wiki/`, `sdk/`) are both here,
     # so target is the unambiguous half and legacy stays unrun. DISCLOSED on the final line.
     check_boundaries)       echo "--mode target --root $REPO" ;;
-    check_artifact)         echo "--content-root $REPO/$BUNDLE" ;;
+    check_artifact)         echo "--content-root $BUNDLE_DIR" ;;
     check_grammar_home)     echo "--root $REPO" ;;
     check_engine_coupling)  echo "$REPO" ;;
     check_entry_points)     echo "$REPO" ;;

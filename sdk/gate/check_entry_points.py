@@ -179,8 +179,13 @@ DEFAULT_TIMEOUT = 60.0
 #: bundles as the real fixture. First one that exists wins.
 #: example_tpch_ontology REMOVED 2026-10-04 (operator: keep only contoso as the example). A name
 #: here pointing at a directory that is gone is an exemption over nothing, so it goes with it.
-#: example_shop_ontology was REMOVED 2026-10-05, completing the 2026-10-04 ruling that took example_tpch_ontology ("keep only contoso as the example"). It was the LAST in-repo bundle, so this fixture is tests/fixtures/two_plane_project — the two-plane sibling of flat_project, written to the current column standard that shop had gone stale against.
-EXAMPLE_BUNDLES = ("tests/fixtures/two_plane_project",)
+#: THE POSITIONAL FIXTURE IS GENERATED, NOT FOUND. Both in-repo bundles are gone — example_tpch
+#: 2026-10-04 and example_shop 2026-10-05, both by the "keep only contoso as the example" ruling —
+#: and the committed fixture that briefly replaced them went on 2026-10-08 on "mac is generic
+#: framework": a generic framework ships no INSTANCE. tools/mac_fixture.py emits one per run into a
+#: temp directory and refuses to emit inside a git work tree, so the thing this gate hands to 34
+#: entry points is a real two-plane bundle that this repository does not contain.
+EXAMPLE_BUNDLES = ()
 
 
 # ------------------------------------------------------------------------------------------------
@@ -515,7 +520,21 @@ def sweep(root: Path, *, timeout: float = DEFAULT_TIMEOUT) -> Sweep:
             s.skipped[module] = why
 
     bundle_dir = next((root / b for b in EXAMPLE_BUNDLES if (root / b).is_dir()), None)
-    s.bundle = bundle_dir.name if bundle_dir else "<an empty temp dir: no example bundle here>"
+    if bundle_dir is None:
+        sys.path.insert(0, str(root / "tools"))
+        try:
+            import mac_fixture as _FIX
+            bundle_dir = _FIX.emit_temp(prefix="mac_entrypoints_fixture_")
+            _emitted = bundle_dir
+        except Exception as exc:                                   # noqa: BLE001 — report, never die
+            _emitted = None
+            print(f"  [NOTE] could not emit the two-plane fixture ({exc.__class__.__name__}: "
+                  f"{exc}); the path mode falls back to an empty temp dir, which exercises "
+                  f"argument handling but not a real bundle", flush=True)
+    else:
+        _emitted = None
+    s.bundle = (bundle_dir.name if bundle_dir
+                else "<an empty temp dir: the fixture could not be emitted>")
 
     for module in s.exercised:
         modes: list[tuple[str, list[str]]] = [("--help", ["--help"]), ("bare", [])]
@@ -540,6 +559,9 @@ def sweep(root: Path, *, timeout: float = DEFAULT_TIMEOUT) -> Sweep:
             cls = classify(r)
             if cls is not None:
                 s.findings.append((cls, r))
+    # the emitted fixture is this sweep's to own and this sweep's to remove
+    if _emitted is not None:
+        shutil.rmtree(_emitted, ignore_errors=True)
     return s
 
 

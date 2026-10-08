@@ -9,19 +9,24 @@ flat_project/ is the living back-compat example (tests/fixtures/two_plane_projec
 Usage:  python3 tests/test_layout.py     ·     Exit: 0 = ok · 1 = a layout assertion failed
 """
 import os
+import shutil
 import sys
 from pathlib import Path
 
 HERE = os.path.dirname(__file__)
 sys.path.insert(0, os.path.join(HERE, "..", "tools"))
 from mac_project import resolve   # noqa: E402
+import mac_fixture               # noqa: E402
 
 REPO = Path(HERE).resolve().parent
 flat = REPO / "tests" / "fixtures" / "flat_project"
-# THE TWO-PLANE FIXTURE, not a worked example. The bundle that stood here was removed 2026-10-05
-# and was the repo's last two-plane one; deleting it without this would have left the three
-# assertions below measuring nothing while still printing a tick.
-two_plane = REPO / "tests" / "fixtures" / "two_plane_project"
+# THE BUNDLE IS GENERATED, NEVER STORED. Operator ruling 2026-10-08 -- "mac is generic framework"
+# -- so the framework ships tools/mac_fixture.py (the generator) and no instance. The committed
+# fixture this replaces put an `ontology/` directory inside the framework, which the ontology guard
+# then classified as a live meaning plane -- so maintaining the framework's own scaffolding needed
+# an operator unlock IN the framework. mac_fixture.emit() refuses any destination inside a git work
+# tree, so this cannot regress by anyone forgetting.
+two_plane = mac_fixture.emit_temp()
 
 fails = 0
 
@@ -41,6 +46,8 @@ S = resolve(two_plane)
 check(S.two_plane, "two-plane project (mac.project.yaml) -> two-plane layout")
 check(S.ontology.name == "ontology", "two-plane: ontology plane == ontology/")
 check(S.descriptors.name == "datasets", "two-plane: descriptors == data/datasets/")
+
+shutil.rmtree(two_plane, ignore_errors=True)
 
 print(f"\n{'all layout assertions passed' if not fails else str(fails) + ' FAILED'}")
 sys.exit(1 if fails else 0)
