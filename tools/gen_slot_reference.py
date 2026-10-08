@@ -76,8 +76,10 @@ import check_vocabulary_parity as parity  # noqa: E402 — the ONE home of the s
 #: parity gate declares three pairs, this declares the rest"): two tables of one fact.
 PAGES = (
     ("column_map", "The column map — everything about one column, on the column",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties"],
+     # `$defs.columnDeclaration` since v0.1.20: the per-column body was EXTRACTED out of
+     # `grounding.source.columns` so the relation plane (`RelationFile.columns`) and the concept
+     # plane could not hold two copies of it. One home, so this page has one source.
+     ["$defs", "columnDeclaration"],
      "Keyed by column name; each value is that column's flags, or `null` to serve the column and say "
      "nothing more. This is the CONCEPT plane's view of a column — what a query may do with it. The "
      "relation's own physical shape is a different slot (see the data plane) and the two routinely "

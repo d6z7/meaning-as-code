@@ -93,7 +93,7 @@ errors.
 
 <!-- BEGIN GENERATED:schema-shapes (tools/gen_schema_shapes.py — do not edit inside this block) -->
 
-## Structural shapes — generated (schema 0.1.19-develop)
+## Structural shapes — generated (schema 0.1.20-develop)
 
 _Generated from [`mac.schema.json`](../mac.schema.json) by `tools/gen_schema_shapes.py`._
 _Do not hand-edit between the markers; re-run the generator. The closed vocabulary is
@@ -248,6 +248,12 @@ grounding:  # Thin pointer to where the data lives (FRAMEWORK §5)
           scoped_by: <…>  # string · THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may…
           naming: <…>  # enum: common | legal | long | short | code · WHICH of that thing's names this column is — the companion `label_of`…
     counts: <…>  # string · WHAT ONE INSTANCE IS, when the relation is served FINER than the thing…
+  bindings:  # WHICH RELATIONS THIS CONCEPT READS, and which of their columns it…
+    - <item>
+      relation: <…>  # REQUIRED · string · The relation whose `ontology/relations/<name>.yaml` describes these…
+      serves: [ ... ]  # REQUIRED · The columns of that relation this concept exposes — a SUBSET, in the…
+      counts: <…>  # string · WHAT ONE INSTANCE IS, when the relation is served FINER than the thing…
+      measure: <…>  # string · WHICH measure a bare question means, when this concept serves several
 
 constraints:
   - <item>  # $defs.constraintEntry
@@ -834,6 +840,53 @@ config:  # OPAQUE TO MAC
 label: <…>  # string · A human name for this deployment target, for disclosure lines
 
 note: <…>  # string · Free prose about this deployment
+```
+
+### RelationFile
+
+*discriminator key:* `?:` · *required:* `relation`, `columns`
+
+```yaml
+metadata: <…>
+
+relation:  # REQUIRED · WHICH relation this describes, and what makes one row of it unique.
+  name: <…>  # REQUIRED · string · The served relation, spelled as the data plane's descriptor spells it.
+  key: <…>  # REQUIRED · string|array · WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list
+  grounds_column: <…>  # string · Legacy display hint, honoured where a bundle already carries it.
+  code_column: <…>  # string · Legacy display hint, honoured where a bundle already carries it.
+
+columns:  # REQUIRED · EVERY COLUMN OF THIS RELATION A QUESTION MAY TOUCH, keyed by column…
+  <name>:  # author-chosen key name · object|null · EVERYTHING ABOUT ONE COLUMN, ON THE COLUMN  # closed: only keys above
+    offers:  # REQUIRED · WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each use to that…  # closed: only keys above
+      axis: <…>  # enum: time | categorical · WHICH KIND OF AGGREGATION AXIS
+      suppressed: <…>  # string · THE COLUMN IS A REAL AXIS AND A PERSON HAS RULED THAT NO QUESTION MAY…
+      aggregate:  # THE MEASURE FACTS for this column — its type, its unit, and any…  # closed: only keys above
+        type: <…>  # enum: flow | stock | intensive | precomputed | target · WHAT KIND OF QUANTITY — the row of the fold law
+        unit: <…>  # string · WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`
+        additivity:  # PER-AXIS EXCEPTIONS to what the measure type already implies, written…  # open: extra keys allowed
+        default: <…>  # boolean · WHICH aggregate a bare question means, when a concept carries several
+      period_binding: <…>  # = True · THE COLUMN A QUESTION'S PERIOD BINDS TO — which date is the reporting…
+      extremum: [ ... ]  # WHICH OF THE EARLIEST OR LATEST VALUE MAY BE ASKED FOR
+    references: <…>  # string · THIS COLUMN'S VALUES IDENTIFY ONE ROW OF THAT CONCEPT — a foreign key,…
+    value_register: <…>  # string · THE FILE WHOSE ROWS ARE THIS COLUMN'S VALUES, bundle-relative — so a…
+    rulings:  # WHAT A PERSON DECIDED ABOUT THIS COLUMN'S RELATION TO ANOTHER COLUMN  # closed: only keys above
+      label_of: <…>  # string · THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another…
+      sort: <…>  # enum: asc | desc | none · THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question…
+      finer_than: <…>  # string · THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it…
+      scoped_by: <…>  # string · THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may…
+      naming: <…>  # enum: common | legal | long | short | code · WHICH of that thing's names this column is — the companion `label_of`…
+
+governance:  # Housekeeping
+  owner: <…>  # string · WHO ANSWERS FOR THE GOVERNANCE OF THIS CONCEPT — who may approve a…
+  last_reviewed: <…>  # ISO date — string or a YAML-parsed date
+  approval_status: <…>  # string · Whether a human has approved this concept as it now stands
+  change_log:  # WHAT CHANGED, WHEN, BY WHOM AND WHY, newest last
+    - <item>  # $defs.changeLogEntry
+      date: <…>  # REQUIRED · ISO date — string or a YAML-parsed date
+      change: <…>  # REQUIRED · string · What changed, in one line — the shape or the statement that moved, not…
+      change_type: <…>  # REQUIRED · enum: CREATION | ADDITION | CORRECTION | REMOVAL | REFACTOR · What KIND of change this was: a correction, a clarification, a…
+      by: <…>  # string · Who made the change — the person or seat accountable for it, not the…
+      rationale: <…>  # string · WHY the change was made, and against what evidence
 ```
 
 <!-- END GENERATED:schema-shapes -->

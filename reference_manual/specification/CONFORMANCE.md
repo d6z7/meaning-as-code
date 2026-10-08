@@ -1,6 +1,6 @@
 ---
-title: MAC Conformance — the strict-syntax contract (v0.1.19-develop)
-version: '0.1.19-develop'
+title: MAC Conformance — the strict-syntax contract (v0.1.20-develop)
+version: '0.1.20-develop'
 date: 2026-06-14
 status: DRAFT — the normative conformance rules; companion to mac.schema.json
 companions:
@@ -471,7 +471,35 @@ bundle must reach the start before anything is allowed to run.
 ## 6. schema_version discipline
 
 - `metadata.schema_version` pins **the `mac.schema.json` generation a file is written against** — there is
-  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.19-develop'`**.
+  one version axis, and it *is* the MAC schema version. The current generation is **`'0.1.20-develop'`**.
+- **`0.1.20`** — **a column's facts live on the RELATION, not on each concept that reads it.**
+  Operator ruling 2026-10-08 ("option A"). ADDITIVE: a concept keeps `source:`, a bundle with no
+  `ontology/relations/` is unchanged, and contoso5 validates 96 of 96 before and after.
+  - `$defs.RelationFile` — the SEMANTIC descriptor of one served relation,
+    `ontology/relations/<relation>.yaml`, beside the PHYSICAL one in `data/datasets/` (`TableFile`).
+    Both are named after the relation: the data plane says what a column IS (type, physical role,
+    measured distincts), this says what a QUESTION may do with it. Carries `relation.name`,
+    `relation.key` (ordered) and `columns`.
+  - `grounding.bindings[]` — `relation` + `serves` (a SUBSET of that relation's columns) + optional
+    `counts` and `measure`. The ALTERNATIVE to `source:`, never its companion: declaring both is a
+    load error. A binding carries NO column facts, which is what makes several of them safe where
+    `sources:` was not — there is nothing in a second entry that can be silently dropped except the
+    binding itself, and that refuses.
+  - `$defs.columnDeclaration` — the per-column body EXTRACTED out of `grounding.source.columns` so
+    the two planes `$ref` one home. Its keys, terms and `dependentRequired` are unchanged to the
+    letter; two copies of it would have been precisely the two-homes defect this ruling removes.
+  - WHY, measured on the worked bundle: **11 of its 17 concepts share a relation**, so
+    `v_contoso5_sales_line` was described SEVEN times and `dim_product` four. Eight columns across
+    those two were declared divergently — seven because one concept simply knew MORE than its
+    sibling (`Brand` carries `brand`'s `value_register`, `Product`'s copy does not), and one an
+    outright contradiction (`Order` declared `offers: {}` on three key columns six siblings call an
+    axis). `key` was overloaded in both: `Order` declared `order_key` on a line-grained relation,
+    and `dim_product`'s four concepts declared four different keys for one table.
+  - NOT YET BUILT, and it refuses rather than guessing: the chooser that picks between SEVERAL
+    bindings by which one's `serves` covers the question's axes. That is what `Region` needs — a
+    pre-aggregated rollup AND the membership at the fact's join-key grain, over one membership — and
+    until it exists a second binding is a load error with a named reason.
+
 - **`0.1.15`** — **the data plane carries no grade of belief.** `confidence` is REMOVED from
   `TableFile` (`columns.items`, `table`, `foreign_keys.items`). It was a core key that nothing read
   there: every reader of `confidence` in this framework reads it on an ONTOLOGY artifact — concept

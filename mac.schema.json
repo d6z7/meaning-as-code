@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/d6z7/meaning-as-code/mac.schema.json",
-  "version": "0.1.19-develop",
-  "title": "Meaning-as-Code (MAC) — formal schema v0.1.19-develop",
-  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected, and there is NO extension namespace: `x-` is BANNED (operator ruling 2026-10-05) and tools/check_extension_keys.py refuses any such key as MAC012. Where an extension seems needed, that is a MAC gap — name the wall and change this schema. This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.19-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.concept.identity, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
+  "version": "0.1.20-develop",
+  "title": "Meaning-as-Code (MAC) — formal schema v0.1.20-develop",
+  "description": "The strict, machine-checkable contract for MAC YAML files across the four layers (Concept, Rules, Edges, Physical/Tables). The CORE vocabulary is closed: unknown keys are rejected, and there is NO extension namespace: `x-` is BANNED (operator ruling 2026-10-05) and tools/check_extension_keys.py refuses any such key as MAC012. Where an extension seems needed, that is a MAC gap — name the wall and change this schema. This schema is the normative companion to FRAMEWORK.md (the why) and CONCEPT_SPEC.md (the prose reference); where they disagree, FRAMEWORK.md governs intent and this schema governs syntax. Schema (schema_version) changes are recorded in CONFORMANCE.md §changelog; current generation v0.1.20-develop (adds `$defs.RelationFile` — the SEMANTIC descriptor of a served relation — plus `grounding.bindings` and the extracted `$defs.columnDeclaration`; ADDITIVE over v0.1.19, so 0.1.19 files remain valid: a concept keeps `source:` and a bundle with no `ontology/relations/` is unchanged). Prior: v0.1.19-develop (adds the OPTIONAL typed-rule `subject` field — a short email-subject-style headline per rule, complementing `why`; additive over v0.1.12, so 0.1.12 files remain valid). Prior: v0.1.12 (adds the relationAliasBlock $def, the business-edge type `shared_attribute`, and the OPTIONAL edge.resolved_by / edge.aliases fields — giving a business relation a first-class NL-trigger alias slot resolved by mac.canon.relation_alias_resolve; additive over v0.1.11, so 0.1.11 files remain valid). Prior: v0.1.11 (adds the OPTIONAL concept.identity block {kind ∈ mac.concept.identity, canonical_key} — declaring a concept's canonical identity; additive over v0.1.10, so 0.1.10 files remain valid). Prior: v0.1.10 (adds the aliasBlock $def: an optional two-tier `aliases` map — scope_relative + multilingual — on the enumeration shape, resolved by mac.canon.alias_resolve; additive over v0.1.9's content-model UDF seam, so 0.1.9 files remain valid during migration). v0.1.14: the `^x-` escape hatch is CLOSED. It had stood in 58 places, written as `patternProperties: {\"^x-\": true}` — `true` meaning any shape, any type, no validation — so every `additionalProperties: false` in this file was immediately undone beside it. Extension keys were therefore not violations of MAC; MAC SANCTIONED them, and what they held could not be checked. Measured on the day x-grain was retired: two of four declared cell keys were false while still reading as VERIFIED, and the two that held were the two a view enforced. Where an extension seems needed, that is a MAC gap — name the wall and change the schema, which is now the only way to add a field.",
   "$comment": "A MAC file is one of four file types, distinguished by its discriminator key: concept files have 'concept:', rules files 'rules:', edges files 'edges:', table files 'table:'. A validator selects the matching $def by file location; the root oneOf also resolves it structurally.",
   "oneOf": [
     {
@@ -56,6 +56,9 @@
     },
     {
       "$ref": "#/$defs/ConnectionFile"
+    },
+    {
+      "$ref": "#/$defs/RelationFile"
     }
   ],
   "$defs": {
@@ -3910,155 +3913,7 @@
                   "type": "object",
                   "description": "THE COLUMN MAP — everything about one column, ON the column. Keyed by column name; each value is that column's flags. Added v0.1.16, and until then THE STANDARD WAS UNWRITABLE: this slot was `type: array` only, so the map form that mac-runtime's parser accepts and PROJECTS was a conformance error in the core. That is the whole explanation of the measurement in ColumnSpec's own docstring — '21 concepts, 0 using the standard'. A standard the schema refuses cannot be adopted; 19 more were then written the old way before anyone asked why.",
                   "additionalProperties": {
-                    "type": [
-                      "object",
-                      "null"
-                    ],
-                    "description": "EVERYTHING ABOUT ONE COLUMN, ON THE COLUMN. Five keys: `offers` (required — what a question may do with it), `references` (the concept its values identify), `value_register` (where its values come from), `rulings` (what a person decided about its relation to another column). `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.",
-                    "additionalProperties": false,
-                    "properties": {
-                      "offers": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "description": "WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each use to that use's own terms. An EMPTY map is a statement: the column is loaded, typed, and offered to no question. An ABSENT `offers` is a column nobody classified, which is a finding rather than a state. It was `roles:` until 2026-10-07; the word changed because `role` is what the five DERIVED names are still called and this container is not those names.",
-                        "properties": {
-                          "axis": {
-                            "type": "string",
-                            "enum": [
-                              "time",
-                              "categorical"
-                            ],
-                            "description": "WHICH KIND OF AGGREGATION AXIS. The kind IS the permission: declaring one says a question may group and filter by this column, and names the row of the fold law a fold across it resolves against. Two terms and no more — the law is `measure_type x axis` and a third kind leaves cells nobody has ruled on (test_foldplane_law asserts 5 x 2 == 10). A declared kind must agree with the column's measured TYPE family: temporal -> time, everything else -> categorical, 70 of 70 on contoso5."
-                          },
-                          "suppressed": {
-                            "type": "string",
-                            "minLength": 1,
-                            "description": "THE COLUMN IS A REAL AXIS AND A PERSON HAS RULED THAT NO QUESTION MAY GROUP BY IT, and this value IS the data-quality finding that justifies it. A prohibition therefore cannot be authored without naming its evidence, and the refusal quotes the register rather than a word. `axis` must be declared alongside: the ontology states what the warehouse IS, and a suppression is a judgement on top of that, never a denial that the axis exists. It was `rulings: {never_axis, evidence}` — two keys in a block whose every other member names ANOTHER column."
-                          },
-                          "aggregate": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "description": "THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.",
-                            "properties": {
-                              "type": {
-                                "type": "string",
-                                "enum": [
-                                  "flow",
-                                  "stock",
-                                  "intensive",
-                                  "precomputed",
-                                  "target"
-                                ],
-                                "description": "WHAT KIND OF QUANTITY — the row of the fold law. CLOSED here as of 2026-10-07; it was `{\"type\": \"string\"}` with no enum, so any spelling validated while the law it keys could match none of them. Bare, like every other column term."
-                              },
-                              "unit": {
-                                "type": "string",
-                                "description": "WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.",
-                                "constellation": "THE ANSWER WILL BE READ BY SOMEBODY WHO DID NOT WRITE THE QUERY. The sharp case is a rate: a column of values like 1.08 is euros per dollar or dollars per euro, and the two give answers that are each other's reciprocal. Reach for it on every measure, and reach for it hardest where the unit is a ratio or a count rather than money, because money is the one people assume correctly."
-                              },
-                              "additivity": {
-                                "type": "object",
-                                "description": "PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.",
-                                "constellation": "THE MEASURE TYPE IS RIGHT IN GENERAL AND WRONG ON ONE NAMED AXIS. An inventory balance sums across stores and not across days. The type cannot say that, because the exception is a property of the AXIS rather than of the quantity — so this is the only place it can be stated. Do not restate what the type already implies: a per-axis entry that agrees with the type is a second home for it."
-                              },
-                              "default": {
-                                "type": "boolean",
-                                "description": "WHICH aggregate a bare question means, when a concept carries several. It was `canonical` — a word retired from `identity` the same day, and reusing it here is the confusion that review was about.",
-                                "constellation": "THE CONCEPT HAS MORE THAN ONE MEASURE COLUMN AND ONE OF THEM IS THE CONCEPT'S OWN QUANTITY. A sale line carries both a net amount and a net price; the concept IS the amount, and the price is an input to it. Without this the projection cannot choose between two units and must be told the composed unit on the concept instead — so declaring the canonical column is the cheaper of the two ways to answer the same question."
-                              }
-                            },
-                            "constellation": "THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys."
-                          },
-                          "period_binding": {
-                            "const": true,
-                            "description": "THE COLUMN A QUESTION'S PERIOD BINDS TO — which date is the reporting date when a relation carries several, so \"sales in March\" cannot silently pick the wrong one. A bare flag: the role has no parameter."
-                          },
-                          "extremum": {
-                            "type": "array",
-                            "items": {
-                              "enum": [
-                                "min",
-                                "max"
-                              ]
-                            },
-                            "minItems": 1,
-                            "uniqueItems": true,
-                            "description": "WHICH OF THE EARLIEST OR LATEST VALUE MAY BE ASKED FOR. Not a fold: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM."
-                          }
-                        },
-                        "dependentRequired": {
-                          "suppressed": [
-                            "axis"
-                          ]
-                        }
-                      },
-                      "references": {
-                        "type": "string",
-                        "minLength": 1,
-                        "description": "THIS COLUMN'S VALUES IDENTIFY ONE ROW OF THAT CONCEPT — a foreign key, named by the concept it points at. It was `roles: {identity: reference}`, which said only THAT the column pointed somewhere: the target was recovered by matching column names against concepts whose key is that column, and that inference has been observed to fail. `columns[].references` is also the data plane's own measured spelling of this fact (operator ruling, 2026-09-27), so both planes now name it the same way. Whether every value is present over there is a measurement, never a declaration."
-                      },
-                      "value_register": {
-                        "type": "string",
-                        "minLength": 1,
-                        "description": "THE FILE WHOSE ROWS ARE THIS COLUMN'S VALUES, bundle-relative — so a question naming a member by word resolves to the exact value the column holds instead of probing. It was `register`, one word that also named `rulings.register`, a closed five-term enum, one nesting level away: country.yaml declared both seven lines apart. The runtime had already been forced to split them (`value_register` / `naming_register`); the author was still asked to use one word."
-                      },
-                      "rulings": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "description": "WHAT A PERSON DECIDED ABOUT THIS COLUMN'S RELATION TO ANOTHER COLUMN. Every member names one: `label_of`, `finer_than` and `scoped_by` take a column name, and `sort` orders this column's own values. `never_axis` left this block on 2026-10-07 because it named no other column — it is `offers.suppressed`.",
-                        "properties": {
-                          "label_of": {
-                            "type": "string",
-                            "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have.",
-                            "constellation": "TWO COLUMNS ARE 1:1 AND ONE OF THEM IS WHAT A PERSON SAYS WHILE THE OTHER IS WHAT THE SYSTEM GROUPS ON. A manufacturer and a brand are 1:1; a question asks about the manufacturer and the answer must group on the brand and print the manufacturer. Cardinality is symmetric, so the data cannot say which direction it goes — and getting it backwards is not an error, it is an answer with the wrong column as its axis."
-                          },
-                          "sort": {
-                            "type": "string",
-                            "enum": [
-                              "asc",
-                              "desc",
-                              "none"
-                            ],
-                            "description": "THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: \"it must be sort per column and not concept\"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. Measured on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged.",
-                            "constellation": "A QUESTION ASKS FOR AN ORDER AND STATES NONE, so the rows arrive in whatever order the engine happened to emit. SQL guarantees no order without ORDER BY. Measured: an 88-row breakdown passed and failed on alternate runs with the data unchanged, because the grader compared the approved rows against the capture's first 50 and which 50 depended on unordered output. Reach for it on any column a reader will scan — a name wants ascending, a magnitude wants descending, and an identifier wants neither."
-                          },
-                          "finer_than": {
-                            "type": "string",
-                            "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`.",
-                            "constellation": "TWO DIMENSION COLUMNS ARE A HIERARCHY AND THE DATA DOES NOT SAY SO. Every sub-category belongs to exactly one category, so a question about categories can be answered from sub-category rows — but not the reverse. The containment is a business fact; in the rows it looks like two independent dimensions that happen to correlate."
-                          },
-                          "scoped_by": {
-                            "type": "string",
-                            "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent.",
-                            "constellation": "A CODE IS UNIQUE ONLY INSIDE ITS PARENT. The measured case: 40 of 565 state codes collide across countries, so `GROUP BY state` silently merges three regions into one row. It runs, it returns, and the number is wrong — which is why this cannot wait for someone to notice. Reach for it whenever a code's uniqueness depends on a column beside it."
-                          },
-                          "naming": {
-                            "type": "string",
-                            "enum": [
-                              "common",
-                              "legal",
-                              "long",
-                              "short",
-                              "code"
-                            ],
-                            "description": "WHICH of that thing's names this column is — the companion `label_of` requires. Renamed from `register` 2026-10-07: see `value_register`.",
-                            "constellation": "`label_of` IS DECLARED AND THE THING HAS MORE THAN ONE NAME. A company has a trading name and a registered name — both are labels of the same brand, and a question may legitimately use either. Reach for it the moment a second naming column appears for one thing, because then \"which name is this\" stops being obvious and the resolver needs telling."
-                          }
-                        },
-                        "dependentRequired": {
-                          "label_of": [
-                            "naming"
-                          ],
-                          "naming": [
-                            "label_of"
-                          ]
-                        },
-                        "constellation": "SOMETHING TRUE ABOUT THE COLUMN CANNOT BE MEASURED FROM IT. That is the whole test, and it is the one that tells a ruling from a fact: if profiling the rows could establish it, it is not a ruling and does not belong here. The compelling case is two columns that are 1:1 where one is the other's NAME — cardinality is the same in both directions, so nothing in the data says which is the name and which is the thing."
-                      }
-                    },
-                    "required": [
-                      "offers"
-                    ]
+                    "$ref": "#/$defs/columnDeclaration"
                   }
                 }
               ],
@@ -4071,6 +3926,44 @@
             }
           },
           "additionalProperties": false
+        },
+        "bindings": {
+          "type": "array",
+          "minItems": 1,
+          "description": "WHICH RELATIONS THIS CONCEPT READS, and which of their columns it serves — the relation-owned form (option A, operator 2026-10-08). The ALTERNATIVE to `source:`, never its companion: a concept declaring both is a load error, because one home is the whole point. A binding carries NO column facts, which is what makes several of them safe where `sources:` was not — there is nothing in a second entry that can be silently dropped except the binding itself, and that refuses. Several bindings are the `Region` case: a pre-aggregated rollup AND the membership at the fact's join-key grain, over one membership, chosen per question by which one's `serves` COVERS the axes the question needs.",
+          "items": {
+            "type": "object",
+            "required": [
+              "relation",
+              "serves"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "relation": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The relation whose `ontology/relations/<name>.yaml` describes these columns."
+              },
+              "serves": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                },
+                "description": "The columns of that relation this concept exposes — a SUBSET, in the order a reader should meet them. A name the relation does not declare is a load error."
+              },
+              "counts": {
+                "type": "string",
+                "minLength": 1,
+                "description": "WHAT ONE INSTANCE IS, when the relation is served FINER than the thing — the column a count DISTINCTs. `Brand` over `dim_product` counts `brand`: 11, not 2517. This is why the relation's `key` can be single-homed while four concepts read it at four grains."
+              },
+              "measure": {
+                "type": "string",
+                "minLength": 1,
+                "description": "WHICH measure a bare question means, when this concept serves several. It was `offers.aggregate.default` on the column and cannot stay there under option A: one relation's seven measure columns serve five concepts, so the answer is the CONCEPT's and not the column's."
+              }
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -4233,6 +4126,220 @@
         "draft",
         "prototype"
       ]
+    },
+    "columnDeclaration": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "EVERYTHING ABOUT ONE COLUMN, ON THE COLUMN. Five keys: `offers` (required — what a question may do with it), `references` (the concept its values identify), `value_register` (where its values come from), `rulings` (what a person decided about its relation to another column). `additionalProperties: false` is the point: a misspelled flag is a LOAD ERROR, where a misspelled sentence is just another sentence.",
+      "additionalProperties": false,
+      "properties": {
+        "offers": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "WHAT A QUESTION MAY DO WITH THIS COLUMN — a map from each use to that use's own terms. An EMPTY map is a statement: the column is loaded, typed, and offered to no question. An ABSENT `offers` is a column nobody classified, which is a finding rather than a state. It was `roles:` until 2026-10-07; the word changed because `role` is what the five DERIVED names are still called and this container is not those names.",
+          "properties": {
+            "axis": {
+              "type": "string",
+              "enum": [
+                "time",
+                "categorical"
+              ],
+              "description": "WHICH KIND OF AGGREGATION AXIS. The kind IS the permission: declaring one says a question may group and filter by this column, and names the row of the fold law a fold across it resolves against. Two terms and no more — the law is `measure_type x axis` and a third kind leaves cells nobody has ruled on (test_foldplane_law asserts 5 x 2 == 10). A declared kind must agree with the column's measured TYPE family: temporal -> time, everything else -> categorical, 70 of 70 on contoso5."
+            },
+            "suppressed": {
+              "type": "string",
+              "minLength": 1,
+              "description": "THE COLUMN IS A REAL AXIS AND A PERSON HAS RULED THAT NO QUESTION MAY GROUP BY IT, and this value IS the data-quality finding that justifies it. A prohibition therefore cannot be authored without naming its evidence, and the refusal quotes the register rather than a word. `axis` must be declared alongside: the ontology states what the warehouse IS, and a suppression is a judgement on top of that, never a denial that the axis exists. It was `rulings: {never_axis, evidence}` — two keys in a block whose every other member names ANOTHER column."
+            },
+            "aggregate": {
+              "type": "object",
+              "additionalProperties": false,
+              "description": "THE MEASURE FACTS for this column — its type, its unit, and any per-axis additivity exception. SEVERAL COLUMNS MAY CARRY IT WHEN THEY COMPOSE ONE QUANTITY: revenue on an order line is quantity × net price, two columns and one amount, and each carries its own factor's unit (`units`, `USD`). THE COMPOSED UNIT IS THEN STATED ON THE CONCEPT as `semantics.unit`, and with more than one measure column that is REQUIRED — the projection cannot choose between two factor units, and taking the first would make an answer's unit depend on the order of keys in a YAML file. With exactly one measure column the unit projects from it. Enforced by check_delivery_consistency's MEASURE-UNIT invariant, because a rule stated only in prose here is enforced by nothing.",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "flow",
+                    "stock",
+                    "intensive",
+                    "precomputed",
+                    "target"
+                  ],
+                  "description": "WHAT KIND OF QUANTITY — the row of the fold law. CLOSED here as of 2026-10-07; it was `{\"type\": \"string\"}` with no enum, so any spelling validated while the law it keys could match none of them. Bare, like every other column term."
+                },
+                "unit": {
+                  "type": "string",
+                  "description": "WHAT ONE VALUE IS COUNTED IN — `USD`, `units`, `percent`. An answer without a unit is a number somebody will read in their own. It is also what makes two measures comparable or not: the ratio of a USD column to a `units` column is a price, and the sum of them is nothing. Where several columns compose one quantity each states ITS OWN factor's unit, and the composed unit is declared once on the concept as `semantics.unit`.",
+                  "constellation": "THE ANSWER WILL BE READ BY SOMEBODY WHO DID NOT WRITE THE QUERY. The sharp case is a rate: a column of values like 1.08 is euros per dollar or dollars per euro, and the two give answers that are each other's reciprocal. Reach for it on every measure, and reach for it hardest where the unit is a ratio or a count rather than money, because money is the one people assume correctly."
+                },
+                "additivity": {
+                  "type": "object",
+                  "description": "PER-AXIS EXCEPTIONS to what the measure type already implies, written only where the type is not the whole story. The type says how this quantity behaves in general; this says where one named axis disagrees — a balance that sums across stores and not across days is the standard case. Leave it out when the type suffices, because a restatement of the type is a second home for it.",
+                  "constellation": "THE MEASURE TYPE IS RIGHT IN GENERAL AND WRONG ON ONE NAMED AXIS. An inventory balance sums across stores and not across days. The type cannot say that, because the exception is a property of the AXIS rather than of the quantity — so this is the only place it can be stated. Do not restate what the type already implies: a per-axis entry that agrees with the type is a second home for it."
+                },
+                "default": {
+                  "type": "boolean",
+                  "description": "WHICH aggregate a bare question means, when a concept carries several. It was `canonical` — a word retired from `identity` the same day, and reusing it here is the confusion that review was about.",
+                  "constellation": "THE CONCEPT HAS MORE THAN ONE MEASURE COLUMN AND ONE OF THEM IS THE CONCEPT'S OWN QUANTITY. A sale line carries both a net amount and a net price; the concept IS the amount, and the price is an input to it. Without this the projection cannot choose between two units and must be told the composed unit on the concept instead — so declaring the canonical column is the cheaper of the two ways to answer the same question."
+                }
+              },
+              "constellation": "THE COLUMN HOLDS A NUMBER A QUESTION WILL WANT TOTALLED. The test is not that the values are numeric — it is whether ADDING TWO OF THEM MEANS ANYTHING. A postcode is a number and the sum of two postcodes is nothing. Declare it where the sum is the point, and then the fold law has something to reason with; leave it off a numeric identifier, or the engine will offer to add up customer keys."
+            },
+            "period_binding": {
+              "const": true,
+              "description": "THE COLUMN A QUESTION'S PERIOD BINDS TO — which date is the reporting date when a relation carries several, so \"sales in March\" cannot silently pick the wrong one. A bare flag: the role has no parameter."
+            },
+            "extremum": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "min",
+                  "max"
+                ]
+              },
+              "minItems": 1,
+              "uniqueItems": true,
+              "description": "WHICH OF THE EARLIEST OR LATEST VALUE MAY BE ASKED FOR. Not a fold: an extremum PICKS one value that exists in the data instead of combining several, so it answers to no additivity cell and is meaningful on a column no law would let anyone SUM."
+            }
+          },
+          "dependentRequired": {
+            "suppressed": [
+              "axis"
+            ]
+          }
+        },
+        "references": {
+          "type": "string",
+          "minLength": 1,
+          "description": "THIS COLUMN'S VALUES IDENTIFY ONE ROW OF THAT CONCEPT — a foreign key, named by the concept it points at. It was `roles: {identity: reference}`, which said only THAT the column pointed somewhere: the target was recovered by matching column names against concepts whose key is that column, and that inference has been observed to fail. `columns[].references` is also the data plane's own measured spelling of this fact (operator ruling, 2026-09-27), so both planes now name it the same way. Whether every value is present over there is a measurement, never a declaration."
+        },
+        "value_register": {
+          "type": "string",
+          "minLength": 1,
+          "description": "THE FILE WHOSE ROWS ARE THIS COLUMN'S VALUES, bundle-relative — so a question naming a member by word resolves to the exact value the column holds instead of probing. It was `register`, one word that also named `rulings.register`, a closed five-term enum, one nesting level away: country.yaml declared both seven lines apart. The runtime had already been forced to split them (`value_register` / `naming_register`); the author was still asked to use one word."
+        },
+        "rulings": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "WHAT A PERSON DECIDED ABOUT THIS COLUMN'S RELATION TO ANOTHER COLUMN. Every member names one: `label_of`, `finer_than` and `scoped_by` take a column name, and `sort` orders this column's own values. `never_axis` left this block on 2026-10-07 because it named no other column — it is `offers.suppressed`.",
+          "properties": {
+            "label_of": {
+              "type": "string",
+              "description": "THIS COLUMN IS ANOTHER NAME FOR THE NAMED COLUMN'S THING, not another thing — group on the named column and DISPLAY this one. The argument is the column it labels. NOT a parent: had `Manufacturer` meant the OWNING company it would be one-to-many and `finer_than` would be the correct ruling instead. Cardinality cannot tell you which you have.",
+              "constellation": "TWO COLUMNS ARE 1:1 AND ONE OF THEM IS WHAT A PERSON SAYS WHILE THE OTHER IS WHAT THE SYSTEM GROUPS ON. A manufacturer and a brand are 1:1; a question asks about the manufacturer and the answer must group on the brand and print the manufacturer. Cardinality is symmetric, so the data cannot say which direction it goes — and getting it backwards is not an error, it is an answer with the wrong column as its axis."
+            },
+            "sort": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc",
+                "none"
+              ],
+              "description": "THE ORDER THIS COLUMN'S VALUES ARE PRESENTED IN when the question states none. PER COLUMN, never per concept (operator ruling, 2026-10-02: \"it must be sort per column and not concept\"): one breakdown legitimately wants `brand asc`, `country_code asc` and `net_amount desc` at once. `asc` is alphanumeric / smallest-first, the reading for a NAME; `desc` is largest-first, the reading for a MAGNITUDE; `none` means this column is never an ordering key. A column that declares nothing falls to query_grammar.yaml#projection.default_ordering, and `Intent.ordering` — the reader's own words — outranks both. NOT A FORMATTING PREFERENCE: SQL guarantees no row order without ORDER BY, so an unordered answer is whatever the engine happened to emit and it changes between runs. Measured on AGG-15, an 88-row breakdown: the grader compares the approved rows against the capture's first 50, WHICH 50 depended on unordered output, and the question passed and failed on alternate runs with the data unchanged.",
+              "constellation": "A QUESTION ASKS FOR AN ORDER AND STATES NONE, so the rows arrive in whatever order the engine happened to emit. SQL guarantees no order without ORDER BY. Measured: an 88-row breakdown passed and failed on alternate runs with the data unchanged, because the grader compared the approved rows against the capture's first 50 and which 50 depended on unordered output. Reach for it on any column a reader will scan — a name wants ascending, a magnitude wants descending, and an identifier wants neither."
+            },
+            "finer_than": {
+              "type": "string",
+              "description": "THIS COLUMN DISTINGUISHES MORE MEMBERS than the named column, which it rolls up into. Both are legitimate axes and an answer must DISCLOSE which level it used. The test is a CLEAN N:1 — every child having exactly one parent; a pair that merely differs in cardinality may be a colliding code space, which is `scoped_by`.",
+              "constellation": "TWO DIMENSION COLUMNS ARE A HIERARCHY AND THE DATA DOES NOT SAY SO. Every sub-category belongs to exactly one category, so a question about categories can be answered from sub-category rows — but not the reverse. The containment is a business fact; in the rows it looks like two independent dimensions that happen to correlate."
+            },
+            "scoped_by": {
+              "type": "string",
+              "description": "THIS COLUMN'S VALUES ARE ONLY UNIQUE WITHIN the named column, so it may not be grouped or filtered on alone — the scope column must travel with it. NOT `finer_than`: nothing here is a level of anything, it is one code space reused per parent.",
+              "constellation": "A CODE IS UNIQUE ONLY INSIDE ITS PARENT. The measured case: 40 of 565 state codes collide across countries, so `GROUP BY state` silently merges three regions into one row. It runs, it returns, and the number is wrong — which is why this cannot wait for someone to notice. Reach for it whenever a code's uniqueness depends on a column beside it."
+            },
+            "naming": {
+              "type": "string",
+              "enum": [
+                "common",
+                "legal",
+                "long",
+                "short",
+                "code"
+              ],
+              "description": "WHICH of that thing's names this column is — the companion `label_of` requires. Renamed from `register` 2026-10-07: see `value_register`.",
+              "constellation": "`label_of` IS DECLARED AND THE THING HAS MORE THAN ONE NAME. A company has a trading name and a registered name — both are labels of the same brand, and a question may legitimately use either. Reach for it the moment a second naming column appears for one thing, because then \"which name is this\" stops being obvious and the resolver needs telling."
+            }
+          },
+          "dependentRequired": {
+            "label_of": [
+              "naming"
+            ],
+            "naming": [
+              "label_of"
+            ]
+          },
+          "constellation": "SOMETHING TRUE ABOUT THE COLUMN CANNOT BE MEASURED FROM IT. That is the whole test, and it is the one that tells a ruling from a fact: if profiling the rows could establish it, it is not a ruling and does not belong here. The compelling case is two columns that are 1:1 where one is the other's NAME — cardinality is the same in both directions, so nothing in the data says which is the name and which is the thing."
+        }
+      },
+      "required": [
+        "offers"
+      ],
+      "$comment": "EXTRACTED 2026-10-08 so the relation plane and the concept plane cannot drift. It was inline under `grounding.source.columns`, and option A (operator ruling, same day) gives a second reader the same shape: `RelationFile.columns`. Two copies of the column body is precisely the two-homes defect that ruling exists to remove, so there is one, here, and both sides $ref it."
+    },
+    "RelationFile": {
+      "type": "object",
+      "required": [
+        "relation",
+        "columns"
+      ],
+      "additionalProperties": false,
+      "description": "THE SEMANTIC DESCRIPTOR OF ONE SERVED RELATION — `ontology/relations/<relation>.yaml`, beside the PHYSICAL one in `data/datasets/` (TableFile). Both are named after the relation and the pair is the two-plane split restated at one address: the data plane says what a column IS (type, physical role, measured distincts) and this says what a QUESTION may do with it. ADDED v0.1.20 by operator ruling 2026-10-08 (option A). WHY, measured on the worked bundle: 11 of its 17 concepts share a relation, and the column facts lived on the CONCEPT — so `v_contoso5_sales_line` was described SEVEN times and `dim_product` four. Eight columns across those two relations were declared divergently: seven because one concept simply knew MORE than its sibling (`Brand` carries `brand`'s `value_register`, `Product`'s copy does not), and one outright contradiction (`Order` declared `offers: {}` on three key columns six siblings call an axis). `key` was overloaded in both. A concept now names a relation and the columns of it it serves; the facts about those columns live here, once.",
+      "properties": {
+        "metadata": {
+          "$ref": "#/$defs/ConceptFile/properties/metadata"
+        },
+        "relation": {
+          "type": "object",
+          "required": [
+            "name",
+            "key"
+          ],
+          "additionalProperties": false,
+          "description": "WHICH relation this describes, and what makes one row of it unique.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The served relation, spelled as the data plane's descriptor spells it."
+            },
+            "key": {
+              "type": [
+                "string",
+                "array"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "WHAT MAKES ONE ROW UNIQUE — the column, or the ORDERED list. THE ORDER IS LOAD-BEARING: it becomes `cell_key` and reaches the SQL. ONE HOME, which is the point: it was per-concept and already disagreed — `Order` declared `order_key` on a line-grained relation, and `dim_product`'s four concepts declared four different keys for one table. A concept served COARSER than the relation says so with `bindings[].counts`, not by restating the key."
+            },
+            "grounds_column": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Legacy display hint, honoured where a bundle already carries it."
+            },
+            "code_column": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Legacy display hint, honoured where a bundle already carries it."
+            }
+          }
+        },
+        "columns": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/$defs/columnDeclaration"
+          },
+          "description": "EVERY COLUMN OF THIS RELATION A QUESTION MAY TOUCH, keyed by column name — the same declaration the concept plane carried, at its own address. A column declared here that no concept serves is LEGAL: the relation describes what the warehouse IS, and exposure is the concept's own choice. A column a concept SERVES and this file does not declare is a load error naming both files."
+        },
+        "governance": {
+          "$ref": "#/$defs/governance"
+        }
+      }
     }
   }
 }

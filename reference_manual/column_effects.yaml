@@ -45,9 +45,17 @@
 # tools/gen_grammar_map.py, which verifies two of its three operations against the planner's own
 # tuples.
 
+# RELATION-OWNED SINCE 2026-10-08 (operator ruling, option A). Every `key` below is unchanged and
+# so is every `reader`: what moved is the FILE the declaration sits in, not what reads it.
+# `block: source` now means the BINDING (`grounding.bindings[]`) for a relation-owned concept and
+# the inline `source:` for one that has not converted -- the parser synthesises the second shape
+# from the first (`_source_from_binding`), which is why no reader in this file changed. The two
+# new binding keys are `serves` (which columns of the relation this concept exposes) and `measure`
+# (which measure a bare question means -- `offers.aggregate.default` moved off the column, because
+# one relation's measure columns serve several concepts and the answer is the CONCEPT's).
 metadata:
   of: the column specification
-  schema_version: 0.1.19
+  schema_version: 0.1.20
   companions: [column_declaration.md, column_specification.md, column_rulings.md, ../mac_vocabulary.yaml]
   measured_at: '2026-10-07'
   # The enforced set was read off mac-platform's ColumnSpec model fields, not asserted:

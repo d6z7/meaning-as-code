@@ -1,12 +1,18 @@
 ---
 title: The column declaration — every key an author writes, and who reads each answer
 status: >-
-  CURRENT (2026-10-07, revision 5). This page IS the surface: mac.schema.json admits exactly these
+  CURRENT (2026-10-08, revision 6). This page IS the surface: mac.schema.json admits exactly these
   keys, mac_vocabulary.yaml declares exactly these terms, and the runtime reads them. Revisions 1-4
   each retired a key that carried two facts — `role` (join key vs axis), `identity: canonical`
   (relation key vs tall-fact discriminator), `identity` (key vs foreign key), `register` (a file path
-  vs a naming term). This revision is the result of a four-agent design review that looked for the
+  vs a naming term). Revision 5 was the result of a four-agent design review that looked for the
   remaining ones.
+  REVISION 6 MOVES THE MAP, NOT ITS KEYS (operator ruling 2026-10-08, "option A"). The column body
+  below is unchanged, down to the last term; what changed is WHOSE FILE it lives in. It was per
+  `(concept, relation)`, and 11 of the worked bundle's 17 concepts share a relation — so one
+  relation was described seven times and another four, and eight columns across those two were
+  declared divergently. It is now per `(relation, column)`, in `ontology/relations/<relation>.yaml`,
+  and a concept names the relation and the columns of it it serves.
 audience: ontology authors, importer developers, framework developers
 companions:
   - column_specification.md   # the long form: every key, with its enforcement state
@@ -24,20 +30,64 @@ one question —
 > **What may a question do with me, and on what terms?**
 
 ```yaml
-grounding:
-  source:
-    relation: v_contoso5_sales_line
-    key: [order_key, line_number]        # what makes ONE ROW unique, in order
-    columns:
-      order_key:     {offers: {}}        # loaded, offered to no question
-      line_number:   {offers: {}}
-      quantity:      {offers: {aggregate: {type: flow, unit: units}, extremum: [min, max]}}
-      order_date:    {offers: {axis: time, period_binding: true, extremum: [min, max]}}
-      customer_key:  {offers: {axis: categorical}, references: Customer}
-      city:          {offers: {axis: categorical, suppressed: DQ-IDENTIFYING-DIM_CUSTOMER-CITY}}
+# ontology/relations/v_contoso5_sales_line.yaml — the SEMANTIC descriptor of the relation,
+# beside the PHYSICAL one in data/datasets/. Written ONCE, whatever reads it.
+relation:
+  name: v_contoso5_sales_line
+  key: [order_key, line_number]          # what makes ONE ROW unique, in order
+columns:
+  order_key:     {offers: {}}            # loaded, offered to no question
+  line_number:   {offers: {}}
+  quantity:      {offers: {aggregate: {type: flow, unit: units}, extremum: [min, max]}}
+  order_date:    {offers: {axis: time, period_binding: true, extremum: [min, max]}}
+  customer_key:  {offers: {axis: categorical}, references: Customer}
+  city:          {offers: {axis: categorical, suppressed: DQ-IDENTIFYING-DIM_CUSTOMER-CITY}}
 ```
 
-## The source
+```yaml
+# ontology/concepts/units_sold.yaml — the concept names what it READS, and carries no column facts
+grounding:
+  bindings:
+    - relation: v_contoso5_sales_line
+      serves: [order_key, line_number, quantity, order_date, customer_key]
+      measure: quantity                  # which measure a BARE question means — the concept's call
+```
+
+The inline form below is still legal and still loads. A bundle converts one relation at a time.
+
+## The relation file — `ontology/relations/<relation>.yaml`
+
+| key | card | required | value | says | read by |
+|---|---|---|---|---|---|
+| `relation.name` | string | **yes** | the served relation | which relation this file describes, spelled as the data plane spells it | `parser.parse_relations` |
+| `relation.key` | string · **ordered list** | **yes** | column names of `columns` | what makes ONE ROW of the RELATION unique. **The order is load-bearing** — it becomes `cell_key` and reaches the SQL | `Grounding.cell_key` |
+| `columns` | map | **yes** | column name → the body below | every column of this relation a question may touch | `parser._source_from_binding` |
+
+ONE HOME, and the `key` is why it matters most. Per-concept it had already disagreed: `Order`
+declared `order_key` on a line-grained relation, and `dim_product`'s four concepts declared four
+different keys for one table. A concept served COARSER than its relation says so with
+`bindings[].counts`, never by restating the key.
+
+A column this file declares that **no concept serves** is legal: the relation describes what the
+warehouse IS, and exposure is the concept's choice. A column a concept **serves** and this file does
+not declare is a load error naming both files.
+
+## The binding — `grounding.bindings[]`
+
+| key | card | required | says | read by |
+|---|---|---|---|---|
+| `relation` | string | **yes** | the relation file whose columns these are | `_source_from_binding` |
+| `serves` | list | **yes** | the columns of it this concept exposes — a SUBSET | `served_columns` |
+| `counts` | column name | no | a count of this concept counts THAT column, not its rows | the count route; disclosed in the answer |
+| `measure` | column name | no | which measure a bare question means, when several fold | `column_facts.canonical_measure` |
+
+A binding carries **no column facts**, which is what makes several of them safe where `sources:` was
+not: there is nothing in a second entry that can be silently dropped except the binding itself, and
+that refuses. Several bindings are the `Region` case — a pre-aggregated rollup AND the membership at
+the fact's join-key grain, over one membership — and the chooser that picks between them by `serves`
+coverage is **not built yet**, so a second entry is a refusal today rather than a silent first-wins.
+
+## The source — the inline form, still legal
 
 | key | card | required | value | says | read by |
 |---|---|---|---|---|---|
@@ -46,10 +96,13 @@ grounding:
 | `counts` | column name | no | a column of this map | a count of this concept counts THAT column, not its rows | the count route; disclosed in the answer |
 | `columns` | map | **yes** | column name → body | the columns this concept serves | `served_columns` |
 
-`source` is **singular**. A concept binds one relation; many concepts bind one relation. `sources:` as
-a list is a load error — it was never honoured (`Grounding` carries no `sources` field, a second entry
-was silently dropped), and a notion genuinely over two relations is a transform view, or two concepts
-and an edge.
+`source` is **singular**. `sources:` as a list is a load error — it was never honoured (`Grounding`
+carries no `sources` field, a second entry was silently dropped). Declaring BOTH `source:` and
+`bindings:` is also a load error: one home is the point.
+
+The two forms are not equivalent and the difference is only WHOSE FILE the body sits in — the keys
+below are identical either way, and `parser._source_from_binding` turns a binding plus its relation
+file into exactly this mapping, so every reader downstream is unchanged.
 
 ## The column — four keys
 

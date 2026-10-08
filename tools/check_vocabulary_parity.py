@@ -94,8 +94,7 @@ PAIRS = (
     # pair naming it would report `missing_block` forever — a disagreement that is not there, the
     # exact defect category this module's own history (2026-10-05, see above) already paid for once.
     ("column `offers.axis`",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "offers", "properties", "axis"],
+     ["$defs", "columnDeclaration", "properties", "offers", "properties", "axis"],
      "concept.axis"),
     # ADDED 2026-10-07 AFTERNOON: `offers.aggregate.type` was `{"type": "string"}` with NO enum until
     # this same revision closed it to the fold law's five kinds — a slot that could not be governed
@@ -103,13 +102,11 @@ PAIRS = (
     # PATTERNS for the same reason `axis` moved out of PATTERNS below: a closed `enum` is compared
     # directly, a PATTERN is only for a namespaced TOKEN inside a regex.
     ("column `offers.aggregate.type`",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "offers", "properties", "aggregate",
+     ["$defs", "columnDeclaration", "properties", "offers", "properties", "aggregate",
       "properties", "type"],
      "concept.column.measure_type"),
     ("column ruling `naming`",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "rulings", "properties", "naming"],
+     ["$defs", "columnDeclaration", "properties", "rulings", "properties", "naming"],
      "name_register"),
     ("dataset column `role`",
      ["$defs", "TableFile", "properties", "columns", "items", "properties", "role"], "dataset.column.role"),
@@ -167,13 +164,11 @@ PROPERTY_SETS = (
     # uses a question may make of a column, so the vocabulary's terms are this object's property
     # names and `additionalProperties: false` is what closes the set, the same shape `rulings` has.
     ("column `offers` keys",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "offers"],
+     ["$defs", "columnDeclaration", "properties", "offers"],
      "concept.column.offers",
      {}),
     ("column `rulings` keys",
-     ["$defs", "grounding", "properties", "source", "properties", "columns",
-      "oneOf", 1, "additionalProperties", "properties", "rulings"],
+     ["$defs", "columnDeclaration", "properties", "rulings"],
      "concept.column.ruling",
      # `evidence`/`never_axis` LEFT THIS OBJECT 2026-10-07: both folded into the single `offers.
      # suppressed` key (a use, not a ruling about another column), so there is no longer a
@@ -622,8 +617,7 @@ def _self_test() -> int:
              compare(_plant(path, {"enum": ["a", "b"]}), folded, one)[0][4] == "ok")
 
     # ── THE PAGE DERIVATION: a reference page's "choices" come from PAIRS, not from a second table.
-    obj = ["$defs", "grounding", "properties", "source", "properties", "columns",
-           "oneOf", 1, "additionalProperties"]
+    obj = ["$defs", "columnDeclaration"]
     g = governs_under(obj)
     # THREE, since 2026-10-07 AFTERNOON — up from the morning's two. `roles.identity` DROPPED (no
     # enum survives it to govern); `roles.axis` MOVED IN from PATTERNS, now bare; `aggregate.type`

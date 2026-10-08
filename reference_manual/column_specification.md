@@ -1,14 +1,18 @@
 ---
 title: The column specification — everything about a column, on the column
 status: >-
-  CURRENT (2026-10-07, revision 5). The long form of column_declaration.md: every key, its
+  CURRENT (2026-10-08, revision 6). The long form of column_declaration.md: every key, its
   cardinality, its terms, and who reads it. A column has FOUR top-level keys — `offers` (required),
   `references`, `value_register`, `rulings` — and `mac.schema.json` admits only those four
   (`additionalProperties: false`), as does mac-runtime's `ColumnSpec` (`extra="forbid"`), so a fifth
   is a load error rather than a line nothing reads. `offers` is a map from each USE a question may
   make of the column to that use's own terms; the five scalar role names are DERIVED by
   `ColumnSpec.role` and never authored. Every planner step asks `Grounding.offers(column, use)`,
-  which reads this map. TWO FACTS ARE THE SOURCE'S AND NOT ANY COLUMN'S: what makes one row unique
+  which reads this map. RELATION-OWNED SINCE REVISION 6 (operator ruling 2026-10-08, option A): the body below is
+  unchanged to the last term, and it now lives in `ontology/relations/<relation>.yaml` keyed by
+  column, with a concept naming the relation and the columns of it it serves under
+  `grounding.bindings[]`. `$defs.columnDeclaration` is the one home both planes $ref. The inline
+  `source:` form still loads. TWO FACTS ARE THE SOURCE'S AND NOT ANY COLUMN'S: what makes one row unique
   (`source.key`, an ordered list) and what a count of the concept counts (`source.counts`, a column
   name). TERMS ARE BARE — `axis: categorical`, `aggregate.type: flow` — closed enums the schema
   validates by name. contoso5 is authored entirely in this shape and every example on this page is a
